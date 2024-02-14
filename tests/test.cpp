@@ -7,7 +7,7 @@ void
 testParallelKDtree( const int& Dim, const int& LEAVE_WRAP, parlay::sequence<point>& wp,
                     const size_t& N, const int& K, const int& rounds,
                     const string& insertFile, const int& tag, const int& queryType ) {
-  using tree = ParallelKDtree<point>;
+  using tree = baseTree<point>;
   using points = typename tree::points;
   using node = typename tree::node;
   using interior = typename tree::interior;

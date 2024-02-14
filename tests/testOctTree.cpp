@@ -8,6 +8,8 @@ testOctTree( const int& Dim, const int& LEAVE_WRAP, parlay::sequence<point>& wp,
              const size_t& N, const int& K, const int& rounds, const string& insertFile,
              const int& tag, const int& queryType ) {
   using tree = octTree<point>;
+  tree pkd;
+  buildTree<point, tree>( Dim, wp, rounds, pkd );
 
   std::cout << std::endl << std::flush;
 
@@ -61,44 +63,6 @@ main( int argc, char* argv[] ) {
 
   assert( N > 0 && Dim > 0 && K > 0 && LEAVE_WRAP >= 1 );
 
-  // if ( tag == -1 ) {
-  //   //* serial run
-  //   // todo rewrite test serial code
-  //   // testSerialKDtree( Dim, LEAVE_WRAP, wp, N, K );
-  // } else if ( Dim == 2 ) {
-  //   auto pts = parlay::tabulate( N, [&]( size_t i ) -> PointID<coord, 2> {
-  //     return PointID<coord, 2>( wp[i].pnt.begin(), i );
-  //   } );
-  //   decltype( wp )().swap( wp );
-  //   testOctTree<PointID<coord, 2>>( Dim, LEAVE_WRAP, pts, N, K, rounds,
-  //   insertFile,
-  //                                          tag, queryType );
-  // } else if ( Dim == 3 ) {
-  //   auto pts = parlay::tabulate( N, [&]( size_t i ) -> PointID<coord, 3> {
-  //     return PointID<coord, 3>( wp[i].pnt.begin(), i );
-  //   } );
-  //   decltype( wp )().swap( wp );
-  //   testOctTree<PointID<coord, 3>>( Dim, LEAVE_WRAP, pts, N, K, rounds,
-  //   insertFile,
-  //                                          tag, queryType );
-  // } else if ( Dim == 5 ) {
-  //   auto pts = parlay::tabulate( N, [&]( size_t i ) -> PointID<coord, 5> {
-  //     return PointID<coord, 5>( wp[i].pnt.begin(), i );
-  //   } );
-  //   decltype( wp )().swap( wp );
-  //   testOctTree<PointID<coord, 5>>( Dim, LEAVE_WRAP, pts, N, K, rounds,
-  //   insertFile,
-  //                                          tag, queryType );
-  // } else if ( Dim == 7 ) {
-  //   auto pts = parlay::tabulate( N, [&]( size_t i ) -> PointID<coord, 7> {
-  //     return PointID<coord, 7>( wp[i].pnt.begin(), i );
-  //   } );
-  //   decltype( wp )().swap( wp );
-  //   testOctTree<PointID<coord, 7>>( Dim, LEAVE_WRAP, pts, N, K, rounds,
-  //   insertFile,
-  //                                          tag, queryType );
-  // }
-  //
   if ( tag == -1 ) {
     //* serial run
     // todo rewrite test serial code

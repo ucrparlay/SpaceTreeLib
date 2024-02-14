@@ -4,7 +4,6 @@
 #include "basic_point.h"
 
 #include "baseTree.h"
-#include "oct_tree.h"
 
 #include "utility/tree_node.hpp"
 #include "utility/box_op.hpp"
@@ -22,3 +21,6 @@
 #include "query_op/nn_search.hpp"
 #include "query_op/range_count.hpp"
 #include "query_op/range_query.hpp"
+
+#include "oct_tree.h"
+#include "octTree/oct_build_tree.hpp"

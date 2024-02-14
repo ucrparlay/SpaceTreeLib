@@ -6,15 +6,16 @@
 
 namespace cpdd {
 
-template<typename point>
-void
-baseTree<point>::build( slice A, const dim_type DIM ) {
-  points B = points::uninitialized( A.size() );
-  this->bbox = get_box( A );
-  this->root = build_recursive( A, B.cut( 0, A.size() ), 0, DIM, this->bbox );
-  assert( this->root != nullptr );
-  return;
-}
+// template<typename point>
+// void
+// baseTree<point>::build( slice A, const dim_type DIM ) {
+//   points B = points::uninitialized( A.size() );
+//   this->bbox = get_box( A );
+//   this->root = build_recursive( A, B.cut( 0, A.size() ), 0, DIM, this->bbox );
+//   assert( this->root != nullptr );
+//   return;
+// }
+//
 
 template<typename point>
 void
@@ -167,142 +168,147 @@ baseTree<point>::serial_partition( slice In, dim_type d ) {
   return _2ndGroup.begin();
 }
 
-template<typename point>
-typename baseTree<point>::node*
-baseTree<point>::serial_build_recursive( slice In, slice Out, dim_type dim,
-                                         const dim_type DIM, const box& bx ) {
-  size_t n = In.size();
-  if ( n == 0 ) return alloc_empty_leaf();
-  if ( n <= LEAVE_WRAP ) return alloc_leaf_node( In );
+// template<typename point>
+// typename baseTree<point>::node*
+// baseTree<point>::serial_build_recursive( slice In, slice Out, dim_type dim,
+//                                          const dim_type DIM, const box& bx ) {
+//   size_t n = In.size();
+//   if ( n == 0 ) return alloc_empty_leaf();
+//   if ( n <= LEAVE_WRAP ) return alloc_leaf_node( In );
+//
+//   auto parallel_partition = [&]( slice In, dim_type d ) {
+//     auto cmp = [&]( const point& p1, const point& p2 ) {
+//       return Num::Lt( p1.pnt[d], p2.pnt[d] );
+//     };
+//     auto iter_pivot = parlay::kth_smallest( In, n / 2, cmp );
+//     auto iter_min = parlay::kth_smallest( In, 0, cmp );
+//     auto ucmp = *iter_pivot == *iter_min ? &Num::Leq : &Num::Lt;
+//     auto res = parlay::internal::split_two(
+//         In, parlay::delayed_seq<bool>( n, [&]( const point& p ) {
+//           return ( *ucmp )( p.pnt[d], iter_pivot->pnt[d] );
+//         } ) );
+//     parlay::copy( std::move( res.first ), In );
+//     return In.begin() + res.second;
+//   };
+//
+//   dim_type d = ( _split_rule == MAX_STRETCH_DIM ? pick_max_stretch_dim( bx, DIM ) : dim
+//   );
+//   // points_iter splitIter =
+//   //     n > 5000000 ? parallel_partition( In, d ) : serial_partition( In, d );
+//   points_iter splitIter = serial_partition( In, d );
+//   points_iter diffEleIter;
+//
+//   splitter split;
+//
+//   if ( splitIter <= In.begin() + n / 2 ) {
+//     split = splitter( In[n / 2].pnt[d], d );
+//   } else if ( splitIter != In.end() ) {
+//     auto minEleIter = std::ranges::min_element( splitIter, In.end(),
+//                                                 [&]( const point& p1, const point& p2 )
+//                                                 {
+//                                                   return Num::Lt( p1.pnt[d], p2.pnt[d]
+//                                                   );
+//                                                 } );
+//     split = splitter( minEleIter->pnt[d], d );
+//   } else if ( In.end() ==
+//               ( diffEleIter = std::ranges::find_if_not( In, [&]( const point& p ) {
+//                   return p.sameDimension( In[0] );
+//                 } ) ) ) {  //* check whether all elements are identical
+//     return alloc_dummy_leaf( In );
+//   } else {  //* current dim d is same but other dims are not
+//     if ( _split_rule == MAX_STRETCH_DIM ) {  //* next recursion redirects to new dim
+//       return serial_build_recursive( In, Out, d, DIM, get_box( In ) );
+//     } else if ( _split_rule == ROTATE_DIM ) {  //* switch dim, break rotation order
+//       points_iter compIter =
+//           diffEleIter == In.begin() ? std::ranges::prev( In.end() ) : In.begin();
+//       assert( compIter != diffEleIter );
+//       for ( int i = 0; i < DIM; i++ ) {
+//         if ( !Num::Eq( diffEleIter->pnt[i], compIter->pnt[i] ) ) {
+//           d = i;
+//           break;
+//         }
+//       }
+//       return serial_build_recursive( In, Out, d, DIM, bx );
+//     }
+//   }
+//
+//   assert( std::ranges::all_of(
+//               In.begin(), splitIter,
+//               [&]( point& p ) { return Num::Lt( p.pnt[split.second], split.first ); } )
+//               &&
+//           std::ranges::all_of( splitIter, In.end(), [&]( point& p ) {
+//             return Num::Geq( p.pnt[split.second], split.first );
+//           } ) );
+//
+//   box lbox( bx ), rbox( bx );
+//   lbox.second.pnt[d] = split.first;  //* loose
+//   rbox.first.pnt[d] = split.first;
+//
+//   d = ( d + 1 ) % DIM;
+//   node *L, *R;
+//
+//   L = serial_build_recursive( In.cut( 0, splitIter - In.begin() ),
+//                               Out.cut( 0, splitIter - In.begin() ), d, DIM, lbox );
+//   R = serial_build_recursive( In.cut( splitIter - In.begin(), n ),
+//                               Out.cut( splitIter - In.begin(), n ), d, DIM, rbox );
+//   return alloc_interior_node( L, R, split );
+// }
 
-  auto parallel_partition = [&]( slice In, dim_type d ) {
-    auto cmp = [&]( const point& p1, const point& p2 ) {
-      return Num::Lt( p1.pnt[d], p2.pnt[d] );
-    };
-    auto iter_pivot = parlay::kth_smallest( In, n / 2, cmp );
-    auto iter_min = parlay::kth_smallest( In, 0, cmp );
-    auto ucmp = *iter_pivot == *iter_min ? &Num::Leq : &Num::Lt;
-    auto res = parlay::internal::split_two(
-        In, parlay::delayed_seq<bool>( n, [&]( const point& p ) {
-          return ( *ucmp )( p.pnt[d], iter_pivot->pnt[d] );
-        } ) );
-    parlay::copy( std::move( res.first ), In );
-    return In.begin() + res.second;
-  };
-
-  dim_type d = ( _split_rule == MAX_STRETCH_DIM ? pick_max_stretch_dim( bx, DIM ) : dim );
-  // points_iter splitIter =
-  //     n > 5000000 ? parallel_partition( In, d ) : serial_partition( In, d );
-  points_iter splitIter = serial_partition( In, d );
-  points_iter diffEleIter;
-
-  splitter split;
-
-  if ( splitIter <= In.begin() + n / 2 ) {
-    split = splitter( In[n / 2].pnt[d], d );
-  } else if ( splitIter != In.end() ) {
-    auto minEleIter = std::ranges::min_element( splitIter, In.end(),
-                                                [&]( const point& p1, const point& p2 ) {
-                                                  return Num::Lt( p1.pnt[d], p2.pnt[d] );
-                                                } );
-    split = splitter( minEleIter->pnt[d], d );
-  } else if ( In.end() ==
-              ( diffEleIter = std::ranges::find_if_not( In, [&]( const point& p ) {
-                  return p.sameDimension( In[0] );
-                } ) ) ) {  //* check whether all elements are identical
-    return alloc_dummy_leaf( In );
-  } else {  //* current dim d is same but other dims are not
-    if ( _split_rule == MAX_STRETCH_DIM ) {  //* next recursion redirects to new dim
-      return serial_build_recursive( In, Out, d, DIM, get_box( In ) );
-    } else if ( _split_rule == ROTATE_DIM ) {  //* switch dim, break rotation order
-      points_iter compIter =
-          diffEleIter == In.begin() ? std::ranges::prev( In.end() ) : In.begin();
-      assert( compIter != diffEleIter );
-      for ( int i = 0; i < DIM; i++ ) {
-        if ( !Num::Eq( diffEleIter->pnt[i], compIter->pnt[i] ) ) {
-          d = i;
-          break;
-        }
-      }
-      return serial_build_recursive( In, Out, d, DIM, bx );
-    }
-  }
-
-  assert( std::ranges::all_of(
-              In.begin(), splitIter,
-              [&]( point& p ) { return Num::Lt( p.pnt[split.second], split.first ); } ) &&
-          std::ranges::all_of( splitIter, In.end(), [&]( point& p ) {
-            return Num::Geq( p.pnt[split.second], split.first );
-          } ) );
-
-  box lbox( bx ), rbox( bx );
-  lbox.second.pnt[d] = split.first;  //* loose
-  rbox.first.pnt[d] = split.first;
-
-  d = ( d + 1 ) % DIM;
-  node *L, *R;
-
-  L = serial_build_recursive( In.cut( 0, splitIter - In.begin() ),
-                              Out.cut( 0, splitIter - In.begin() ), d, DIM, lbox );
-  R = serial_build_recursive( In.cut( splitIter - In.begin(), n ),
-                              Out.cut( splitIter - In.begin(), n ), d, DIM, rbox );
-  return alloc_interior_node( L, R, split );
-}
-
-template<typename point>
-typename baseTree<point>::node*
-baseTree<point>::build_recursive( slice In, slice Out, dim_type dim, const dim_type DIM,
-                                  const box& bx ) {
-  assert( In.size() == 0 || within_box( get_box( In ), bx ) );
-
-  // if ( In.size() ) {
-  if ( In.size() <= SERIAL_BUILD_CUTOFF ) {
-    return serial_build_recursive( In, Out, dim, DIM, bx );
-  }
-
-  //* parallel partitons
-  auto pivots = splitter_s::uninitialized( PIVOT_NUM + BUCKET_NUM + 1 );
-  auto boxs = box_s::uninitialized( BUCKET_NUM );
-  parlay::sequence<balls_type> sums;
-
-  pick_pivots( In, In.size(), pivots, dim, DIM, boxs, bx );
-  partition( In, Out, In.size(), pivots, sums );
-
-  //* if random sampling failed to split points, re-partitions using serail approach
-  auto treeNodes = parlay::sequence<node*>::uninitialized( BUCKET_NUM );
-  auto nodesMap = parlay::sequence<bucket_type>::uninitialized( BUCKET_NUM );
-
-  bucket_type zeros = 0, cnt = 0;
-  for ( bucket_type i = 0; i < BUCKET_NUM; i++ ) {
-    if ( !sums[i] ) {
-      zeros++;
-      treeNodes[i] = alloc_empty_leaf();
-    } else {
-      nodesMap[cnt++] = i;
-    }
-  }
-
-  if ( zeros == BUCKET_NUM - 1 ) {  // * switch to seral
-                                    // TODO: add parallelsim within this call
-    return serial_build_recursive( In, Out, dim, DIM, bx );
-  }
-
-  dim = ( dim + BUILD_DEPTH_ONCE ) % DIM;
-
-  parlay::parallel_for(
-      0, BUCKET_NUM - zeros,
-      [&]( bucket_type i ) {
-        size_t start = 0;
-        for ( bucket_type j = 0; j < nodesMap[i]; j++ ) {
-          start += sums[j];
-        }
-
-        treeNodes[nodesMap[i]] = build_recursive(
-            Out.cut( start, start + sums[nodesMap[i]] ),
-            In.cut( start, start + sums[nodesMap[i]] ), dim, DIM, boxs[nodesMap[i]] );
-      },
-      1 );
-  return build_inner_tree( 1, pivots, treeNodes );
-}
+// template<typename point>
+// typename baseTree<point>::node*
+// baseTree<point>::build_recursive( slice In, slice Out, dim_type dim, const dim_type
+// DIM,
+//                                   const box& bx ) {
+//   assert( In.size() == 0 || within_box( get_box( In ), bx ) );
+//
+//   // if ( In.size() ) {
+//   if ( In.size() <= SERIAL_BUILD_CUTOFF ) {
+//     return serial_build_recursive( In, Out, dim, DIM, bx );
+//   }
+//
+//   //* parallel partitons
+//   auto pivots = splitter_s::uninitialized( PIVOT_NUM + BUCKET_NUM + 1 );
+//   auto boxs = box_s::uninitialized( BUCKET_NUM );
+//   parlay::sequence<balls_type> sums;
+//
+//   pick_pivots( In, In.size(), pivots, dim, DIM, boxs, bx );
+//   partition( In, Out, In.size(), pivots, sums );
+//
+//   //* if random sampling failed to split points, re-partitions using serail approach
+//   auto treeNodes = parlay::sequence<node*>::uninitialized( BUCKET_NUM );
+//   auto nodesMap = parlay::sequence<bucket_type>::uninitialized( BUCKET_NUM );
+//
+//   bucket_type zeros = 0, cnt = 0;
+//   for ( bucket_type i = 0; i < BUCKET_NUM; i++ ) {
+//     if ( !sums[i] ) {
+//       zeros++;
+//       treeNodes[i] = alloc_empty_leaf();
+//     } else {
+//       nodesMap[cnt++] = i;
+//     }
+//   }
+//
+//   if ( zeros == BUCKET_NUM - 1 ) {  // * switch to seral
+//                                     // TODO: add parallelsim within this call
+//     return serial_build_recursive( In, Out, dim, DIM, bx );
+//   }
+//
+//   dim = ( dim + BUILD_DEPTH_ONCE ) % DIM;
+//
+//   parlay::parallel_for(
+//       0, BUCKET_NUM - zeros,
+//       [&]( bucket_type i ) {
+//         size_t start = 0;
+//         for ( bucket_type j = 0; j < nodesMap[i]; j++ ) {
+//           start += sums[j];
+//         }
+//
+//         treeNodes[nodesMap[i]] = build_recursive(
+//             Out.cut( start, start + sums[nodesMap[i]] ),
+//             In.cut( start, start + sums[nodesMap[i]] ), dim, DIM, boxs[nodesMap[i]] );
+//       },
+//       1 );
+//   return build_inner_tree( 1, pivots, treeNodes );
+// }
 
 }  // namespace cpdd

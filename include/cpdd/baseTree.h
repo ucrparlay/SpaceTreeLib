@@ -14,7 +14,6 @@ class baseTree {
  public:
   using bucket_type = uint_fast8_t;
   using balls_type = uint_fast32_t;
-  // using balls_type = uint_fast64_t;
   using dim_type = uint_fast8_t;
 
   using coord = typename point::coord;
@@ -107,12 +106,13 @@ class baseTree {
                          parlay::sequence<balls_type>& sums );
   static node* build_inner_tree( bucket_type idx, splitter_s& pivots,
                                  parlay::sequence<node*>& treeNodes );
-  void build( slice In, const dim_type DIM );
   points_iter serial_partition( slice In, dim_type d );
-  node* serial_build_recursive( slice In, slice Out, dim_type dim, const dim_type DIM,
-                                const box& bx );
-  node* build_recursive( slice In, slice Out, dim_type dim, const dim_type DIM,
-                         const box& bx );
+
+  virtual void build( slice In, const dim_type DIM ) = 0;
+  virtual node* serial_build_recursive( slice In, slice Out, dim_type dim,
+                                        const dim_type DIM, const box& bx ) = 0;
+  virtual node* build_recursive( slice In, slice Out, dim_type dim, const dim_type DIM,
+                                 const box& bx ) = 0;
 
   //@ random support
   static inline uint64_t _hash64( uint64_t u );
@@ -222,7 +222,7 @@ class baseTree {
     return this->bbox;
   }
 
- private:
+ protected:
   node* root = nullptr;
   parlay::internal::timer timer;
   // split_rule _split_rule = ROTATE_DIM;
