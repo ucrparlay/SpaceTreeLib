@@ -3,7 +3,8 @@
 #include "comparator.h"
 #include "basic_point.h"
 
-#include "kdTreeParallel.h"
+#include "baseTree.h"
+#include "oct_tree.h"
 
 #include "utility/tree_node.hpp"
 #include "utility/box_op.hpp"

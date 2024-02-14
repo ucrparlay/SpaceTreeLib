@@ -10,7 +10,7 @@ namespace cpdd {
 #define ENDL std::endl << std::flush
 
 template<typename point>
-class ParallelKDtree {
+class baseTree {
  public:
   using bucket_type = uint_fast8_t;
   using balls_type = uint_fast32_t;
@@ -177,7 +177,7 @@ class ParallelKDtree {
   template<typename StoreType>
   size_t range_query_serial( const box& queryBox, StoreType Out );
   template<typename StoreType>
-  size_t range_query_parallel( const typename ParallelKDtree<point>::box& queryBox,
+  size_t range_query_parallel( const typename baseTree<point>::box& queryBox,
                                StoreType Out, double& tim );
   template<typename StoreType>
   static void range_query_recursive_serial( node* T, StoreType Out, size_t& s,

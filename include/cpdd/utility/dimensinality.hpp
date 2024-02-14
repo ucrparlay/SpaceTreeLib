@@ -1,12 +1,11 @@
 #pragma once
 
-#include "../kdTreeParallel.h"
+#include "../baseTree.h"
 
 namespace cpdd {
 template<typename point>
-inline ParallelKDtree<point>::dim_type
-ParallelKDtree<point>::pick_rebuild_dim( const node* T, const dim_type d,
-                                         const dim_type DIM ) {
+inline baseTree<point>::dim_type
+baseTree<point>::pick_rebuild_dim( const node* T, const dim_type d, const dim_type DIM ) {
   if ( this->_split_rule == MAX_STRETCH_DIM ) {
     return 0;
   } else if ( this->_split_rule == ROTATE_DIM ) {
@@ -18,8 +17,8 @@ ParallelKDtree<point>::pick_rebuild_dim( const node* T, const dim_type d,
 }
 
 template<typename point>
-inline ParallelKDtree<point>::dim_type
-ParallelKDtree<point>::pick_max_stretch_dim( const box& bx, const dim_type DIM ) {
+inline baseTree<point>::dim_type
+baseTree<point>::pick_max_stretch_dim( const box& bx, const dim_type DIM ) {
   dim_type d( 0 );
   coord diff( bx.second.pnt[0] - bx.first.pnt[0] );
   assert( Num::Geq( diff, 0 ) );

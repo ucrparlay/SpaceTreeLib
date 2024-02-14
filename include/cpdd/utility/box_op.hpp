@@ -1,12 +1,12 @@
 #pragma once
 
-#include "../kdTreeParallel.h"
+#include "../baseTree.h"
 
 namespace cpdd {
 
 template<typename point>
 inline bool
-ParallelKDtree<point>::legal_box( const box& bx ) {
+baseTree<point>::legal_box( const box& bx ) {
   if ( bx == get_empty_box() ) return true;
   for ( dim_type i = 0; i < bx.first.get_dim(); i++ ) {
     if ( Num::Gt( bx.first.pnt[i], bx.second.pnt[i] ) ) {
@@ -18,7 +18,7 @@ ParallelKDtree<point>::legal_box( const box& bx ) {
 
 template<typename point>
 inline bool
-ParallelKDtree<point>::within_box( const box& a, const box& b ) {
+baseTree<point>::within_box( const box& a, const box& b ) {
   assert( legal_box( a ) );
   assert( legal_box( b ) );
   for ( dim_type i = 0; i < a.first.get_dim(); i++ ) {
@@ -32,7 +32,7 @@ ParallelKDtree<point>::within_box( const box& a, const box& b ) {
 
 template<typename point>
 inline bool
-ParallelKDtree<point>::within_box( const point& p, const box& bx ) {
+baseTree<point>::within_box( const point& p, const box& bx ) {
   assert( legal_box( bx ) );
   for ( dim_type i = 0; i < p.get_dim(); i++ ) {
     if ( Num::Lt( p.pnt[i], bx.first.pnt[i] ) || Num::Gt( p.pnt[i], bx.second.pnt[i] ) ) {
@@ -44,7 +44,7 @@ ParallelKDtree<point>::within_box( const point& p, const box& bx ) {
 
 template<typename point>
 inline bool
-ParallelKDtree<point>::box_intersect_box( const box& a, const box& b ) {
+baseTree<point>::box_intersect_box( const box& a, const box& b ) {
   assert( legal_box( a ) && legal_box( b ) );
   for ( dim_type i = 0; i < a.first.get_dim(); i++ ) {
     if ( Num::Lt( a.second.pnt[i], b.first.pnt[i] ) ||
@@ -56,21 +56,21 @@ ParallelKDtree<point>::box_intersect_box( const box& a, const box& b ) {
 }
 
 template<typename point>
-inline typename ParallelKDtree<point>::box
-ParallelKDtree<point>::get_empty_box() {
+inline typename baseTree<point>::box
+baseTree<point>::get_empty_box() {
   return box( point( std::numeric_limits<coord>::max() ),
               point( std::numeric_limits<coord>::min() ) );
 }
 
 template<typename point>
-typename ParallelKDtree<point>::box
-ParallelKDtree<point>::get_box( const box& x, const box& y ) {
+typename baseTree<point>::box
+baseTree<point>::get_box( const box& x, const box& y ) {
   return box( x.first.minCoords( y.first ), x.second.maxCoords( y.second ) );
 }
 
 template<typename point>
-typename ParallelKDtree<point>::box
-ParallelKDtree<point>::get_box( slice V ) {
+typename baseTree<point>::box
+baseTree<point>::get_box( slice V ) {
   if ( V.size() == 0 ) {
     return get_empty_box();
   } else {
@@ -84,8 +84,8 @@ ParallelKDtree<point>::get_box( slice V ) {
 }
 
 template<typename point>
-typename ParallelKDtree<point>::box
-ParallelKDtree<point>::get_box( node* T ) {
+typename baseTree<point>::box
+baseTree<point>::get_box( node* T ) {
   points wx = points::uninitialized( T->size );
   flatten( T, parlay::make_slice( wx ) );
   return get_box( parlay::make_slice( wx ) );
@@ -93,7 +93,7 @@ ParallelKDtree<point>::get_box( node* T ) {
 
 template<typename point>
 inline bool
-ParallelKDtree<point>::within_circle( const box& bx, const circle& cl ) {
+baseTree<point>::within_circle( const box& bx, const circle& cl ) {
   //* the logical is same as p2b_max_distance <= radius
   coord r = 0;
   for ( dim_type i = 0; i < cl.first.get_dim(); i++ ) {
@@ -111,7 +111,7 @@ ParallelKDtree<point>::within_circle( const box& bx, const circle& cl ) {
 
 template<typename point>
 inline bool
-ParallelKDtree<point>::within_circle( const point& p, const circle& cl ) {
+baseTree<point>::within_circle( const point& p, const circle& cl ) {
   coord r = 0;
   for ( dim_type i = 0; i < cl.first.get_dim(); i++ ) {
     r += ( p.pnt[i] - cl.first.pnt[i] ) * ( p.pnt[i] - cl.first.pnt[i] );
@@ -123,7 +123,7 @@ ParallelKDtree<point>::within_circle( const point& p, const circle& cl ) {
 
 template<typename point>
 inline bool
-ParallelKDtree<point>::circle_intersect_box( const circle& cl, const box& bx ) {
+baseTree<point>::circle_intersect_box( const circle& cl, const box& bx ) {
   //* the logical is same as p2b_min_distance > radius
   coord r = 0;
   for ( dim_type i = 0; i < cl.first.get_dim(); i++ ) {

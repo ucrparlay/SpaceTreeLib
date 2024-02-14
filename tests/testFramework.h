@@ -8,6 +8,7 @@
 #include "common/geometryIO.h"
 #include "common/parse_command_line.h"
 #include "common/time_loop.h"
+#include "cpdd/baseTree.h"
 #include "parlay/internal/group_by.h"
 #include "parlay/parallel.h"
 #include "parlay/primitives.h"
@@ -143,7 +144,7 @@ size_t
 recurse_box( parlay::slice<point*, point*> In,
              parlay::sequence<std::pair<point, point>>& boxs, int DIM,
              std::pair<size_t, size_t> range, int& idx, int recNum, int type ) {
-  using tree = ParallelKDtree<point>;
+  using tree = baseTree<point>;
   using box = typename tree::box;
 
   size_t n = In.size();
@@ -190,7 +191,7 @@ recurse_box( parlay::slice<point*, point*> In,
 template<typename point>
 std::pair<parlay::sequence<std::pair<point, point>>, size_t>
 gen_rectangles( int recNum, const int type, const parlay::sequence<point>& WP, int DIM ) {
-  using tree = ParallelKDtree<point>;
+  using tree = baseTree<point>;
   using points = typename tree::points;
   using node = typename tree::node;
   using box = typename tree::box;
@@ -264,11 +265,11 @@ checkTreesSize( typename tree::node* T ) {
   return T->size;
 }
 
-template<typename point, int print = 1>
+template<typename point, typename tree, int print = 1>
 void
 buildTree( const int& Dim, const parlay::sequence<point>& WP, const int& rounds,
-           ParallelKDtree<point>& pkd ) {
-  using tree = ParallelKDtree<point>;
+           baseTree<point>& pkd ) {
+  // using tree = baseTree<point>;
   using points = typename tree::points;
   using node = typename tree::node;
 
@@ -300,8 +301,8 @@ buildTree( const int& Dim, const parlay::sequence<point>& WP, const int& rounds,
 template<typename point, int print = 1>
 void
 incrementalBuild( const int Dim, const parlay::sequence<point>& WP, const int rounds,
-                  ParallelKDtree<point>& pkd, double stepRatio ) {
-  using tree = ParallelKDtree<point>;
+                  baseTree<point>& pkd, double stepRatio ) {
+  using tree = baseTree<point>;
   using points = typename tree::points;
   using node = typename tree::node;
   size_t n = WP.size();
@@ -348,9 +349,9 @@ incrementalBuild( const int Dim, const parlay::sequence<point>& WP, const int ro
 template<typename point, bool print = 1>
 void
 incrementalDelete( const int Dim, const parlay::sequence<point>& WP,
-                   const parlay::sequence<point>& WI, int rounds,
-                   ParallelKDtree<point>& pkd, double stepRatio ) {
-  using tree = ParallelKDtree<point>;
+                   const parlay::sequence<point>& WI, int rounds, baseTree<point>& pkd,
+                   double stepRatio ) {
+  using tree = baseTree<point>;
   using points = typename tree::points;
   using node = typename tree::node;
   size_t n = WP.size();
@@ -399,10 +400,10 @@ incrementalDelete( const int Dim, const parlay::sequence<point>& WP,
 
 template<typename point>
 void
-batchInsert( ParallelKDtree<point>& pkd, const parlay::sequence<point>& WP,
+batchInsert( baseTree<point>& pkd, const parlay::sequence<point>& WP,
              const parlay::sequence<point>& WI, const uint_fast8_t& DIM,
              const int& rounds, double ratio = 1.0 ) {
-  using tree = ParallelKDtree<point>;
+  using tree = baseTree<point>;
   using points = typename tree::points;
   using node = typename tree::node;
   points wp = points::uninitialized( WP.size() );
@@ -431,10 +432,10 @@ batchInsert( ParallelKDtree<point>& pkd, const parlay::sequence<point>& WP,
 
 template<typename point>
 void
-batchDelete( ParallelKDtree<point>& pkd, const parlay::sequence<point>& WP,
+batchDelete( baseTree<point>& pkd, const parlay::sequence<point>& WP,
              const parlay::sequence<point>& WI, const uint_fast8_t& DIM,
              const int& rounds, bool afterInsert = 1, double ratio = 1.0 ) {
-  using tree = ParallelKDtree<point>;
+  using tree = baseTree<point>;
   using points = typename tree::points;
   using node = typename tree::node;
   points wp = points::uninitialized( WP.size() );
@@ -481,9 +482,9 @@ batchDelete( ParallelKDtree<point>& pkd, const parlay::sequence<point>& WP,
 template<typename point, bool printHeight = 1, bool printVisNode = 1>
 void
 queryKNN( const uint_fast8_t& Dim, const parlay::sequence<point>& WP, const int& rounds,
-          ParallelKDtree<point>& pkd, Typename* kdknn, const int K,
+          baseTree<point>& pkd, Typename* kdknn, const int K,
           const bool flattenTreeTag ) {
-  using tree = ParallelKDtree<point>;
+  using tree = baseTree<point>;
   using points = typename tree::points;
   using node = typename tree::node;
   using coord = typename point::coord;
@@ -541,9 +542,9 @@ queryKNN( const uint_fast8_t& Dim, const parlay::sequence<point>& WP, const int&
 
 template<typename point>
 void
-rangeCount( const parlay::sequence<point>& wp, ParallelKDtree<point>& pkd,
-            Typename* kdknn, const int& rounds, const int& queryNum ) {
-  using tree = ParallelKDtree<point>;
+rangeCount( const parlay::sequence<point>& wp, baseTree<point>& pkd, Typename* kdknn,
+            const int& rounds, const int& queryNum ) {
+  using tree = baseTree<point>;
   using points = typename tree::points;
   using node = typename tree::node;
   using box = typename tree::box;
@@ -571,9 +572,9 @@ rangeCount( const parlay::sequence<point>& wp, ParallelKDtree<point>& pkd,
 
 template<typename point>
 void
-rangeCountRadius( const parlay::sequence<point>& wp, ParallelKDtree<point>& pkd,
+rangeCountRadius( const parlay::sequence<point>& wp, baseTree<point>& pkd,
                   Typename* kdknn, const int& rounds, const int& queryNum ) {
-  using tree = ParallelKDtree<point>;
+  using tree = baseTree<point>;
   using points = typename tree::points;
   using node = typename tree::node;
   using box = typename tree::box;
@@ -588,8 +589,8 @@ rangeCountRadius( const parlay::sequence<point>& wp, ParallelKDtree<point>& pkd,
           //   box queryBox = pkd.get_box(
           //   box( wp[i], wp[i] ), box( wp[( i + n / 2 ) % n], wp[( i + n / 2 )
           //   % n] ) );
-          auto d = cpdd::ParallelKDtree<point>::p2p_distance(
-              wp[i], wp[( i + n / 2 ) % n], wp[i].get_dim() );
+          auto d = cpdd::baseTree<point>::p2p_distance( wp[i], wp[( i + n / 2 ) % n],
+                                                        wp[i].get_dim() );
           d = static_cast<coord>( std::sqrt( d ) );
           circle cl = circle( wp[i], d );
           kdknn[i] = pkd.range_count( cl );
@@ -604,10 +605,9 @@ rangeCountRadius( const parlay::sequence<point>& wp, ParallelKDtree<point>& pkd,
 
 template<typename point>
 void
-rangeQuery( const parlay::sequence<point>& wp, ParallelKDtree<point>& pkd,
-            Typename* kdknn, const int& rounds, const int& queryNum,
-            parlay::sequence<point>& Out ) {
-  using tree = ParallelKDtree<point>;
+rangeQuery( const parlay::sequence<point>& wp, baseTree<point>& pkd, Typename* kdknn,
+            const int& rounds, const int& queryNum, parlay::sequence<point>& Out ) {
+  using tree = baseTree<point>;
   using points = typename tree::points;
   using node = typename tree::node;
   using box = typename tree::box;
@@ -643,9 +643,9 @@ rangeQuery( const parlay::sequence<point>& wp, ParallelKDtree<point>& pkd,
 //* test range count for fix rectangle
 template<typename point>
 void
-rangeCountFix( const parlay::sequence<point>& WP, ParallelKDtree<point>& pkd,
-               Typename* kdknn, const int& rounds, int recType, int recNum, int DIM ) {
-  using tree = ParallelKDtree<point>;
+rangeCountFix( const parlay::sequence<point>& WP, baseTree<point>& pkd, Typename* kdknn,
+               const int& rounds, int recType, int recNum, int DIM ) {
+  using tree = baseTree<point>;
   using points = typename tree::points;
   using node = typename tree::node;
   using box = typename tree::box;
@@ -690,10 +690,10 @@ rangeCountFix( const parlay::sequence<point>& WP, ParallelKDtree<point>& pkd,
 //* test range query for fix rectangle
 template<typename point>
 void
-rangeQueryFix( const parlay::sequence<point>& WP, ParallelKDtree<point>& pkd,
-               Typename* kdknn, const int& rounds, parlay::sequence<point>& Out,
-               int recType, int recNum, int DIM ) {
-  using tree = ParallelKDtree<point>;
+rangeQueryFix( const parlay::sequence<point>& WP, baseTree<point>& pkd, Typename* kdknn,
+               const int& rounds, parlay::sequence<point>& Out, int recType, int recNum,
+               int DIM ) {
+  using tree = baseTree<point>;
   using points = typename tree::points;
   using node = typename tree::node;
   using box = typename tree::box;
@@ -728,7 +728,7 @@ template<typename point>
 void
 generate_knn( const uint_fast8_t& Dim, const parlay::sequence<point>& WP, const int K,
               const char* outFile ) {
-  using tree = ParallelKDtree<point>;
+  using tree = baseTree<point>;
   using points = typename tree::points;
   using node = typename tree::node;
   using coord = typename point::coord;

@@ -1,25 +1,21 @@
 #pragma once
 
-#include "../kdTreeParallel.h"
+#include "../baseTree.h"
 
 namespace cpdd {
 
 /*TODO range count */
 template<typename point>
 size_t
-ParallelKDtree<point>::range_count(
-    const typename ParallelKDtree<point>::box& bx, size_t& visLeafNum,
-    size_t& visInterNum ) {
-  return range_count_rectangle( this->root, bx, this->bbox, visLeafNum,
-                                visInterNum );
+baseTree<point>::range_count( const typename baseTree<point>::box& bx, size_t& visLeafNum,
+                              size_t& visInterNum ) {
+  return range_count_rectangle( this->root, bx, this->bbox, visLeafNum, visInterNum );
 }
 
 template<typename point>
 size_t
-ParallelKDtree<point>::range_count_rectangle( node* T, const box& queryBox,
-                                              const box& nodeBox,
-                                              size_t& visLeafNum,
-                                              size_t& visInterNum ) {
+baseTree<point>::range_count_rectangle( node* T, const box& queryBox, const box& nodeBox,
+                                        size_t& visLeafNum, size_t& visInterNum ) {
 
   if ( T->is_leaf ) {
     visLeafNum++;
@@ -36,7 +32,7 @@ ParallelKDtree<point>::range_count_rectangle( node* T, const box& queryBox,
   visInterNum++;
   interior* TI = static_cast<interior*>( T );
   box lbox( nodeBox ), rbox( nodeBox );
-  lbox.second.pnt[TI->split.second] = TI->split.first;  //TODO loose
+  lbox.second.pnt[TI->split.second] = TI->split.first;  // TODO loose
   rbox.first.pnt[TI->split.second] = TI->split.first;
 
   size_t l, r;
@@ -47,8 +43,7 @@ ParallelKDtree<point>::range_count_rectangle( node* T, const box& queryBox,
     } else if ( within_box( bx, queryBox ) ) {
       conter = Ts->size;
     } else {
-      conter =
-          range_count_rectangle( Ts, queryBox, bx, visLeafNum, visInterNum );
+      conter = range_count_rectangle( Ts, queryBox, bx, visLeafNum, visInterNum );
     }
   };
 
@@ -60,15 +55,14 @@ ParallelKDtree<point>::range_count_rectangle( node* T, const box& queryBox,
 
 template<typename point>
 size_t
-ParallelKDtree<point>::range_count( const circle& cl ) {
+baseTree<point>::range_count( const circle& cl ) {
   return range_count_radius( this->root, cl, this->bbox );
 }
 
 // TODO as range_count_rectangle
 template<typename point>
 size_t
-ParallelKDtree<point>::range_count_radius( node* T, const circle& cl,
-                                           const box& nodeBox ) {
+baseTree<point>::range_count_radius( node* T, const circle& cl, const box& nodeBox ) {
   if ( !circle_intersect_box( cl, nodeBox ) ) return 0;
   if ( within_circle( nodeBox, cl ) ) return T->size;
 
@@ -98,9 +92,9 @@ ParallelKDtree<point>::range_count_radius( node* T, const circle& cl,
 };
 
 template<typename point>
-ParallelKDtree<point>::simple_node*
-ParallelKDtree<point>::range_count_save_path( node* T, const box& queryBox,
-                                              const box& nodeBox ) {
+baseTree<point>::simple_node*
+baseTree<point>::range_count_save_path( node* T, const box& queryBox,
+                                        const box& nodeBox ) {
   if ( !intersect_box( nodeBox, queryBox ) ) return alloc_simple_node( 0 );
   if ( within_box( nodeBox, queryBox ) ) {
     return alloc_simple_node( T->size );

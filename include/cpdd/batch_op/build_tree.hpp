@@ -1,14 +1,14 @@
 #pragma once
 
 #include <cassert>
-#include "../kdTreeParallel.h"
+#include "../baseTree.h"
 #include "parlay/primitives.h"
 
 namespace cpdd {
 
 template<typename point>
 void
-ParallelKDtree<point>::build( slice A, const dim_type DIM ) {
+baseTree<point>::build( slice A, const dim_type DIM ) {
   points B = points::uninitialized( A.size() );
   this->bbox = get_box( A );
   this->root = build_recursive( A, B.cut( 0, A.size() ), 0, DIM, this->bbox );
@@ -18,10 +18,9 @@ ParallelKDtree<point>::build( slice A, const dim_type DIM ) {
 
 template<typename point>
 void
-ParallelKDtree<point>::divide_rotate( slice In, splitter_s& pivots, dim_type dim,
-                                      bucket_type idx, bucket_type deep,
-                                      bucket_type& bucket, const dim_type DIM,
-                                      box_s& boxs, const box& bx ) {
+baseTree<point>::divide_rotate( slice In, splitter_s& pivots, dim_type dim,
+                                bucket_type idx, bucket_type deep, bucket_type& bucket,
+                                const dim_type DIM, box_s& boxs, const box& bx ) {
   if ( deep > BUILD_DEPTH_ONCE ) {
     //! sometimes cut dimension can be -1
     //! never use pivots[idx].first to check whether it is in bucket; instead,
@@ -56,9 +55,9 @@ ParallelKDtree<point>::divide_rotate( slice In, splitter_s& pivots, dim_type dim
 //* starting at dimesion dim and pick pivots in a rotation manner
 template<typename point>
 void
-ParallelKDtree<point>::pick_pivots( slice In, const size_t& n, splitter_s& pivots,
-                                    const dim_type dim, const dim_type DIM, box_s& boxs,
-                                    const box& bx ) {
+baseTree<point>::pick_pivots( slice In, const size_t& n, splitter_s& pivots,
+                              const dim_type dim, const dim_type DIM, box_s& boxs,
+                              const box& bx ) {
   size_t size = std::min( n, (size_t)32 * BUCKET_NUM );
   assert( size <= n );
 
@@ -82,7 +81,7 @@ ParallelKDtree<point>::pick_pivots( slice In, const size_t& n, splitter_s& pivot
 
 template<typename point>
 inline uint_fast8_t
-ParallelKDtree<point>::find_bucket( const point& p, const splitter_s& pivots ) {
+baseTree<point>::find_bucket( const point& p, const splitter_s& pivots ) {
   uint_fast8_t k = 1;
   while ( k <= PIVOT_NUM ) {
     // k = p.pnt[pivots[k].second] < pivots[k].first ? k << 1 : k << 1 | 1;
@@ -94,9 +93,8 @@ ParallelKDtree<point>::find_bucket( const point& p, const splitter_s& pivots ) {
 
 template<typename point>
 void
-ParallelKDtree<point>::partition( slice A, slice B, const size_t n,
-                                  const splitter_s& pivots,
-                                  parlay::sequence<balls_type>& sums ) {
+baseTree<point>::partition( slice A, slice B, const size_t n, const splitter_s& pivots,
+                            parlay::sequence<balls_type>& sums ) {
   size_t num_block = ( n + BLOCK_SIZE - 1 ) >> LOG2_BASE;
   parlay::sequence<parlay::sequence<balls_type>> offset(
       num_block, parlay::sequence<balls_type>( BUCKET_NUM ) );
@@ -137,9 +135,9 @@ ParallelKDtree<point>::partition( slice A, slice B, const size_t n,
 }
 
 template<typename point>
-typename ParallelKDtree<point>::node*
-ParallelKDtree<point>::build_inner_tree( bucket_type idx, splitter_s& pivots,
-                                         parlay::sequence<node*>& treeNodes ) {
+typename baseTree<point>::node*
+baseTree<point>::build_inner_tree( bucket_type idx, splitter_s& pivots,
+                                   parlay::sequence<node*>& treeNodes ) {
   if ( idx > PIVOT_NUM ) {
     assert( idx - PIVOT_NUM - 1 < BUCKET_NUM );
     return treeNodes[idx - PIVOT_NUM - 1];
@@ -151,8 +149,8 @@ ParallelKDtree<point>::build_inner_tree( bucket_type idx, splitter_s& pivots,
 }
 
 template<typename point>
-typename ParallelKDtree<point>::points_iter
-ParallelKDtree<point>::serial_partition( slice In, dim_type d ) {
+typename baseTree<point>::points_iter
+baseTree<point>::serial_partition( slice In, dim_type d ) {
   size_t n = In.size();
   std::ranges::nth_element( In.begin(), In.begin() + n / 2, In.end(),
                             [&]( const point& p1, const point& p2 ) {
@@ -170,9 +168,9 @@ ParallelKDtree<point>::serial_partition( slice In, dim_type d ) {
 }
 
 template<typename point>
-typename ParallelKDtree<point>::node*
-ParallelKDtree<point>::serial_build_recursive( slice In, slice Out, dim_type dim,
-                                               const dim_type DIM, const box& bx ) {
+typename baseTree<point>::node*
+baseTree<point>::serial_build_recursive( slice In, slice Out, dim_type dim,
+                                         const dim_type DIM, const box& bx ) {
   size_t n = In.size();
   if ( n == 0 ) return alloc_empty_leaf();
   if ( n <= LEAVE_WRAP ) return alloc_leaf_node( In );
@@ -252,9 +250,9 @@ ParallelKDtree<point>::serial_build_recursive( slice In, slice Out, dim_type dim
 }
 
 template<typename point>
-typename ParallelKDtree<point>::node*
-ParallelKDtree<point>::build_recursive( slice In, slice Out, dim_type dim,
-                                        const dim_type DIM, const box& bx ) {
+typename baseTree<point>::node*
+baseTree<point>::build_recursive( slice In, slice Out, dim_type dim, const dim_type DIM,
+                                  const box& bx ) {
   assert( In.size() == 0 || within_box( get_box( In ), bx ) );
 
   // if ( In.size() ) {

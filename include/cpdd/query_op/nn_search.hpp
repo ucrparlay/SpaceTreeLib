@@ -1,14 +1,13 @@
 #pragma once
 
-#include "../kdTreeParallel.h"
+#include "../baseTree.h"
 
 namespace cpdd {
 
 //* NN search
 template<typename point>
-inline typename ParallelKDtree<point>::coord
-ParallelKDtree<point>::p2p_distance( const point& p, const point& q,
-                                     const dim_type DIM ) {
+inline typename baseTree<point>::coord
+baseTree<point>::p2p_distance( const point& p, const point& q, const dim_type DIM ) {
   coord r = 0;
   for ( dim_type i = 0; i < DIM; i++ ) {
     r += ( p.pnt[i] - q.pnt[i] ) * ( p.pnt[i] - q.pnt[i] );
@@ -18,10 +17,9 @@ ParallelKDtree<point>::p2p_distance( const point& p, const point& q,
 
 //* distance between a point and a box
 template<typename point>
-inline typename ParallelKDtree<point>::coord
-ParallelKDtree<point>::p2b_min_distance( const point& p,
-                                         const typename ParallelKDtree<point>::box& a,
-                                         const dim_type DIM ) {
+inline typename baseTree<point>::coord
+baseTree<point>::p2b_min_distance( const point& p, const typename baseTree<point>::box& a,
+                                   const dim_type DIM ) {
   coord r = 0;
   for ( dim_type i = 0; i < DIM; i++ ) {
     if ( Num::Lt( p.pnt[i], a.first.pnt[i] ) ) {
@@ -34,10 +32,9 @@ ParallelKDtree<point>::p2b_min_distance( const point& p,
 }
 
 template<typename point>
-inline typename ParallelKDtree<point>::coord
-ParallelKDtree<point>::p2b_max_distance( const point& p,
-                                         const typename ParallelKDtree<point>::box& a,
-                                         const dim_type DIM ) {
+inline typename baseTree<point>::coord
+baseTree<point>::p2b_max_distance( const point& p, const typename baseTree<point>::box& a,
+                                   const dim_type DIM ) {
   coord r = 0;
   for ( dim_type i = 0; i < DIM; i++ ) {
     if ( Num::Lt( p.pnt[i], ( a.second.pnt[i] + a.first.pnt[i] ) / 2 ) ) {
@@ -52,9 +49,9 @@ ParallelKDtree<point>::p2b_max_distance( const point& p,
 //* early return the partial distance between p and q if it is larger than r
 //* else return the distance between p and q
 template<typename point>
-inline typename ParallelKDtree<point>::coord
-ParallelKDtree<point>::interruptible_distance( const point& p, const point& q, coord up,
-                                               dim_type DIM ) {
+inline typename baseTree<point>::coord
+baseTree<point>::interruptible_distance( const point& p, const point& q, coord up,
+                                         dim_type DIM ) {
   coord r = 0;
   dim_type i = 0;
   if ( DIM >= 6 ) {
@@ -86,9 +83,9 @@ ParallelKDtree<point>::interruptible_distance( const point& p, const point& q, c
 template<typename point>
 template<typename StoreType>
 void
-ParallelKDtree<point>::k_nearest( node* T, const point& q, const dim_type DIM,
-                                  kBoundedQueue<point, StoreType>& bq, const box& nodeBox,
-                                  size_t& visNodeNum ) {
+baseTree<point>::k_nearest( node* T, const point& q, const dim_type DIM,
+                            kBoundedQueue<point, StoreType>& bq, const box& nodeBox,
+                            size_t& visNodeNum ) {
   visNodeNum++;
 
   if ( T->is_leaf ) {

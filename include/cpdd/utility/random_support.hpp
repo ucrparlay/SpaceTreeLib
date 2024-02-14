@@ -1,12 +1,12 @@
 #pragma once
 
-#include "../kdTreeParallel.h"
+#include "../baseTree.h"
 
 namespace cpdd {
 
 template<typename point>
 inline uint64_t
-ParallelKDtree<point>::_hash64( uint64_t u ) {
+baseTree<point>::_hash64( uint64_t u ) {
   uint64_t v = u * 3935559000370003845ul + 2691343689449507681ul;
   v ^= v >> 21;
   v ^= v << 37;

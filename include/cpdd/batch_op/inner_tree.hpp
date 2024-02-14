@@ -1,11 +1,11 @@
 #pragma once
 
-#include "../kdTreeParallel.h"
+#include "../baseTree.h"
 
 namespace cpdd {
 
 template<typename point>
-struct ParallelKDtree<point>::InnerTree {
+struct baseTree<point>::InnerTree {
   //@ helpers
   bool
   assert_size( node* T ) const {

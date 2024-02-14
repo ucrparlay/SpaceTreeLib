@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../kdTreeParallel.h"
+#include "../baseTree.h"
 #include "inner_tree.hpp"
 #include <ranges>
 
@@ -8,7 +8,7 @@ namespace cpdd {
 // TODO add member test before delete
 template<typename point>
 void
-ParallelKDtree<point>::batchDelete( slice A, const dim_type DIM ) {
+baseTree<point>::batchDelete( slice A, const dim_type DIM ) {
   points B = points::uninitialized( A.size() );
   node* T = this->root;
   int a = 1;
@@ -19,9 +19,8 @@ ParallelKDtree<point>::batchDelete( slice A, const dim_type DIM ) {
 }
 
 template<typename point>
-typename ParallelKDtree<point>::node_box
-ParallelKDtree<point>::rebuild_after_delete( node* T, const dim_type d,
-                                             const dim_type DIM ) {
+typename baseTree<point>::node_box
+baseTree<point>::rebuild_after_delete( node* T, const dim_type d, const dim_type DIM ) {
   points wo = points::uninitialized( T->size );
   points wx = points::uninitialized( T->size );
   uint_fast8_t curDim = pick_rebuild_dim( T, d, DIM );
@@ -37,11 +36,11 @@ ParallelKDtree<point>::rebuild_after_delete( node* T, const dim_type d,
 // NOTE: the node whose ancestor has been rebuilt has tag BUCKET_NUM+2
 // NOTE: otherwise it has tag BUCKET_NUM+1
 template<typename point>
-typename ParallelKDtree<point>::node_box
-ParallelKDtree<point>::delete_inner_tree( bucket_type idx, const node_tags& tags,
-                                          parlay::sequence<node_box>& treeNodes,
-                                          bucket_type& p, const tag_nodes& rev_tag,
-                                          dim_type d, const dim_type DIM ) {
+typename baseTree<point>::node_box
+baseTree<point>::delete_inner_tree( bucket_type idx, const node_tags& tags,
+                                    parlay::sequence<node_box>& treeNodes, bucket_type& p,
+                                    const tag_nodes& rev_tag, dim_type d,
+                                    const dim_type DIM ) {
   if ( tags[idx].second == BUCKET_NUM + 1 || tags[idx].second == BUCKET_NUM + 2 ) {
     assert( rev_tag[p] == idx );
     return treeNodes[p++];  // WARN: this blocks the parallelsim
@@ -68,9 +67,9 @@ ParallelKDtree<point>::delete_inner_tree( bucket_type idx, const node_tags& tags
 }
 
 template<typename point>
-typename ParallelKDtree<point>::node_box
-ParallelKDtree<point>::batchDelete_recursive( node* T, slice In, slice Out, dim_type d,
-                                              const dim_type DIM, bool hasTomb ) {
+typename baseTree<point>::node_box
+baseTree<point>::batchDelete_recursive( node* T, slice In, slice Out, dim_type d,
+                                        const dim_type DIM, bool hasTomb ) {
   size_t n = In.size();
 
   if ( n == 0 ) return node_box( T, get_box( T ) );

@@ -42,7 +42,7 @@ testParallelKDtree( const int& Dim, const int& LEAVE_WRAP, parlay::sequence<poin
   Typename* kdknn = nullptr;
 
   //* begin test
-  buildTree<point>( Dim, wp, rounds, pkd );
+  buildTree<point, tree>( Dim, wp, rounds, pkd );
 
   //* batch insert
   if ( tag >= 1 ) {
@@ -151,7 +151,7 @@ testParallelKDtree( const int& Dim, const int& LEAVE_WRAP, parlay::sequence<poin
     kdknn = new Typename[wp.size()];
 
     //* first normal build
-    buildTree<point, 0>( Dim, wp, rounds, pkd );
+    buildTree<point, tree, 0>( Dim, wp, rounds, pkd );
     queryKNN<point>( Dim, wp, rounds, pkd, kdknn, K, false );
 
     //* then incremental build
@@ -165,7 +165,7 @@ testParallelKDtree( const int& Dim, const int& LEAVE_WRAP, parlay::sequence<poin
     kdknn = new Typename[wp.size()];
 
     //* first normal build
-    buildTree<point, 0>( Dim, wp, rounds, pkd );
+    buildTree<point, tree, 0>( Dim, wp, rounds, pkd );
     queryKNN<point>( Dim, wp, rounds, pkd, kdknn, K, false );
 
     //* then incremental delete
@@ -193,7 +193,7 @@ testParallelKDtree( const int& Dim, const int& LEAVE_WRAP, parlay::sequence<poin
 
     auto run = [&]() {
       if ( inbaBuildType == 0 ) {
-        buildTree<point, 2>( Dim, np, rounds, pkd );
+        buildTree<point, tree, 2>( Dim, np, rounds, pkd );
       } else {
         incrementalBuild<point, 2>( Dim, np, rounds, pkd, 0.01 );
       }
@@ -245,7 +245,7 @@ testParallelKDtree( const int& Dim, const int& LEAVE_WRAP, parlay::sequence<poin
     path = prefix + "/1.in";
     // std::cout << path << std::endl;
     read_points<point>( path.c_str(), np, K );
-    buildTree<point, 0>( Dim, np, rounds, pkd );
+    buildTree<point, tree, 0>( Dim, np, rounds, pkd );
     pkd.flatten( pkd.get_root(), parlay::make_slice( np ) );
     run();
 
