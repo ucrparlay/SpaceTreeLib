@@ -1,14 +1,4 @@
-# Pkd-tree: a parallel kd-tree with batch update
-
-Pkd-tree is a library of kd-tree that is:
-
-- Surprisingly fast,
-- Scale to billions input size,
-- All operations are in parallel, including:
-  - tree construction,
-  - batch insertion/deletion,
-  - $k$-NN,
-  - range count & range query
+# Spatial partition trees
 
 ## Requirements
 
@@ -22,7 +12,6 @@ Optional:
 
 - [jemalloc](https://github.com/jemalloc/jemalloc), slightly memory allocation improvement.
 - [NUMA control](https://manpages.ubuntu.com/manpages/trusty/man8/numactl.8.html), improve the performance for parallelism.
-- [Zdtree](https://github.com/cmuparlay/pbbsbench/tree/9820e9fc38ce64d43aa5c62aa02a0c3ec5384a92), [ParGeo](https://github.com/ParAlg/ParGeo) and [CGAL](https://www.cgal.org/index.html), for benchmark comparison.
 
 ## Getting Code
 
@@ -183,26 +172,6 @@ The execution flow is shown below:
 13. Query `q & (1<<9)` first construct a tree $T$ using $P$ and run a 10-NN on it, then construct another tree $T'$ from $P\cup Q$, delete $Q$ from $T'$ incrementally, after which performs a 10-NN on it.
     For each NN, outputs the total time, average depth and average # nodes visited.
 
-## Comparison
-
-- Zdtree
-
-  1.  Clone the repository of [PBBS](https://github.com/cmuparlay/pbbsbench), then checkout the version [`9820e9f`](https://github.com/cmuparlay/pbbsbench/tree/9820e9fc38ce64d43aa5c62aa02a0c3ec5384a92).
-  2.  Copy folder `tests/zdtree/octTree` to `pbbsbench/benchmarks/nearestNeighbors/`.
-  3.  Copy file `tests/zdtree/neighborsTime.C` to `pbbsbench/benchmarks/nearestNeighbors/bench/`.
-  4.  Copy file `tests/common/time_loop.h` to `pbbsbench/common/`.
-  4.  Run the program according to the tutorial in PBBS.
-
-- ParGeo
-  
-  See `ParGeo` branch for more details.
-
-- CGAL
-  1.  Make sure `CGAL` is installed.
-  2.  Compile the whole program with the flag `-DCGAL=ON` attached.
-  3.  There should be binary named `cgal` in `build/`, which can be run using the same argument as mentioned in [Usage](##usage) above.
 
 
-## Ciatation
 
-If you use our code, please contact `zmen002@ucr.edu` for ciatation.
