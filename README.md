@@ -1,4 +1,4 @@
-# Spatial partition trees
+# A library for spatial partition trees
 
 ## Requirements
 
