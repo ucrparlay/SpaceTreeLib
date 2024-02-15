@@ -39,47 +39,6 @@ baseTree<point>::range_query_serial( const typename baseTree<point>::box& queryB
 template<typename point>
 template<typename StoreType>
 void
-baseTree<point>::range_query_recursive_parallel( node* T, simple_node* ST, StoreType Out,
-                                                 const box& queryBox ) {
-  if ( ST->size == 0 ) {
-    return;
-  }
-  if ( ST->size == T->size ) {
-    assert( Out.size() == T->size );
-    flatten( T, Out.cut( 0, T->size ) );
-    return;
-  }
-  if ( T->is_leaf ) {
-    assert( ST->size == Out.size() );
-    leaf* TL = static_cast<leaf*>( T );
-    int s = 0;
-    for ( int i = 0; i < TL->size; i++ ) {
-      if ( within_box( TL->pts[( !T->is_dummy ) * i], queryBox ) ) {
-        Out[s++] = TL->pts[( !T->is_dummy ) * i];
-      }
-    }
-    return;
-  }
-
-  interior* TI = static_cast<interior*>( T );
-  //! granularity control
-  parlay::par_do_if(
-      ST->size >= SERIAL_BUILD_CUTOFF,
-      [&]() {
-        range_query_recursive_parallel( TI->left, ST->left, Out.cut( 0, ST->left->size ),
-                                        queryBox );
-      },
-      [&]() {
-        range_query_recursive_parallel( TI->right, ST->right,
-                                        Out.cut( ST->left->size, Out.size() ), queryBox );
-      } );
-
-  return;
-}
-
-template<typename point>
-template<typename StoreType>
-void
 baseTree<point>::range_query_recursive_serial( node* T, StoreType Out, size_t& s,
                                                const box& queryBox, const box& nodeBox ) {
   if ( T->is_leaf ) {

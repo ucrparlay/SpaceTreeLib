@@ -33,11 +33,15 @@ class octTree : public baseTree<point> {
   using box_s = baseTree::box_s;
   using circle = baseTree::circle;
 
-  virtual void build( slice In, const dim_type DIM ) override;
-  virtual node* serial_build_recursive( slice In, slice Out, dim_type dim,
-                                        const dim_type DIM, const box& bx ) override;
-  virtual node* build_recursive( slice In, slice Out, dim_type dim, const dim_type DIM,
-                                 const box& bx ) override;
+  struct interior;
+
+  void build( slice In, const dim_type DIM ) override;
+  node* serial_build_recursive( slice In, slice Out, dim_type dim, const dim_type DIM,
+                                const box& bx ) override;
+  node* build_recursive( slice In, slice Out, dim_type dim, const dim_type DIM,
+                         const box& bx ) override;
+
+  static interior* alloc_interior_node( node* L, node* R );
 };
 
 }  // namespace cpdd

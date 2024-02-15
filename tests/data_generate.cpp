@@ -73,7 +73,7 @@ struct kd_node_t {
   int num;  // number of nodes in subtree plus itself
 };
 
-kd_node_t* node;
+kd_node_t* tmp_points;
 
 inline double
 getRealRandom( const double& a, const double& b ) {
@@ -89,7 +89,7 @@ getIntRandom( const int& a, const int& b ) {
 
 void
 generatePointsSerial( std::ofstream& f ) {
-  node = (kd_node_t*)malloc( N * sizeof( kd_node_t ) );
+  tmp_points = (kd_node_t*)malloc( N * sizeof( kd_node_t ) );
   f << N << " " << Dim << std::endl;
   for ( int i = 0; i < N; i++ ) {
     int idx = 0;
@@ -100,18 +100,18 @@ generatePointsSerial( std::ofstream& f ) {
       else if ( std::is_floating_point_v<Typename> ) {
         a = getRealRandom( -dataRange, dataRange );
       }
-      node[i].x[j] = a;
+      tmp_points[i].x[j] = a;
       f << a << " ";
     }
     f << std::endl;
   }
-  free( node );
+  free( tmp_points );
 }
 
 int
 main( int argc, char* argv[] ) {
   assert( argc >= 4 );
-  path = std::string(argv[1]);
+  path = std::string( argv[1] );
   N = std::stoll( argv[2] );
   Dim = std::stoll( argv[3] );
   numFile = std::stoll( argv[4] );

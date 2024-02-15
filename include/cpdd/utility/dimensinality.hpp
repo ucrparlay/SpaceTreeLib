@@ -3,6 +3,25 @@
 #include "../baseTree.h"
 
 namespace cpdd {
+
+template<typename point>
+inline size_t
+baseTree<point>::get_imbalance_ratio() {
+  if ( const auto env_p = std::getenv( "INBALANCE_RATIO" ) ) {
+    return static_cast<size_t>( std::stoi( env_p ) );
+  } else {
+    return static_cast<size_t>( INBALANCE_RATIO );
+  }
+}
+
+template<typename point>
+inline bool
+baseTree<point>::inbalance_node( const size_t l, const size_t n ) {
+  if ( n == 0 ) return true;
+  return Num::Gt( static_cast<size_t>( std::abs( 100.0 * l / n - 50.0 ) ),
+                  get_imbalance_ratio() );
+}
+
 template<typename point>
 inline baseTree<point>::dim_type
 baseTree<point>::pick_rebuild_dim( const node* T, const dim_type d, const dim_type DIM ) {

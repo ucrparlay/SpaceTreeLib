@@ -91,38 +91,4 @@ baseTree<point>::range_count_radius( node* T, const circle& cl, const box& nodeB
   return std::move( l + r );
 };
 
-template<typename point>
-baseTree<point>::simple_node*
-baseTree<point>::range_count_save_path( node* T, const box& queryBox,
-                                        const box& nodeBox ) {
-  if ( !intersect_box( nodeBox, queryBox ) ) return alloc_simple_node( 0 );
-  if ( within_box( nodeBox, queryBox ) ) {
-    return alloc_simple_node( T->size );
-  }
-
-  if ( T->is_leaf ) {
-    size_t cnt = 0;
-    leaf* TL = static_cast<leaf*>( T );
-    for ( int i = 0; i < TL->size; i++ ) {
-      if ( within_box( TL->pts[( !T->is_dummy ) * i], queryBox ) ) {
-        cnt++;
-      }
-    }
-    return alloc_simple_node( cnt );
-  }
-
-  interior* TI = static_cast<interior*>( T );
-  box lbox( nodeBox ), rbox( nodeBox );
-  lbox.second.pnt[TI->split.second] = TI->split.first;  //* loose
-  rbox.first.pnt[TI->split.second] = TI->split.first;
-
-  simple_node *L, *R;
-  parlay::par_do_if(
-      TI->size >= SERIAL_BUILD_CUTOFF,
-      [&] { L = range_count_save_path( TI->left, queryBox, lbox ); },
-      [&] { R = range_count_save_path( TI->right, queryBox, rbox ); } );
-
-  return alloc_simple_node( L, R );
-}
-
 }  // namespace cpdd

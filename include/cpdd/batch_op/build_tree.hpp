@@ -135,19 +135,19 @@ baseTree<point>::partition( slice A, slice B, const size_t n, const splitter_s& 
   return;
 }
 
-template<typename point>
-typename baseTree<point>::node*
-baseTree<point>::build_inner_tree( bucket_type idx, splitter_s& pivots,
-                                   parlay::sequence<node*>& treeNodes ) {
-  if ( idx > PIVOT_NUM ) {
-    assert( idx - PIVOT_NUM - 1 < BUCKET_NUM );
-    return treeNodes[idx - PIVOT_NUM - 1];
-  }
-  node *L, *R;
-  L = build_inner_tree( idx << 1, pivots, treeNodes );
-  R = build_inner_tree( idx << 1 | 1, pivots, treeNodes );
-  return alloc_interior_node( L, R, pivots[idx] );
-}
+// template<typename point>
+// typename baseTree<point>::node*
+// baseTree<point>::build_inner_tree( bucket_type idx, splitter_s& pivots,
+//                                    parlay::sequence<node*>& treeNodes ) {
+//   if ( idx > PIVOT_NUM ) {
+//     assert( idx - PIVOT_NUM - 1 < BUCKET_NUM );
+//     return treeNodes[idx - PIVOT_NUM - 1];
+//   }
+//   node *L, *R;
+//   L = build_inner_tree( idx << 1, pivots, treeNodes );
+//   R = build_inner_tree( idx << 1 | 1, pivots, treeNodes );
+//   return alloc_interior_node( L, R, pivots[idx] );
+// }
 
 template<typename point>
 typename baseTree<point>::points_iter

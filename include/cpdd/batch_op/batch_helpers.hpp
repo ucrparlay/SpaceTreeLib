@@ -31,30 +31,6 @@ baseTree<point>::flatten( typename baseTree<point>::node* T, Slice Out,
 }
 
 template<typename point>
-void
-baseTree<point>::flatten_and_delete( typename baseTree<point>::node* T, slice Out ) {
-  assert( T->size == Out.size() );
-  if ( T->is_leaf ) {
-    leaf* TL = static_cast<leaf*>( T );
-    for ( int i = 0; i < TL->size; i++ ) {
-      Out[i] = TL->pts[( !T->is_dummy ) * i];
-    }
-    free_leaf( T );
-    return;
-  }
-
-  interior* TI = static_cast<interior*>( T );
-  assert( TI->size == TI->left->size + TI->right->size );
-  parlay::par_do_if(
-      TI->size > SERIAL_BUILD_CUTOFF,
-      [&]() { flatten( TI->left, Out.cut( 0, TI->left->size ) ); },
-      [&]() { flatten( TI->right, Out.cut( TI->size - TI->right->size, TI->size ) ); } );
-  free_interior( T );
-
-  return;
-}
-
-template<typename point>
 inline void
 baseTree<point>::update_interior( typename baseTree<point>::node* T,
                                   typename baseTree<point>::node* L,
@@ -138,7 +114,7 @@ void
 baseTree<point>::delete_tree_recursive( node* T, bool granularity ) {
   if ( T == nullptr ) return;
   if ( T->is_leaf ) {
-    free_leaf( T );
+    free_node<point, leaf>( T );
   } else {
     interior* TI = static_cast<interior*>( T );
 
@@ -147,17 +123,8 @@ baseTree<point>::delete_tree_recursive( node* T, bool granularity ) {
     parlay::par_do_if( ( granularity && T->size > SERIAL_BUILD_CUTOFF ) || !granularity,
                        [&] { delete_tree_recursive( TI->left, granularity ); },
                        [&] { delete_tree_recursive( TI->right, granularity ); } );
-    free_interior( T );
+    free_node<point, interior>( T );
   }
 }
 
-template<typename point>  //* delete tree in parallel
-void
-baseTree<point>::delete_simple_tree_recursive( simple_node* T ) {
-  if ( T == nullptr ) return;
-  parlay::par_do_if(
-      0, [&] { delete_simple_tree_recursive( T->left ); },
-      [&] { delete_simple_tree_recursive( T->right ); } );
-  free_simple_node( T );
-}
 }  // namespace cpdd

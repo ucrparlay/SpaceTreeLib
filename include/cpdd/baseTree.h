@@ -2,6 +2,7 @@
 
 #include "comparator.h"
 #include "basic_point.h"
+#include "tree_node.h"
 #include "query_op/nn_search_helpers.h"
 
 namespace cpdd {
@@ -28,6 +29,8 @@ class baseTree {
   using box_s = parlay::sequence<box>;
   using circle = std::pair<point, coord>;
 
+  using node = node<point>;
+  using leaf = leaf<point>;
   //@ Const variables
   //@ uint32t handle up to 4e9 at least
   //! bucket num should smaller than 1<<8 to handle type overflow
@@ -48,23 +51,22 @@ class baseTree {
 
   //*------------------- Tree Structures--------------------*//
   //@ kd tree node types and functions
-  struct node;
-  struct leaf;
-  struct interior;
-  //@ range query tree node
-  struct simple_node;
 
-  static leaf* alloc_leaf_node( slice In );
-  static leaf* alloc_dummy_leaf( slice In );
-  static leaf* alloc_empty_leaf();
-  static interior* alloc_interior_node( node* L, node* R, const splitter& split );
-  static simple_node* alloc_simple_node( simple_node* L, simple_node* R );
-  static simple_node* alloc_simple_node( size_t sz );
-  static void free_leaf( node* T );
-  static void free_interior( node* T );
-  static void free_simple_node( simple_node* T );
-  static inline size_t get_imbalance_ratio();
-  static inline bool inbalance_node( const size_t l, const size_t n );
+  struct interior : node {
+    node* left;
+    node* right;
+    splitter split;
+    interior( node* _left, node* _right, splitter _split ) :
+        node{ false, false, _left->size + _right->size },
+        left( _left ),
+        right( _right ),
+        split( _split ) {}
+  };
+
+  //@ range query tree node
+
+  inline size_t get_imbalance_ratio();
+  inline bool inbalance_node( const size_t l, const size_t n );
 
   using node_box = std::pair<node*, box>;
   using node_tag = std::pair<node*, uint_fast8_t>;
@@ -131,7 +133,6 @@ class baseTree {
                                   const tag_nodes& rev_tag );
   node* delete_tree();
   static void delete_tree_recursive( node* T, bool granularity = true );
-  static void delete_simple_tree_recursive( simple_node* T );
 
   //@ batch insert
   node* rebuild_with_insert( node* T, slice In, const dim_type d, const dim_type DIM );
@@ -172,7 +173,6 @@ class baseTree {
   static size_t range_count_rectangle( node* T, const box& queryBox, const box& nodeBox,
                                        size_t& visLeafNum, size_t& visInterNum );
   static size_t range_count_radius( node* T, const circle& cl, const box& nodeBox );
-  simple_node* range_count_save_path( node* T, const box& queryBox, const box& nodeBox );
 
   template<typename StoreType>
   size_t range_query_serial( const box& queryBox, StoreType Out );
@@ -182,9 +182,6 @@ class baseTree {
   template<typename StoreType>
   static void range_query_recursive_serial( node* T, StoreType Out, size_t& s,
                                             const box& queryBox, const box& nodeBox );
-  template<typename StoreType>
-  static void range_query_recursive_parallel( node* T, simple_node* ST, StoreType Out,
-                                              const box& queryBox );
 
   //@ validations
   static bool checkBox( node* T, const box& bx );
