@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include "comparator.h"
 #include "baseTree.h"
 #include "basic_point.h"
@@ -20,6 +21,8 @@ class octTree : public baseTree<point> {
   using bucket_type = baseTree::bucket_type;
   using balls_type = baseTree::balls_type;
   using dim_type = baseTree::dim_type;
+  using z_bit_type = uint_fast8_t;
+  using z_value_type = uint_fast64_t;
 
   using coord = typename point::coord;
   using coords = typename point::coords;
@@ -33,15 +36,18 @@ class octTree : public baseTree<point> {
   using box_s = baseTree::box_s;
   using circle = baseTree::circle;
 
+  static constexpr z_bit_type KEY_BITS = 64;
+
   struct interior;
+  static interior* alloc_oct_interior_node(node* L, node* R);
 
-  void build( slice In, const dim_type DIM ) override;
-  node* serial_build_recursive( slice In, slice Out, dim_type dim, const dim_type DIM,
-                                const box& bx ) override;
-  node* build_recursive( slice In, slice Out, dim_type dim, const dim_type DIM,
-                         const box& bx ) override;
+  static inline void interleave_bits(point* p, const dim_type DIM);
 
-  static interior* alloc_interior_node( node* L, node* R );
+  void build(slice In, const dim_type DIM) override;
+
+  node* serial_build_recursive(slice In, z_bit_type bit);
+
+  node* build_recursive(slice In, z_bit_type bit);
 };
 
 }  // namespace cpdd

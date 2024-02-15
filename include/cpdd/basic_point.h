@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include "comparator.h"
 
 #include "parlay/alloc.h"
@@ -18,63 +19,63 @@ struct PointType {
 
   PointType() {}
 
-  PointType( const T val ) { pnt.fill( val ); }
+  explicit PointType(const T val) { pnt.fill(val); }
 
-  PointType( const coords& _pnt ) : pnt( _pnt ){};
+  explicit PointType(const coords& _pnt) : pnt(_pnt) {}
 
-  PointType( parlay::slice<T*, T*> x ) {
-    assert( x.size() == d );
-    for ( int i = 0; i < d; i++ )
+  explicit PointType(parlay::slice<T*, T*> x) {
+    assert(x.size() == d);
+    for (int i = 0; i < d; i++)
       pnt[i] = x[i];
   }
 
-  PointType( T* x ) {
-    for ( int i = 0; i < d; i++ )
+  explicit PointType(T const* x) {
+    for (int i = 0; i < d; i++)
       pnt[i] = x[i];
   }
 
   inline const PointType
-  minCoords( const PointType& b ) const {
+  minCoords(const PointType& b) const {
     coords pts;
-    for ( uint_fast8_t i = 0; i < d; i++ ) {
-      pts[i] = Num::min( pnt[i], b.pnt[i] );
+    for (uint_fast8_t i = 0; i < d; i++) {
+      pts[i] = Num::min(pnt[i], b.pnt[i]);
     }
-    return std::move( PointType( pts ) );
+    return std::move(PointType(pts));
   }
 
   inline const PointType
-  maxCoords( const PointType& b ) const {
+  maxCoords(const PointType& b) const {
     coords pts;
-    for ( uint_fast8_t i = 0; i < d; i++ ) {
-      pts[i] = Num::max( pnt[i], b.pnt[i] );
+    for (uint_fast8_t i = 0; i < d; i++) {
+      pts[i] = Num::max(pnt[i], b.pnt[i]);
     }
-    return std::move( PointType( pts ) );
+    return std::move(PointType(pts));
   }
 
   inline const uint_fast8_t
   get_dim() const {
-    return std::move( pnt.size() );
+    return pnt.size();
   }
 
   inline bool
-  sameDimension( const PointType& b ) const {
+  sameDimension(const PointType& b) const {
     return *this == b;
   }
 
   inline bool
-  operator==( const PointType& x ) const {
-    for ( int i = 0; i < d; i++ ) {
-      if ( !Num::Eq( pnt[i], x.pnt[i] ) ) return false;
+  operator==(const PointType& x) const {
+    for (int i = 0; i < d; i++) {
+      if (!Num::Eq(pnt[i], x.pnt[i])) return false;
     }
     return true;
   }
 
   inline bool
-  operator<( const PointType& x ) const {
-    for ( int i = 0; i < d; i++ ) {
-      if ( Num::Lt( pnt[i], x.pnt[i] ) )
+  operator<(const PointType& x) const {
+    for (int i = 0; i < d; i++) {
+      if (Num::Lt(pnt[i], x.pnt[i]))
         return true;
-      else if ( Num::Gt( pnt[i], x.pnt[i] ) )
+      else if (Num::Gt(pnt[i], x.pnt[i]))
         return false;
       else
         continue;
@@ -83,9 +84,9 @@ struct PointType {
   }
 
   friend std::ostream&
-  operator<<( std::ostream& o, PointType const& a ) {
+  operator<<(std::ostream& o, PointType const& a) {
     o << "(";
-    for ( int i = 0; i < d; i++ ) {
+    for (int i = 0; i < d; i++) {
       o << a.pnt[i] << ", ";
     }
     o << ") " << std::flush;
@@ -95,7 +96,7 @@ struct PointType {
   coords pnt;
 };
 
-template<typename T, uint_fast8_t d, typename IDtype = uint>
+template<typename T, uint_fast8_t d, typename IDtype = uint_fast64_t>
 struct PointID : PointType<T, d> {
   using coord = T;
   using coords = std::array<T, d>;
@@ -103,54 +104,50 @@ struct PointID : PointType<T, d> {
   using ID = IDtype;
 
   PointID() {}
-  PointID( const T val ) { this->pnt.fill( val ); }
-  PointID( const coords& _pnt ) { this->pnt = _pnt, id = 0; }
-  PointID( const coords& _pnt, ID _id ) { this->pnt = _pnt, id = _id; }
-  PointID( parlay::slice<T*, T*> x, ID _id ) {
-    assert( x.size() == d );
-    id = _id;
-    for ( int i = 0; i < d; i++ )
-      this->pnt[i] = x[i];
-  }
-  PointID( T* x, ID _id ) {
-    id = _id;
-    for ( int i = 0; i < d; i++ )
-      this->pnt[i] = x[i];
+
+  explicit PointID(const T val) : id(0) { this->pnt.fill(val); }
+
+  explicit PointID(const coords& _pnt) : PointType<T, d>(_pnt), id(0) {}
+
+  PointID(const coords& _pnt, ID _id) : PointType<T, d>(_pnt), id(_id) {}
+
+  PointID(parlay::slice<T*, T*> x, ID _id) : PointType<T, d>(x), id(_id) {}
+
+  PointID(T const* x, ID _id) : PointType<T, d>(x), id(_id) {}
+
+  inline const PointID
+  minCoords(const PointID& b) const {
+    coords pts;
+    for (int i = 0; i < d; i++) {
+      pts[i] = Num::min(this->pnt[i], b.pnt[i]);
+    }
+    return std::move(PointID(pts));
   }
 
   inline const PointID
-  minCoords( const PointID& b ) const {
+  maxCoords(const PointID& b) const {
     coords pts;
-    for ( int i = 0; i < d; i++ ) {
-      pts[i] = Num::min( this->pnt[i], b.pnt[i] );
+    for (int i = 0; i < d; i++) {
+      pts[i] = Num::max(this->pnt[i], b.pnt[i]);
     }
-    return std::move( PointID( pts ) );
-  }
-
-  inline const PointID
-  maxCoords( const PointID& b ) const {
-    coords pts;
-    for ( int i = 0; i < d; i++ ) {
-      pts[i] = Num::max( this->pnt[i], b.pnt[i] );
-    }
-    return std::move( PointID( pts ) );
+    return std::move(PointID(pts));
   }
 
   inline bool
-  operator==( const PointID& x ) const {
-    for ( int i = 0; i < d; i++ ) {
-      if ( !Num::Eq( this->pnt[i], x.pnt[i] ) ) return false;
+  operator==(const PointID& x) const {
+    for (int i = 0; i < d; i++) {
+      if (!Num::Eq(this->pnt[i], x.pnt[i])) return false;
     }
     return this->id == x.id;
   }
 
   inline bool
-  operator<( const PointID& x ) const {
-    if ( this->id == x.id ) {
-      for ( int i = 0; i < d; i++ ) {
-        if ( Num::Lt( this->pnt[i], x.pnt[i] ) )
+  operator<(const PointID& x) const {
+    if (this->id == x.id) {
+      for (int i = 0; i < d; i++) {
+        if (Num::Lt(this->pnt[i], x.pnt[i]))
           return true;
-        else if ( Num::Gt( this->pnt[i], x.pnt[i] ) )
+        else if (Num::Gt(this->pnt[i], x.pnt[i]))
           return false;
         else
           continue;
@@ -162,10 +159,10 @@ struct PointID : PointType<T, d> {
   }
 
   friend std::ostream&
-  operator<<( std::ostream& o, PointID const& a ) {
+  operator<<(std::ostream& o, PointID const& a) {
     o << a.id << "-";
     o << "(";
-    for ( int i = 0; i < d; i++ ) {
+    for (int i = 0; i < d; i++) {
       o << a.pnt[i] << ", ";
     }
     o << ") " << std::flush;
@@ -173,7 +170,7 @@ struct PointID : PointType<T, d> {
   }
 
   ID
-  getId() {
+  get_id() {
     return id;
   }
 
