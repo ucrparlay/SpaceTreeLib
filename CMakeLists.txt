@@ -1,9 +1,9 @@
 cmake_minimum_required(VERSION 3.15)
 
 project(
-	kdTree
+	spatialTrees
 	VERSION 1.0
-	DESCRIPTION "KD tree"
+	DESCRIPTION "spatial partition tree"
 	HOMEPAGE_URL ""
 	LANGUAGES CXX
 )
@@ -54,27 +54,29 @@ elseif(JEMA)
 endif()
 
 add_subdirectory(parlaylib)
+add_subdirectory(libmorton)
 
 # set(source_files
-# ${PROJECT_SOURCE_DIR}/include/cpdd/kdTreeParallel.hpp
+# ${PROJECT_SOURCE_DIR}/include/cpdd/spatialTrees.hpp
 # )
 
 # my kd
-add_library(kdTreeParallel INTERFACE)
-target_link_libraries(kdTreeParallel INTERFACE parlay)
-target_include_directories(kdTreeParallel INTERFACE ${PROJECT_SOURCE_DIR}/include)
+add_library(spatialTrees INTERFACE)
+target_link_libraries(spatialTrees INTERFACE parlay)
+target_link_libraries(spatialTrees INTERFACE libmorton)
+target_include_directories(spatialTrees INTERFACE ${PROJECT_SOURCE_DIR}/include)
 
 include(GNUInstallDirs)
-install(TARGETS kdTreeParallel
+install(TARGETS spatialTrees
 	LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
 	PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
 # add_executable(test ${PROJECT_SOURCE_DIR}/tests/test.cpp)
-# target_link_libraries(test PUBLIC kdTreeParallel)
+# target_link_libraries(test PUBLIC spatialTrees)
 # target_include_directories(test PUBLIC ${PROJECT_SOURCE_DIR}/include)
 
 add_executable(oct ${PROJECT_SOURCE_DIR}/tests/testOctTree.cpp)
-target_link_libraries(oct PUBLIC kdTreeParallel)
+target_link_libraries(oct PUBLIC spatialTrees)
 target_include_directories(oct PUBLIC ${PROJECT_SOURCE_DIR}/include)
 
 if(JEMA)
@@ -83,7 +85,7 @@ if(JEMA)
 endif()
 
 add_executable(data_generator ${PROJECT_SOURCE_DIR}/tests/data_generate.cpp)
-target_link_libraries(data_generator PUBLIC kdTreeParallel)
+target_link_libraries(data_generator PUBLIC spatialTrees)
 target_include_directories(data_generator PUBLIC ${PROJECT_SOURCE_DIR}/include)
 
 # CGAL
@@ -112,11 +114,11 @@ if(CGAL)
 
 	# executables
 	add_executable(cgal ${PROJECT_SOURCE_DIR}/tests/cgal.cpp)
-	target_link_libraries(cgal PUBLIC kdTreeParallel CGAL::CGAL CGAL::TBB_support)
+	target_link_libraries(cgal PUBLIC spatialTrees CGAL::CGAL CGAL::TBB_support)
 	target_include_directories(cgal PUBLIC ${PROJECT_SOURCE_DIR}/include )
 
 	add_executable(checkCorrectParallel ${PROJECT_SOURCE_DIR}/tests/checkCorrectParallel.cpp)
-	target_link_libraries(checkCorrectParallel PUBLIC kdTreeParallel CGAL::CGAL CGAL::TBB_support)
+	target_link_libraries(checkCorrectParallel PUBLIC spatialTrees CGAL::CGAL CGAL::TBB_support)
 endif()
 
 FIND_PROGRAM(CLANG_FORMAT "clang-format")

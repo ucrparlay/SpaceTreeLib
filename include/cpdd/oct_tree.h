@@ -1,6 +1,7 @@
 #pragma once
 
 #include "base_tree.h"
+#include "libmorton/morton.h"
 
 namespace cpdd {
 
