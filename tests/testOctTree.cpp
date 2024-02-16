@@ -12,7 +12,7 @@ testOctTree(const int& Dim, const int& LEAVE_WRAP, parlay::sequence<point>& wp,
   buildTree<point, tree>(Dim, wp, rounds, pkd);
 
   std::cout << std::endl << std::flush;
-
+  pkd.delete_tree();
   return;
 }
 

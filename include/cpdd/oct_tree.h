@@ -1,15 +1,8 @@
 #pragma once
 
-#include <cstdint>
-#include "comparator.h"
-#include "baseTree.h"
-#include "basic_point.h"
-#include "query_op/nn_search_helpers.h"
+#include "base_tree.h"
 
 namespace cpdd {
-
-#define LOG  std::cout
-#define ENDL std::endl << std::flush
 
 template<typename point>
 class octTree : public baseTree<point> {
@@ -39,11 +32,14 @@ class octTree : public baseTree<point> {
   static constexpr z_bit_type KEY_BITS = 64;
 
   struct interior;
-  static interior* alloc_oct_interior_node(node* L, node* R);
+
+  static interior* alloc_oct_interior_node(node* L, node* R, z_bit_type bit);
 
   static inline void interleave_bits(point* p, const dim_type DIM);
 
   void build(slice In, const dim_type DIM) override;
+
+  void delete_tree() override;
 
   node* serial_build_recursive(slice In, z_bit_type bit);
 
@@ -51,3 +47,7 @@ class octTree : public baseTree<point> {
 };
 
 }  // namespace cpdd
+
+#include "octTree/oct_build_tree.hpp"
+#include "octTree/oct_inter_node.hpp"
+#include "octTree/oct_override.hpp"

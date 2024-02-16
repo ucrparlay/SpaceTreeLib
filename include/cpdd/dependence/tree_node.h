@@ -1,4 +1,5 @@
 #pragma once
+#include <cstdint>
 #include "basic_point.h"
 
 namespace cpdd {
@@ -25,8 +26,10 @@ struct leaf : node<point> {
   using slice = parlay::slice<point*, point*>;
   points pts;
   leaf() : node{true, false, static_cast<size_t>(0)} {};
-  leaf(slice In) : node{true, false, static_cast<size_t>(In.size())} {
-    pts = points::uninitialized(32);
+  leaf(slice In, const size_t size) :
+      node{true, false, static_cast<size_t>(In.size())} {
+    assert(In.size() <= size);
+    pts = points::uninitialized(size);
     for (int i = 0; i < In.size(); i++) {
       pts[i] = In[i];
     }
@@ -40,10 +43,10 @@ struct leaf : node<point> {
 
 template<typename point, typename slice = parlay::slice<point*, point*>>
 static leaf<point>*
-alloc_leaf_node(slice In) {
+alloc_leaf_node(slice In, const uint_fast8_t LEAVE_WRAP) {
   using leaf = leaf<point>;
   leaf* o = parlay::type_allocator<leaf>::alloc();
-  new (o) leaf(In);
+  new (o) leaf(In, In.size() <= LEAVE_WRAP ? LEAVE_WRAP : In.size());
   assert(o->is_dummy == false);
   return o;
 }

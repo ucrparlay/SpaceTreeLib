@@ -3,12 +3,10 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
-#include "cpdd/cpdd.h"
-
+#include <cpdd/oct_tree.h>
 #include "common/geometryIO.h"
 #include "common/parse_command_line.h"
 #include "common/time_loop.h"
-#include "cpdd/baseTree.h"
 #include "parlay/internal/group_by.h"
 #include "parlay/parallel.h"
 #include "parlay/primitives.h"
@@ -292,12 +290,13 @@ buildTree(const int& Dim, const parlay::sequence<point>& WP, const int& rounds,
 
   if (print == 1) {
     LOG << aveBuild << " " << std::flush;
-    auto deep = pkd.getAveTreeHeight();
-    LOG << deep << " " << std::flush;
+    // auto deep = pkd.getAveTreeHeight();
+    // LOG << deep << " " << std::flush;
   } else if (print == 2) {
     size_t max_deep = 0;
-    LOG << aveBuild << " " << pkd.getMaxTreeDepth(pkd.get_root(), max_deep)
-        << " " << pkd.getAveTreeHeight() << " " << std::flush;
+    LOG << aveBuild << " ";
+    // LOG << pkd.getMaxTreeDepth(pkd.get_root(), max_deep) << " "
+    //     << pkd.getAveTreeHeight() << " " << std::flush;
   }
 
   return;

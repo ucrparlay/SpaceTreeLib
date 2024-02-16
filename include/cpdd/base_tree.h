@@ -1,9 +1,8 @@
 #pragma once
 
-#include "comparator.h"
-#include "basic_point.h"
-#include "tree_node.h"
-#include "query_op/nn_search_helpers.h"
+#include "dependence/comparator.h"
+#include "dependence/tree_node.h"
+#include "dependence/search_container.h"
 
 namespace cpdd {
 
@@ -31,6 +30,11 @@ class baseTree {
 
   using node = node<point>;
   using leaf = leaf<point>;
+
+  using node_box = std::pair<node*, box>;
+  using node_tag = std::pair<node*, uint_fast8_t>;
+  using node_tags = parlay::sequence<node_tag>;
+  using tag_nodes = parlay::sequence<balls_type>;  //*index by tag
   //@ Const variables
   //@ uint32t handle up to 4e9 at least
   //! bucket num should smaller than 1<<8 to handle type overflow
@@ -49,29 +53,8 @@ class baseTree {
   //@ reconstruct weight threshold
   static constexpr uint_fast8_t INBALANCE_RATIO = 30;
 
-  //*------------------- Tree Structures--------------------*//
-  //@ kd tree node types and functions
-
-  struct interior : node {
-    node* left;
-    node* right;
-    splitter split;
-    interior(node* _left, node* _right, splitter _split) :
-        node{false, false, _left->size + _right->size},
-        left(_left),
-        right(_right),
-        split(_split) {}
-  };
-
-  //@ range query tree node
-
   inline size_t get_imbalance_ratio();
   inline bool inbalance_node(const size_t l, const size_t n);
-
-  using node_box = std::pair<node*, box>;
-  using node_tag = std::pair<node*, uint_fast8_t>;
-  using node_tags = parlay::sequence<node_tag>;
-  using tag_nodes = parlay::sequence<balls_type>;  //*index by tag
 
   enum split_rule { MAX_STRETCH_DIM, ROTATE_DIM };
 
@@ -138,7 +121,13 @@ class baseTree {
   static node* update_inner_tree(bucket_type idx, const node_tags& tags,
                                  parlay::sequence<node*>& treeNodes,
                                  bucket_type& p, const tag_nodes& rev_tag);
-  node* delete_tree();
+
+  virtual void delete_tree() = 0;
+
+  template<typename interior_node_type>
+  void delete_tree_wrapper();
+
+  template<typename interior_node_type>
   static void delete_tree_recursive(node* T, bool granularity = true);
 
   //@ batch insert
@@ -159,61 +148,32 @@ class baseTree {
                              bucket_type& p, const tag_nodes& rev_tag,
                              const dim_type d, const dim_type DIM);
 
-  //@ query stuffs
-
-  static inline coord p2p_distance(const point& p, const point& q,
-                                   const dim_type DIM);
-  static inline coord p2b_min_distance(const point& p, const box& a,
-                                       const dim_type DIM);
-  static inline coord p2b_max_distance(const point& p, const box& a,
-                                       const dim_type DIM);
-  static inline coord interruptible_distance(const point& p, const point& q,
-                                             coord up, dim_type DIM);
-  template<typename StoreType>
-  static void k_nearest(node* T, const point& q, const dim_type DIM,
-                        kBoundedQueue<point, StoreType>& bq,
-                        size_t& visNodeNum);
-  template<typename StoreType>
-  static void k_nearest(node* T, const point& q, const dim_type DIM,
-                        kBoundedQueue<point, StoreType>& bq, const box& bx,
-                        size_t& visNodeNum);
-
-  size_t range_count(const box& queryBox, size_t& visLeafNum,
-                     size_t& visInterNum);
-  size_t range_count(const circle& cl);
-  static size_t range_count_rectangle(node* T, const box& queryBox,
-                                      const box& nodeBox, size_t& visLeafNum,
-                                      size_t& visInterNum);
-  static size_t range_count_radius(node* T, const circle& cl,
-                                   const box& nodeBox);
-
-  template<typename StoreType>
-  size_t range_query_serial(const box& queryBox, StoreType Out);
-  template<typename StoreType>
-  size_t range_query_parallel(const typename baseTree<point>::box& queryBox,
-                              StoreType Out, double& tim);
-  template<typename StoreType>
-  static void range_query_recursive_serial(node* T, StoreType Out, size_t& s,
-                                           const box& queryBox,
-                                           const box& nodeBox);
-
   //@ validations
-  static bool checkBox(node* T, const box& bx);
+  template<typename interior>
+  bool checkBox(node* T, const box& bx);
 
-  static size_t checkSize(node* T);
+  template<typename interior>
+  size_t checkSize(node* T);
 
+  template<typename interior>
   void checkTreeSameSequential(node* T, int dim, const int& DIM);
 
+  template<typename interior>
   void validate(const dim_type DIM);
 
+  template<typename interior>
   size_t getTreeHeight();
 
+  template<typename interior>
   size_t getMaxTreeDepth(node* T, size_t deep);
 
+  template<typename interior>
   double getAveTreeHeight();
 
+  template<typename interior>
   size_t countTreeNodesNum(node* T);
 
+  template<typename interior>
   void countTreeHeights(node* T, size_t deep, size_t& idx,
                         parlay::sequence<size_t>& heights);
 
@@ -242,3 +202,9 @@ class baseTree {
 };
 
 }  // namespace cpdd
+
+#include "baseTree/box_op.hpp"
+// #include "baseTree/validation.hpp"
+#include "baseTree/delete_tree.hpp"
+#include "baseTree/dimensinality.hpp"
+#include "baseTree/random_support.hpp"
