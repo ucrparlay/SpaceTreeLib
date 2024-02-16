@@ -271,7 +271,7 @@ checkTreesSize(typename tree::node* T) {
 template<typename point, typename tree, int print = 1>
 void
 buildTree(const int& Dim, const parlay::sequence<point>& WP, const int& rounds,
-          baseTree<point>& pkd) {
+          tree& pkd) {
   // using tree = baseTree<point>;
   using points = typename tree::points;
   using node = typename tree::node;

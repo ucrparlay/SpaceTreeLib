@@ -20,12 +20,19 @@ octTree<point>::interleave_bits(point* p, const dim_type DIM) {
 template<typename point>
 void
 octTree<point>::build(slice A, const dim_type DIM) {
+  parlay::internal::timer t;
+  LOG << "here" << ENDL;
+  t.start();
   this->bbox = this->get_box(A);
+  t.next("get_box");
   parlay::parallel_for(0, A.size(),
                        [&](size_t i) { interleave_bits(&A[i], DIM); });
+  t.next("interleave_bits");
   parlay::internal::integer_sort_inplace(A,
                                          [&](const point& p) { return p.id; });
+  t.next("integer_sort_inplace");
   this->root = build_recursive(A, DIM * (KEY_BITS / DIM));
+  t.next("build_recursive");
   assert(this->root != nullptr);
   return;
 }
