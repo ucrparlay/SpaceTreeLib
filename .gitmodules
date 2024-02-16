@@ -1,3 +1,6 @@
 [submodule "parlaylib"]
 	path = parlaylib
 	url = https://github.com/cmuparlay/parlaylib
+[submodule "libmorton"]
+	path = libmorton
+	url = https://github.com/Forceflow/libmorton
