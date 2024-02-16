@@ -41,9 +41,9 @@ class octTree : public baseTree<point> {
 
   void delete_tree() override;
 
-  node* serial_build_recursive(slice In, z_bit_type bit);
+  node* serial_build_recursive(slice In, z_bit_type bit, const dim_type DIM);
 
-  node* build_recursive(slice In, z_bit_type bit);
+  node* build_recursive(slice In, z_bit_type bit, const dim_type DIM);
 };
 
 }  // namespace cpdd
