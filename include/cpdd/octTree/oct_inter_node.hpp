@@ -3,6 +3,7 @@
 #include "../oct_tree.h"
 
 namespace cpdd {
+
 template<typename point>
 struct octTree<point>::interior : node {
   node* left;

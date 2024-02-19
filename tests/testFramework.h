@@ -274,7 +274,7 @@ buildTree(const int& Dim, const parlay::sequence<point>& WP, const int& rounds,
           tree& pkd) {
   // using tree = baseTree<point>;
   using points = typename tree::points;
-  using node = typename tree::node;
+  using node = typename cpdd::node;
 
   double loopLate = rounds > 1 ? 1.0 : -0.1;
   size_t n = WP.size();

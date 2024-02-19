@@ -28,9 +28,6 @@ class baseTree {
   using box_s = parlay::sequence<box>;
   using circle = std::pair<point, coord>;
 
-  using node = node<point>;
-  using leaf = leaf<point>;
-
   using node_box = std::pair<node*, box>;
   using node_tag = std::pair<node*, uint_fast8_t>;
   using node_tags = parlay::sequence<node_tag>;
@@ -124,10 +121,10 @@ class baseTree {
 
   virtual void delete_tree() = 0;
 
-  template<typename interior_node_type>
+  template<typename leaf_node_type, typename interior_node_type>
   void delete_tree_wrapper();
 
-  template<typename interior_node_type>
+  template<typename leaf_node_type, typename interior_node_type>
   static void delete_tree_recursive(node* T, bool granularity = true);
 
   //@ batch insert

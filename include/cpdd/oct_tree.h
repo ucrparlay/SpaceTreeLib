@@ -9,14 +9,13 @@ template<typename point>
 class octTree : public baseTree<point> {
  public:
   using baseTree = baseTree<point>;
-  using node = baseTree::node;
-  using leaf = baseTree::leaf;
 
   using bucket_type = baseTree::bucket_type;
   using balls_type = baseTree::balls_type;
   using dim_type = baseTree::dim_type;
   using z_bit_type = uint_fast8_t;
   using z_value_type = uint_fast64_t;
+  using z_slice = parlay::slice<z_value_type*, z_value_type*>;
 
   using coord = typename point::coord;
   using coords = typename point::coords;
@@ -37,6 +36,7 @@ class octTree : public baseTree<point> {
   static interior* alloc_oct_interior_node(node* L, node* R, z_bit_type bit);
 
   static inline void interleave_bits(point* p, const dim_type DIM);
+  static inline z_value_type get_z_value(const point& p);
 
   void build(slice In, const dim_type DIM) override;
 
@@ -45,6 +45,8 @@ class octTree : public baseTree<point> {
   node* serial_build_recursive(slice In, z_bit_type bit, const dim_type DIM);
 
   node* build_recursive(slice In, z_bit_type bit, const dim_type DIM);
+  node* build_recursive_with_z_value(z_slice In, z_bit_type bit,
+                                     const dim_type DIM);
 };
 
 }  // namespace cpdd

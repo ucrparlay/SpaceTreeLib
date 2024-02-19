@@ -4,11 +4,7 @@
 
 namespace cpdd {
 
-template<typename point>
 struct node {
-  using coord = point::coord;
-  using coords = point::coords;
-
   node() : is_leaf{false}, is_dummy{false}, size{0} {};
 
   node(bool _is_leaf, bool _is_dummy, size_t _size) :
@@ -20,8 +16,7 @@ struct node {
 };
 
 template<typename point>
-struct leaf : node<point> {
-  using node = node<point>;
+struct leaf : node {
   using points = parlay::sequence<point>;
   using slice = parlay::slice<point*, point*>;
   points pts;
@@ -71,15 +66,15 @@ alloc_empty_leaf() {
   return o;
 }
 
-template<typename point>
-static void
-free_leaf(node<point>* T) {
-  parlay::type_allocator<leaf<point>>::retire(static_cast<leaf<point>*>(T));
-}
+// template<typename point>
+// static void
+// free_leaf(node* T) {
+//   parlay::type_allocator<leaf<point>>::retire(static_cast<leaf<point>*>(T));
+// }
 
 template<typename point, typename node_type>
 static void
-free_node(node<point>* T) {
+free_node(node* T) {
   // TODO: add static type check
   parlay::type_allocator<node_type>::retire(static_cast<node_type*>(T));
 }
