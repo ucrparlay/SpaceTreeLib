@@ -36,6 +36,7 @@ class octTree : public baseTree<point> {
   static interior* alloc_oct_interior_node(node* L, node* R, z_bit_type bit);
 
   static inline void interleave_bits(point* p, const dim_type DIM);
+
   static inline z_value_type get_z_value(const point& p);
 
   void build(slice In, const dim_type DIM) override;
@@ -45,6 +46,7 @@ class octTree : public baseTree<point> {
   node* serial_build_recursive(slice In, z_bit_type bit, const dim_type DIM);
 
   node* build_recursive(slice In, z_bit_type bit, const dim_type DIM);
+
   node* build_recursive_with_z_value(z_slice In, z_bit_type bit,
                                      const dim_type DIM);
 };
