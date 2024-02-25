@@ -71,7 +71,7 @@ node* octTree<point>::build_recursive_with_z_value(z_value_slice In,
   size_t n = In.size();
   if (bit == 0 || n < this->LEAVE_WRAP) {
     return alloc_leaf_node<z_value_type, z_value_slice>(
-        In, std::max(In.size(), this->LEAVE_WRAP));
+        In, std::max(In.size(), static_cast<size_t>(this->LEAVE_WRAP)));
   }
 
   z_value_type val = (static_cast<z_value_type>(1)) << (bit - 1);
