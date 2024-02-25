@@ -21,13 +21,13 @@ struct leaf : node {
   using points = parlay::sequence<point>;
   points pts;
   leaf() : node{true, false, static_cast<size_t>(0)} {};
-  // TODO: design better inference
+  // TODO: design better inference in order to distinguish between dummy leaf
+  // allocate and size
   leaf(slice In, const size_t size, bool _is_dummy) :
       node{true, false, static_cast<size_t>(In.size())} {
     assert(In.size() <= size);
     pts = points::uninitialized(size);
     for (int i = 0; i < In.size(); i++) {
-      // ASSIGN_FUNC(pts[i], In[i]);
       pts[i] = In[i];
     }
   }
