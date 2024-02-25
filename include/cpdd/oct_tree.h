@@ -1,5 +1,6 @@
 #pragma once
 
+#include <utility>
 #include "base_tree.h"
 #include "libmorton/morton.h"
 
@@ -15,7 +16,13 @@ class octTree : public baseTree<point> {
   using dim_type = baseTree::dim_type;
   using z_bit_type = uint_fast8_t;
   using z_value_type = uint_fast64_t;
-  using z_slice = parlay::slice<z_value_type*, z_value_type*>;
+  using z_value_slice = parlay::slice<z_value_type*, z_value_type*>;
+  using z_value_pointer_pair = std::pair<z_value_type, point*>;
+  using z_value_pointer_slice =
+      parlay::slice<z_value_pointer_pair*, z_value_pointer_pair*>;
+  using z_value_point_pair = std::pair<z_value_type, point>;
+  using z_value_point_slice =
+      parlay::slice<z_value_point_pair*, z_value_point_pair*>;
 
   using coord = typename point::coord;
   using coords = typename point::coords;
@@ -39,16 +46,28 @@ class octTree : public baseTree<point> {
 
   static inline z_value_type get_z_value(const point& p);
 
+  void build_z_value(slice In, const dim_type DIM);
+  node* build_recursive_with_z_value(z_value_slice In, z_bit_type bit,
+                                     const dim_type DIM);
+
+  void build_z_value_pointer(slice In, const dim_type DIM);
+  node* build_recursive_with_z_value_pointer(z_value_pointer_slice In,
+                                             z_bit_type bit,
+                                             const dim_type DIM);
+
+  void build_point_z_value(slice In, const dim_type DIM);
+  node* build_recursive_point_z_value(z_value_point_slice In, z_bit_type bit,
+                                      const dim_type DIM);
+
+  void build_point(slice In, const dim_type DIM);
+  node* build_recursive_point(slice In, z_bit_type bit, const dim_type DIM);
+
+  // NOTE: wrapper
   void build(slice In, const dim_type DIM) override;
-
-  void delete_tree() override;
-
   node* serial_build_recursive(slice In, z_bit_type bit, const dim_type DIM);
-
   node* build_recursive(slice In, z_bit_type bit, const dim_type DIM);
 
-  node* build_recursive_with_z_value(z_slice In, z_bit_type bit,
-                                     const dim_type DIM);
+  void delete_tree() override;
 };
 
 }  // namespace cpdd
