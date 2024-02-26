@@ -10,10 +10,10 @@
 namespace cpdd {
 template<typename point>
 void octTree<point>::build(slice A, const dim_type DIM) {
-  // build_z_value(A, DIM);
+  build_z_value(A, DIM);
   // build_z_value_pointer(A, DIM);
   // build_point_z_value(A, DIM);
-  build_point(A, DIM);
+  // build_point(A, DIM);
   return;
 }
 
@@ -123,7 +123,9 @@ node* octTree<point>::build_recursive_with_z_value_pointer(
     z_value_pointer_slice In, z_bit_type bit, const dim_type DIM) {
   size_t n = In.size();
   if (bit == 0 || n <= this->LEAVE_WRAP) {
-    return alloc_leaf_node<point*, z_value_pointer_slice>(
+    // return alloc_leaf_node<point*, z_value_pointer_slice>(
+    //     In, std::max(In.size(), static_cast<size_t>(this->LEAVE_WRAP)));
+    return alloc_leaf_node<point, z_value_pointer_slice>(
         In, std::max(In.size(), static_cast<size_t>(this->LEAVE_WRAP)));
   }
 
