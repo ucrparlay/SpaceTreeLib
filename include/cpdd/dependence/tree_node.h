@@ -24,16 +24,16 @@ struct leaf : node {
   // TODO: design better inference in order to distinguish between dummy leaf
   // allocate and size
   leaf(slice In, const size_t size, bool _is_dummy) :
-      node{true, false, static_cast<size_t>(In.size())} {
+      node{true, false, static_cast<size_t>(In.size())},
+      pts(points::uninitialized(size)) {
     assert(In.size() <= size);
-    pts = points::uninitialized(size);
     for (int i = 0; i < In.size(); i++) {
-      pts[i] = In[i].second;
+      pts[i] = *(In[i].second);
     }
   }
   leaf(slice In, bool _is_dummy) :
-      node{true, true, static_cast<size_t>(In.size())} {
-    pts = points::uninitialized(1);
+      node{true, true, static_cast<size_t>(In.size())},
+      pts(points::uninitialized(1)) {
     pts[0] = In[0];
   }
 };

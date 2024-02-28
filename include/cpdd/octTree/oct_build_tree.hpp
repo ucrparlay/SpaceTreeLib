@@ -11,8 +11,8 @@ namespace cpdd {
 template<typename point>
 void octTree<point>::build(slice A, const dim_type DIM) {
   // build_z_value(A, DIM);
-  // build_z_value_pointer(A, DIM);
-  build_point_z_value(A, DIM);
+  build_z_value_pointer(A, DIM);
+  // build_point_z_value(A, DIM);
   // build_point(A, DIM);
   return;
 }
@@ -169,6 +169,7 @@ void octTree<point>::build_point_z_value(slice A, const dim_type DIM) {
   parlay::internal::integer_sort_inplace(
       parlay::make_slice(z_value_arr),
       [&](const auto& val) { return val.first; });
+  // parlay::sort_inplace(z_value_arr);
   t.next("integer_sort_inplace");
 
   this->root = build_recursive_point_z_value(parlay::make_slice(z_value_arr),
