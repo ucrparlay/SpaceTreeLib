@@ -68,6 +68,11 @@ class octTree : public baseTree<point> {
   node* build_recursive(slice In, z_bit_type bit, const dim_type DIM);
 
   void delete_tree() override;
+
+  uint64_t binary_search_time = 0;
+  uint64_t leaf_alloc_time = 0;
+  uint64_t leaf_num = 0;
+  uint64_t time_base = 1000000;
 };
 
 }  // namespace cpdd

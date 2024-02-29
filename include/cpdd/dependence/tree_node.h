@@ -28,7 +28,8 @@ struct leaf : node {
       pts(points::uninitialized(size)) {
     assert(In.size() <= size);
     for (int i = 0; i < In.size(); i++) {
-      pts[i] = *(In[i].second);
+      // pts[i] = *(In[i].second);
+      pts[i] = In[i].second;
     }
   }
   leaf(slice In, bool _is_dummy) :
