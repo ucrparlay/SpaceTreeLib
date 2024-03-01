@@ -17,34 +17,101 @@ void octTree<point>::build(slice A, const dim_type DIM) {
   build_z_value_pointer(A, DIM);
   // build_point_z_value(A, DIM);
   // build_point(A, DIM);
-  LOG << "leaf time: "
-      << static_cast<double>(leaf_alloc_time) / time_base / leaf_num
-      << " , leaf num: " << leaf_num << " , binary search time: "
-      << static_cast<double>(binary_search_time) / time_base << ENDL;
   return;
 }
 
 template<typename point>
-void octTree<point>::interleave_bits(point* p, const dim_type DIM) {
+typename octTree<point>::z_value_type octTree<point>::interleave_bits(
+    point* p, const dim_type DIM) {
   z_bit_type loc = 0;
-  p->id = 0;
-  for (int i = 0; i < KEY_BITS / DIM; i++) {
-    for (int d = 0; d < DIM; d++) {
-      p->id = p->id |
-              (((p->pnt[d] >> i) & static_cast<z_value_type>(1)) << (loc++));
+  z_value_type id = 0;
+  for (z_bit_type i = 0; i < KEY_BITS / DIM; i++) {
+    for (dim_type d = 0; d < DIM; d++) {
+      id = id | (((p->pnt[d] >> i) & static_cast<z_value_type>(1)) << (loc++));
     }
   }
-  return;
+  return id;
 }
 
 template<typename point>
 typename octTree<point>::z_value_type octTree<point>::get_z_value(
     const point& p) {
-  assert(point::DIM == 3);
-  return libmorton::m3D_e_BMI<z_value_type, coord>(p.pnt[0], p.pnt[1],
-                                                   p.pnt[2]);
+  if constexpr (std::tuple_size<typename point::coords>::value == 2) {
+    return libmorton::m2D_e_BMI<z_value_type, coord>(p.pnt[0], p.pnt[1]);
+  } else {
+    return libmorton::m3D_e_BMI<z_value_type, coord>(p.pnt[0], p.pnt[1],
+                                                     p.pnt[2]);
+  }
 }
 
+// NOTE: 2: z value and the pointer
+template<typename point>
+void octTree<point>::build_z_value_pointer(slice A, const dim_type DIM) {
+  parlay::internal::timer t;
+  LOG << "here" << ENDL;
+  t.start();
+  this->bbox = this->get_box(A);
+  t.next("get_box");
+
+  auto z_value_arr = parlay::map(
+      A, [&](point& p) { return std::make_pair(this->get_z_value(p), &p); });
+  assert(z_value_arr[0].first == this->interleave_bits(&A[0], DIM));
+  t.next("generate z_value_pointer");
+
+  parlay::internal::integer_sort_inplace(
+      parlay::make_slice(z_value_arr),
+      [&](const auto& val) { return val.first; });
+  t.next("integer_sort_inplace");
+
+  this->root = build_recursive_with_z_value_pointer(
+      parlay::make_slice(z_value_arr), DIM * (KEY_BITS / DIM), DIM);
+  t.next("build_recursive_z_value");
+
+  assert(this->root != nullptr);
+  return;
+}
+
+//  NOTE: 2.1: z value and the pointer
+template<typename point>
+node* octTree<point>::build_recursive_with_z_value_pointer(
+    z_value_pointer_slice In, z_bit_type bit, const dim_type DIM) {
+  size_t n = In.size();
+
+  if (n <= baseTree::LEAVE_WRAP) {
+    return alloc_leaf_node<point, z_value_pointer_slice, alloc_normal_leaf_tag,
+                           parlay::uninitialized_relocate_tag>(
+        In, std::max(In.size(), static_cast<size_t>(baseTree::LEAVE_WRAP)));
+  }
+
+  if (bit == 0) {
+    return alloc_leaf_node<point, z_value_pointer_slice, alloc_fat_leaf_tag,
+                           parlay::uninitialized_relocate_tag>(In, In.size());
+  }
+
+  z_value_type val = (static_cast<z_value_type>(1)) << (bit - 1);
+  z_value_type mask = (bit == 64) ? ~(static_cast<z_value_type>(0))
+                                  : ~(~(static_cast<z_value_type>(0)) << bit);
+  auto less = [&](const z_value_pointer_pair& x) {
+    return (x.first & mask) < val;
+  };
+
+  size_t pos = parlay::internal::binary_search(In, less);
+
+  if (pos == 0 || pos == n) {
+    return build_recursive_with_z_value_pointer(In, bit - 1, DIM);
+  }
+
+  node *L, *R;
+  parlay::par_do_if(
+      n >= this->SERIAL_BUILD_CUTOFF,
+      [&] {
+        L = build_recursive_with_z_value_pointer(In.cut(0, pos), bit - 1, DIM);
+      },
+      [&] {
+        R = build_recursive_with_z_value_pointer(In.cut(pos, n), bit - 1, DIM);
+      });
+  return alloc_oct_interior_node(L, R, bit);
+}
 // NOTE: 1: z value only
 template<typename point>
 void octTree<point>::build_z_value(slice A, const dim_type DIM) {
@@ -98,74 +165,6 @@ node* octTree<point>::build_recursive_with_z_value(z_value_slice In,
       n >= this->SERIAL_BUILD_CUTOFF,
       [&] { L = build_recursive_with_z_value(In.cut(0, pos), bit - 1, DIM); },
       [&] { R = build_recursive_with_z_value(In.cut(pos, n), bit - 1, DIM); });
-  return alloc_oct_interior_node(L, R, bit);
-}
-
-// NOTE: 2: z value and the pointer
-template<typename point>
-void octTree<point>::build_z_value_pointer(slice A, const dim_type DIM) {
-  parlay::internal::timer t;
-  LOG << "here" << ENDL;
-  t.start();
-  this->bbox = this->get_box(A);
-  t.next("get_box");
-  // parlay::sequence<z_value_pointer_pair> z_value_arr =
-  //     parlay::sequence<z_value_pointer_pair>::uninitialized(A.size());
-  // parlay::parallel_for(0, A.size(), [&](size_t i) {
-  //   z_value_arr[i] = std::make_pair(this->get_z_value(A[i]), std::ref(A[i]));
-  // });
-  auto z_value_arr = parlay::map(
-      A, [&](point& p) { return std::make_pair(this->get_z_value(p), &p); });
-  t.next("generate z_value_pointer");
-
-  parlay::internal::integer_sort_inplace(
-      parlay::make_slice(z_value_arr),
-      [&](const auto& val) { return val.first; });
-  t.next("integer_sort_inplace");
-
-  this->root = build_recursive_with_z_value_pointer(
-      parlay::make_slice(z_value_arr), DIM * (KEY_BITS / DIM), DIM);
-  t.next("build_recursive_z_value");
-
-  assert(this->root != nullptr);
-  return;
-}
-
-template<typename point>
-node* octTree<point>::build_recursive_with_z_value_pointer(
-    z_value_pointer_slice In, z_bit_type bit, const dim_type DIM) {
-  parlay::internal::timer t;
-  double time;
-
-  size_t n = In.size();
-  if (bit == 0 || n <= baseTree::LEAVE_WRAP) {
-    return alloc_leaf_node<point, z_value_pointer_slice, alloc_normal_leaf_tag,
-                           parlay::uninitialized_relocate_tag>(
-        In, std::max(In.size(), static_cast<size_t>(baseTree::LEAVE_WRAP)));
-  }
-
-  z_value_type val = (static_cast<z_value_type>(1)) << (bit - 1);
-  z_value_type mask = (bit == 64) ? ~(static_cast<z_value_type>(0))
-                                  : ~(~(static_cast<z_value_type>(0)) << bit);
-  auto less = [&](const z_value_pointer_pair& x) {
-    return (x.first & mask) < val;
-  };
-
-  size_t pos = parlay::internal::binary_search(In, less);
-
-  if (pos == 0 || pos == n) {
-    return build_recursive_with_z_value_pointer(In, bit - 1, DIM);
-  }
-
-  node *L, *R;
-  parlay::par_do_if(
-      n >= this->SERIAL_BUILD_CUTOFF,
-      [&] {
-        L = build_recursive_with_z_value_pointer(In.cut(0, pos), bit - 1, DIM);
-      },
-      [&] {
-        R = build_recursive_with_z_value_pointer(In.cut(pos, n), bit - 1, DIM);
-      });
   return alloc_oct_interior_node(L, R, bit);
 }
 

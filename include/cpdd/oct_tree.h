@@ -43,7 +43,7 @@ class octTree : public baseTree<point> {
 
   static interior* alloc_oct_interior_node(node* L, node* R, z_bit_type bit);
 
-  static inline void interleave_bits(point* p, const dim_type DIM);
+  static inline z_value_type interleave_bits(point* p, const dim_type DIM);
 
   static inline z_value_type get_z_value(const point& p);
 

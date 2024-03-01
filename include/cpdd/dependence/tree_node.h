@@ -26,29 +26,49 @@ struct leaf : node {
       node{true, false, static_cast<size_t>(In.size())},
       pts(points::uninitialized(alloc_size)) {
     assert(In.size() <= alloc_size);
-    for (int i = 0; i < In.size(); i++) {
-      // if input is pair, assign using the second value
-      if constexpr (is_pair<typename slice::value_type>::value) {
-        // point is stored within the tree as a pointer
-        if constexpr (std::is_pointer<point>::value) {
-          static_assert(
-              std::is_pointer<typename slice::value_type::second_type>::value);
-          parlay::assign_dispatch(pts[i], In[i].second, point_assign_tag());
-        } else {  // fetch coordinates
-          parlay::assign_dispatch(pts[i], *(In[i].second), point_assign_tag());
-        }
-      } else {  // input is a point with coordinates
+    // NOTE: if input is pair, assign using the second value
+    if constexpr (is_pair<typename slice::value_type>::value) {
+      // WARN: we are assuming that the second value is a pointer
+      static_assert(
+          std::is_pointer<typename slice::value_type::second_type>::value);
+      for (int i = 0; i < In.size(); i++) {
+        parlay::assign_dispatch(pts[i], *(In[i].second), point_assign_tag());
+      }
+    } else {  //  NOTE: input is a point with coordinates
+      for (int i = 0; i < In.size(); i++) {
         parlay::assign_dispatch(pts[i], In[i], point_assign_tag());
       }
     }
   }
-  // WARN: fat leaf should ensure alloc using parallel copy
-  leaf(slice In, alloc_fat_leaf_tag) :
+  leaf(slice In, const auto alloc_size, alloc_fat_leaf_tag) :
       node{true, false, static_cast<size_t>(In.size())},
-      pts(In.begin(), In.end()) {}
+      pts(points::uninitialized(alloc_size)) {
+    if constexpr (is_pair<typename slice::value_type>::value) {
+      // WARN: we are assuming that the second value is a pointer
+      static_assert(
+          std::is_pointer<typename slice::value_type::second_type>::value);
+      parlay::parallel_for(0, In.size(), [&](size_t i) {
+        parlay::assign_dispatch(pts[i], *(In[i].second), point_assign_tag());
+      });
+    } else {
+      parlay::parallel_for(0, In.size(), [&](size_t i) {
+        parlay::assign_dispatch(pts[i], In[i], point_assign_tag());
+      });
+    }
+  }
   leaf(slice In, alloc_dummy_leaf_tag) :
       node{true, true, static_cast<size_t>(In.size())},
-      pts(In.begin(), In.end()) {}
+      pts(points::uninitialized(1)) {
+    assert(In.size() == 1);
+    if constexpr (is_pair<typename slice::value_type>::value) {
+      // WARN: we are assuming that the second value is a pointer
+      static_assert(
+          std::is_pointer<typename slice::value_type::second_type>::value);
+      parlay::assign_dispatch(pts[0], *(In[0].second), point_assign_tag());
+    } else {
+      parlay::assign_dispatch(pts[0], In[0], point_assign_tag());
+    }
+  }
 };
 
 // NOTE: point: how data is stored in the tree
@@ -60,6 +80,16 @@ static leaf<point, slice, point_assign_tag>* alloc_leaf_node(
   using leaf = leaf<point, slice, point_assign_tag>;
   leaf* o = parlay::type_allocator<leaf>::alloc();
   new (o) leaf(In, alloc_size, leaf_alloc_tag());
+  assert(o->is_dummy == false);
+  return o;
+}
+
+template<typename point, typename slice, typename leaf_alloc_tag,
+         typename point_assign_tag>
+static leaf<point, slice, point_assign_tag>* alloc_leaf_node(slice In) {
+  using leaf = leaf<point, slice, point_assign_tag>;
+  leaf* o = parlay::type_allocator<leaf>::alloc();
+  new (o) leaf(In, leaf_alloc_tag());
   assert(o->is_dummy == false);
   return o;
 }
