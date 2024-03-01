@@ -1,11 +1,13 @@
 #pragma once
 
 #include <parlay/slice.h>
+#include <functional>
 #include <utility>
 #include <algorithm>
 #include "../oct_tree.h"
 #include "libmorton/morton_BMI.h"
 #include "parlay/primitives.h"
+#include "typeinfo"
 
 namespace cpdd {
 template<typename point>
@@ -74,9 +76,10 @@ node* octTree<point>::build_recursive_with_z_value(z_value_slice In,
                                                    z_bit_type bit,
                                                    const dim_type DIM) {
   size_t n = In.size();
-  if (bit == 0 || n <= this->LEAVE_WRAP) {
-    return alloc_leaf_node<z_value_type, z_value_slice>(
-        In, std::max(In.size(), static_cast<size_t>(this->LEAVE_WRAP)));
+  if (bit == 0 || n <= baseTree::LEAVE_WRAP) {
+    // BUG:: need to check the type of the leaf
+    return alloc_leaf_node<z_value_type, z_value_slice, alloc_normal_leaf_tag>(
+        In, std::max(In.size(), static_cast<size_t>(baseTree::LEAVE_WRAP)));
   }
 
   z_value_type val = (static_cast<z_value_type>(1)) << (bit - 1);
@@ -105,9 +108,20 @@ void octTree<point>::build_z_value_pointer(slice A, const dim_type DIM) {
   t.start();
   this->bbox = this->get_box(A);
   t.next("get_box");
+  int a;
+  int& b = a;
+  auto c = std::ref(b);
 
-  auto z_value_arr = parlay::map(
-      A, [&](point& p) { return std::make_pair(this->get_z_value(p), &p); });
+  // parlay::sequence<z_value_pointer_pair> z_value_arr(
+  //     A.size(), std::make_pair(this->get_z_value(A[0]), std::ref(A[0])));
+  parlay::sequence<z_value_pointer_pair> z_value_arr =
+      parlay::sequence<z_value_pointer_pair>::uninitialized(A.size());
+  parlay::parallel_for(0, A.size(), [&](size_t i) {
+    z_value_arr[i] = std::make_pair(this->get_z_value(A[i]), std::ref(A[0]));
+  });
+  // auto z_value_arr = parlay::map(A, [](point& p) {
+  //   return std::make_pair(this->get_z_value(p), std::ref(p));
+  // });
   t.next("generate z_value_pointer");
 
   parlay::internal::integer_sort_inplace(
@@ -130,18 +144,19 @@ node* octTree<point>::build_recursive_with_z_value_pointer(
   double time;
 
   size_t n = In.size();
-  if (bit == 0 || n <= this->LEAVE_WRAP) {
+  if (bit == 0 || n <= baseTree::LEAVE_WRAP) {
     t.reset();
     t.start();
     // return alloc_leaf_node<point*, z_value_pointer_slice>(
-    //     In, std::max(In.size(), static_cast<size_t>(this->LEAVE_WRAP)));
+    //     In, std::max(In.size(), static_cast<size_t>(baseTree::LEAVE_WRAP)));
     // return alloc_leaf_node<point, z_value_pointer_slice>(
-    //     In, std::max(In.size(), static_cast<size_t>(this->LEAVE_WRAP)));
+    //     In, std::max(In.size(), static_cast<size_t>(baseTree::LEAVE_WRAP)));
 
-    node* o = alloc_leaf_node<point*, z_value_pointer_slice>(
-        In, std::max(In.size(), static_cast<size_t>(this->LEAVE_WRAP)));
+    node* o = alloc_leaf_node<std::reference_wrapper<point>,
+                              z_value_pointer_slice, alloc_normal_leaf_tag>(
+        In, std::max(In.size(), static_cast<size_t>(baseTree::LEAVE_WRAP)));
     // node* o = alloc_leaf_node<point, z_value_pointer_slice>(
-    //     In, std::max(In.size(), static_cast<size_t>(this->LEAVE_WRAP)));
+    //     In, std::max(In.size(), static_cast<size_t>(baseTree::LEAVE_WRAP)));
     t.stop();
     time = t.total_time() * time_base;
     __sync_fetch_and_add(&leaf_alloc_time, static_cast<uint64_t>(time));
@@ -212,9 +227,9 @@ node* octTree<point>::build_recursive_point_z_value(z_value_point_slice In,
                                                     z_bit_type bit,
                                                     const dim_type DIM) {
   size_t n = In.size();
-  if (bit == 0 || n <= this->LEAVE_WRAP) {
+  if (bit == 0 || n <= baseTree::LEAVE_WRAP) {
     return alloc_leaf_node<point, z_value_point_slice>(
-        In, std::max(In.size(), static_cast<size_t>(this->LEAVE_WRAP)));
+        In, std::max(In.size(), static_cast<size_t>(baseTree::LEAVE_WRAP)));
   }
 
   z_value_type val = (static_cast<z_value_type>(1)) << (bit - 1);
@@ -273,9 +288,9 @@ template<typename point>
 node* octTree<point>::build_recursive_point(slice In, z_bit_type bit,
                                             const dim_type DIM) {
   size_t n = In.size();
-  if (bit == 0 || n <= this->LEAVE_WRAP) {
+  if (bit == 0 || n <= baseTree::LEAVE_WRAP) {
     return alloc_leaf_node<point, slice>(
-        In, std::max(In.size(), static_cast<size_t>(this->LEAVE_WRAP)));
+        In, std::max(In.size(), static_cast<size_t>(baseTree::LEAVE_WRAP)));
   }
 
   auto bits = parlay::delayed::map(In, [&](const point& p) {

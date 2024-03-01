@@ -4,6 +4,10 @@
 #include "basic_point.h"
 
 namespace cpdd {
+struct alloc_normal_leaf_tag {};
+struct alloc_dummy_leaf_tag {};
+struct alloc_fat_leaf_tag {};
+struct alloc_thin_leaf_tag {};
 
 struct node {
   node() : is_leaf{false}, is_dummy{false}, size{0} {};
@@ -21,31 +25,30 @@ struct leaf : node {
   using points = parlay::sequence<point>;
   points pts;
   leaf() : node{true, false, static_cast<size_t>(0)} {};
-  // TODO: design better inference in order to distinguish between dummy leaf
-  // allocate and size
-  leaf(slice In, const size_t size, bool _is_dummy) :
+  leaf(slice In, const auto alloc_size, alloc_normal_leaf_tag) :
       node{true, false, static_cast<size_t>(In.size())},
-      pts(points::uninitialized(size)) {
-    assert(In.size() <= size);
+      pts(points::uninitialized(alloc_size)) {
+    assert(In.size <= LEAVE_WRAP);
     for (int i = 0; i < In.size(); i++) {
-      // pts[i] = *(In[i].second);
       pts[i] = In[i].second;
     }
   }
-  leaf(slice In, bool _is_dummy) :
+  // WARN: fat leaf should ensure alloc using parallel copy
+  leaf(slice In, alloc_fat_leaf_tag) :
+      node{true, false, static_cast<size_t>(In.size())},
+      pts(In.begin(), In.end()) {}
+  leaf(slice In, alloc_dummy_leaf_tag) :
       node{true, true, static_cast<size_t>(In.size())},
-      pts(points::uninitialized(1)) {
-    pts[0] = In[0];
-  }
+      pts(In.begin(), In.end()) {}
 };
 
 // NOTE: point: how data is stored in the tree
 // NOTE: slice: input slice
-template<typename point, typename slice>
-static leaf<point, slice>* alloc_leaf_node(slice In, const size_t alloc_size) {
+template<typename point, typename slice, typename leaf_alloc_tag>
+static leaf<point, slice>* alloc_leaf_node(slice In, const auto alloc_size) {
   using leaf = leaf<point, slice>;
   leaf* o = parlay::type_allocator<leaf>::alloc();
-  new (o) leaf(In, alloc_size, false);
+  new (o) leaf(In, alloc_size, leaf_alloc_tag());
   assert(o->is_dummy == false);
   return o;
 }

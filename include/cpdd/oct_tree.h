@@ -1,5 +1,6 @@
 #pragma once
 
+#include <functional>
 #include <utility>
 #include "base_tree.h"
 #include "libmorton/morton.h"
@@ -17,7 +18,8 @@ class octTree : public baseTree<point> {
   using z_bit_type = uint_fast8_t;
   using z_value_type = uint_fast64_t;
   using z_value_slice = parlay::slice<z_value_type*, z_value_type*>;
-  using z_value_pointer_pair = std::pair<z_value_type, point*>;
+  using z_value_pointer_pair =
+      std::pair<z_value_type, std::reference_wrapper<point>>;
   using z_value_pointer_slice =
       parlay::slice<z_value_pointer_pair*, z_value_pointer_pair*>;
   using z_value_point_pair = std::pair<z_value_type, point>;
