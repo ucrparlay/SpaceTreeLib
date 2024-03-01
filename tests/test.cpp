@@ -3,11 +3,11 @@
 #include "testFramework.h"
 
 template<typename point>
-void
-testParallelKDtree(const int& Dim, const int& LEAVE_WRAP,
-                   parlay::sequence<point>& wp, const size_t& N, const int& K,
-                   const int& rounds, const string& insertFile, const int& tag,
-                   const int& queryType) {
+void testParallelKDtree(const int& Dim, const int& LEAVE_WRAP,
+                        parlay::sequence<point>& wp, const size_t& N,
+                        const int& K, const int& rounds,
+                        const string& insertFile, const int& tag,
+                        const int& queryType) {
   using tree = baseTree<point>;
   using points = typename tree::points;
   using node = typename tree::node;
@@ -262,8 +262,7 @@ testParallelKDtree(const int& Dim, const int& LEAVE_WRAP,
   return;
 }
 
-int
-main(int argc, char* argv[]) {
+int main(int argc, char* argv[]) {
   commandLine P(argc, argv,
                 "[-k {1,...,100}] [-d {2,3,5,7,9,10}] [-n <node num>] [-t "
                 "<parallelTag>] [-p <inFile>] [-r {1,...,5}] [-q {0,1}] [-i "

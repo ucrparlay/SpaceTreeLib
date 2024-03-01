@@ -108,20 +108,13 @@ void octTree<point>::build_z_value_pointer(slice A, const dim_type DIM) {
   t.start();
   this->bbox = this->get_box(A);
   t.next("get_box");
-  int a;
-  int& b = a;
-  auto c = std::ref(b);
-
-  // parlay::sequence<z_value_pointer_pair> z_value_arr(
-  //     A.size(), std::make_pair(this->get_z_value(A[0]), std::ref(A[0])));
-  parlay::sequence<z_value_pointer_pair> z_value_arr =
-      parlay::sequence<z_value_pointer_pair>::uninitialized(A.size());
-  parlay::parallel_for(0, A.size(), [&](size_t i) {
-    z_value_arr[i] = std::make_pair(this->get_z_value(A[i]), std::ref(A[0]));
-  });
-  // auto z_value_arr = parlay::map(A, [](point& p) {
-  //   return std::make_pair(this->get_z_value(p), std::ref(p));
+  // parlay::sequence<z_value_pointer_pair> z_value_arr =
+  //     parlay::sequence<z_value_pointer_pair>::uninitialized(A.size());
+  // parlay::parallel_for(0, A.size(), [&](size_t i) {
+  //   z_value_arr[i] = std::make_pair(this->get_z_value(A[i]), std::ref(A[i]));
   // });
+  auto z_value_arr = parlay::map(
+      A, [&](point& p) { return std::make_pair(this->get_z_value(p), &p); });
   t.next("generate z_value_pointer");
 
   parlay::internal::integer_sort_inplace(
@@ -145,23 +138,26 @@ node* octTree<point>::build_recursive_with_z_value_pointer(
 
   size_t n = In.size();
   if (bit == 0 || n <= baseTree::LEAVE_WRAP) {
-    t.reset();
-    t.start();
-    // return alloc_leaf_node<point*, z_value_pointer_slice>(
+    // t.reset();
+    // t.start();
+    // return alloc_leaf_node<point*, z_value_pointer_slice,
+    //                        alloc_normal_leaf_tag>(
     //     In, std::max(In.size(), static_cast<size_t>(baseTree::LEAVE_WRAP)));
-    // return alloc_leaf_node<point, z_value_pointer_slice>(
-    //     In, std::max(In.size(), static_cast<size_t>(baseTree::LEAVE_WRAP)));
-
-    node* o = alloc_leaf_node<std::reference_wrapper<point>,
-                              z_value_pointer_slice, alloc_normal_leaf_tag>(
+    return alloc_leaf_node<point, z_value_pointer_slice, alloc_normal_leaf_tag>(
         In, std::max(In.size(), static_cast<size_t>(baseTree::LEAVE_WRAP)));
-    // node* o = alloc_leaf_node<point, z_value_pointer_slice>(
+
+    // node* o = alloc_leaf_node<std::reference_wrapper<point>,
+    //                           z_value_pointer_slice, alloc_normal_leaf_tag>(
     //     In, std::max(In.size(), static_cast<size_t>(baseTree::LEAVE_WRAP)));
-    t.stop();
-    time = t.total_time() * time_base;
-    __sync_fetch_and_add(&leaf_alloc_time, static_cast<uint64_t>(time));
-    __sync_fetch_and_add(&leaf_num, 1);
-    return o;
+    // node* o =
+    //     alloc_leaf_node<point, z_value_pointer_slice, alloc_normal_leaf_tag>(
+    //         In, std::max(In.size(),
+    //         static_cast<size_t>(baseTree::LEAVE_WRAP)));
+    // t.stop();
+    // time = t.total_time() * time_base;
+    // __sync_fetch_and_add(&leaf_alloc_time, static_cast<uint64_t>(time));
+    // __sync_fetch_and_add(&leaf_num, 1);
+    // return o;
   }
 
   z_value_type val = (static_cast<z_value_type>(1)) << (bit - 1);
@@ -171,14 +167,14 @@ node* octTree<point>::build_recursive_with_z_value_pointer(
     return (x.first & mask) < val;
   };
 
-  t.reset();
-  t.start();
+  // t.reset();
+  // t.start();
 
   size_t pos = parlay::internal::binary_search(In, less);
 
-  t.stop();
-  time = t.total_time() * time_base;
-  __sync_fetch_and_add(&binary_search_time, static_cast<uint64_t>(time));
+  // t.stop();
+  // time = t.total_time() * time_base;
+  // __sync_fetch_and_add(&binary_search_time, static_cast<uint64_t>(time));
 
   if (pos == 0 || pos == n) {
     return build_recursive_with_z_value_pointer(In, bit - 1, DIM);

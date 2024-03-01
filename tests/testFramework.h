@@ -12,8 +12,8 @@
 #include "parlay/primitives.h"
 #include "parlay/slice.h"
 
-using coord = long;
-// using coord = double;
+// using coord = uint64_t;
+using coord = double;
 using Typename = coord;
 using namespace cpdd;
 
@@ -28,8 +28,7 @@ class counter_iterator {
  private:
   struct accept_any {
     template<typename U>
-    accept_any&
-    operator=(const U&) {
+    accept_any& operator=(const U&) {
       return *this;
     }
   };
@@ -40,27 +39,22 @@ class counter_iterator {
   counter_iterator(T& counter) : counter(counter) {}
   counter_iterator(const counter_iterator& other) : counter(other.counter) {}
 
-  bool
-  operator==(const counter_iterator& rhs) const {
+  bool operator==(const counter_iterator& rhs) const {
     return counter == rhs.counter;
   }
-  bool
-  operator!=(const counter_iterator& rhs) const {
+  bool operator!=(const counter_iterator& rhs) const {
     return counter != rhs.counter;
   }
 
-  accept_any
-  operator*() const {
+  accept_any operator*() const {
     ++counter.get();
     return {};
   }
 
-  counter_iterator&
-  operator++() {  // ++a
+  counter_iterator& operator++() {  // ++a
     return *this;
   }
-  counter_iterator
-  operator++(int) {  // a++
+  counter_iterator operator++(int) {  // a++
     return *this;
   }
 
@@ -70,9 +64,8 @@ class counter_iterator {
 
 //*---------- generate points within a 0-box_size --------------------
 template<typename point>
-void
-generate_random_points(parlay::sequence<point>& wp, coord _box_size, long n,
-                       int Dim) {
+void generate_random_points(parlay::sequence<point>& wp, coord _box_size,
+                            long n, int Dim) {
   coord box_size = _box_size;
 
   std::random_device rd;      // a seed source for the random number engine
@@ -97,9 +90,9 @@ generate_random_points(parlay::sequence<point>& wp, coord _box_size, long n,
 }
 
 template<typename point>
-std::pair<size_t, int>
-read_points(const char* iFile, parlay::sequence<point>& wp, int K,
-            bool withID = false) {
+std::pair<size_t, int> read_points(const char* iFile,
+                                   parlay::sequence<point>& wp, int K,
+                                   bool withID = false) {
   using coord = typename point::coord;
   using coords = typename point::coords;
   static coords samplePoint;
@@ -133,18 +126,17 @@ read_points(const char* iFile, parlay::sequence<point>& wp, int K,
 }
 
 //* [a,b)
-size_t
-get_random_index(size_t a, size_t b, int seed) {
+size_t get_random_index(size_t a, size_t b, int seed) {
   return size_t((rand() % (b - a)) + a);
   // return size_t( ( parlay::hash64( static_cast<uint64_t>( seed ) ) % ( b - a
   // ) ) + a );
 }
 
 template<typename point>
-size_t
-recurse_box(parlay::slice<point*, point*> In,
-            parlay::sequence<std::pair<point, point>>& boxs, int DIM,
-            std::pair<size_t, size_t> range, int& idx, int recNum, int type) {
+size_t recurse_box(parlay::slice<point*, point*> In,
+                   parlay::sequence<std::pair<point, point>>& boxs, int DIM,
+                   std::pair<size_t, size_t> range, int& idx, int recNum,
+                   int type) {
   using tree = baseTree<point>;
   using box = typename tree::box;
 
@@ -190,9 +182,8 @@ recurse_box(parlay::slice<point*, point*> In,
 }
 
 template<typename point>
-std::pair<parlay::sequence<std::pair<point, point>>, size_t>
-gen_rectangles(int recNum, const int type, const parlay::sequence<point>& WP,
-               int DIM) {
+std::pair<parlay::sequence<std::pair<point, point>>, size_t> gen_rectangles(
+    int recNum, const int type, const parlay::sequence<point>& WP, int DIM) {
   using tree = baseTree<point>;
   using points = typename tree::points;
   using node = typename tree::node;
@@ -239,8 +230,7 @@ gen_rectangles(int recNum, const int type, const parlay::sequence<point>& WP,
 }
 
 template<typename tree>
-void
-checkTreeSameSequential(typename tree::node* T, int dim, const int& DIM) {
+void checkTreeSameSequential(typename tree::node* T, int dim, const int& DIM) {
   if (T->is_leaf) {
     assert(T->dim == dim);
     return;
@@ -256,8 +246,7 @@ checkTreeSameSequential(typename tree::node* T, int dim, const int& DIM) {
 }
 
 template<typename tree>
-size_t
-checkTreesSize(typename tree::node* T) {
+size_t checkTreesSize(typename tree::node* T) {
   if (T->is_leaf) {
     return T->size;
   }
@@ -269,9 +258,8 @@ checkTreesSize(typename tree::node* T) {
 }
 
 template<typename point, typename tree, int print = 1>
-void
-buildTree(const int& Dim, const parlay::sequence<point>& WP, const int& rounds,
-          tree& pkd) {
+void buildTree(const int& Dim, const parlay::sequence<point>& WP,
+               const int& rounds, tree& pkd) {
   // using tree = baseTree<point>;
   using points = typename tree::points;
   using node = typename cpdd::node;
@@ -303,9 +291,9 @@ buildTree(const int& Dim, const parlay::sequence<point>& WP, const int& rounds,
 }
 
 template<typename point, int print = 1>
-void
-incrementalBuild(const int Dim, const parlay::sequence<point>& WP,
-                 const int rounds, baseTree<point>& pkd, double stepRatio) {
+void incrementalBuild(const int Dim, const parlay::sequence<point>& WP,
+                      const int rounds, baseTree<point>& pkd,
+                      double stepRatio) {
   using tree = baseTree<point>;
   using points = typename tree::points;
   using node = typename tree::node;
@@ -351,10 +339,9 @@ incrementalBuild(const int Dim, const parlay::sequence<point>& WP,
 }
 
 template<typename point, bool print = 1>
-void
-incrementalDelete(const int Dim, const parlay::sequence<point>& WP,
-                  const parlay::sequence<point>& WI, int rounds,
-                  baseTree<point>& pkd, double stepRatio) {
+void incrementalDelete(const int Dim, const parlay::sequence<point>& WP,
+                       const parlay::sequence<point>& WI, int rounds,
+                       baseTree<point>& pkd, double stepRatio) {
   using tree = baseTree<point>;
   using points = typename tree::points;
   using node = typename tree::node;
@@ -403,10 +390,9 @@ incrementalDelete(const int Dim, const parlay::sequence<point>& WP,
 }
 
 template<typename point>
-void
-batchInsert(baseTree<point>& pkd, const parlay::sequence<point>& WP,
-            const parlay::sequence<point>& WI, const uint_fast8_t& DIM,
-            const int& rounds, double ratio = 1.0) {
+void batchInsert(baseTree<point>& pkd, const parlay::sequence<point>& WP,
+                 const parlay::sequence<point>& WI, const uint_fast8_t& DIM,
+                 const int& rounds, double ratio = 1.0) {
   using tree = baseTree<point>;
   using points = typename tree::points;
   using node = typename tree::node;
@@ -435,10 +421,9 @@ batchInsert(baseTree<point>& pkd, const parlay::sequence<point>& WP,
 }
 
 template<typename point>
-void
-batchDelete(baseTree<point>& pkd, const parlay::sequence<point>& WP,
-            const parlay::sequence<point>& WI, const uint_fast8_t& DIM,
-            const int& rounds, bool afterInsert = 1, double ratio = 1.0) {
+void batchDelete(baseTree<point>& pkd, const parlay::sequence<point>& WP,
+                 const parlay::sequence<point>& WI, const uint_fast8_t& DIM,
+                 const int& rounds, bool afterInsert = 1, double ratio = 1.0) {
   using tree = baseTree<point>;
   using points = typename tree::points;
   using node = typename tree::node;
@@ -484,10 +469,9 @@ batchDelete(baseTree<point>& pkd, const parlay::sequence<point>& WP,
 }
 
 template<typename point, bool printHeight = 1, bool printVisNode = 1>
-void
-queryKNN(const uint_fast8_t& Dim, const parlay::sequence<point>& WP,
-         const int& rounds, baseTree<point>& pkd, Typename* kdknn, const int K,
-         const bool flattenTreeTag) {
+void queryKNN(const uint_fast8_t& Dim, const parlay::sequence<point>& WP,
+              const int& rounds, baseTree<point>& pkd, Typename* kdknn,
+              const int K, const bool flattenTreeTag) {
   using tree = baseTree<point>;
   using points = typename tree::points;
   using node = typename tree::node;
@@ -545,9 +529,8 @@ queryKNN(const uint_fast8_t& Dim, const parlay::sequence<point>& WP,
 }
 
 template<typename point>
-void
-rangeCount(const parlay::sequence<point>& wp, baseTree<point>& pkd,
-           Typename* kdknn, const int& rounds, const int& queryNum) {
+void rangeCount(const parlay::sequence<point>& wp, baseTree<point>& pkd,
+                Typename* kdknn, const int& rounds, const int& queryNum) {
   using tree = baseTree<point>;
   using points = typename tree::points;
   using node = typename tree::node;
@@ -575,9 +558,8 @@ rangeCount(const parlay::sequence<point>& wp, baseTree<point>& pkd,
 }
 
 template<typename point>
-void
-rangeCountRadius(const parlay::sequence<point>& wp, baseTree<point>& pkd,
-                 Typename* kdknn, const int& rounds, const int& queryNum) {
+void rangeCountRadius(const parlay::sequence<point>& wp, baseTree<point>& pkd,
+                      Typename* kdknn, const int& rounds, const int& queryNum) {
   using tree = baseTree<point>;
   using points = typename tree::points;
   using node = typename tree::node;
@@ -608,10 +590,9 @@ rangeCountRadius(const parlay::sequence<point>& wp, baseTree<point>& pkd,
 }
 
 template<typename point>
-void
-rangeQuery(const parlay::sequence<point>& wp, baseTree<point>& pkd,
-           Typename* kdknn, const int& rounds, const int& queryNum,
-           parlay::sequence<point>& Out) {
+void rangeQuery(const parlay::sequence<point>& wp, baseTree<point>& pkd,
+                Typename* kdknn, const int& rounds, const int& queryNum,
+                parlay::sequence<point>& Out) {
   using tree = baseTree<point>;
   using points = typename tree::points;
   using node = typename tree::node;
@@ -647,10 +628,9 @@ rangeQuery(const parlay::sequence<point>& wp, baseTree<point>& pkd,
 
 //* test range count for fix rectangle
 template<typename point>
-void
-rangeCountFix(const parlay::sequence<point>& WP, baseTree<point>& pkd,
-              Typename* kdknn, const int& rounds, int recType, int recNum,
-              int DIM) {
+void rangeCountFix(const parlay::sequence<point>& WP, baseTree<point>& pkd,
+                   Typename* kdknn, const int& rounds, int recType, int recNum,
+                   int DIM) {
   using tree = baseTree<point>;
   using points = typename tree::points;
   using node = typename tree::node;
@@ -696,10 +676,10 @@ rangeCountFix(const parlay::sequence<point>& WP, baseTree<point>& pkd,
 
 //* test range query for fix rectangle
 template<typename point>
-void
-rangeQueryFix(const parlay::sequence<point>& WP, baseTree<point>& pkd,
-              Typename* kdknn, const int& rounds, parlay::sequence<point>& Out,
-              int recType, int recNum, int DIM) {
+void rangeQueryFix(const parlay::sequence<point>& WP, baseTree<point>& pkd,
+                   Typename* kdknn, const int& rounds,
+                   parlay::sequence<point>& Out, int recType, int recNum,
+                   int DIM) {
   using tree = baseTree<point>;
   using points = typename tree::points;
   using node = typename tree::node;
@@ -733,9 +713,8 @@ rangeQueryFix(const parlay::sequence<point>& WP, baseTree<point>& pkd,
 }
 
 template<typename point>
-void
-generate_knn(const uint_fast8_t& Dim, const parlay::sequence<point>& WP,
-             const int K, const char* outFile) {
+void generate_knn(const uint_fast8_t& Dim, const parlay::sequence<point>& WP,
+                  const int K, const char* outFile) {
   using tree = baseTree<point>;
   using points = typename tree::points;
   using node = typename tree::node;

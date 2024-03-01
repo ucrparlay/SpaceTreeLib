@@ -175,20 +175,11 @@ class baseTree {
                         parlay::sequence<size_t>& heights);
 
   //@ kdtree interfaces
-  inline void
-  set_root(node* _root) {
-    this->root = _root;
-  }
+  inline void set_root(node* _root) { this->root = _root; }
 
-  inline node*
-  get_root() {
-    return this->root;
-  }
+  inline node* get_root() { return this->root; }
 
-  inline box
-  get_root_box() {
-    return this->bbox;
-  }
+  inline box get_root_box() { return this->bbox; }
 
  protected:
   node* root = nullptr;

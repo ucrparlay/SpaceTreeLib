@@ -28,9 +28,12 @@ struct leaf : node {
   leaf(slice In, const auto alloc_size, alloc_normal_leaf_tag) :
       node{true, false, static_cast<size_t>(In.size())},
       pts(points::uninitialized(alloc_size)) {
-    assert(In.size <= LEAVE_WRAP);
+    assert(In.size() <= alloc_size);
     for (int i = 0; i < In.size(); i++) {
-      pts[i] = In[i].second;
+      // parlay::assign_dispatch(pts[i], *(In[i].second),
+      //                         parlay::uninitialized_copy_tag());
+      // pts[i] = In[i].second;
+      pts[i] = *(In[i].second);
     }
   }
   // WARN: fat leaf should ensure alloc using parallel copy
