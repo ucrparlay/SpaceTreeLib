@@ -2,12 +2,9 @@
 #include <parlay/slice.h>
 #include <cstdint>
 #include "basic_point.h"
+#include "utility.h"
 
 namespace cpdd {
-struct alloc_normal_leaf_tag {};
-struct alloc_dummy_leaf_tag {};
-struct alloc_fat_leaf_tag {};
-struct alloc_thin_leaf_tag {};
 
 struct node {
   node() : is_leaf{false}, is_dummy{false}, size{0} {};
@@ -20,7 +17,7 @@ struct node {
   size_t size;
 };
 
-template<typename point, typename slice>
+template<typename point, typename slice, typename point_assign_tag>
 struct leaf : node {
   using points = parlay::sequence<point>;
   points pts;
@@ -30,10 +27,19 @@ struct leaf : node {
       pts(points::uninitialized(alloc_size)) {
     assert(In.size() <= alloc_size);
     for (int i = 0; i < In.size(); i++) {
-      // parlay::assign_dispatch(pts[i], *(In[i].second),
-      //                         parlay::uninitialized_copy_tag());
-      // pts[i] = In[i].second;
-      pts[i] = *(In[i].second);
+      // if input is pair, assign using the second value
+      if constexpr (is_pair<typename slice::value_type>::value) {
+        // point is stored within the tree as a pointer
+        if constexpr (std::is_pointer<point>::value) {
+          static_assert(
+              std::is_pointer<typename slice::value_type::second_type>::value);
+          parlay::assign_dispatch(pts[i], In[i].second, point_assign_tag());
+        } else {  // fetch coordinates
+          parlay::assign_dispatch(pts[i], *(In[i].second), point_assign_tag());
+        }
+      } else {  // input is a point with coordinates
+        parlay::assign_dispatch(pts[i], In[i], point_assign_tag());
+      }
     }
   }
   // WARN: fat leaf should ensure alloc using parallel copy
@@ -47,9 +53,11 @@ struct leaf : node {
 
 // NOTE: point: how data is stored in the tree
 // NOTE: slice: input slice
-template<typename point, typename slice, typename leaf_alloc_tag>
-static leaf<point, slice>* alloc_leaf_node(slice In, const auto alloc_size) {
-  using leaf = leaf<point, slice>;
+template<typename point, typename slice, typename leaf_alloc_tag,
+         typename point_assign_tag>
+static leaf<point, slice, point_assign_tag>* alloc_leaf_node(
+    slice In, const auto alloc_size) {
+  using leaf = leaf<point, slice, point_assign_tag>;
   leaf* o = parlay::type_allocator<leaf>::alloc();
   new (o) leaf(In, alloc_size, leaf_alloc_tag());
   assert(o->is_dummy == false);

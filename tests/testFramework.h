@@ -12,8 +12,8 @@
 #include "parlay/primitives.h"
 #include "parlay/slice.h"
 
-// using coord = uint64_t;
-using coord = double;
+using coord = uint32_t;
+// using coord = double;
 using Typename = coord;
 using namespace cpdd;
 
@@ -22,45 +22,6 @@ static constexpr int rangeQueryNum = 10000;
 static constexpr int rangeQueryNumInbaRatio = 50000;
 static constexpr double batchInsertRatio = 0.1;
 static constexpr int summaryRangeQueryType = 3;
-
-template<typename T>
-class counter_iterator {
- private:
-  struct accept_any {
-    template<typename U>
-    accept_any& operator=(const U&) {
-      return *this;
-    }
-  };
-
- public:
-  typedef std::output_iterator_tag iterator_category;
-
-  counter_iterator(T& counter) : counter(counter) {}
-  counter_iterator(const counter_iterator& other) : counter(other.counter) {}
-
-  bool operator==(const counter_iterator& rhs) const {
-    return counter == rhs.counter;
-  }
-  bool operator!=(const counter_iterator& rhs) const {
-    return counter != rhs.counter;
-  }
-
-  accept_any operator*() const {
-    ++counter.get();
-    return {};
-  }
-
-  counter_iterator& operator++() {  // ++a
-    return *this;
-  }
-  counter_iterator operator++(int) {  // a++
-    return *this;
-  }
-
- protected:
-  std::reference_wrapper<T> counter;
-};
 
 //*---------- generate points within a 0-box_size --------------------
 template<typename point>

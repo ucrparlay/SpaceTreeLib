@@ -78,7 +78,8 @@ node* octTree<point>::build_recursive_with_z_value(z_value_slice In,
   size_t n = In.size();
   if (bit == 0 || n <= baseTree::LEAVE_WRAP) {
     // BUG:: need to check the type of the leaf
-    return alloc_leaf_node<z_value_type, z_value_slice, alloc_normal_leaf_tag>(
+    return alloc_leaf_node<z_value_type, z_value_slice, alloc_normal_leaf_tag,
+                           parlay::uninitialized_copy_tag>(
         In, std::max(In.size(), static_cast<size_t>(baseTree::LEAVE_WRAP)));
   }
 
@@ -138,26 +139,9 @@ node* octTree<point>::build_recursive_with_z_value_pointer(
 
   size_t n = In.size();
   if (bit == 0 || n <= baseTree::LEAVE_WRAP) {
-    // t.reset();
-    // t.start();
-    // return alloc_leaf_node<point*, z_value_pointer_slice,
-    //                        alloc_normal_leaf_tag>(
-    //     In, std::max(In.size(), static_cast<size_t>(baseTree::LEAVE_WRAP)));
-    return alloc_leaf_node<point, z_value_pointer_slice, alloc_normal_leaf_tag>(
+    return alloc_leaf_node<point, z_value_pointer_slice, alloc_normal_leaf_tag,
+                           parlay::uninitialized_relocate_tag>(
         In, std::max(In.size(), static_cast<size_t>(baseTree::LEAVE_WRAP)));
-
-    // node* o = alloc_leaf_node<std::reference_wrapper<point>,
-    //                           z_value_pointer_slice, alloc_normal_leaf_tag>(
-    //     In, std::max(In.size(), static_cast<size_t>(baseTree::LEAVE_WRAP)));
-    // node* o =
-    //     alloc_leaf_node<point, z_value_pointer_slice, alloc_normal_leaf_tag>(
-    //         In, std::max(In.size(),
-    //         static_cast<size_t>(baseTree::LEAVE_WRAP)));
-    // t.stop();
-    // time = t.total_time() * time_base;
-    // __sync_fetch_and_add(&leaf_alloc_time, static_cast<uint64_t>(time));
-    // __sync_fetch_and_add(&leaf_num, 1);
-    // return o;
   }
 
   z_value_type val = (static_cast<z_value_type>(1)) << (bit - 1);
@@ -167,14 +151,7 @@ node* octTree<point>::build_recursive_with_z_value_pointer(
     return (x.first & mask) < val;
   };
 
-  // t.reset();
-  // t.start();
-
   size_t pos = parlay::internal::binary_search(In, less);
-
-  // t.stop();
-  // time = t.total_time() * time_base;
-  // __sync_fetch_and_add(&binary_search_time, static_cast<uint64_t>(time));
 
   if (pos == 0 || pos == n) {
     return build_recursive_with_z_value_pointer(In, bit - 1, DIM);
