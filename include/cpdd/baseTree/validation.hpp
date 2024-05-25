@@ -7,8 +7,7 @@ namespace cpdd {
 
 template<typename point>
 template<typename interior>
-bool
-baseTree<point>::checkBox(node* T, const box& bx) {
+bool baseTree<point>::checkBox(node* T, const box& bx) {
   assert(T != nullptr);
   assert(legal_box(bx));
   points wx = points::uninitialized(T->size);
@@ -20,8 +19,7 @@ baseTree<point>::checkBox(node* T, const box& bx) {
 
 template<typename point>
 template<typename interior>
-size_t
-baseTree<point>::checkSize(node* T) {
+size_t baseTree<point>::checkSize(node* T) {
   if (T->is_leaf) {
     return T->size;
   }
@@ -34,8 +32,8 @@ baseTree<point>::checkSize(node* T) {
 
 template<typename point>
 template<typename interior>
-void
-baseTree<point>::checkTreeSameSequential(node* T, int dim, const int& DIM) {
+void baseTree<point>::checkTreeSameSequential(node* T, int dim,
+                                              const int& DIM) {
   if (T->is_leaf) {
     // assert( pick_rebuild_dim( T, DIM ) == dim );
     return;
@@ -55,8 +53,7 @@ baseTree<point>::checkTreeSameSequential(node* T, int dim, const int& DIM) {
 
 template<typename point>
 template<typename interior>
-void
-baseTree<point>::validate(const dim_type DIM) {
+void baseTree<point>::validate(const dim_type DIM) {
   if (checkBox<interior>(this->root, this->bbox) && legal_box(this->bbox)) {
     std::cout << "Correct bounding box" << std::endl << std::flush;
   } else {
@@ -80,16 +77,14 @@ baseTree<point>::validate(const dim_type DIM) {
 
 template<typename point>
 template<typename interior>
-size_t
-baseTree<point>::getTreeHeight() {
+size_t baseTree<point>::getTreeHeight() {
   size_t deep = 0;
   return getMaxTreeDepth<interior>(this->root, deep);
 }
 
 template<typename point>
 template<typename interior>
-size_t
-baseTree<point>::getMaxTreeDepth(node* T, size_t deep) {
+size_t baseTree<point>::getMaxTreeDepth(node* T, size_t deep) {
   if (T->is_leaf) {
     return deep;
   }
@@ -101,8 +96,7 @@ baseTree<point>::getMaxTreeDepth(node* T, size_t deep) {
 
 template<typename point>
 template<typename interior>
-double
-baseTree<point>::getAveTreeHeight() {
+double baseTree<point>::getAveTreeHeight() {
   parlay::sequence<size_t> heights(this->root->size);
   size_t idx = 0;
   countTreeHeights<interior>(this->root, 0, idx, heights);
@@ -116,8 +110,7 @@ baseTree<point>::getAveTreeHeight() {
 
 template<typename point>
 template<typename interior>
-size_t
-baseTree<point>::countTreeNodesNum(node* T) {
+size_t baseTree<point>::countTreeNodesNum(node* T) {
   if (T->is_leaf) {
     return 1;
   }
@@ -131,9 +124,8 @@ baseTree<point>::countTreeNodesNum(node* T) {
 
 template<typename point>
 template<typename interior>
-void
-baseTree<point>::countTreeHeights(node* T, size_t deep, size_t& idx,
-                                  parlay::sequence<size_t>& heights) {
+void baseTree<point>::countTreeHeights(node* T, size_t deep, size_t& idx,
+                                       parlay::sequence<size_t>& heights) {
   if (T->is_leaf) {
     heights[idx++] = deep;
     return;

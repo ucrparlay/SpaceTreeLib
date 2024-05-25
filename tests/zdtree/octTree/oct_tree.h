@@ -48,8 +48,7 @@ struct oct_tree {
   // the bits into "key_bits" total bits.
   // min_point is the minimmum x,y,z coordinate for all points
   // delta is the largest range of any of the three dimensions
-  static size_t
-  interleave_bits(point p, point min_point, double delta) {
+  static size_t interleave_bits(point p, point min_point, double delta) {
     int dim = p.dimension();
     int bits = key_bits / dim;
     uint maxval = (((size_t)1) << bits) -
@@ -69,8 +68,7 @@ struct oct_tree {
   // generates a box consisting of a lower left corner,
   // and an upper right corner.
   template<typename Seq>
-  static box
-  get_box(Seq& V) {  // parlay::sequence<vtx*> &V) {
+  static box get_box(Seq& V) {  // parlay::sequence<vtx*> &V) {
     if (V.size() == 0) abort();
     size_t n = V.size();
     auto minmax = [&](box x, box y) {
@@ -90,59 +88,25 @@ struct oct_tree {
     int bit;
     parlay::sequence<indexed_point> indexed_pts;
     using leaf_seq = parlay::sequence<vtx*>;
-    point
-    center() {
-      return centerv;
-    }
-    box
-    Box() {
-      return b;
-    }
-    size_t
-    size() {
-      return n;
-    }
-    bool
-    is_leaf() {
-      return (L == nullptr) && (R == nullptr);
-    }
-    node*
-    Left() {
-      return L;
-    }
-    node*
-    Right() {
-      return R;
-    }
-    node*
-    Parent() {
-      return parent;
-    }
-    leaf_seq&
-    Vertices() {
-      return P;
-    }
+    point center() { return centerv; }
+    box Box() { return b; }
+    size_t size() { return n; }
+    bool is_leaf() { return (L == nullptr) && (R == nullptr); }
+    node* Left() { return L; }
+    node* Right() { return R; }
+    node* Parent() { return parent; }
+    leaf_seq& Vertices() { return P; }
 
     // the flag is for the batch dynamic updates
     // it keeps track of whether a node has been updated or not
     // so that we can go back and fix boxes etc where necessary
-    void
-    set_flag(bool new_flag) {
-      flag = new_flag;
-    }
+    void set_flag(bool new_flag) { flag = new_flag; }
 
-    void
-    set_bit(int currentBit) {
-      bit = currentBit;
-    }
+    void set_bit(int currentBit) { bit = currentBit; }
 
-    void
-    set_size(int size) {
-      n = size;
-    }
+    void set_size(int size) { n = size; }
 
-    void
-    set_vertices(parlay::sequence<vtx*> Vertices0) {
+    void set_vertices(parlay::sequence<vtx*> Vertices0) {
       size_t n = Vertices0.size();
       P.clear();
       P.resize(n);
@@ -151,8 +115,7 @@ struct oct_tree {
       }
     }
 
-    void
-    set_idpts(parlay::sequence<indexed_point> idpts) {
+    void set_idpts(parlay::sequence<indexed_point> idpts) {
       size_t n = idpts.size();
       indexed_pts.clear();
       indexed_pts.resize(n);
@@ -161,31 +124,20 @@ struct oct_tree {
       }
     }
 
-    void
-    reset_center() {
-      set_center();
-    }
+    void reset_center() { set_center(); }
 
-    void
-    set_box(box B) {
-      b = B;
-    }
+    void set_box(box B) { b = B; }
 
-    void
-    set_parent(node* Parent) {
-      parent = Parent;
-    }
+    void set_parent(node* Parent) { parent = Parent; }
 
-    void
-    set_child(node* child, bool left) {
+    void set_child(node* child, bool left) {
       if (left)
         L = child;
       else
         R = child;
     }
 
-    void
-    batch_update(slice_t new_points) {
+    void batch_update(slice_t new_points) {
       int new_size = new_points.size();
       for (size_t i = 0; i < new_size; i++) {
         indexed_pts.push_back(new_points[i]);
@@ -196,8 +148,7 @@ struct oct_tree {
       set_center();
     }
 
-    static void
-    print_point(point p) {
+    static void print_point(point p) {
       int d = p.dimension();
       std::cout << "Point: ";
       for (int j = 0; j < d; j++) {
@@ -206,28 +157,24 @@ struct oct_tree {
       std::cout << "\n";
     }
 
-    void
-    print_seq(parlay::sequence<vtx*> v) {
+    void print_seq(parlay::sequence<vtx*> v) {
       for (size_t i = 0; i < v.size(); i++)
         print_point(v[i]->pt);
     }
 
-    void
-    print_slice(slice_t v) {
+    void print_slice(slice_t v) {
       for (size_t i = 0; i < v.size(); i++)
         print_point(v[i].second->pt);
     }
 
-    bool
-    are_equal(point p, point q, int d) {
+    bool are_equal(point p, point q, int d) {
       for (int i = 0; i < d; i++) {
         if (p[i] != q[i]) return false;
       }
       return true;
     }
 
-    void
-    batch_remove(slice_t points_to_delete) {
+    void batch_remove(slice_t points_to_delete) {
       int deleted_size = points_to_delete.size();
       parlay::sequence<bool> indices_to_retain(P.size(), true);
       for (size_t i = 0; i < deleted_size; i++) {
@@ -276,15 +223,13 @@ struct oct_tree {
       set_bit(currentBit);
     }
 
-    static node*
-    new_leaf(slice_t Pts, int currentBit) {
+    static node* new_leaf(slice_t Pts, int currentBit) {
       node* r = alloc_node();
       new (r) node(Pts, currentBit);
       return r;
     }
 
-    static node*
-    new_node(node* L, node* R, int currentBit) {
+    static node* new_node(node* L, node* R, int currentBit) {
       node* nd = alloc_node();
       new (nd) node(L, R, currentBit);
       // both children point to this node as their parent
@@ -298,8 +243,7 @@ struct oct_tree {
           n > 1000, [&]() { delete_tree(L); }, [&]() { delete_tree(R); });
     }
 
-    parlay::sequence<vtx*>
-    flatten() {
+    parlay::sequence<vtx*> flatten() {
       parlay::sequence<vtx*> r(n);
       flatten_rec(this, parlay::make_slice(r));
       return r;
@@ -311,19 +255,16 @@ struct oct_tree {
 
     // pass in a function to compute nearest neighbors
     template<typename F>
-    void
-    map(F f) {
+    void map(F f) {
       if (is_leaf())
         for (int i = 0; i < size(); i++)
           f(P[i], this);
       else {
-        parlay::par_do_if(
-            n > 1000, [&]() { L->map(f); }, [&]() { R->map(f); });
+        parlay::par_do_if(n > 1000, [&]() { L->map(f); }, [&]() { R->map(f); });
       }
     }
 
-    size_t
-    depth() {
+    size_t depth() {
       if (is_leaf())
         return 0;
       else {
@@ -335,8 +276,7 @@ struct oct_tree {
     }
 
     // recursively frees the tree
-    static void
-    delete_tree(node* T) {
+    static void delete_tree(node* T) {
       if (T != nullptr) {
         T->~node();
         node::free_node(T);
@@ -350,15 +290,9 @@ struct oct_tree {
     node& operator=(node const&) = delete;
     node& operator=(node&&) = delete;
 
-    void
-    set_aug(size_t v) {
-      this->aug = v;
-    }
+    void set_aug(size_t v) { this->aug = v; }
 
-    size_t
-    get_aug() {
-      return this->aug;
-    }
+    size_t get_aug() { return this->aug; }
 
     static node* alloc_node();
     static void free_node(node* T);
@@ -373,13 +307,9 @@ struct oct_tree {
     leaf_seq P;
     size_t aug = 0;
 
-    void
-    set_center() {
-      centerv = b.first + (b.second - b.first) / 2;
-    }
+    void set_center() { centerv = b.first + (b.second - b.first) / 2; }
 
-    static void
-    flatten_rec(node* T, slice_v R) {
+    static void flatten_rec(node* T, slice_v R) {
       if (T->is_leaf())
         for (int i = 0; i < T->size(); i++)
           R[i] = T->P[i];
@@ -396,8 +326,7 @@ struct oct_tree {
   // takes in a sequence of points and a leaf node and splits based on the leaf
   // node
   // TODO fix edge case where T has no parent
-  static void
-  batch_split(slice_t new_points, node* T) {
+  static void batch_split(slice_t new_points, node* T) {
     // get the new sequence of indexed points and sort it
     int size = T->size();
     int new_size = new_points.size();
@@ -444,8 +373,8 @@ struct oct_tree {
   // occasionally, inserting a point will require not splitting an existing
   // node but creating a new one this function creates the new node and a new
   // intermediate node
-  static void
-  create_new(node* parent, slice_t indexed_points, int bit, bool left) {
+  static void create_new(node* parent, slice_t indexed_points, int bit,
+                         bool left) {
     if (indexed_points.size() == 0) return;
     node* new_node = build_recursive(indexed_points, bit - 1);
     node* left_child = parent->Left();
@@ -467,8 +396,7 @@ struct oct_tree {
   // delete a node and all its children
   // replace the node's parent with its other child
   // must then also set the grandparent's pointer correctly
-  static void
-  prune(node* T) {
+  static void prune(node* T) {
     if (T->Parent() == nullptr || (T->Parent())->Parent() == nullptr) {
       std::cout << "ERROR: deleting the root or one of its two children is "
                    "not supported"
@@ -485,8 +413,7 @@ struct oct_tree {
   // gets rid of any nodes which only have one child due to pruning
   // can assume due to constraints on prune() that the deleted node has a
   // parent
-  static void
-  compress(node* T) {
+  static void compress(node* T) {
     if (T->is_leaf()) return;
     if (T->flag == false) return;
     if ((T->Left() != nullptr) && (T->Right() != nullptr)) {
@@ -514,8 +441,7 @@ struct oct_tree {
     }
   }
 
-  static void
-  verify_compress(node* T) {
+  static void verify_compress(node* T) {
     if ((T->Left() == nullptr) && (T->Right() == nullptr))
       return;
     else if ((T->Left() != nullptr) && (T->Right() != nullptr)) {
@@ -533,8 +459,7 @@ struct oct_tree {
     }
   }
 
-  static void
-  verify_parents0(node* T) {
+  static void verify_parents0(node* T) {
     if (T->Parent() == nullptr) {
       std::cout << "ERROR: parent of a non-root node is null" << std::endl;
       abort();
@@ -544,14 +469,12 @@ struct oct_tree {
     verify_parents0(T->Right());
   }
 
-  static void
-  verify_parents(node* T) {
+  static void verify_parents(node* T) {
     verify_parents0(T->Left());
     verify_parents0(T->Right());
   }
 
-  static bool
-  same_box(box a, box b) {
+  static bool same_box(box a, box b) {
     for (int i = 0; i < a.first.dimension(); i++) {
       if (std::abs(a.first[i] - b.first[i]) > 1e-7 ||
           std::abs(a.second[i] - b.second[i]) > 1e-7) {
@@ -561,8 +484,7 @@ struct oct_tree {
     return true;
   }
 
-  static box
-  update_boxes(node* T) {
+  static box update_boxes(node* T) {
     //  if( T->flag == false ) {  // if the node was not traversed during the
     //                            // update, stop recursing
     //    // std::cout << "here" << std::endl;
@@ -593,17 +515,13 @@ struct oct_tree {
   // A unique pointer to a tree node to ensure the tree is
   // destructed when the pointer is, and that  no copies are made.
   struct delete_tree {
-    void
-    operator()(node* T) const {
-      node::delete_tree(T);
-    }
+    void operator()(node* T) const { node::delete_tree(T); }
   };
   using tree_ptr = std::unique_ptr<node, delete_tree>;
 
   // build a tree given a sequence of pointers to points
   template<typename Seq>
-  static tree_ptr
-  build(Seq& P) {
+  static tree_ptr build(Seq& P) {
     timer t("oct_tree", false);
     int dims = (P[0]->pt).dimension();
     auto pts = tag_points(P);
@@ -615,8 +533,7 @@ struct oct_tree {
 
   // build a tree given a sequence of pointers to points
   template<typename Seq>
-  static tree_ptr
-  build(Seq& P, box b) {
+  static tree_ptr build(Seq& P, box b) {
     timer t("oct_tree", false);
     int dims = (P[0]->pt).dimension();
     auto pts = tag_points(P, b);
@@ -626,8 +543,8 @@ struct oct_tree {
     return tree_ptr(r);
   }
 
-  static parlay::sequence<indexed_point>
-  tag_points_external(parlay::sequence<vtx*>& V) {
+  static parlay::sequence<indexed_point> tag_points_external(
+      parlay::sequence<vtx*>& V) {
     return tag_points(V);
   }
 
@@ -637,8 +554,7 @@ struct oct_tree {
   // tags each point (actually a pointer to it), with an interger
   // consisting of the interleaved bits for the x,y,z coordinates.
   // Also sorts based the integer.
-  static parlay::sequence<indexed_point>
-  tag_points(parlay::sequence<vtx*>& V) {
+  static parlay::sequence<indexed_point> tag_points(parlay::sequence<vtx*>& V) {
     timer t(
         "tag",
         false);  // tag is an arbitrary string, turn to true for printing out
@@ -667,8 +583,8 @@ struct oct_tree {
     return x;
   }
 
-  static parlay::sequence<indexed_point>
-  tag_points(parlay::sequence<vtx*>& V, box b) {
+  static parlay::sequence<indexed_point> tag_points(parlay::sequence<vtx*>& V,
+                                                    box b) {
     timer t(
         "tag",
         false);  // tag is an arbitrary string, turn to true for printing out
@@ -699,8 +615,7 @@ struct oct_tree {
   // each point is a pair consisting of an interleave integer along with
   // the pointer to the point.   The bit specifies which bit of the integer
   // we are working on (starts at top, and goes down).
-  static node*
-  build_recursive(slice_t Pts, int bit) {
+  static node* build_recursive(slice_t Pts, int bit) {
     size_t n = Pts.size();
     if (n == 0) abort();
 
@@ -742,13 +657,11 @@ template<typename vtx>
 parlay::type_allocator<typename oct_tree<vtx>::node> node_allocator;
 
 template<typename vtx>
-typename oct_tree<vtx>::node*
-oct_tree<vtx>::node::alloc_node() {
+typename oct_tree<vtx>::node* oct_tree<vtx>::node::alloc_node() {
   return node_allocator<vtx>.alloc();
 }
 
 template<typename vtx>
-void
-oct_tree<vtx>::node::free_node(node* T) {
+void oct_tree<vtx>::node::free_node(node* T) {
   node_allocator<vtx>.free(T);
 }

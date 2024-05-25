@@ -17,8 +17,8 @@ struct octTree<point>::interior : node {
 };
 
 template<typename point>
-typename octTree<point>::interior*
-octTree<point>::alloc_oct_interior_node(node* L, node* R, z_bit_type bit) {
+typename octTree<point>::interior* octTree<point>::alloc_oct_interior_node(
+    node* L, node* R, z_bit_type bit) {
   interior* o = parlay::type_allocator<interior>::alloc();
   new (o) interior(L, R, bit);
   return o;

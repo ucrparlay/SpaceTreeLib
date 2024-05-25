@@ -4,8 +4,7 @@ namespace cpdd {
 
 template<typename point>
 template<typename leaf_node_type, typename interior_node_type>
-void
-baseTree<point>::delete_tree_wrapper() {
+void baseTree<point>::delete_tree_wrapper() {
   if (this->root == nullptr) {
     return;
   }
@@ -16,8 +15,7 @@ baseTree<point>::delete_tree_wrapper() {
 
 template<typename point>  //* delete tree in parallel
 template<typename leaf_node_type, typename interior_node_type>
-void
-baseTree<point>::delete_tree_recursive(node* T, bool granularity) {
+void baseTree<point>::delete_tree_recursive(node* T, bool granularity) {
   if (T == nullptr) return;
   if (T->is_leaf) {
     free_node<point, leaf_node_type>(T);

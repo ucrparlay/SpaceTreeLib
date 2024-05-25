@@ -10,75 +10,68 @@ namespace cpdd {
 template<typename T>
 class Num_Comparator {
  public:
-  static inline bool
-  Gt( const T a, const T b ) {
-    if constexpr ( std::is_integral_v<T> ) {
+  static inline bool Gt(const T a, const T b) {
+    if constexpr (std::is_integral_v<T>) {
       return a > b;
-    } else if ( std::is_floating_point_v<T> ) {
+    } else if (std::is_floating_point_v<T>) {
       return a - b > eps;
     } else {
       return a > b;
     }
   }
 
-  static inline bool
-  Lt( const T a, const T b ) {
-    if constexpr ( std::is_integral_v<T> )
+  static inline bool Lt(const T a, const T b) {
+    if constexpr (std::is_integral_v<T>)
       return a < b;
-    else if ( std::is_floating_point_v<T> )
+    else if (std::is_floating_point_v<T>)
       return a - b < -eps;
     else
       return a < b;
   }
 
-  static inline bool
-  Eq( const T a, const T b ) {
-    if constexpr ( std::is_integral_v<T> )
+  static inline bool Eq(const T a, const T b) {
+    if constexpr (std::is_integral_v<T>)
       return a == b;
-    else if ( std::is_floating_point_v<T> )
-      return std::abs( a - b ) < eps;
+    else if (std::is_floating_point_v<T>)
+      return std::abs(a - b) < eps;
     else
       return a == b;
   }
 
-  static inline bool
-  Geq( const T a, const T b ) {
-    if constexpr ( std::is_integral_v<T> )
+  static inline bool Geq(const T a, const T b) {
+    if constexpr (std::is_integral_v<T>)
       return a >= b;
-    else if ( std::is_floating_point_v<T> )
-      return ~Lt( a, b );
+    else if (std::is_floating_point_v<T>)
+      return ~Lt(a, b);
     else
       return a >= b;
   }
 
-  static inline bool
-  Leq( const T a, const T b ) {
-    if constexpr ( std::is_integral_v<T> )
+  static inline bool Leq(const T a, const T b) {
+    if constexpr (std::is_integral_v<T>)
       return a <= b;
-    else if ( std::is_floating_point_v<T> )
-      return ~Gt( a, b );
+    else if (std::is_floating_point_v<T>)
+      return ~Gt(a, b);
     else
       return a <= b;
   }
 
-  static inline T
-  min( const T a, const T b ) {
-    if constexpr ( std::is_integral_v<T> )
-      return std::min( a, b );
-    else if ( std::is_floating_point_v<T> )
-      return Lt( a, b ) ? a : b;
+  static inline T min(const T a, const T b) {
+    if constexpr (std::is_integral_v<T>)
+      return std::min(a, b);
+    else if (std::is_floating_point_v<T>)
+      return Lt(a, b) ? a : b;
     else
-      return std::min( a, b );
+      return std::min(a, b);
   }
 
-  static inline T
-  max( const T a, const T b ) {
-    if constexpr ( std::is_integral_v<T> )
-      return std::max( a, b );
-    else if ( std::is_floating_point_v<T> )
-      return Gt( a, b ) ? a : b;
+  static inline T max(const T a, const T b) {
+    if constexpr (std::is_integral_v<T>)
+      return std::max(a, b);
+    else if (std::is_floating_point_v<T>)
+      return Gt(a, b) ? a : b;
     else
-      return std::max( a, b );
+      return std::max(a, b);
   }
 
  private:

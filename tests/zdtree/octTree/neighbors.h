@@ -23,7 +23,7 @@
 bool report_stats = true;
 int algorithm_version = 0;
 // 0=root based, 1=bit based, >2=map based
-#define LOG std::cout
+#define LOG  std::cout
 #define ENDL std::endl << std::flush
 
 #include <math.h>
@@ -47,7 +47,7 @@ static constexpr double batchInsertRatio = 0.1;
 
 // find the k nearest neighbors for all points in tree
 // places pointers to them in the .ngh field of each vertex
-template <int max_k, class vtx>
+template<int max_k, class vtx>
 void ANN(parlay::sequence<vtx> &v, int k, int rounds,
          parlay::sequence<vtx> &vin, int tag, int queryType) {
   //  timer t( "ANN", report_stats );
@@ -184,7 +184,7 @@ void ANN(parlay::sequence<vtx> &v, int k, int rounds,
       whole_box = knn_tree::o_tree::get_box(v2);
       //* warning not the same as others
       // T = knn_tree(allv, whole_box);
-      T = knn_tree(v2, whole_box); // NOTE: remove delete
+      T = knn_tree(v2, whole_box);  // NOTE: remove delete
       // dims = v2[0]->pt.dimension();
       // root = T.tree.get();
       // bd = T.get_box_delta(dims);
@@ -193,7 +193,7 @@ void ANN(parlay::sequence<vtx> &v, int k, int rounds,
     }
 
     parlay::sequence<size_t> visNodeNum(n, 0);
-    if (queryType & (1 << 0)) { //* KNN
+    if (queryType & (1 << 0)) {  //* KNN
       auto run_zdtree_knn = [&](int kth) {
         auto aveQuery = time_loop(
             rounds, 1.0,
@@ -231,7 +231,7 @@ void ANN(parlay::sequence<vtx> &v, int k, int rounds,
       }
     }
 
-    if (queryType & (1 << 1)) { //* batch query
+    if (queryType & (1 << 1)) {  //* batch query
       std::cout << "-1 -1 -1 " << std::flush;
     }
 
@@ -246,7 +246,7 @@ void ANN(parlay::sequence<vtx> &v, int k, int rounds,
     // return;
 
     int queryNum = 100;
-    if (queryType & (1 << 2)) { //* range Count
+    if (queryType & (1 << 2)) {  //* range Count
       double aveQuery = time_loop(
           rounds, 1.0, [&]() {},
           [&]() {
@@ -263,7 +263,7 @@ void ANN(parlay::sequence<vtx> &v, int k, int rounds,
       std::cout << "-1 -1 -1 " << std::flush;
     }
 
-    if (queryType & (1 << 3)) { //* range query
+    if (queryType & (1 << 3)) {  //* range query
       // parlay::sequence<vtx*> Out( size );
       // double aveQuery = time_loop(
       //     rounds, 1.0, [&]() {},
@@ -288,7 +288,7 @@ void ANN(parlay::sequence<vtx> &v, int k, int rounds,
       }
     }
 
-    if (queryType & (1 << 4)) { //* batch insertion with fraction
+    if (queryType & (1 << 4)) {  //* batch insertion with fraction
       double ratios[10] = {0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0};
       for (int i = 0; i < 10; i++) {
         size_t sz = size_t(vin.size() * ratios[i]);
@@ -318,12 +318,11 @@ void ANN(parlay::sequence<vtx> &v, int k, int rounds,
       }
     }
 
-    if (queryType & (1 << 5)) { //* batch deletion with fraction
+    if (queryType & (1 << 5)) {  //* batch deletion with fraction
       double ratios[10] = {0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0};
       for (int i = 0; i < 10; i++) {
         size_t sz = size_t(v.size() * ratios[i]);
-        if (i == 9)
-          sz = v.size() - 100;
+        if (i == 9) sz = v.size() - 100;
 
         double aveDelete = time_loop(
             rounds, 1.0,
@@ -351,7 +350,7 @@ void ANN(parlay::sequence<vtx> &v, int k, int rounds,
       }
     }
 
-    if (queryType & (1 << 8)) { //* batch insertion then knn
+    if (queryType & (1 << 8)) {  //* batch insertion then knn
       //* first run general build
       T.tree.reset();
       v2 = parlay::tabulate(n, [&](size_t i) -> vtx * { return &v[i]; });
@@ -361,7 +360,7 @@ void ANN(parlay::sequence<vtx> &v, int k, int rounds,
       auto aveQuery = time_loop(
           rounds, 1.0, [&]() {},
           [&]() {
-            if (algorithm_version == 0) { // this is for starting from
+            if (algorithm_version == 0) {  // this is for starting from
               parlay::sequence<vtx *> vr = T.vertices();
               // find nearest k neighbors for each point
               //  vr = T.vertices();
@@ -429,7 +428,7 @@ void ANN(parlay::sequence<vtx> &v, int k, int rounds,
       aveQuery = time_loop(
           rounds, 1.0, [&]() {},
           [&]() {
-            if (algorithm_version == 0) { // this is for starting from
+            if (algorithm_version == 0) {  // this is for starting from
               parlay::sequence<vtx *> vr = T.vertices();
               // find nearest k neighbors for each point
               //  vr = T.vertices();
@@ -464,8 +463,8 @@ void ANN(parlay::sequence<vtx> &v, int k, int rounds,
                 << std::flush;
     }
 
-    if (queryType & (1 << 9)) { //* batch deletion then knn
-                                //* first run general build
+    if (queryType & (1 << 9)) {  //* batch deletion then knn
+                                 //* first run general build
       T.tree.reset();
       v2 = parlay::tabulate(n, [&](size_t i) -> vtx * { return &v[i]; });
       whole_box = knn_tree::o_tree::get_box(v2);
@@ -475,7 +474,7 @@ void ANN(parlay::sequence<vtx> &v, int k, int rounds,
           rounds, 1.0, [&]() {},
           [&]() {
             k = 100;
-            if (algorithm_version == 0) { // this is for starting from
+            if (algorithm_version == 0) {  // this is for starting from
               parlay::sequence<vtx *> vr = T.vertices();
               // find nearest k neighbors for each point
               //  vr = T.vertices();
@@ -520,7 +519,7 @@ void ANN(parlay::sequence<vtx> &v, int k, int rounds,
           rounds, 1.0, [&]() {},
           [&]() {
             k = 100;
-            if (algorithm_version == 0) { // this is for starting from
+            if (algorithm_version == 0) {  // this is for starting from
               parlay::sequence<vtx *> vr = T.vertices();
               // find nearest k neighbors for each point
               //  vr = T.vertices();

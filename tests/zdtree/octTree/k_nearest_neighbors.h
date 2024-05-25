@@ -51,8 +51,7 @@ struct k_nearest_neighbors {
 
   box tree_box;
 
-  bool
-  box_eq(box b, box c, int d) {
+  bool box_eq(box b, box c, int d) {
     bool first = true;
     bool second = true;
     for (int i = 0; i < d; i++) {
@@ -62,14 +61,12 @@ struct k_nearest_neighbors {
     return (first && second);
   }
 
-  void
-  are_equal(node* T, int d) {
+  void are_equal(node* T, int d) {
     node* V = tree.get();
     return are_equal_rec(V, T, d);
   }
 
-  void
-  are_equal_rec(node* V, node* T, int d) {
+  void are_equal_rec(node* V, node* T, int d) {
     if (T->bit != V->bit) {
       std::cout << "UNEQUAL: bit" << std::endl;
       std::cout << "Inserted tree has bit " << V->bit
@@ -97,10 +94,7 @@ struct k_nearest_neighbors {
     }
   }
 
-  void
-  set_box(box b) {
-    tree_box = b;
-  }
+  void set_box(box b) { tree_box = b; }
 
   // generates the search structure
   k_nearest_neighbors(parlay::sequence<vtx*>& V) {
@@ -134,10 +128,7 @@ struct k_nearest_neighbors {
 
   // returns the vertices in the search structure, in an
   //  order that has spacial locality
-  parlay::sequence<vtx*>
-  vertices() {
-    return tree->flatten();
-  }
+  parlay::sequence<vtx*> vertices() { return tree->flatten(); }
 
   struct kNN {
     vtx* vertex;              // the vertex for which we are trying to find a NN
@@ -155,10 +146,7 @@ struct k_nearest_neighbors {
 
     // returns the ith smallest element (0 is smallest) up to k-1
     // no need to make a queue equivalent
-    vtx*
-    operator[](const int i) {
-      return neighbors[k - i - 1];
-    }
+    vtx* operator[](const int i) { return neighbors[k - i - 1]; }
 
     kNN(vtx* p, int kk) {
       if (kk > max_k) {
@@ -184,8 +172,7 @@ struct k_nearest_neighbors {
     }
 
     // if p is closer than neighbors[0] then swap it in
-    void
-    update_nearest(vtx* other) {
+    void update_nearest(vtx* other) {
       auto dist = (vertex->pt - other->pt).sqLength();
       if (dist < max_distance) {
         neighbors[0] = other;
@@ -199,8 +186,7 @@ struct k_nearest_neighbors {
     }
 
     // put into queue if vtx is closer than the furthest neighbor
-    void
-    update_nearest_queue(vtx* other) {
+    void update_nearest_queue(vtx* other) {
       auto dist = (vertex->pt - other->pt).sqLength();
       bool updated = nearest_nbh.update(other, dist);
       if (updated) {
@@ -208,8 +194,7 @@ struct k_nearest_neighbors {
       }
     }
 
-    bool
-    within_epsilon_box(node* T, double epsilon) {
+    bool within_epsilon_box(node* T, double epsilon) {
       auto box = T->Box();
       bool result = true;
       for (int i = 0; i < dimensions; i++) {
@@ -219,14 +204,10 @@ struct k_nearest_neighbors {
       return result;
     }
 
-    double
-    distance(node* T) {
-      return (T->center() - vertex->pt).sqLength();
-    }
+    double distance(node* T) { return (T->center() - vertex->pt).sqLength(); }
 
     // sorted backwards
-    void
-    merge(kNN& L, kNN& R) {
+    void merge(kNN& L, kNN& R) {
       int i = k - 1;
       int j = k - 1;
       int r = k - 1;
@@ -247,8 +228,7 @@ struct k_nearest_neighbors {
     }
 
     // looks for nearest neighbors for pt in Tree node T
-    void
-    k_nearest_rec(node* T) {
+    void k_nearest_rec(node* T) {
       if (within_epsilon_box(T, sqrt(max_distance))) {
         if (report_stats) internal_cnt++;
         if (T->is_leaf()) {
@@ -279,8 +259,7 @@ struct k_nearest_neighbors {
       }
     }
 
-    void
-    k_nearest_fromLeaf(node* T) {
+    void k_nearest_fromLeaf(node* T) {
       node* current = T;  // this will be the node that node*T points to
       if (current->is_leaf()) {
         if (report_stats) leaf_cnt += T->size();
@@ -310,8 +289,7 @@ struct k_nearest_neighbors {
 
   using box_delta = std::pair<box, double>;
 
-  box_delta
-  get_box_delta(int dims) {
+  box_delta get_box_delta(int dims) {
     box b = tree_box;
     // double Delta = 1e-7;
     double Delta = 0;
@@ -323,8 +301,7 @@ struct k_nearest_neighbors {
 
   // takes in an integer and a position in said integer and returns whether the
   // bit at that position is 0 or 1
-  int
-  lookup_bit(
+  int lookup_bit(
       size_t interleave_integer,
       int pos) {  // pos must be less than key_bits, can I throw error if not?
     size_t val = ((size_t)1) << (pos - 1);
@@ -337,10 +314,9 @@ struct k_nearest_neighbors {
   }
 
   // This finds the leaf in the search structure that p is located in
-  node*
-  find_leaf(point p, node* T, box b,
-            double Delta) {  // takes in a point since interleave_bits()
-                             // takes in a point
+  node* find_leaf(point p, node* T, box b,
+                  double Delta) {  // takes in a point since interleave_bits()
+                                   // takes in a point
     // first, we use code copied over from oct_tree to go from a point to an
     // interleave integer
     node* current = T;
@@ -359,8 +335,7 @@ struct k_nearest_neighbors {
 
   // this instantiates the knn search structure and then calls the function
   // k_nearest_fromLeaf
-  void
-  k_nearest_leaf(vtx* p, node* T, int k) {
+  void k_nearest_leaf(vtx* p, node* T, int k) {
     kNN nn(p, k);
     nn.k_nearest_fromLeaf(T);
     if (report_stats) p->counter = nn.internal_cnt;
@@ -368,8 +343,7 @@ struct k_nearest_neighbors {
       p->ngh[i] = nn[i];
   }
 
-  void
-  k_nearest(vtx* p, int k) {
+  void k_nearest(vtx* p, int k) {
     kNN nn(p, k);
     nn.k_nearest_rec(
         tree.get());  // this is passing in a pointer to the o_tree root
@@ -381,8 +355,7 @@ struct k_nearest_neighbors {
       p->ngh[i] = nn[i];
   }
 
-  parlay::sequence<vtx*>
-  z_sort(parlay::sequence<vtx*> v, box b, double Delta) {
+  parlay::sequence<vtx*> z_sort(parlay::sequence<vtx*> v, box b, double Delta) {
     using indexed_point = typename o_tree::indexed_point;
     size_t n = v.size();
     parlay::sequence<indexed_point> points;
@@ -404,8 +377,7 @@ struct k_nearest_neighbors {
 
   using indexed_point = typename o_tree::indexed_point;
 
-  indexed_point
-  get_point(node* T) {
+  indexed_point get_point(node* T) {
     if (T->is_leaf()) {
       return (T->indexed_pts)[0];
     } else {
@@ -413,8 +385,7 @@ struct k_nearest_neighbors {
     }
   }
 
-  void
-  batch_insert0(slice_t idpts, node* T) {
+  void batch_insert0(slice_t idpts, node* T) {
     if (idpts.size() == 0) return;
     T->set_flag(true);
     if (T->is_leaf()) {
@@ -462,8 +433,7 @@ struct k_nearest_neighbors {
     }
   }
 
-  void
-  batch_insert(parlay::sequence<vtx*> v, node* R, box b, double Delta) {
+  void batch_insert(parlay::sequence<vtx*> v, node* R, box b, double Delta) {
     size_t vsize = v.size();
     // make sure all the points are within the bounding box of the initial
     // tree
@@ -503,8 +473,7 @@ struct k_nearest_neighbors {
     // std::cout << "updated boxes" << std::endl;
   }
 
-  void
-  batch_delete0(slice_t idpts, node* R) {
+  void batch_delete0(slice_t idpts, node* R) {
     if (idpts.size() == 0) return;
     R->set_flag(true);
     if (R->is_leaf()) {
@@ -534,8 +503,7 @@ struct k_nearest_neighbors {
     }
   }
 
-  void
-  batch_delete(parlay::sequence<vtx*> v, node* R, box b, double Delta) {
+  void batch_delete(parlay::sequence<vtx*> v, node* R, box b, double Delta) {
     size_t vsize = v.size();
     parlay::sequence<indexed_point> idpts;
     idpts = parlay::sequence<indexed_point>(vsize);
@@ -557,8 +525,7 @@ struct k_nearest_neighbors {
     // std::cout << "updated boxes" << std::endl;
   }
 
-  bool
-  within_box(node* T, vtx* vertex, double epsilon) {
+  bool within_box(node* T, vtx* vertex, double epsilon) {
     auto box = T->Box();
     for (int i = 0; i < box.first.dimension(); i++) {
       if (vertex->pt[i] < box.first[i] - epsilon ||
@@ -569,8 +536,7 @@ struct k_nearest_neighbors {
     return true;
   }
 
-  bool
-  box_within_box(box a, box b, double epsilon) {
+  bool box_within_box(box a, box b, double epsilon) {
     for (int i = 0; i < a.first.dimension(); i++) {
       if (a.first[i] + epsilon < b.first[i] ||
           a.second[i] - epsilon > b.second[i]) {
@@ -580,8 +546,7 @@ struct k_nearest_neighbors {
     return true;
   }
 
-  bool
-  intersect_box(box a, box b, double epsilon) {
+  bool intersect_box(box a, box b, double epsilon) {
     for (int i = 0; i < a.first.dimension(); i++) {
       if (a.first[i] - epsilon > b.second[i]) {
         return false;
@@ -590,8 +555,7 @@ struct k_nearest_neighbors {
     return true;
   }
 
-  void
-  range_count(node* T, box queryBox, double Delta) {
+  void range_count(node* T, box queryBox, double Delta) {
     if (!intersect_box(T->Box(), queryBox, Delta)) {
       // std::cout << T->Box().first << " " << T->Box().second << " "
       //           << queryBox.first << " " << queryBox.second << std::endl
@@ -627,8 +591,7 @@ struct k_nearest_neighbors {
     T->set_aug(T->Left()->get_aug() + T->Right()->get_aug());
   }
 
-  void
-  range_query(node* T, slice_v Out, box queryBox, double Delta) {
+  void range_query(node* T, slice_v Out, box queryBox, double Delta) {
     if (!intersect_box(T->Box(), queryBox, Delta)) {
       return;
     }
@@ -663,15 +626,13 @@ struct k_nearest_neighbors {
   void range_query();
 
   //* [a,b)
-  size_t
-  get_random_index(size_t a, size_t b) {
+  size_t get_random_index(size_t a, size_t b) {
     return size_t((rand() % (b - a)) + a);
   }
 
-  void
-  recurse_box(parlay::slice<vtx*, vtx*> In, parlay::sequence<box>& boxs,
-              int DIM, std::pair<size_t, size_t> range, int& idx, int recNum,
-              bool first) {
+  void recurse_box(parlay::slice<vtx*, vtx*> In, parlay::sequence<box>& boxs,
+                   int DIM, std::pair<size_t, size_t> range, int& idx,
+                   int recNum, bool first) {
     using tree = o_tree;
 
     size_t n = In.size();
@@ -712,9 +673,8 @@ struct k_nearest_neighbors {
     return;
   }
 
-  parlay::sequence<std::pair<point, point>>
-  gen_rectangles(int recNum, int type, const parlay::sequence<vtx>& WP,
-                 int DIM) {
+  parlay::sequence<std::pair<point, point>> gen_rectangles(
+      int recNum, int type, const parlay::sequence<vtx>& WP, int DIM) {
     using points = typename parlay::sequence<point>;
     using boxs = parlay::sequence<box>;
 

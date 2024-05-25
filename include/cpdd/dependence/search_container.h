@@ -10,8 +10,7 @@ class NN_Comparator {
   using Num = Num_Comparator<coord>;
 
  public:
-  bool
-  operator()(const T& a, const T& b) {
+  bool operator()(const T& a, const T& b) {
     return Num::Lt(a.second, b.second);
   }
 };
@@ -41,39 +40,22 @@ class kBoundedQueue {
       m_count(0), m_data(data_slice), m_comp(comp) {}
 
   /** Sets the max number of elements in the queue */
-  void
-  resize(parlay::slice<T*, T*> data_slice) {
+  void resize(parlay::slice<T*, T*> data_slice) {
     m_data = data_slice;
     m_count = 0;
   }
 
-  void
-  reset() {
-    m_count = 0;
-  }
+  void reset() { m_count = 0; }
 
-  inline bool
-  full() const {
-    return m_count == m_data.size();
-  }
+  inline bool full() const { return m_count == m_data.size(); }
 
-  inline const T&
-  top() const {
-    return m_data[0];
-  }
+  inline const T& top() const { return m_data[0]; }
 
-  inline const coord
-  top_value() const {
-    return m_data[0].second;
-  }
+  inline const coord top_value() const { return m_data[0].second; }
 
-  inline parlay::slice<T*, T*>
-  data() const {
-    return m_data;
-  }
+  inline parlay::slice<T*, T*> data() const { return m_data; }
 
-  inline void
-  insert(const std::pair<std::reference_wrapper<point>, coord> x) {
+  inline void insert(const std::pair<std::reference_wrapper<point>, coord> x) {
     // T x( _x.first, _x.second );
     T* data1 = (&m_data[0] - 1);
     if (full()) {

@@ -5,8 +5,7 @@
 namespace cpdd {
 
 template<typename point>
-inline bool
-baseTree<point>::legal_box(const box& bx) {
+inline bool baseTree<point>::legal_box(const box& bx) {
   if (bx == get_empty_box()) return true;
   for (dim_type i = 0; i < bx.first.get_dim(); i++) {
     if (Num::Gt(bx.first.pnt[i], bx.second.pnt[i])) {
@@ -17,8 +16,7 @@ baseTree<point>::legal_box(const box& bx) {
 }
 
 template<typename point>
-inline bool
-baseTree<point>::within_box(const box& a, const box& b) {
+inline bool baseTree<point>::within_box(const box& a, const box& b) {
   assert(legal_box(a));
   assert(legal_box(b));
   for (dim_type i = 0; i < a.first.get_dim(); i++) {
@@ -31,8 +29,7 @@ baseTree<point>::within_box(const box& a, const box& b) {
 }
 
 template<typename point>
-inline bool
-baseTree<point>::within_box(const point& p, const box& bx) {
+inline bool baseTree<point>::within_box(const point& p, const box& bx) {
   assert(legal_box(bx));
   for (dim_type i = 0; i < p.get_dim(); i++) {
     if (Num::Lt(p.pnt[i], bx.first.pnt[i]) ||
@@ -44,8 +41,7 @@ baseTree<point>::within_box(const point& p, const box& bx) {
 }
 
 template<typename point>
-inline bool
-baseTree<point>::box_intersect_box(const box& a, const box& b) {
+inline bool baseTree<point>::box_intersect_box(const box& a, const box& b) {
   assert(legal_box(a) && legal_box(b));
   for (dim_type i = 0; i < a.first.get_dim(); i++) {
     if (Num::Lt(a.second.pnt[i], b.first.pnt[i]) ||
@@ -57,21 +53,19 @@ baseTree<point>::box_intersect_box(const box& a, const box& b) {
 }
 
 template<typename point>
-inline typename baseTree<point>::box
-baseTree<point>::get_empty_box() {
+inline typename baseTree<point>::box baseTree<point>::get_empty_box() {
   return box(point(std::numeric_limits<coord>::max()),
              point(std::numeric_limits<coord>::min()));
 }
 
 template<typename point>
-typename baseTree<point>::box
-baseTree<point>::get_box(const box& x, const box& y) {
+typename baseTree<point>::box baseTree<point>::get_box(const box& x,
+                                                       const box& y) {
   return box(x.first.minCoords(y.first), x.second.maxCoords(y.second));
 }
 
 template<typename point>
-typename baseTree<point>::box
-baseTree<point>::get_box(slice V) {
+typename baseTree<point>::box baseTree<point>::get_box(slice V) {
   if (V.size() == 0) {
     return get_empty_box();
   } else {
@@ -85,16 +79,14 @@ baseTree<point>::get_box(slice V) {
 }
 
 template<typename point>
-typename baseTree<point>::box
-baseTree<point>::get_box(node* T) {
+typename baseTree<point>::box baseTree<point>::get_box(node* T) {
   points wx = points::uninitialized(T->size);
   flatten(T, parlay::make_slice(wx));
   return get_box(parlay::make_slice(wx));
 }
 
 template<typename point>
-inline bool
-baseTree<point>::within_circle(const box& bx, const circle& cl) {
+inline bool baseTree<point>::within_circle(const box& bx, const circle& cl) {
   //* the logical is same as p2b_max_distance <= radius
   coord r = 0;
   for (dim_type i = 0; i < cl.first.get_dim(); i++) {
@@ -112,8 +104,7 @@ baseTree<point>::within_circle(const box& bx, const circle& cl) {
 }
 
 template<typename point>
-inline bool
-baseTree<point>::within_circle(const point& p, const circle& cl) {
+inline bool baseTree<point>::within_circle(const point& p, const circle& cl) {
   coord r = 0;
   for (dim_type i = 0; i < cl.first.get_dim(); i++) {
     r += (p.pnt[i] - cl.first.pnt[i]) * (p.pnt[i] - cl.first.pnt[i]);
@@ -124,8 +115,8 @@ baseTree<point>::within_circle(const point& p, const circle& cl) {
 }
 
 template<typename point>
-inline bool
-baseTree<point>::circle_intersect_box(const circle& cl, const box& bx) {
+inline bool baseTree<point>::circle_intersect_box(const circle& cl,
+                                                  const box& bx) {
   //* the logical is same as p2b_min_distance > radius
   coord r = 0;
   for (dim_type i = 0; i < cl.first.get_dim(); i++) {
