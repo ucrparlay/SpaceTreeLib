@@ -12,7 +12,7 @@ namespace cpdd {
 template<typename point>
 class BaseTree {
    public:
-    using bucket_type = uint_fast8_t;
+    using BucketType = uint_fast8_t;
     using balls_type = uint_fast32_t;
     using dim_type = uint_fast8_t;
 
@@ -37,9 +37,9 @@ class BaseTree {
     //! bucket num should smaller than 1<<8 to handle type overflow
 
     // TODO wrap the variables using std::getenv()
-    static constexpr bucket_type BUILD_DEPTH_ONCE = 6;  //* last layer is leaf
-    static constexpr bucket_type PIVOT_NUM = (1 << BUILD_DEPTH_ONCE) - 1;
-    static constexpr bucket_type BUCKET_NUM = 1 << BUILD_DEPTH_ONCE;
+    static constexpr BucketType BUILD_DEPTH_ONCE = 6;  //* last layer is leaf
+    static constexpr BucketType PIVOT_NUM = (1 << BUILD_DEPTH_ONCE) - 1;
+    static constexpr BucketType BUCKET_NUM = 1 << BUILD_DEPTH_ONCE;
     //@ tree structure
     static constexpr uint_fast8_t LEAVE_WRAP = 32;
     static constexpr uint_fast8_t THIN_LEAVE_WRAP = 24;
@@ -78,14 +78,14 @@ class BaseTree {
 
     //@ Parallel KD tree cores
     //@ build
-    void divide_rotate(slice In, splitter_s& pivots, dim_type dim, bucket_type idx, bucket_type deep,
-                       bucket_type& bucket, const dim_type DIM, box_s& boxs, const box& bx);
+    void divide_rotate(slice In, splitter_s& pivots, dim_type dim, BucketType idx, BucketType deep, BucketType& bucket,
+                       const dim_type DIM, box_s& boxs, const box& bx);
     void pick_pivots(slice In, const size_t& n, splitter_s& pivots, const dim_type dim, const dim_type DIM, box_s& boxs,
                      const box& bx);
-    static inline bucket_type find_bucket(const point& p, const splitter_s& pivots);
+    static inline BucketType find_bucket(const point& p, const splitter_s& pivots);
     static void partition(slice A, slice B, const size_t n, const splitter_s& pivots,
                           parlay::sequence<balls_type>& sums);
-    static node* build_inner_tree(bucket_type idx, splitter_s& pivots, parlay::sequence<node*>& treeNodes);
+    static node* build_inner_tree(BucketType idx, splitter_s& pivots, parlay::sequence<node*>& treeNodes);
     points_iter serial_partition(slice In, dim_type d);
 
     virtual void build(slice In, const dim_type DIM) = 0;
@@ -104,10 +104,10 @@ class BaseTree {
 
     void flatten_and_delete(node* T, slice Out);
     static void seieve_points(slice A, slice B, const size_t n, const node_tags& tags,
-                              parlay::sequence<balls_type>& sums, const bucket_type tagsNum);
-    static inline bucket_type retrive_tag(const point& p, const node_tags& tags);
-    static node* update_inner_tree(bucket_type idx, const node_tags& tags, parlay::sequence<node*>& treeNodes,
-                                   bucket_type& p, const tag_nodes& rev_tag);
+                              parlay::sequence<balls_type>& sums, const BucketType tagsNum);
+    static inline BucketType retrive_tag(const point& p, const node_tags& tags);
+    static node* update_inner_tree(BucketType idx, const node_tags& tags, parlay::sequence<node*>& treeNodes,
+                                   BucketType& p, const tag_nodes& rev_tag);
 
     virtual void delete_tree() = 0;
 
@@ -127,8 +127,8 @@ class BaseTree {
     node_box rebuild_after_delete(node* T, const dim_type d, const dim_type DIM);
     void batchDelete(slice In, const dim_type DIM);
     node_box batchDelete_recursive(node* T, slice In, slice Out, dim_type d, const dim_type DIM, bool hasTomb);
-    node_box delete_inner_tree(bucket_type idx, const node_tags& tags, parlay::sequence<node_box>& treeNodes,
-                               bucket_type& p, const tag_nodes& rev_tag, const dim_type d, const dim_type DIM);
+    node_box delete_inner_tree(BucketType idx, const node_tags& tags, parlay::sequence<node_box>& treeNodes,
+                               BucketType& p, const tag_nodes& rev_tag, const dim_type d, const dim_type DIM);
 
     //@ validations
     template<typename interior>

@@ -12,7 +12,7 @@ class octTree : public BaseTree<point> {
    public:
     using BaseTree = BaseTree<point>;
 
-    using bucket_type = BaseTree::bucket_type;
+    using bucket_type = BaseTree::BucketType;
     using balls_type = BaseTree::balls_type;
     using dim_type = BaseTree::dim_type;
     using z_bit_type = uint_fast8_t;
