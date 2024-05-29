@@ -4,8 +4,8 @@
 
 namespace cpdd {
 
-template<typename point>
-struct octTree<point>::interior : node {
+template<typename Point>
+struct octTree<Point>::interior : node {
     node* left;
     node* right;
     z_bit_type bit;
@@ -14,8 +14,8 @@ struct octTree<point>::interior : node {
         node{false, _left->size + _right->size}, left(_left), right(_right), bit(_bit), aug(false) {}
 };
 
-template<typename point>
-typename octTree<point>::interior* octTree<point>::alloc_oct_interior_node(node* L, node* R, z_bit_type bit) {
+template<typename Point>
+typename octTree<Point>::interior* octTree<Point>::alloc_oct_interior_node(node* L, node* R, z_bit_type bit) {
     interior* o = parlay::type_allocator<interior>::alloc();
     new (o) interior(L, R, bit);
     return o;

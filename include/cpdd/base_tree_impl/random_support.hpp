@@ -4,8 +4,8 @@
 
 namespace cpdd {
 
-template<typename point>
-inline uint64_t BaseTree<point>::_hash64(uint64_t u) {
+template<typename Point>
+inline uint64_t BaseTree<Point>::Hash64(uint64_t u) {
     uint64_t v = u * 3935559000370003845ul + 2691343689449507681ul;
     v ^= v >> 21;
     v ^= v << 37;

@@ -7,34 +7,34 @@
 
 namespace cpdd {
 
-template<typename point>
-class octTree : public BaseTree<point> {
+template<typename Point>
+class octTree : public BaseTree<Point> {
    public:
-    using BaseTree = BaseTree<point>;
+    using BaseTree = BaseTree<Point>;
 
-    using bucket_type = BaseTree::BucketType;
-    using balls_type = BaseTree::balls_type;
-    using dim_type = BaseTree::dim_type;
+    using BucketType = BaseTree::BucketType;
+    using BallsType = BaseTree::BallsType;
+    using DimsType = BaseTree::DimsType;
     using z_bit_type = uint_fast8_t;
     using z_value_type = uint_fast64_t;
     using z_value_slice = parlay::slice<z_value_type*, z_value_type*>;
-    using z_value_pointer_pair = std::pair<z_value_type, point*>;
+    using z_value_pointer_pair = std::pair<z_value_type, Point*>;
     using z_value_pointer_slice = parlay::slice<z_value_pointer_pair*, z_value_pointer_pair*>;
-    using z_value_point_pair = std::pair<z_value_type, point>;
+    using z_value_point_pair = std::pair<z_value_type, Point>;
     using z_value_point_slice = parlay::slice<z_value_point_pair*, z_value_point_pair*>;
 
-    using coord = typename point::coord;
-    using coords = typename point::coords;
+    using Coord = typename Point::Coord;
+    using Coords = typename Point::Coords;
     using AugType = bool;
-    using Num = Num_Comparator<coord>;
+    using Num = Num_Comparator<Coord>;
     using slice = BaseTree::slice;
-    using points = BaseTree::points;
-    using points_iter = BaseTree::points_iter;
-    using splitter = BaseTree::splitter;
-    using splitter_s = BaseTree::splitter_s;
-    using box = BaseTree::box;
-    using box_s = BaseTree::box_s;
-    using circle = BaseTree::circle;
+    using Points = BaseTree::Points;
+    using PointsIter = BaseTree::PointsIter;
+    using Splitter = BaseTree::Splitter;
+    using SplitterSeq = BaseTree::SplitterSeq;
+    using Box = BaseTree::Box;
+    using BoxSeq = BaseTree::BoxSeq;
+    using Circle = BaseTree::Circle;
 
     static constexpr z_bit_type KEY_BITS = 64;
 
@@ -42,28 +42,28 @@ class octTree : public BaseTree<point> {
 
     static interior* alloc_oct_interior_node(node* L, node* R, z_bit_type bit);
 
-    static inline z_value_type interleave_bits(point* p, const dim_type DIM);
+    static inline z_value_type interleave_bits(Point* p, const DimsType DIM);
 
-    static inline z_value_type get_z_value(const point& p);
+    static inline z_value_type get_z_value(const Point& p);
 
-    void build_z_value(slice In, const dim_type DIM);
-    node* build_recursive_with_z_value(z_value_slice In, z_bit_type bit, const dim_type DIM);
+    void build_z_value(slice In, const DimsType DIM);
+    node* build_recursive_with_z_value(z_value_slice In, z_bit_type bit, const DimsType DIM);
 
-    void build_z_value_pointer(slice In, const dim_type DIM);
-    node* build_recursive_with_z_value_pointer(z_value_pointer_slice In, z_bit_type bit, const dim_type DIM);
+    void build_z_value_pointer(slice In, const DimsType DIM);
+    node* build_recursive_with_z_value_pointer(z_value_pointer_slice In, z_bit_type bit, const DimsType DIM);
 
-    void build_point_z_value(slice In, const dim_type DIM);
-    node* build_recursive_point_z_value(z_value_point_slice In, z_bit_type bit, const dim_type DIM);
+    void build_point_z_value(slice In, const DimsType DIM);
+    node* build_recursive_point_z_value(z_value_point_slice In, z_bit_type bit, const DimsType DIM);
 
-    void build_point(slice In, const dim_type DIM);
-    node* build_recursive_point(slice In, z_bit_type bit, const dim_type DIM);
+    void build_point(slice In, const DimsType DIM);
+    node* build_recursive_point(slice In, z_bit_type bit, const DimsType DIM);
 
     // NOTE: wrapper
-    void build(slice In, const dim_type DIM) override;
-    node* serial_build_recursive(slice In, z_bit_type bit, const dim_type DIM);
-    node* build_recursive(slice In, z_bit_type bit, const dim_type DIM);
+    void Build(slice In, const DimsType DIM) override;
+    node* serial_build_recursive(slice In, z_bit_type bit, const DimsType DIM);
+    node* build_recursive(slice In, z_bit_type bit, const DimsType DIM);
 
-    void delete_tree() override;
+    void DeleteTree() override;
 
     uint64_t binary_search_time = 0;
     uint64_t leaf_alloc_time = 0;
@@ -73,6 +73,6 @@ class octTree : public BaseTree<point> {
 
 }  // namespace cpdd
 
-#include "octTree/oct_build_tree.hpp"
-#include "octTree/oct_inter_node.hpp"
-#include "octTree/oct_override.hpp"
+#include "oct_tree_impl/oct_build_tree.hpp"
+#include "oct_tree_impl/oct_inter_node.hpp"
+#include "oct_tree_impl/oct_override.hpp"
