@@ -15,13 +15,13 @@ class octTree : public BaseTree<Point> {
     using BucketType = BaseTree::BucketType;
     using BallsType = BaseTree::BallsType;
     using DimsType = BaseTree::DimsType;
-    using z_bit_type = uint_fast8_t;
-    using z_value_type = uint_fast64_t;
-    using z_value_slice = parlay::slice<z_value_type*, z_value_type*>;
-    using z_value_pointer_pair = std::pair<z_value_type, Point*>;
-    using z_value_pointer_slice = parlay::slice<z_value_pointer_pair*, z_value_pointer_pair*>;
-    using z_value_point_pair = std::pair<z_value_type, Point>;
-    using z_value_point_slice = parlay::slice<z_value_point_pair*, z_value_point_pair*>;
+    using ZBitType = uint_fast8_t;
+    using ZValueType = uint_fast64_t;
+    using ZValueSlice = parlay::slice<ZValueType*, ZValueType*>;
+    using ZValuePointerPair = std::pair<ZValueType, Point*>;
+    using ZValuePointerSlice = parlay::slice<ZValuePointerPair*, ZValuePointerPair*>;
+    using ZValuePointPair = std::pair<ZValueType, Point>;
+    using ZValuePointSlice = parlay::slice<ZValuePointPair*, ZValuePointPair*>;
 
     using Coord = typename Point::Coord;
     using Coords = typename Point::Coords;
@@ -36,32 +36,32 @@ class octTree : public BaseTree<Point> {
     using BoxSeq = BaseTree::BoxSeq;
     using Circle = BaseTree::Circle;
 
-    static constexpr z_bit_type KEY_BITS = 64;
+    static constexpr ZBitType KEY_BITS = 64;
 
     struct interior;
 
-    static interior* alloc_oct_interior_node(node* L, node* R, z_bit_type bit);
+    static interior* alloc_oct_interior_node(node* L, node* R, ZBitType bit);
 
-    static inline z_value_type interleave_bits(Point* p, const DimsType DIM);
+    static inline ZValueType interleave_bits(Point* p, const DimsType DIM);
 
-    static inline z_value_type get_z_value(const Point& p);
+    static inline ZValueType get_z_value(const Point& p);
 
     void build_z_value(slice In, const DimsType DIM);
-    node* build_recursive_with_z_value(z_value_slice In, z_bit_type bit, const DimsType DIM);
+    node* build_recursive_with_z_value(ZValueSlice In, ZBitType bit, const DimsType DIM);
 
     void build_z_value_pointer(slice In, const DimsType DIM);
-    node* build_recursive_with_z_value_pointer(z_value_pointer_slice In, z_bit_type bit, const DimsType DIM);
+    node* build_recursive_with_z_value_pointer(ZValuePointerSlice In, ZBitType bit, const DimsType DIM);
 
     void build_point_z_value(slice In, const DimsType DIM);
-    node* build_recursive_point_z_value(z_value_point_slice In, z_bit_type bit, const DimsType DIM);
+    node* build_recursive_point_z_value(ZValuePointSlice In, ZBitType bit, const DimsType DIM);
 
     void build_point(slice In, const DimsType DIM);
-    node* build_recursive_point(slice In, z_bit_type bit, const DimsType DIM);
+    node* build_recursive_point(slice In, ZBitType bit, const DimsType DIM);
 
     // NOTE: wrapper
     void Build(slice In, const DimsType DIM) override;
-    node* serial_build_recursive(slice In, z_bit_type bit, const DimsType DIM);
-    node* build_recursive(slice In, z_bit_type bit, const DimsType DIM);
+    node* serial_build_recursive(slice In, ZBitType bit, const DimsType DIM);
+    node* build_recursive(slice In, ZBitType bit, const DimsType DIM);
 
     void DeleteTree() override;
 

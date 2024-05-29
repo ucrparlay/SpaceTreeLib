@@ -20,23 +20,23 @@ void octTree<Point>::Build(slice A, const DimsType DIM) {
 }
 
 template<typename Point>
-typename octTree<Point>::z_value_type octTree<Point>::interleave_bits(Point* p, const DimsType DIM) {
-    z_bit_type loc = 0;
-    z_value_type id = 0;
-    for (z_bit_type i = 0; i < KEY_BITS / DIM; i++) {
+typename octTree<Point>::ZValueType octTree<Point>::interleave_bits(Point* p, const DimsType DIM) {
+    ZBitType loc = 0;
+    ZValueType id = 0;
+    for (ZBitType i = 0; i < KEY_BITS / DIM; i++) {
         for (DimsType d = 0; d < DIM; d++) {
-            id = id | (((p->pnt[d] >> i) & static_cast<z_value_type>(1)) << (loc++));
+            id = id | (((p->pnt[d] >> i) & static_cast<ZValueType>(1)) << (loc++));
         }
     }
     return id;
 }
 
 template<typename Point>
-typename octTree<Point>::z_value_type octTree<Point>::get_z_value(const Point& p) {
+typename octTree<Point>::ZValueType octTree<Point>::get_z_value(const Point& p) {
     if constexpr (std::tuple_size<typename Point::Coords>::value == 2) {
-        return libmorton::m2D_e_BMI<z_value_type, Coord>(p.pnt[0], p.pnt[1]);
+        return libmorton::m2D_e_BMI<ZValueType, Coord>(p.pnt[0], p.pnt[1]);
     } else {
-        return libmorton::m3D_e_BMI<z_value_type, Coord>(p.pnt[0], p.pnt[1], p.pnt[2]);
+        return libmorton::m3D_e_BMI<ZValueType, Coord>(p.pnt[0], p.pnt[1], p.pnt[2]);
     }
 }
 
@@ -65,23 +65,22 @@ void octTree<Point>::build_z_value_pointer(slice A, const DimsType DIM) {
 
 //  NOTE: 2.1: z value and the pointer
 template<typename Point>
-node* octTree<Point>::build_recursive_with_z_value_pointer(z_value_pointer_slice In, z_bit_type bit,
-                                                           const DimsType DIM) {
+node* octTree<Point>::build_recursive_with_z_value_pointer(ZValuePointerSlice In, ZBitType bit, const DimsType DIM) {
     size_t n = In.size();
 
     if (n <= BaseTree::kLeaveWrap) {
-        return alloc_leaf_node<Point, z_value_pointer_slice, alloc_normal_leaf_tag, parlay::uninitialized_relocate_tag>(
+        return alloc_leaf_node<Point, ZValuePointerSlice, alloc_normal_leaf_tag, parlay::uninitialized_relocate_tag>(
             In, std::max(In.size(), static_cast<size_t>(BaseTree::kLeaveWrap)));
     }
 
     if (bit == 0) {
-        return alloc_leaf_node<Point, z_value_pointer_slice, alloc_fat_leaf_tag, parlay::uninitialized_relocate_tag>(
+        return alloc_leaf_node<Point, ZValuePointerSlice, alloc_fat_leaf_tag, parlay::uninitialized_relocate_tag>(
             In, In.size());
     }
 
-    z_value_type val = (static_cast<z_value_type>(1)) << (bit - 1);
-    z_value_type mask = (bit == 64) ? ~(static_cast<z_value_type>(0)) : ~(~(static_cast<z_value_type>(0)) << bit);
-    auto less = [&](const z_value_pointer_pair& x) { return (x.first & mask) < val; };
+    ZValueType val = (static_cast<ZValueType>(1)) << (bit - 1);
+    ZValueType mask = (bit == 64) ? ~(static_cast<ZValueType>(0)) : ~(~(static_cast<ZValueType>(0)) << bit);
+    auto less = [&](const ZValuePointerPair& x) { return (x.first & mask) < val; };
 
     size_t pos = parlay::internal::binary_search(In, less);
 
@@ -107,8 +106,7 @@ void octTree<Point>::build_z_value(slice A, const DimsType DIM) {
     auto z_value_arr = parlay::map(A, [&](const Point& p) { return this->get_z_value(p); });
     t.next("generate_z_value");
 
-    parlay::internal::integer_sort_inplace(parlay::make_slice(z_value_arr),
-                                           [&](const z_value_type& val) { return val; });
+    parlay::internal::integer_sort_inplace(parlay::make_slice(z_value_arr), [&](const ZValueType& val) { return val; });
     t.next("integer_sort_inplace");
 
     this->root_ = build_recursive_with_z_value(parlay::make_slice(z_value_arr), DIM * (KEY_BITS / DIM), DIM);
@@ -119,17 +117,17 @@ void octTree<Point>::build_z_value(slice A, const DimsType DIM) {
 }
 
 template<typename Point>
-node* octTree<Point>::build_recursive_with_z_value(z_value_slice In, z_bit_type bit, const DimsType DIM) {
+node* octTree<Point>::build_recursive_with_z_value(ZValueSlice In, ZBitType bit, const DimsType DIM) {
     size_t n = In.size();
     if (bit == 0 || n <= BaseTree::kLeaveWrap) {
         // BUG:: need to check the type of the leaf
-        return alloc_leaf_node<z_value_type, z_value_slice, alloc_normal_leaf_tag, parlay::uninitialized_copy_tag>(
+        return alloc_leaf_node<ZValueType, ZValueSlice, alloc_normal_leaf_tag, parlay::uninitialized_copy_tag>(
             In, std::max(In.size(), static_cast<size_t>(BaseTree::kLeaveWrap)));
     }
 
-    z_value_type val = (static_cast<z_value_type>(1)) << (bit - 1);
-    z_value_type mask = (bit == 64) ? ~(static_cast<z_value_type>(0)) : ~(~(static_cast<z_value_type>(0)) << bit);
-    auto less = [&](const z_value_type& x) { return (x & mask) < val; };
+    ZValueType val = (static_cast<ZValueType>(1)) << (bit - 1);
+    ZValueType mask = (bit == 64) ? ~(static_cast<ZValueType>(0)) : ~(~(static_cast<ZValueType>(0)) << bit);
+    auto less = [&](const ZValueType& x) { return (x & mask) < val; };
     size_t pos = parlay::internal::binary_search(In, less);
 
     if (pos == 0 || pos == n) {
@@ -166,16 +164,16 @@ void octTree<Point>::build_point_z_value(slice A, const DimsType DIM) {
 }
 
 template<typename Point>
-node* octTree<Point>::build_recursive_point_z_value(z_value_point_slice In, z_bit_type bit, const DimsType DIM) {
+node* octTree<Point>::build_recursive_point_z_value(ZValuePointSlice In, ZBitType bit, const DimsType DIM) {
     size_t n = In.size();
     if (bit == 0 || n <= BaseTree::kLeaveWrap) {
-        return alloc_leaf_node<Point, z_value_point_slice>(
-            In, std::max(In.size(), static_cast<size_t>(BaseTree::kLeaveWrap)));
+        return alloc_leaf_node<Point, ZValuePointSlice>(In,
+                                                        std::max(In.size(), static_cast<size_t>(BaseTree::kLeaveWrap)));
     }
 
-    z_value_type val = (static_cast<z_value_type>(1)) << (bit - 1);
-    z_value_type mask = (bit == 64) ? ~(static_cast<z_value_type>(0)) : ~(~(static_cast<z_value_type>(0)) << bit);
-    auto less = [&](const z_value_point_pair& x) { return (x.first & mask) < val; };
+    ZValueType val = (static_cast<ZValueType>(1)) << (bit - 1);
+    ZValueType mask = (bit == 64) ? ~(static_cast<ZValueType>(0)) : ~(~(static_cast<ZValueType>(0)) << bit);
+    auto less = [&](const ZValuePointPair& x) { return (x.first & mask) < val; };
     size_t pos = parlay::internal::binary_search(In, less);
 
     if (pos == 0 || pos == n) {
@@ -222,7 +220,7 @@ void octTree<Point>::build_point(slice A, const DimsType DIM) {
 }
 
 template<typename Point>
-node* octTree<Point>::build_recursive_point(slice In, z_bit_type bit, const DimsType DIM) {
+node* octTree<Point>::build_recursive_point(slice In, ZBitType bit, const DimsType DIM) {
     size_t n = In.size();
     if (bit == 0 || n <= BaseTree::kLeaveWrap) {
         return alloc_leaf_node<Point, slice>(In, std::max(In.size(), static_cast<size_t>(BaseTree::kLeaveWrap)));
