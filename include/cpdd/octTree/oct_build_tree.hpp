@@ -69,9 +69,9 @@ node* octTree<point>::build_recursive_with_z_value_pointer(z_value_pointer_slice
                                                            const dim_type DIM) {
     size_t n = In.size();
 
-    if (n <= baseTree::LEAVE_WRAP) {
+    if (n <= BaseTree::LEAVE_WRAP) {
         return alloc_leaf_node<point, z_value_pointer_slice, alloc_normal_leaf_tag, parlay::uninitialized_relocate_tag>(
-            In, std::max(In.size(), static_cast<size_t>(baseTree::LEAVE_WRAP)));
+            In, std::max(In.size(), static_cast<size_t>(BaseTree::LEAVE_WRAP)));
     }
 
     if (bit == 0) {
@@ -121,10 +121,10 @@ void octTree<point>::build_z_value(slice A, const dim_type DIM) {
 template<typename point>
 node* octTree<point>::build_recursive_with_z_value(z_value_slice In, z_bit_type bit, const dim_type DIM) {
     size_t n = In.size();
-    if (bit == 0 || n <= baseTree::LEAVE_WRAP) {
+    if (bit == 0 || n <= BaseTree::LEAVE_WRAP) {
         // BUG:: need to check the type of the leaf
         return alloc_leaf_node<z_value_type, z_value_slice, alloc_normal_leaf_tag, parlay::uninitialized_copy_tag>(
-            In, std::max(In.size(), static_cast<size_t>(baseTree::LEAVE_WRAP)));
+            In, std::max(In.size(), static_cast<size_t>(BaseTree::LEAVE_WRAP)));
     }
 
     z_value_type val = (static_cast<z_value_type>(1)) << (bit - 1);
@@ -168,9 +168,9 @@ void octTree<point>::build_point_z_value(slice A, const dim_type DIM) {
 template<typename point>
 node* octTree<point>::build_recursive_point_z_value(z_value_point_slice In, z_bit_type bit, const dim_type DIM) {
     size_t n = In.size();
-    if (bit == 0 || n <= baseTree::LEAVE_WRAP) {
+    if (bit == 0 || n <= BaseTree::LEAVE_WRAP) {
         return alloc_leaf_node<point, z_value_point_slice>(
-            In, std::max(In.size(), static_cast<size_t>(baseTree::LEAVE_WRAP)));
+            In, std::max(In.size(), static_cast<size_t>(BaseTree::LEAVE_WRAP)));
     }
 
     z_value_type val = (static_cast<z_value_type>(1)) << (bit - 1);
@@ -224,8 +224,8 @@ void octTree<point>::build_point(slice A, const dim_type DIM) {
 template<typename point>
 node* octTree<point>::build_recursive_point(slice In, z_bit_type bit, const dim_type DIM) {
     size_t n = In.size();
-    if (bit == 0 || n <= baseTree::LEAVE_WRAP) {
-        return alloc_leaf_node<point, slice>(In, std::max(In.size(), static_cast<size_t>(baseTree::LEAVE_WRAP)));
+    if (bit == 0 || n <= BaseTree::LEAVE_WRAP) {
+        return alloc_leaf_node<point, slice>(In, std::max(In.size(), static_cast<size_t>(BaseTree::LEAVE_WRAP)));
     }
 
     auto bits =

@@ -8,13 +8,13 @@
 namespace cpdd {
 
 template<typename point>
-class octTree : public baseTree<point> {
+class octTree : public BaseTree<point> {
    public:
-    using baseTree = baseTree<point>;
+    using BaseTree = BaseTree<point>;
 
-    using bucket_type = baseTree::bucket_type;
-    using balls_type = baseTree::balls_type;
-    using dim_type = baseTree::dim_type;
+    using bucket_type = BaseTree::bucket_type;
+    using balls_type = BaseTree::balls_type;
+    using dim_type = BaseTree::dim_type;
     using z_bit_type = uint_fast8_t;
     using z_value_type = uint_fast64_t;
     using z_value_slice = parlay::slice<z_value_type*, z_value_type*>;
@@ -25,23 +25,22 @@ class octTree : public baseTree<point> {
 
     using coord = typename point::coord;
     using coords = typename point::coords;
+    using AugType = bool;
     using Num = Num_Comparator<coord>;
-    using slice = baseTree::slice;
-    using points = baseTree::points;
-    using points_iter = baseTree::points_iter;
-    using splitter = baseTree::splitter;
-    using splitter_s = baseTree::splitter_s;
-    using box = baseTree::box;
-    using box_s = baseTree::box_s;
-    using circle = baseTree::circle;
+    using slice = BaseTree::slice;
+    using points = BaseTree::points;
+    using points_iter = BaseTree::points_iter;
+    using splitter = BaseTree::splitter;
+    using splitter_s = BaseTree::splitter_s;
+    using box = BaseTree::box;
+    using box_s = BaseTree::box_s;
+    using circle = BaseTree::circle;
 
     static constexpr z_bit_type KEY_BITS = 64;
 
-    template<typename aug_type = bool>
     struct interior;
 
-    template<typename aug_type = bool>
-    static interior<aug_type>* alloc_oct_interior_node(node* L, node* R, z_bit_type bit);
+    static interior* alloc_oct_interior_node(node* L, node* R, z_bit_type bit);
 
     static inline z_value_type interleave_bits(point* p, const dim_type DIM);
 
