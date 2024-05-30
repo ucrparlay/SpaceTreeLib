@@ -96,14 +96,14 @@ struct k_nearest_neighbors {
 
     // generates the search structure
     k_nearest_neighbors(parlay::sequence<vtx*>& V) {
-        tree = o_tree::Build(V);
+        tree = o_tree::build(V);
         node* root = tree.get();
         set_box(root->Box());
     }
 
     k_nearest_neighbors(parlay::sequence<vtx*>& V, box b) {
         // TODO add safety check
-        box points_box = o_tree::GetBox(V);
+        box points_box = o_tree::get_box(V);
         int dims = V[0]->pt.dimension();
         bool ll_bad = false;
         bool ur_bad = false;
@@ -120,12 +120,12 @@ struct k_nearest_neighbors {
             abort();
         }
         set_box(b);
-        tree = o_tree::Build(V);
+        tree = o_tree::build(V);
     }
 
     // returns the vertices in the search structure, in an
     //  order that has spacial locality
-    parlay::sequence<vtx*> vertices() { return tree->Flatten(); }
+    parlay::sequence<vtx*> vertices() { return tree->flatten(); }
 
     struct kNN {
         vtx* vertex;              // the vertex for which we are trying to find a NN
@@ -421,7 +421,7 @@ struct k_nearest_neighbors {
         size_t vsize = v.size();
         // make sure all the points are within the bounding box of the initial
         // tree
-        box points_box = o_tree::GetBox(v);
+        box points_box = o_tree::get_box(v);
         int dims = v[0]->pt.dimension();
         bool ll_bad = false;
         bool ur_bad = false;
@@ -497,7 +497,7 @@ struct k_nearest_neighbors {
         // std::cout << "updated boxes" << std::endl;
     }
 
-    bool WithinBox(node* T, vtx* vertex, double epsilon) {
+    bool within_box(node* T, vtx* vertex, double epsilon) {
         auto box = T->Box();
         for (int i = 0; i < box.first.dimension(); i++) {
             if (vertex->pt[i] < box.first[i] - epsilon || vertex->pt[i] > box.second[i] + epsilon) {
@@ -543,7 +543,7 @@ struct k_nearest_neighbors {
             size_t cnt = 0;
             parlay::sequence<vtx*>& Vtx = T->Vertices();
             for (int i = 0; i < T->size(); i++) {
-                if (WithinBox(T, Vtx[i], Delta)) {
+                if (within_box(T, Vtx[i], Delta)) {
                     // std::cout << Vtx[i]->pt << "--" << queryBox.first << " "
                     //           << queryBox.second << std::endl
                     //           << std::flush;
@@ -567,14 +567,14 @@ struct k_nearest_neighbors {
         }
 
         if (box_within_box(T->Box(), queryBox, Delta)) {
-            parlay::copy(tree->Flatten(), Out);
+            parlay::copy(tree->flatten(), Out);
             return;
         }
 
         if (T->is_leaf()) {
             size_t cnt = 0;
             for (int i = 0; i < T->size(); i++) {
-                if (WithinBox(T, T->Vertices()[i], Delta)) {
+                if (within_box(T, T->Vertices()[i], Delta)) {
                     Out[cnt++] = T->Vertices()[i];
                 }
             }
@@ -604,7 +604,7 @@ struct k_nearest_neighbors {
             } else {
                 // LOG << n << ENDL;
                 auto P = parlay::tabulate(n, [&](size_t i) -> vtx* { return &In[i]; });
-                boxs[idx++] = tree::GetBox(P);
+                boxs[idx++] = tree::get_box(P);
                 return;
             }
         }

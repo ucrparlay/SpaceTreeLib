@@ -65,22 +65,22 @@ void ANN(parlay::sequence<vtx> &v, int k, int rounds, parlay::sequence<vtx> &vin
         parlay::sequence<vtx *> v2, vin2, allv;
 
         v2 = parlay::tabulate(n, [&](size_t i) -> vtx * { return &v[i]; });
-        box whole_box = knn_tree::o_tree::GetBox(v2);
+        box whole_box = knn_tree::o_tree::get_box(v2);
         knn_tree T = knn_tree(v2, whole_box);
 
-        //* Build
+        //* build
         double aveBuild = time_loop(
             rounds, 1.0, [&]() {},
             [&]() {
                 v2 = parlay::tabulate(n, [&](size_t i) -> vtx * { return &v[i]; });
-                whole_box = knn_tree::o_tree::GetBox(v2);
+                whole_box = knn_tree::o_tree::get_box(v2);
                 T = knn_tree(v2, whole_box);
             },
             [&]() { T.tree.reset(); });
 
         //* restore
         v2 = parlay::tabulate(n, [&](size_t i) -> vtx * { return &v[i]; });
-        whole_box = knn_tree::o_tree::GetBox(v2);
+        whole_box = knn_tree::o_tree::get_box(v2);
         T = knn_tree(v2, whole_box);
 
         std::cout << aveBuild << " " << T.tree.get()->depth() << " " << std::flush;
@@ -108,7 +108,7 @@ void ANN(parlay::sequence<vtx> &v, int k, int rounds, parlay::sequence<vtx> &vin
                     v2 = parlay::tabulate(n, [&](size_t i) -> vtx * { return &v[i]; });
                     vin2 = parlay::tabulate(sz, [&](size_t i) -> vtx * { return &vin[i]; });
                     allv = parlay::append(v2, vin2);
-                    whole_box = knn_tree::o_tree::GetBox(allv);
+                    whole_box = knn_tree::o_tree::get_box(allv);
                     T = knn_tree(v2, whole_box);
                 },
                 [&]() {
@@ -127,7 +127,7 @@ void ANN(parlay::sequence<vtx> &v, int k, int rounds, parlay::sequence<vtx> &vin
             v2 = parlay::tabulate(n, [&](size_t i) -> vtx * { return &v[i]; });
             vin2 = parlay::tabulate(sz, [&](size_t i) -> vtx * { return &vin[i]; });
             allv = parlay::append(v2, vin2);
-            whole_box = knn_tree::o_tree::GetBox(allv);
+            whole_box = knn_tree::o_tree::get_box(allv);
             T = knn_tree(v2, whole_box);
             dims = vin2[0]->pt.dimension();
             root = T.tree.get();
@@ -153,8 +153,8 @@ void ANN(parlay::sequence<vtx> &v, int k, int rounds, parlay::sequence<vtx> &vin
                     //     parlay::tabulate( n, [&]( size_t i ) -> vtx* { return
                     //     &vin[i]; } );
                     // allv = parlay::append( v2, vin2 );
-                    // whole_box = knn_tree::o_tree::GetBox( allv );
-                    whole_box = knn_tree::o_tree::GetBox(v2);
+                    // whole_box = knn_tree::o_tree::get_box( allv );
+                    whole_box = knn_tree::o_tree::get_box(v2);
                     //* warning not the same as others
                     //  T = knn_tree(allv, whole_box);
                     T = knn_tree(v2, whole_box);
@@ -178,7 +178,7 @@ void ANN(parlay::sequence<vtx> &v, int k, int rounds, parlay::sequence<vtx> &vin
             v2 = parlay::tabulate(n, [&](size_t i) -> vtx * { return &v[i]; });
             // vin2 = parlay::tabulate( sz, [&]( size_t i ) -> vtx* { return &vin[i];
             // } ); allv = parlay::append( v2, vin2 );
-            whole_box = knn_tree::o_tree::GetBox(v2);
+            whole_box = knn_tree::o_tree::get_box(v2);
             //* warning not the same as others
             // T = knn_tree(allv, whole_box);
             T = knn_tree(v2, whole_box);  // NOTE: remove delete
@@ -248,7 +248,7 @@ void ANN(parlay::sequence<vtx> &v, int k, int rounds, parlay::sequence<vtx> &vin
                 [&]() {
                     // for( int i = 0; i < 10; i++ ) {
                     //   parlay::sequence<vtx*> pts{ v[i], v[( i + n / 2 ) % size] };
-                    //   box queryBox = knn_tree::o_tree::GetBox( pts );
+                    //   box queryBox = knn_tree::o_tree::get_box( pts );
                     //   int dims = ( v[0]->pt ).dimension();
                     //   box_delta bd = T.get_box_delta( dims );
                     //   T.range_count( T.tree.get(), queryBox, 1e-7 );
@@ -266,7 +266,7 @@ void ANN(parlay::sequence<vtx> &v, int k, int rounds, parlay::sequence<vtx> &vin
             //     [&]() {
             //       for( int i = 0; i < 10; i++ ) {
             //         parlay::sequence<vtx*> pts{ v[i], v[( i + size / 2 ) % size] };
-            //         box queryBox = knn_tree::o_tree::GetBox( pts );
+            //         box queryBox = knn_tree::o_tree::get_box( pts );
             //         int dims = ( v[0]->pt ).dimension();
             //         box_delta bd = T.get_box_delta( dims );
             //         T.range_count( T.tree.get(), queryBox, 1e-7 );
@@ -296,7 +296,7 @@ void ANN(parlay::sequence<vtx> &v, int k, int rounds, parlay::sequence<vtx> &vin
                         v2 = parlay::tabulate(n, [&](size_t i) -> vtx * { return &v[i]; });
                         vin2 = parlay::tabulate(sz, [&](size_t i) -> vtx * { return &vin[i]; });
                         allv = parlay::append(v2, vin2);
-                        whole_box = knn_tree::o_tree::GetBox(allv);
+                        whole_box = knn_tree::o_tree::get_box(allv);
                         T = knn_tree(v2, whole_box);
                     },
                     [&]() {
@@ -325,7 +325,7 @@ void ANN(parlay::sequence<vtx> &v, int k, int rounds, parlay::sequence<vtx> &vin
                         v2 = parlay::tabulate(n, [&](size_t i) -> vtx * { return &v[i]; });
                         vin2 = parlay::tabulate(sz, [&](size_t i) -> vtx * { return &vin[i]; });
                         allv = parlay::append(v2, vin2);
-                        whole_box = knn_tree::o_tree::GetBox(allv);
+                        whole_box = knn_tree::o_tree::get_box(allv);
                         //* warning not the same as others
                         T = knn_tree(allv, whole_box);
                         dims = vin2[0]->pt.dimension();
@@ -342,10 +342,10 @@ void ANN(parlay::sequence<vtx> &v, int k, int rounds, parlay::sequence<vtx> &vin
         }
 
         if (queryType & (1 << 8)) {  //* batch insertion then knn
-            //* first run general Build
+            //* first run general build
             T.tree.reset();
             v2 = parlay::tabulate(n, [&](size_t i) -> vtx * { return &v[i]; });
-            whole_box = knn_tree::o_tree::GetBox(v2);
+            whole_box = knn_tree::o_tree::get_box(v2);
             T = knn_tree(v2, whole_box);
 
             auto aveQuery = time_loop(
@@ -380,12 +380,12 @@ void ANN(parlay::sequence<vtx> &v, int k, int rounds, parlay::sequence<vtx> &vin
             std::cout << aveQuery << " " << T.tree.get()->depth() << " "
                       << parlay::reduce(visNodeNum) / T.tree.get()->size() << " " << std::flush;
 
-            //* then incremental Build
+            //* then incremental build
             T.tree.reset();
             v2 = parlay::tabulate(n, [&](size_t i) -> vtx * { return &v[i]; });
             vin2 = parlay::tabulate(n, [&](size_t i) -> vtx * { return &vin[i]; });
             allv = parlay::append(v2, vin2);
-            whole_box = knn_tree::o_tree::GetBox(allv);
+            whole_box = knn_tree::o_tree::get_box(allv);
 
             size_t sz = n * 0.1;
             vin2.resize(sz);
@@ -444,10 +444,10 @@ void ANN(parlay::sequence<vtx> &v, int k, int rounds, parlay::sequence<vtx> &vin
         }
 
         if (queryType & (1 << 9)) {  //* batch deletion then knn
-                                     //* first run general Build
+                                     //* first run general build
             T.tree.reset();
             v2 = parlay::tabulate(n, [&](size_t i) -> vtx * { return &v[i]; });
-            whole_box = knn_tree::o_tree::GetBox(v2);
+            whole_box = knn_tree::o_tree::get_box(v2);
             T = knn_tree(v2, whole_box);
 
             auto aveQuery = time_loop(
@@ -476,7 +476,7 @@ void ANN(parlay::sequence<vtx> &v, int k, int rounds, parlay::sequence<vtx> &vin
             v2 = parlay::tabulate(n, [&](size_t i) -> vtx * { return &v[i]; });
             vin2 = parlay::tabulate(n, [&](size_t i) -> vtx * { return &vin[i]; });
             allv = parlay::append(v2, vin2);
-            whole_box = knn_tree::o_tree::GetBox(allv);
+            whole_box = knn_tree::o_tree::get_box(allv);
             T = knn_tree(allv, whole_box);
 
             size_t sz = n * 0.1;

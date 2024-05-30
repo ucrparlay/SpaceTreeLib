@@ -35,9 +35,9 @@ using namespace benchIO;
 //  SOME DEFINITIONS
 // *************************************************************
 
-using Coord = double;
-using point2 = point2d<Coord>;
-using point3 = point3d<Coord>;
+using coord = double;
+using point2 = point2d<coord>;
+using point3 = point3d<coord>;
 
 template<class PT, int KK>
 struct vertex {

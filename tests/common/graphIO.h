@@ -39,31 +39,31 @@ using namespace benchIO;
 
 template<class intV>
 int xToStringLen(edge<intV> a) {
-  return xToStringLen(a.u) + xToStringLen(a.v) + 1;
+    return xToStringLen(a.u) + xToStringLen(a.v) + 1;
 }
 
 template<class intV>
 void xToString(char* s, edge<intV> a) {
-  int l = xToStringLen(a.u);
-  xToString(s, a.u);
-  s[l] = ' ';
-  xToString(s + l + 1, a.v);
+    int l = xToStringLen(a.u);
+    xToString(s, a.u);
+    s[l] = ' ';
+    xToString(s + l + 1, a.v);
 }
 
 template<class intV, class Weight>
 int xToStringLen(wghEdge<intV, Weight> a) {
-  return xToStringLen(a.u) + xToStringLen(a.v) + xToStringLen(a.weight) + 2;
+    return xToStringLen(a.u) + xToStringLen(a.v) + xToStringLen(a.weight) + 2;
 }
 
 template<class intV, class Weight>
 void xToString(char* s, wghEdge<intV, Weight> a) {
-  int lu = xToStringLen(a.u);
-  int lv = xToStringLen(a.v);
-  xToString(s, a.u);
-  s[lu] = ' ';
-  xToString(s + lu + 1, a.v);
-  s[lu + lv + 1] = ' ';
-  xToString(s + lu + lv + 2, a.weight);
+    int lu = xToStringLen(a.u);
+    int lv = xToStringLen(a.v);
+    xToString(s, a.u);
+    s[lu] = ' ';
+    xToString(s + lu + 1, a.v);
+    s[lu + lv + 1] = ' ';
+    xToString(s + lu + lv + 2, a.weight);
 }
 
 namespace benchIO {
@@ -76,144 +76,135 @@ string WghAdjGraphHeader = "WeightedAdjacencyGraph";
 
 template<class intV, class intE>
 int writeGraphToFile(graph<intV, intE> const& G, char* fname) {
-  if (G.degrees.size() > 0) {
-    graph<intV, intE> GP = packGraph(G);
-    return writeGraphToFile(GP, fname);
-  }
-  size_t m = G.numEdges();
-  size_t n = G.numVertices();
-  size_t totalLen = 2 + n + m;
-  parlay::sequence<size_t> Out(totalLen);
-  Out[0] = n;
-  Out[1] = m;
+    if (G.degrees.size() > 0) {
+        graph<intV, intE> GP = packGraph(G);
+        return writeGraphToFile(GP, fname);
+    }
+    size_t m = G.numEdges();
+    size_t n = G.numVertices();
+    size_t totalLen = 2 + n + m;
+    parlay::sequence<size_t> Out(totalLen);
+    Out[0] = n;
+    Out[1] = m;
 
-  // write offsets to Out[2,..,2+n)
-  parlay::sequence<intE> const& offsets = G.get_offsets();
-  parlay::parallel_for(0, n, [&](size_t i) { Out[i + 2] = offsets[i]; });
+    // write offsets to Out[2,..,2+n)
+    parlay::sequence<intE> const& offsets = G.get_offsets();
+    parlay::parallel_for(0, n, [&](size_t i) { Out[i + 2] = offsets[i]; });
 
-  // write out edges to Out[2+n,..,2+n+m)
-  parlay::parallel_for(0, n, [&](size_t i) {
-    size_t o = offsets[i] + 2 + n;
-    for (intV j = 0; j < G[i].degree; j++)
-      Out[o + j] = G[i].Neighbors[j];
-  });
+    // write out edges to Out[2+n,..,2+n+m)
+    parlay::parallel_for(0, n, [&](size_t i) {
+        size_t o = offsets[i] + 2 + n;
+        for (intV j = 0; j < G[i].degree; j++)
+            Out[o + j] = G[i].Neighbors[j];
+    });
 
-  int r = writeSeqToFile(AdjGraphHeader, Out, fname);
-  return r;
+    int r = writeSeqToFile(AdjGraphHeader, Out, fname);
+    return r;
 }
 
 template<class intV, class Weight, class intE>
 int writeWghGraphToFile(wghGraph<intV, Weight, intE> G, char* fname) {
-  size_t m = G.m;
-  size_t n = G.n;
-  // weights have to separate since they could be floats
-  parlay::sequence<size_t> Out1(2 + n + m);
-  parlay::sequence<Weight> Out2(m);
-  Out1[0] = n;
-  Out2[1] = m;
+    size_t m = G.m;
+    size_t n = G.n;
+    // weights have to separate since they could be floats
+    parlay::sequence<size_t> Out1(2 + n + m);
+    parlay::sequence<Weight> Out2(m);
+    Out1[0] = n;
+    Out2[1] = m;
 
-  // write offsets to Out[2,..,2+n)
-  auto offsets = G.get_offsets();
-  parlay::parallel_for(0, n, [&](size_t i) { Out1[i + 2] = offsets[i]; });
+    // write offsets to Out[2,..,2+n)
+    auto offsets = G.get_offsets();
+    parlay::parallel_for(0, n, [&](size_t i) { Out1[i + 2] = offsets[i]; });
 
-  // write out edges to Out1[2+n,..,2+n+m)
-  // and weights to Out2[0,..,m)
-  parlay::parallel_for(0, n, [&](size_t i) {
-    size_t o = offsets[i];
-    wghVertex<intV, Weight> v = G[i];
-    for (intV j = 0; j < v.degree; j++) {
-      Out1[2 + n + o + j] = v.Neighbors[j];
-      Out2[o + j] = v.nghWeights[j];
-    }
-  });
-  int r = write2SeqToFile(WghAdjGraphHeader, Out1, Out2, fname);
-  return r;
+    // write out edges to Out1[2+n,..,2+n+m)
+    // and weights to Out2[0,..,m)
+    parlay::parallel_for(0, n, [&](size_t i) {
+        size_t o = offsets[i];
+        wghVertex<intV, Weight> v = G[i];
+        for (intV j = 0; j < v.degree; j++) {
+            Out1[2 + n + o + j] = v.Neighbors[j];
+            Out2[o + j] = v.nghWeights[j];
+        }
+    });
+    int r = write2SeqToFile(WghAdjGraphHeader, Out1, Out2, fname);
+    return r;
 }
 
 template<class intV>
 int writeEdgeArrayToFile(edgeArray<intV> const& EA, char* fname) {
-  return writeSeqToFile(EdgeArrayHeader, EA.E, fname);
+    return writeSeqToFile(EdgeArrayHeader, EA.E, fname);
 }
 
 template<class intV, class intE>
 int writeWghEdgeArrayToFile(wghEdgeArray<intV, intE> const& EA, char* fname) {
-  return writeSeqToFile(WghEdgeArrayHeader, EA.E, fname);
+    return writeSeqToFile(WghEdgeArrayHeader, EA.E, fname);
 }
 
 template<class intV>
 edgeArray<intV> readEdgeArrayFromFile(char* fname) {
-  parlay::sequence<char> S = readStringFromFile(fname);
-  parlay::sequence<char*> W = stringToWords(S);
-  if (W[0] != EdgeArrayHeader) {
-    cout << "Bad input file" << endl;
-    abort();
-  }
-  long n = (W.size() - 1) / 2;
-  auto E = parlay::tabulate(n, [&](long i) -> edge<intV> {
-    return edge<intV>(atol(W[2 * i + 1]), atol(W[2 * i + 2]));
-  });
+    parlay::sequence<char> S = readStringFromFile(fname);
+    parlay::sequence<char*> W = stringToWords(S);
+    if (W[0] != EdgeArrayHeader) {
+        cout << "Bad input file" << endl;
+        abort();
+    }
+    long n = (W.size() - 1) / 2;
+    auto E =
+        parlay::tabulate(n, [&](long i) -> edge<intV> { return edge<intV>(atol(W[2 * i + 1]), atol(W[2 * i + 2])); });
 
-  auto mon = parlay::make_monoid(
-      [&](edge<intV> a, edge<intV> b) {
-        return edge<intV>(std::max(a.u, b.u), std::max(a.v, b.v));
-      },
-      edge<intV>(0, 0));
-  auto r = parlay::reduce(E, mon);
+    auto mon = parlay::make_monoid(
+        [&](edge<intV> a, edge<intV> b) { return edge<intV>(std::max(a.u, b.u), std::max(a.v, b.v)); },
+        edge<intV>(0, 0));
+    auto r = parlay::reduce(E, mon);
 
-  intV maxrc = std::max(r.u, r.v) + 1;
-  return edgeArray<intV>(std::move(E), maxrc, maxrc);
+    intV maxrc = std::max(r.u, r.v) + 1;
+    return edgeArray<intV>(std::move(E), maxrc, maxrc);
 }
 
 template<class intV, class Weight>
 wghEdgeArray<intV, Weight> readWghEdgeArrayFromFile(char* fname) {
-  using WE = wghEdge<intV, Weight>;
-  parlay::sequence<char> S = readStringFromFile(fname);
-  parlay::sequence<char*> W = stringToWords(S);
-  if (W[0] != WghEdgeArrayHeader) {
-    cout << "Bad input file" << endl;
-    abort();
-  }
-  long n = (W.size() - 1) / 3;
-  auto E = parlay::tabulate(n, [&](size_t i) -> WE {
-    return WE(atol(W[3 * i + 1]), atol(W[3 * i + 2]),
-              (Weight)atof(W[3 * i + 3]));
-  });
+    using WE = wghEdge<intV, Weight>;
+    parlay::sequence<char> S = readStringFromFile(fname);
+    parlay::sequence<char*> W = stringToWords(S);
+    if (W[0] != WghEdgeArrayHeader) {
+        cout << "Bad input file" << endl;
+        abort();
+    }
+    long n = (W.size() - 1) / 3;
+    auto E = parlay::tabulate(
+        n, [&](size_t i) -> WE { return WE(atol(W[3 * i + 1]), atol(W[3 * i + 2]), (Weight)atof(W[3 * i + 3])); });
 
-  auto mon = parlay::make_monoid(
-      [&](WE a, WE b) { return WE(std::max(a.u, b.u), std::max(a.v, b.v), 0); },
-      WE(0, 0, 0));
-  auto r = parlay::reduce(E, mon);
+    auto mon =
+        parlay::make_monoid([&](WE a, WE b) { return WE(std::max(a.u, b.u), std::max(a.v, b.v), 0); }, WE(0, 0, 0));
+    auto r = parlay::reduce(E, mon);
 
-  return wghEdgeArray<intV, Weight>(std::move(E), max<intV>(r.u, r.v) + 1);
+    return wghEdgeArray<intV, Weight>(std::move(E), max<intV>(r.u, r.v) + 1);
 }
 
 template<class intV, class intE = intV>
 graph<intV, intE> readGraphFromFile(char* fname) {
-  auto W = get_tokens(fname);
-  string header(W[0].begin(), W[0].end());
-  if (header != AdjGraphHeader) {
-    cout << "Bad input file: missing header: " << AdjGraphHeader << endl;
-    abort();
-  }
+    auto W = get_tokens(fname);
+    string header(W[0].begin(), W[0].end());
+    if (header != AdjGraphHeader) {
+        cout << "Bad input file: missing header: " << AdjGraphHeader << endl;
+        abort();
+    }
 
-  // file consists of [type, num_vertices, num_edges, <vertex offsets>, <edges>]
-  // in compressed sparse row format
-  long n = parlay::chars_to_long(W[1]);
-  long m = parlay::chars_to_long(W[2]);
-  if (W.size() != n + m + 3) {
-    cout << "Bad input file: length = " << W.size() << " n+m+3 = " << n + m + 3
-         << endl;
-    abort();
-  }
+    // file consists of [type, num_vertices, num_edges, <vertex offsets>, <edges>]
+    // in compressed sparse row format
+    long n = parlay::chars_to_long(W[1]);
+    long m = parlay::chars_to_long(W[2]);
+    if (W.size() != n + m + 3) {
+        cout << "Bad input file: length = " << W.size() << " n+m+3 = " << n + m + 3 << endl;
+        abort();
+    }
 
-  // tags on m at the end (so n+1 total offsets)
-  auto offsets = parlay::tabulate(n + 1, [&](size_t i) -> intE {
-    return (i == n) ? m : parlay::chars_to_long(W[i + 3]);
-  });
-  auto edges = parlay::tabulate(
-      m, [&](size_t i) -> intV { return parlay::chars_to_long(W[n + i + 3]); });
+    // tags on m at the end (so n+1 total offsets)
+    auto offsets =
+        parlay::tabulate(n + 1, [&](size_t i) -> intE { return (i == n) ? m : parlay::chars_to_long(W[i + 3]); });
+    auto edges = parlay::tabulate(m, [&](size_t i) -> intV { return parlay::chars_to_long(W[n + i + 3]); });
 
-  return graph<intV, intE>(std::move(offsets), std::move(edges), n);
+    return graph<intV, intE>(std::move(offsets), std::move(edges), n);
 }
 
 // parlay::sequence<char> mmapStringFromFile(const char *filename) {
@@ -231,8 +222,8 @@ graph<intV, intE> readGraphFromFile(char* fname) {
 //     perror("not a file\n");
 //     exit(-1);
 //   }
-//   char *p = static_cast<char*>(mmap(0, sb.st_size, PROT_READ, MAP_PRIVATE,
-//   fd, 0)); if (p == MAP_FAILED) {
+//   char *p = static_cast<char*>(mmap(0, sb.st_size, PROT_READ, MAP_PRIVATE, fd, 0));
+//   if (p == MAP_FAILED) {
 //     perror("mmap");
 //     exit(-1);
 //   }
@@ -288,59 +279,51 @@ graph<intV, intE> readGraphFromFile(char* fname) {
 
 template<class intV, class Weight, class intE>
 wghGraph<intV, Weight, intE> readWghGraphFromFile(char* fname) {
-  parlay::sequence<char> S = readStringFromFile(fname);
-  parlay::sequence<char*> W = stringToWords(S);
-  if (W[0] != WghAdjGraphHeader) {
-    cout << "Bad input file" << endl;
-    abort();
-  }
+    parlay::sequence<char> S = readStringFromFile(fname);
+    parlay::sequence<char*> W = stringToWords(S);
+    if (W[0] != WghAdjGraphHeader) {
+        cout << "Bad input file" << endl;
+        abort();
+    }
 
-  long n = atol(W[1]);
-  long m = atol(W[2]);
-  if (W.size() != n + 2 * m + 3) {
-    cout << "Bad input file: length = " << W.size()
-         << " n + 2*m + 3 = " << n + 2 * m + 3 << endl;
-    abort();
-  }
+    long n = atol(W[1]);
+    long m = atol(W[2]);
+    if (W.size() != n + 2 * m + 3) {
+        cout << "Bad input file: length = " << W.size() << " n + 2*m + 3 = " << n + 2 * m + 3 << endl;
+        abort();
+    }
 
-  // tags on m at the end (so n+1 total offsets)
-  auto offsets = parlay::tabulate(
-      n + 1, [&](size_t i) -> intE { return (i == n) ? m : atol(W[i + 3]); });
-  auto edges =
-      parlay::tabulate(m, [&](size_t i) -> intV { return atol(W[n + i + 3]); });
-  auto weights = parlay::tabulate(
-      m, [&](size_t i) -> Weight { return (Weight)atof(W[n + i + 3 + m]); });
+    // tags on m at the end (so n+1 total offsets)
+    auto offsets = parlay::tabulate(n + 1, [&](size_t i) -> intE { return (i == n) ? m : atol(W[i + 3]); });
+    auto edges = parlay::tabulate(m, [&](size_t i) -> intV { return atol(W[n + i + 3]); });
+    auto weights = parlay::tabulate(m, [&](size_t i) -> Weight { return (Weight)atof(W[n + i + 3 + m]); });
 
-  return wghGraph<intV, Weight, intE>(std::move(offsets), std::move(edges),
-                                      std::move(weights), n);
+    return wghGraph<intV, Weight, intE>(std::move(offsets), std::move(edges), std::move(weights), n);
 }
 
-// The following two are used by the graph generators to write out in either
-// format and either with reordering or not
+// The following two are used by the graph generators to write out in either format
+// and either with reordering or not
 template<class intV, class intE>
-void writeGraphFromAdj(graph<intV, intE> const& G, char* fname, bool adjArray,
-                       bool ordered) {
-  if (adjArray)
-    if (ordered)
-      writeGraphToFile(G, fname);
-    else
-      writeGraphToFile(graphReorder(G), fname);
-  else {
-    if (ordered)
-      writeEdgeArrayToFile(edgesFromGraph(G), fname);
+void writeGraphFromAdj(graph<intV, intE> const& G, char* fname, bool adjArray, bool ordered) {
+    if (adjArray)
+        if (ordered)
+            writeGraphToFile(G, fname);
+        else
+            writeGraphToFile(graphReorder(G), fname);
     else {
-      auto B = edgesFromGraph(graphReorder(G));
-      B = randomShuffle(B);
-      writeEdgeArrayToFile(B, fname);
+        if (ordered)
+            writeEdgeArrayToFile(edgesFromGraph(G), fname);
+        else {
+            auto B = edgesFromGraph(graphReorder(G));
+            B = randomShuffle(B);
+            writeEdgeArrayToFile(B, fname);
+        }
     }
-  }
 }
 
 template<class intV, class intE = intV>
-void writeGraphFromEdges(edgeArray<intV>& EA, char* fname, bool adjArray,
-                         bool ordered) {
-  writeGraphFromAdj(graphFromEdges<intV, intE>(EA, adjArray), fname, adjArray,
-                    ordered);
+void writeGraphFromEdges(edgeArray<intV>& EA, char* fname, bool adjArray, bool ordered) {
+    writeGraphFromAdj(graphFromEdges<intV, intE>(EA, adjArray), fname, adjArray, ordered);
 }
 
 // void errorOut(const char* s) {

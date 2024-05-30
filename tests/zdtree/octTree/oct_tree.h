@@ -66,7 +66,7 @@ struct oct_tree {
     // generates a box consisting of a lower left corner,
     // and an upper right corner.
     template<typename Seq>
-    static box GetBox(Seq& V) {  // parlay::sequence<vtx*> &V) {
+    static box get_box(Seq& V) {  // parlay::sequence<vtx*> &V) {
         if (V.size() == 0) abort();
         size_t n = V.size();
         auto minmax = [&](box x, box y) { return box(x.first.minCoords(y.first), x.second.maxCoords(y.second)); };
@@ -139,7 +139,7 @@ struct oct_tree {
                 P.push_back(new_points[i].second);
             }
             n += new_size;
-            b = GetBox(P);
+            b = get_box(P);
             set_center();
         }
 
@@ -185,7 +185,7 @@ struct oct_tree {
             auto new_idpts = parlay::pack(indexed_pts, indices_to_retain);
             indexed_pts = new_idpts;
             n -= deleted_size;
-            b = GetBox(P);
+            b = get_box(P);
             set_center();
         }
 
@@ -202,7 +202,7 @@ struct oct_tree {
                 indexed_pts[i] = Pts[i];
             }
             L = R = nullptr;
-            b = GetBox(P);
+            b = get_box(P);
             set_center();
             set_bit(currentBit);
         }
@@ -232,10 +232,11 @@ struct oct_tree {
 
         ~node() {
             // need to collect in parallel
-            parlay::par_do_if(n > 1000, [&]() { DeleteTree(L); }, [&]() { DeleteTree(R); });
+            parlay::par_do_if(
+                n > 1000, [&]() { delete_tree(L); }, [&]() { delete_tree(R); });
         }
 
-        parlay::sequence<vtx*> Flatten() {
+        parlay::sequence<vtx*> flatten() {
             parlay::sequence<vtx*> r(n);
             flatten_rec(this, parlay::make_slice(r));
             return r;
@@ -252,7 +253,8 @@ struct oct_tree {
                 for (int i = 0; i < size(); i++)
                     f(P[i], this);
             else {
-                parlay::par_do_if(n > 1000, [&]() { L->map(f); }, [&]() { R->map(f); });
+                parlay::par_do_if(
+                    n > 1000, [&]() { L->map(f); }, [&]() { R->map(f); });
             }
         }
 
@@ -261,13 +263,14 @@ struct oct_tree {
                 return 0;
             else {
                 size_t l, r;
-                parlay::par_do_if(n > 1000, [&]() { l = L->depth(); }, [&]() { r = R->depth(); });
+                parlay::par_do_if(
+                    n > 1000, [&]() { l = L->depth(); }, [&]() { r = R->depth(); });
                 return 1 + std::max(l, r);
             }
         }
 
         // recursively frees the tree
-        static void DeleteTree(node* T) {
+        static void delete_tree(node* T) {
             if (T != nullptr) {
                 T->~node();
                 node::free_node(T);
@@ -356,7 +359,7 @@ struct oct_tree {
             grandparent->set_child(parent, false);
         parent->set_parent(grandparent);
         T->set_parent(nullptr);
-        node::DeleteTree(T);
+        node::delete_tree(T);
     }
 
     // occasionally, inserting a point will require not splitting an existing
@@ -395,7 +398,7 @@ struct oct_tree {
             (T->Parent())->set_child(nullptr, true);
         else
             (T->Parent())->set_child(nullptr, false);
-        node::DeleteTree(T);
+        node::delete_tree(T);
     }
 
     // gets rid of any nodes which only have one child due to pruning
@@ -405,7 +408,8 @@ struct oct_tree {
         if (T->is_leaf()) return;
         if (T->flag == false) return;
         if ((T->Left() != nullptr) && (T->Right() != nullptr)) {
-            parlay::par_do_if(T->size() > 1000, [&]() { compress(T->Right()); }, [&]() { compress(T->Left()); });
+            parlay::par_do_if(
+                T->size() > 1000, [&]() { compress(T->Right()); }, [&]() { compress(T->Left()); });
         } else {
             node* grandparent = T->Parent();
             node* T_replacement;
@@ -421,7 +425,7 @@ struct oct_tree {
                 grandparent->set_child(T_replacement, true);
             else
                 grandparent->set_child(T_replacement, false);
-            node::DeleteTree(T);
+            node::delete_tree(T);
             compress(T_replacement);
         }
     }
@@ -474,7 +478,7 @@ struct oct_tree {
         //    return T->Box();
         //  }
         if (T->is_leaf()) {
-            assert(same_box(T->Box(), GetBox(T->Vertices())));
+            assert(same_box(T->Box(), get_box(T->Vertices())));
             return T->Box();
             T->set_flag(false);
         } else {
@@ -487,40 +491,40 @@ struct oct_tree {
             T->reset_center();
             T->set_flag(false);
 
-            // auto p = T->Flatten();
-            // assert( same_box( b_T, GetBox( p ) ) );
+            // auto p = T->flatten();
+            // assert( same_box( b_T, get_box( p ) ) );
             return b_T;
         }
     }
 
     // A unique pointer to a tree node to ensure the tree is
     // destructed when the pointer is, and that  no copies are made.
-    struct DeleteTree {
-        void operator()(node* T) const { node::DeleteTree(T); }
+    struct delete_tree {
+        void operator()(node* T) const { node::delete_tree(T); }
     };
-    using tree_ptr = std::unique_ptr<node, DeleteTree>;
+    using tree_ptr = std::unique_ptr<node, delete_tree>;
 
-    // Build a tree given a sequence of pointers to points
+    // build a tree given a sequence of pointers to points
     template<typename Seq>
-    static tree_ptr Build(Seq& P) {
+    static tree_ptr build(Seq& P) {
         timer t("oct_tree", false);
         int dims = (P[0]->pt).dimension();
         auto pts = tag_points(P);
         t.next("tag");
         node* r = build_recursive(make_slice(pts), dims * (key_bits / dims));
-        t.next("Build");
+        t.next("build");
         return tree_ptr(r);
     }
 
-    // Build a tree given a sequence of pointers to points
+    // build a tree given a sequence of pointers to points
     template<typename Seq>
-    static tree_ptr Build(Seq& P, box b) {
+    static tree_ptr build(Seq& P, box b) {
         timer t("oct_tree", false);
         int dims = (P[0]->pt).dimension();
         auto pts = tag_points(P, b);
         t.next("tag");
         node* r = build_recursive(make_slice(pts), dims * (key_bits / dims));
-        t.next("Build");
+        t.next("build");
         return tree_ptr(r);
     }
 
@@ -539,7 +543,7 @@ struct oct_tree {
         int dims = (V[0]->pt).dimension();
 
         // find box around points, and size along largest axis
-        box b = GetBox(V);
+        box b = get_box(V);
         double Delta = 0;
         for (int i = 0; i < dims; i++)
             Delta = std::max(Delta, b.second[i] - b.first[i]);

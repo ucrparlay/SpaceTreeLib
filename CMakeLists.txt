@@ -75,13 +75,12 @@ install(TARGETS spatialTrees
 # target_link_libraries(test PUBLIC spatialTrees)
 # target_include_directories(test PUBLIC ${PROJECT_SOURCE_DIR}/include)
 
-add_executable(oct ${PROJECT_SOURCE_DIR}/tests/testOctTree.cpp)
-target_link_libraries(oct PUBLIC spatialTrees)
-target_include_directories(oct PUBLIC ${PROJECT_SOURCE_DIR}/include)
+add_executable(test ${PROJECT_SOURCE_DIR}/tests/test.cpp)
+target_link_libraries(test PUBLIC spatialTrees)
+target_include_directories(test PUBLIC ${PROJECT_SOURCE_DIR}/include)
 
 if(JEMA)
-	# target_link_libraries(test PUBLIC libjemalloc.so)
-	target_link_libraries(oct PUBLIC libjemalloc.so)
+	target_link_libraries(test PUBLIC libjemalloc.so)
 endif()
 
 add_executable(data_generator ${PROJECT_SOURCE_DIR}/tests/data_generate.cpp)
