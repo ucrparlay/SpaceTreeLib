@@ -28,8 +28,8 @@ class BaseTree {
     using BoxSeq = parlay::sequence<Box>;
     using Circle = std::pair<Point, Coord>;
 
-    using NodeBox = std::pair<node*, Box>;
-    using NodeTag = std::pair<node*, uint_fast8_t>;
+    using NodeBox = std::pair<Node*, Box>;
+    using NodeTag = std::pair<Node*, uint_fast8_t>;
     using NodeTagSeq = parlay::sequence<NodeTag>;
     using TagNodes = parlay::sequence<BallsType>;  //*index by tag
     //@ Const variables
@@ -66,79 +66,36 @@ class BaseTree {
     static inline Box GetEmptyBox();
     static Box GetBox(const Box& x, const Box& y);
     static Box GetBox(slice V);
-    static Box GetBox(node* T);
+    static Box GetBox(Node* T);
 
     static inline bool WithinCircle(const Box& bx, const Circle& cl);
     static inline bool WithinCircle(const Point& p, const Circle& cl);
     static inline bool CircleIntersectBox(const Circle& cl, const Box& bx);
 
     //@ dimensionality
-    inline DimsType PickRebuildDim(const node* T, const DimsType d, const DimsType DIM);
+    inline DimsType PickRebuildDim(const Node* T, const DimsType d, const DimsType DIM);
     static inline DimsType PickMaxStretchDim(const Box& bx, const DimsType DIM);
 
-    //@ Parallel KD tree cores
-    //@ Build
-    void DivideRotate(slice In, SplitterSeq& pivots, DimsType dim, BucketType idx, BucketType deep, BucketType& bucket,
-                      const DimsType DIM, BoxSeq& boxs, const Box& bx);
-    void PickPivots(slice In, const size_t& n, SplitterSeq& pivots, const DimsType dim, const DimsType DIM,
-                    BoxSeq& boxs, const Box& bx);
-    static inline BucketType FindBucket(const Point& p, const SplitterSeq& pivots);
-    static void Partition(slice A, slice B, const size_t n, const SplitterSeq& pivots,
-                          parlay::sequence<BallsType>& sums);
-    static node* BuildInnerTree(BucketType idx, SplitterSeq& pivots, parlay::sequence<node*>& treeNodes);
-    PointsIter SerialPartition(slice In, DimsType d);
+    virtual void build(slice In, const DimsType DIM) = 0;
 
-    virtual void Build(slice In, const DimsType DIM) = 0;
-    // virtual node* serial_build_recursive(slice In, slice Out, DimsType dim,
-    //                                      const DimsType DIM, const Box& bx) =
-    //                                      0;
-    // virtual node* build_recursive(slice In, slice Out, DimsType dim,
-    //                               const DimsType DIM, const Box& bx) = 0;
-
-    //@ random support
-    static inline uint64_t Hash64(uint64_t u);
-
-    //@ batch helpers:
-    template<typename Slice>
-    static void Flatten(node* T, Slice Out, bool granularity = true);
-
-    void FlattenAndDelete(node* T, slice Out);
-    static void SeievePoints(slice A, slice B, const size_t n, const NodeTagSeq& tags,
-                             parlay::sequence<BallsType>& sums, const BucketType tagsNum);
-    static inline BucketType RetriveTag(const Point& p, const NodeTagSeq& tags);
-    static node* UpdateInnerTree(BucketType idx, const NodeTagSeq& tags, parlay::sequence<node*>& treeNodes,
-                                 BucketType& p, const TagNodes& rev_tag);
-
-    virtual void DeleteTree() = 0;
+    inline uint64_t Hash64(uint64_t u);
+    virtual void deleteTree() = 0;
 
     template<typename leaf_node_type, typename interior_node_type>
-    void DeleteTreeWrapper();
+    void deleteTreeWrapper();
 
     template<typename leaf_node_type, typename interior_node_type>
-    static void DeleteTreeRecursive(node* T, bool granularity = true);
-
-    //@ batch insert
-    node* RebuildWithInsert(node* T, slice In, const DimsType d, const DimsType DIM);
-    static inline void UpdateInterior(node* T, node* L, node* R);
-    void BatchInsert(slice In, const DimsType DIM);
-    node* BatchInsertRecursive(node* T, slice In, slice Out, DimsType d, const DimsType DIM);
-
-    //@ batch delete
-    NodeBox RebuildAfterDelete(node* T, const DimsType d, const DimsType DIM);
-    void BatchDelete(slice In, const DimsType DIM);
-    NodeBox BatchDeleteRecursive(node* T, slice In, slice Out, DimsType d, const DimsType DIM, bool hasTomb);
-    NodeBox DeleteInnerTree(BucketType idx, const NodeTagSeq& tags, parlay::sequence<NodeBox>& treeNodes, BucketType& p,
-                            const TagNodes& rev_tag, const DimsType d, const DimsType DIM);
+    static void deleteTreeRecursive(Node* T, bool granularity = true);
 
     //@ validations
     template<typename interior>
-    bool CheckBox(node* T, const Box& bx);
+    bool CheckBox(Node* T, const Box& bx);
 
     template<typename interior>
-    size_t CheckSize(node* T);
+    size_t CheckSize(Node* T);
 
     template<typename interior>
-    void CheckTreeSameSequential(node* T, int dim, const int& DIM);
+    void CheckTreeSameSequential(Node* T, int dim, const int& DIM);
 
     template<typename interior>
     void Validate(const DimsType DIM);
@@ -147,26 +104,26 @@ class BaseTree {
     size_t GetTreeHeight();
 
     template<typename interior>
-    size_t GetMaxTreeDepth(node* T, size_t deep);
+    size_t GetMaxTreeDepth(Node* T, size_t deep);
 
     template<typename interior>
     double GetAveTreeHeight();
 
     template<typename interior>
-    size_t CountTreeNodesNum(node* T);
+    size_t CountTreeNodesNum(Node* T);
 
     template<typename interior>
-    void CountTreeHeights(node* T, size_t deep, size_t& idx, parlay::sequence<size_t>& heights);
+    void CountTreeHeights(Node* T, size_t deep, size_t& idx, parlay::sequence<size_t>& heights);
 
     //@ kdtree interfaces
-    inline void SetRoot(node* _root) { this->root_ = _root; }
+    inline void SetRoot(Node* _root) { this->root_ = _root; }
 
-    inline node* GetRoot() { return this->root_; }
+    inline Node* GetRoot() { return this->root_; }
 
     inline Box GetRootBox() { return this->tree_box_; }
 
    protected:
-    node* root_ = nullptr;
+    Node* root_ = nullptr;
     parlay::internal::timer timer;
     // SplitRule split_rule_ = kRotateDim;
     SplitRule split_rule_ = kMaxStretchDim;

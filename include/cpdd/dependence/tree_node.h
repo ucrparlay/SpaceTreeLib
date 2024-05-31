@@ -6,47 +6,47 @@
 
 namespace cpdd {
 
-struct node {
-    node() : is_leaf{false}, size{0} {};
-    node(bool _is_leaf, size_t _size) : is_leaf{_is_leaf}, size{_size} {};
+struct Node {
+    Node() : is_leaf{false}, size{0} {};
+    Node(bool _is_leaf, size_t _size) : is_leaf{_is_leaf}, size{_size} {};
 
     bool is_leaf;
     size_t size;
 };
 
-template<typename Point, typename slice, typename point_assign_tag>
-struct leaf : node {
+template<typename Point, typename Range, typename PointAssignTag>
+struct Leaf : Node {
     using Points = parlay::sequence<Point>;
 
     // NOTE: default allocator
-    leaf() : node{true, static_cast<size_t>(0)}, is_dummy(false){};
+    Leaf() : Node{true, static_cast<size_t>(0)}, is_dummy(false) {};
 
     // NOTE: alloc a normal leaf
-    leaf(slice In, const auto alloc_size, alloc_normal_leaf_tag) :
-        node{true, static_cast<size_t>(In.size())}, is_dummy(false), pts(Points::uninitialized(alloc_size)) {
+    Leaf(Range In, const auto alloc_size, AllocNormalLeafTag) :
+        Node{true, static_cast<size_t>(In.size())}, is_dummy(false), pts(Points::uninitialized(alloc_size)) {
         assert(In.size() <= alloc_size);
-        if constexpr (is_pair<typename slice::value_type>::value) {  // NOTE: if input is pair, assign using the second
+        if constexpr (is_pair<typename Range::value_type>::value) {  // NOTE: if input is pair, assign using the second
                                                                      // value
-            static_assert(std::is_pointer<typename slice::value_type::second_type>::value);
+            static_assert(std::is_pointer<typename Range::value_type::second_type>::value);
             for (int i = 0; i < In.size(); i++) {
-                parlay::assign_dispatch(pts[i], *(In[i].second), point_assign_tag());
+                parlay::assign_dispatch(pts[i], *(In[i].second), PointAssignTag());
             }
         } else {  //  NOTE: input is a Point with coordinates
             for (int i = 0; i < In.size(); i++) {
-                parlay::assign_dispatch(pts[i], In[i], point_assign_tag());
+                parlay::assign_dispatch(pts[i], In[i], PointAssignTag());
             }
         }
     }
 
     // NOTE: alloc a dummy leaf
-    leaf(slice In, alloc_dummy_leaf_tag) :
-        node{true, static_cast<size_t>(In.size())}, is_dummy(true), pts(Points::uninitialized(1)) {
+    Leaf(Range In, AllocDummyLeafTag) :
+        Node{true, static_cast<size_t>(In.size())}, is_dummy(true), pts(Points::uninitialized(1)) {
         assert(In.size() == 1);
-        if constexpr (is_pair<typename slice::value_type>::value) {
-            static_assert(std::is_pointer<typename slice::value_type::second_type>::value);
-            parlay::assign_dispatch(pts[0], *(In[0].second), point_assign_tag());
+        if constexpr (is_pair<typename Range::value_type>::value) {
+            static_assert(std::is_pointer<typename Range::value_type::second_type>::value);
+            parlay::assign_dispatch(pts[0], *(In[0].second), PointAssignTag());
         } else {
-            parlay::assign_dispatch(pts[0], In[0], point_assign_tag());
+            parlay::assign_dispatch(pts[0], In[0], PointAssignTag());
         }
     }
 
@@ -54,22 +54,39 @@ struct leaf : node {
     Points pts;
 };
 
+template<typename Point, typename AugType>
+struct Interior : Node {
+    Node* left;
+    Node* right;
+    AugType aug;
+    Interior(Node* _left, Node* _right, AugType& _aug) :
+        Node{false, _left->size + _right->size}, left(_left), right(_right), aug(_aug) {}
+};
+
+template<typename Point, typename AugType>
+static Interior<Point, AugType>* allocInteriorNode(Node* L, Node* R, AugType& bit) {
+    using Interior = Interior<Point, AugType>;
+    Interior* o = parlay::type_allocator<Interior>::alloc();
+    new (o) Interior(L, R, bit);
+    return o;
+}
+
 // NOTE: Point: how data is stored in the tree
 // NOTE: slice: input slice
-template<typename Point, typename slice, typename leaf_alloc_tag, typename point_assign_tag>
-static leaf<Point, slice, point_assign_tag>* alloc_leaf_node(slice In, const auto alloc_size) {
-    using leaf = leaf<Point, slice, point_assign_tag>;
+template<typename Point, typename Range, typename LeafAllocTag, typename PointAssignTag>
+static Leaf<Point, Range, PointAssignTag>* allocLeafNode(Range In, const auto alloc_size) {
+    using leaf = Leaf<Point, Range, PointAssignTag>;
     leaf* o = parlay::type_allocator<leaf>::alloc();
-    new (o) leaf(In, alloc_size, leaf_alloc_tag());
+    new (o) leaf(In, alloc_size, LeafAllocTag());
     assert(o->is_dummy == false);
     return o;
 }
 
-template<typename Point, typename slice, typename leaf_alloc_tag, typename point_assign_tag>
-static leaf<Point, slice, point_assign_tag>* alloc_leaf_node(slice In) {
-    using leaf = leaf<Point, slice, point_assign_tag>;
+template<typename Point, typename Range, typename LeafAllocTag, typename PointAssignTag>
+static Leaf<Point, Range, PointAssignTag>* allocLeafNode(Range In) {
+    using leaf = Leaf<Point, Range, PointAssignTag>;
     leaf* o = parlay::type_allocator<leaf>::alloc();
-    new (o) leaf(In, leaf_alloc_tag());
+    new (o) leaf(In, LeafAllocTag());
     assert(o->is_dummy == false);
     return o;
 }
@@ -101,7 +118,7 @@ static leaf<Point, slice, point_assign_tag>* alloc_leaf_node(slice In) {
 // }
 
 template<typename Point, typename node_type>
-static void free_node(node* T) {
+static void free_node(Node* T) {
     // TODO: add static type check
     parlay::type_allocator<node_type>::retire(static_cast<node_type*>(T));
 }

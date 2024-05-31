@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdlib>
+#include "cpdd/kd_tree.h"
 #include "cpdd/oct_tree.h"
 #include "parlay/primitives.h"
 #include "testFramework.h"
@@ -363,7 +364,7 @@ void TestSpacialTree(const int& kDim, const parlay::sequence<Point>& wp, const p
 
     std::cout << std::endl << std::flush;
 
-    tree.DeleteTree();
+    tree.deleteTree();
 
     return;
 }
@@ -373,6 +374,12 @@ struct wrapper {
         template<class Point>
         struct Desc {
             using TreeType = cpdd::octTree<Point>;
+        };
+    };
+    struct KDtree {
+        template<class Point>
+        struct Desc {
+            using TreeType = cpdd::KdTree<Point>;
         };
     };
 };
@@ -445,7 +452,7 @@ int main(int argc, char* argv[]) {
     };
 
     if (tree_type == 0) {
-        run_test(wrapper::ZDTree{});
+        run_test(wrapper::KDtree{});
     } else if (tree_type == 1) {
     } else if (tree_type == 2) {
     }

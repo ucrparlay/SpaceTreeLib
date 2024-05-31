@@ -11,7 +11,7 @@
 
 namespace cpdd {
 template<typename Point>
-void octTree<Point>::Build(slice A, const DimsType DIM) {
+void octTree<Point>::build(slice A, const DimsType DIM) {
     // build_z_value(A, DIM);
     // build_z_value_pointer(A, DIM);
     // build_point_z_value(A, DIM);
@@ -65,16 +65,16 @@ void octTree<Point>::build_z_value_pointer(slice A, const DimsType DIM) {
 
 //  NOTE: 2.1: z value and the pointer
 template<typename Point>
-node* octTree<Point>::build_recursive_with_z_value_pointer(ZValuePointerSlice In, ZBitType bit, const DimsType DIM) {
+Node* octTree<Point>::build_recursive_with_z_value_pointer(ZValuePointerSlice In, ZBitType bit, const DimsType DIM) {
     size_t n = In.size();
 
     if (n <= BaseTree::kLeaveWrap) {
-        return alloc_leaf_node<Point, ZValuePointerSlice, alloc_normal_leaf_tag, parlay::uninitialized_relocate_tag>(
+        return allocLeafNode<Point, ZValuePointerSlice, AllocNormalLeafTag, parlay::uninitialized_relocate_tag>(
             In, std::max(In.size(), static_cast<size_t>(BaseTree::kLeaveWrap)));
     }
 
     if (bit == 0) {
-        return alloc_leaf_node<Point, ZValuePointerSlice, alloc_fat_leaf_tag, parlay::uninitialized_relocate_tag>(
+        return allocLeafNode<Point, ZValuePointerSlice, alloc_fat_leaf_tag, parlay::uninitialized_relocate_tag>(
             In, In.size());
     }
 
@@ -88,7 +88,7 @@ node* octTree<Point>::build_recursive_with_z_value_pointer(ZValuePointerSlice In
         return build_recursive_with_z_value_pointer(In, bit - 1, DIM);
     }
 
-    node *L, *R;
+    Node *L, *R;
     parlay::par_do_if(
         n >= this->kSerialBuildCutoff, [&] { L = build_recursive_with_z_value_pointer(In.cut(0, pos), bit - 1, DIM); },
         [&] { R = build_recursive_with_z_value_pointer(In.cut(pos, n), bit - 1, DIM); });
@@ -117,11 +117,11 @@ void octTree<Point>::build_z_value(slice A, const DimsType DIM) {
 }
 
 template<typename Point>
-node* octTree<Point>::build_recursive_with_z_value(ZValueSlice In, ZBitType bit, const DimsType DIM) {
+Node* octTree<Point>::build_recursive_with_z_value(ZValueSlice In, ZBitType bit, const DimsType DIM) {
     size_t n = In.size();
     if (bit == 0 || n <= BaseTree::kLeaveWrap) {
         // BUG:: need to check the type of the leaf
-        return alloc_leaf_node<ZValueType, ZValueSlice, alloc_normal_leaf_tag, parlay::uninitialized_copy_tag>(
+        return allocLeafNode<ZValueType, ZValueSlice, AllocNormalLeafTag, parlay::uninitialized_copy_tag>(
             In, std::max(In.size(), static_cast<size_t>(BaseTree::kLeaveWrap)));
     }
 
@@ -134,7 +134,7 @@ node* octTree<Point>::build_recursive_with_z_value(ZValueSlice In, ZBitType bit,
         return build_recursive_with_z_value(In, bit - 1, DIM);
     }
 
-    node *L, *R;
+    Node *L, *R;
     parlay::par_do_if(
         n >= this->kSerialBuildCutoff, [&] { L = build_recursive_with_z_value(In.cut(0, pos), bit - 1, DIM); },
         [&] { R = build_recursive_with_z_value(In.cut(pos, n), bit - 1, DIM); });
@@ -164,11 +164,11 @@ void octTree<Point>::build_point_z_value(slice A, const DimsType DIM) {
 }
 
 template<typename Point>
-node* octTree<Point>::build_recursive_point_z_value(ZValuePointSlice In, ZBitType bit, const DimsType DIM) {
+Node* octTree<Point>::build_recursive_point_z_value(ZValuePointSlice In, ZBitType bit, const DimsType DIM) {
     size_t n = In.size();
     if (bit == 0 || n <= BaseTree::kLeaveWrap) {
-        return alloc_leaf_node<Point, ZValuePointSlice>(In,
-                                                        std::max(In.size(), static_cast<size_t>(BaseTree::kLeaveWrap)));
+        return allocLeafNode<Point, ZValuePointSlice>(In,
+                                                      std::max(In.size(), static_cast<size_t>(BaseTree::kLeaveWrap)));
     }
 
     ZValueType val = (static_cast<ZValueType>(1)) << (bit - 1);
@@ -180,7 +180,7 @@ node* octTree<Point>::build_recursive_point_z_value(ZValuePointSlice In, ZBitTyp
         return build_recursive_point_z_value(In, bit - 1, DIM);
     }
 
-    node *L, *R;
+    Node *L, *R;
     parlay::par_do_if(
         n >= this->kSerialBuildCutoff, [&] { L = build_recursive_point_z_value(In.cut(0, pos), bit - 1, DIM); },
         [&] { R = build_recursive_point_z_value(In.cut(pos, n), bit - 1, DIM); });
@@ -220,10 +220,10 @@ void octTree<Point>::build_point(slice A, const DimsType DIM) {
 }
 
 template<typename Point>
-node* octTree<Point>::build_recursive_point(slice In, ZBitType bit, const DimsType DIM) {
+Node* octTree<Point>::build_recursive_point(slice In, ZBitType bit, const DimsType DIM) {
     size_t n = In.size();
     if (bit == 0 || n <= BaseTree::kLeaveWrap) {
-        return alloc_leaf_node<Point, slice>(In, std::max(In.size(), static_cast<size_t>(BaseTree::kLeaveWrap)));
+        return allocLeafNode<Point, slice>(In, std::max(In.size(), static_cast<size_t>(BaseTree::kLeaveWrap)));
     }
 
     auto bits =
@@ -234,7 +234,7 @@ node* octTree<Point>::build_recursive_point(slice In, ZBitType bit, const DimsTy
         return build_recursive_point(In, bit - 1, DIM);
     }
 
-    node *L, *R;
+    Node *L, *R;
     parlay::par_do_if(
         n >= this->kSerialBuildCutoff, [&] { L = build_recursive_point(In.cut(0, pos), bit - 1, DIM); },
         [&] { R = build_recursive_point(In.cut(pos, n), bit - 1, DIM); });

@@ -40,30 +40,30 @@ class octTree : public BaseTree<Point> {
 
     struct interior;
 
-    static interior* alloc_oct_interior_node(node* L, node* R, ZBitType bit);
+    static interior* alloc_oct_interior_node(Node* L, Node* R, ZBitType bit);
 
     static inline ZValueType interleave_bits(Point* p, const DimsType DIM);
 
     static inline ZValueType get_z_value(const Point& p);
 
     void build_z_value(slice In, const DimsType DIM);
-    node* build_recursive_with_z_value(ZValueSlice In, ZBitType bit, const DimsType DIM);
+    Node* build_recursive_with_z_value(ZValueSlice In, ZBitType bit, const DimsType DIM);
 
     void build_z_value_pointer(slice In, const DimsType DIM);
-    node* build_recursive_with_z_value_pointer(ZValuePointerSlice In, ZBitType bit, const DimsType DIM);
+    Node* build_recursive_with_z_value_pointer(ZValuePointerSlice In, ZBitType bit, const DimsType DIM);
 
     void build_point_z_value(slice In, const DimsType DIM);
-    node* build_recursive_point_z_value(ZValuePointSlice In, ZBitType bit, const DimsType DIM);
+    Node* build_recursive_point_z_value(ZValuePointSlice In, ZBitType bit, const DimsType DIM);
 
     void build_point(slice In, const DimsType DIM);
-    node* build_recursive_point(slice In, ZBitType bit, const DimsType DIM);
+    Node* build_recursive_point(slice In, ZBitType bit, const DimsType DIM);
 
     // NOTE: wrapper
-    void Build(slice In, const DimsType DIM) override;
-    node* serial_build_recursive(slice In, ZBitType bit, const DimsType DIM);
-    node* build_recursive(slice In, ZBitType bit, const DimsType DIM);
+    void build(slice In, const DimsType DIM) override;
+    Node* serial_build_recursive(slice In, ZBitType bit, const DimsType DIM);
+    Node* build_recursive(slice In, ZBitType bit, const DimsType DIM);
 
-    void DeleteTree() override;
+    void deleteTree() override;
 
     uint64_t binary_search_time = 0;
     uint64_t leaf_alloc_time = 0;

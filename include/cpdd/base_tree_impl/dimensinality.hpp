@@ -20,7 +20,7 @@ inline bool BaseTree<Point>::ImbalanceNode(const size_t l, const size_t n) {
 }
 
 template<typename Point>
-inline BaseTree<Point>::DimsType BaseTree<Point>::PickRebuildDim(const node* T, const DimsType d, const DimsType DIM) {
+inline BaseTree<Point>::DimsType BaseTree<Point>::PickRebuildDim(const Node* T, const DimsType d, const DimsType DIM) {
     if (this->split_rule_ == kMaxStretchDim) {
         return 0;
     } else if (this->split_rule_ == kRotateDim) {

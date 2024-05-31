@@ -73,7 +73,7 @@ typename BaseTree<Point>::Box BaseTree<Point>::GetBox(slice V) {
 }
 
 template<typename Point>
-typename BaseTree<Point>::Box BaseTree<Point>::GetBox(node* T) {
+typename BaseTree<Point>::Box BaseTree<Point>::GetBox(Node* T) {
     Points wx = Points::uninitialized(T->size);
     Flatten(T, parlay::make_slice(wx));
     return GetBox(parlay::make_slice(wx));
