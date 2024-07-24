@@ -15,7 +15,7 @@ long long N = 8e5;
 long long Dim = 5;
 long long numFile = 3;
 
-using Typename = coord;
+using Typename = Coord;
 const Typename dataRange = 1e6;
 
 // std::string path = "../benchmark/craft_var_node_integer";
@@ -29,7 +29,7 @@ Point<Typename>* wp;
 
 void generatePoints(std::ofstream& f) {
     wp = new Point<Typename>[N];
-    coord box_size = 1e6;
+    Coord box_size = 1e6;
 
     std::random_device rd;      // a seed source for the random number engine
     std::mt19937 gen_mt(rd());  // mersenne_twister_engine seeded with rd()
