@@ -7,8 +7,10 @@
 #include "testFramework.h"
 
 template<class TreeDesc, typename Point>
-void TestSpacialTree(const int& kDim, const parlay::sequence<Point>& wp, const parlay::sequence<Point>& wi,
-                     const size_t& N, const int& K, const int& kRounds, const string& kInsertFile, const int& kTag,
+void TestSpacialTree(const int& kDim, const parlay::sequence<Point>& wp,
+                     const parlay::sequence<Point>& wi, const size_t& N,
+                     const int& K, const int& kRounds,
+                     const string& kInsertFile, const int& kTag,
                      const int& kQueryType, const int kSummary) {
     using Tree = TreeDesc::TreeType;
     using Points = typename Tree::Points;
@@ -22,8 +24,8 @@ void TestSpacialTree(const int& kDim, const parlay::sequence<Point>& wp, const p
     // //* batch insert
     // if (tag >= 1) {
     //     if (summary) {
-    //         const parlay::sequence<double> ratios = {0.0001, 0.001, 0.01, 0.1};
-    //         for (int i = 0; i < ratios.size(); i++) {
+    //         const parlay::sequence<double> ratios = {0.0001, 0.001, 0.01,
+    //         0.1}; for (int i = 0; i < ratios.size(); i++) {
     //             batchInsert<point>(pkd, wp, wi, Dim, rounds, ratios[i]);
     //         }
     //     } else {
@@ -34,17 +36,19 @@ void TestSpacialTree(const int& kDim, const parlay::sequence<Point>& wp, const p
     // //* batch delete
     // if (tag >= 2) {
     //     if (summary) {
-    //         const parlay::sequence<double> ratios = {0.0001, 0.001, 0.01, 0.1};
-    //         for (int i = 0; i < ratios.size(); i++) {
+    //         const parlay::sequence<double> ratios = {0.0001, 0.001, 0.01,
+    //         0.1}; for (int i = 0; i < ratios.size(); i++) {
     //             batchDelete<point>(pkd, wp, wi, Dim, rounds, 0, ratios[i]);
     //         }
     //     } else {
-    //         batchDelete<point>(pkd, wp, wi, Dim, rounds, 0, batchInsertRatio);
+    //         batchDelete<point>(pkd, wp, wi, Dim, rounds, 0,
+    //         batchInsertRatio);
     //     }
     // }
     //
     // if (queryType & (1 << 0)) {  // NOTE: KNN
-    //     auto run_batch_knn = [&](const points& pts, int kth, size_t batchSize) {
+    //     auto run_batch_knn = [&](const points& pts, int kth, size_t
+    //     batchSize) {
     //         points newPts(batchSize);
     //         parlay::copy(pts.cut(0, batchSize), newPts.cut(0, batchSize));
     //         kdknn = new Typename[batchSize];
@@ -77,7 +81,8 @@ void TestSpacialTree(const int& kDim, const parlay::sequence<Point>& wp, const p
     //     //
     //     // run_batch_knn(wp, static_cast<size_t>(wp.size() *
     //     // batchQueryRatio));
-    //     // const std::vector<double> batchRatios = {0.001, 0.01, 0.1, 0.2, 0.5};
+    //     // const std::vector<double> batchRatios = {0.001, 0.01, 0.1, 0.2,
+    //     0.5};
     //     // for (auto ratio : batchRatios) {
     //     //   run_batch_knn(wp, static_cast<size_t>(wp.size() * ratio));
     //     // }
@@ -93,9 +98,11 @@ void TestSpacialTree(const int& kDim, const parlay::sequence<Point>& wp, const p
     //
     //     LOG << ENDL;
     //     for (int i = 0; i < 3; i++) {
-    //         rangeCountFixWithLog<point>(wp, pkd, kdknn, singleQueryLogRepeatNum, type[i], recNum, Dim);
+    //         rangeCountFixWithLog<point>(wp, pkd, kdknn,
+    //         singleQueryLogRepeatNum, type[i], recNum, Dim);
     //     }
-    //     // rangeCountFix<point>(wp, pkd, kdknn, rounds, 2, rangeQueryNumInbaRatio, Dim);
+    //     // rangeCountFix<point>(wp, pkd, kdknn, rounds, 2,
+    //     rangeQueryNumInbaRatio, Dim);
     //     // rangeCountFix<point>(wp, pkd, kdknn, rounds, 2, recNum, Dim);
     //
     //     delete[] kdknn;
@@ -111,28 +118,33 @@ void TestSpacialTree(const int& kDim, const parlay::sequence<Point>& wp, const p
     //             //* run range count to obtain size
     //             kdknn = new Typename[recNum];
     //             points Out;
-    //             rangeQuerySerialWithLog<point>(wp, pkd, kdknn, singleQueryLogRepeatNum, Out, type[i], recNum, Dim);
-    //             delete[] kdknn;
+    //             rangeQuerySerialWithLog<point>(wp, pkd, kdknn,
+    //             singleQueryLogRepeatNum, Out, type[i], recNum, Dim); delete[]
+    //             kdknn;
     //         }
     //     } else if (summary == 1) {  // NOTE: for summary
     //         kdknn = new Typename[summaryRangeQueryNum];
     //         points Out;
-    //         rangeQueryFix<point>(wp, pkd, kdknn, rounds, Out, 2, summaryRangeQueryNum, Dim);
-    //         delete[] kdknn;
+    //         rangeQueryFix<point>(wp, pkd, kdknn, rounds, Out, 2,
+    //         summaryRangeQueryNum, Dim); delete[] kdknn;
     //     }
     // }
     //
     // if (queryType & (1 << 4)) {  // NOTE: batch insertion with fraction
-    //     const parlay::sequence<double> ratios = {0.0001, 0.0002, 0.0005, 0.001, 0.002, 0.005, 0.01,
-    //                                              0.02,   0.05,   0.1,    0.2,   0.5,   1.0};
+    //     const parlay::sequence<double> ratios = {0.0001, 0.0002, 0.0005,
+    //     0.001, 0.002, 0.005, 0.01,
+    //                                              0.02,   0.05,   0.1,    0.2,
+    //                                              0.5,   1.0};
     //     for (int i = 0; i < ratios.size(); i++) {
     //         batchInsert<point>(pkd, wp, wi, Dim, rounds, ratios[i]);
     //     }
     // }
     //
     // if (queryType & (1 << 5)) {  // NOTE: batch deletion with fraction
-    //     const parlay::sequence<double> ratios = {0.0001, 0.0002, 0.0005, 0.001, 0.002, 0.005, 0.01,
-    //                                              0.02,   0.05,   0.1,    0.2,   0.5,   1.0};
+    //     const parlay::sequence<double> ratios = {0.0001, 0.0002, 0.0005,
+    //     0.001, 0.002, 0.005, 0.01,
+    //                                              0.02,   0.05,   0.1,    0.2,
+    //                                              0.5,   1.0};
     //     points tmp;
     //     for (int i = 0; i < ratios.size(); i++) {
     //         batchDelete<point>(pkd, wp, tmp, Dim, rounds, 0, ratios[i]);
@@ -189,9 +201,11 @@ void TestSpacialTree(const int& kDim, const parlay::sequence<Point>& wp, const p
     //     points np, nq, up;
     //     std::string prefix, path;
     //     const string insertFileBack = insertFile;
-    //     const string ten_varden_path = "/data/zmen002/kdtree/ss_varden/1000000000_3/10V.in";
-    //     const string one_uniform_nine_varden = "/data/zmen002/kdtree/ss_varden/1000000000_3/1U9V.in";
-    //     const string uniform_path = "/data/zmen002/kdtree/uniform/1000000000_3/1.in";
+    //     const string ten_varden_path =
+    //     "/data/zmen002/kdtree/ss_varden/1000000000_3/10V.in"; const string
+    //     one_uniform_nine_varden =
+    //     "/data/zmen002/kdtree/ss_varden/1000000000_3/1U9V.in"; const string
+    //     uniform_path = "/data/zmen002/kdtree/uniform/1000000000_3/1.in";
     //
     //     auto inbaQueryType = std::stoi(std::getenv("INBA_QUERY"));
     //     auto inbaBuildType = std::stoi(std::getenv("INBA_BUILD"));
@@ -220,28 +234,34 @@ void TestSpacialTree(const int& kDim, const parlay::sequence<Point>& wp, const p
     //         if (inbaBuildType == 0) {
     //             buildTree<point, 2>(Dim, np, rounds, pkd);
     //         } else {
-    //             // incrementalBuild<point, 2>(Dim, np, rounds, pkd, insertBatchInbaRatio);
+    //             // incrementalBuild<point, 2>(Dim, np, rounds, pkd,
+    //             insertBatchInbaRatio);
     //
-    //             size_t batchSize = static_cast<size_t>(up.size() * knnBatchInbaRatio);
-    //             points newPts(batchSize);
+    //             size_t batchSize = static_cast<size_t>(up.size() *
+    //             knnBatchInbaRatio); points newPts(batchSize);
     //             parlay::copy(up.cut(0, batchSize), newPts.cut(0, batchSize));
-    //             incrementalBuildAndQuery<point, 2>(Dim, np, rounds, pkd, insertBatchInbaRatio, newPts);
+    //             incrementalBuildAndQuery<point, 2>(Dim, np, rounds, pkd,
+    //             insertBatchInbaRatio, newPts);
     //         }
     //
     //         // if (inbaQueryType == 0) {
-    //         //     size_t batchSize = static_cast<size_t>(np.size() * knnBatchInbaRatio);
+    //         //     size_t batchSize = static_cast<size_t>(np.size() *
+    //         knnBatchInbaRatio);
     //         //     points newPts(batchSize);
-    //         //     parlay::copy(np.cut(0, batchSize), newPts.cut(0, batchSize));
+    //         //     parlay::copy(np.cut(0, batchSize), newPts.cut(0,
+    //         batchSize));
     //         //     kdknn = new Typename[batchSize];
     //         //     const int k[3] = {1, 5, 100};
     //         //     for (int i = 0; i < 3; i++) {
-    //         //         queryKNN<point, 0, 1>(Dim, newPts, rounds, pkd, kdknn, k[i], true);
+    //         //         queryKNN<point, 0, 1>(Dim, newPts, rounds, pkd, kdknn,
+    //         k[i], true);
     //         //     }
     //         //     delete[] kdknn;
     //         // } else if (inbaQueryType == 1) {
     //         //     kdknn = new Typename[rangeQueryNumInbaRatio];
     //         //     int type = 2;
-    //         //     rangeCountFix<point>(np, pkd, kdknn, rounds, type, rangeQueryNumInbaRatio, Dim);
+    //         //     rangeCountFix<point>(np, pkd, kdknn, rounds, type,
+    //         rangeQueryNumInbaRatio, Dim);
     //         //     delete[] kdknn;
     //         // }
     //     };
@@ -273,11 +293,13 @@ void TestSpacialTree(const int& kDim, const parlay::sequence<Point>& wp, const p
     //     //* then read uniforprefixm
     //     // prefix = prefix.substr(0, prefix.rfind("/"));  // 1000000_3
     //     // prefix = prefix.substr(0, prefix.rfind("/"));  // ss_varden
-    //     // path = prefix + "/uniform/" + std::to_string(wp.size()) + "_" + std::to_string(Dim) + "/1.in";
+    //     // path = prefix + "/uniform/" + std::to_string(wp.size()) + "_" +
+    //     std::to_string(Dim) + "/1.in";
     //     // std::cout << "uniform path:" << path << std::endl;
     //
     //     // read_points<point>(path.c_str(), nq, K);
-    //     // parlay::parallel_for(0, batchPointNum, [&](size_t i) { np[i] = nq[i]; });
+    //     // parlay::parallel_for(0, batchPointNum, [&](size_t i) { np[i] =
+    //     nq[i]; });
     //     // writeToFile(one_uniform_nine_varden);
     //     read_points(one_uniform_nine_varden.c_str(), np, K);
     //     run();
@@ -297,8 +319,10 @@ void TestSpacialTree(const int& kDim, const parlay::sequence<Point>& wp, const p
     // if (queryType & (1 << 11)) {  // NOTE: osm by year
     //     // WARN: remember using double
     //     string osm_prefix = "/data/zmen002/kdtree/real_world/osm/year/";
-    //     const std::vector<std::string> files = {"2014", "2015", "2016", "2017", "2018",
-    //                                             "2019", "2020", "2021", "2022", "2023"};
+    //     const std::vector<std::string> files = {"2014", "2015", "2016",
+    //     "2017", "2018",
+    //                                             "2019", "2020", "2021",
+    //                                             "2022", "2023"};
     //     parlay::sequence<points> node_by_year(files.size());
     //     for (int i = 0; i < files.size(); i++) {
     //         std::string path = osm_prefix + "osm_" + files[i] + ".csv";
@@ -316,15 +340,19 @@ void TestSpacialTree(const int& kDim, const parlay::sequence<Point>& wp, const p
     // if (queryType & (1 << 12)) {  // NOTE: osm by month
     //     // WARN: remember using double
     //     string osm_prefix = "/data/zmen002/kdtree/real_world/osm/month/";
-    //     const std::vector<std::string> files = {"2014", "2015", "2016", "2017", "2018",
-    //                                             "2019", "2020", "2021", "2022", "2023"};
-    //     const std::vector<std::string> month = {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"};
+    //     const std::vector<std::string> files = {"2014", "2015", "2016",
+    //     "2017", "2018",
+    //                                             "2019", "2020", "2021",
+    //                                             "2022", "2023"};
+    //     const std::vector<std::string> month = {"1", "2", "3", "4", "5", "6",
+    //     "7", "8", "9", "10", "11", "12"};
     //
     //     parlay::sequence<points> node(files.size() * month.size());
     //     for (int i = 0; i < files.size(); i++) {
     //         for (int j = 0; j < month.size(); j++) {
-    //             std::string path = osm_prefix + files[i] + "/" + month[j] + ".csv";
-    //             read_points(path.c_str(), node[i * month.size() + j], K);
+    //             std::string path = osm_prefix + files[i] + "/" + month[j] +
+    //             ".csv"; read_points(path.c_str(), node[i * month.size() + j],
+    //             K);
     //         }
     //     }
     //     kdknn = new Typename[batchQueryOsmSize];
@@ -336,29 +364,36 @@ void TestSpacialTree(const int& kDim, const parlay::sequence<Point>& wp, const p
     //
     // if (queryType & (1 << 13)) {  // NOTE: serial insert VS batch insert
     //     // NOTE: first insert in serial one bu one
-    //     const parlay::sequence<double> ratios = {1e-9, 2e-9, 5e-9, 1e-8, 2e-8, 5e-8, 1e-7, 2e-7, 5e-7, 1e-6, 2e-6,
-    //                                              5e-6, 1e-5, 2e-5, 5e-5, 1e-4, 2e-4, 5e-4, 1e-3, 2e-3, 5e-3, 1e-2};
+    //     const parlay::sequence<double> ratios = {1e-9, 2e-9, 5e-9, 1e-8,
+    //     2e-8, 5e-8, 1e-7, 2e-7, 5e-7, 1e-6, 2e-6,
+    //                                              5e-6, 1e-5, 2e-5, 5e-5,
+    //                                              1e-4, 2e-4, 5e-4, 1e-3,
+    //                                              2e-3, 5e-3, 1e-2};
     //     // LOG << ENDL << "serial ";
-    //     // batchInsert<point, true>(pkd, wp, wi, Dim, rounds, *ratios.rbegin());
-    //     LOG << ENDL;
-    //     for (int i = 0; i < ratios.size(); i++) {
+    //     // batchInsert<point, true>(pkd, wp, wi, Dim, rounds,
+    //     *ratios.rbegin()); LOG << ENDL; for (int i = 0; i < ratios.size();
+    //     i++) {
     //         LOG << wi.size() * ratios[i] << " ";
-    //         batchUpdateByStep<point, true>(pkd, wp, wi, Dim, rounds, ratios[i], *ratios.rbegin());
-    //         LOG << ENDL;
+    //         batchUpdateByStep<point, true>(pkd, wp, wi, Dim, rounds,
+    //         ratios[i], *ratios.rbegin()); LOG << ENDL;
     //     }
     // }
     //
     // if (queryType & (1 << 14)) {  // NOTE: serial delete VS batch delete
     //     // NOTE: first insert in serial one bu one
-    //     const parlay::sequence<double> ratios = {1e-9, 2e-9, 5e-9, 1e-8, 2e-8, 5e-8, 1e-7, 2e-7, 5e-7, 1e-6, 2e-6,
-    //                                              5e-6, 1e-5, 2e-5, 5e-5, 1e-4, 2e-4, 5e-4, 1e-3, 2e-3, 5e-3, 1e-2};
+    //     const parlay::sequence<double> ratios = {1e-9, 2e-9, 5e-9, 1e-8,
+    //     2e-8, 5e-8, 1e-7, 2e-7, 5e-7, 1e-6, 2e-6,
+    //                                              5e-6, 1e-5, 2e-5, 5e-5,
+    //                                              1e-4, 2e-4, 5e-4, 1e-3,
+    //                                              2e-3, 5e-3, 1e-2};
     //     // LOG << ENDL << "serial ";
-    //     // batchDelete<point, true>(pkd, wp, wi, Dim, rounds, false, *ratios.rbegin());
+    //     // batchDelete<point, true>(pkd, wp, wi, Dim, rounds, false,
+    //     *ratios.rbegin());
     //     // LOG << ENDL;
     //     for (int i = 0; i < ratios.size(); i++) {
     //         LOG << wi.size() * ratios[i] << " ";
-    //         batchUpdateByStep<point, false>(pkd, wp, wp, Dim, rounds, ratios[i], *ratios.rbegin());
-    //         LOG << ENDL;
+    //         batchUpdateByStep<point, false>(pkd, wp, wp, Dim, rounds,
+    //         ratios[i], *ratios.rbegin()); LOG << ENDL;
     //     }
     // }
 
@@ -370,12 +405,12 @@ void TestSpacialTree(const int& kDim, const parlay::sequence<Point>& wp, const p
 }
 
 struct wrapper {
-    struct ZDTree {
-        template<class Point>
-        struct Desc {
-            using TreeType = cpdd::octTree<Point>;
-        };
-    };
+    // struct ZDTree {
+    //     template<class Point>
+    //     struct Desc {
+    //         using TreeType = cpdd::octTree<Point>;
+    //     };
+    // };
     struct KDtree {
         template<class Point>
         struct Desc {
@@ -415,7 +450,8 @@ int main(int argc, char* argv[]) {
                 name = std::string(input_file_path);
                 name = name.substr(name.rfind("/") + 1);
                 std::cout << name << " ";
-                auto [n, d] = read_points<PointTypeAlias>(input_file_path, wp, K);
+                auto [n, d] =
+                    read_points<PointTypeAlias>(input_file_path, wp, K);
                 N = n;
                 assert(d == Dim);
             }
@@ -425,12 +461,15 @@ int main(int argc, char* argv[]) {
                 id = (id + 1) % 3;  // WARN: MOD graph number used to test
                 if (!id) id++;
                 int pos = std::string(input_file_path).rfind("/") + 1;
-                insert_file_path = std::string(input_file_path).substr(0, pos) + std::to_string(id) + ".in";
-                auto [n, d] = read_points<PointTypeAlias>(insert_file_path.c_str(), wi, K);
+                insert_file_path = std::string(input_file_path).substr(0, pos) +
+                                   std::to_string(id) + ".in";
+                auto [n, d] = read_points<PointTypeAlias>(
+                    insert_file_path.c_str(), wi, K);
                 assert(d == Dim);
             }
 
-            TestSpacialTree<Desc>(Dim, wp, wi, N, K, rounds, insert_file_path, tag, queryType, summary);
+            TestSpacialTree<Desc>(Dim, wp, wi, N, K, rounds, insert_file_path,
+                                  tag, queryType, summary);
         };
 
         if (tag == -1) {

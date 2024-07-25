@@ -34,20 +34,14 @@ class KdTree : public BaseTree<Point> {
 
     void Build_(Slice In, const DimsType DIM) override;
 
-    void divide_rotate(Slice In, SplitterSeq& pivots, DimsType dim, BucketType idx, BucketType deep, BucketType& bucket,
-                       const DimsType DIM, BoxSeq& boxs, const Box& bx);
-    void pick_pivots(Slice In, const size_t& n, SplitterSeq& pivots, const DimsType dim, const DimsType DIM,
-                     BoxSeq& boxs, const Box& bx);
-    static inline BucketType find_bucket(const Point& p, const SplitterSeq& pivots);
-    static void partition(Slice A, Slice B, const size_t n, const SplitterSeq& pivots,
-                          parlay::sequence<BallsType>& sums);
-    static Node* build_inner_tree(BucketType idx, SplitterSeq& pivots, parlay::sequence<Node*>& treeNodes);
-    void build(Slice In, const DimsType DIM);
-    PointsIter serial_partition(Slice In, DimsType d);
-    Node* serial_build_recursive(Slice In, Slice Out, DimsType dim, const DimsType DIM, const Box& bx);
-    Node* build_recursive(Slice In, Slice Out, DimsType dim, const DimsType DIM, const Box& bx);
-
     void DeleteTree() override;
+
+   private:
+    Node* BuildRecursive(Slice In, Slice Out, DimsType dim, const DimsType DIM,
+                         const Box& bx);
+
+    Node* SerialBuildRecursive(Slice In, Slice Out, DimsType dim,
+                               const DimsType DIM, const Box& bx);
 };
 
 }  // namespace cpdd

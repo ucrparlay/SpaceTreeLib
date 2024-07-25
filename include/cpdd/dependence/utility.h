@@ -20,8 +20,12 @@ class counter_iterator {
     counter_iterator(T& counter) : counter(counter) {}
     counter_iterator(const counter_iterator& other) : counter(other.counter) {}
 
-    bool operator==(const counter_iterator& rhs) const { return counter == rhs.counter; }
-    bool operator!=(const counter_iterator& rhs) const { return counter != rhs.counter; }
+    bool operator==(const counter_iterator& rhs) const {
+        return counter == rhs.counter;
+    }
+    bool operator!=(const counter_iterator& rhs) const {
+        return counter != rhs.counter;
+    }
 
     accept_any operator*() const {
         ++counter.get();
@@ -49,6 +53,7 @@ struct is_pair<std::pair<T, U>> : std::true_type {};
 // NOTE: tag for different leaf allocations
 struct AllocNormalLeafTag {};
 struct AllocDummyLeafTag {};
+struct AllocEmptyLeafTag {};
 struct alloc_fat_leaf_tag {};
 struct alloc_thin_leaf_tag {};
 

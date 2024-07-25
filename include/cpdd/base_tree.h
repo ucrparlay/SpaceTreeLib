@@ -77,10 +77,34 @@ class BaseTree {
 
     // NOTE: dimensionality
     template<typename SplitRule>
-    inline DimsType PickRebuildDim(const Node* T, const DimsType d, const DimsType DIM);
-    inline DimsType PickRebuildDim_(const Node* T, const DimsType d, const DimsType DIM, MaxStretchDimTag);
-    inline DimsType PickRebuildDim_(const Node* T, const DimsType d, const DimsType DIM, RotateDimTag);
+    inline DimsType PickRebuildDim(const Node* T, const DimsType d,
+                                   const DimsType DIM);
+    inline DimsType PickRebuildDim_(const Node* T, const DimsType d,
+                                    const DimsType DIM, MaxStretchDimTag);
+    inline DimsType PickRebuildDim_(const Node* T, const DimsType d,
+                                    const DimsType DIM, RotateDimTag);
     static inline DimsType PickMaxStretchDim(const Box& bx, const DimsType DIM);
+
+    // NOTE: build tree
+    void DivideRotate(Slice In, SplitterSeq& pivots, DimsType dim,
+                      BucketType idx, BucketType deep, BucketType& bucket,
+                      const DimsType DIM, BoxSeq& boxs, const Box& bx);
+
+    void PickPivots(Slice In, const size_t& n, SplitterSeq& pivots,
+                    const DimsType dim, const DimsType DIM, BoxSeq& boxs,
+                    const Box& bx);
+
+    static inline BucketType FindBucket(const Point& p,
+                                        const SplitterSeq& pivots);
+
+    static void Partition(Slice A, Slice B, const size_t n,
+                          const SplitterSeq& pivots,
+                          parlay::sequence<BallsType>& sums);
+
+    static Node* BuildInnerTree(BucketType idx, SplitterSeq& pivots,
+                                parlay::sequence<Node*>& tree_nodes);
+
+    PointsIter SerialPartition(Slice In, DimsType d);
 
     virtual void Build_(Slice In, const DimsType DIM) = 0;
 
@@ -119,7 +143,8 @@ class BaseTree {
     size_t CountTreeNodesNum(Node* T);
 
     template<typename interior>
-    void CountTreeHeights(Node* T, size_t deep, size_t& idx, parlay::sequence<size_t>& heights);
+    void CountTreeHeights(Node* T, size_t deep, size_t& idx,
+                          parlay::sequence<size_t>& heights);
 
     //@ kdtree interfaces
     inline void SetRoot(Node* _root) { this->root_ = _root; }
