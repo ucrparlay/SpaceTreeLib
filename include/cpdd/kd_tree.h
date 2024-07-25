@@ -9,29 +9,48 @@ namespace cpdd {
 template<typename Point>
 class KdTree : public BaseTree<Point> {
    public:
-    using BaseTree = BaseTree<Point>;
+    using BT = BaseTree<Point>;
 
-    using BucketType = BaseTree::BucketType;
-    using BallsType = BaseTree::BallsType;
-    using DimsType = BaseTree::DimsType;
+    using BucketType = BT::BucketType;
+    using BallsType = BT::BallsType;
+    using DimsType = BT::DimsType;
     using Coord = typename Point::Coord;
     using Coords = typename Point::Coords;
     using AugType = bool;
     using Num = Num_Comparator<Coord>;
-    using slice = BaseTree::slice;
-    using Points = BaseTree::Points;
-    using PointsIter = BaseTree::PointsIter;
-    using Splitter = BaseTree::Splitter;
-    using SplitterSeq = BaseTree::SplitterSeq;
-    using Box = BaseTree::Box;
-    using BoxSeq = BaseTree::BoxSeq;
-    using Circle = BaseTree::Circle;
+    using Slice = BT::Slice;
+    using Points = BT::Points;
+    using PointsIter = BT::PointsIter;
+    using Splitter = BT::Splitter;
+    using SplitterSeq = BT::SplitterSeq;
+    using Box = BT::Box;
+    using BoxSeq = BT::BoxSeq;
+    using Circle = BT::Circle;
 
     struct interior;
-    // NOTE: wrapper
-    void build(slice In, const DimsType DIM) override;
+    enum SplitRule { kMaxStretchDim, kRotateDim };
 
-    void deleteTree() override;
+    template<typename R>
+    void Build(R&& In, int DIM);
+
+    void Build_(Slice In, const DimsType DIM) override;
+
+    void divide_rotate(Slice In, SplitterSeq& pivots, DimsType dim, BucketType idx, BucketType deep, BucketType& bucket,
+                       const DimsType DIM, BoxSeq& boxs, const Box& bx);
+    void pick_pivots(Slice In, const size_t& n, SplitterSeq& pivots, const DimsType dim, const DimsType DIM,
+                     BoxSeq& boxs, const Box& bx);
+    static inline BucketType find_bucket(const Point& p, const SplitterSeq& pivots);
+    static void partition(Slice A, Slice B, const size_t n, const SplitterSeq& pivots,
+                          parlay::sequence<BallsType>& sums);
+    static Node* build_inner_tree(BucketType idx, SplitterSeq& pivots, parlay::sequence<Node*>& treeNodes);
+    void build(Slice In, const DimsType DIM);
+    PointsIter serial_partition(Slice In, DimsType d);
+    Node* serial_build_recursive(Slice In, Slice Out, DimsType dim, const DimsType DIM, const Box& bx);
+    Node* build_recursive(Slice In, Slice Out, DimsType dim, const DimsType DIM, const Box& bx);
+
+    void DeleteTree() override;
+
+    SplitRule split_rule_ = kMaxStretchDim;
 };
 
 }  // namespace cpdd

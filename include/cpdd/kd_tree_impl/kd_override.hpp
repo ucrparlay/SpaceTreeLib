@@ -4,8 +4,8 @@
 namespace cpdd {
 
 template<typename Point>
-void KdTree<Point>::deleteTree() {
-    this->template deleteTreeWrapper<Leaf<Point, slice, std::true_type>, Interior<Point, bool>>();
+void KdTree<Point>::DeleteTree() {
+    this->template DeleteTreeWrapper<Leaf<Point, Slice, std::true_type>, Interior<Point, bool>>();
 }
 
 }  // namespace cpdd

@@ -364,7 +364,7 @@ void TestSpacialTree(const int& kDim, const parlay::sequence<Point>& wp, const p
 
     std::cout << std::endl << std::flush;
 
-    tree.deleteTree();
+    tree.DeleteTree();
 
     return;
 }

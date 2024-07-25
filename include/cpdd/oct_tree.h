@@ -27,7 +27,7 @@ class octTree : public BaseTree<Point> {
     using Coords = typename Point::Coords;
     using AugType = bool;
     using Num = Num_Comparator<Coord>;
-    using slice = BaseTree::slice;
+    using slice = BaseTree::Slice;
     using Points = BaseTree::Points;
     using PointsIter = BaseTree::PointsIter;
     using Splitter = BaseTree::Splitter;

@@ -60,7 +60,7 @@ typename BaseTree<Point>::Box BaseTree<Point>::GetBox(const Box& x, const Box& y
 }
 
 template<typename Point>
-typename BaseTree<Point>::Box BaseTree<Point>::GetBox(slice V) {
+typename BaseTree<Point>::Box BaseTree<Point>::GetBox(Slice V) {
     if (V.size() == 0) {
         return GetEmptyBox();
     } else {

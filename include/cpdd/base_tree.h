@@ -19,7 +19,7 @@ class BaseTree {
     using Coord = typename Point::Coord;
     using Coords = typename Point::Coords;
     using Num = Num_Comparator<Coord>;
-    using slice = parlay::slice<Point*, Point*>;
+    using Slice = parlay::slice<Point*, Point*>;
     using Points = parlay::sequence<Point>;
     using PointsIter = typename parlay::sequence<Point>::iterator;
     using Splitter = std::pair<Coord, DimsType>;
@@ -36,56 +36,54 @@ class BaseTree {
     //@ uint32t handle up to 4e9 at least
     //! bucket num should smaller than 1<<8 to handle type overflow
 
-    // TODO wrap the variables using std::getenv()
+    // TODO: wrap the variables using std::getenv()
     static constexpr BucketType kBuildDepthOnce = 6;  //* last layer is leaf
     static constexpr BucketType kPivotNum = (1 << kBuildDepthOnce) - 1;
     static constexpr BucketType kBucketNum = 1 << kBuildDepthOnce;
-    //@ tree structure
+    // NOTE: tree structure
     static constexpr uint_fast8_t kLeaveWrap = 32;
     static constexpr uint_fast8_t kThinLeaveWrap = 24;
     static constexpr uint_fast16_t kSerialBuildCutoff = 1 << 10;
-    //@ block param in Partition
+    // NOTE: block param in Partition
     static constexpr uint_fast8_t kLog2Base = 10;
     static constexpr uint_fast16_t kBlockSize = 1 << kLog2Base;
-    //@ reconstruct weight threshold
+    // NOTE: reconstruct weight threshold
     static constexpr uint_fast8_t kInbalanceRatio = 30;
 
     inline size_t GetImbalanceRatio();
     inline bool ImbalanceNode(const size_t l, const size_t n);
 
-    enum SplitRule { kMaxStretchDim, kRotateDim };
-
-    //@ array based inner tree for batch insertion and deletion
+    // NOTE: array based inner tree for batch insertion and deletion
     struct InnerTree;
 
-    //@ Box operations
+    // NOTE: Box operations
     static inline bool LegalBox(const Box& bx);
     static inline bool WithinBox(const Box& a, const Box& b);
     static inline bool WithinBox(const Point& p, const Box& bx);
     static inline bool BoxIntersectBox(const Box& a, const Box& b);
     static inline Box GetEmptyBox();
     static Box GetBox(const Box& x, const Box& y);
-    static Box GetBox(slice V);
+    static Box GetBox(Slice V);
     static Box GetBox(Node* T);
 
     static inline bool WithinCircle(const Box& bx, const Circle& cl);
     static inline bool WithinCircle(const Point& p, const Circle& cl);
     static inline bool CircleIntersectBox(const Circle& cl, const Box& bx);
 
-    //@ dimensionality
+    // NOTE: dimensionality
     inline DimsType PickRebuildDim(const Node* T, const DimsType d, const DimsType DIM);
     static inline DimsType PickMaxStretchDim(const Box& bx, const DimsType DIM);
 
-    virtual void build(slice In, const DimsType DIM) = 0;
+    virtual void Build_(Slice In, const DimsType DIM) = 0;
 
     inline uint64_t Hash64(uint64_t u);
-    virtual void deleteTree() = 0;
+    virtual void DeleteTree() = 0;
 
     template<typename leaf_node_type, typename interior_node_type>
-    void deleteTreeWrapper();
+    void DeleteTreeWrapper();
 
     template<typename leaf_node_type, typename interior_node_type>
-    static void deleteTreeRecursive(Node* T, bool granularity = true);
+    static void DeleteTreeRecursive(Node* T, bool granularity = true);
 
     //@ validations
     template<typename interior>
@@ -126,7 +124,6 @@ class BaseTree {
     Node* root_ = nullptr;
     parlay::internal::timer timer;
     // SplitRule split_rule_ = kRotateDim;
-    SplitRule split_rule_ = kMaxStretchDim;
     Box tree_box_;
 };
 
