@@ -28,7 +28,6 @@ class KdTree : public BaseTree<Point> {
     using Circle = BT::Circle;
 
     struct interior;
-    enum SplitRule { kMaxStretchDim, kRotateDim };
 
     template<typename R>
     void Build(R&& In, int DIM);
@@ -49,8 +48,6 @@ class KdTree : public BaseTree<Point> {
     Node* build_recursive(Slice In, Slice Out, DimsType dim, const DimsType DIM, const Box& bx);
 
     void DeleteTree() override;
-
-    SplitRule split_rule_ = kMaxStretchDim;
 };
 
 }  // namespace cpdd

@@ -50,11 +50,16 @@ class BaseTree {
     // NOTE: reconstruct weight threshold
     static constexpr uint_fast8_t kInbalanceRatio = 30;
 
+    // NOTE: get the imbalance ratio
     inline size_t GetImbalanceRatio();
     inline bool ImbalanceNode(const size_t l, const size_t n);
 
     // NOTE: array based inner tree for batch insertion and deletion
     struct InnerTree;
+
+    // NOTE: split rule
+    struct MaxStretchDimTag {};
+    struct RotateDimTag {};
 
     // NOTE: Box operations
     static inline bool LegalBox(const Box& bx);
@@ -71,7 +76,10 @@ class BaseTree {
     static inline bool CircleIntersectBox(const Circle& cl, const Box& bx);
 
     // NOTE: dimensionality
+    template<typename SplitRule>
     inline DimsType PickRebuildDim(const Node* T, const DimsType d, const DimsType DIM);
+    inline DimsType PickRebuildDim_(const Node* T, const DimsType d, const DimsType DIM, MaxStretchDimTag);
+    inline DimsType PickRebuildDim_(const Node* T, const DimsType d, const DimsType DIM, RotateDimTag);
     static inline DimsType PickMaxStretchDim(const Box& bx, const DimsType DIM);
 
     virtual void Build_(Slice In, const DimsType DIM) = 0;
