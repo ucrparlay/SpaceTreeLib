@@ -5,7 +5,8 @@ namespace cpdd {
 
 template<typename Point>
 void octTree<Point>::deleteTree() {
-    this->template deleteTreeWrapper<Leaf<ZValueType, ZValueSlice, std::true_type>, interior>();
+    this->template deleteTreeWrapper<
+        Leaf<ZValueType, ZValueSlice, 32, std::true_type>, interior>();
 }
 
 }  // namespace cpdd

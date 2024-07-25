@@ -2,7 +2,7 @@
 #include <cstddef>
 #include <cstdlib>
 #include "cpdd/kd_tree.h"
-#include "cpdd/oct_tree.h"
+/*#include "cpdd/oct_tree.h"*/
 #include "parlay/primitives.h"
 #include "testFramework.h"
 

@@ -15,14 +15,26 @@ struct Node {
     size_t size;
 };
 
-template<typename Point, typename Range, typename PointAssignTag>
+template<typename Point, typename Range, uint_fast8_t kDefaultWrap,
+         typename PointAssignTag>
 struct Leaf : Node {
     using Points = parlay::sequence<Point>;
 
     // NOTE: default allocator
-    Leaf() : Node{true, static_cast<size_t>(0)}, is_dummy(false){};
+    Leaf() : Node{true, static_cast<size_t>(0)}, is_dummy(false) {}
 
-    // NOTE: alloc a normal leaf
+    // NOTE: alloc a normal leaf with size of DefaultWrap
+    Leaf(Range In, AllocNormalLeafTag) :
+        Node{true, static_cast<size_t>(In.size())},
+        is_dummy(false),
+        pts(Points::uninitialized(kDefaultWrap)) {
+        assert(In.size() <= kDefaultWrap);
+        for (int i = 0; i < In.size(); i++) {
+            parlay::assign_dispatch(pts[i], In[i], PointAssignTag());
+        }
+    }
+
+    // NOTE: alloc a normal leaf with specific size
     Leaf(Range In, const auto alloc_size, AllocNormalLeafTag) :
         Node{true, static_cast<size_t>(In.size())},
         is_dummy(false),
@@ -48,23 +60,26 @@ struct Leaf : Node {
 
 // NOTE:: Alloc a leaf with input IN and given size
 template<typename Point, typename Range, typename LeafAllocTag,
-         typename PointAssignTag = parlay::copy_assign_tag>
-static Leaf<Point, Range, PointAssignTag>* AllocLeafNode(
+         uint_fast8_t kDefaultWrap,
+         typename PointAssignTag = parlay::move_assign_tag>
+static Leaf<Point, Range, kDefaultWrap, PointAssignTag>* AllocLeafNode(
     Range In, const auto alloc_size) {
     static_assert(std::is_integral<decltype(alloc_size)>::value);
 
-    using leaf = Leaf<Point, Range, PointAssignTag>;
+    using leaf = Leaf<Point, Range, kDefaultWrap, PointAssignTag>;
     leaf* o = parlay::type_allocator<leaf>::alloc();
     new (o) leaf(In, alloc_size, LeafAllocTag());
     assert(o->is_dummy == false);
     return o;
 }
 
-// NOTE: Alloc a leaf with input IN
+// NOTE: Alloc a leaf with input IN and default leaf wrap
 template<typename Point, typename Range, typename LeafAllocTag,
-         typename PointAssignTag = parlay::copy_assign_tag>
-static Leaf<Point, Range, PointAssignTag>* AllocLeafNode(Range In) {
-    using leaf = Leaf<Point, Range, PointAssignTag>;
+         uint_fast8_t kDefaultWrap,
+         typename PointAssignTag = parlay::move_assign_tag>
+static Leaf<Point, Range, kDefaultWrap, PointAssignTag>* AllocLeafNode(
+    Range In) {
+    using leaf = Leaf<Point, Range, kDefaultWrap, PointAssignTag>;
     leaf* o = parlay::type_allocator<leaf>::alloc();
     new (o) leaf(In, LeafAllocTag());
     assert(o->is_dummy == false);
@@ -73,32 +88,35 @@ static Leaf<Point, Range, PointAssignTag>* AllocLeafNode(Range In) {
 
 // NOTE: Alloc a empty leaf
 template<typename Point, typename Range, typename LeafAllocTag,
-         typename PointAssignTag = parlay::copy_assign_tag>
-static Leaf<Point, Range, PointAssignTag>* AllocLeafNode() {
-    using leaf = Leaf<Point, Range, PointAssignTag>;
+         uint_fast8_t kDefaultWrap,
+         typename PointAssignTag = parlay::move_assign_tag>
+static Leaf<Point, Range, kDefaultWrap, PointAssignTag>* AllocLeafNode() {
+    using leaf = Leaf<Point, Range, kDefaultWrap, PointAssignTag>;
     leaf* o = parlay::type_allocator<leaf>::alloc();
     new (o) leaf();
     return o;
 }
 
-template<typename Point, typename AugType>
+template<typename Point, typename SplitType, typename AugType>
 struct Interior : Node {
     Node* left;
     Node* right;
+    SplitType split;
     AugType aug;
-    Interior(Node* _left, Node* _right, AugType& _aug) :
+    Interior(Node* _left, Node* _right, SplitType _split, const AugType& _aug) :
         Node{false, _left->size + _right->size},
         left(_left),
         right(_right),
+        split(_split),
         aug(_aug) {}
 };
 
-template<typename Point, typename AugType>
-static Interior<Point, AugType>* allocInteriorNode(Node* L, Node* R,
-                                                   AugType& aug) {
-    using Interior = Interior<Point, AugType>;
+template<typename Point, typename SplitType, typename AugType>
+static Interior<Point, SplitType, AugType>* AllocInteriorNode(
+    Node* L, Node* R, const SplitType& split, const AugType& aug) {
+    using Interior = Interior<Point, SplitType, AugType>;
     Interior* o = parlay::type_allocator<Interior>::alloc();
-    new (o) Interior(L, R, aug);
+    new (o) Interior(L, R, split, aug);
     return o;
 }
 

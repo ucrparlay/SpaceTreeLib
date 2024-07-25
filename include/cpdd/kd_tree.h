@@ -8,7 +8,7 @@ namespace cpdd {
 
 template<typename Point, typename SplitRule>
 class KdTree : public BaseTree<Point> {
-   public:
+ public:
     using BT = BaseTree<Point>;
 
     using BucketType = BT::BucketType;
@@ -36,7 +36,7 @@ class KdTree : public BaseTree<Point> {
 
     void DeleteTree() override;
 
-   private:
+ private:
     Node* BuildRecursive(Slice In, Slice Out, DimsType dim, const DimsType DIM,
                          const Box& bx);
 
