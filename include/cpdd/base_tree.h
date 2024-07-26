@@ -57,10 +57,6 @@ class BaseTree {
     // NOTE: array based inner tree for batch insertion and deletion
     struct InnerTree;
 
-    // NOTE: split rule
-    struct MaxStretchDimTag {};
-    struct RotateDimTag {};
-
     // NOTE: Box operations
     static inline bool LegalBox(const Box& bx);
     static inline bool WithinBox(const Box& a, const Box& b);
@@ -79,11 +75,6 @@ class BaseTree {
     template<typename SplitRule>
     inline DimsType PickRebuildDim(const Node* T, const DimsType d,
                                    const DimsType DIM);
-    inline DimsType PickRebuildDim_(const Node* T, const DimsType d,
-                                    const DimsType DIM, MaxStretchDimTag);
-    inline DimsType PickRebuildDim_(const Node* T, const DimsType d,
-                                    const DimsType DIM, RotateDimTag);
-    static inline DimsType PickMaxStretchDim(const Box& bx, const DimsType DIM);
 
     // NOTE: build tree
     void DivideRotate(Slice In, SplitterSeq& pivots, DimsType dim,
@@ -105,8 +96,6 @@ class BaseTree {
                                 parlay::sequence<Node*>& tree_nodes);
 
     PointsIter SerialPartition(Slice In, DimsType d);
-
-    virtual void Build_(Slice In, const DimsType DIM) = 0;
 
     inline uint64_t Hash64(uint64_t u);
     virtual void DeleteTree() = 0;
@@ -156,7 +145,6 @@ class BaseTree {
    protected:
     Node* root_ = nullptr;
     parlay::internal::timer timer;
-    // SplitRule split_rule_ = kRotateDim;
     Box tree_box_;
 };
 

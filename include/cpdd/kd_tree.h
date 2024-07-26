@@ -6,7 +6,7 @@
 
 namespace cpdd {
 
-template<typename Point>
+template<typename Point, typename SplitRule>
 class KdTree : public BaseTree<Point> {
    public:
     using BT = BaseTree<Point>;
@@ -29,10 +29,10 @@ class KdTree : public BaseTree<Point> {
 
     struct interior;
 
-    template<typename R>
-    void Build(R&& In, int DIM);
+    template<typename Range>
+    void Build(Range&& In, int DIM);
 
-    void Build_(Slice In, const DimsType DIM) override;
+    void Build_(Slice In, const DimsType DIM);
 
     void DeleteTree() override;
 
@@ -42,6 +42,8 @@ class KdTree : public BaseTree<Point> {
 
     Node* SerialBuildRecursive(Slice In, Slice Out, DimsType dim,
                                const DimsType DIM, const Box& bx);
+
+    SplitRule split_rule_;
 };
 
 }  // namespace cpdd

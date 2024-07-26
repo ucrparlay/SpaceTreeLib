@@ -8,6 +8,7 @@
 #include <ios>
 #include "cpdd/base_tree.h"
 #include "cpdd/oct_tree.h"
+#include "cpdd/dependence/splitter.h"
 
 #include "common/geometryIO.h"
 #include "common/parse_command_line.h"
@@ -46,14 +47,16 @@ static constexpr int summaryRangeQueryNum = 10000;
 //* [a,b)
 // inline size_t get_random_index(size_t a, size_t b, int seed) {
 //     return size_t((rand() % (b - a)) + a);
-//     // return size_t( ( parlay::hash64( static_cast<uint64_t>( seed ) ) % ( b - a
+//     // return size_t( ( parlay::hash64( static_cast<uint64_t>( seed ) ) % ( b
+//     - a
 //     // ) ) + a );
 // }
 //
 // template<typename point>
-// size_t recurse_box(parlay::slice<point*, point*> In, parlay::sequence<std::pair<std::pair<point, point>, size_t>>&
-// boxs,
-//                    int DIM, std::pair<size_t, size_t> range, int& idx, int recNum, int type) {
+// size_t recurse_box(parlay::slice<point*, point*> In,
+// parlay::sequence<std::pair<std::pair<point, point>, size_t>>& boxs,
+//                    int DIM, std::pair<size_t, size_t> range, int& idx, int
+//                    recNum, int type) {
 //     using tree = BaseTree<point>;
 //     using box = typename tree::box;
 //
@@ -64,11 +67,13 @@ static constexpr int summaryRangeQueryNum = 10000;
 //     bool goon = false;
 //     if (n <= range.second) {
 //         boxs[idx++] = std::make_pair(tree::get_box(In), In.size());
-//         // NOTE: handle the cose that all points are the same then become un-divideable
-//         // NOTE: Modify the coefficient to make the rectangle size distribute as uniform as possible within the range
-//         if ((type == 0 && n < 40 * range.first) || (type == 1 && n < 10 * range.first) ||
-//             (type == 2 && n < 2 * range.first) || parlay::all_of(In, [&](const point& p) { return p == In[0]; })) {
-//             return In.size();
+//         // NOTE: handle the cose that all points are the same then become
+//         un-divideable
+//         // NOTE: Modify the coefficient to make the rectangle size distribute
+//         as uniform as possible within the range if ((type == 0 && n < 40 *
+//         range.first) || (type == 1 && n < 10 * range.first) ||
+//             (type == 2 && n < 2 * range.first) || parlay::all_of(In,
+//             [&](const point& p) { return p == In[0]; })) { return In.size();
 //         } else {
 //             goon = true;
 //             mx = n;
@@ -79,7 +84,8 @@ static constexpr int summaryRangeQueryNum = 10000;
 //     size_t pos = get_random_index(0, n, rand());
 //     parlay::sequence<bool> flag(n, 0);
 //     parlay::parallel_for(0, n, [&](size_t i) {
-//         if (cpdd::Num_Comparator<Coord>::Gt(In[i].pnt[dim], In[pos].pnt[dim]))
+//         if (cpdd::Num_Comparator<Coord>::Gt(In[i].pnt[dim],
+//         In[pos].pnt[dim]))
 //             flag[i] = 1;
 //         else
 //             flag[i] = 0;
@@ -89,8 +95,9 @@ static constexpr int summaryRangeQueryNum = 10000;
 //     assert(Out.size() == n);
 //     // LOG << dim << " " << Out[0] << Out[m] << ENDL;
 //     size_t l, r;
-//     l = recurse_box<point>(Out.cut(0, m), boxs, DIM, range, idx, recNum, type);
-//     r = recurse_box<point>(Out.cut(m, n), boxs, DIM, range, idx, recNum, type);
+//     l = recurse_box<point>(Out.cut(0, m), boxs, DIM, range, idx, recNum,
+//     type); r = recurse_box<point>(Out.cut(m, n), boxs, DIM, range, idx,
+//     recNum, type);
 //
 //     if (goon) {
 //         return mx;
@@ -100,7 +107,8 @@ static constexpr int summaryRangeQueryNum = 10000;
 // }
 //
 // template<typename point>
-// std::pair<parlay::sequence<std::pair<std::pair<point, point>, size_t>>, size_t> gen_rectangles(
+// std::pair<parlay::sequence<std::pair<std::pair<point, point>, size_t>>,
+// size_t> gen_rectangles(
 //     int recNum, const int type, const parlay::sequence<point>& WP, int DIM) {
 //     using tree = BaseTree<point>;
 //     using points = typename tree::points;
@@ -138,8 +146,8 @@ static constexpr int summaryRangeQueryNum = 10000;
 //     size_t maxSize = 0;
 //     while (cnt < recNum) {
 //         parlay::copy(WP, wp);
-//         auto r = recurse_box<point>(parlay::make_slice(wp), bxs, DIM, range, cnt, recNum, type);
-//         maxSize = std::max(maxSize, r);
+//         auto r = recurse_box<point>(parlay::make_slice(wp), bxs, DIM, range,
+//         cnt, recNum, type); maxSize = std::max(maxSize, r);
 //         // LOG << cnt << " " << maxSize << ENDL;
 //     }
 //     // LOG << "finish generate " << ENDL;
@@ -147,7 +155,8 @@ static constexpr int summaryRangeQueryNum = 10000;
 // }
 //
 // template<typename tree>
-// void checkTreeSameSequential(typename tree::node* T, int dim, const int& DIM) {
+// void checkTreeSameSequential(typename tree::node* T, int dim, const int& DIM)
+// {
 //     if (T->is_leaf) {
 //         assert(T->dim == dim);
 //         return;
@@ -156,7 +165,8 @@ static constexpr int summaryRangeQueryNum = 10000;
 //     assert(TI->split.second == dim && TI->dim == dim);
 //     dim = (dim + 1) % DIM;
 //     parlay::par_do_if(
-//         T->size > 1000, [&]() { checkTreeSameSequential<tree>(TI->left, dim, DIM); },
+//         T->size > 1000, [&]() { checkTreeSameSequential<tree>(TI->left, dim,
+//         DIM); },
 //         [&]() { checkTreeSameSequential<tree>(TI->right, dim, DIM); });
 //     return;
 // }
@@ -174,7 +184,8 @@ static constexpr int summaryRangeQueryNum = 10000;
 // }
 
 template<typename Point, typename Tree, int kPrint = 1>
-void buildTree(const int& Dim, const parlay::sequence<Point>& WP, const int& rounds, Tree& pkd) {
+void buildTree(const int& Dim, const parlay::sequence<Point>& WP,
+               const int& rounds, Tree& pkd) {
     using points = typename Tree::Points;
 
     double loopLate = rounds > 1 ? 1.0 : -0.1;
@@ -183,8 +194,8 @@ void buildTree(const int& Dim, const parlay::sequence<Point>& WP, const int& rou
     // parlay::sort();
     pkd.DeleteTree();
     double aveBuild = time_loop(
-        rounds, loopLate, [&]() { parlay::copy(WP.cut(0, n), wp.cut(0, n)); }, [&]() { pkd.Build(wp.cut(0, n), Dim); },
-        [&]() { pkd.DeleteTree(); });
+        rounds, loopLate, [&]() { parlay::copy(WP.cut(0, n), wp.cut(0, n)); },
+        [&]() { pkd.Build(wp.cut(0, n), Dim); }, [&]() { pkd.DeleteTree(); });
 
     //* return a built tree
     parlay::copy(WP.cut(0, n), wp.cut(0, n));
@@ -196,7 +207,8 @@ void buildTree(const int& Dim, const parlay::sequence<Point>& WP, const int& rou
     //     LOG << deep << " " << std::flush;
     // } else if (print == 2) {
     //     size_t max_deep = 0;
-    //     LOG << aveBuild << " " << pkd.GetMaxTreeDepth(pkd.GetRoot(), max_deep) << " " << pkd.GetAveTreeHeight() << "
+    //     LOG << aveBuild << " " << pkd.GetMaxTreeDepth(pkd.GetRoot(),
+    //     max_deep) << " " << pkd.GetAveTreeHeight() << "
     //     "
     //         << std::flush;
     // }
@@ -205,7 +217,8 @@ void buildTree(const int& Dim, const parlay::sequence<Point>& WP, const int& rou
 }
 //
 // template<typename point, int print = 1>
-// void incrementalBuild(const int Dim, const parlay::sequence<point>& WP, const int rounds, BaseTree<point>& pkd,
+// void incrementalBuild(const int Dim, const parlay::sequence<point>& WP, const
+// int rounds, BaseTree<point>& pkd,
 //                       double stepRatio) {
 //     using tree = BaseTree<point>;
 //     using points = typename tree::points;
@@ -243,17 +256,19 @@ void buildTree(const int& Dim, const parlay::sequence<Point>& WP, const int& rou
 //     if (print == 1) {
 //         auto deep = pkd.getAveTreeHeight();
 //         LOG << aveIncreBuild << " " << deep << " " << std::flush;
-//     } else if (print == 2) {  // NOTE: print the maxtree height and avetree height
+//     } else if (print == 2) {  // NOTE: print the maxtree height and avetree
+//     height
 //         size_t max_deep = 0;
-//         LOG << aveIncreBuild << " " << pkd.getMaxTreeDepth(pkd.get_root(), max_deep) << " " << pkd.getAveTreeHeight()
+//         LOG << aveIncreBuild << " " << pkd.getMaxTreeDepth(pkd.get_root(),
+//         max_deep) << " " << pkd.getAveTreeHeight()
 //             << " " << std::flush;
 //     }
 //     return;
 // }
 //
 // template<typename point, bool print = 1>
-// void incrementalDelete(const int Dim, const parlay::sequence<point>& WP, const parlay::sequence<point>& WI, int
-// rounds,
+// void incrementalDelete(const int Dim, const parlay::sequence<point>& WP,
+// const parlay::sequence<point>& WI, int rounds,
 //                        BaseTree<point>& pkd, double stepRatio) {
 //     using tree = BaseTree<point>;
 //     using points = typename tree::points;
@@ -303,8 +318,10 @@ void buildTree(const int& Dim, const parlay::sequence<Point>& WP, const int& rou
 // }
 //
 // template<typename point, bool serial = false>
-// void batchInsert(BaseTree<point>& pkd, const parlay::sequence<point>& WP, const parlay::sequence<point>& WI,
-//                  const uint_fast8_t& DIM, const int& rounds, double ratio = 1.0) {
+// void batchInsert(BaseTree<point>& pkd, const parlay::sequence<point>& WP,
+// const parlay::sequence<point>& WI,
+//                  const uint_fast8_t& DIM, const int& rounds, double ratio
+//                  = 1.0) {
 //     using tree = BaseTree<point>;
 //     using points = typename tree::points;
 //     using node = typename tree::node;
@@ -347,13 +364,16 @@ void buildTree(const int& Dim, const parlay::sequence<Point>& WP, const int& rou
 // }
 //
 // template<typename point, bool serial = false>
-// void batchDelete(BaseTree<point>& pkd, const parlay::sequence<point>& WP, const parlay::sequence<point>& WI,
-//                  const uint_fast8_t& DIM, const int& rounds, bool afterInsert = 1, double ratio = 1.0) {
+// void batchDelete(BaseTree<point>& pkd, const parlay::sequence<point>& WP,
+// const parlay::sequence<point>& WI,
+//                  const uint_fast8_t& DIM, const int& rounds, bool afterInsert
+//                  = 1, double ratio = 1.0) {
 //     using tree = BaseTree<point>;
 //     using points = typename tree::points;
 //     using node = typename tree::node;
 //     points wp = points::uninitialized(WP.size());
-//     points wi = points::uninitialized(WP.size());  //! warnning need to adjust space if necessary
+//     points wi = points::uninitialized(WP.size());  //! warnning need to
+//     adjust space if necessary
 //
 //     pkd.delete_tree();
 //     size_t batchSize = static_cast<size_t>(WP.size() * ratio);
@@ -409,8 +429,10 @@ void buildTree(const int& Dim, const parlay::sequence<Point>& WP, const int& rou
 // }
 //
 // template<typename point, bool insert>
-// void batchUpdateByStep(BaseTree<point>& pkd, const parlay::sequence<point>& WP, const parlay::sequence<point>& WI,
-//                        const uint_fast8_t& DIM, const int& rounds, double ratio = 1.0, double max_ratio = 1e-2) {
+// void batchUpdateByStep(BaseTree<point>& pkd, const parlay::sequence<point>&
+// WP, const parlay::sequence<point>& WI,
+//                        const uint_fast8_t& DIM, const int& rounds, double
+//                        ratio = 1.0, double max_ratio = 1e-2) {
 //     using tree = BaseTree<point>;
 //     using points = typename tree::points;
 //     using node = typename tree::node;
@@ -433,9 +455,11 @@ void buildTree(const int& Dim, const parlay::sequence<Point>& WP, const int& rou
 //                 r = std::min(l + step, n);
 //                 // LOG << l << ' ' << r << ENDL;
 //                 if (insert) {
-//                     pkd.batchInsert(parlay::make_slice(wi.begin() + l, wi.begin() + r), DIM);
+//                     pkd.batchInsert(parlay::make_slice(wi.begin() + l,
+//                     wi.begin() + r), DIM);
 //                 } else {
-//                     pkd.batchDelete(parlay::make_slice(wi.begin() + l, wi.begin() + r), DIM);
+//                     pkd.batchDelete(parlay::make_slice(wi.begin() + l,
+//                     wi.begin() + r), DIM);
 //                 }
 //                 l = r;
 //             }
@@ -452,9 +476,11 @@ void buildTree(const int& Dim, const parlay::sequence<Point>& WP, const int& rou
 //     // while (l < n) {
 //     //     r = std::min(l + step, n);
 //     //     if (insert) {
-//     //         pkd.batchInsert(parlay::make_slice(wi.begin() + l, wi.begin() + r), DIM);
+//     //         pkd.batchInsert(parlay::make_slice(wi.begin() + l, wi.begin()
+//     + r), DIM);
 //     //     } else {
-//     //         pkd.batchDelete(parlay::make_slice(wi.begin() + l, wi.begin() + r), DIM);
+//     //         pkd.batchDelete(parlay::make_slice(wi.begin() + l, wi.begin()
+//     + r), DIM);
 //     //     }
 //     //     l = r;
 //     // }
@@ -465,7 +491,8 @@ void buildTree(const int& Dim, const parlay::sequence<Point>& WP, const int& rou
 // }
 //
 // template<typename point, bool printHeight = 1, bool printVisNode = 1>
-// void queryKNN(const uint_fast8_t& Dim, const parlay::sequence<point>& WP, const int& rounds, BaseTree<point>& pkd,
+// void queryKNN(const uint_fast8_t& Dim, const parlay::sequence<point>& WP,
+// const int& rounds, BaseTree<point>& pkd,
 //               Typename* kdknn, const int K, const bool flattenTreeTag) {
 //     using tree = BaseTree<point>;
 //     using points = typename tree::points;
@@ -484,22 +511,24 @@ void buildTree(const int& Dim, const parlay::sequence<Point>& WP, const int& rou
 //     // parlay::sequence<nn_pair> Out(K * n);
 //     parlay::sequence<kBoundedQueue<point, nn_pair>> bq =
 //         parlay::sequence<kBoundedQueue<point, nn_pair>>::uninitialized(n);
-//     parlay::parallel_for(0, n, [&](size_t i) { bq[i].resize(Out.cut(i * K, i * K + K)); });
-//     parlay::sequence<size_t> visNum(n);
+//     parlay::parallel_for(0, n, [&](size_t i) { bq[i].resize(Out.cut(i * K, i
+//     * K + K)); }); parlay::sequence<size_t> visNum(n);
 //
 //     double aveQuery = time_loop(
-//         rounds, loopLate, [&]() { parlay::parallel_for(0, n, [&](size_t i) { bq[i].reset(); }); },
+//         rounds, loopLate, [&]() { parlay::parallel_for(0, n, [&](size_t i) {
+//         bq[i].reset(); }); },
 //         [&]() {
-//             if (!flattenTreeTag) {  // WARN: Need ensure pkd.size() == wp.size()
+//             if (!flattenTreeTag) {  // WARN: Need ensure pkd.size() ==
+//             wp.size()
 //                 pkd.flatten(pkd.get_root(), parlay::make_slice(wp));
 //             }
 //             auto bx = pkd.get_root_box();
 //             double aveVisNum = 0.0;
 //             parlay::parallel_for(0, n, [&](size_t i) {
 //                 size_t visNodeNum = 0;
-//                 pkd.k_nearest(KDParallelRoot, wp[i], Dim, bq[i], bx, visNodeNum);
-//                 kdknn[i] = bq[i].top().second;
-//                 visNum[i] = visNodeNum;
+//                 pkd.k_nearest(KDParallelRoot, wp[i], Dim, bq[i], bx,
+//                 visNodeNum); kdknn[i] = bq[i].top().second; visNum[i] =
+//                 visNodeNum;
 //             });
 //         },
 //         [&]() {});
@@ -517,7 +546,8 @@ void buildTree(const int& Dim, const parlay::sequence<Point>& WP, const int& rou
 // }
 //
 // template<typename point>
-// void rangeCount(const parlay::sequence<point>& wp, BaseTree<point>& pkd, Typename* kdknn, const int& rounds,
+// void rangeCount(const parlay::sequence<point>& wp, BaseTree<point>& pkd,
+// Typename* kdknn, const int& rounds,
 //                 const int& queryNum) {
 //     using tree = BaseTree<point>;
 //     using points = typename tree::points;
@@ -533,8 +563,9 @@ void buildTree(const int& Dim, const parlay::sequence<Point>& WP, const int& rou
 //         rounds, 1.0, [&]() {},
 //         [&]() {
 //             parlay::parallel_for(0, queryNum, [&](size_t i) {
-//                 box queryBox = pkd.get_box(box(wp[i], wp[i]), box(wp[(i + n / 2) % n], wp[(i + n / 2) % n]));
-//                 kdknn[i] = pkd.range_count(queryBox, visLeafNum[i], visInterNum[i]);
+//                 box queryBox = pkd.get_box(box(wp[i], wp[i]), box(wp[(i + n /
+//                 2) % n], wp[(i + n / 2) % n])); kdknn[i] =
+//                 pkd.range_count(queryBox, visLeafNum[i], visInterNum[i]);
 //             });
 //         },
 //         [&]() {});
@@ -545,7 +576,8 @@ void buildTree(const int& Dim, const parlay::sequence<Point>& WP, const int& rou
 // }
 //
 // template<typename point>
-// void rangeCountRadius(const parlay::sequence<point>& wp, BaseTree<point>& pkd, Typename* kdknn, const int& rounds,
+// void rangeCountRadius(const parlay::sequence<point>& wp, BaseTree<point>&
+// pkd, Typename* kdknn, const int& rounds,
 //                       const int& queryNum) {
 //     using tree = BaseTree<point>;
 //     using points = typename tree::points;
@@ -560,12 +592,13 @@ void buildTree(const int& Dim, const parlay::sequence<Point>& WP, const int& rou
 //         [&]() {
 //             parlay::parallel_for(0, queryNum, [&](size_t i) {
 //                 //   box queryBox = pkd.get_box(
-//                 //   box( wp[i], wp[i] ), box( wp[( i + n / 2 ) % n], wp[( i + n / 2 )
+//                 //   box( wp[i], wp[i] ), box( wp[( i + n / 2 ) % n], wp[( i
+//                 + n / 2 )
 //                 //   % n] ) );
-//                 auto d = cpdd::BaseTree<point>::p2p_distance(wp[i], wp[(i + n / 2) % n], wp[i].get_dim());
-//                 d = static_cast<Coord>(std::sqrt(d));
-//                 circle cl = circle(wp[i], d);
-//                 kdknn[i] = pkd.range_count(cl);
+//                 auto d = cpdd::BaseTree<point>::p2p_distance(wp[i], wp[(i + n
+//                 / 2) % n], wp[i].get_dim()); d =
+//                 static_cast<Coord>(std::sqrt(d)); circle cl = circle(wp[i],
+//                 d); kdknn[i] = pkd.range_count(cl);
 //             });
 //         },
 //         [&]() {});
@@ -576,7 +609,8 @@ void buildTree(const int& Dim, const parlay::sequence<Point>& WP, const int& rou
 // }
 //
 // template<typename point>
-// void rangeQuery(const parlay::sequence<point>& wp, BaseTree<point>& pkd, Typename* kdknn, const int& rounds,
+// void rangeQuery(const parlay::sequence<point>& wp, BaseTree<point>& pkd,
+// Typename* kdknn, const int& rounds,
 //                 const int& queryNum, parlay::sequence<point>& Out) {
 //     using tree = BaseTree<point>;
 //     using points = typename tree::points;
@@ -593,8 +627,10 @@ void buildTree(const int& Dim, const parlay::sequence<Point>& WP, const int& rou
 //         rounds, 1.0, [&]() {},
 //         [&]() {
 //             parlay::parallel_for(0, queryNum, [&](size_t i) {
-//                 box queryBox = pkd.get_box(box(wp[i], wp[i]), box(wp[(i + n / 2) % n], wp[(i + n / 2) % n]));
-//                 kdknn[i] = pkd.range_query_serial(queryBox, out_ref.cut(i * step, (i + 1) * step));
+//                 box queryBox = pkd.get_box(box(wp[i], wp[i]), box(wp[(i + n /
+//                 2) % n], wp[(i + n / 2) % n])); kdknn[i] =
+//                 pkd.range_query_serial(queryBox, out_ref.cut(i * step, (i +
+//                 1) * step));
 //             });
 //         },
 //         [&]() {});
@@ -611,7 +647,8 @@ void buildTree(const int& Dim, const parlay::sequence<Point>& WP, const int& rou
 //
 // //* test range count for fix rectangle
 // template<typename point>
-// void rangeCountFix(const parlay::sequence<point>& WP, BaseTree<point>& pkd, Typename* kdknn, const int& rounds,
+// void rangeCountFix(const parlay::sequence<point>& WP, BaseTree<point>& pkd,
+// Typename* kdknn, const int& rounds,
 //                    int recType, int recNum, int DIM) {
 //     using tree = BaseTree<point>;
 //     using points = typename tree::points;
@@ -631,13 +668,15 @@ void buildTree(const int& Dim, const parlay::sequence<Point>& WP, const int& rou
 //                 [&](size_t i) {
 //                     visInterNum[i] = 0;
 //                     visLeafNum[i] = 0;
-//                     kdknn[i] = pkd.range_count(queryBox[i].first, visLeafNum[i], visInterNum[i]);
+//                     kdknn[i] = pkd.range_count(queryBox[i].first,
+//                     visLeafNum[i], visInterNum[i]);
 //                 },
 //                 1);
 //             // for (int i = 0; i < recNum; i++) {
 //             //     visInterNum[i] = 0;
 //             //     visLeafNum[i] = 0;
-//             //     kdknn[i] = pkd.range_count(queryBox[i].first, visLeafNum[i], visInterNum[i]);
+//             //     kdknn[i] = pkd.range_count(queryBox[i].first,
+//             visLeafNum[i], visInterNum[i]);
 //             // }
 //         },
 //         [&]() {});
@@ -648,8 +687,8 @@ void buildTree(const int& Dim, const parlay::sequence<Point>& WP, const int& rou
 // }
 //
 // template<typename point>
-// void rangeCountFixWithLog(const parlay::sequence<point>& WP, BaseTree<point>& pkd, Typename* kdknn, const int&
-// rounds,
+// void rangeCountFixWithLog(const parlay::sequence<point>& WP, BaseTree<point>&
+// pkd, Typename* kdknn, const int& rounds,
 //                           int recType, int recNum, int DIM) {
 //     using tree = BaseTree<point>;
 //     using points = typename tree::points;
@@ -668,9 +707,11 @@ void buildTree(const int& Dim, const parlay::sequence<Point>& WP, const int& rou
 //                 visInterNum[i] = 0;
 //                 visLeafNum[i] = 0;
 //             },
-//             [&]() { kdknn[i] = pkd.range_count(queryBox[i].first, visLeafNum[i], visInterNum[i]); }, [&]() {});
+//             [&]() { kdknn[i] = pkd.range_count(queryBox[i].first,
+//             visLeafNum[i], visInterNum[i]); }, [&]() {});
 //         if (queryBox[i].second != kdknn[i]) LOG << "wrong" << ENDL;
-//         LOG << queryBox[i].second << " " << std::scientific << aveQuery << ENDL;
+//         LOG << queryBox[i].second << " " << std::scientific << aveQuery <<
+//         ENDL;
 //     }
 //
 //     return;
@@ -678,8 +719,10 @@ void buildTree(const int& Dim, const parlay::sequence<Point>& WP, const int& rou
 //
 // //* test range query for fix rectangle
 // template<typename point>
-// void rangeQueryFix(const parlay::sequence<point>& WP, BaseTree<point>& pkd, Typename* kdknn, const int& rounds,
-//                    parlay::sequence<point>& Out, int recType, int recNum, int DIM) {
+// void rangeQueryFix(const parlay::sequence<point>& WP, BaseTree<point>& pkd,
+// Typename* kdknn, const int& rounds,
+//                    parlay::sequence<point>& Out, int recType, int recNum, int
+//                    DIM) {
 //     using tree = BaseTree<point>;
 //     using points = typename tree::points;
 //     using node = typename tree::node;
@@ -698,7 +741,8 @@ void buildTree(const int& Dim, const parlay::sequence<Point>& WP, const int& rou
 //         rounds, 1.0, [&]() {},
 //         [&]() {
 //             parlay::parallel_for(0, recNum, [&](size_t i) {
-//                 kdknn[i] = pkd.range_query_serial(queryBox[i].first, Out.cut(i * step, (i + 1) * step));
+//                 kdknn[i] = pkd.range_query_serial(queryBox[i].first,
+//                 Out.cut(i * step, (i + 1) * step));
 //             });
 //         },
 //         [&]() {});
@@ -708,8 +752,10 @@ void buildTree(const int& Dim, const parlay::sequence<Point>& WP, const int& rou
 // }
 //
 // template<typename point>
-// void rangeQuerySerialWithLog(const parlay::sequence<point>& WP, BaseTree<point>& pkd, Typename* kdknn,
-//                              const int& rounds, parlay::sequence<point>& Out, int recType, int recNum, int DIM) {
+// void rangeQuerySerialWithLog(const parlay::sequence<point>& WP,
+// BaseTree<point>& pkd, Typename* kdknn,
+//                              const int& rounds, parlay::sequence<point>& Out,
+//                              int recType, int recNum, int DIM) {
 //     using tree = BaseTree<point>;
 //     using points = typename tree::points;
 //     using node = typename tree::node;
@@ -725,18 +771,22 @@ void buildTree(const int& Dim, const parlay::sequence<Point>& WP, const int& rou
 //     for (int i = 0; i < recNum; i++) {
 //         double aveQuery = time_loop(
 //             rounds, -1.0, [&]() {},
-//             [&]() { kdknn[i] = pkd.range_query_serial(queryBox[i].first, Out.cut(i * step, (i + 1) * step)); },
+//             [&]() { kdknn[i] = pkd.range_query_serial(queryBox[i].first,
+//             Out.cut(i * step, (i + 1) * step)); },
 //             [&]() {});
 //         if (queryBox[i].second != kdknn[i]) LOG << "wrong" << ENDL;
-//         LOG << queryBox[i].second << " " << std::scientific << aveQuery << ENDL;
-//         // LOG << queryBox[i].second << " " << std::setprecision(7) << aveQuery << ENDL;
+//         LOG << queryBox[i].second << " " << std::scientific << aveQuery <<
+//         ENDL;
+//         // LOG << queryBox[i].second << " " << std::setprecision(7) <<
+//         aveQuery << ENDL;
 //     }
 //
 //     return;
 // }
 //
 // template<typename point>
-// void generate_knn(const uint_fast8_t& Dim, const parlay::sequence<point>& WP, const int K, const char* outFile) {
+// void generate_knn(const uint_fast8_t& Dim, const parlay::sequence<point>& WP,
+// const int K, const char* outFile) {
 //     using tree = BaseTree<point>;
 //     using points = typename tree::points;
 //     using node = typename tree::node;
@@ -811,7 +861,8 @@ void buildTree(const int& Dim, const parlay::sequence<Point>& WP, const int& rou
 // }
 //
 // template<typename point>
-// void insertOsmByTime(const int Dim, const parlay::sequence<parlay::sequence<point>>& node_by_time, const int rounds,
+// void insertOsmByTime(const int Dim, const
+// parlay::sequence<parlay::sequence<point>>& node_by_time, const int rounds,
 //                      BaseTree<point>& pkd, const int K, Typename* kdknn) {
 //     using tree = BaseTree<point>;
 //     using points = typename tree::points;
@@ -858,8 +909,9 @@ void buildTree(const int& Dim, const parlay::sequence<Point>& WP, const int& rou
 //             queryKNN(Dim, tmp, rounds, pkd, kdknn, K, true);
 //         } else if (i != 0 && (i + 1) % 12 == 0) {
 //             points tmp(batchQueryOsmSize);
-//             parlay::copy(parlay::make_slice(wp[0]), tmp.cut(0, wp[0].size()));
-//             parlay::copy(parlay::make_slice(wp[1].begin(), wp[1].begin() + batchQueryOsmSize - wp[0].size()),
+//             parlay::copy(parlay::make_slice(wp[0]), tmp.cut(0,
+//             wp[0].size())); parlay::copy(parlay::make_slice(wp[1].begin(),
+//             wp[1].begin() + batchQueryOsmSize - wp[0].size()),
 //                          tmp.cut(wp[0].size(), tmp.size()));
 //             queryKNN(Dim, tmp, rounds, pkd, kdknn, K, true);
 //         }
@@ -868,16 +920,18 @@ void buildTree(const int& Dim, const parlay::sequence<Point>& WP, const int& rou
 //     }
 //
 //     size_t max_deep = 0;
-//     LOG << ave << " " << pkd.getMaxTreeDepth(pkd.get_root(), max_deep) << " " << pkd.getAveTreeHeight() << " "
+//     LOG << ave << " " << pkd.getMaxTreeDepth(pkd.get_root(), max_deep) << " "
+//     << pkd.getAveTreeHeight() << " "
 //         << std::flush;
 //
 //     return;
 // }
 //
 // template<typename point, int print = 1>
-// void incrementalBuildAndQuery(const int Dim, const parlay::sequence<point>& WP, const int rounds, BaseTree<point>&
-// pkd,
-//                               double stepRatio, const parlay::sequence<point>& query_points) {
+// void incrementalBuildAndQuery(const int Dim, const parlay::sequence<point>&
+// WP, const int rounds, BaseTree<point>& pkd,
+//                               double stepRatio, const
+//                               parlay::sequence<point>& query_points) {
 //     using tree = BaseTree<point>;
 //     using points = typename tree::points;
 //     using node = typename tree::node;
@@ -905,15 +959,17 @@ void buildTree(const int& Dim, const parlay::sequence<Point>& WP, const int& rou
 //
 //         // NOTE: print info
 //
-//         if ((cnt < 50 && cnt % 5 == 0) || (cnt < 100 && cnt % 10 == 0) || (cnt % 100 == 0)) {
+//         if ((cnt < 50 && cnt % 5 == 0) || (cnt < 100 && cnt % 10 == 0) ||
+//         (cnt % 100 == 0)) {
 //             size_t max_deep = 0;
-//             LOG << l << " " << r << " " << t.total_time() << " " << pkd.getMaxTreeDepth(pkd.get_root(), max_deep) <<
-//             " "
+//             LOG << l << " " << r << " " << t.total_time() << " " <<
+//             pkd.getMaxTreeDepth(pkd.get_root(), max_deep) << " "
 //                 << pkd.getAveTreeHeight() << " " << std::flush;
 //
 //             // NOTE: add additional query phase
 //             for (int i = 0; i < 3; i++) {
-//                 queryKNN<point, 0, 1>(Dim, query_points, 1, pkd, kdknn, k[i], true);
+//                 queryKNN<point, 0, 1>(Dim, query_points, 1, pkd, kdknn, k[i],
+//                 true);
 //             }
 //             LOG << ENDL;
 //         }
@@ -941,8 +997,12 @@ class counter_iterator {
     counter_iterator(T& counter) : counter(counter) {}
     counter_iterator(const counter_iterator& other) : counter(other.counter) {}
 
-    bool operator==(const counter_iterator& rhs) const { return counter == rhs.counter; }
-    bool operator!=(const counter_iterator& rhs) const { return counter != rhs.counter; }
+    bool operator==(const counter_iterator& rhs) const {
+        return counter == rhs.counter;
+    }
+    bool operator!=(const counter_iterator& rhs) const {
+        return counter != rhs.counter;
+    }
 
     accept_any operator*() const {
         ++counter.get();
@@ -962,7 +1022,8 @@ class counter_iterator {
 
 //*---------- generate points within a 0-box_size --------------------
 template<typename point>
-void generate_random_points(parlay::sequence<point>& wp, Coord _box_size, long n, int Dim) {
+void generate_random_points(parlay::sequence<point>& wp, Coord _box_size,
+                            long n, int Dim) {
     Coord box_size = _box_size;
 
     std::random_device rd;      // a seed source for the random number engine
@@ -987,7 +1048,9 @@ void generate_random_points(parlay::sequence<point>& wp, Coord _box_size, long n
 }
 
 template<typename point>
-std::pair<size_t, int> read_points(const char* iFile, parlay::sequence<point>& wp, int K, bool withID = false) {
+std::pair<size_t, int> read_points(const char* iFile,
+                                   parlay::sequence<point>& wp, int K,
+                                   bool withID = false) {
     using Coord = typename point::Coord;
     using Coords = typename point::Coords;
     static Coords samplePoint;
@@ -1010,7 +1073,8 @@ std::pair<size_t, int> read_points(const char* iFile, parlay::sequence<point>& w
     parlay::parallel_for(0, n, [&](size_t i) {
         for (int j = 0; j < Dim; j++) {
             wp[i].pnt[j] = a[i * Dim + j];
-            if constexpr (std::is_same_v<point, PointType<Coord, samplePoint.size()>>) {
+            if constexpr (std::is_same_v<
+                              point, PointType<Coord, samplePoint.size()>>) {
             } else {
                 wp[i].id = i;
             }
