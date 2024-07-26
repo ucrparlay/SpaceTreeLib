@@ -37,6 +37,14 @@ class KdTree : public BaseTree<Point> {
     void DeleteTree() override;
 
  private:
+    void DivideRotate(Slice In, SplitterSeq& pivots, DimsType dim,
+                      BucketType idx, BucketType deep, BucketType& bucket,
+                      const DimsType DIM, BoxSeq& boxs, const Box& bx);
+
+    void PickPivots(Slice In, const size_t& n, SplitterSeq& pivots,
+                    const DimsType dim, const DimsType DIM, BoxSeq& boxs,
+                    const Box& bx);
+
     Node* BuildRecursive(Slice In, Slice Out, DimsType dim, const DimsType DIM,
                          const Box& bx);
 

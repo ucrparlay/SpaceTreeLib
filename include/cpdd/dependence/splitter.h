@@ -1,3 +1,5 @@
+#pragma once
+
 #include "../base_tree.h"
 
 namespace cpdd {

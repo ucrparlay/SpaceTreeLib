@@ -11,7 +11,7 @@ namespace cpdd {
 
 template<typename Point>
 class BaseTree {
-   public:
+ public:
     using BucketType = uint_fast8_t;
     using BallsType = uint_fast32_t;
     using DimsType = uint_fast8_t;
@@ -31,7 +31,8 @@ class BaseTree {
     using NodeBox = std::pair<Node*, Box>;
     using NodeTag = std::pair<Node*, uint_fast8_t>;
     using NodeTagSeq = parlay::sequence<NodeTag>;
-    using TagNodes = parlay::sequence<BallsType>;  //*index by tag
+    using TagNodes = parlay::sequence<BallsType>;
+
     //@ Const variables
     //@ uint32t handle up to 4e9 at least
     //! bucket num should smaller than 1<<8 to handle type overflow
@@ -77,13 +78,7 @@ class BaseTree {
                                    const DimsType DIM);
 
     // NOTE: build tree
-    void DivideRotate(Slice In, SplitterSeq& pivots, DimsType dim,
-                      BucketType idx, BucketType deep, BucketType& bucket,
-                      const DimsType DIM, BoxSeq& boxs, const Box& bx);
-
-    void PickPivots(Slice In, const size_t& n, SplitterSeq& pivots,
-                    const DimsType dim, const DimsType DIM, BoxSeq& boxs,
-                    const Box& bx);
+    static inline void SamplePoints(Slice In, Points& arr);
 
     static inline BucketType FindBucket(const Point& p,
                                         const SplitterSeq& pivots);
@@ -92,8 +87,10 @@ class BaseTree {
                           const SplitterSeq& pivots,
                           parlay::sequence<BallsType>& sums);
 
+    template<typename SplitType, typename AugType>
     static Node* BuildInnerTree(BucketType idx, SplitterSeq& pivots,
-                                parlay::sequence<Node*>& tree_nodes);
+                                parlay::sequence<Node*>& tree_nodes,
+                                const AugType& aug);
 
     PointsIter SerialPartition(Slice In, DimsType d);
 
@@ -142,7 +139,7 @@ class BaseTree {
 
     inline Box GetRootBox() { return this->tree_box_; }
 
-   protected:
+ protected:
     Node* root_ = nullptr;
     parlay::internal::timer timer;
     Box tree_box_;
@@ -155,3 +152,5 @@ class BaseTree {
 #include "base_tree_impl/delete_tree.hpp"
 #include "base_tree_impl/dimensinality.hpp"
 #include "base_tree_impl/random_support.hpp"
+#include "base_tree_impl/points_op.hpp"
+#include "base_tree_impl/tree_op.hpp"

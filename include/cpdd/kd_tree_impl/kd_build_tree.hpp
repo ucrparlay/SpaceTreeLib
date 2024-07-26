@@ -22,6 +22,62 @@ void KdTree<Point, SplitRule>::Build(Range&& In, int DIM) {
 }
 
 template<typename Point, typename SplitRule>
+void KdTree<Point, SplitRule>::DivideRotate(Slice In, SplitterSeq& pivots,
+                                            DimsType dim, BucketType idx,
+                                            BucketType deep, BucketType& bucket,
+                                            const DimsType DIM, BoxSeq& boxs,
+                                            const Box& bx) {
+    if (deep > BT::kBuildDepthOnce) {
+        // WARN: sometimes cut dimension can be -1
+        //  never use pivots[idx].first to check whether it is in bucket;
+        //  instead, use idx > PIVOT_NUM
+        boxs[bucket] = bx;
+        pivots[idx] = Splitter(-1, bucket++);
+        return;
+    }
+    size_t n = In.size();
+    uint_fast8_t d = split_rule_.FindCuttingDimension(bx, dim, DIM);
+    assert(d < DIM);
+
+    std::ranges::nth_element(In.begin(), In.begin() + n / 2, In.end(),
+                             [&](const Point& p1, const Point& p2) {
+                                 return Num::Lt(p1.pnt[d], p2.pnt[d]);
+                             });
+    pivots[idx] = Splitter(In[n / 2].pnt[d], d);
+
+    Box lbox(bx), rbox(bx);
+    lbox.second.pnt[d] = pivots[idx].first;  // PERF: loose
+    rbox.first.pnt[d] = pivots[idx].first;
+
+    d = (d + 1) % DIM;
+    DivideRotate(In.cut(0, n / 2), pivots, d, 2 * idx, deep + 1, bucket, DIM,
+                 boxs, lbox);
+    DivideRotate(In.cut(n / 2, n), pivots, d, 2 * idx + 1, deep + 1, bucket,
+                 DIM, boxs, rbox);
+    return;
+}
+
+// NOTE: starting at dimesion dim and pick pivots in a rotation manner
+template<typename Point, typename SplitRule>
+void KdTree<Point, SplitRule>::PickPivots(Slice In, const size_t& n,
+                                          SplitterSeq& pivots,
+                                          const DimsType dim,
+                                          const DimsType DIM, BoxSeq& boxs,
+                                          const Box& bx) {
+    size_t size = std::min(n, static_cast<size_t>(32 * BT::kBucketNum));
+    assert(size <= n);
+
+    Points arr = Points::uninitialized(size);
+    BT::SamplePoints(In, arr);
+
+    // NOTE: pick pivots
+    BucketType bucket = 0;
+    DivideRotate(arr.cut(0, size), pivots, dim, 1, 1, bucket, DIM, boxs, bx);
+    assert(bucket == BUCKET_NUM);
+    return;
+}
+
+template<typename Point, typename SplitRule>
 Node* KdTree<Point, SplitRule>::SerialBuildRecursive(Slice In, Slice Out,
                                                      DimsType dim,
                                                      const DimsType DIM,
@@ -100,7 +156,7 @@ Node* KdTree<Point, SplitRule>::BuildRecursive(Slice In, Slice Out,
     auto boxs = BoxSeq::uninitialized(BT::kBucketNum);
     parlay::sequence<BallsType> sums;
 
-    BT::PickPivots(In, In.size(), pivots, dim, DIM, boxs, bx);
+    PickPivots(In, In.size(), pivots, dim, DIM, boxs, bx);
     BT::Partition(In, Out, In.size(), pivots, sums);
 
     // NOTE: if random sampling failed to split points, re-partitions using
@@ -140,7 +196,8 @@ Node* KdTree<Point, SplitRule>::BuildRecursive(Slice In, Slice Out,
                                DIM, boxs[nodes_map[i]]);
         },
         1);
-    return BT::BuildInnerTree(1, pivots, tree_nodes);
+    return BT::template BuildInnerTree<Splitter, bool>(1, pivots, tree_nodes,
+                                                       false);
 }
 
 template<typename Point, typename SplitRule>
