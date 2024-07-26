@@ -100,15 +100,23 @@ Node* KdTree<Point, SplitRule>::SerialBuildRecursive(Slice In, Slice Out,
     if (splitIter <= In.begin() + n / 2) {  // NOTE: split is on left half
         split = Splitter(In[n / 2].pnt[d], d);
     } else if (splitIter != In.end()) {  // NOTE: split is on right half
+#if __cplusplus <= 201703L
+        auto minEleIter = std::min_element(
+            splitIter, In.end(), [&](const Point& p1, const Point& p2) {
+                return Num::Lt(p1.pnt[d], p2.pnt[d]);
+            });
+#else
         auto minEleIter = std::ranges::min_element(
             splitIter, In.end(), [&](const Point& p1, const Point& p2) {
                 return Num::Lt(p1.pnt[d], p2.pnt[d]);
             });
+#endif
         split = Splitter(minEleIter->pnt[d], d);
     } else if (In.end() ==
-               (diffEleIter = std::ranges::find_if_not(In, [&](const Point& p) {
-                    return p.sameDimension(In[0]);
-                }))) {  // NOTE: check whether all elements are identical
+               (diffEleIter =
+                    std::find_if_not(In.begin(), In.end(), [&](const Point& p) {
+                        return p.sameDimension(In[0]);
+                    }))) {  // NOTE: check whether all elements are identical
         return AllocLeafNode<Point, Slice, AllocDummyLeafTag, BT::kLeaveWrap>(
             In);
     } else {  // NOTE: current dim d is same but other dims are not
@@ -116,12 +124,11 @@ Node* KdTree<Point, SplitRule>::SerialBuildRecursive(Slice In, Slice Out,
         SerialBuildRecursive(In, Out, new_dim, DIM, new_box);
     }
 
-    assert(std::ranges::all_of(In.begin(), splitIter,
-                               [&](Point& p) {
-                                   return Num::Lt(p.pnt[split.second],
-                                                  split.first);
-                               }) &&
-           std::ranges::all_of(splitIter, In.end(), [&](Point& p) {
+    assert(std::all_of(In.begin(), splitIter,
+                       [&](Point& p) {
+                           return Num::Lt(p.pnt[split.second], split.first);
+                       }) &&
+           std::all_of(splitIter, In.end(), [&](Point& p) {
                return Num::Geq(p.pnt[split.second], split.first);
            }));
 

@@ -84,6 +84,22 @@ template<typename Point>
 typename BaseTree<Point>::PointsIter BaseTree<Point>::SerialPartition(
     Slice In, DimsType d) {
     size_t n = In.size();
+#if __cplusplus <= 201703L
+    std::nth_element(In.begin(), In.begin() + n / 2, In.end(),
+                     [&](const Point& p1, const Point& p2) {
+                         return Num::Lt(p1.pnt[d], p2.pnt[d]);
+                     });
+    PointsIter _2ndGroup = std::partition(
+        In.begin(), In.begin() + n / 2,
+        [&](const Point& p) { return Num::Lt(p.pnt[d], In[n / 2].pnt[d]); });
+    if (_2ndGroup == In.begin()) {  // NOTE: handle duplicated medians
+        _2ndGroup =
+            std::partition(In.begin() + n / 2, In.end(), [&](const Point& p) {
+                return Num::Eq(p.pnt[d], In[n / 2].pnt[d]);
+            });
+    }
+    return _2ndGroup;
+#else
     std::ranges::nth_element(In.begin(), In.begin() + n / 2, In.end(),
                              [&](const Point& p1, const Point& p2) {
                                  return Num::Lt(p1.pnt[d], p2.pnt[d]);
@@ -98,6 +114,7 @@ typename BaseTree<Point>::PointsIter BaseTree<Point>::SerialPartition(
             });
     }
     return _2ndGroup.begin();
+#endif
 }
 
 }  // namespace cpdd
