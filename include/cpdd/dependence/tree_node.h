@@ -103,7 +103,8 @@ struct Interior : Node {
     Node* right;
     SplitType split;
     AugType aug;
-    Interior(Node* _left, Node* _right, SplitType _split, const AugType& _aug) :
+    Interior(Node* _left, Node* _right, const SplitType& _split,
+             const AugType& _aug) :
         Node{false, _left->size + _right->size},
         left(_left),
         right(_right),
