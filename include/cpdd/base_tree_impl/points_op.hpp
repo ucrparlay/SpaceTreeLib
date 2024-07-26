@@ -21,6 +21,7 @@ inline void BaseTree<Point>::SamplePoints(Slice In, Points& arr) {
 }
 
 template<typename point>
+template<typename SplitterSeq>
 inline uint_fast8_t BaseTree<point>::FindBucket(const point& p,
                                                 const SplitterSeq& pivots) {
     uint_fast8_t k = 1;
@@ -34,6 +35,7 @@ inline uint_fast8_t BaseTree<point>::FindBucket(const point& p,
 }
 
 template<typename point>
+template<typename SplitterSeq>
 void BaseTree<point>::Partition(Slice A, Slice B, const size_t n,
                                 const SplitterSeq& pivots,
                                 parlay::sequence<BallsType>& sums) {

@@ -18,7 +18,7 @@ template<typename leaf_node_type, typename interior_node_type>
 void BaseTree<Point>::DeleteTreeRecursive(Node* T, bool granularity) {
     if (T == nullptr) return;
     if (T->is_leaf) {
-        FreeNode<Point, leaf_node_type>(T);
+        FreeNode<leaf_node_type>(T);
     } else {
         interior_node_type* TI = static_cast<interior_node_type*>(T);
         // NOTE: enable granularity control by default, if it is disabled,
@@ -34,7 +34,7 @@ void BaseTree<Point>::DeleteTreeRecursive(Node* T, bool granularity) {
                 DeleteTreeRecursive<leaf_node_type, interior_node_type>(
                     TI->right, granularity);
             });
-        FreeNode<Point, interior_node_type>(T);
+        FreeNode<interior_node_type>(T);
     }
 }
 

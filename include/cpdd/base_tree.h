@@ -22,8 +22,8 @@ class BaseTree {
     using Slice = parlay::slice<Point*, Point*>;
     using Points = parlay::sequence<Point>;
     using PointsIter = typename parlay::sequence<Point>::iterator;
-    using Splitter = std::pair<Coord, DimsType>;
-    using SplitterSeq = parlay::sequence<Splitter>;
+    /*using Splitter = std::pair<Coord, DimsType>;*/
+    /*using SplitterSeq = parlay::sequence<Splitter>;*/
     using Box = std::pair<Point, Point>;
     using BoxSeq = parlay::sequence<Box>;
     using Circle = std::pair<Point, Coord>;
@@ -80,21 +80,22 @@ class BaseTree {
     // NOTE: build tree
     static inline void SamplePoints(Slice In, Points& arr);
 
+    template<typename SplitterSeq>
     static inline BucketType FindBucket(const Point& p,
                                         const SplitterSeq& pivots);
 
+    template<typename SplitterSeq>
     static void Partition(Slice A, Slice B, const size_t n,
                           const SplitterSeq& pivots,
                           parlay::sequence<BallsType>& sums);
 
-    template<typename SplitType, typename AugType>
+    template<typename InterType, typename SplitterSeq>
     static Node* BuildInnerTree(BucketType idx, SplitterSeq& pivots,
-                                parlay::sequence<Node*>& tree_nodes,
-                                const AugType& aug);
+                                parlay::sequence<Node*>& tree_nodes);
 
     PointsIter SerialPartition(Slice In, DimsType d);
 
-    inline uint64_t Hash64(uint64_t u);
+    // NOTE: delete tree
     virtual void DeleteTree() = 0;
 
     template<typename leaf_node_type, typename interior_node_type>
@@ -103,32 +104,56 @@ class BaseTree {
     template<typename leaf_node_type, typename interior_node_type>
     static void DeleteTreeRecursive(Node* T, bool granularity = true);
 
-    //@ validations
-    template<typename interior>
+    // NOTE: query stuffs
+    static inline Coord P2PDistance(const Point& p, const Point& q,
+                                    const DimsType DIM);
+
+    static inline Coord P2BMinDistance(const Point& p, const Box& a,
+                                       const DimsType DIM);
+
+    static inline Coord P2BMaxDistance(const Point& p, const Box& a,
+                                       const DimsType DIM);
+
+    static inline Coord InterruptibleDistance(const Point& p, const Point& q,
+                                              Coord up, DimsType DIM);
+
+    template<typename StoreType, typename LeafType, typename InterType>
+    static void KNNRec(Node* T, const Point& q, const DimsType DIM,
+                       kBoundedQueue<Point, StoreType>& bq, const Box& bx,
+                       size_t& vis_node_num);
+
+    // NOTE: utility
+    template<typename Leaf, typename Interior, typename Range,
+             typename UnaryPred>
+    static void FlattenRec(Node* T, Range Out, UnaryPred&& ForceParallel,
+                           bool granularity = true);
+
+    // NOTE: validations
+    template<typename Interior>
     bool CheckBox(Node* T, const Box& bx);
 
-    template<typename interior>
+    template<typename Interior>
     size_t CheckSize(Node* T);
 
-    template<typename interior>
+    template<typename Interior>
     void CheckTreeSameSequential(Node* T, int dim, const int& DIM);
 
-    template<typename interior>
+    template<typename Interior>
     void Validate(const DimsType DIM);
 
-    template<typename interior>
+    template<typename Interior>
     size_t GetTreeHeight();
 
-    template<typename interior>
+    template<typename Interior>
     size_t GetMaxTreeDepth(Node* T, size_t deep);
 
-    template<typename interior>
+    template<typename Interior>
     double GetAveTreeHeight();
 
-    template<typename interior>
+    template<typename Interior>
     size_t CountTreeNodesNum(Node* T);
 
-    template<typename interior>
+    template<typename Interior>
     void CountTreeHeights(Node* T, size_t deep, size_t& idx,
                           parlay::sequence<size_t>& heights);
 
@@ -151,6 +176,6 @@ class BaseTree {
 // #include "base_tree_impl/validation.hpp"
 #include "base_tree_impl/delete_tree.hpp"
 #include "base_tree_impl/dimensinality.hpp"
-#include "base_tree_impl/random_support.hpp"
 #include "base_tree_impl/points_op.hpp"
 #include "base_tree_impl/tree_op.hpp"
+#include "base_tree_impl/query_op.hpp"

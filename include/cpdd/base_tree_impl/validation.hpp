@@ -6,8 +6,8 @@
 namespace cpdd {
 
 template<typename Point>
-template<typename interior>
-bool BaseTree<Point>::CheckBox(node* T, const Box& bx) {
+template<typename Interior>
+bool BaseTree<Point>::CheckBox(Node* T, const Box& bx) {
     assert(T != nullptr);
     assert(LegalBox(bx));
     Points wx = Points::uninitialized(T->size);
@@ -18,41 +18,44 @@ bool BaseTree<Point>::CheckBox(node* T, const Box& bx) {
 }
 
 template<typename Point>
-template<typename interior>
-size_t BaseTree<Point>::CheckSize(node* T) {
+template<typename Interior>
+size_t BaseTree<Point>::CheckSize(Node* T) {
     if (T->is_leaf) {
         return T->size;
     }
-    interior* TI = static_cast<interior*>(T);
-    size_t l = CheckSize<interior>(TI->left);
-    size_t r = CheckSize<interior>(TI->right);
+    Interior* TI = static_cast<Interior*>(T);
+    size_t l = CheckSize<Interior>(TI->left);
+    size_t r = CheckSize<Interior>(TI->right);
     assert(l + r == T->size);
     return T->size;
 }
 
 template<typename Point>
-template<typename interior>
-void BaseTree<Point>::CheckTreeSameSequential(node* T, int dim, const int& DIM) {
+template<typename Interior>
+void BaseTree<Point>::CheckTreeSameSequential(Node* T, int dim,
+                                              const int& DIM) {
     if (T->is_leaf) {
         // assert( PickRebuildDim( T, DIM ) == dim );
         return;
     }
-    interior* TI = static_cast<interior*>(T);
+    Interior* TI = static_cast<Interior*>(T);
     if (TI->split.second != dim) {
         LOG << int(TI->split.second) << " " << int(dim) << TI->size << ENDL;
     }
     assert(TI->split.second == dim);
     dim = (dim + 1) % DIM;
     parlay::par_do_if(
-        T->size > 1000, [&]() { CheckTreeSameSequential<interior>(TI->left, dim, DIM); },
-        [&]() { CheckTreeSameSequential<interior>(TI->right, dim, DIM); });
+        T->size > 1000,
+        [&]() { CheckTreeSameSequential<Interior>(TI->left, dim, DIM); },
+        [&]() { CheckTreeSameSequential<Interior>(TI->right, dim, DIM); });
     return;
 }
 
 template<typename Point>
-template<typename interior>
+template<typename Interior>
 void BaseTree<Point>::Validate(const DimsType DIM) {
-    if (CheckBox<interior>(this->root_, this->tree_box_) && LegalBox(this->tree_box_)) {
+    if (CheckBox<Interior>(this->root_, this->tree_box_) &&
+        LegalBox(this->tree_box_)) {
         std::cout << "Correct bounding Box" << std::endl << std::flush;
     } else {
         std::cout << "wrong bounding Box" << std::endl << std::flush;
@@ -60,11 +63,11 @@ void BaseTree<Point>::Validate(const DimsType DIM) {
     }
 
     if (this->split_rule_ == kRotateDim) {
-        CheckTreeSameSequential<interior>(this->root_, 0, DIM);
+        CheckTreeSameSequential<Interior>(this->root_, 0, DIM);
         std::cout << "Correct rotate dimension" << std::endl << std::flush;
     }
 
-    if (CheckSize<interior>(this->root_) == this->root_->size) {
+    if (CheckSize<Interior>(this->root_) == this->root_->size) {
         std::cout << "Correct size" << std::endl << std::flush;
     } else {
         std::cout << "wrong tree size" << std::endl << std::flush;
@@ -74,30 +77,30 @@ void BaseTree<Point>::Validate(const DimsType DIM) {
 }
 
 template<typename Point>
-template<typename interior>
+template<typename Interior>
 size_t BaseTree<Point>::GetTreeHeight() {
     size_t deep = 0;
-    return GetMaxTreeDepth<interior>(this->root_, deep);
+    return GetMaxTreeDepth<Interior>(this->root_, deep);
 }
 
 template<typename Point>
-template<typename interior>
-size_t BaseTree<Point>::GetMaxTreeDepth(node* T, size_t deep) {
+template<typename Interior>
+size_t BaseTree<Point>::GetMaxTreeDepth(Node* T, size_t deep) {
     if (T->is_leaf) {
         return deep;
     }
-    interior* TI = static_cast<interior*>(T);
-    int l = GetMaxTreeDepth<interior>(TI->left, deep + 1);
-    int r = GetMaxTreeDepth<interior>(TI->right, deep + 1);
+    Interior* TI = static_cast<Interior*>(T);
+    int l = GetMaxTreeDepth<Interior>(TI->left, deep + 1);
+    int r = GetMaxTreeDepth<Interior>(TI->right, deep + 1);
     return std::max(l, r);
 }
 
 template<typename Point>
-template<typename interior>
+template<typename Interior>
 double BaseTree<Point>::GetAveTreeHeight() {
     parlay::sequence<size_t> heights(this->root_->size);
     size_t idx = 0;
-    CountTreeHeights<interior>(this->root_, 0, idx, heights);
+    CountTreeHeights<Interior>(this->root_, 0, idx, heights);
     // auto kv = parlay::histogram_by_key( heights.cut( 0, idx ) );
     // std::sort( kv.begin(), kv.end(),
     //            [&]( auto a, auto b ) { return a.first < b.first; } );
@@ -107,29 +110,30 @@ double BaseTree<Point>::GetAveTreeHeight() {
 }
 
 template<typename Point>
-template<typename interior>
-size_t BaseTree<Point>::CountTreeNodesNum(node* T) {
+template<typename Interior>
+size_t BaseTree<Point>::CountTreeNodesNum(Node* T) {
     if (T->is_leaf) {
         return 1;
     }
 
-    interior* TI = static_cast<interior*>(T);
+    Interior* TI = static_cast<Interior*>(T);
     size_t l, r;
-    parlay::par_do([&]() { l = CountTreeNodesNum<interior>(TI->left); },
-                   [&]() { r = CountTreeNodesNum<interior>(TI->right); });
+    parlay::par_do([&]() { l = CountTreeNodesNum<Interior>(TI->left); },
+                   [&]() { r = CountTreeNodesNum<Interior>(TI->right); });
     return l + r + 1;
 }
 
 template<typename Point>
-template<typename interior>
-void BaseTree<Point>::CountTreeHeights(node* T, size_t deep, size_t& idx, parlay::sequence<size_t>& heights) {
+template<typename Interior>
+void BaseTree<Point>::CountTreeHeights(Node* T, size_t deep, size_t& idx,
+                                       parlay::sequence<size_t>& heights) {
     if (T->is_leaf) {
         heights[idx++] = deep;
         return;
     }
-    interior* TI = static_cast<interior*>(T);
-    CountTreeHeights<interior>(TI->left, deep + 1, idx, heights);
-    CountTreeHeights<interior>(TI->right, deep + 1, idx, heights);
+    Interior* TI = static_cast<Interior*>(T);
+    CountTreeHeights<Interior>(TI->left, deep + 1, idx, heights);
+    CountTreeHeights<Interior>(TI->right, deep + 1, idx, heights);
     return;
 }
 

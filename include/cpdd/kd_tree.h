@@ -16,18 +16,21 @@ class KdTree : public BaseTree<Point> {
     using DimsType = BT::DimsType;
     using Coord = typename Point::Coord;
     using Coords = typename Point::Coords;
-    using AugType = bool;
     using Num = Num_Comparator<Coord>;
     using Slice = BT::Slice;
     using Points = BT::Points;
     using PointsIter = BT::PointsIter;
-    using Splitter = BT::Splitter;
-    using SplitterSeq = BT::SplitterSeq;
     using Box = BT::Box;
     using BoxSeq = BT::BoxSeq;
     using Circle = BT::Circle;
 
-    struct interior;
+    using Splitter = std::pair<Coord, DimsType>;
+    using SplitterSeq = parlay::sequence<Splitter>;
+    using AugType = bool;
+
+    using Leaf =
+        LeafNode<Point, Slice, BT::kLeaveWrap, parlay::move_assign_tag>;
+    using Interior = InteriorNode<Point, Splitter, AugType>;
 
     template<typename Range>
     void Build(Range&& In, int DIM);
@@ -35,6 +38,14 @@ class KdTree : public BaseTree<Point> {
     void Build_(Slice In, const DimsType DIM);
 
     void DeleteTree() override;
+
+    template<typename Range>
+    void Flatten(Range&& Out);
+
+    template<typename StoreType>
+    void KNN(Node* T, const Point& q, const DimsType DIM,
+             kBoundedQueue<Point, StoreType>& bq, const Box& bx,
+             size_t& vis_node_num);
 
  private:
     void DivideRotate(Slice In, SplitterSeq& pivots, DimsType dim,

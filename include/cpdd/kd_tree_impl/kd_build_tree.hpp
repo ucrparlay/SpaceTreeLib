@@ -39,10 +39,18 @@ void KdTree<Point, SplitRule>::DivideRotate(Slice In, SplitterSeq& pivots,
     uint_fast8_t d = split_rule_.FindCuttingDimension(bx, dim, DIM);
     assert(d < DIM);
 
+#if __cplusplus <= 201703L
+    std::nth_element(In.begin(), In.begin() + n / 2, In.end(),
+                     [&](const Point& p1, const Point& p2) {
+                         return Num::Lt(p1.pnt[d], p2.pnt[d]);
+                     });
+#else
     std::ranges::nth_element(In.begin(), In.begin() + n / 2, In.end(),
                              [&](const Point& p1, const Point& p2) {
                                  return Num::Lt(p1.pnt[d], p2.pnt[d]);
                              });
+#endif
+
     pivots[idx] = Splitter(In[n / 2].pnt[d], d);
 
     Box lbox(bx), rbox(bx);
@@ -84,12 +92,9 @@ Node* KdTree<Point, SplitRule>::SerialBuildRecursive(Slice In, Slice Out,
                                                      const Box& bx) {
     size_t n = In.size();
 
-    if (n == 0)
-        return AllocLeafNode<Point, Slice, AllocEmptyLeafTag, BT::kLeaveWrap>();
+    if (n == 0) return AllocEmptyLeafNode<Slice, Leaf>();
 
-    if (n <= BT::kLeaveWrap)
-        return AllocLeafNode<Point, Slice, AllocNormalLeafTag, BT::kLeaveWrap>(
-            In);
+    if (n <= BT::kLeaveWrap) return AllocNormalLeafNode<Slice, Leaf>(In);
 
     DimsType d = split_rule_.FindCuttingDimension(bx, dim, DIM);
     PointsIter splitIter = BT::SerialPartition(In, d);
@@ -117,8 +122,7 @@ Node* KdTree<Point, SplitRule>::SerialBuildRecursive(Slice In, Slice Out,
                     std::find_if_not(In.begin(), In.end(), [&](const Point& p) {
                         return p.sameDimension(In[0]);
                     }))) {  // NOTE: check whether all elements are identical
-        return AllocLeafNode<Point, Slice, AllocDummyLeafTag, BT::kLeaveWrap>(
-            In);
+        return AllocDummyLeafNode<Slice, Leaf>(In);
     } else {  // NOTE: current dim d is same but other dims are not
         auto [new_box, new_dim] = split_rule_.SwitchDimension(In, dim, DIM, bx);
         SerialBuildRecursive(In, Out, new_dim, DIM, new_box);
@@ -143,7 +147,7 @@ Node* KdTree<Point, SplitRule>::SerialBuildRecursive(Slice In, Slice Out,
                              Out.cut(0, splitIter - In.begin()), d, DIM, lbox);
     R = SerialBuildRecursive(In.cut(splitIter - In.begin(), n),
                              Out.cut(splitIter - In.begin(), n), d, DIM, rbox);
-    return AllocInteriorNode<Point, Splitter, bool>(L, R, split, false);
+    return AllocInteriorNode<Point, Splitter, AugType>(L, R, split, false);
 }
 
 template<typename Point, typename SplitRule>
@@ -157,7 +161,6 @@ Node* KdTree<Point, SplitRule>::BuildRecursive(Slice In, Slice Out,
         return SerialBuildRecursive(In, Out, dim, DIM, bx);
     }
 
-    //* parallel partitons
     auto pivots =
         SplitterSeq::uninitialized(BT::kPivotNum + BT::kBucketNum + 1);
     auto boxs = BoxSeq::uninitialized(BT::kBucketNum);
@@ -175,8 +178,7 @@ Node* KdTree<Point, SplitRule>::BuildRecursive(Slice In, Slice Out,
     for (BucketType i = 0; i < BT::kBucketNum; ++i) {
         if (!sums[i]) {
             ++zeros;
-            tree_nodes[i] = AllocLeafNode<Point, Slice, AllocEmptyLeafTag,
-                                          BT::kLeaveWrap>();
+            tree_nodes[i] = AllocEmptyLeafNode<Slice, Leaf>();
         } else {
             nodes_map[cnt++] = i;
         }
@@ -203,8 +205,9 @@ Node* KdTree<Point, SplitRule>::BuildRecursive(Slice In, Slice Out,
                                DIM, boxs[nodes_map[i]]);
         },
         1);
-    return BT::template BuildInnerTree<Splitter, bool>(1, pivots, tree_nodes,
-                                                       false);
+
+    return BT::template BuildInnerTree<Interior, SplitterSeq>(1, pivots,
+                                                              tree_nodes);
 }
 
 template<typename Point, typename SplitRule>

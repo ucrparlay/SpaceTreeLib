@@ -490,63 +490,62 @@ void buildTree(const int& Dim, const parlay::sequence<Point>& WP,
 //     return;
 // }
 //
-// template<typename point, bool printHeight = 1, bool printVisNode = 1>
-// void queryKNN(const uint_fast8_t& Dim, const parlay::sequence<point>& WP,
-// const int& rounds, BaseTree<point>& pkd,
-//               Typename* kdknn, const int K, const bool flattenTreeTag) {
-//     using tree = BaseTree<point>;
-//     using points = typename tree::points;
-//     using node = typename tree::node;
-//     using Coord = typename point::Coord;
-//     using nn_pair = std::pair<std::reference_wrapper<point>, Coord>;
-//     // using nn_pair = std::pair<point, Coord>;
-//     size_t n = WP.size();
-//     int LEAVE_WRAP = 32;
-//     double loopLate = rounds > 1 ? 1.0 : -0.1;
-//     node* KDParallelRoot = pkd.get_root();
-//     points wp = points::uninitialized(n);
-//     parlay::copy(WP, wp);
-//
-//     parlay::sequence<nn_pair> Out(K * n, nn_pair(std::ref(wp[0]), 0));
-//     // parlay::sequence<nn_pair> Out(K * n);
-//     parlay::sequence<kBoundedQueue<point, nn_pair>> bq =
-//         parlay::sequence<kBoundedQueue<point, nn_pair>>::uninitialized(n);
-//     parlay::parallel_for(0, n, [&](size_t i) { bq[i].resize(Out.cut(i * K, i
-//     * K + K)); }); parlay::sequence<size_t> visNum(n);
-//
-//     double aveQuery = time_loop(
-//         rounds, loopLate, [&]() { parlay::parallel_for(0, n, [&](size_t i) {
-//         bq[i].reset(); }); },
-//         [&]() {
-//             if (!flattenTreeTag) {  // WARN: Need ensure pkd.size() ==
-//             wp.size()
-//                 pkd.flatten(pkd.get_root(), parlay::make_slice(wp));
-//             }
-//             auto bx = pkd.get_root_box();
-//             double aveVisNum = 0.0;
-//             parlay::parallel_for(0, n, [&](size_t i) {
-//                 size_t visNodeNum = 0;
-//                 pkd.k_nearest(KDParallelRoot, wp[i], Dim, bq[i], bx,
-//                 visNodeNum); kdknn[i] = bq[i].top().second; visNum[i] =
-//                 visNodeNum;
-//             });
-//         },
-//         [&]() {});
-//
-//     LOG << aveQuery << " " << std::flush;
-//     if (printHeight) {
-//         auto deep = pkd.getAveTreeHeight();
-//         LOG << deep << " " << std::flush;
-//     }
-//     if (printVisNode) {
-//         LOG << parlay::reduce(visNum.cut(0, n)) / n << " " << std::flush;
-//     }
-//
-//     return;
-// }
-//
-// template<typename point>
-// void rangeCount(const parlay::sequence<point>& wp, BaseTree<point>& pkd,
+template<typename Point, typename Tree, bool printHeight = 1,
+         bool printVisNode = 1>
+void queryKNN(const uint_fast8_t& Dim, const parlay::sequence<Point>& WP,
+              const int& rounds, Tree& pkd, Typename* kdknn, const int K,
+              const bool flattenTreeTag) {
+    using points = typename Tree::Points;
+    using Coord = typename Point::Coord;
+    using nn_pair = std::pair<std::reference_wrapper<Point>, Coord>;
+    // using nn_pair = std::pair<Point, Coord>;
+    size_t n = WP.size();
+    int LEAVE_WRAP = 32;
+    double loopLate = rounds > 1 ? 1.0 : -0.1;
+    auto* KDParallelRoot = pkd.GetRoot();
+    points wp = points::uninitialized(n);
+    parlay::copy(WP, wp);
+
+    parlay::sequence<nn_pair> Out(K * n, nn_pair(std::ref(wp[0]), 0));
+    // parlay::sequence<nn_pair> Out(K * n);
+    parlay::sequence<kBoundedQueue<Point, nn_pair>> bq =
+        parlay::sequence<kBoundedQueue<Point, nn_pair>>::uninitialized(n);
+    parlay::parallel_for(
+        0, n, [&](size_t i) { bq[i].resize(Out.cut(i * K, i * K + K)); });
+    parlay::sequence<size_t> visNum(n);
+
+    double aveQuery = time_loop(
+        rounds, loopLate,
+        [&]() { parlay::parallel_for(0, n, [&](size_t i) { bq[i].reset(); }); },
+        [&]() {
+            if (!flattenTreeTag) {  // WARN: Need ensure pkd.size() == wp.size()
+                pkd.Flatten(parlay::make_slice(wp));
+            }
+            auto bx = pkd.GetRootBox();
+            double aveVisNum = 0.0;
+            parlay::parallel_for(0, n, [&](size_t i) {
+                size_t visNodeNum = 0;
+                pkd.KNN(KDParallelRoot, wp[i], Dim, bq[i], bx, visNodeNum);
+                kdknn[i] = bq[i].top().second;
+                visNum[i] = visNodeNum;
+            });
+        },
+        [&]() {});
+
+    LOG << aveQuery << " " << std::flush;
+    if (printHeight) {
+        auto deep = pkd.template GetAveTreeHeight<typename Tree::Interior>();
+        LOG << deep << " " << std::flush;
+    }
+    if (printVisNode) {
+        LOG << parlay::reduce(visNum.cut(0, n)) / n << " " << std::flush;
+    }
+
+    return;
+}
+
+// template<typename Point>
+// void rangeCount(const parlay::sequence<Point>& wp, BaseTree<Point>& pkd,
 // Typename* kdknn, const int& rounds,
 //                 const int& queryNum) {
 //     using tree = BaseTree<point>;
@@ -983,7 +982,7 @@ void buildTree(const int& Dim, const parlay::sequence<Point>& WP,
 
 template<typename T>
 class counter_iterator {
-   private:
+ private:
     struct accept_any {
         template<typename U>
         accept_any& operator=(const U&) {
@@ -991,7 +990,7 @@ class counter_iterator {
         }
     };
 
-   public:
+ public:
     typedef std::output_iterator_tag iterator_category;
 
     counter_iterator(T& counter) : counter(counter) {}
@@ -1016,7 +1015,7 @@ class counter_iterator {
         return *this;
     }
 
-   protected:
+ protected:
     std::reference_wrapper<T> counter;
 };
 

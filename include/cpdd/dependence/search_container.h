@@ -9,8 +9,10 @@ class NN_Comparator {
     using Coord = Point::Coord;
     using Num = Num_Comparator<Coord>;
 
-   public:
-    bool operator()(const T& a, const T& b) { return Num::Lt(a.second, b.second); }
+ public:
+    bool operator()(const T& a, const T& b) {
+        return Num::Lt(a.second, b.second);
+    }
 };
 
 template<typename Point, typename T, typename Compare = NN_Comparator<Point, T>>
@@ -30,10 +32,11 @@ class kBoundedQueue {
     using Coord = typename Point::Coord;
     // using T = std::pair<Point*, Coord>;
 
-   public:
+ public:
     kBoundedQueue(const Compare& comp = Compare()) : m_comp(comp) {}
 
-    kBoundedQueue(parlay::slice<T*, T*> data_slice, const Compare& comp = Compare()) :
+    kBoundedQueue(parlay::slice<T*, T*> data_slice,
+                  const Compare& comp = Compare()) :
         m_count(0), m_data(data_slice), m_comp(comp) {}
 
     /** Sets the max number of elements in the queue */
@@ -52,7 +55,8 @@ class kBoundedQueue {
 
     inline parlay::slice<T*, T*> data() const { return m_data; }
 
-    inline void insert(const std::pair<std::reference_wrapper<Point>, Coord> x) {
+    inline void insert(
+        const std::pair<std::reference_wrapper<Point>, Coord> x) {
         // T x( _x.first, _x.second );
         T* data1 = (&m_data[0] - 1);
         if (full()) {
@@ -62,7 +66,8 @@ class kBoundedQueue {
                 size_t j(1), k(2);
                 while (k <= m_count) {
                     T* z = &(data1[k]);
-                    if ((k < m_count) && m_comp(*z, data1[k + 1])) z = &(data1[++k]);
+                    if ((k < m_count) && m_comp(*z, data1[k + 1]))
+                        z = &(data1[++k]);
                     if (m_comp(*z, x)) break;
                     data1[j] = *z;
                     j = k;
@@ -84,7 +89,7 @@ class kBoundedQueue {
         }
     }
 
-   public:
+ public:
     size_t m_count = 0;
     parlay::slice<T*, T*> m_data;
     Compare m_comp;
