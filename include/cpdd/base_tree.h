@@ -117,7 +117,7 @@ class BaseTree {
     static inline Coord InterruptibleDistance(const Point& p, const Point& q,
                                               Coord up, DimsType DIM);
 
-    template<typename StoreType, typename LeafType, typename InterType>
+    template<typename LeafType, typename InterType, typename StoreType>
     static void KNNRec(Node* T, const Point& q, const DimsType DIM,
                        kBoundedQueue<Point, StoreType>& bq, const Box& bx,
                        size_t& vis_node_num);
@@ -173,7 +173,7 @@ class BaseTree {
 }  // namespace cpdd
 
 #include "base_tree_impl/box_op.hpp"
-// #include "base_tree_impl/validation.hpp"
+#include "base_tree_impl/validation.hpp"
 #include "base_tree_impl/delete_tree.hpp"
 #include "base_tree_impl/dimensinality.hpp"
 #include "base_tree_impl/points_op.hpp"

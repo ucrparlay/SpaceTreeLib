@@ -81,7 +81,7 @@ void KdTree<Point, SplitRule>::PickPivots(Slice In, const size_t& n,
     // NOTE: pick pivots
     BucketType bucket = 0;
     DivideRotate(arr.cut(0, size), pivots, dim, 1, 1, bucket, DIM, boxs, bx);
-    assert(bucket == BUCKET_NUM);
+    assert(bucket == BT::kBucketNum);
     return;
 }
 
@@ -154,7 +154,7 @@ template<typename Point, typename SplitRule>
 Node* KdTree<Point, SplitRule>::BuildRecursive(Slice In, Slice Out,
                                                DimsType dim, const DimsType DIM,
                                                const Box& bx) {
-    assert(In.size() == 0 || within_box(get_box(In), bx));
+    assert(In.size() == 0 || BT::WithinBox(BT::GetBox(In), bx));
 
     // if ( In.size() ) {
     if (In.size() <= BT::kSerialBuildCutoff) {

@@ -62,10 +62,9 @@ void BaseTree<Point>::Validate(const DimsType DIM) {
         abort();
     }
 
-    if (this->split_rule_ == kRotateDim) {
-        CheckTreeSameSequential<Interior>(this->root_, 0, DIM);
-        std::cout << "Correct rotate dimension" << std::endl << std::flush;
-    }
+    // NOTE: used to check rotate dimension
+    /*CheckTreeSameSequential<Interior>(this->root_, 0, DIM);*/
+    /*std::cout << "Correct rotate dimension" << std::endl << std::flush;*/
 
     if (CheckSize<Interior>(this->root_) == this->root_->size) {
         std::cout << "Correct size" << std::endl << std::flush;

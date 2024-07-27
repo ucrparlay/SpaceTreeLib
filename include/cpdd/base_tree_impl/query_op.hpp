@@ -81,14 +81,14 @@ inline typename BaseTree<Point>::Coord BaseTree<Point>::InterruptibleDistance(
 }
 
 template<typename Point>
-template<typename StoreType, typename LeafType, typename InterType>
+template<typename Leaf, typename Interior, typename StoreType>
 void BaseTree<Point>::KNNRec(Node* T, const Point& q, const DimsType DIM,
                              kBoundedQueue<Point, StoreType>& bq,
                              const Box& node_box, size_t& vis_node_num) {
     vis_node_num++;
 
     if (T->is_leaf) {
-        LeafType* TL = static_cast<LeafType*>(T);
+        Leaf* TL = static_cast<Leaf*>(T);
         int i = 0;
         while (!bq.full() && i < TL->size) {
             bq.insert(std::make_pair(
@@ -110,7 +110,7 @@ void BaseTree<Point>::KNNRec(Node* T, const Point& q, const DimsType DIM,
         return;
     }
 
-    InterType* TI = static_cast<InterType*>(T);
+    Interior* TI = static_cast<Interior*>(T);
     auto GoLeftTester = [&]() -> bool {
         return Num::Gt(TI->split.first - q.pnt[TI->split.second], 0);
     };
@@ -125,14 +125,14 @@ void BaseTree<Point>::KNNRec(Node* T, const Point& q, const DimsType DIM,
         second_box.second.pnt[TI->split.second] = TI->split.first;
     }
 
-    KNNRec(GoLeftTester() ? TI->left : TI->right, q, DIM, bq, first_box,
-           vis_node_num);
+    KNNRec<Leaf, Interior>(GoLeftTester() ? TI->left : TI->right, q, DIM, bq,
+                           first_box, vis_node_num);
     if (Num::Gt(P2BMinDistance(q, second_box, DIM), bq.top_value()) &&
         bq.full()) {
         return;
     }
-    KNNRec(GoLeftTester() ? TI->right : TI->left, q, DIM, bq, second_box,
-           vis_node_num);
+    KNNRec<Leaf, Interior>(GoLeftTester() ? TI->right : TI->left, q, DIM, bq,
+                           second_box, vis_node_num);
     return;
 }
 }  // namespace cpdd
