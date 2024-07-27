@@ -9,7 +9,7 @@ namespace cpdd {
 
 template<typename Point>
 class octTree : public BaseTree<Point> {
-   public:
+ public:
     using BaseTree = BaseTree<Point>;
 
     using BucketType = BaseTree::BucketType;
@@ -19,7 +19,8 @@ class octTree : public BaseTree<Point> {
     using ZValueType = uint_fast64_t;
     using ZValueSlice = parlay::slice<ZValueType*, ZValueType*>;
     using ZValuePointerPair = std::pair<ZValueType, Point*>;
-    using ZValuePointerSlice = parlay::slice<ZValuePointerPair*, ZValuePointerPair*>;
+    using ZValuePointerSlice =
+        parlay::slice<ZValuePointerPair*, ZValuePointerPair*>;
     using ZValuePointPair = std::pair<ZValueType, Point>;
     using ZValuePointSlice = parlay::slice<ZValuePointPair*, ZValuePointPair*>;
 
@@ -47,13 +48,17 @@ class octTree : public BaseTree<Point> {
     static inline ZValueType get_z_value(const Point& p);
 
     void build_z_value(slice In, const DimsType DIM);
-    Node* build_recursive_with_z_value(ZValueSlice In, ZBitType bit, const DimsType DIM);
+    Node* build_recursive_with_z_value(ZValueSlice In, ZBitType bit,
+                                       const DimsType DIM);
 
     void build_z_value_pointer(slice In, const DimsType DIM);
-    Node* build_recursive_with_z_value_pointer(ZValuePointerSlice In, ZBitType bit, const DimsType DIM);
+    Node* build_recursive_with_z_value_pointer(ZValuePointerSlice In,
+                                               ZBitType bit,
+                                               const DimsType DIM);
 
     void build_point_z_value(slice In, const DimsType DIM);
-    Node* build_recursive_point_z_value(ZValuePointSlice In, ZBitType bit, const DimsType DIM);
+    Node* build_recursive_point_z_value(ZValuePointSlice In, ZBitType bit,
+                                        const DimsType DIM);
 
     void build_point(slice In, const DimsType DIM);
     Node* build_recursive_point(slice In, ZBitType bit, const DimsType DIM);

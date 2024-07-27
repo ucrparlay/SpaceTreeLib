@@ -1,3 +1,4 @@
+#include "cpdd/kd_tree.h"
 #include "testFramework.h"
 
 #include <CGAL/Cartesian_d.h>
@@ -14,7 +15,7 @@
 #include <tbb/parallel_for.h>
 #include <CGAL/Fuzzy_sphere.h>
 // using point = PointID<coord, 5>;
-using point = PointType<coord, 5>;
+using point = PointType<Coord, 5>;
 using points = parlay::sequence<point>;
 
 typedef CGAL::Cartesian_d<Typename> Kernel;
@@ -151,12 +152,12 @@ void runCGAL(points& wp, points& wi, Typename* cgknn, int queryNum,
     tree.clear();
 }
 
+template<typename Tree>
 void runKDParallel(points& wp, const points& wi, Typename* kdknn, points& p,
                    int queryNum) {
-    //* kd tree
     puts("build kd tree");
-    using pkdtree = ParallelKDtree<point>;
-    using box = typename ParallelKDtree<point>::box;
+    using pkdtree = Tree;
+    using box = typename Tree::Box;
     pkdtree pkd;
     size_t n = wp.size();
 
@@ -168,22 +169,24 @@ void runKDParallel(points& wp, const points& wi, Typename* kdknn, points& p,
     // LOG << pkd.get_root()->size << ENDL;
 
     buildTree<point>(Dim, wp, rounds, pkd);
-    pkdtree::node* KDParallelRoot = pkd.get_root();
-    pkd.validate(Dim);
+    cpdd::Node* KDParallelRoot = pkd.GetRoot();
+    pkd.Validate(Dim);
 
-    if (tag >= 1) {
-        batchInsert<point, true>(pkd, wp, wi, Dim, 2, batchInsertCheckRatio);
-        if (tag == 1) wp.append(wi.cut(0, wp.size() * batchInsertCheckRatio));
-        pkd.validate(Dim);
-        LOG << "finish insert" << ENDL;
-    }
-
-    if (tag >= 2) {
-        batchDelete<point, true>(pkd, wp, wi, Dim, 2, true,
-                                 batchInsertCheckRatio);
-        pkd.validate(Dim);
-        LOG << "finish delete" << ENDL;
-    }
+    /*if (tag >= 1) {*/
+    /*    batchInsert<point, true>(pkd, wp, wi, Dim, 2,
+     * batchInsertCheckRatio);*/
+    /*    if (tag == 1) wp.append(wi.cut(0, wp.size() *
+     * batchInsertCheckRatio));*/
+    /*    pkd.validate(Dim);*/
+    /*    LOG << "finish insert" << ENDL;*/
+    /*}*/
+    /**/
+    /*if (tag >= 2) {*/
+    /*    batchDelete<point, true>(pkd, wp, wi, Dim, 2, true,*/
+    /*                             batchInsertCheckRatio);*/
+    /*    pkd.validate(Dim);*/
+    /*    LOG << "finish delete" << ENDL;*/
+    /*}*/
 
     //* query phase
 
@@ -194,23 +197,25 @@ void runKDParallel(points& wp, const points& wi, Typename* kdknn, points& p,
         points new_wp(batchQuerySize);
         parlay::copy(wp.cut(0, batchQuerySize), new_wp.cut(0, batchQuerySize));
         queryKNN<point>(Dim, wp, rounds, pkd, kdknn, K, true);
-    } else if (queryType == 1) {
-        rangeCount<point>(wp, pkd, kdknn, rounds, queryNum);
-        // rangeCountRadius<point>( wp, pkd, kdknn, rounds, queryNum );
-    } else if (queryType == 2) {
-        rangeCount<point>(wp, pkd, kdknn, rounds, queryNum);
-        maxReduceSize =
-            parlay::reduce(parlay::delayed_tabulate(
-                               queryNum, [&](size_t i) { return kdknn[i]; }),
-                           parlay::maximum<Typename>());
-        LOG << maxReduceSize << ENDL;
-        p.resize(queryNum * maxReduceSize);
-        rangeQuery<point>(wp, pkd, kdknn, rounds, queryNum, p);
     }
+    /*else if (queryType == 1) {*/
+    /*    rangeCount<point>(wp, pkd, kdknn, rounds, queryNum);*/
+    /*    // rangeCountRadius<point>( wp, pkd, kdknn, rounds, queryNum );*/
+    /*} else if (queryType == 2) {*/
+    /*    rangeCount<point>(wp, pkd, kdknn, rounds, queryNum);*/
+    /*    maxReduceSize =*/
+    /*        parlay::reduce(parlay::delayed_tabulate(*/
+    /*                           queryNum, [&](size_t i) { return kdknn[i];
+     * }),*/
+    /*                       parlay::maximum<Typename>());*/
+    /*    LOG << maxReduceSize << ENDL;*/
+    /*    p.resize(queryNum * maxReduceSize);*/
+    /*    rangeQuery<point>(wp, pkd, kdknn, rounds, queryNum, p);*/
+    /*}*/
 
     if (tag == 1) wp.pop_tail(wi.size() * batchInsertCheckRatio);
     assert(wp.size() == N);
-    pkd.delete_tree();
+    pkd.DeleteTree();
     return;
 }
 
@@ -330,7 +335,8 @@ int main(int argc, char* argv[]) {
 
     points kdOut;
     parlay::sequence<Point_d> cgOut;
-    runKDParallel(wp, wi, kdknn, kdOut, queryNum);
+    runKDParallel<cpdd::KdTree<point, cpdd::MaxStretchDim<point>>>(
+        wp, wi, kdknn, kdOut, queryNum);
     runCGAL(wp, wi, cgknn, queryNum, cgOut);
 
     //* verify

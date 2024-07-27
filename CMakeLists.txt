@@ -19,7 +19,7 @@ option(CILKPLUS "" OFF)
 option(OPENCILK "" OFF)
 option(SERIAL "" OFF)
 option(STDALLOC "" OFF)
-option(CGAL "" OFF)
+option(CGAL "" ON)
 option(MEMCHECK "" OFF)
 option(JEMA "" OFF)
 
@@ -54,7 +54,7 @@ elseif(JEMA)
 endif()
 
 add_subdirectory(parlaylib)
-add_subdirectory(libmorton)
+# add_subdirectory(libmorton)
 
 # set(source_files
 # ${PROJECT_SOURCE_DIR}/include/cpdd/spatialTrees.hpp
@@ -63,7 +63,7 @@ add_subdirectory(libmorton)
 # my kd
 add_library(spatialTrees INTERFACE)
 target_link_libraries(spatialTrees INTERFACE parlay)
-target_link_libraries(spatialTrees INTERFACE libmorton)
+# target_link_libraries(spatialTrees INTERFACE libmorton)
 target_include_directories(spatialTrees INTERFACE ${PROJECT_SOURCE_DIR}/include)
 
 include(GNUInstallDirs)
@@ -112,9 +112,9 @@ if(CGAL)
 	list(APPEND CGAL_3RD_PARTY_LIBRARIES ${TBB_LIBRARIES})
 
 	# executables
-	add_executable(cgal ${PROJECT_SOURCE_DIR}/tests/cgal.cpp)
-	target_link_libraries(cgal PUBLIC spatialTrees CGAL::CGAL CGAL::TBB_support)
-	target_include_directories(cgal PUBLIC ${PROJECT_SOURCE_DIR}/include )
+	# add_executable(cgal ${PROJECT_SOURCE_DIR}/tests/cgal.cpp)
+	# target_link_libraries(cgal PUBLIC spatialTrees CGAL::CGAL CGAL::TBB_support)
+	# target_include_directories(cgal PUBLIC ${PROJECT_SOURCE_DIR}/include )
 
 	add_executable(checkCorrectParallel ${PROJECT_SOURCE_DIR}/tests/checkCorrectParallel.cpp)
 	target_link_libraries(checkCorrectParallel PUBLIC spatialTrees CGAL::CGAL CGAL::TBB_support)
