@@ -7,7 +7,7 @@
 namespace cpdd {
 
 template<typename Point, typename SplitRule>
-class KdTree : public BaseTree<Point> {
+class KdTree : private BaseTree<Point> {
  public:
     using BT = BaseTree<Point>;
 
@@ -32,6 +32,14 @@ class KdTree : public BaseTree<Point> {
     using Leaf =
         LeafNode<Point, Slice, BT::kLeaveWrap, parlay::move_assign_tag>;
     using Interior = KdInteriorNode;
+
+    // NOTE: expose basetree interface
+    using BT::GetAveTreeHeight;
+    using BT::GetRoot;
+    using BT::GetRootBox;
+    using BT::Validate;
+
+    // NOTE: functions
 
     template<typename Range>
     void Build(Range&& In, int DIM);

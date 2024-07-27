@@ -106,9 +106,11 @@ typename BaseTree<Point>::PointsIter BaseTree<Point>::SerialPartition(
                              [&](const Point& p1, const Point& p2) {
                                  return Num::Lt(p1.pnt[d], p2.pnt[d]);
                              });
+
     std::ranges::subrange _2ndGroup = std::ranges::partition(
         In.begin(), In.begin() + n / 2,
         [&](const Point& p) { return Num::Lt(p.pnt[d], In[n / 2].pnt[d]); });
+
     if (_2ndGroup.begin() == In.begin()) {  // NOTE: handle duplicated medians
         _2ndGroup = std::ranges::partition(
             In.begin() + n / 2, In.end(), [&](const Point& p) {
