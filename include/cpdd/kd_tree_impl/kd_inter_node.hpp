@@ -1,3 +1,18 @@
 #pragma once
+#include "../kd_tree.h"
+#include "cpdd/dependence/tree_node.h"
+namespace cpdd {
+template<typename Point, typename SplitRule>
+struct KdTree<Point, SplitRule>::KdInteriorNode :
+    InteriorNode<Point, Splitter, AugType> {
+    using ST = Splitter;
+    using AT = AugType;
 
-namespace cpdd {}  // namespace cpdd
+    KdInteriorNode(Node* _left, Node* _right, const ST& _split,
+                   const AT& _aug) :
+        InteriorNode<Point, Splitter, AugType>(_left, _right, _split, _aug) {}
+
+    inline bool ForceParallel() const { return this->aug; }
+};
+
+}  // namespace cpdd

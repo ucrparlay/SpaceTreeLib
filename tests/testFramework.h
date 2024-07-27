@@ -497,6 +497,8 @@ void queryKNN(const uint_fast8_t& Dim, const parlay::sequence<Point>& WP,
     using points = typename Tree::Points;
     using Coord = typename Point::Coord;
     using nn_pair = std::pair<std::reference_wrapper<Point>, Coord>;
+    using Leaf = typename Tree::Leaf;
+    using Interior = typename Tree::Interior;
     // using nn_pair = std::pair<Point, Coord>;
     size_t n = WP.size();
     int LEAVE_WRAP = 32;
@@ -533,7 +535,7 @@ void queryKNN(const uint_fast8_t& Dim, const parlay::sequence<Point>& WP,
 
     LOG << aveQuery << " " << std::flush;
     if (printHeight) {
-        auto deep = pkd.template GetAveTreeHeight<typename Tree::Interior>();
+        auto deep = pkd.template GetAveTreeHeight<Leaf, Interior>();
         LOG << deep << " " << std::flush;
     }
     if (printVisNode) {

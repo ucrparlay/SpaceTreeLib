@@ -14,9 +14,8 @@ void KdTree<Point, SplitRule>::KNN(Node* T, const Point& q, const DimsType DIM,
 template<typename Point, typename SplitRule>
 template<typename Range>
 void KdTree<Point, SplitRule>::Flatten(Range&& Out) {
-    BT::template FlattenRec<Leaf, Interior>(
-        this->root_, parlay::make_slice(Out),
-        [&](const Interior* TI) { return TI->aug; }, false);
+    BT::template FlattenRec<Leaf, Interior>(this->root_,
+                                            parlay::make_slice(Out), false);
 }
 
 template<typename Point, typename SplitRule>

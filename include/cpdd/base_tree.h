@@ -123,37 +123,35 @@ class BaseTree {
                        size_t& vis_node_num);
 
     // NOTE: utility
-    template<typename Leaf, typename Interior, typename Range,
-             typename UnaryPred>
-    static void FlattenRec(Node* T, Range Out, UnaryPred&& ForceParallel,
-                           bool granularity = true);
+    template<typename Leaf, typename Interior, typename Range>
+    static void FlattenRec(Node* T, Range Out, bool granularity = true);
 
     // NOTE: validations
-    template<typename Interior>
+    template<typename Leaf, typename Interior>
     bool CheckBox(Node* T, const Box& bx);
 
-    template<typename Interior>
+    template<typename Leaf, typename Interior>
     size_t CheckSize(Node* T);
 
-    template<typename Interior>
+    template<typename Leaf, typename Interior>
     void CheckTreeSameSequential(Node* T, int dim, const int& DIM);
 
-    template<typename Interior>
+    template<typename Leaf, typename Interior>
     void Validate(const DimsType DIM);
 
-    template<typename Interior>
+    template<typename Leaf, typename Interior>
     size_t GetTreeHeight();
 
-    template<typename Interior>
+    template<typename Leaf, typename Interior>
     size_t GetMaxTreeDepth(Node* T, size_t deep);
 
-    template<typename Interior>
+    template<typename Leaf, typename Interior>
     double GetAveTreeHeight();
 
-    template<typename Interior>
+    template<typename Leaf, typename Interior>
     size_t CountTreeNodesNum(Node* T);
 
-    template<typename Interior>
+    template<typename Leaf, typename Interior>
     void CountTreeHeights(Node* T, size_t deep, size_t& idx,
                           parlay::sequence<size_t>& heights);
 

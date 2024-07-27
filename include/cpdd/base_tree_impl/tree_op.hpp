@@ -15,15 +15,13 @@ Node* BaseTree<Point>::BuildInnerTree(BucketType idx, SplitterSeq& pivots,
     Node *L, *R;
     L = BuildInnerTree<Interior, SplitterSeq>(idx << 1, pivots, tree_nodes);
     R = BuildInnerTree<Interior, SplitterSeq>(idx << 1 | 1, pivots, tree_nodes);
-    return AllocInteriorNode<Point, typename Interior::ST,
-                             typename Interior::AT>(L, R, pivots[idx],
-                                                    typename Interior::AT());
+    return AllocInteriorNode<Interior>(L, R, pivots[idx],
+                                       typename Interior::AT());
 }
 
 template<typename Point>
-template<typename Leaf, typename Interior, typename Range, typename UnaryPred>
-void BaseTree<Point>::FlattenRec(Node* T, Range Out, UnaryPred&& F,
-                                 bool granularity) {
+template<typename Leaf, typename Interior, typename Range>
+void BaseTree<Point>::FlattenRec(Node* T, Range Out, bool granularity) {
     assert(T->size == Out.size());
 
     if (T->size == 0) return;
@@ -41,16 +39,14 @@ void BaseTree<Point>::FlattenRec(Node* T, Range Out, UnaryPred&& F,
     parlay::par_do_if(
         // WARN: check parallelisim using node size can be biased
         (granularity && TI->size > kSerialBuildCutoff) ||
-            (!granularity && F(TI)),
+            (!granularity && TI->ForceParallel()),
         [&]() {
-            FlattenRec<Leaf, Interior, Range, UnaryPred>(
-                TI->left, Out.cut(0, TI->left->size),
-                std::forward<UnaryPred>(F), granularity);
+            FlattenRec<Leaf, Interior, Range>(
+                TI->left, Out.cut(0, TI->left->size), granularity);
         },
         [&]() {
-            FlattenRec<Leaf, Interior, Range, UnaryPred>(
-                TI->right, Out.cut(TI->left->size, TI->size),
-                std::forward<UnaryPred>(F), granularity);
+            FlattenRec<Leaf, Interior, Range>(
+                TI->right, Out.cut(TI->left->size, TI->size), granularity);
         });
 
     return;

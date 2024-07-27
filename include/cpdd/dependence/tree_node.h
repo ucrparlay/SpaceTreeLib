@@ -97,22 +97,24 @@ template<typename Point, typename SplitType, typename AugType>
 struct InteriorNode : Node {
     using ST = SplitType;
     using AT = AugType;
-    Node* left;
-    Node* right;
-    ST split;
-    AT aug;
+
     InteriorNode(Node* _left, Node* _right, const ST& _split, const AT& _aug) :
         Node{false, _left->size + _right->size},
         left(_left),
         right(_right),
         split(_split),
         aug(_aug) {}
+
+    Node* left;
+    Node* right;
+    ST split;
+    AT aug;
 };
 
-template<typename Point, typename SplitType, typename AugType>
-static InteriorNode<Point, SplitType, AugType>* AllocInteriorNode(
-    Node* L, Node* R, const SplitType& split, const AugType& aug) {
-    using Interior = InteriorNode<Point, SplitType, AugType>;
+template<typename Interior>
+static Interior* AllocInteriorNode(Node* L, Node* R,
+                                   const typename Interior::ST& split,
+                                   const typename Interior::AT& aug) {
     Interior* o = parlay::type_allocator<Interior>::alloc();
     new (o) Interior(L, R, split, aug);
     return o;

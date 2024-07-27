@@ -27,10 +27,11 @@ class KdTree : public BaseTree<Point> {
     using Splitter = std::pair<Coord, DimsType>;
     using SplitterSeq = parlay::sequence<Splitter>;
     using AugType = bool;
+    struct KdInteriorNode;
 
     using Leaf =
         LeafNode<Point, Slice, BT::kLeaveWrap, parlay::move_assign_tag>;
-    using Interior = InteriorNode<Point, Splitter, AugType>;
+    using Interior = KdInteriorNode;
 
     template<typename Range>
     void Build(Range&& In, int DIM);
