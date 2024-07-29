@@ -2,8 +2,8 @@
 #include "../kd_tree.h"
 #include "cpdd/dependence/tree_node.h"
 namespace cpdd {
-template<typename Point, typename SplitRule>
-struct KdTree<Point, SplitRule>::KdInteriorNode :
+template<typename Point, typename SplitRule, uint8_t kBDO>
+struct KdTree<Point, SplitRule, kBDO>::KdInteriorNode :
     InteriorNode<Point, Splitter, AugType> {
     using ST = Splitter;
     using AT = AugType;

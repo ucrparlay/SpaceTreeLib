@@ -5,9 +5,9 @@
 
 namespace cpdd {
 
-template<typename Point>
+template<typename Point, uint8_t kBDO>
 template<typename Leaf, typename Interior>
-bool BaseTree<Point>::CheckBox(Node* T, const Box& bx) {
+bool BaseTree<Point, kBDO>::CheckBox(Node* T, const Box& bx) {
     assert(T != nullptr);
     assert(LegalBox(bx));
     Points wx = Points::uninitialized(T->size);
@@ -17,9 +17,9 @@ bool BaseTree<Point>::CheckBox(Node* T, const Box& bx) {
     return WithinBox(b, bx);
 }
 
-template<typename Point>
+template<typename Point, uint8_t kBDO>
 template<typename Leaf, typename Interior>
-size_t BaseTree<Point>::CheckSize(Node* T) {
+size_t BaseTree<Point, kBDO>::CheckSize(Node* T) {
     if (T->is_leaf) {
         return T->size;
     }
@@ -30,10 +30,10 @@ size_t BaseTree<Point>::CheckSize(Node* T) {
     return T->size;
 }
 
-template<typename Point>
+template<typename Point, uint8_t kBDO>
 template<typename Leaf, typename Interior>
-void BaseTree<Point>::CheckTreeSameSequential(Node* T, int dim,
-                                              const int& DIM) {
+void BaseTree<Point, kBDO>::CheckTreeSameSequential(Node* T, int dim,
+                                                    const int& DIM) {
     if (T->is_leaf) {
         // assert( PickRebuildDim( T, DIM ) == dim );
         return;
@@ -53,9 +53,9 @@ void BaseTree<Point>::CheckTreeSameSequential(Node* T, int dim,
     return;
 }
 
-template<typename Point>
+template<typename Point, uint8_t kBDO>
 template<typename Leaf, typename Interior>
-void BaseTree<Point>::Validate(const DimsType DIM) {
+void BaseTree<Point, kBDO>::Validate(const DimsType DIM) {
     if (CheckBox<Leaf, Interior>(this->root_, this->tree_box_) &&
         LegalBox(this->tree_box_)) {
         std::cout << "Correct bounding Box" << std::endl << std::flush;
@@ -77,16 +77,16 @@ void BaseTree<Point>::Validate(const DimsType DIM) {
     return;
 }
 
-template<typename Point>
+template<typename Point, uint8_t kBDO>
 template<typename Leaf, typename Interior>
-size_t BaseTree<Point>::GetTreeHeight() {
+size_t BaseTree<Point, kBDO>::GetTreeHeight() {
     size_t deep = 0;
     return GetMaxTreeDepth<Leaf, Interior>(this->root_, deep);
 }
 
-template<typename Point>
+template<typename Point, uint8_t kBDO>
 template<typename Leaf, typename Interior>
-size_t BaseTree<Point>::GetMaxTreeDepth(Node* T, size_t deep) {
+size_t BaseTree<Point, kBDO>::GetMaxTreeDepth(Node* T, size_t deep) {
     if (T->is_leaf) {
         return deep;
     }
@@ -96,9 +96,9 @@ size_t BaseTree<Point>::GetMaxTreeDepth(Node* T, size_t deep) {
     return std::max(l, r);
 }
 
-template<typename Point>
+template<typename Point, uint8_t kBDO>
 template<typename Leaf, typename Interior>
-double BaseTree<Point>::GetAveTreeHeight() {
+double BaseTree<Point, kBDO>::GetAveTreeHeight() {
     parlay::sequence<size_t> heights(this->root_->size);
     size_t idx = 0;
     CountTreeHeights<Leaf, Interior>(this->root_, 0, idx, heights);
@@ -110,9 +110,9 @@ double BaseTree<Point>::GetAveTreeHeight() {
     return double(1.0 * parlay::reduce(heights.cut(0, idx)) / idx);
 }
 
-template<typename Point>
+template<typename Point, uint8_t kBDO>
 template<typename Leaf, typename Interior>
-size_t BaseTree<Point>::CountTreeNodesNum(Node* T) {
+size_t BaseTree<Point, kBDO>::CountTreeNodesNum(Node* T) {
     if (T->is_leaf) {
         return 1;
     }
@@ -124,10 +124,10 @@ size_t BaseTree<Point>::CountTreeNodesNum(Node* T) {
     return l + r + 1;
 }
 
-template<typename Point>
+template<typename Point, uint8_t kBDO>
 template<typename Leaf, typename Interior>
-void BaseTree<Point>::CountTreeHeights(Node* T, size_t deep, size_t& idx,
-                                       parlay::sequence<size_t>& heights) {
+void BaseTree<Point, kBDO>::CountTreeHeights(
+    Node* T, size_t deep, size_t& idx, parlay::sequence<size_t>& heights) {
     if (T->is_leaf) {
         heights[idx++] = deep;
         return;

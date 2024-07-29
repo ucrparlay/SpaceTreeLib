@@ -1,5 +1,7 @@
 #pragma once
 
+#include <sys/types.h>
+#include <cstdint>
 #include "dependence/comparator.h"
 #include "dependence/tree_node.h"
 #include "dependence/search_container.h"
@@ -9,7 +11,7 @@ namespace cpdd {
 #define LOG  std::cout
 #define ENDL std::endl << std::flush
 
-template<typename Point>
+template<typename Point, uint8_t kBDO = 6>
 class BaseTree {
  public:
     using BucketType = uint_fast8_t;
@@ -38,18 +40,18 @@ class BaseTree {
     //! bucket num should smaller than 1<<8 to handle type overflow
 
     // TODO: wrap the variables using std::getenv()
-    static constexpr BucketType kBuildDepthOnce = 6;  //* last layer is leaf
-    static constexpr BucketType kPivotNum = (1 << kBuildDepthOnce) - 1;
-    static constexpr BucketType kBucketNum = 1 << kBuildDepthOnce;
+    static const constexpr BucketType kBuildDepthOnce = kBDO;
+    static const constexpr BucketType kPivotNum = (1 << kBuildDepthOnce) - 1;
+    static const constexpr BucketType kBucketNum = 1 << kBuildDepthOnce;
     // NOTE: tree structure
-    static constexpr uint_fast8_t kLeaveWrap = 32;
-    static constexpr uint_fast8_t kThinLeaveWrap = 24;
-    static constexpr uint_fast16_t kSerialBuildCutoff = 1 << 10;
+    static const constexpr uint_fast8_t kLeaveWrap = 32;
+    static const constexpr uint_fast8_t kThinLeaveWrap = 24;
+    static const constexpr uint_fast16_t kSerialBuildCutoff = 1 << 10;
     // NOTE: block param in Partition
-    static constexpr uint_fast8_t kLog2Base = 10;
-    static constexpr uint_fast16_t kBlockSize = 1 << kLog2Base;
+    static const constexpr uint_fast8_t kLog2Base = 10;
+    static const constexpr uint_fast16_t kBlockSize = 1 << kLog2Base;
     // NOTE: reconstruct weight threshold
-    static constexpr uint_fast8_t kInbalanceRatio = 30;
+    static const constexpr uint_fast8_t kInbalanceRatio = 30;
 
     // NOTE: get the imbalance ratio
     inline size_t GetImbalanceRatio();

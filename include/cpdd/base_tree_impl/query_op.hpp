@@ -6,8 +6,8 @@
 namespace cpdd {
 
 // NOTE: NN search
-template<typename Point>
-inline typename BaseTree<Point>::Coord BaseTree<Point>::P2PDistance(
+template<typename Point, uint8_t kBDO>
+inline typename BaseTree<Point, kBDO>::Coord BaseTree<Point, kBDO>::P2PDistance(
     const Point& p, const Point& q, const DimsType DIM) {
     Coord r = 0;
     for (DimsType i = 0; i < DIM; ++i) {
@@ -17,9 +17,10 @@ inline typename BaseTree<Point>::Coord BaseTree<Point>::P2PDistance(
 }
 
 // NOTE: distance between a Point and a Box
-template<typename Point>
-inline typename BaseTree<Point>::Coord BaseTree<Point>::P2BMinDistance(
-    const Point& p, const typename BaseTree<Point>::Box& a,
+template<typename Point, uint8_t kBDO>
+inline typename BaseTree<Point, kBDO>::Coord
+BaseTree<Point, kBDO>::P2BMinDistance(
+    const Point& p, const typename BaseTree<Point, kBDO>::Box& a,
     const DimsType DIM) {
     Coord r = 0;
     for (DimsType i = 0; i < DIM; ++i) {
@@ -32,9 +33,10 @@ inline typename BaseTree<Point>::Coord BaseTree<Point>::P2BMinDistance(
     return r;
 }
 
-template<typename Point>
-inline typename BaseTree<Point>::Coord BaseTree<Point>::P2BMaxDistance(
-    const Point& p, const typename BaseTree<Point>::Box& a,
+template<typename Point, uint8_t kBDO>
+inline typename BaseTree<Point, kBDO>::Coord
+BaseTree<Point, kBDO>::P2BMaxDistance(
+    const Point& p, const typename BaseTree<Point, kBDO>::Box& a,
     const DimsType DIM) {
     Coord r = 0;
     for (DimsType i = 0; i < DIM; ++i) {
@@ -49,9 +51,10 @@ inline typename BaseTree<Point>::Coord BaseTree<Point>::P2BMaxDistance(
 
 // NOTE: early return the partial distance between p and q if it is larger than
 // r else return the distance between p and q
-template<typename Point>
-inline typename BaseTree<Point>::Coord BaseTree<Point>::InterruptibleDistance(
-    const Point& p, const Point& q, Coord up, DimsType DIM) {
+template<typename Point, uint8_t kBDO>
+inline typename BaseTree<Point, kBDO>::Coord
+BaseTree<Point, kBDO>::InterruptibleDistance(const Point& p, const Point& q,
+                                             Coord up, DimsType DIM) {
     Coord r = 0;
     DimsType i = 0;
     if (DIM >= 6) {
@@ -81,11 +84,11 @@ inline typename BaseTree<Point>::Coord BaseTree<Point>::InterruptibleDistance(
 }
 
 // NOTE: KNN search for Point q
-template<typename Point>
+template<typename Point, uint8_t kBDO>
 template<typename Leaf, typename Interior, typename StoreType>
-void BaseTree<Point>::KNNRec(Node* T, const Point& q, const DimsType DIM,
-                             kBoundedQueue<Point, StoreType>& bq,
-                             const Box& node_box, size_t& vis_node_num) {
+void BaseTree<Point, kBDO>::KNNRec(Node* T, const Point& q, const DimsType DIM,
+                                   kBoundedQueue<Point, StoreType>& bq,
+                                   const Box& node_box, size_t& vis_node_num) {
     vis_node_num++;
 
     if (T->is_leaf) {
@@ -137,12 +140,12 @@ void BaseTree<Point>::KNNRec(Node* T, const Point& q, const DimsType DIM,
     return;
 }
 
-template<typename Point>
+template<typename Point, uint8_t kBDO>
 template<typename Leaf, typename Interior>
-size_t BaseTree<Point>::RangeCountRectangle(Node* T, const Box& query_box,
-                                            const Box& node_box,
-                                            size_t& vis_leaf_num,
-                                            size_t& vis_inter_num) {
+size_t BaseTree<Point, kBDO>::RangeCountRectangle(Node* T, const Box& query_box,
+                                                  const Box& node_box,
+                                                  size_t& vis_leaf_num,
+                                                  size_t& vis_inter_num) {
     if (T->is_leaf) {
         Leaf* TL = static_cast<Leaf*>(T);
         size_t cnt = 0;
@@ -191,10 +194,10 @@ size_t BaseTree<Point>::RangeCountRectangle(Node* T, const Box& query_box,
 }
 
 // TODO as range_count_rectangle
-template<typename Point>
+template<typename Point, uint8_t kBDO>
 template<typename Leaf, typename Interior>
-size_t BaseTree<Point>::RangeCountRadius(Node* T, const Circle& cl,
-                                         const Box& node_box) {
+size_t BaseTree<Point, kBDO>::RangeCountRadius(Node* T, const Circle& cl,
+                                               const Box& node_box) {
     if (!circle_intersect_box(cl, node_box)) return 0;
     if (within_circle(node_box, cl)) return T->size;
 
@@ -223,11 +226,12 @@ size_t BaseTree<Point>::RangeCountRadius(Node* T, const Circle& cl,
     return std::move(l + r);
 };
 
-template<typename Point>
+template<typename Point, uint8_t kBDO>
 template<typename Leaf, typename Interior, typename StoreType>
-void BaseTree<Point>::RangeQuerySerialRecursive(Node* T, StoreType Out,
-                                                size_t& s, const Box& query_box,
-                                                const Box& node_box) {
+void BaseTree<Point, kBDO>::RangeQuerySerialRecursive(Node* T, StoreType Out,
+                                                      size_t& s,
+                                                      const Box& query_box,
+                                                      const Box& node_box) {
     if (T->is_leaf) {
         Leaf* TL = static_cast<Leaf*>(T);
         if (TL->is_dummy) {

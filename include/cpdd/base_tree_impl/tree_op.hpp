@@ -4,10 +4,10 @@
 #include "../base_tree.h"
 
 namespace cpdd {
-template<typename Point>
+template<typename Point, uint8_t kBDO>
 template<typename Interior, typename SplitterSeq>
-Node* BaseTree<Point>::BuildInnerTree(BucketType idx, SplitterSeq& pivots,
-                                      parlay::sequence<Node*>& tree_nodes) {
+Node* BaseTree<Point, kBDO>::BuildInnerTree(
+    BucketType idx, SplitterSeq& pivots, parlay::sequence<Node*>& tree_nodes) {
     if (idx > kPivotNum) {
         assert(idx - kPivotNum - 1 < kBucketNum);
         return tree_nodes[idx - kPivotNum - 1];
@@ -19,9 +19,9 @@ Node* BaseTree<Point>::BuildInnerTree(BucketType idx, SplitterSeq& pivots,
                                        typename Interior::AT());
 }
 
-template<typename Point>
+template<typename Point, uint8_t kBDO>
 template<typename Leaf, typename Interior, typename Range>
-void BaseTree<Point>::FlattenRec(Node* T, Range Out, bool granularity) {
+void BaseTree<Point, kBDO>::FlattenRec(Node* T, Range Out, bool granularity) {
     assert(T->size == Out.size());
 
     if (T->size == 0) return;

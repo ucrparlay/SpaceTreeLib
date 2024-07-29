@@ -2,9 +2,9 @@
 
 namespace cpdd {
 
-template<typename Point>
+template<typename Point, uint8_t kBDO>
 template<typename leaf_node_type, typename interior_node_type>
-void BaseTree<Point>::DeleteTreeWrapper() {
+void BaseTree<Point, kBDO>::DeleteTreeWrapper() {
     if (this->root_ == nullptr) {
         return;
     }
@@ -13,9 +13,9 @@ void BaseTree<Point>::DeleteTreeWrapper() {
     return;
 }
 
-template<typename Point>  //* delete tree in parallel
+template<typename Point, uint8_t kBDO>  //* delete tree in parallel
 template<typename leaf_node_type, typename interior_node_type>
-void BaseTree<Point>::DeleteTreeRecursive(Node* T, bool granularity) {
+void BaseTree<Point, kBDO>::DeleteTreeRecursive(Node* T, bool granularity) {
     if (T == nullptr) return;
     if (T->is_leaf) {
         FreeNode<leaf_node_type>(T);

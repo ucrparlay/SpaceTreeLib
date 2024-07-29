@@ -5,8 +5,8 @@
 #include <utility>
 
 namespace cpdd {
-template<typename Point>
-inline void BaseTree<Point>::SamplePoints(Slice In, Points& arr) {
+template<typename Point, uint8_t kBDO>
+inline void BaseTree<Point, kBDO>::SamplePoints(Slice In, Points& arr) {
     auto size = arr.size();
     auto n = In.size();
     auto indexs = parlay::sequence<uint64_t>::uninitialized(size);
@@ -20,10 +20,10 @@ inline void BaseTree<Point>::SamplePoints(Slice In, Points& arr) {
     return;
 }
 
-template<typename point>
+template<typename Point, uint8_t kBDO>
 template<typename SplitterSeq>
-inline uint_fast8_t BaseTree<point>::FindBucket(const point& p,
-                                                const SplitterSeq& pivots) {
+inline uint_fast8_t BaseTree<Point, kBDO>::FindBucket(
+    const Point& p, const SplitterSeq& pivots) {
     uint_fast8_t k = 1;
     while (k <= kPivotNum) {
         // TODO: remove conditional judge
@@ -34,11 +34,11 @@ inline uint_fast8_t BaseTree<point>::FindBucket(const point& p,
     return pivots[k].second;
 }
 
-template<typename point>
+template<typename Point, uint8_t kBDO>
 template<typename SplitterSeq>
-void BaseTree<point>::Partition(Slice A, Slice B, const size_t n,
-                                const SplitterSeq& pivots,
-                                parlay::sequence<BallsType>& sums) {
+void BaseTree<Point, kBDO>::Partition(Slice A, Slice B, const size_t n,
+                                      const SplitterSeq& pivots,
+                                      parlay::sequence<BallsType>& sums) {
     size_t num_block = (n + kBlockSize - 1) >> kLog2Base;
     parlay::sequence<parlay::sequence<BallsType>> offset(
         num_block, parlay::sequence<BallsType>(kBucketNum));
@@ -82,9 +82,9 @@ void BaseTree<point>::Partition(Slice A, Slice B, const size_t n,
     return;
 }
 
-template<typename Point>
-typename BaseTree<Point>::PointsIter BaseTree<Point>::SerialPartition(
-    Slice In, DimsType d) {
+template<typename Point, uint8_t kBDO>
+typename BaseTree<Point, kBDO>::PointsIter
+BaseTree<Point, kBDO>::SerialPartition(Slice In, DimsType d) {
     size_t n = In.size();
 #if __cplusplus <= 201703L
     std::nth_element(In.begin(), In.begin() + n / 2, In.end(),
