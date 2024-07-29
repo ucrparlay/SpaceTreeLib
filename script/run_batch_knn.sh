@@ -1,31 +1,21 @@
 #!/bin/bash
-# {
-# 	sleep 10s
-# 	# kill $$
-# 	pkill -P $$
-# } &
-set -o xtrace
-Solvers=("cgal")
-# Solvers=("zdtree" "test")
-# Node=(100000000 1000000000)
+# set -o xtrace
+
+Solvers=("zdtree" "test" "cgal")
+# Solvers=("test")
 Node=(1000000000)
-Dim=(2 3 5 9)
-# Dim=(2 9)
+Dim=(3)
 declare -A datas
-datas["/data/legacy/data3/zmen002/kdtree/ss_varden/"]="../benchmark/ss_varden/"
-datas["/data/legacy/data3/zmen002/kdtree/uniform/"]="../benchmark/uniform/"
+datas["/data3/zmen002/kdtree/ss_varden/"]="../benchmark/ss_varden/"
+datas["/data3/zmen002/kdtree/uniform/"]="../benchmark/uniform/"
 
-# tag=2
 tag=0
-k=10
-insNum=1
-queryType=$((2#1)) # 1110000
-# queryType=$((2#1001)) # 1110000
-echo $queryType
-type="summary"
-rounds=3
-
+k=100
+insNum=2
+queryType=$((2#1))
+type="batch_knn_query"
 resFile=""
+readFile=0
 
 for solver in "${Solvers[@]}"; do
 	exe="../build/${solver}"
@@ -34,21 +24,13 @@ for solver in "${Solvers[@]}"; do
 	if [[ ${solver} == "test" ]]; then
 		resFile="res_${type}.out"
 	elif [[ ${solver} == "cgal" ]]; then
-		if [[ ${tag} == 0 ]]; then
-			resFile="cgal_${type}_knn.out"
-		else
-			resFile="cgal_${type}.out"
-		fi
+		resFile="cgal_${type}.out"
 	elif [[ ${solver} == "zdtree" ]]; then
 		resFile="zdtree_${type}.out"
 		exe="/home/zmen002/pbbsbench_x/build/zdtree"
 	fi
 
 	for dim in "${Dim[@]}"; do
-		if [ "${dim}" -gt 3 ] && [ "${solver}" == "zdtree" ]; then
-			continue
-		fi
-
 		for dataPath in "${!datas[@]}"; do
 			for node in "${Node[@]}"; do
 				files_path="${dataPath}${node}_${dim}"
@@ -59,14 +41,11 @@ for solver in "${Solvers[@]}"; do
 				echo ">>>${dest}"
 
 				for ((i = 1; i <= insNum; i++)); do
-
-					export PARLAY_NUM_THREADS=192
-					# export TEST_CGAL_THREADS=192
-					numactl -i all ${exe} -p "${files_path}/${i}.in" -k ${k} -t ${tag} -d ${dim} -q ${queryType} -r ${rounds} -i 1 -s 1 >>"${dest}"
+					PARLAY_NUM_THREADS=192 numactl -i all ${exe} -p "${files_path}/${i}.in" -k ${k} -t ${tag} -d ${dim} -q ${queryType} -i ${readFile} >>"${dest}"
 
 					retval=$?
 					if [ ${retval} -eq 124 ]; then
-						echo -e "timeout" >>"${dest}"
+						echo -e "${node}_${dim}.in ${T} -1 -1 -1 -1" >>"${dest}"
 						echo "timeout ${node}_${dim}"
 					else
 						echo "finish ${node}_${dim}"
@@ -76,3 +55,6 @@ for solver in "${Solvers[@]}"; do
 		done
 	done
 done
+
+current_date_time="$(date "+%d %H:%M:%S")"
+echo $current_date_time

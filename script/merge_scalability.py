@@ -9,9 +9,10 @@ benchmarks = ["ss_varden", "uniform"]
 storePrefix = "data/"
 
 if len(sys.argv) > 1 and int(sys.argv[1]) == 1:
-    Nodes = [100000000]
+    Nodes = [1000000000]
     cores = [1, 2, 4, 8, 16, 24, 48, 96, 192]
 
+    # solverName = ["test", "zdtree", "cgal"]
     solverName = ["test", "zdtree", "cgal"]
     resMap = {"test": "res.out", "zdtree": "zdtree.out", "cgal": "cgal.out"}
     csvFilePointer = open(storePrefix + "scalability" + ".csv", "w", newline="")
@@ -21,9 +22,9 @@ if len(sys.argv) > 1 and int(sys.argv[1]) == 1:
         [
             "solver",
             "benchType",
-            "nodes",
-            "dims",
-            "file",
+            # "nodes",
+            # "dims",
+            # "file",
             "build",
             "depth",
             "insert",
@@ -60,13 +61,13 @@ if len(sys.argv) > 1 and int(sys.argv[1]) == 1:
                             [
                                 solver,
                                 bench,
-                                node,
-                                dim,
-                                l[0],
+                                # node,
+                                # dim,
+                                # l[0],
                                 l[1],
                                 l[2],
                                 l[3],
-                                l[4],
+                                l[4] if solver != "cgal" else "-1",
                                 str(core),
                             ]
                         )

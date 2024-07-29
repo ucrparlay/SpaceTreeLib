@@ -1,44 +1,53 @@
 #!/bin/bash
 #
-# set -o xtrace
+set -o xtrace
 
 Solvers=("test")
-# Solvers=("test" "zdtree")
-Node=(100000000)
+# Solvers=("zdtree")
+# Solvers=("cgal")
+Node=(1000000000)
 declare -A datas
-datas["/data3/zmen002/kdtree/ss_varden/"]="../benchmark/ss_varden/scalability/"
-datas["/data3/zmen002/kdtree/uniform/"]="../benchmark/uniform/scalability/"
+# datas["/data/legacy/data3/zmen002/kdtree/ss_varden/"]="../benchmark/ss_varden/scalability/"
+datas["/data/legacy/data3/zmen002/kdtree/uniform/"]="../benchmark/uniform/scalability/"
 
-# declare -a cores=(1)
 declare -a cores=(1 2 4 8 16 24 48 96 192)
 
 declare -a threads=(
+	# "TEST_CGAL_THREADS=1"
+	# "TEST_CGAL_THREADS=2"
+	# "TEST_CGAL_THREADS=4"
+	# "TEST_CGAL_THREADS=8"
+	# "TEST_CGAL_THREADS=16"
+	# "TEST_CGAL_THREADS=24"
+	# "TEST_CGAL_THREADS=48"
+	# "TEST_CGAL_THREADS=96"
+	# "TEST_CGAL_THREADS=192"
 	"PARLAY_NUM_THREADS=1"
-	"PARLAY_NUM_THREADS=2"
-	"PARLAY_NUM_THREADS=4"
-	"PARLAY_NUM_THREADS=8"
-	"PARLAY_NUM_THREADS=16"
-	"PARLAY_NUM_THREADS=24"
-	"PARLAY_NUM_THREADS=48"
-	"PARLAY_NUM_THREADS=96"
-	"PARLAY_NUM_THREADS=192"
+	# "PARLAY_NUM_THREADS=2"
+	# "PARLAY_NUM_THREADS=4"
+	# "PARLAY_NUM_THREADS=8"
+	# "PARLAY_NUM_THREADS=16"
+	# "PARLAY_NUM_THREADS=24"
+	# "PARLAY_NUM_THREADS=48"
+	# "PARLAY_NUM_THREADS=96"
+	# "PARLAY_NUM_THREADS=192"
 )
 
 declare -a commands=(
-	"taskset -c 0-3:4"                 # 1 thread
-	"taskset -c 0-7:4 numactl -i all"  # 2 threads
-	"taskset -c 0-15:4 numactl -i all" # 4 threads
-	"taskset -c 0-31:4 numactl -i all" # 8 threads
-	"taskset -c 0-63:4 numactl -i all" # 16 threads
-	"taskset -c 0-95:4 numactl -i all" # 24 threads
-	"taskset -c 0-95:2 numactl -i all" # 48 threads
-	"taskset -c 0-95 numactl -i all"   # 96 threads
-	"numactl -i all"                   # 192 threads
+	"taskset -c 0-3:4" # 1 thread
+	# "taskset -c 0-7:4 numactl -i all"  # 2 threads
+	# "taskset -c 0-15:4 numactl -i all" # 4 threads
+	# "taskset -c 0-31:4 numactl -i all" # 8 threads
+	# "taskset -c 0-63:4 numactl -i all" # 16 threads
+	# "taskset -c 0-95:4 numactl -i all" # 24 threads
+	# "taskset -c 0-95:2 numactl -i all" # 48 threads
+	# "taskset -c 0-95 numactl -i all"   # 96 threads
+	# "numactl -i all"                   # 192 threads
 )
 
 tag=2
 dim=3
-k=100
+k=10
 
 resFile=""
 
@@ -67,7 +76,7 @@ for solver in "${Solvers[@]}"; do
 				echo ">>>${dest}"
 
 				export "${threads[${i}]}"
-				${commands[${i}]} "${exe}" -p "${files_path}/1.in" -k ${k} -t ${tag} -d ${dim} -r 2 -q 0 -i 1 >>"${dest}"
+				${commands[${i}]} "${exe}" -p "${files_path}/1.in" -k ${k} -t ${tag} -d ${dim} -r 1 -q 0 -i 1 >>"${dest}"
 
 			done
 		done

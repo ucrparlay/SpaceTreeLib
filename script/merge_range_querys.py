@@ -5,17 +5,24 @@ import csv
 print(os.getcwd())
 
 path = "../benchmark"
-# benchmarks = ["ss_varden"]
 benchmarks = ["uniform", "ss_varden"]
 storePrefix = "data/"
 Nodes = [1000000000]
-Dims = [2, 3, 5, 9]
 
-solverName = ["test", "zdtree", "cgal"]
+type = "range_query_log"
+
+#! order by test order
+
+solverName = ["test", "cgal", "test_count", "LogTree", "BhlTree"]
+files = ["build", "count"]
+Dims = [3]
+
 resMap = {
-    "test": "res_summary.out",
-    "cgal": "cgal_summary.out",
-    "zdtree": "zdtree_summary.out",
+    "test": "res_" + type + ".out",
+    "test_count": "res_" + "range_count_log" + ".out",
+    "cgal": "cgal_" + type + ".out",
+    "LogTree": "LogTree_" + type + ".out",
+    "BhlTree": "BhlTree_" + type + ".out",
 }
 
 common = [
@@ -24,78 +31,54 @@ common = [
     "nodes",
     "dims",
 ]
-
-#! order by test order
-files = ["summary"]
-
-build_header = [
-    "build",
-    "aveDepth",
-    "insert_0.0001",
-    "insert_0.001",
-    "insert_0.01",
-    "insert_0.1",
-    "delete_0.0001",
-    "delete_0.001",
-    "delete_0.01",
-    "delete_0.1",
-    "k",
-    "depth",
-    "visNum",
-    "rangeQuery",
-]
+build_header = ["build", "depth"]
 file_header = {
-    "summary": build_header,
+    "build": build_header,
 }
 
 prefix = [0] * len(files)
 
-# TODO change order
+
+def get_recType(i):
+    if i < 100:
+        return 1
+    if i < 200:
+        return 2
+    return 3
 
 
 def combine(P, file, csvWriter, solver, benchName, node, dim):
     if not os.path.isfile(P):
         print("No file fonund: " + P)
-        if solver == "zdtree":
-            csvWriter.writerow(
-                [solver, benchName, node, dim] + ["-"] * len(build_header)
-            )
-        elif solver == "cgal":
-            csvWriter.writerow(
-                [solver, benchName, node, dim] + ["T"] * len(build_header)
-            )
         return
-    print(P)
+
     lines = open(P, "r").readlines()
-    if len(lines) == 0:
-        return
     sep_lines = []
     for line in lines:
         l = " ".join(line.split())
         l = l.split(" ")
+        if len(l) == 0:
+            continue
         sep_lines.append(l)
 
-    width = len(file_header[file])
-    l = prefix[files.index(file)]
-    r = l + width
-    num = len(lines)
-    for i in range(0, len(sep_lines), num):
-        line = [0] * width
-        for j in range(i, num):
-            for k in range(l, r):
-                line[k - l] = line[k - l] + float(sep_lines[j][k]) / num
+    sep_lines.pop(0)
 
+    num = 1
+    for i in range(0, len(sep_lines), num):
         csvWriter.writerow(
-            [solver, benchName, node, dim] + list(map(lambda x: round(x, 3), line))
+            [solver, benchName, node, dim] + sep_lines[i] + [get_recType(i)]
         )
 
 
 def csvSetup(solver):
+    print(solver)
     csvFilePointer = open(storePrefix + solver + ".csv", "w", newline="")
     csvFilePointer.truncate()
     csvWriter = csv.writer(csvFilePointer)
-    csvWriter.writerow(common + file_header[file])
-    return csvWriter, csvFilePointer
+    csvWriter.writerow(
+        ["solver", "benchmark", "node", "dim", "batchSize", "batchTime", "recType"]
+    )
+    return csvWriter
 
 
 def calculatePrefix():
@@ -108,16 +91,16 @@ def calculatePrefix():
         prefix[i] = l + prefix[i - 1]
         l = r
 
-    print(prefix)
-
 
 # * merge the result
 if len(sys.argv) > 1 and int(sys.argv[1]) == 1:
-    calculatePrefix()
+    # print(type)
+    # calculatePrefix()
     for file in files:
-        csvWriter, csvFilePointer = csvSetup(file)
-        for dim in Dims:
-            for bench in benchmarks:
+        csvWriter = csvSetup(file)
+
+        for bench in benchmarks:
+            for dim in Dims:
                 for solver in solverName:
                     for node in Nodes:
                         P = (
@@ -132,6 +115,3 @@ if len(sys.argv) > 1 and int(sys.argv[1]) == 1:
                             + resMap[solver]
                         )
                         combine(P, file, csvWriter, solver, bench, node, dim)
-        csvFilePointer.close()
-
-    # reorder()
