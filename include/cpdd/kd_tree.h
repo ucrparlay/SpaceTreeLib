@@ -35,6 +35,7 @@ class KdTree : private BaseTree<Point> {
 
     // NOTE: expose basetree interface
     using BT::GetAveTreeHeight;
+    using BT::GetBox;
     using BT::GetRoot;
     using BT::GetRootBox;
     using BT::Validate;
@@ -50,10 +51,17 @@ class KdTree : private BaseTree<Point> {
     template<typename Range>
     void Flatten(Range&& Out);
 
-    template<typename StoreType>
+    template<typename Range>
     void KNN(Node* T, const Point& q, const DimsType DIM,
-             kBoundedQueue<Point, StoreType>& bq, const Box& bx,
+             kBoundedQueue<Point, Range>& bq, const Box& bx,
              size_t& vis_node_num);
+
+    size_t RangeCount(const Box& query_box);
+
+    size_t RangeCount(const Circle& cl);
+
+    template<typename Range>
+    size_t RangeQuery(const Box& query_box, Range&& Out);
 
  private:
     void DivideRotate(Slice In, SplitterSeq& pivots, DimsType dim,

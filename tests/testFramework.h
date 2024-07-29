@@ -549,7 +549,6 @@ template<typename Point, typename Tree>
 void rangeCount(const parlay::sequence<Point>& wp, Tree& pkd, Typename* kdknn,
                 const int& rounds, const int& queryNum) {
     using points = typename Tree::Points;
-    using node = typename Tree::Node;
     using box = typename Tree::Box;
 
     int n = wp.size();
@@ -564,8 +563,7 @@ void rangeCount(const parlay::sequence<Point>& wp, Tree& pkd, Typename* kdknn,
                 box queryBox =
                     pkd.GetBox(box(wp[i], wp[i]),
                                box(wp[(i + n / 2) % n], wp[(i + n / 2) % n]));
-                kdknn[i] =
-                    pkd.range_count(queryBox, visLeafNum[i], visInterNum[i]);
+                kdknn[i] = pkd.RangeCount(queryBox);
             });
         },
         [&]() {});
@@ -574,46 +572,44 @@ void rangeCount(const parlay::sequence<Point>& wp, Tree& pkd, Typename* kdknn,
 
     return;
 }
-//
-// template<typename point>
-// void rangeCountRadius(const parlay::sequence<point>& wp, BaseTree<point>&
-// pkd, Typename* kdknn, const int& rounds,
-//                       const int& queryNum) {
-//     using tree = BaseTree<point>;
-//     using points = typename tree::points;
-//     using node = typename tree::node;
-//     using box = typename tree::box;
-//     using circle = typename tree::circle;
-//
-//     int n = wp.size();
-//
-//     double aveCount = time_loop(
-//         rounds, 1.0, [&]() {},
-//         [&]() {
-//             parlay::parallel_for(0, queryNum, [&](size_t i) {
-//                 //   box queryBox = pkd.get_box(
-//                 //   box( wp[i], wp[i] ), box( wp[( i + n / 2 ) % n], wp[( i
-//                 + n / 2 )
-//                 //   % n] ) );
-//                 auto d = cpdd::BaseTree<point>::p2p_distance(wp[i], wp[(i + n
-//                 / 2) % n], wp[i].get_dim()); d =
-//                 static_cast<Coord>(std::sqrt(d)); circle cl = circle(wp[i],
-//                 d); kdknn[i] = pkd.range_count(cl);
-//             });
-//         },
-//         [&]() {});
-//
-//     LOG << aveCount << " " << std::flush;
-//
-//     return;
-// }
-//
+
+template<typename point>
+void rangeCountRadius(const parlay::sequence<point>& wp, BaseTree<point>& pkd,
+                      Typename* kdknn, const int& rounds, const int& queryNum) {
+    using tree = BaseTree<point>;
+    using points = typename tree::points;
+    using node = typename tree::node;
+    using box = typename tree::box;
+    using circle = typename tree::circle;
+
+    int n = wp.size();
+
+    double aveCount = time_loop(
+        rounds, 1.0, [&]() {},
+        [&]() {
+            parlay::parallel_for(0, queryNum, [&](size_t i) {
+                box queryBox =
+                    pkd.get_box(box(wp[i], wp[i]),
+                                box(wp[(i + n / 2) % n], wp[(i + n / 2) % n]));
+                auto d = cpdd::BaseTree<point>::p2p_distance(
+                    wp[i], wp[(i + n / 2) % n], wp[i].get_dim());
+                d = static_cast<Coord>(std::sqrt(d));
+                circle cl = circle(wp[i], d);
+                kdknn[i] = pkd.range_count(cl);
+            });
+        },
+        [&]() {});
+
+    LOG << aveCount << " " << std::flush;
+
+    return;
+}
+
 template<typename point, typename Tree>
 void rangeQuery(const parlay::sequence<point>& wp, Tree& pkd, Typename* kdknn,
                 const int& rounds, const int& queryNum,
                 parlay::sequence<point>& Out) {
     using points = typename Tree::Points;
-    using node = typename Tree::Node;
     using box = typename Tree::Box;
 
     int n = wp.size();
@@ -629,7 +625,7 @@ void rangeQuery(const parlay::sequence<point>& wp, Tree& pkd, Typename* kdknn,
                 box queryBox =
                     pkd.GetBox(box(wp[i], wp[i]),
                                box(wp[(i + n / 2) % n], wp[(i + n / 2) % n]));
-                kdknn[i] = pkd.range_query_serial(
+                kdknn[i] = pkd.RangeQuery(
                     queryBox, out_ref.cut(i * step, (i + 1) * step));
             });
         },

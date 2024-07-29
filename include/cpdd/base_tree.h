@@ -124,13 +124,6 @@ class BaseTree {
 
     // NOTE: range count stuffs
     template<typename Leaf, typename Interior>
-    size_t RangeCount(const Box& query_box, size_t& vis_leaf_num,
-                      size_t& vis_inter_num);
-
-    template<typename Leaf, typename Interior>
-    size_t RangeCount(const Circle& cl);
-
-    template<typename Leaf, typename Interior>
     static size_t RangeCountRectangle(Node* T, const Box& query_box,
                                       const Box& node_box, size_t& vis_leaf_num,
                                       size_t& vis_inter_num);
@@ -140,9 +133,6 @@ class BaseTree {
                                    const Box& node_box);
 
     // NOTE: range query stuffs
-    template<typename Leaf, typename Interior, typename StoreType>
-    size_t RangeQuery(const Box& query_box, StoreType Out);
-
     template<typename Leaf, typename Interior, typename StoreType>
     static void RangeQuerySerialRecursive(Node* T, StoreType Out, size_t& s,
                                           const Box& query_box,

@@ -139,14 +139,6 @@ void BaseTree<Point>::KNNRec(Node* T, const Point& q, const DimsType DIM,
 
 template<typename Point>
 template<typename Leaf, typename Interior>
-size_t BaseTree<Point>::RangeCount(const Box& bx, size_t& vis_leaf_num,
-                                   size_t& vis_inter_num) {
-    return RangeCountRectangle(this->root, bx, this->bbox, vis_leaf_num,
-                               vis_inter_num);
-}
-
-template<typename Point>
-template<typename Leaf, typename Interior>
 size_t BaseTree<Point>::RangeCountRectangle(Node* T, const Box& query_box,
                                             const Box& node_box,
                                             size_t& vis_leaf_num,
@@ -181,8 +173,8 @@ size_t BaseTree<Point>::RangeCountRectangle(Node* T, const Box& query_box,
         } else if (WithinBox(bx, query_box)) {
             counter = Ts->size;
         } else {
-            counter = RangeCountRectangle(Ts, query_box, bx, vis_leaf_num,
-                                          vis_inter_num);
+            counter = RangeCountRectangle<Leaf, Interior>(
+                Ts, query_box, bx, vis_leaf_num, vis_inter_num);
         }
     };
 
@@ -196,12 +188,6 @@ size_t BaseTree<Point>::RangeCountRectangle(Node* T, const Box& query_box,
     recurse(TI->right, abox, r);
 
     return l + r;
-}
-
-template<typename Point>
-template<typename Leaf, typename Interior>
-size_t BaseTree<Point>::RangeCount(const Circle& cl) {
-    return RangeCountRadius(this->root, cl, this->bbox);
 }
 
 // TODO as range_count_rectangle
@@ -239,15 +225,6 @@ size_t BaseTree<Point>::RangeCountRadius(Node* T, const Circle& cl,
 
 template<typename Point>
 template<typename Leaf, typename Interior, typename StoreType>
-size_t BaseTree<Point>::RangeQuery(
-    const typename BaseTree<Point>::Box& query_box, StoreType Out) {
-    size_t s = 0;
-    RangeQuerySerialRecursive(this->root, Out, s, query_box, this->bbox);
-    return s;
-}
-
-template<typename Point>
-template<typename Leaf, typename Interior, typename StoreType>
 void BaseTree<Point>::RangeQuerySerialRecursive(Node* T, StoreType Out,
                                                 size_t& s, const Box& query_box,
                                                 const Box& node_box) {
@@ -281,7 +258,8 @@ void BaseTree<Point>::RangeQuerySerialRecursive(Node* T, StoreType Out,
             s += Ts->size;
             return;
         } else {
-            RangeQuerySerialRecursive(Ts, Out, s, query_box, bx);
+            RangeQuerySerialRecursive<Leaf, Interior>(Ts, Out, s, query_box,
+                                                      bx);
             return;
         }
     };
