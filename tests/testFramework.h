@@ -545,35 +545,35 @@ void queryKNN(const uint_fast8_t& Dim, const parlay::sequence<Point>& WP,
     return;
 }
 
-// template<typename Point>
-// void rangeCount(const parlay::sequence<Point>& wp, BaseTree<Point>& pkd,
-// Typename* kdknn, const int& rounds,
-//                 const int& queryNum) {
-//     using tree = BaseTree<point>;
-//     using points = typename tree::points;
-//     using node = typename tree::node;
-//     using box = typename tree::box;
-//
-//     int n = wp.size();
-//
-//     parlay::sequence<size_t> visLeafNum(queryNum, 0);
-//     parlay::sequence<size_t> visInterNum(queryNum, 0);
-//
-//     double aveCount = time_loop(
-//         rounds, 1.0, [&]() {},
-//         [&]() {
-//             parlay::parallel_for(0, queryNum, [&](size_t i) {
-//                 box queryBox = pkd.get_box(box(wp[i], wp[i]), box(wp[(i + n /
-//                 2) % n], wp[(i + n / 2) % n])); kdknn[i] =
-//                 pkd.range_count(queryBox, visLeafNum[i], visInterNum[i]);
-//             });
-//         },
-//         [&]() {});
-//
-//     LOG << aveCount << " " << std::flush;
-//
-//     return;
-// }
+template<typename Point, typename Tree>
+void rangeCount(const parlay::sequence<Point>& wp, Tree& pkd, Typename* kdknn,
+                const int& rounds, const int& queryNum) {
+    using points = typename Tree::Points;
+    using node = typename Tree::Node;
+    using box = typename Tree::Box;
+
+    int n = wp.size();
+
+    parlay::sequence<size_t> visLeafNum(queryNum, 0);
+    parlay::sequence<size_t> visInterNum(queryNum, 0);
+
+    double aveCount = time_loop(
+        rounds, 1.0, [&]() {},
+        [&]() {
+            parlay::parallel_for(0, queryNum, [&](size_t i) {
+                box queryBox =
+                    pkd.GetBox(box(wp[i], wp[i]),
+                               box(wp[(i + n / 2) % n], wp[(i + n / 2) % n]));
+                kdknn[i] =
+                    pkd.range_count(queryBox, visLeafNum[i], visInterNum[i]);
+            });
+        },
+        [&]() {});
+
+    LOG << aveCount << " " << std::flush;
+
+    return;
+}
 //
 // template<typename point>
 // void rangeCountRadius(const parlay::sequence<point>& wp, BaseTree<point>&
@@ -608,44 +608,44 @@ void queryKNN(const uint_fast8_t& Dim, const parlay::sequence<Point>& WP,
 //     return;
 // }
 //
-// template<typename point>
-// void rangeQuery(const parlay::sequence<point>& wp, BaseTree<point>& pkd,
-// Typename* kdknn, const int& rounds,
-//                 const int& queryNum, parlay::sequence<point>& Out) {
-//     using tree = BaseTree<point>;
-//     using points = typename tree::points;
-//     using node = typename tree::node;
-//     using box = typename tree::box;
-//
-//     int n = wp.size();
-//     size_t step = Out.size() / queryNum;
-//     using ref_t = std::reference_wrapper<point>;
-//     parlay::sequence<ref_t> out_ref(Out.size(), std::ref(Out[0]));
-//     // parlay::sequence<double> preTime( queryNum, 0 );
-//
-//     double aveQuery = time_loop(
-//         rounds, 1.0, [&]() {},
-//         [&]() {
-//             parlay::parallel_for(0, queryNum, [&](size_t i) {
-//                 box queryBox = pkd.get_box(box(wp[i], wp[i]), box(wp[(i + n /
-//                 2) % n], wp[(i + n / 2) % n])); kdknn[i] =
-//                 pkd.range_query_serial(queryBox, out_ref.cut(i * step, (i +
-//                 1) * step));
-//             });
-//         },
-//         [&]() {});
-//
-//     parlay::parallel_for(0, queryNum, [&](size_t i) {
-//         for (int j = 0; j < kdknn[i]; j++) {
-//             Out[i * step + j] = out_ref[i * step + j];
-//         }
-//     });
-//
-//     LOG << aveQuery << " " << std::flush;
-//     return;
-// }
-//
-// //* test range count for fix rectangle
+template<typename point, typename Tree>
+void rangeQuery(const parlay::sequence<point>& wp, Tree& pkd, Typename* kdknn,
+                const int& rounds, const int& queryNum,
+                parlay::sequence<point>& Out) {
+    using points = typename Tree::Points;
+    using node = typename Tree::Node;
+    using box = typename Tree::Box;
+
+    int n = wp.size();
+    size_t step = Out.size() / queryNum;
+    using ref_t = std::reference_wrapper<point>;
+    parlay::sequence<ref_t> out_ref(Out.size(), std::ref(Out[0]));
+    // parlay::sequence<double> preTime( queryNum, 0 );
+
+    double aveQuery = time_loop(
+        rounds, 1.0, [&]() {},
+        [&]() {
+            parlay::parallel_for(0, queryNum, [&](size_t i) {
+                box queryBox =
+                    pkd.GetBox(box(wp[i], wp[i]),
+                               box(wp[(i + n / 2) % n], wp[(i + n / 2) % n]));
+                kdknn[i] = pkd.range_query_serial(
+                    queryBox, out_ref.cut(i * step, (i + 1) * step));
+            });
+        },
+        [&]() {});
+
+    parlay::parallel_for(0, queryNum, [&](size_t i) {
+        for (int j = 0; j < kdknn[i]; j++) {
+            Out[i * step + j] = out_ref[i * step + j];
+        }
+    });
+
+    LOG << aveQuery << " " << std::flush;
+    return;
+}
+
+//* test range count for fix rectangle
 // template<typename point>
 // void rangeCountFix(const parlay::sequence<point>& WP, BaseTree<point>& pkd,
 // Typename* kdknn, const int& rounds,

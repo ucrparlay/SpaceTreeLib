@@ -40,7 +40,6 @@ class KdTree : private BaseTree<Point> {
     using BT::Validate;
 
     // NOTE: functions
-
     template<typename Range>
     void Build(Range&& In, int DIM);
 

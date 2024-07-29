@@ -89,7 +89,7 @@ class BaseTree {
                           const SplitterSeq& pivots,
                           parlay::sequence<BallsType>& sums);
 
-    template<typename InterType, typename SplitterSeq>
+    template<typename Interior, typename SplitterSeq>
     static Node* BuildInnerTree(BucketType idx, SplitterSeq& pivots,
                                 parlay::sequence<Node*>& tree_nodes);
 
@@ -101,10 +101,10 @@ class BaseTree {
     template<typename leaf_node_type, typename interior_node_type>
     void DeleteTreeWrapper();
 
-    template<typename leaf_node_type, typename interior_node_type>
+    template<typename Leaf, typename Interior>
     static void DeleteTreeRecursive(Node* T, bool granularity = true);
 
-    // NOTE: query stuffs
+    // NOTE: KNN query stuffs
     static inline Coord P2PDistance(const Point& p, const Point& q,
                                     const DimsType DIM);
 
@@ -117,10 +117,36 @@ class BaseTree {
     static inline Coord InterruptibleDistance(const Point& p, const Point& q,
                                               Coord up, DimsType DIM);
 
-    template<typename LeafType, typename InterType, typename StoreType>
+    template<typename Leaf, typename Interior, typename StoreType>
     static void KNNRec(Node* T, const Point& q, const DimsType DIM,
                        kBoundedQueue<Point, StoreType>& bq, const Box& bx,
                        size_t& vis_node_num);
+
+    // NOTE: range count stuffs
+    template<typename Leaf, typename Interior>
+    size_t RangeCount(const Box& query_box, size_t& vis_leaf_num,
+                      size_t& vis_inter_num);
+
+    template<typename Leaf, typename Interior>
+    size_t RangeCount(const Circle& cl);
+
+    template<typename Leaf, typename Interior>
+    static size_t RangeCountRectangle(Node* T, const Box& query_box,
+                                      const Box& node_box, size_t& vis_leaf_num,
+                                      size_t& vis_inter_num);
+
+    template<typename Leaf, typename Interior>
+    static size_t RangeCountRadius(Node* T, const Circle& cl,
+                                   const Box& node_box);
+
+    // NOTE: range query stuffs
+    template<typename Leaf, typename Interior, typename StoreType>
+    size_t RangeQuery(const Box& query_box, StoreType Out);
+
+    template<typename Leaf, typename Interior, typename StoreType>
+    static void RangeQuerySerialRecursive(Node* T, StoreType Out, size_t& s,
+                                          const Box& query_box,
+                                          const Box& node_box);
 
     // NOTE: utility
     template<typename Leaf, typename Interior, typename Range>
