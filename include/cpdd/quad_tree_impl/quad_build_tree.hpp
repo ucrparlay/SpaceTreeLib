@@ -4,6 +4,7 @@
 #include <parlay/type_traits.h>
 #include <parlay/slice.h>
 #include "cpdd/dependence/tree_node.h"
+#include "cpdd/quad_tree.h"
 
 namespace cpdd {
 template<typename Point, typename SplitRule, uint8_t kBDO>
@@ -21,12 +22,10 @@ void QuadTree<Point, SplitRule, kBDO>::Build(Range&& In, int DIM) {
 }
 
 template<typename Point, typename SplitRule, uint8_t kBDO>
-void QuadTree<Point, SplitRule, kBDO>::DivideRotate(Slice In, SplitterSeq& pivots,
-                                                  DimsType dim, BucketType idx,
-                                                  BucketType deep,
-                                                  BucketType& bucket,
-                                                  const DimsType DIM,
-                                                  BoxSeq& boxs, const Box& bx) {
+void QuadTree<Point, SplitRule, kBDO>::DivideRotate(
+    Slice In, HyperPlaneSeq& pivots, DimsType dim, BucketType idx,
+    BucketType deep, BucketType& bucket, const DimsType DIM, BoxSeq& boxs,
+    const Box& bx) {
     if (deep > BT::kBuildDepthOnce) {
         // WARN: sometimes cut dimension can be -1
         //  never use pivots[idx].first to check whether it is in bucket;
@@ -68,10 +67,10 @@ void QuadTree<Point, SplitRule, kBDO>::DivideRotate(Slice In, SplitterSeq& pivot
 // NOTE: starting at dimesion dim and pick pivots in a rotation manner
 template<typename Point, typename SplitRule, uint8_t kBDO>
 void QuadTree<Point, SplitRule, kBDO>::PickPivots(Slice In, const size_t& n,
-                                                SplitterSeq& pivots,
-                                                const DimsType dim,
-                                                const DimsType DIM,
-                                                BoxSeq& boxs, const Box& bx) {
+                                                  HyperPlaneSeq& pivots,
+                                                  const DimsType dim,
+                                                  const DimsType DIM,
+                                                  BoxSeq& boxs, const Box& bx) {
     size_t size = std::min(n, static_cast<size_t>(32 * BT::kBucketNum));
     assert(size <= n);
 
@@ -86,10 +85,8 @@ void QuadTree<Point, SplitRule, kBDO>::PickPivots(Slice In, const size_t& n,
 }
 
 template<typename Point, typename SplitRule, uint8_t kBDO>
-Node* QuadTree<Point, SplitRule, kBDO>::SerialBuildRecursive(Slice In, Slice Out,
-                                                           DimsType dim,
-                                                           const DimsType DIM,
-                                                           const Box& bx) {
+Node* QuadTree<Point, SplitRule, kBDO>::SerialBuildRecursive(
+    Slice In, Slice Out, DimsType dim, const DimsType DIM, const Box& bx) {
     size_t n = In.size();
 
     if (n == 0) return AllocEmptyLeafNode<Slice, Leaf>();
@@ -152,9 +149,9 @@ Node* QuadTree<Point, SplitRule, kBDO>::SerialBuildRecursive(Slice In, Slice Out
 
 template<typename Point, typename SplitRule, uint8_t kBDO>
 Node* QuadTree<Point, SplitRule, kBDO>::BuildRecursive(Slice In, Slice Out,
-                                                     DimsType dim,
-                                                     const DimsType DIM,
-                                                     const Box& bx) {
+                                                       DimsType dim,
+                                                       const DimsType DIM,
+                                                       const Box& bx) {
     assert(In.size() == 0 || BT::WithinBox(BT::GetBox(In), bx));
 
     // if ( In.size() ) {
@@ -207,8 +204,7 @@ Node* QuadTree<Point, SplitRule, kBDO>::BuildRecursive(Slice In, Slice Out,
         },
         1);
 
-    return BT::template BuildInnerTree<Interior, SplitterSeq>(1, pivots,
-                                                              tree_nodes);
+    return QuadBuildInnerTree<Interior, SplitterSeq>(1, pivots, tree_nodes);
 }
 
 template<typename Point, typename SplitRule, uint8_t kBDO>

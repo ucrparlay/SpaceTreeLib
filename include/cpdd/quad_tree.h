@@ -24,9 +24,10 @@ class QuadTree : private BaseTree<Point, kBDO> {
     using BoxSeq = BT::BoxSeq;
     using Circle = BT::Circle;
 
-    using Splitter = std::pair<Coord, DimsType>;
+    using HyperPlane = BT::HyperPlane;
+    using HyperPlaneSeq = BT::HyperPlaneSeq;
+    using Splitter = std::pair<HyperPlane, HyperPlane>;
     using SplitterSeq = parlay::sequence<Splitter>;
-    using SplitType = std::pair<Splitter, Splitter>;
     using AugType = bool;
 
     struct QuadInteriorNode;
@@ -66,11 +67,11 @@ class QuadTree : private BaseTree<Point, kBDO> {
     size_t RangeQuery(const Box& query_box, Range&& Out);
 
  private:
-    void DivideRotate(Slice In, SplitterSeq& pivots, DimsType dim,
+    void DivideRotate(Slice In, HyperPlaneSeq& pivots, DimsType dim,
                       BucketType idx, BucketType deep, BucketType& bucket,
                       const DimsType DIM, BoxSeq& boxs, const Box& bx);
 
-    void PickPivots(Slice In, const size_t& n, SplitterSeq& pivots,
+    void PickPivots(Slice In, const size_t& n, HyperPlaneSeq& pivots,
                     const DimsType dim, const DimsType DIM, BoxSeq& boxs,
                     const Box& bx);
 
@@ -79,6 +80,9 @@ class QuadTree : private BaseTree<Point, kBDO> {
 
     Node* SerialBuildRecursive(Slice In, Slice Out, DimsType dim,
                                const DimsType DIM, const Box& bx);
+
+    static Node* QuadBuildInnerTree(BucketType idx, HyperPlaneSeq& pivots,
+                                    parlay::sequence<Node*>& tree_nodes);
 
     SplitRule split_rule_;
 };
