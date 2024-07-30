@@ -1,6 +1,8 @@
 #pragma once
+
 #include "../kd_tree.h"
 #include "cpdd/dependence/tree_node.h"
+
 namespace cpdd {
 template<typename Point, typename SplitRule, uint8_t kBDO>
 struct KdTree<Point, SplitRule, kBDO>::KdInteriorNode :

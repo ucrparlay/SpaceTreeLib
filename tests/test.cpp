@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdlib>
+#include "cpdd/dependence/splitter.h"
 #include "cpdd/kd_tree.h"
 #include "parlay/primitives.h"
 #include "testFramework.h"
@@ -403,12 +404,12 @@ void TestSpacialTree(const int& kDim, const parlay::sequence<Point>& wp,
 }
 
 struct wrapper {
-    // struct ZDTree {
-    //     template<class Point>
-    //     struct Desc {
-    //         using TreeType = cpdd::octTree<Point>;
-    //     };
-    // };
+    struct QadTree {
+        template<class Point>
+        struct Desc {
+            using TreeType = cpdd::QuadTree<Point, cpdd::RotateDim<Point>>;
+        };
+    };
     struct KDtree {
         template<class Point>
         struct Desc {
@@ -491,6 +492,7 @@ int main(int argc, char* argv[]) {
     if (tree_type == 0) {
         run_test(wrapper::KDtree{});
     } else if (tree_type == 1) {
+        run_test(wrapper::QadTree{});
     } else if (tree_type == 2) {
     }
 

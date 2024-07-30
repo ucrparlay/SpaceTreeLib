@@ -21,9 +21,8 @@ inline void BaseTree<Point, kBDO>::SamplePoints(Slice In, Points& arr) {
 }
 
 template<typename Point, uint8_t kBDO>
-template<typename SplitterSeq>
 inline uint_fast8_t BaseTree<Point, kBDO>::FindBucket(
-    const Point& p, const SplitterSeq& pivots) {
+    const Point& p, const HyperPlaneSeq& pivots) {
     uint_fast8_t k = 1;
     while (k <= kPivotNum) {
         // TODO: remove conditional judge
@@ -35,9 +34,8 @@ inline uint_fast8_t BaseTree<Point, kBDO>::FindBucket(
 }
 
 template<typename Point, uint8_t kBDO>
-template<typename SplitterSeq>
 void BaseTree<Point, kBDO>::Partition(Slice A, Slice B, const size_t n,
-                                      const SplitterSeq& pivots,
+                                      const HyperPlaneSeq& pivots,
                                       parlay::sequence<BallsType>& sums) {
     size_t num_block = (n + kBlockSize - 1) >> kLog2Base;
     parlay::sequence<parlay::sequence<BallsType>> offset(

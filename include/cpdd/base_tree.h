@@ -24,8 +24,8 @@ class BaseTree {
     using Slice = parlay::slice<Point*, Point*>;
     using Points = parlay::sequence<Point>;
     using PointsIter = typename parlay::sequence<Point>::iterator;
-    /*using Splitter = std::pair<Coord, DimsType>;*/
-    /*using SplitterSeq = parlay::sequence<Splitter>;*/
+    using HyperPlane = std::pair<Coord, DimsType>;
+    using HyperPlaneSeq = parlay::sequence<HyperPlane>;
     using Box = std::pair<Point, Point>;
     using BoxSeq = parlay::sequence<Box>;
     using Circle = std::pair<Point, Coord>;
@@ -35,21 +35,23 @@ class BaseTree {
     using NodeTagSeq = parlay::sequence<NodeTag>;
     using TagNodes = parlay::sequence<BallsType>;
 
-    //@ Const variables
-    //@ uint32t handle up to 4e9 at least
-    //! bucket num should smaller than 1<<8 to handle type overflow
-
-    // TODO: wrap the variables using std::getenv()
-    static const constexpr BucketType kBuildDepthOnce = kBDO;
+    // NOTE: Const variables
+    // NOTE: uint32t handle up to 4e9 at least
+    // WARN: bucket num should smaller than 1<<8 to handle type overflow
+    static const constexpr BucketType kBuildDepthOnce = 6;
+    // static const constexpr BucketType kBuildDepthOnce = kBDO;
     static const constexpr BucketType kPivotNum = (1 << kBuildDepthOnce) - 1;
     static const constexpr BucketType kBucketNum = 1 << kBuildDepthOnce;
+
     // NOTE: tree structure
     static const constexpr uint_fast8_t kLeaveWrap = 32;
     static const constexpr uint_fast8_t kThinLeaveWrap = 24;
     static const constexpr uint_fast16_t kSerialBuildCutoff = 1 << 10;
+
     // NOTE: block param in Partition
     static const constexpr uint_fast8_t kLog2Base = 10;
     static const constexpr uint_fast16_t kBlockSize = 1 << kLog2Base;
+
     // NOTE: reconstruct weight threshold
     static const constexpr uint_fast8_t kInbalanceRatio = 30;
 
@@ -82,17 +84,15 @@ class BaseTree {
     // NOTE: build tree
     static inline void SamplePoints(Slice In, Points& arr);
 
-    template<typename SplitterSeq>
     static inline BucketType FindBucket(const Point& p,
-                                        const SplitterSeq& pivots);
+                                        const HyperPlaneSeq& pivots);
 
-    template<typename SplitterSeq>
     static void Partition(Slice A, Slice B, const size_t n,
-                          const SplitterSeq& pivots,
+                          const HyperPlaneSeq& pivots,
                           parlay::sequence<BallsType>& sums);
 
-    template<typename Interior, typename SplitterSeq>
-    static Node* BuildInnerTree(BucketType idx, SplitterSeq& pivots,
+    template<typename Interior>
+    static Node* BuildInnerTree(BucketType idx, HyperPlaneSeq& pivots,
                                 parlay::sequence<Node*>& tree_nodes);
 
     PointsIter SerialPartition(Slice In, DimsType d);

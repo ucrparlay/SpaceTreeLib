@@ -94,7 +94,7 @@ struct RotateDim : BaseSplitterRule<Point> {
         [[maybe_unused]] const Box& bx) override {
         DimsType d(0);
         for (DimsType i = 0; i < DIM; ++i) {
-            if (!Num::Eq(In.begin()->pnt[i], (--In.end())->pnt[i])) {
+            if (!Num::Eq(In.begin()->pnt[i], std::prev(In.end())->pnt[i])) {
                 d = i;
             }
         }

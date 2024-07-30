@@ -5,16 +5,17 @@
 
 namespace cpdd {
 template<typename Point, uint8_t kBDO>
-template<typename Interior, typename SplitterSeq>
+template<typename Interior>
 Node* BaseTree<Point, kBDO>::BuildInnerTree(
-    BucketType idx, SplitterSeq& pivots, parlay::sequence<Node*>& tree_nodes) {
+    BucketType idx, HyperPlaneSeq& pivots,
+    parlay::sequence<Node*>& tree_nodes) {
     if (idx > kPivotNum) {
         assert(idx - kPivotNum - 1 < kBucketNum);
         return tree_nodes[idx - kPivotNum - 1];
     }
     Node *L, *R;
-    L = BuildInnerTree<Interior, SplitterSeq>(idx << 1, pivots, tree_nodes);
-    R = BuildInnerTree<Interior, SplitterSeq>(idx << 1 | 1, pivots, tree_nodes);
+    L = BuildInnerTree<Interior>(idx << 1, pivots, tree_nodes);
+    R = BuildInnerTree<Interior>(idx << 1 | 1, pivots, tree_nodes);
     return AllocInteriorNode<Interior>(L, R, pivots[idx],
                                        typename Interior::AT());
 }

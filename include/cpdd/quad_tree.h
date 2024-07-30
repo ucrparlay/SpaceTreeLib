@@ -7,7 +7,7 @@
 namespace cpdd {
 
 template<typename Point, typename SplitRule, uint8_t kBDO = 6>
-class KdTree : private BaseTree<Point, kBDO> {
+class QuadTree : private BaseTree<Point, kBDO> {
  public:
     using BT = BaseTree<Point, kBDO>;
 
@@ -24,17 +24,16 @@ class KdTree : private BaseTree<Point, kBDO> {
     using BoxSeq = BT::BoxSeq;
     using Circle = BT::Circle;
 
-    using HyperPlane = BT::HyperPlane;
-    using HyperPlaneSeq = BT::HyperPlaneSeq;
-    using Splitter = HyperPlane;
-    using SplitterSeq = HyperPlaneSeq;
-
+    using Splitter = std::pair<Coord, DimsType>;
+    using SplitterSeq = parlay::sequence<Splitter>;
+    using SplitType = std::pair<Splitter, Splitter>;
     using AugType = bool;
-    struct KdInteriorNode;
+
+    struct QuadInteriorNode;
 
     using Leaf =
         LeafNode<Point, Slice, BT::kLeaveWrap, parlay::move_assign_tag>;
-    using Interior = KdInteriorNode;
+    using Interior = QuadInteriorNode;
 
     // NOTE: expose basetree interface
     using BT::GetAveTreeHeight;
@@ -86,6 +85,6 @@ class KdTree : private BaseTree<Point, kBDO> {
 
 }  // namespace cpdd
 
-#include "kd_tree_impl/kd_build_tree.hpp"
-#include "kd_tree_impl/kd_inter_node.hpp"
-#include "kd_tree_impl/kd_override.hpp"
+#include "quad_tree_impl/quad_build_tree.hpp"
+#include "quad_tree_impl/quad_inter_node.hpp"
+#include "quad_tree_impl/quad_override.hpp"
