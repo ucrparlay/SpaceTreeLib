@@ -85,6 +85,31 @@ void QuadTree<Point, SplitRule, kBDO>::PickPivots(Slice In, const size_t& n,
 }
 
 template<typename Point, typename SplitRule, uint8_t kBDO>
+void QuadTree<Point, SplitRule, kBDO>::SerialSplit(
+    Slice In, const Box& bx, DimsType dim, DimsType DIM, const Splitter& split,
+    parlay::sequence<BallsType>& sums) {
+    assert(dim <= DIM);
+
+    if (dim == DIM) return;
+    auto mid = split[dim].first;
+    assert(dim == split[dim].second);
+
+#if __cplusplus <= 201703L
+    PointsIter split_iter = std::partition(
+        In.begin(), In.end(),
+        [&](const Point& p) { return Num::Lt(p.pnt[dim], mid); });
+#else
+    PointsIter split_iter = std::ranges::partition(In, [&](const Point& p) {
+                                return Num::Lt(p.pnt[dim], mid);
+                            }).begin();
+#endif
+
+    SerialSplit(In.cut(0, split_iter - In.begin()), bx, dim + 1, DIM, split);
+    SerialSplit(In.cut(split_iter - In.begin(), In.end()), bx, dim + 1, DIM,
+                split);
+}
+
+template<typename Point, typename SplitRule, uint8_t kBDO>
 Node* QuadTree<Point, SplitRule, kBDO>::SerialBuildRecursive(
     Slice In, Slice Out, DimsType dim, const DimsType DIM, const Box& bx) {
     size_t n = In.size();
@@ -93,45 +118,18 @@ Node* QuadTree<Point, SplitRule, kBDO>::SerialBuildRecursive(
 
     if (n <= BT::kLeaveWrap) return AllocNormalLeafNode<Slice, Leaf>(In);
 
-    DimsType d = split_rule_.FindCuttingDimension(bx, dim, DIM);
-    PointsIter splitIter = BT::SerialPartition(In, d);
-    PointsIter diffEleIter;
-
+    // DimsType d = split_rule_.FindCuttingDimension(bx, dim, DIM);
+    DimsType d = 0;
     Splitter split;
-
-    if (splitIter <= In.begin() + n / 2) {  // NOTE: split is on left half
-        split = Splitter(In[n / 2].pnt[d], d);
-    } else if (splitIter != In.end()) {  // NOTE: split is on right half
-#if __cplusplus <= 201703L
-        auto minEleIter = std::min_element(
-            splitIter, In.end(), [&](const Point& p1, const Point& p2) {
-                return Num::Lt(p1.pnt[d], p2.pnt[d]);
-            });
-#else
-        auto minEleIter = std::ranges::min_element(
-            splitIter, In.end(), [&](const Point& p1, const Point& p2) {
-                return Num::Lt(p1.pnt[d], p2.pnt[d]);
-            });
-#endif
-        split = Splitter(minEleIter->pnt[d], d);
-    } else if (In.end() ==
-               (diffEleIter =
-                    std::find_if_not(In.begin(), In.end(), [&](const Point& p) {
-                        return p.sameDimension(In[0]);
-                    }))) {  // NOTE: check whether all elements are identical
-        return AllocDummyLeafNode<Slice, Leaf>(In);
-    } else {  // NOTE: current dim d is same but other dims are not
-        auto [new_box, new_dim] = split_rule_.SwitchDimension(In, dim, DIM, bx);
-        SerialBuildRecursive(In, Out, new_dim, DIM, new_box);
+    for (DimsType i = 0; i < DIM; ++i) {
+        std::get<i>(split) = HyperPlane(
+            static_cast<Coord>((bx.first.pnt[i] + bx.second.pnt[i]) / 2), i);
     }
+    parlay::sequence<BallsType> sums(kNodeRegions, 0);
 
-    assert(std::all_of(In.begin(), splitIter,
-                       [&](Point& p) {
-                           return Num::Lt(p.pnt[split.second], split.first);
-                       }) &&
-           std::all_of(splitIter, In.end(), [&](Point& p) {
-               return Num::Geq(p.pnt[split.second], split.first);
-           }));
+    for (DimsType i = 0; i < DIM; ++i) {
+        auto split_iter = SerialSplit(In, d);
+    }
 
     Box lbox(bx), rbox(bx);
     lbox.second.pnt[d] = split.first;  //* loose
@@ -211,8 +209,10 @@ template<typename Point, typename SplitRule, uint8_t kBDO>
 void QuadTree<Point, SplitRule, kBDO>::Build_(Slice A, const DimsType DIM) {
     Points B = Points::uninitialized(A.size());
     this->tree_box_ = BT::GetBox(A);
+    // this->root_ =
+    //     BuildRecursive(A, B.cut(0, A.size()), 0, DIM, this->tree_box_);
     this->root_ =
-        BuildRecursive(A, B.cut(0, A.size()), 0, DIM, this->tree_box_);
+        SerialBuildRecursive(A, B.cut(0, A.size()), 0, DIM, this->tree_box_);
     assert(this->root_ != nullptr);
     return;
 }

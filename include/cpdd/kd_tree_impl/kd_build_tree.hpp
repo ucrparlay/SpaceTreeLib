@@ -99,7 +99,7 @@ Node* KdTree<Point, SplitRule, kBDO>::SerialBuildRecursive(Slice In, Slice Out,
 
     DimsType d = split_rule_.FindCuttingDimension(bx, dim, DIM);
     PointsIter splitIter = BT::SerialPartition(In, d);
-    PointsIter diffEleIter;
+    PointsIter diffEleIter;  // TODO: we can remove this iter
 
     Splitter split;
 

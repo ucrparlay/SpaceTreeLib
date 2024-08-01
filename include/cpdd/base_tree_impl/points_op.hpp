@@ -113,7 +113,7 @@ BaseTree<Point, kBDO>::SerialPartition(Slice In, DimsType d) {
         _2ndGroup = std::ranges::partition(
             In.begin() + n / 2, In.end(), [&](const Point& p) {
                 return Num::Eq(p.pnt[d], In[n / 2].pnt[d]);
-            });
+            });  // NOTE: now all duplicated median is on the left
     }
     return _2ndGroup.begin();
 #endif

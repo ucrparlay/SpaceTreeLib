@@ -6,7 +6,7 @@
 
 namespace cpdd {
 
-template<typename Point, typename SplitRule, uint8_t kBDO = 6>
+template<typename Point, typename SplitRule, uint8_t kMD = 2, uint8_t kBDO = 6>
 class QuadTree : private BaseTree<Point, kBDO> {
  public:
     using BT = BaseTree<Point, kBDO>;
@@ -26,7 +26,7 @@ class QuadTree : private BaseTree<Point, kBDO> {
 
     using HyperPlane = BT::HyperPlane;
     using HyperPlaneSeq = BT::HyperPlaneSeq;
-    using Splitter = std::pair<HyperPlane, HyperPlane>;
+    using Splitter = std::array<HyperPlane, kMD>;
     using SplitterSeq = parlay::sequence<Splitter>;
     using AugType = bool;
 
@@ -42,6 +42,10 @@ class QuadTree : private BaseTree<Point, kBDO> {
     using BT::GetRoot;
     using BT::GetRootBox;
     using BT::Validate;
+
+    static constexpr size_t kMaxDim = kMD;
+    static constexpr size_t kNodeRegions = 1 << kMD;
+    static constexpr size_t kNodeSplits = (1 << kMD) - 1;
 
     // NOTE: functions
     template<typename Range>
@@ -67,6 +71,9 @@ class QuadTree : private BaseTree<Point, kBDO> {
     size_t RangeQuery(const Box& query_box, Range&& Out);
 
  private:
+    void SerialSplit(Slice In, DimsType dim, DimsType DIM,
+                     const Splitter& split, parlay::sequence<BallsType>& sums);
+
     void DivideRotate(Slice In, HyperPlaneSeq& pivots, DimsType dim,
                       BucketType idx, BucketType deep, BucketType& bucket,
                       const DimsType DIM, BoxSeq& boxs, const Box& bx);
