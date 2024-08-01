@@ -45,9 +45,7 @@ size_t KdTree<Point, SplitRule, kBDO>::RangeQuery(const Box& query_box,
 
 template<typename Point, typename SplitRule, uint8_t kBDO>
 void KdTree<Point, SplitRule, kBDO>::DeleteTree() {
-    this->template DeleteTreeWrapper<
-        LeafNode<Point, Slice, BT::kLeaveWrap, std::true_type>,
-        InteriorNode<Point, Splitter, bool>, BinaryInteriorTag>();
+    this->template DeleteTreeWrapper<Leaf, Interior, BinaryInteriorTag>();
 }
 
 }  // namespace cpdd

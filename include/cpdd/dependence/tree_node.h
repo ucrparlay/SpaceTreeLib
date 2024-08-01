@@ -115,7 +115,7 @@ struct InteriorNode : Node {
 
 template<typename Point, uint8_t kMD, typename SplitType, typename AugType>
 struct MultiWayInteriorNode : Node {
-    using Nodes = std::array<Node*, kMD>;
+    using Nodes = std::array<Node*, 1 << kMD>;
     using ST = SplitType;
     using AT = AugType;
 

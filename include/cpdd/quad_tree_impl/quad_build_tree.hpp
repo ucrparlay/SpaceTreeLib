@@ -244,7 +244,6 @@ void QuadTree<Point, SplitRule, kMD, kBDO>::Build_(Slice A,
                                                    const DimsType DIM) {
     Points B = Points::uninitialized(A.size());
     this->tree_box_ = BT::GetBox(A);
-    LOG << "here" << ENDL;
     // this->root_ =
     //     BuildRecursive(A, B.cut(0, A.size()), 0, DIM, this->tree_box_);
     this->root_ = SerialBuildRecursive(A, B.cut(0, A.size()), 0, DIM,

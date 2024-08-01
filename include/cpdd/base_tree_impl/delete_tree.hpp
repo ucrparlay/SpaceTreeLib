@@ -5,12 +5,12 @@
 namespace cpdd {
 
 template<typename Point, uint8_t kBDO>
-template<typename Leaf, typename Interior, typename MultiInteriorTag>
+template<typename Leaf, typename Interior, typename MultiWayTag>
 void BaseTree<Point, kBDO>::DeleteTreeWrapper() {
     if (this->root_ == nullptr) {
         return;
     }
-    DeleteTreeRecursive<Leaf, Interior>(MultiInteriorTag(), this->root_);
+    DeleteTreeRecursive<Leaf, Interior>(MultiWayTag(), this->root_);
     this->root_ = nullptr;
     return;
 }
@@ -26,17 +26,16 @@ void BaseTree<Point, kBDO>::DeleteTreeRecursive(BinaryInteriorTag, Node* T,
         Interior* TI = static_cast<Interior*>(T);
         // NOTE: enable granularity control by default, if it is disabled,
         // always delete in parallel
-        parlay::par_do_if(
-            (granularity && T->size > kSerialBuildCutoff) ||
-                (!granularity && TI->aug),  // TODO: change force parallel
-            [&] {
-                DeleteTreeRecursive<Leaf, Interior>(BinaryInteriorTag(),
-                                                    TI->left, granularity);
-            },
-            [&] {
-                DeleteTreeRecursive<Leaf, Interior>(BinaryInteriorTag(),
-                                                    TI->right, granularity);
-            });
+        parlay::par_do_if((granularity && T->size > kSerialBuildCutoff) ||
+                              (!granularity && TI->ForceParallel()),
+                          [&] {
+                              DeleteTreeRecursive<Leaf, Interior>(
+                                  BinaryInteriorTag(), TI->left, granularity);
+                          },
+                          [&] {
+                              DeleteTreeRecursive<Leaf, Interior>(
+                                  BinaryInteriorTag(), TI->right, granularity);
+                          });
         FreeNode<Interior>(T);
     }
 }
@@ -54,7 +53,7 @@ void BaseTree<Point, kBDO>::DeleteTreeRecursive(MultiWayInteriorTag, Node* T,
         // NOTE: enable granularity control by default, if it is disabled,
         // always delete in parallel
         if ((granularity && T->size > kSerialBuildCutoff) ||
-            (!granularity && TI->aug)) {  // TODO: change force parallel
+            (!granularity && TI->ForceParallel())) {
             parlay::parallel_for(
                 0, TI->tree_nodes.size(),
                 [&](size_t i) {
