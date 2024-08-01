@@ -49,7 +49,7 @@ class QuadTree : private BaseTree<Point, kBDO> {
 
     // NOTE: functions
     template<typename Range>
-    void Build(Range&& In, int DIM);
+    void Build(Range&& In, uint8_t DIM);
 
     void Build_(Slice In, const DimsType DIM);
 
@@ -75,9 +75,9 @@ class QuadTree : private BaseTree<Point, kBDO> {
                      const Box& box, const Splitter& split,
                      parlay::sequence<BallsType>& sums, BoxSeq& box_seq);
 
-    void DivideRotate(Slice In, HyperPlaneSeq& pivots, DimsType dim,
-                      BucketType idx, BucketType deep, BucketType& bucket,
-                      const DimsType DIM, BoxSeq& boxs, const Box& bx);
+    void DivideRotate(HyperPlaneSeq& pivots, DimsType dim, BucketType idx,
+                      DimsType deep, BucketType& bucket, const DimsType DIM,
+                      BoxSeq& box_seq, const Box& box);
 
     void PickPivots(Slice In, const size_t& n, HyperPlaneSeq& pivots,
                     const DimsType dim, const DimsType DIM, BoxSeq& boxs,
@@ -89,8 +89,8 @@ class QuadTree : private BaseTree<Point, kBDO> {
     Node* SerialBuildRecursive(Slice In, Slice Out, DimsType dim,
                                const DimsType DIM, const Box& bx);
 
-    static Node* QuadBuildInnerTree(BucketType idx, HyperPlaneSeq& pivots,
-                                    parlay::sequence<Node*>& tree_nodes);
+    static Node* QuadBuildInnerTree(BucketType idx, const HyperPlaneSeq& pivots,
+                                    const parlay::sequence<Node*>& tree_nodes);
 
     SplitRule split_rule_;
 };

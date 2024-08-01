@@ -9,13 +9,15 @@
 namespace cpdd {
 template<typename Point, typename SplitRule, uint8_t kMD, uint8_t kBDO>
 template<typename Range>
-void QuadTree<Point, SplitRule, kMD, kBDO>::Build(Range&& In, int DIM) {
+void QuadTree<Point, SplitRule, kMD, kBDO>::Build(Range&& In, uint8_t DIM) {
     static_assert(parlay::is_random_access_range_v<Range>);
     static_assert(parlay::is_less_than_comparable_v<
                   parlay::range_reference_type_t<Range>>);
     static_assert(
         std::is_constructible_v<parlay::range_value_type_t<Range>,
                                 parlay::range_reference_type_t<Range>>);
+    static_assert(BT::kBucketNum % kMD == 0);
+    assert(kMD == DIM);
 
     Slice A = parlay::make_slice(In);
     Build_(A, DIM);
@@ -23,62 +25,31 @@ void QuadTree<Point, SplitRule, kMD, kBDO>::Build(Range&& In, int DIM) {
 
 template<typename Point, typename SplitRule, uint8_t kMD, uint8_t kBDO>
 void QuadTree<Point, SplitRule, kMD, kBDO>::DivideRotate(
-    Slice In, HyperPlaneSeq& pivots, DimsType dim, BucketType idx,
-    BucketType deep, BucketType& bucket, const DimsType DIM, BoxSeq& boxs,
-    const Box& bx) {
-    if (deep > BT::kBuildDepthOnce) {
+    HyperPlaneSeq& pivots, DimsType dim, BucketType idx, DimsType deep,
+    BucketType& bucket, const DimsType DIM, BoxSeq& box_seq, const Box& box) {
+    if (deep > BT::kBuildDepthOnce) {  // TODO: remove deep and use idx
         // WARN: sometimes cut dimension can be -1
         //  never use pivots[idx].first to check whether it is in bucket;
         //  instead, use idx > PIVOT_NUM
-        boxs[bucket] = bx;
-        pivots[idx] = Splitter(-1, bucket++);
+        box_seq[bucket] = box;
+        pivots[idx] = HyperPlane(
+            -1, bucket++);  // TODO: remove bucket++ using idx-kRegions
         return;
     }
-    size_t n = In.size();
-    uint_fast8_t d = split_rule_.FindCuttingDimension(bx, dim, DIM);
-    assert(d < DIM);
 
-#if __cplusplus <= 201703L
-    std::nth_element(In.begin(), In.begin() + n / 2, In.end(),
-                     [&](const Point& p1, const Point& p2) {
-                         return Num::Lt(p1.pnt[d], p2.pnt[d]);
-                     });
-#else
-    std::ranges::nth_element(In, In.begin() + n / 2,
-                             [&](const Point& p1, const Point& p2) {
-                                 return Num::Lt(p1.pnt[d], p2.pnt[d]);
-                             });
-#endif
+    pivots[idx] = HyperPlane(
+        static_cast<Coord>((box.first.pnt[dim] + box.second.pnt[dim]) / 2),
+        dim);
 
-    pivots[idx] = Splitter(In[n / 2].pnt[d], d);
+    Box lbox(box), rbox(box);
+    lbox.second.pnt[dim] = pivots[idx].first;
+    rbox.first.pnt[dim] = pivots[idx].first;
 
-    Box lbox(bx), rbox(bx);
-    lbox.second.pnt[d] = pivots[idx].first;  // PERF: loose
-    rbox.first.pnt[d] = pivots[idx].first;
+    dim = (dim + 1) % DIM;
+    DivideRotate(pivots, dim, 2 * idx, deep + 1, bucket, DIM, box_seq, lbox);
+    DivideRotate(pivots, dim, 2 * idx + 1, deep + 1, bucket, DIM, box_seq,
+                 rbox);
 
-    d = (d + 1) % DIM;
-    DivideRotate(In.cut(0, n / 2), pivots, d, 2 * idx, deep + 1, bucket, DIM,
-                 boxs, lbox);
-    DivideRotate(In.cut(n / 2, n), pivots, d, 2 * idx + 1, deep + 1, bucket,
-                 DIM, boxs, rbox);
-    return;
-}
-
-// NOTE: starting at dimesion dim and pick pivots in a rotation manner
-template<typename Point, typename SplitRule, uint8_t kMD, uint8_t kBDO>
-void QuadTree<Point, SplitRule, kMD, kBDO>::PickPivots(
-    Slice In, const size_t& n, HyperPlaneSeq& pivots, const DimsType dim,
-    const DimsType DIM, BoxSeq& boxs, const Box& bx) {
-    size_t size = std::min(n, static_cast<size_t>(32 * BT::kBucketNum));
-    assert(size <= n);
-
-    Points arr = Points::uninitialized(size);
-    BT::SamplePoints(In, arr);
-
-    // NOTE: pick pivots
-    BucketType bucket = 0;
-    DivideRotate(arr.cut(0, size), pivots, dim, 1, 1, bucket, DIM, boxs, bx);
-    assert(bucket == BT::kBucketNum);
     return;
 }
 
@@ -118,24 +89,24 @@ void QuadTree<Point, SplitRule, kMD, kBDO>::SerialSplit(
 
 template<typename Point, typename SplitRule, uint8_t kMD, uint8_t kBDO>
 Node* QuadTree<Point, SplitRule, kMD, kBDO>::SerialBuildRecursive(
-    Slice In, Slice Out, DimsType dim, const DimsType DIM, const Box& bx) {
+    Slice In, Slice Out, DimsType dim, const DimsType DIM, const Box& box) {
     size_t n = In.size();
 
     if (n == 0) return AllocEmptyLeafNode<Slice, Leaf>();
 
     if (n <= BT::kLeaveWrap) return AllocNormalLeafNode<Slice, Leaf>(In);
 
-    // DimsType d = split_rule_.FindCuttingDimension(bx, dim, DIM);
+    // DimsType d = split_rule_.FindCuttingDimension(box, dim, DIM);
     DimsType d = 0;
     Splitter split;
     for (DimsType i = 0; i < kSplitterNum; ++i) {
         split[i] = HyperPlane(
-            static_cast<Coord>((bx.first.pnt[i] + bx.second.pnt[i]) / 2), i);
+            static_cast<Coord>((box.first.pnt[i] + box.second.pnt[i]) / 2), i);
     }
 
     parlay::sequence<BallsType> sums(kNodeRegions, 0);
     BoxSeq box_seq(kNodeRegions);
-    SerialSplit(In, dim, DIM, 1, bx, split, sums, box_seq);
+    SerialSplit(In, dim, DIM, 1, box, split, sums, box_seq);
 
     Nodes tree_nodes;
     size_t start = 0;
@@ -150,23 +121,53 @@ Node* QuadTree<Point, SplitRule, kMD, kBDO>::SerialBuildRecursive(
 }
 
 template<typename Point, typename SplitRule, uint8_t kMD, uint8_t kBDO>
+Node* QuadTree<Point, SplitRule, kMD, kBDO>::QuadBuildInnerTree(
+    BucketType idx, const HyperPlaneSeq& pivots,
+    const parlay::sequence<Node*>& tree_nodes) {
+    assert(idx < BT::kPivotNum + BT::kBucketNum + 1);
+
+    if (idx > BT::kPivotNum) {
+        return tree_nodes[idx - BT::kPivotNum - 1];
+    }
+
+    typename Interior::Nodes
+        multi_nodes;  // TODO: define the multi_nodes type within class, rather
+                      // than from the node
+    Splitter split;
+    for (DimsType i = 0; i < kNodeRegions; ++i) {
+        multi_nodes[i] =
+            QuadBuildInnerTree(idx * kNodeRegions + i, pivots, tree_nodes);
+    }
+    for (DimsType i = 0; i < kSplitterNum; ++i) {
+        split[i] = pivots[idx * (1 << i)];
+        assert(pivots[idx * (1 << i)] == pivots[idx * (1 << i) + 1]);
+    }
+
+    return AllocInteriorNode<Interior>(multi_nodes, split, false);
+}
+
+template<typename Point, typename SplitRule, uint8_t kMD, uint8_t kBDO>
 Node* QuadTree<Point, SplitRule, kMD, kBDO>::BuildRecursive(Slice In, Slice Out,
                                                             DimsType dim,
                                                             const DimsType DIM,
-                                                            const Box& bx) {
-    assert(In.size() == 0 || BT::WithinBox(BT::GetBox(In), bx));
+                                                            const Box& box) {
+    assert(dim == 0);
+    // TODO: set dim == 0 in the begining
+    assert(In.size() == 0 || BT::WithinBox(BT::GetBox(In), box));
 
     // if ( In.size() ) {
     if (In.size() <= BT::kSerialBuildCutoff) {
-        return SerialBuildRecursive(In, Out, dim, DIM, bx);
+        return SerialBuildRecursive(In, Out, dim, DIM, box);
     }
 
     auto pivots =
-        SplitterSeq::uninitialized(BT::kPivotNum + BT::kBucketNum + 1);
-    auto boxs = BoxSeq::uninitialized(BT::kBucketNum);
+        HyperPlaneSeq::uninitialized(BT::kPivotNum + BT::kBucketNum + 1);
+    auto box_seq = BoxSeq::uninitialized(BT::kBucketNum);
     parlay::sequence<BallsType> sums;
 
-    PickPivots(In, In.size(), pivots, dim, DIM, boxs, bx);
+    // PickPivots(In, In.size(), pivots, dim, DIM, box_seq, box);
+    BucketType bucket = 0;
+    DivideRotate(pivots, dim, 1, 1, bucket, DIM, box_seq, box);
     BT::Partition(In, Out, In.size(), pivots, sums);
 
     // NOTE: if random sampling failed to split points, re-partitions using
@@ -186,7 +187,7 @@ Node* QuadTree<Point, SplitRule, kMD, kBDO>::BuildRecursive(Slice In, Slice Out,
 
     if (zeros == BT::kBucketNum - 1) {  // NOTE: switch to seral
         // TODO: add parallelsim within this call
-        return SerialBuildRecursive(In, Out, dim, DIM, bx);
+        return SerialBuildRecursive(In, Out, dim, DIM, box);
     }
 
     dim = (dim + BT::kBuildDepthOnce) % DIM;
@@ -202,11 +203,11 @@ Node* QuadTree<Point, SplitRule, kMD, kBDO>::BuildRecursive(Slice In, Slice Out,
             tree_nodes[nodes_map[i]] =
                 BuildRecursive(Out.cut(start, start + sums[nodes_map[i]]),
                                In.cut(start, start + sums[nodes_map[i]]), dim,
-                               DIM, boxs[nodes_map[i]]);
+                               DIM, box_seq[nodes_map[i]]);
         },
         1);
 
-    return QuadBuildInnerTree<Interior, SplitterSeq>(1, pivots, tree_nodes);
+    return QuadBuildInnerTree(1, pivots, tree_nodes);
 }
 
 template<typename Point, typename SplitRule, uint8_t kMD, uint8_t kBDO>
@@ -214,10 +215,10 @@ void QuadTree<Point, SplitRule, kMD, kBDO>::Build_(Slice A,
                                                    const DimsType DIM) {
     Points B = Points::uninitialized(A.size());
     this->tree_box_ = BT::GetBox(A);
-    // this->root_ =
-    //     BuildRecursive(A, B.cut(0, A.size()), 0, DIM, this->tree_box_);
     this->root_ =
-        SerialBuildRecursive(A, B.cut(0, A.size()), 0, DIM, this->tree_box_);
+        BuildRecursive(A, B.cut(0, A.size()), 0, DIM, this->tree_box_);
+    // this->root_ =
+    //     SerialBuildRecursive(A, B.cut(0, A.size()), 0, DIM, this->tree_box_);
     assert(this->root_ != nullptr);
     return;
 }
