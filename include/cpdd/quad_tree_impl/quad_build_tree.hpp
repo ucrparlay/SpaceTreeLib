@@ -90,8 +90,9 @@ void QuadTree<Point, SplitRule, kMD, kBDO>::SerialSplit(
 
 template<typename Point, typename SplitRule, uint8_t kMD, uint8_t kBDO>
 Node* QuadTree<Point, SplitRule, kMD, kBDO>::SerialBuildRecursive(
-    Slice In, Slice Out, DimsType dim, const DimsType DIM, const Box& box,
+    Slice In, Slice Out, const DimsType DIM, const Box& box,
     bool checked_duplicate) {
+    assert(In.size() == 0 || BT::WithinBox(BT::GetBox(In), box));
     size_t n = In.size();
 
     if (n == 0) return AllocEmptyLeafNode<Slice, Leaf>();
@@ -99,7 +100,8 @@ Node* QuadTree<Point, SplitRule, kMD, kBDO>::SerialBuildRecursive(
     if (n <= BT::kLeaveWrap) return AllocNormalLeafNode<Slice, Leaf>(In);
 
     assert(kSplitterNum == DIM);
-    DimsType d = 0;
+
+    DimsType dim = 0;
     Splitter split;
     for (DimsType i = 0; i < kSplitterNum; ++i) {
         split[i] = HyperPlane(
@@ -108,7 +110,7 @@ Node* QuadTree<Point, SplitRule, kMD, kBDO>::SerialBuildRecursive(
 
     parlay::sequence<BallsType> sums(kNodeRegions, 0);
     BoxSeq box_seq(kNodeRegions);
-    SerialSplit(In, d, DIM, 1, box, split, sums, box_seq);
+    SerialSplit(In, dim, DIM, 1, box, split, sums, box_seq);
 
     Nodes tree_nodes;
     auto non_empty_node =
@@ -141,7 +143,7 @@ Node* QuadTree<Point, SplitRule, kMD, kBDO>::SerialBuildRecursive(
                  // into the position identified by non_empty_node
         tree_nodes[non_empty_node[i]] = SerialBuildRecursive(
             In.cut(start, start + sums[non_empty_node[i]]),
-            Out.cut(start, start + sums[non_empty_node[i]]), d, DIM,
+            Out.cut(start, start + sums[non_empty_node[i]]), DIM,
             box_seq[non_empty_node[i]], checked_duplicate);
         start += sums[non_empty_node[i]];
     }
@@ -159,9 +161,7 @@ Node* QuadTree<Point, SplitRule, kMD, kBDO>::QuadBuildInnerTree(
         return tree_nodes[idx - BT::kPivotNum - 1];
     }
 
-    typename Interior::Nodes
-        multi_nodes;  // TODO: define the multi_nodes type within class,
-                      // rather than from the node
+    Nodes multi_nodes;
     Splitter split;
     for (DimsType i = 0; i < kNodeRegions; ++i) {
         multi_nodes[i] =
@@ -169,7 +169,7 @@ Node* QuadTree<Point, SplitRule, kMD, kBDO>::QuadBuildInnerTree(
     }
     for (DimsType i = 0; i < kSplitterNum; ++i) {
         split[i] = pivots[idx * (1 << i)];
-        assert(pivots[idx * (1 << i)] == pivots[idx * (1 << i) + 1]);
+        assert(i == 0 || pivots[idx * (1 << i)] == pivots[idx * (1 << i) + 1]);
     }
 
     return AllocInteriorNode<Interior>(multi_nodes, split, false);
@@ -177,16 +177,15 @@ Node* QuadTree<Point, SplitRule, kMD, kBDO>::QuadBuildInnerTree(
 
 template<typename Point, typename SplitRule, uint8_t kMD, uint8_t kBDO>
 Node* QuadTree<Point, SplitRule, kMD, kBDO>::BuildRecursive(Slice In, Slice Out,
-                                                            DimsType dim,
                                                             const DimsType DIM,
                                                             const Box& box) {
-    assert(dim == 0);
-    // TODO: set dim == 0 in the begining
     assert(In.size() == 0 || BT::WithinBox(BT::GetBox(In), box));
+
+    const DimsType dim = 0;
 
     // if ( In.size() ) {
     if (In.size() <= BT::kSerialBuildCutoff) {
-        return SerialBuildRecursive(In, Out, dim, DIM, box, false);
+        return SerialBuildRecursive(In, Out, DIM, box, false);
     }
 
     auto pivots =
@@ -216,10 +215,8 @@ Node* QuadTree<Point, SplitRule, kMD, kBDO>::BuildRecursive(Slice In, Slice Out,
 
     if (zeros == BT::kBucketNum - 1) {  // NOTE: switch to seral
         // TODO: add parallelsim within this call
-        return SerialBuildRecursive(In, Out, dim, DIM, box, false);
+        return SerialBuildRecursive(In, Out, DIM, box, false);
     }
-
-    dim = (dim + BT::kBuildDepthOnce) % DIM;
 
     parlay::parallel_for(
         0, BT::kBucketNum - zeros,
@@ -231,8 +228,8 @@ Node* QuadTree<Point, SplitRule, kMD, kBDO>::BuildRecursive(Slice In, Slice Out,
 
             tree_nodes[nodes_map[i]] =
                 BuildRecursive(Out.cut(start, start + sums[nodes_map[i]]),
-                               In.cut(start, start + sums[nodes_map[i]]), dim,
-                               DIM, box_seq[nodes_map[i]]);
+                               In.cut(start, start + sums[nodes_map[i]]), DIM,
+                               box_seq[nodes_map[i]]);
         },
         1);
 
@@ -244,10 +241,10 @@ void QuadTree<Point, SplitRule, kMD, kBDO>::Build_(Slice A,
                                                    const DimsType DIM) {
     Points B = Points::uninitialized(A.size());
     this->tree_box_ = BT::GetBox(A);
-    // this->root_ =
-    //     BuildRecursive(A, B.cut(0, A.size()), 0, DIM, this->tree_box_);
-    this->root_ = SerialBuildRecursive(A, B.cut(0, A.size()), 0, DIM,
-                                       this->tree_box_, false);
+    this->root_ =
+        BuildRecursive(A, B.cut(0, A.size()), 0, DIM, this->tree_box_);
+    // this->root_ = SerialBuildRecursive(A, B.cut(0, A.size()), 0, DIM,
+    //                                    this->tree_box_, false);
     assert(this->root_ != nullptr);
     return;
 }
