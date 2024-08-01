@@ -1,6 +1,8 @@
 #pragma once
 #include <parlay/slice.h>
+#include <array>
 #include <cstdint>
+#include <numeric>
 #include "basic_point.h"
 #include "parlay/utilities.h"
 #include "utility.h"
@@ -111,12 +113,42 @@ struct InteriorNode : Node {
     AT aug;
 };
 
+template<typename Point, uint8_t kMD, typename SplitType, typename AugType>
+struct MultiWayInteriorNode : Node {
+    using Nodes = std::array<Node*, kMD>;
+    using ST = SplitType;
+    using AT = AugType;
+
+    MultiWayInteriorNode(const Nodes& _tree_nodes, const ST& _split,
+                         const AT& _aug) :
+        Node{false,
+             std::accumulate(
+                 _tree_nodes.begin(), _tree_nodes.end(), static_cast<size_t>(0),
+                 [](size_t acc, Node* n) -> size_t { return acc + n->size; })},
+        tree_nodes(_tree_nodes),
+        split(_split),
+        aug(_aug) {}
+
+    Nodes tree_nodes;
+    ST split;
+    AT aug;
+};
+
 template<typename Interior>
 static Interior* AllocInteriorNode(Node* L, Node* R,
                                    const typename Interior::ST& split,
                                    const typename Interior::AT& aug) {
     Interior* o = parlay::type_allocator<Interior>::alloc();
     new (o) Interior(L, R, split, aug);
+    return o;
+}
+
+template<typename Interior>
+static Interior* AllocInteriorNode(const typename Interior::Nodes& tree_nodes,
+                                   const typename Interior::ST& split,
+                                   const typename Interior::AT& aug) {
+    Interior* o = parlay::type_allocator<Interior>::alloc();
+    new (o) Interior(tree_nodes, split, aug);
     return o;
 }
 

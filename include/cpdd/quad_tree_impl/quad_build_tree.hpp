@@ -84,7 +84,7 @@ void QuadTree<Point, SplitRule, kMD, kBDO>::PickPivots(
 
 template<typename Point, typename SplitRule, uint8_t kMD, uint8_t kBDO>
 void QuadTree<Point, SplitRule, kMD, kBDO>::SerialSplit(
-    Slice In, DimsType dim, DimsType DIM, DimsType idx, Box& box,
+    Slice In, DimsType dim, DimsType DIM, DimsType idx, const Box& box,
     const Splitter& split, parlay::sequence<BallsType>& sums, BoxSeq& box_seq) {
     assert(dim <= DIM);
 
@@ -111,9 +111,9 @@ void QuadTree<Point, SplitRule, kMD, kBDO>::SerialSplit(
     lbox.second.pnt[dim] = mid;
     rbox.first.pnt[dim] = mid;
     SerialSplit(In.cut(0, split_iter - In.begin()), dim + 1, DIM, idx << 1,
-                lbox, split, sums);
-    SerialSplit(In.cut(split_iter - In.begin(), In.size()), dim + 1, DIM, rbox,
-                idx << 1 | 1, split, sums);
+                lbox, split, sums, box_seq);
+    SerialSplit(In.cut(split_iter - In.begin(), In.size()), dim + 1, DIM,
+                idx << 1 | 1, rbox, split, sums, box_seq);
 }
 
 template<typename Point, typename SplitRule, uint8_t kMD, uint8_t kBDO>
@@ -128,23 +128,25 @@ Node* QuadTree<Point, SplitRule, kMD, kBDO>::SerialBuildRecursive(
     // DimsType d = split_rule_.FindCuttingDimension(bx, dim, DIM);
     DimsType d = 0;
     Splitter split;
-    for (DimsType i = 0; i < DIM; ++i) {
+    for (DimsType i = 0; i < kSplitterNum; ++i) {
         split[i] = HyperPlane(
             static_cast<Coord>((bx.first.pnt[i] + bx.second.pnt[i]) / 2), i);
     }
 
     parlay::sequence<BallsType> sums(kNodeRegions, 0);
-    BoxSeq box_seq(kNodeRegions, 0);
-    SerialSplit(In, dim, DIM, 1, split, sums, box_seq);
+    BoxSeq box_seq(kNodeRegions);
+    SerialSplit(In, dim, DIM, 1, bx, split, sums, box_seq);
 
+    Nodes tree_nodes;
     size_t start = 0;
     for (DimsType i = 0; i < kNodeRegions; ++i) {
-        SerialBuildRecursive(In.cut(start, sums[i]), Out.cut(start, sums[i]),
-                             dim, DIM, box_seq[i]);
+        tree_nodes[i] = SerialBuildRecursive(In.cut(start, start + sums[i]),
+                                             Out.cut(start, start + sums[i]),
+                                             dim, DIM, box_seq[i]);
         start += sums[i];
     }
 
-    return AllocInteriorNode<Interior>(L, R, split, false);
+    return AllocInteriorNode<Interior>(tree_nodes, split, false);
 }
 
 template<typename Point, typename SplitRule, uint8_t kMD, uint8_t kBDO>

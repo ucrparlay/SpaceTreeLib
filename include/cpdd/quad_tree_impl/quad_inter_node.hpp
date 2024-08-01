@@ -1,18 +1,21 @@
 #pragma once
 
+#include <array>
 #include "../quad_tree.h"
 #include "cpdd/dependence/tree_node.h"
 
 namespace cpdd {
 template<typename Point, typename SplitRule, uint8_t kMD, uint8_t kBDO>
 struct QuadTree<Point, SplitRule, kMD, kBDO>::QuadInteriorNode :
-    InteriorNode<Point, Splitter, AugType> {
+    MultiWayInteriorNode<Point, kMD, Splitter, AugType> {
+    using Nodes = std::array<Node*, kMD>;
     using ST = Splitter;
     using AT = AugType;
 
-    QuadInteriorNode(Node* _left, Node* _right, const ST& _split,
+    QuadInteriorNode(const Nodes& _tree_nodes, const ST& _split,
                      const AT& _aug) :
-        InteriorNode<Point, Splitter, AugType>(_left, _right, _split, _aug) {}
+        MultiWayInteriorNode<Point, kMD, Splitter, AugType>(_tree_nodes, _split,
+                                                            _aug) {}
 
     inline bool ForceParallel() const { return this->aug; }
 };

@@ -9,6 +9,9 @@ namespace cpdd {
 template<typename Point, typename SplitRule, uint8_t kMD = 2, uint8_t kBDO = 6>
 class QuadTree : private BaseTree<Point, kBDO> {
  public:
+    static constexpr size_t kSplitterNum = kMD;
+    static constexpr size_t kNodeRegions = 1 << kMD;
+
     using BT = BaseTree<Point, kBDO>;
 
     using BucketType = BT::BucketType;
@@ -26,7 +29,7 @@ class QuadTree : private BaseTree<Point, kBDO> {
 
     using HyperPlane = BT::HyperPlane;
     using HyperPlaneSeq = BT::HyperPlaneSeq;
-    using Splitter = std::array<HyperPlane, kMD>;
+    using Splitter = std::array<HyperPlane, kSplitterNum>;
     using SplitterSeq = parlay::sequence<Splitter>;
     using AugType = bool;
 
@@ -35,6 +38,7 @@ class QuadTree : private BaseTree<Point, kBDO> {
     using Leaf =
         LeafNode<Point, Slice, BT::kLeaveWrap, parlay::move_assign_tag>;
     using Interior = QuadInteriorNode;
+    using Nodes = Interior::Nodes;
 
     // NOTE: expose basetree interface
     using BT::GetAveTreeHeight;
@@ -42,10 +46,6 @@ class QuadTree : private BaseTree<Point, kBDO> {
     using BT::GetRoot;
     using BT::GetRootBox;
     using BT::Validate;
-
-    static constexpr size_t kMaxDim = 2;
-    static constexpr size_t kNodeRegions = 1 << kMaxDim;
-    static constexpr size_t kNodeSplits = (1 << kMaxDim) - 1;
 
     // NOTE: functions
     template<typename Range>
@@ -72,7 +72,7 @@ class QuadTree : private BaseTree<Point, kBDO> {
 
  private:
     void SerialSplit(Slice In, DimsType dim, DimsType DIM, DimsType idx,
-                     Box& box, const Splitter& split,
+                     const Box& box, const Splitter& split,
                      parlay::sequence<BallsType>& sums, BoxSeq& box_seq);
 
     void DivideRotate(Slice In, HyperPlaneSeq& pivots, DimsType dim,
