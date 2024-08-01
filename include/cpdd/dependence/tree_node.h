@@ -91,7 +91,7 @@ template<typename Range, typename Leaf>
 static Leaf* AllocDummyLeafNode(Range In) {
     Leaf* o = parlay::type_allocator<Leaf>::alloc();
     new (o) Leaf(In, AllocDummyLeafTag());
-    assert(o->is_dummy == false);
+    assert(o->is_dummy == true);
     return o;
 }
 
