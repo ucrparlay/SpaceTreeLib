@@ -1,13 +1,16 @@
 #include <type_traits>
 #include <utility>
+#include "../quad_tree.h"
+#include "cpdd/dependence/tree_node.h"
 
 namespace cpdd {
 template<typename Point, typename SplitRule, uint8_t kMD, uint8_t kBDO>
 template<typename Range>
 void QuadTree<Point, SplitRule, kMD, kBDO>::KNN(Node* T, const Point& q,
-                                         const DimsType DIM,
-                                         kBoundedQueue<Point, Range>& bq,
-                                         const Box& bx, size_t& vis_node_num) {
+                                                const DimsType DIM,
+                                                kBoundedQueue<Point, Range>& bq,
+                                                const Box& bx,
+                                                size_t& vis_node_num) {
     BT::template KNNRec<Leaf, Interior>(T, q, DIM, bq, bx, vis_node_num);
 }
 
@@ -34,7 +37,7 @@ size_t QuadTree<Point, SplitRule, kMD, kBDO>::RangeCount(const Circle& cl) {
 template<typename Point, typename SplitRule, uint8_t kMD, uint8_t kBDO>
 template<typename Range>
 size_t QuadTree<Point, SplitRule, kMD, kBDO>::RangeQuery(const Box& query_box,
-                                                  Range&& Out) {
+                                                         Range&& Out) {
     size_t s = 0;
     BT::template RangeQuerySerialRecursive<Leaf, Interior>(
         this->root_, parlay::make_slice(Out), s, query_box, this->tree_box_);
@@ -43,9 +46,7 @@ size_t QuadTree<Point, SplitRule, kMD, kBDO>::RangeQuery(const Box& query_box,
 
 template<typename Point, typename SplitRule, uint8_t kMD, uint8_t kBDO>
 void QuadTree<Point, SplitRule, kMD, kBDO>::DeleteTree() {
-    this->template DeleteTreeWrapper<
-        LeafNode<Point, Slice, BT::kLeaveWrap, std::true_type>,
-        InteriorNode<Point, Splitter, bool>>();
+    this->template DeleteTreeWrapper<Leaf, Interior, MultiWayInteriorTag>();
 }
 
 }  // namespace cpdd

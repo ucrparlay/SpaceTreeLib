@@ -14,6 +14,8 @@ struct is_pair<std::pair<T, U>> : std::true_type {};
 struct AllocNormalLeafTag {};
 struct AllocDummyLeafTag {};
 struct AllocEmptyLeafTag {};
+struct BinaryInteriorTag {};
+struct MultiWayInteriorTag {};
 struct alloc_fat_leaf_tag {};
 struct alloc_thin_leaf_tag {};
 

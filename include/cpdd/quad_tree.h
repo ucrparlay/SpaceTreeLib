@@ -87,7 +87,8 @@ class QuadTree : private BaseTree<Point, kBDO> {
                          const Box& bx);
 
     Node* SerialBuildRecursive(Slice In, Slice Out, DimsType dim,
-                               const DimsType DIM, const Box& bx);
+                               const DimsType DIM, const Box& bx,
+                               bool checked_duplicate);
 
     static Node* QuadBuildInnerTree(BucketType idx, const HyperPlaneSeq& pivots,
                                     const parlay::sequence<Node*>& tree_nodes);

@@ -100,11 +100,16 @@ class BaseTree {
     // NOTE: delete tree
     virtual void DeleteTree() = 0;
 
-    template<typename leaf_node_type, typename interior_node_type>
+    template<typename Leaf, typename Interior, typename MultiWayInteriorTag>
     void DeleteTreeWrapper();
 
     template<typename Leaf, typename Interior>
-    static void DeleteTreeRecursive(Node* T, bool granularity = true);
+    static void DeleteTreeRecursive(BinaryInteriorTag, Node* T,
+                                    bool granularity = true);
+
+    template<typename Leaf, typename Interior>
+    static void DeleteTreeRecursive(MultiWayInteriorTag, Node* T,
+                                    bool granularity = true);
 
     // NOTE: KNN query stuffs
     static inline Coord P2PDistance(const Point& p, const Point& q,
