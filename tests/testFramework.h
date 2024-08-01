@@ -187,6 +187,8 @@ template<typename Point, typename Tree, int kPrint = 1>
 void buildTree(const int& Dim, const parlay::sequence<Point>& WP,
                const int& rounds, Tree& pkd) {
     using points = typename Tree::Points;
+    using Leaf = typename Tree::Leaf;
+    using Interior = typename Tree::Interior;
 
     double loopLate = rounds > 1 ? 1.0 : -0.1;
     size_t n = WP.size();
@@ -201,17 +203,18 @@ void buildTree(const int& Dim, const parlay::sequence<Point>& WP,
     parlay::copy(WP.cut(0, n), wp.cut(0, n));
     pkd.Build(wp.cut(0, n), Dim);
 
-    // if (print == 1) {
-    //     LOG << aveBuild << " " << std::flush;
-    //     auto deep = pkd.GetAveTreeHeight();
-    //     LOG << deep << " " << std::flush;
-    // } else if (print == 2) {
-    //     size_t max_deep = 0;
-    //     LOG << aveBuild << " " << pkd.GetMaxTreeDepth(pkd.GetRoot(),
-    //     max_deep) << " " << pkd.GetAveTreeHeight() << "
-    //     "
-    //         << std::flush;
-    // }
+    if (kPrint == 1) {
+        LOG << aveBuild << " " << std::flush;
+        // auto deep = pkd.template GetAveTreeHeight<Leaf, Interior>();
+        // LOG << deep << " " << std::flush;
+    } else if (kPrint == 2) {
+        size_t max_deep = 0;
+        LOG << aveBuild << " ";
+        //     LOG << pkd.template GetMaxTreeDepth<Leaf,
+        //     Interior>(pkd.GetRoot(), max_deep)
+        //     << " " << pkd.template GetAveTreeHeight<Leaf, Interior>() << " "
+        //     << std::flush;
+    }
 
     return;
 }

@@ -125,17 +125,16 @@ Node* KdTree<Point, SplitRule, kBDO>::SerialBuildRecursive(Slice In, Slice Out,
                     }))) {  // NOTE: check whether all elements are identical
         return AllocDummyLeafNode<Slice, Leaf>(In.cut(0, 1));
     } else {  // NOTE: current dim d is same but other dims are not
-        auto [new_box, new_dim] = split_rule_.SwitchDimension(In, dim, DIM, bx);
-        SerialBuildRecursive(In, Out, new_dim, DIM, new_box);
+        auto [new_box, new_dim] = split_rule_.SwitchDimension(In, d, DIM, bx);
+        return SerialBuildRecursive(In, Out, new_dim, DIM, new_box);
     }
 
-    assert(std::all_of(In.begin(), splitIter,
-                       [&](Point& p) {
-                           return Num::Lt(p.pnt[split.second], split.first);
-                       }) &&
-           std::all_of(splitIter, In.end(), [&](Point& p) {
-               return Num::Geq(p.pnt[split.second], split.first);
-           }));
+    assert(std::all_of(In.begin(), splitIter, [&](Point& p) {
+        return Num::Lt(p.pnt[split.second], split.first);
+    }));
+    assert(std::all_of(splitIter, In.end(), [&](Point& p) {
+        return Num::Geq(p.pnt[split.second], split.first);
+    }));
 
     Box lbox(bx), rbox(bx);
     lbox.second.pnt[d] = split.first;  //* loose
@@ -158,8 +157,8 @@ Node* KdTree<Point, SplitRule, kBDO>::BuildRecursive(Slice In, Slice Out,
                                                      const Box& bx) {
     assert(In.size() == 0 || BT::WithinBox(BT::GetBox(In), bx));
 
-    if (In.size()) {
-        // if (In.size() <= BT::kSerialBuildCutoff) {
+    // if (In.size()) {
+    if (In.size() <= BT::kSerialBuildCutoff) {
         return SerialBuildRecursive(In, Out, dim, DIM, bx);
     }
 
