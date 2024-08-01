@@ -43,9 +43,9 @@ class QuadTree : private BaseTree<Point, kBDO> {
     using BT::GetRootBox;
     using BT::Validate;
 
-    static constexpr size_t kMaxDim = kMD;
-    static constexpr size_t kNodeRegions = 1 << kMD;
-    static constexpr size_t kNodeSplits = (1 << kMD) - 1;
+    static constexpr size_t kMaxDim = 2;
+    static constexpr size_t kNodeRegions = 1 << kMaxDim;
+    static constexpr size_t kNodeSplits = (1 << kMaxDim) - 1;
 
     // NOTE: functions
     template<typename Range>
@@ -71,8 +71,9 @@ class QuadTree : private BaseTree<Point, kBDO> {
     size_t RangeQuery(const Box& query_box, Range&& Out);
 
  private:
-    void SerialSplit(Slice In, DimsType dim, DimsType DIM,
-                     const Splitter& split, parlay::sequence<BallsType>& sums);
+    void SerialSplit(Slice In, DimsType dim, DimsType DIM, DimsType idx,
+                     Box& box, const Splitter& split,
+                     parlay::sequence<BallsType>& sums, BoxSeq& box_seq);
 
     void DivideRotate(Slice In, HyperPlaneSeq& pivots, DimsType dim,
                       BucketType idx, BucketType deep, BucketType& bucket,

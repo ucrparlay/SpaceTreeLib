@@ -4,8 +4,8 @@
 #include "cpdd/dependence/tree_node.h"
 
 namespace cpdd {
-template<typename Point, typename SplitRule, uint8_t kBDO>
-struct QuadTree<Point, SplitRule, kBDO>::QuadInteriorNode :
+template<typename Point, typename SplitRule, uint8_t kMD, uint8_t kBDO>
+struct QuadTree<Point, SplitRule, kMD, kBDO>::QuadInteriorNode :
     InteriorNode<Point, Splitter, AugType> {
     using ST = Splitter;
     using AT = AugType;
