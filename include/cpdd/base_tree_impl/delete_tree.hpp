@@ -19,7 +19,10 @@ template<typename Point, uint8_t kBDO>  //* delete tree in parallel
 template<typename Leaf, typename Interior>
 void BaseTree<Point, kBDO>::DeleteTreeRecursive(BinaryInteriorTag, Node* T,
                                                 bool granularity) {
-    if (T == nullptr) return;
+    if (T == nullptr) {
+        LOG << "empty ptr" << ENDL;
+        return;
+    }
     if (T->is_leaf) {
         FreeNode<Leaf>(T);
     } else {

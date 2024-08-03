@@ -108,8 +108,8 @@ class BaseTree {
                                     bool granularity = true);
 
     template<typename Leaf, typename Interior>
-    static void DeleteTreeRecursive(MultiWayInteriorTag, Node* T,
-                                    bool granularity = true);
+    void DeleteTreeRecursive(MultiWayInteriorTag, Node* T,
+                             bool granularity = true);
 
     // NOTE: KNN query stuffs
     static inline Coord P2PDistance(const Point& p, const Point& q,
@@ -189,6 +189,8 @@ class BaseTree {
     Node* root_ = nullptr;
     parlay::internal::timer timer;
     Box tree_box_;
+    size_t delete_node_num_ = 0;
+    size_t alloc_node_num_ = 0;
 };
 
 }  // namespace cpdd

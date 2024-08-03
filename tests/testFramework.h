@@ -194,27 +194,30 @@ void buildTree(const int& Dim, const parlay::sequence<Point>& WP,
     size_t n = WP.size();
     points wp = points::uninitialized(n);
     // parlay::sort();
-    pkd.DeleteTree();
-    double aveBuild = time_loop(
-        rounds, loopLate, [&]() { parlay::copy(WP.cut(0, n), wp.cut(0, n)); },
-        [&]() { pkd.Build(wp.cut(0, n), Dim); }, [&]() { pkd.DeleteTree(); });
+    // pkd.DeleteTree();
+    // double aveBuild = time_loop(
+    //     rounds, loopLate, [&]() { parlay::copy(WP.cut(0, n), wp.cut(0, n));
+    //     },
+    //     [&]() { pkd.Build(wp.cut(0, n), Dim); }, [&]() { pkd.DeleteTree();
+    //     });
 
     //* return a built tree
     parlay::copy(WP.cut(0, n), wp.cut(0, n));
     pkd.Build(wp.cut(0, n), Dim);
 
-    if (kPrint == 1) {
-        LOG << aveBuild << " " << std::flush;
-        // auto deep = pkd.template GetAveTreeHeight<Leaf, Interior>();
-        // LOG << deep << " " << std::flush;
-    } else if (kPrint == 2) {
-        size_t max_deep = 0;
-        LOG << aveBuild << " ";
-        //     LOG << pkd.template GetMaxTreeDepth<Leaf,
-        //     Interior>(pkd.GetRoot(), max_deep)
-        //     << " " << pkd.template GetAveTreeHeight<Leaf, Interior>() << " "
-        //     << std::flush;
-    }
+    // if (kPrint == 1) {
+    //     LOG << aveBuild << " " << std::flush;
+    //     // auto deep = pkd.template GetAveTreeHeight<Leaf, Interior>();
+    //     // LOG << deep << " " << std::flush;
+    // } else if (kPrint == 2) {
+    //     size_t max_deep = 0;
+    //     LOG << aveBuild << " ";
+    //     //     LOG << pkd.template GetMaxTreeDepth<Leaf,
+    //     //     Interior>(pkd.GetRoot(), max_deep)
+    //     //     << " " << pkd.template GetAveTreeHeight<Leaf, Interior>() << "
+    //     "
+    //     //     << std::flush;
+    // }
 
     return;
 }

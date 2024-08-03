@@ -95,9 +95,13 @@ Node* QuadTree<Point, SplitRule, kMD, kBDO>::SerialBuildRecursive(
     assert(In.size() == 0 || BT::WithinBox(BT::GetBox(In), box));
     size_t n = In.size();
 
-    if (n == 0) return AllocEmptyLeafNode<Slice, Leaf>();
+    if (n == 0) {
+        return AllocEmptyLeafNode<Slice, Leaf>();
+    }
 
-    if (n <= BT::kLeaveWrap) return AllocNormalLeafNode<Slice, Leaf>(In);
+    if (n <= BT::kLeaveWrap) {
+        return AllocNormalLeafNode<Slice, Leaf>(In);
+    }
 
     assert(kSplitterNum == DIM);
 
@@ -111,41 +115,31 @@ Node* QuadTree<Point, SplitRule, kMD, kBDO>::SerialBuildRecursive(
     parlay::sequence<BallsType> sums(kNodeRegions, 0);
     BoxSeq box_seq(kNodeRegions);
     SerialSplit(In, dim, DIM, 1, box, split, sums, box_seq);
+    assert(std::accumulate(sums.begin(), sums.end(), 0) == n);
 
-    Nodes tree_nodes;
-    auto non_empty_node =
-        parlay::sequence<BucketType>::uninitialized(kNodeRegions);
-    BucketType zeros = 0, cnt = 0;
-    for (BucketType i = 0; i < kNodeRegions; i++) {
-        if (!sums[i]) {
-            zeros++;
-            tree_nodes[i] = AllocEmptyLeafNode<Slice, Leaf>();
-        } else {
-            non_empty_node[cnt++] = i;
+    if (std::count(sums.begin(), sums.end(), 0) == kNodeRegions - 1) {
+        // NOTE: avoid the repeat check as the last
+        if (!checked_duplicate) {
+            if (std::find_if_not(In.begin(), In.end(), [&](const Point& p) {
+                    return p.sameDimension(In[0]);
+                }) == In.end()) {
+                return AllocDummyLeafNode<Slice, Leaf>(In.cut(0, 1));
+            }
+            checked_duplicate = true;
         }
-    }
-
-    if (zeros == kNodeRegions - 1 &&
-        !checked_duplicate) {  // NOTE: avoid the repeat check as the last
-        if (std::ranges::find_if_not(In, [&](const Point& p) {
-                return p.sameDimension(In[0]);
-            }) == In.end()) {
-            return AllocNormalLeafNode<Slice, Leaf>(In.cut(0, 1));
-        }
-        checked_duplicate = true;
-    } else {  // NOTE: once the partition succeeds, next time may check
+    } else {
         checked_duplicate = false;
     }
 
+    Nodes tree_nodes;
     size_t start = 0;
-    for (DimsType i = 0; i < kNodeRegions - zeros;
-         ++i) {  // NOTE: iterate through non-empty partitions, put them
-                 // into the position identified by non_empty_node
-        tree_nodes[non_empty_node[i]] = SerialBuildRecursive(
-            In.cut(start, start + sums[non_empty_node[i]]),
-            Out.cut(start, start + sums[non_empty_node[i]]), DIM,
-            box_seq[non_empty_node[i]], checked_duplicate);
-        start += sums[non_empty_node[i]];
+    for (DimsType i = 0; i < kNodeRegions; ++i) {
+        // NOTE: iterate through non-empty partitions, put them into the
+        // position identified by non_empty_node
+        tree_nodes[i] = SerialBuildRecursive(
+            In.cut(start, start + sums[i]), Out.cut(start, start + sums[i]),
+            DIM, box_seq[i], checked_duplicate);
+        start += sums[i];
     }
 
     return AllocInteriorNode<Interior>(tree_nodes, split, false);
@@ -183,8 +177,8 @@ Node* QuadTree<Point, SplitRule, kMD, kBDO>::BuildRecursive(Slice In, Slice Out,
 
     const DimsType dim = 0;
 
-    // if ( In.size() ) {
-    if (In.size() <= BT::kSerialBuildCutoff) {
+    if (In.size()) {
+        // if (In.size() <= BT::kSerialBuildCutoff) {
         return SerialBuildRecursive(In, Out, DIM, box, false);
     }
 
@@ -241,10 +235,10 @@ void QuadTree<Point, SplitRule, kMD, kBDO>::Build_(Slice A,
                                                    const DimsType DIM) {
     Points B = Points::uninitialized(A.size());
     this->tree_box_ = BT::GetBox(A);
-    this->root_ =
-        BuildRecursive(A, B.cut(0, A.size()), 0, DIM, this->tree_box_);
-    // this->root_ = SerialBuildRecursive(A, B.cut(0, A.size()), 0, DIM,
-    //                                    this->tree_box_, false);
+    // this->root_ = BuildRecursive(A, B.cut(0, A.size()), DIM,
+    // this->tree_box_);
+    this->root_ = SerialBuildRecursive(A, B.cut(0, A.size()), DIM,
+                                       this->tree_box_, false);
     assert(this->root_ != nullptr);
     return;
 }
