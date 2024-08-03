@@ -177,8 +177,8 @@ Node* QuadTree<Point, SplitRule, kMD, kBDO>::BuildRecursive(Slice In, Slice Out,
 
     const DimsType dim = 0;
 
-    if (In.size()) {
-        // if (In.size() <= BT::kSerialBuildCutoff) {
+    // if (In.size()) {
+    if (In.size() <= BT::kSerialBuildCutoff) {
         return SerialBuildRecursive(In, Out, DIM, box, false);
     }
 
@@ -235,10 +235,9 @@ void QuadTree<Point, SplitRule, kMD, kBDO>::Build_(Slice A,
                                                    const DimsType DIM) {
     Points B = Points::uninitialized(A.size());
     this->tree_box_ = BT::GetBox(A);
-    // this->root_ = BuildRecursive(A, B.cut(0, A.size()), DIM,
-    // this->tree_box_);
-    this->root_ = SerialBuildRecursive(A, B.cut(0, A.size()), DIM,
-                                       this->tree_box_, false);
+    this->root_ = BuildRecursive(A, B.cut(0, A.size()), DIM, this->tree_box_);
+    // this->root_ = SerialBuildRecursive(A, B.cut(0, A.size()), DIM,
+    //                                    this->tree_box_, false);
     assert(this->root_ != nullptr);
     return;
 }
