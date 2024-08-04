@@ -7,20 +7,19 @@
 namespace cpdd {
 template<typename Point, typename SplitRule, uint8_t kMD, uint8_t kBDO>
 struct QuadTree<Point, SplitRule, kMD, kBDO>::QuadInteriorNode :
-    MultiWayInteriorNode<Point, kMD, Splitter, AugType> {
+    MultiNode<Point, kMD, Splitter, AugType> {
     using Nodes = std::array<Node*, 1 << kMD>;
+    using PT = Point;
     using ST = Splitter;
     using AT = AugType;
 
     static_assert(
         Nodes().size() ==
-        typename MultiWayInteriorNode<Point, kMD, Splitter, AugType>::Nodes()
-            .size());
+        typename MultiNode<Point, kMD, Splitter, AugType>::Nodes().size());
 
     QuadInteriorNode(const Nodes& _tree_nodes, const ST& _split,
                      const AT& _aug) :
-        MultiWayInteriorNode<Point, kMD, Splitter, AugType>(_tree_nodes, _split,
-                                                            _aug) {}
+        MultiNode<Point, kMD, Splitter, AugType>(_tree_nodes, _split, _aug) {}
 
     inline bool ForceParallel() const { return this->aug; }
 };

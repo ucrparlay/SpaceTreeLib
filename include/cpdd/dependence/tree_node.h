@@ -3,6 +3,7 @@
 #include <array>
 #include <cstdint>
 #include <numeric>
+#include <type_traits>
 #include "basic_point.h"
 #include "parlay/utilities.h"
 #include "utility.h"
@@ -96,11 +97,12 @@ static Leaf* AllocDummyLeafNode(Range In) {
 }
 
 template<typename Point, typename SplitType, typename AugType>
-struct InteriorNode : Node {
+struct BinaryNode : Node {
+    using PT = Point;
     using ST = SplitType;
     using AT = AugType;
 
-    InteriorNode(Node* _left, Node* _right, const ST& _split, const AT& _aug) :
+    BinaryNode(Node* _left, Node* _right, const ST& _split, const AT& _aug) :
         Node{false, _left->size + _right->size},
         left(_left),
         right(_right),
@@ -114,13 +116,12 @@ struct InteriorNode : Node {
 };
 
 template<typename Point, uint8_t kMD, typename SplitType, typename AugType>
-struct MultiWayInteriorNode : Node {
+struct MultiNode : Node {
     using Nodes = std::array<Node*, 1 << kMD>;
     using ST = SplitType;
     using AT = AugType;
 
-    MultiWayInteriorNode(const Nodes& _tree_nodes, const ST& _split,
-                         const AT& _aug) :
+    MultiNode(const Nodes& _tree_nodes, const ST& _split, const AT& _aug) :
         Node{false,
              std::accumulate(
                  _tree_nodes.begin(), _tree_nodes.end(), static_cast<size_t>(0),
@@ -133,6 +134,19 @@ struct MultiWayInteriorNode : Node {
     ST split;
     AT aug;
 };
+
+template<typename T>
+concept IsBinaryNode = std::is_base_of_v<
+    BinaryNode<typename T::PT, typename T::ST, typename T::AT>, T>;
+
+template<typename T>
+concept IsMultiNode =
+    std::is_base_of_v<
+        MultiNode<typename T::PT, 2, typename T::ST, typename T::AT>, T> ||
+    std::is_base_of_v<
+        MultiNode<typename T::PT, 3, typename T::ST, typename T::AT>, T> ||
+    std::is_base_of_v<
+        MultiNode<typename T::PT, 6, typename T::ST, typename T::AT>, T>;
 
 template<typename Interior>
 static Interior* AllocInteriorNode(Node* L, Node* R,

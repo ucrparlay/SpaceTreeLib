@@ -40,17 +40,10 @@ void KdTree<Point, SplitRule, kBDO>::DivideRotate(Slice In, SplitterSeq& pivots,
     uint_fast8_t d = split_rule_.FindCuttingDimension(bx, dim, DIM);
     assert(d < DIM);
 
-#if __cplusplus <= 201703L
-    std::nth_element(In.begin(), In.begin() + n / 2, In.end(),
-                     [&](const Point& p1, const Point& p2) {
-                         return Num::Lt(p1.pnt[d], p2.pnt[d]);
-                     });
-#else
     std::ranges::nth_element(In, In.begin() + n / 2,
                              [&](const Point& p1, const Point& p2) {
                                  return Num::Lt(p1.pnt[d], p2.pnt[d]);
                              });
-#endif
 
     pivots[idx] = Splitter(In[n / 2].pnt[d], d);
 
@@ -106,33 +99,25 @@ Node* KdTree<Point, SplitRule, kBDO>::SerialBuildRecursive(Slice In, Slice Out,
     if (splitIter <= In.begin() + n / 2) {  // NOTE: split is on left half
         split = Splitter(In[n / 2].pnt[d], d);
     } else if (splitIter != In.end()) {  // NOTE: split is on right half
-#if __cplusplus <= 201703L
-        auto minEleIter = std::min_element(
-            splitIter, In.end(), [&](const Point& p1, const Point& p2) {
-                return Num::Lt(p1.pnt[d], p2.pnt[d]);
-            });
-#else
         auto minEleIter = std::ranges::min_element(
             splitIter, In.end(), [&](const Point& p1, const Point& p2) {
                 return Num::Lt(p1.pnt[d], p2.pnt[d]);
             });
-#endif
         split = Splitter(minEleIter->pnt[d], d);
     } else if (In.end() ==
-               (diffEleIter =
-                    std::find_if_not(In.begin(), In.end(), [&](const Point& p) {
-                        return p.sameDimension(In[0]);
-                    }))) {  // NOTE: check whether all elements are identical
+               (diffEleIter = std::ranges::find_if_not(In, [&](const Point& p) {
+                    return p.sameDimension(In[0]);
+                }))) {  // NOTE: check whether all elements are identical
         return AllocDummyLeafNode<Slice, Leaf>(In.cut(0, 1));
     } else {  // NOTE: current dim d is same but other dims are not
         auto [new_box, new_dim] = split_rule_.SwitchDimension(In, d, DIM, bx);
         return SerialBuildRecursive(In, Out, new_dim, DIM, new_box);
     }
 
-    assert(std::all_of(In.begin(), splitIter, [&](Point& p) {
+    assert(std::ranges::all_of(In.begin(), splitIter, [&](Point& p) {
         return Num::Lt(p.pnt[split.second], split.first);
     }));
-    assert(std::all_of(splitIter, In.end(), [&](Point& p) {
+    assert(std::ranges::all_of(splitIter, In.end(), [&](Point& p) {
         return Num::Geq(p.pnt[split.second], split.first);
     }));
 

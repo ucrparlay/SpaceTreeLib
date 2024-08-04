@@ -124,10 +124,20 @@ class BaseTree {
     static inline Coord InterruptibleDistance(const Point& p, const Point& q,
                                               Coord up, DimsType DIM);
 
-    template<typename Leaf, typename Interior, typename StoreType>
-    static void KNNRec(Node* T, const Point& q, const DimsType DIM,
-                       kBoundedQueue<Point, StoreType>& bq, const Box& bx,
-                       size_t& vis_node_num);
+    template<typename Leaf, typename Range>
+    static void KNNLeaf(Node* T, const Point& q, const DimsType DIM,
+                        kBoundedQueue<Point, Range>& bq, const Box& bx,
+                        size_t& vis_node_num);
+
+    template<typename Leaf, IsBinaryNode Interior, typename Range>
+    static void KNNBinary(Node* T, const Point& q, const DimsType DIM,
+                          kBoundedQueue<Point, Range>& bq, const Box& bx,
+                          size_t& vis_node_num);
+
+    template<typename Leaf, IsMultiNode Interior, typename Range>
+    static void KNNMulti(Node* T, const Point& q, const DimsType DIM,
+                         kBoundedQueue<Point, Range>& bq, const Box& bx,
+                         size_t& vis_node_num);
 
     // NOTE: range count stuffs
     template<typename Leaf, typename Interior>
@@ -140,14 +150,20 @@ class BaseTree {
                                    const Box& node_box);
 
     // NOTE: range query stuffs
-    template<typename Leaf, typename Interior, typename StoreType>
-    static void RangeQuerySerialRecursive(Node* T, StoreType Out, size_t& s,
+    template<typename Leaf, typename Interior, typename Range>
+    static void RangeQuerySerialRecursive(Node* T, Range Out, size_t& s,
                                           const Box& query_box,
                                           const Box& node_box);
 
     // NOTE: utility
-    template<typename Leaf, typename Interior, typename Range>
-    static void FlattenRec(Node* T, Range Out, bool granularity = true);
+    // TODO: better evaluate the parallel recursion function
+    template<typename Leaf, IsBinaryNode Interior, typename Range,
+             bool granularity = true>
+    static void FlattenRec(Node* T, Range Out);
+
+    template<typename Leaf, IsMultiNode Interior, typename Range,
+             bool granularity = true>
+    static void FlattenRec(Node* T, Range Out);
 
     // NOTE: validations
     template<typename Leaf, typename Interior>
@@ -201,4 +217,5 @@ class BaseTree {
 #include "base_tree_impl/dimensinality.hpp"
 #include "base_tree_impl/points_op.hpp"
 #include "base_tree_impl/tree_op.hpp"
-#include "base_tree_impl/query_op.hpp"
+#include "base_tree_impl/knn_query.hpp"
+#include "base_tree_impl/range_query.hpp"

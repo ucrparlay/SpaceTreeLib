@@ -69,15 +69,9 @@ void QuadTree<Point, SplitRule, kMD, kBDO>::SerialSplit(
     auto mid = split[dim].first;
     assert(dim == split[dim].second);
 
-#if __cplusplus <= 201703L
-    PointsIter split_iter = std::partition(
-        In.begin(), In.end(),
-        [&](const Point& p) { return Num::Lt(p.pnt[dim], mid); });
-#else
     PointsIter split_iter = std::ranges::partition(In, [&](const Point& p) {
                                 return Num::Lt(p.pnt[dim], mid);
                             }).begin();
-#endif
 
     Box lbox(box), rbox(box);
     lbox.second.pnt[dim] = mid;
@@ -117,10 +111,10 @@ Node* QuadTree<Point, SplitRule, kMD, kBDO>::SerialBuildRecursive(
     SerialSplit(In, dim, DIM, 1, box, split, sums, box_seq);
     assert(std::accumulate(sums.begin(), sums.end(), 0) == n);
 
-    if (std::count(sums.begin(), sums.end(), 0) == kNodeRegions - 1) {
+    if (std::ranges::count(sums, 0) == kNodeRegions - 1) {
         // NOTE: avoid the repeat check as the last
         if (!checked_duplicate) {
-            if (std::find_if_not(In.begin(), In.end(), [&](const Point& p) {
+            if (std::ranges::find_if_not(In, [&](const Point& p) {
                     return p.sameDimension(In[0]);
                 }) == In.end()) {
                 return AllocDummyLeafNode<Slice, Leaf>(In.cut(0, 1));
