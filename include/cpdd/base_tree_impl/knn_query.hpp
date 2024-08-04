@@ -166,27 +166,27 @@ void BaseTree<Point, kBDO>::KNNMulti(Node* T, const Point& q,
         return;
     }
 
-    Interior* TI = static_cast<Interior*>(T);
-    bool go_left = Num::Gt(TI->split.first - q.pnt[TI->split.second], 0);
-
-    Box first_box(node_box), second_box(node_box);
-
-    if (go_left) {  // NOTE: go left child
-        first_box.second.pnt[TI->split.second] = TI->split.first;
-        second_box.first.pnt[TI->split.second] = TI->split.first;
-    } else {  // NOTE: go right child
-        first_box.first.pnt[TI->split.second] = TI->split.first;
-        second_box.second.pnt[TI->split.second] = TI->split.first;
-    }
-
-    KNNMulti<Leaf, Interior>(go_left ? TI->left : TI->right, q, DIM, bq,
-                             first_box, vis_node_num);
-    if (Num::Gt(P2BMinDistance(q, second_box, DIM), bq.top_value()) &&
-        bq.full()) {
-        return;
-    }
-    KNNMulti<Leaf, Interior>(go_left ? TI->right : TI->left, q, DIM, bq,
-                             second_box, vis_node_num);
+    // Interior* TI = static_cast<Interior*>(T);
+    // bool go_left = Num::Gt(TI->split.first - q.pnt[TI->split.second], 0);
+    //
+    // Box first_box(node_box), second_box(node_box);
+    //
+    // if (go_left) {  // NOTE: go left child
+    //     first_box.second.pnt[TI->split.second] = TI->split.first;
+    //     second_box.first.pnt[TI->split.second] = TI->split.first;
+    // } else {  // NOTE: go right child
+    //     first_box.first.pnt[TI->split.second] = TI->split.first;
+    //     second_box.second.pnt[TI->split.second] = TI->split.first;
+    // }
+    //
+    // KNNMulti<Leaf, Interior>(go_left ? TI->left : TI->right, q, DIM, bq,
+    //                          first_box, vis_node_num);
+    // if (Num::Gt(P2BMinDistance(q, second_box, DIM), bq.top_value()) &&
+    //     bq.full()) {
+    //     return;
+    // }
+    // KNNMulti<Leaf, Interior>(go_left ? TI->right : TI->left, q, DIM, bq,
+    // second_box, vis_node_num);
     return;
 }
 

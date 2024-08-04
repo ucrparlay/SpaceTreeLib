@@ -23,11 +23,22 @@ size_t BaseTree<Point, kBDO>::CheckSize(Node* T) {
     if (T->is_leaf) {
         return T->size;
     }
-    Interior* TI = static_cast<Interior*>(T);
-    size_t l = CheckSize<Leaf, Interior>(TI->left);
-    size_t r = CheckSize<Leaf, Interior>(TI->right);
-    assert(l + r == T->size);
-    return T->size;
+    if constexpr (IsBinaryNode<Interior>) {
+        Interior* TI = static_cast<Interior*>(T);
+        size_t l = CheckSize<Leaf, Interior>(TI->left);
+        size_t r = CheckSize<Leaf, Interior>(TI->right);
+        assert(l + r == T->size);
+        return T->size;
+    } else {
+        assert(IsMultiNode<Interior>);
+        Interior* TI = static_cast<Interior*>(T);
+        size_t sum = 0;
+        for (BucketType i = 0; i < TI->tree_nodes[i].size(); ++i) {
+            sum += CheckSize<Leaf, Interior>(TI->tree_nodes[i]);
+        }
+        assert(sum == T->size);
+        return T->size;
+    }
 }
 
 template<typename Point, uint8_t kBDO>
@@ -38,23 +49,39 @@ void BaseTree<Point, kBDO>::CheckTreeSameSequential(Node* T, int dim,
         // assert( PickRebuildDim( T, DIM ) == dim );
         return;
     }
-    Interior* TI = static_cast<Interior*>(T);
-    if (TI->split.second != dim) {
-        LOG << int(TI->split.second) << " " << int(dim) << TI->size << ENDL;
+    if constexpr (IsBinaryNode<Interior>) {
+        Interior* TI = static_cast<Interior*>(T);
+        if (TI->split.second != dim) {
+            LOG << int(TI->split.second) << " " << int(dim) << TI->size << ENDL;
+        }
+        assert(TI->split.second == dim);
+        dim = (dim + 1) % DIM;
+        parlay::par_do_if(
+            T->size > 1000,
+            [&]() {
+                CheckTreeSameSequential<Leaf, Interior>(TI->left, dim, DIM);
+            },
+            [&]() {
+                CheckTreeSameSequential<Leaf, Interior>(TI->right, dim, DIM);
+            });
+    } else {
+        assert(IsMultiNode<Interior>);
+        Interior* TI = static_cast<Interior*>(T);
+        assert((1 << TI->split.size()) == TI->tree_nodes.size());
+        for (int i = 0; i < TI->split.size(); i++) {
+            assert(TI->split[i].second == dim);
+            dim += 1;
+        }
+        for (int i = 0; i < TI->tree_nodes.size(); i++) {
+            CheckTreeSameSequential<Leaf, Interior>(TI->tree_nodes[i], dim,
+                                                    DIM);
+        }
     }
-    assert(TI->split.second == dim);
-    dim = (dim + 1) % DIM;
-    parlay::par_do_if(
-        T->size > 1000,
-        [&]() { CheckTreeSameSequential<Leaf, Interior>(TI->left, dim, DIM); },
-        [&]() {
-            CheckTreeSameSequential<Leaf, Interior>(TI->right, dim, DIM);
-        });
     return;
 }
 
 template<typename Point, uint8_t kBDO>
-template<typename Leaf, typename Interior>
+template<typename Leaf, typename Interior, typename SplitRule>
 void BaseTree<Point, kBDO>::Validate(const DimsType DIM) {
     if (CheckBox<Leaf, Interior>(this->root_, this->tree_box_) &&
         LegalBox(this->tree_box_)) {
@@ -65,8 +92,11 @@ void BaseTree<Point, kBDO>::Validate(const DimsType DIM) {
     }
 
     // NOTE: used to check rotate dimension
-    /*CheckTreeSameSequential<Interior>(this->root_, 0, DIM);*/
-    /*std::cout << "Correct rotate dimension" << std::endl << std::flush;*/
+
+    if constexpr (IsRotateDimSplit<SplitRule>) {
+        CheckTreeSameSequential<Leaf>(this->root_, 0, DIM);
+        std::cout << "Correct rotate dimension" << std::endl << std::flush;
+    }
 
     if (CheckSize<Leaf, Interior>(this->root_) == this->root_->size) {
         std::cout << "Correct size" << std::endl << std::flush;
@@ -90,10 +120,20 @@ size_t BaseTree<Point, kBDO>::GetMaxTreeDepth(Node* T, size_t deep) {
     if (T->is_leaf) {
         return deep;
     }
+
     Interior* TI = static_cast<Interior*>(T);
-    int l = GetMaxTreeDepth<Leaf, Interior>(TI->left, deep + 1);
-    int r = GetMaxTreeDepth<Leaf, Interior>(TI->right, deep + 1);
-    return std::max(l, r);
+    if constexpr (IsBinaryNode<Interior>) {
+        int l = GetMaxTreeDepth<Leaf, Interior>(TI->left, deep + 1);
+        int r = GetMaxTreeDepth<Leaf, Interior>(TI->right, deep + 1);
+        return std::max(l, r);
+    } else {
+        int max_depth = -1;
+        for (int i = 0; i < TI->tree_nodes.size(); i++) {
+            max_depth = std::max(max_depth, GetMaxTreeDepth<Leaf, Interior>(
+                                                TI->tree_nodes[i], deep + 1));
+        }
+        return max_depth;
+    }
 }
 
 template<typename Point, uint8_t kBDO>
@@ -118,10 +158,19 @@ size_t BaseTree<Point, kBDO>::CountTreeNodesNum(Node* T) {
     }
 
     Interior* TI = static_cast<Interior*>(T);
-    size_t l, r;
-    parlay::par_do([&]() { l = CountTreeNodesNum<Leaf, Interior>(TI->left); },
-                   [&]() { r = CountTreeNodesNum<Leaf, Interior>(TI->right); });
-    return l + r + 1;
+    if constexpr (IsBinaryNode<Interior>) {
+        size_t l, r;
+        parlay::par_do(
+            [&]() { l = CountTreeNodesNum<Leaf, Interior>(TI->left); },
+            [&]() { r = CountTreeNodesNum<Leaf, Interior>(TI->right); });
+        return l + r + 1;
+    } else {
+        size_t sum = 0;
+        for (int i = 0; i < TI->tree_nodes.size(); i++) {
+            sum += CountTreeNodesNum<Leaf, Interior>(TI->tree_nodes[i]);
+        }
+        return sum + 1;
+    }
 }
 
 template<typename Point, uint8_t kBDO>
@@ -132,9 +181,17 @@ void BaseTree<Point, kBDO>::CountTreeHeights(
         heights[idx++] = deep;
         return;
     }
+
     Interior* TI = static_cast<Interior*>(T);
-    CountTreeHeights<Leaf, Interior>(TI->left, deep + 1, idx, heights);
-    CountTreeHeights<Leaf, Interior>(TI->right, deep + 1, idx, heights);
+    if constexpr (IsBinaryNode<Interior>) {
+        CountTreeHeights<Leaf, Interior>(TI->left, deep + 1, idx, heights);
+        CountTreeHeights<Leaf, Interior>(TI->right, deep + 1, idx, heights);
+    } else {
+        for (int i = 0; i < TI->tree_nodes.size(); i++) {
+            CountTreeHeights<Leaf, Interior>(TI->tree_nodes[i], deep + 1, idx,
+                                             heights);
+        }
+    }
     return;
 }
 

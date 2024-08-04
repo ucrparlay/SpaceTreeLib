@@ -6,9 +6,14 @@
 #include <type_traits>
 #include "basic_point.h"
 #include "parlay/utilities.h"
-#include "utility.h"
 
 namespace cpdd {
+
+struct AllocNormalLeafTag {};
+struct AllocDummyLeafTag {};
+struct AllocEmptyLeafTag {};
+struct BinaryInteriorTag {};
+struct MultiWayInteriorTag {};
 
 struct Node {
     Node() : is_leaf{false}, size{0} {};
@@ -134,19 +139,6 @@ struct MultiNode : Node {
     ST split;
     AT aug;
 };
-
-template<typename T>
-concept IsBinaryNode = std::is_base_of_v<
-    BinaryNode<typename T::PT, typename T::ST, typename T::AT>, T>;
-
-template<typename T>
-concept IsMultiNode =
-    std::is_base_of_v<
-        MultiNode<typename T::PT, 2, typename T::ST, typename T::AT>, T> ||
-    std::is_base_of_v<
-        MultiNode<typename T::PT, 3, typename T::ST, typename T::AT>, T> ||
-    std::is_base_of_v<
-        MultiNode<typename T::PT, 6, typename T::ST, typename T::AT>, T>;
 
 template<typename Interior>
 static Interior* AllocInteriorNode(Node* L, Node* R,

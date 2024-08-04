@@ -5,6 +5,7 @@
 #include "dependence/comparator.h"
 #include "dependence/tree_node.h"
 #include "dependence/search_container.h"
+#include "dependence/concepts.h"
 
 namespace cpdd {
 
@@ -175,7 +176,7 @@ class BaseTree {
     template<typename Leaf, typename Interior>
     void CheckTreeSameSequential(Node* T, int dim, const int& DIM);
 
-    template<typename Leaf, typename Interior>
+    template<typename Leaf, typename Interior, typename SplitRule>
     void Validate(const DimsType DIM);
 
     template<typename Leaf, typename Interior>

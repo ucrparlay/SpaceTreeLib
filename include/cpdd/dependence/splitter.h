@@ -3,10 +3,6 @@
 #include "../base_tree.h"
 
 namespace cpdd {
-// DimsType d =
-//     (split_rule_ == kMaxStretchDim ? pick_max_stretch_dim(bx, DIM) :
-//     dim);
-//
 template<typename Point>
 struct BaseSplitterRule {
     using BT = BaseTree<Point>;
