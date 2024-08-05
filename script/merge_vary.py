@@ -7,12 +7,12 @@ print(os.getcwd())
 path = "../benchmark"
 benchmarks = ["ss_varden", "uniform"]
 storePrefix = "data/"
-Nodes = [1000000000]
-Dims = [3]
+Nodes = [100000000, 1000000000]
+Dims = [2, 3]
 
-type = "batch_update"
+# type = "batch_update"
 # type = "batch_knn_query"
-# type = "querys"
+type = "querys"
 # type = "quality"
 # type = "count"
 
@@ -26,12 +26,15 @@ if type == "batch_update":
     files = ["build", "insert", "delete"]
     Dims = [3]
 elif type == "batch_knn_query":
-    solverName = ["test", "zdtree", "cgal"]
+    solverName = ["kdtree", "orthtree"]
     files = ["build", "knn"]
-    Dims = [3]
+    Dims = [2, 3]
 elif type == "querys":
-    solverName = ["test", "zdtree", "cgal", "LogTree", "BhlTree"]
-    files = ["build", "knn", "count", "rquery"]
+    solverName = ["kdtree", "orthtree"]
+    files = ["build", "knn"]
+    Dims = [2, 3]
+    # solverName = ["test", "zdtree", "cgal", "LogTree", "BhlTree"]
+    # files = ["build", "knn", "count", "rquery"]
 elif type == "quality":
     solverName = ["test"]
     files = ["build", "increBuild", "decreBuild", "increKNN"]
@@ -44,11 +47,8 @@ elif type == "count":
     Dims = [2, 3, 5, 9]
 
 resMap = {
-    "test": "res_" + type + ".out",
-    "cgal": "cgal_" + type + ".out",
-    "zdtree": "zdtree_" + type + ".out",
-    "LogTree": "LogTree_" + type + ".out",
-    "BhlTree": "BhlTree_" + type + ".out",
+    "kdtree": "res_0_" + type + ".out",
+    "orthtree": "res_1_" + type + ".out",
 }
 
 common = [
@@ -57,7 +57,7 @@ common = [
     "nodes",
     "dims",
 ]
-build_header = ["build", "depth"]
+build_header = ["build", "max-depth", "ave-depth"]
 insert_header = [
     "0.1M",
     "0.2M",
@@ -90,13 +90,13 @@ delete_header = [
 ]
 knn_header = [
     "k=1",
-    "depth",
+    "ave-depth",
     "visNum",
     "k=10",
-    "depth",
+    "ave-depth",
     "visNum",
     "k=100",
-    "depth",
+    "ave-depth",
     "visNum",
 ]
 count_header = ["10000small", "10000medium", "10000large"]
@@ -198,10 +198,10 @@ if len(sys.argv) > 1 and int(sys.argv[1]) == 1:
     for file in files:
         csvWriter = csvSetup(file)
 
-        for dim in Dims:
-            for bench in benchmarks:
-                for solver in solverName:
-                    for node in Nodes:
+        for node in Nodes:
+            for dim in Dims:
+                for bench in benchmarks:
+                    for solver in solverName:
                         P = (
                             path
                             + "/"
