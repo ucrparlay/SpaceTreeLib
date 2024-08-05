@@ -1,6 +1,6 @@
 #include "cpdd/kd_tree.h"
 #include "testFramework.h"
-
+#include <CGAL/Quadtree.h>
 #include <CGAL/Cartesian_d.h>
 #include <CGAL/K_neighbor_search.h>
 #include <CGAL/Kernel_d/Point_d.h>
