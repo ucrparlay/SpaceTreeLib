@@ -35,6 +35,7 @@ class QuadTree : private BaseTree<Point, kBDO> {
 
     struct QuadInteriorNode;
 
+    using SplitRuleType = SplitRule;
     using Leaf =
         LeafNode<Point, Slice, BT::kLeaveWrap, parlay::move_assign_tag>;
     using Interior = QuadInteriorNode;

@@ -1,5 +1,6 @@
 #pragma once
 #include <algorithm>
+#include <tuple>
 #include "../base_tree.h"
 #include "cpdd/dependence/tree_node.h"
 
@@ -161,7 +162,14 @@ void BaseTree<Point, kBDO>::KNNMulti(Node* T, const Point& q,
                                      kBoundedQueue<Point, Range>& bq,
                                      const Box& node_box,
                                      size_t& vis_node_num) {
+    constexpr size_t const kNodeRegions =
+        std::tuple_size_v<typename Interior::Nodes>;
+
     vis_node_num++;
+
+    if (T->size == 0) {
+        return;
+    }
 
     if (T->is_leaf) {
         KNNLeaf<Leaf>(T, q, DIM, bq, node_box, vis_node_num);
@@ -170,28 +178,26 @@ void BaseTree<Point, kBDO>::KNNMulti(Node* T, const Point& q,
 
     Interior* TI = static_cast<Interior*>(T);
 
-    std::array<std::pair<Coord, BucketType>, TI->tree_nodes.size()> dists;
+    BoxSeq regions(kNodeRegions);
+    std::array<std::pair<Coord, BucketType>, kNodeRegions> dists;
+    TI->compute_subregions(regions, node_box, 1, 0);
 
-    // bool go_left = Num::Gt(TI->split.first - q.pnt[TI->split.second], 0);
-    //
-    // Box first_box(node_box), second_box(node_box);
-    //
-    // if (go_left) {  // NOTE: go left child
-    //     first_box.second.pnt[TI->split.second] = TI->split.first;
-    //     second_box.first.pnt[TI->split.second] = TI->split.first;
-    // } else {  // NOTE: go right child
-    //     first_box.first.pnt[TI->split.second] = TI->split.first;
-    //     second_box.second.pnt[TI->split.second] = TI->split.first;
-    // }
-    //
-    // KNNMulti<Leaf, Interior>(go_left ? TI->left : TI->right, q, DIM, bq,
-    //                          first_box, vis_node_num);
-    // if (Num::Gt(P2BMinDistance(q, second_box, DIM), bq.top_value()) &&
-    //     bq.full()) {
-    //     return;
-    // }
-    // KNNMulti<Leaf, Interior>(go_left ? TI->right : TI->left, q, DIM, bq,
-    // second_box, vis_node_num);
+    std::ranges::generate(dists, [i = 0, &q, &regions, &DIM]() mutable {
+        return std::make_pair(P2BMinDistance(q, regions[i], DIM), i++);
+    });
+    std::ranges::sort(dists, std::less<>(),
+                      [&](const auto& box_pair) { return box_pair.first; });
+
+    KNNMulti<Leaf, Interior>(TI->tree_nodes[dists[0].second], q, DIM, bq,
+                             regions[dists[0].second], vis_node_num);
+    for (BucketType i = 1; i < kNodeRegions; ++i) {
+        if (Num::Gt(dists[i].first, bq.top_value()) && bq.full()) {
+            continue;
+        }
+        KNNMulti<Leaf, Interior>(TI->tree_nodes[dists[i].second], q, DIM, bq,
+                                 regions[dists[i].second], vis_node_num);
+    }
+
     return;
 }
 

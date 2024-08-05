@@ -32,6 +32,7 @@ class KdTree : private BaseTree<Point, kBDO> {
     using AugType = bool;
     struct KdInteriorNode;
 
+    using SplitRuleType = SplitRule;
     using Leaf =
         LeafNode<Point, Slice, BT::kLeaveWrap, parlay::move_assign_tag>;
     using Interior = KdInteriorNode;

@@ -135,8 +135,24 @@ struct MultiNode : Node {
         split(_split),
         aug(_aug) {}
 
-    template<typename BoxSeq>
-    void compute_subregions(BoxSeq& box) {}
+    template<typename Box, typename BoxSeq>
+    void compute_subregions(BoxSeq& box_seq, const Box& box, auto idx,
+                            auto deep) {
+        if (idx >= tree_nodes.size()) {
+            assert(deep == kMD);
+            assert(1 << kMD == tree_nodes.size());
+
+            box_seq[idx - (1 << kMD)] = box;
+            return;
+        }
+
+        Box lbox(box), rbox(box);
+        lbox.second.pnt[split[deep].second] = split[deep].first;  // PERF: loose
+        rbox.first.pnt[split[deep].second] = split[deep].first;
+        compute_subregions(box_seq, lbox, 2 * idx, deep + 1);
+        compute_subregions(box_seq, rbox, 2 * idx + 1, deep + 1);
+        return;
+    }
 
     Nodes tree_nodes;
     ST split;

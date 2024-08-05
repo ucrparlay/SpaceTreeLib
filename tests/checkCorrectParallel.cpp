@@ -1,4 +1,6 @@
+#include "cpdd/dependence/splitter.h"
 #include "cpdd/kd_tree.h"
+#include "cpdd/quad_tree.h"
 #include "testFramework.h"
 #include <CGAL/Quadtree.h>
 #include <CGAL/Cartesian_d.h>
@@ -15,7 +17,7 @@
 #include <tbb/parallel_for.h>
 #include <CGAL/Fuzzy_sphere.h>
 // using point = PointID<coord, 5>;
-using point = PointType<Coord, 5>;
+using point = PointType<Coord, 2>;
 using points = parlay::sequence<point>;
 
 typedef CGAL::Cartesian_d<Typename> Kernel;
@@ -34,7 +36,7 @@ typedef CGAL::Fuzzy_iso_box<TreeTraits> Fuzzy_iso_box;
 typedef CGAL::Fuzzy_sphere<TreeTraits> Fuzzy_circle;
 int Dim, K, tag, rounds;
 bool insert;
-int queryType;
+int queryType, tree_type;
 size_t N;
 
 size_t maxReduceSize = 0;
@@ -170,7 +172,8 @@ void runKDParallel(points& wp, const points& wi, Typename* kdknn, points& p,
 
     buildTree<point>(Dim, wp, rounds, pkd);
     cpdd::Node* KDParallelRoot = pkd.GetRoot();
-    pkd.template Validate<typename Tree::Leaf, typename Tree::Interior>(Dim);
+    pkd.template Validate<typename Tree::Leaf, typename Tree::Interior,
+                          typename Tree::SplitRuleType>(Dim);
 
     /*if (tag >= 1) {*/
     /*    batchInsert<point, true>(pkd, wp, wi, Dim, 2,
@@ -197,19 +200,20 @@ void runKDParallel(points& wp, const points& wi, Typename* kdknn, points& p,
         points new_wp(batchQuerySize);
         parlay::copy(wp.cut(0, batchQuerySize), new_wp.cut(0, batchQuerySize));
         queryKNN<point>(Dim, wp, rounds, pkd, kdknn, K, true);
-    } else if (queryType == 1) {
-        rangeCount<point>(wp, pkd, kdknn, rounds, queryNum);
-        // rangeCountRadius<point>( wp, pkd, kdknn, rounds, queryNum );
-    } else if (queryType == 2) {
-        rangeCount<point>(wp, pkd, kdknn, rounds, queryNum);
-        maxReduceSize =
-            parlay::reduce(parlay::delayed_tabulate(
-                               queryNum, [&](size_t i) { return kdknn[i]; }),
-                           parlay::maximum<Typename>());
-        LOG << maxReduceSize << ENDL;
-        p.resize(queryNum * maxReduceSize);
-        rangeQuery<point>(wp, pkd, kdknn, rounds, queryNum, p);
     }
+    // else if (queryType == 1) {
+    //     rangeCount<point>(wp, pkd, kdknn, rounds, queryNum);
+    //     // rangeCountRadius<point>( wp, pkd, kdknn, rounds, queryNum );
+    // } else if (queryType == 2) {
+    //     rangeCount<point>(wp, pkd, kdknn, rounds, queryNum);
+    //     maxReduceSize =
+    //         parlay::reduce(parlay::delayed_tabulate(
+    //                            queryNum, [&](size_t i) { return kdknn[i]; }),
+    //                        parlay::maximum<Typename>());
+    //     LOG << maxReduceSize << ENDL;
+    //     p.resize(queryNum * maxReduceSize);
+    //     rangeQuery<point>(wp, pkd, kdknn, rounds, queryNum, p);
+    // }
 
     if (tag == 1) wp.pop_tail(wi.size() * batchInsertCheckRatio);
     assert(wp.size() == N);
@@ -230,6 +234,7 @@ int main(int argc, char* argv[]) {
     rounds = P.getOptionIntValue("-r", 3);
     queryType = P.getOptionIntValue("-q", 0);
     char* _insertFile = P.getOptionValue("-i");
+    tree_type = P.getOptionIntValue("-T", 1);
 
     assert(Dim == point().get_dim());
 
@@ -333,8 +338,19 @@ int main(int argc, char* argv[]) {
 
     points kdOut;
     parlay::sequence<Point_d> cgOut;
-    runKDParallel<cpdd::KdTree<point, cpdd::MaxStretchDim<point>>>(
-        wp, wi, kdknn, kdOut, queryNum);
+    if (tree_type == 0) {
+        LOG << "test kd tree" << ENDL;
+        runKDParallel<cpdd::KdTree<point, cpdd::MaxStretchDim<point>>>(
+            wp, wi, kdknn, kdOut, queryNum);
+    } else if (tree_type == 1) {
+        LOG << "test quad tree" << ENDL;
+        runKDParallel<cpdd::QuadTree<point, cpdd::RotateDim<point>, 2>>(
+            wp, wi, kdknn, kdOut, queryNum);
+    } else if (tree_type == 2) {
+        LOG << "test oct tree" << ENDL;
+        runKDParallel<cpdd::QuadTree<point, cpdd::RotateDim<point>, 3>>(
+            wp, wi, kdknn, kdOut, queryNum);
+    }
     runCGAL(wp, wi, cgknn, queryNum, cgOut);
 
     //* verify

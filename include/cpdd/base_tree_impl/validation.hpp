@@ -33,7 +33,7 @@ size_t BaseTree<Point, kBDO>::CheckSize(Node* T) {
         assert(IsMultiNode<Interior>);
         Interior* TI = static_cast<Interior*>(T);
         size_t sum = 0;
-        for (BucketType i = 0; i < TI->tree_nodes[i].size(); ++i) {
+        for (BucketType i = 0; i < TI->tree_nodes.size(); ++i) {
             sum += CheckSize<Leaf, Interior>(TI->tree_nodes[i]);
         }
         assert(sum == T->size);

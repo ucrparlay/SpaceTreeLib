@@ -33,4 +33,5 @@ template<typename T>
 concept IsRotateDimSplit = requires(T t) {
     { t.RotateDimTag() } -> std::same_as<void>;
 };
+
 }  // namespace cpdd
