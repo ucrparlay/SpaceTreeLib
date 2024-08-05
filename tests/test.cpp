@@ -17,7 +17,7 @@ void TestSpacialTree(const int& kDim, const parlay::sequence<Point>& wp,
 
     Tree tree;
 
-    buildTree<Point, Tree, 2>(kDim, wp, kRounds, tree);
+    buildTree<Point, Tree, 1>(kDim, wp, kRounds, tree);
 
     Typename* kdknn = nullptr;
 
@@ -46,27 +46,26 @@ void TestSpacialTree(const int& kDim, const parlay::sequence<Point>& wp,
     //     }
     // }
     //
-    // if (kQueryType & (1 << 0)) {  // NOTE: KNN
-    //     auto run_batch_knn = [&](const Points& pts, int kth, size_t
-    //     batchSize) {
-    //         Points newPts(batchSize);
-    //         parlay::copy(pts.cut(0, batchSize), newPts.cut(0, batchSize));
-    //         kdknn = new Typename[batchSize];
-    //         queryKNN<Point>(kDim, newPts, kRounds, tree, kdknn, kth, true);
-    //         delete[] kdknn;
-    //     };
-    //
-    //     size_t batchSize = static_cast<size_t>(wp.size() * batchQueryRatio);
-    //
-    //     if (kSummary == 0) {
-    //         int k[3] = {1, 10, 100};
-    //         for (int i = 0; i < 3; i++) {
-    //             run_batch_knn(wp, k[i], batchSize);
-    //         }
-    //     } else {  // test summary
-    //         run_batch_knn(wp, K, batchSize);
-    //     }
-    // }
+    if (kQueryType & (1 << 0)) {  // NOTE: KNN
+        auto run_batch_knn = [&](const Points& pts, int kth, size_t batchSize) {
+            Points newPts(batchSize);
+            parlay::copy(pts.cut(0, batchSize), newPts.cut(0, batchSize));
+            kdknn = new Typename[batchSize];
+            queryKNN<Point>(kDim, newPts, kRounds, tree, kdknn, kth, true);
+            delete[] kdknn;
+        };
+
+        size_t batchSize = static_cast<size_t>(wp.size() * batchQueryRatio);
+
+        if (kSummary == 0) {
+            int k[3] = {1, 10, 100};
+            for (int i = 0; i < 3; i++) {
+                run_batch_knn(wp, k[i], batchSize);
+            }
+        } else {  // test summary
+            run_batch_knn(wp, K, batchSize);
+        }
+    }
     //
     // if (queryType & (1 << 1)) {  // NOTE: batch NN query
     //
