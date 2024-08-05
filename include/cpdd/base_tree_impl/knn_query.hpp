@@ -183,7 +183,9 @@ void BaseTree<Point, kBDO>::KNNMulti(Node* T, const Point& q,
     TI->compute_subregions(regions, node_box, 1, 0);
 
     std::ranges::generate(dists, [i = 0, &q, &regions, &DIM]() mutable {
-        return std::make_pair(P2BMinDistance(q, regions[i], DIM), i++);
+        auto r = std::make_pair(P2BMinDistance(q, regions[i], DIM), i);
+        i++;
+        return r;
     });
     std::ranges::sort(dists, std::less<>(),
                       [&](const auto& box_pair) { return box_pair.first; });

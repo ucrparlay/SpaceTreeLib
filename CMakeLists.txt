@@ -96,7 +96,6 @@ if(CGAL)
 
 	# copied from CGAL default cmake
 	if(TBB_FOUND AND NOT TARGET CGAL::TBB_support)
-		message("here")
 
 		if(NOT TARGET Threads::Threads)
 			find_package(Threads REQUIRED)
@@ -119,6 +118,10 @@ if(CGAL)
 	add_executable(checkCorrectParallel ${PROJECT_SOURCE_DIR}/tests/checkCorrectParallel.cpp)
 	target_link_libraries(checkCorrectParallel PUBLIC spatialTrees CGAL::CGAL CGAL::TBB_support)
 endif()
+
+set(all_files
+  ${PROJECT_SOURCE_DIR}/include/cpdd/*
+)
 
 FIND_PROGRAM(CLANG_FORMAT "clang-format")
 

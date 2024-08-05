@@ -57,6 +57,10 @@ void BaseTree<Point, kBDO>::FlattenRec(Node* T, Range Out) {
 template<typename Point, uint8_t kBDO>
 template<typename Leaf, IsMultiNode Interior, typename Range, bool granularity>
 void BaseTree<Point, kBDO>::FlattenRec(Node* T, Range Out) {
+    if (T->size != Out.size()) {
+        std::cout << "T->size: " << T->size << " Out.size(): " << Out.size()
+                  << std::endl;
+    }
     assert(T->size == Out.size());
 
     if (T->size == 0) return;
@@ -85,13 +89,15 @@ void BaseTree<Point, kBDO>::FlattenRec(Node* T, Range Out) {
                 start += TI->tree_nodes[j]->size;
             }
             FlattenRec<Leaf, Interior, Range>(
-                TI->tree_nodes[i], Out.cut(start, TI->tree_nodes[i]->size));
+                TI->tree_nodes[i],
+                Out.cut(start, start + TI->tree_nodes[i]->size));
         });
     } else {
         size_t start = 0;
         for (BucketType i = 0; i < TI->tree_nodes.size(); ++i) {
             FlattenRec<Leaf, Interior, Range>(
-                TI->tree_nodes[i], Out.cut(start, TI->tree_nodes[i]->size));
+                TI->tree_nodes[i],
+                Out.cut(start, start + TI->tree_nodes[i]->size));
             start += TI->tree_nodes[i]->size;
         }
     }

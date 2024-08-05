@@ -11,6 +11,7 @@ bool BaseTree<Point, kBDO>::CheckBox(Node* T, const Box& bx) {
     assert(T != nullptr);
     assert(LegalBox(bx));
     Points wx = Points::uninitialized(T->size);
+    LOG << T->size << ENDL;
     FlattenRec<Leaf, Interior>(T, parlay::make_slice(wx));
     auto b = GetBox(parlay::make_slice(wx));
     // LOG << b.first << b.second << ENDL;
