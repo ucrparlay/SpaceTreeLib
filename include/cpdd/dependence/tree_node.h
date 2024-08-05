@@ -58,7 +58,6 @@ struct LeafNode : Node {
         Node{true, static_cast<size_t>(In.size())},
         is_dummy(true),
         pts(Points::uninitialized(1)) {
-        assert(In.size() == 1);
         parlay::assign_dispatch(pts[0], In[0], PointAssignTag());
     }
 

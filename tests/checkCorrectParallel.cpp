@@ -342,11 +342,11 @@ int main(int argc, char* argv[]) {
         LOG << "test kd tree" << ENDL;
         runKDParallel<cpdd::KdTree<point, cpdd::MaxStretchDim<point>>>(
             wp, wi, kdknn, kdOut, queryNum);
-    } else if (tree_type == 1) {
+    } else if (tree_type == 1 && Dim == 2) {
         LOG << "test quad tree" << ENDL;
         runKDParallel<cpdd::QuadTree<point, cpdd::RotateDim<point>, 2>>(
             wp, wi, kdknn, kdOut, queryNum);
-    } else if (tree_type == 2) {
+    } else if (tree_type == 1 && Dim == 3) {
         LOG << "test oct tree" << ENDL;
         runKDParallel<cpdd::QuadTree<point, cpdd::RotateDim<point>, 3>>(
             wp, wi, kdknn, kdOut, queryNum);

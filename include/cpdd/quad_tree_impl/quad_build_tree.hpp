@@ -117,7 +117,8 @@ Node* QuadTree<Point, SplitRule, kMD, kBDO>::SerialBuildRecursive(
             if (std::ranges::find_if_not(In, [&](const Point& p) {
                     return p.sameDimension(In[0]);
                 }) == In.end()) {
-                return AllocDummyLeafNode<Slice, Leaf>(In.cut(0, 1));
+                // WARN: Need to pass full range
+                return AllocDummyLeafNode<Slice, Leaf>(In);
             }
             checked_duplicate = true;
         }

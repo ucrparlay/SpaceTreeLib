@@ -108,7 +108,7 @@ Node* KdTree<Point, SplitRule, kBDO>::SerialBuildRecursive(Slice In, Slice Out,
                (diffEleIter = std::ranges::find_if_not(In, [&](const Point& p) {
                     return p.sameDimension(In[0]);
                 }))) {  // NOTE: check whether all elements are identical
-        return AllocDummyLeafNode<Slice, Leaf>(In.cut(0, 1));
+        return AllocDummyLeafNode<Slice, Leaf>(In);
     } else {  // NOTE: current dim d is same but other dims are not
         auto [new_box, new_dim] = split_rule_.SwitchDimension(In, d, DIM, bx);
         return SerialBuildRecursive(In, Out, new_dim, DIM, new_box);
