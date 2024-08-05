@@ -160,19 +160,20 @@ Node* KdTree<Point, SplitRule, kBDO>::BuildRecursive(Slice In, Slice Out,
     auto tree_nodes = parlay::sequence<Node*>::uninitialized(BT::kBucketNum);
     auto nodes_map =
         parlay::sequence<BucketType>::uninitialized(BT::kBucketNum);
-    BucketType zeros = 0, cnt = 0;
-    for (BucketType i = 0; i < BT::kBucketNum; ++i) {
-        if (!sums[i]) {
-            ++zeros;
-            tree_nodes[i] = AllocEmptyLeafNode<Slice, Leaf>();
-        } else {
-            nodes_map[cnt++] = i;
-        }
-    }
+    BucketType zeros = std::ranges::count(sums, 0), cnt = 0;
 
     if (zeros == BT::kBucketNum - 1) {  // NOTE: switch to seral
         // TODO: add parallelsim within this call
         return SerialBuildRecursive(In, Out, dim, DIM, bx);
+    }
+
+    // NOTE: alloc empty leaf beforehand to avoid spawn threads
+    for (BucketType i = 0; i < BT::kBucketNum; ++i) {
+        if (!sums[i]) {
+            tree_nodes[i] = AllocEmptyLeafNode<Slice, Leaf>();
+        } else {
+            nodes_map[cnt++] = i;
+        }
     }
 
     dim = (dim + BT::kBuildDepthOnce) % DIM;
