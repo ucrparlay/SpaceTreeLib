@@ -39,6 +39,7 @@ class KdTree : private BaseTree<Point, kBDO> {
     // NOTE: expose basetree interface
     using BT::GetAveTreeHeight;
     using BT::GetBox;
+    using BT::GetMaxTreeDepth;
     using BT::GetRoot;
     using BT::GetRootBox;
     using BT::Validate;

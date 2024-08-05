@@ -204,15 +204,15 @@ void buildTree(const int& Dim, const parlay::sequence<Point>& WP,
 
     if (kPrint == 1) {
         LOG << aveBuild << " " << std::flush;
-        // auto deep = pkd.template GetAveTreeHeight<Leaf, Interior>();
-        // LOG << deep << " " << std::flush;
+        auto deep = pkd.template GetAveTreeHeight<Leaf, Interior>();
+        LOG << deep << " " << std::flush;
     } else if (kPrint == 2) {
         size_t max_deep = 0;
         LOG << aveBuild << " ";
-        //     LOG << pkd.template GetMaxTreeDepth<Leaf,
-        //     Interior>(pkd.GetRoot(), max_deep)
-        //     << " " << pkd.template GetAveTreeHeight<Leaf, Interior>() << " "
-        //     << std::flush;
+        LOG << pkd.template GetMaxTreeDepth<Leaf, Interior>(pkd.GetRoot(),
+                                                            max_deep)
+            << " " << pkd.template GetAveTreeHeight<Leaf, Interior>() << " "
+            << std::flush;
     }
 
     return;

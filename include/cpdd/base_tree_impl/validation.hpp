@@ -127,7 +127,7 @@ size_t BaseTree<Point, kBDO>::GetMaxTreeDepth(Node* T, size_t deep) {
         int r = GetMaxTreeDepth<Leaf, Interior>(TI->right, deep + 1);
         return std::max(l, r);
     } else {
-        int max_depth = -1;
+        size_t max_depth = 0;
         for (int i = 0; i < TI->tree_nodes.size(); i++) {
             max_depth = std::max(max_depth, GetMaxTreeDepth<Leaf, Interior>(
                                                 TI->tree_nodes[i], deep + 1));
