@@ -201,11 +201,6 @@ Node* QuadTree<Point, SplitRule, kMD, kBDO>::BuildRecursive(Slice In, Slice Out,
         }
     }
 
-    if (zeros == BT::kBucketNum - 1) {  // NOTE: switch to seral
-        // TODO: add parallelsim within this call
-        return SerialBuildRecursive(In, Out, DIM, box, false);
-    }
-
     parlay::parallel_for(
         0, BT::kBucketNum - zeros,
         [&](BucketType i) {
