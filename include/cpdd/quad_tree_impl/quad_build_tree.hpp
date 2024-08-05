@@ -17,7 +17,7 @@ void QuadTree<Point, SplitRule, kMD, kBDO>::Build(Range&& In, uint8_t DIM) {
     static_assert(
         std::is_constructible_v<parlay::range_value_type_t<Range>,
                                 parlay::range_reference_type_t<Range>>);
-    static_assert(BT::kBucketNum % kMD == 0);
+    static_assert(BT::kBuildDepthOnce % kMD == 0);
     assert(kMD == DIM);
 
     Slice A = parlay::make_slice(In);

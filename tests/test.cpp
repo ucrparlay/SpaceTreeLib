@@ -17,7 +17,7 @@ void TestSpacialTree(const int& kDim, const parlay::sequence<Point>& wp,
 
     Tree tree;
 
-    buildTree<Point, Tree>(kDim, wp, kRounds, tree);
+    buildTree<Point, Tree, 2>(kDim, wp, kRounds, tree);
 
     Typename* kdknn = nullptr;
 
@@ -46,26 +46,27 @@ void TestSpacialTree(const int& kDim, const parlay::sequence<Point>& wp,
     //     }
     // }
     //
-    if (kQueryType & (1 << 0)) {  // NOTE: KNN
-        auto run_batch_knn = [&](const Points& pts, int kth, size_t batchSize) {
-            Points newPts(batchSize);
-            parlay::copy(pts.cut(0, batchSize), newPts.cut(0, batchSize));
-            kdknn = new Typename[batchSize];
-            queryKNN<Point>(kDim, newPts, kRounds, tree, kdknn, kth, true);
-            delete[] kdknn;
-        };
-
-        size_t batchSize = static_cast<size_t>(wp.size() * batchQueryRatio);
-
-        if (kSummary == 0) {
-            int k[3] = {1, 10, 100};
-            for (int i = 0; i < 3; i++) {
-                run_batch_knn(wp, k[i], batchSize);
-            }
-        } else {  // test summary
-            run_batch_knn(wp, K, batchSize);
-        }
-    }
+    // if (kQueryType & (1 << 0)) {  // NOTE: KNN
+    //     auto run_batch_knn = [&](const Points& pts, int kth, size_t
+    //     batchSize) {
+    //         Points newPts(batchSize);
+    //         parlay::copy(pts.cut(0, batchSize), newPts.cut(0, batchSize));
+    //         kdknn = new Typename[batchSize];
+    //         queryKNN<Point>(kDim, newPts, kRounds, tree, kdknn, kth, true);
+    //         delete[] kdknn;
+    //     };
+    //
+    //     size_t batchSize = static_cast<size_t>(wp.size() * batchQueryRatio);
+    //
+    //     if (kSummary == 0) {
+    //         int k[3] = {1, 10, 100};
+    //         for (int i = 0; i < 3; i++) {
+    //             run_batch_knn(wp, k[i], batchSize);
+    //         }
+    //     } else {  // test summary
+    //         run_batch_knn(wp, K, batchSize);
+    //     }
+    // }
     //
     // if (queryType & (1 << 1)) {  // NOTE: batch NN query
     //
@@ -407,7 +408,13 @@ struct wrapper {
     struct QadTree {
         template<class Point>
         struct Desc {
-            using TreeType = cpdd::QuadTree<Point, cpdd::RotateDim<Point>>;
+            using TreeType = cpdd::QuadTree<Point, cpdd::RotateDim<Point>, 2>;
+        };
+    };
+    struct OctTree {
+        template<class Point>
+        struct Desc {
+            using TreeType = cpdd::QuadTree<Point, cpdd::RotateDim<Point>, 3>;
         };
     };
     struct KDtree {
@@ -476,9 +483,9 @@ int main(int argc, char* argv[]) {
             ;
         } else if (Dim == 2) {
             run(std::integral_constant<int, 2>{});
+        } else if (Dim == 3) {
+            run(std::integral_constant<int, 3>{});
         }
-        // else if (Dim == 3) {
-        //     run(std::integral_constant<int, 3>{});
         // } else if (Dim == 5) {
         //     run(std::integral_constant<int, 5>{});
         // } else if (Dim == 7) {
@@ -492,9 +499,10 @@ int main(int argc, char* argv[]) {
 
     if (tree_type == 0) {
         run_test(wrapper::KDtree{});
-    } else if (tree_type == 1) {
+    } else if (tree_type == 1 && Dim == 2) {
         run_test(wrapper::QadTree{});
-    } else if (tree_type == 2) {
+    } else if (tree_type == 1 && Dim == 3) {
+        run_test(wrapper::OctTree{});
     }
 
     return 0;
