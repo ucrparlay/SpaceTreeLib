@@ -135,6 +135,9 @@ struct MultiNode : Node {
         split(_split),
         aug(_aug) {}
 
+    template<typename BoxSeq>
+    void compute_subregions(BoxSeq& box) {}
+
     Nodes tree_nodes;
     ST split;
     AT aug;

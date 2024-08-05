@@ -1,4 +1,5 @@
 #pragma once
+#include <algorithm>
 #include "../base_tree.h"
 #include "cpdd/dependence/tree_node.h"
 
@@ -16,6 +17,7 @@ inline typename BaseTree<Point, kBDO>::Coord BaseTree<Point, kBDO>::P2PDistance(
 }
 
 // NOTE: Distance between a Point and a Box
+// return 0 when p is inside the box a
 template<typename Point, uint8_t kBDO>
 inline typename BaseTree<Point, kBDO>::Coord
 BaseTree<Point, kBDO>::P2BMinDistance(
@@ -166,7 +168,10 @@ void BaseTree<Point, kBDO>::KNNMulti(Node* T, const Point& q,
         return;
     }
 
-    // Interior* TI = static_cast<Interior*>(T);
+    Interior* TI = static_cast<Interior*>(T);
+
+    std::array<std::pair<Coord, BucketType>, TI->tree_nodes.size()> dists;
+
     // bool go_left = Num::Gt(TI->split.first - q.pnt[TI->split.second], 0);
     //
     // Box first_box(node_box), second_box(node_box);

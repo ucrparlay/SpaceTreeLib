@@ -167,6 +167,7 @@ template<typename Point, typename SplitRule, uint8_t kMD, uint8_t kBDO>
 Node* QuadTree<Point, SplitRule, kMD, kBDO>::BuildRecursive(Slice In, Slice Out,
                                                             const DimsType DIM,
                                                             const Box& box) {
+    // TODO: may ensure the bucket is corresponding the the splitter
     assert(In.size() == 0 || BT::WithinBox(BT::GetBox(In), box));
 
     const DimsType dim = 0;
@@ -181,7 +182,6 @@ Node* QuadTree<Point, SplitRule, kMD, kBDO>::BuildRecursive(Slice In, Slice Out,
     auto box_seq = BoxSeq::uninitialized(BT::kBucketNum);
     parlay::sequence<BallsType> sums;
 
-    // PickPivots(In, In.size(), pivots, dim, DIM, box_seq, box);
     BucketType bucket = 0;
     DivideRotate(pivots, dim, 1, 1, bucket, DIM, box_seq, box);
     BT::Partition(In, Out, In.size(), pivots, sums);
