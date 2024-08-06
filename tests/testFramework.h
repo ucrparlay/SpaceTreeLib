@@ -7,7 +7,7 @@
 #include <iomanip>
 #include <ios>
 #include "cpdd/base_tree.h"
-#include "cpdd/quad_tree.h"
+#include "cpdd/orth_tree.h"
 #include "cpdd/dependence/splitter.h"
 
 #include "common/geometryIO.h"

@@ -7,7 +7,7 @@
 namespace cpdd {
 
 template<typename Point, typename SplitRule, uint8_t kMD = 2, uint8_t kBDO = 6>
-class QuadTree : private BaseTree<Point, kBDO> {
+class OrthTree : private BaseTree<Point, kBDO> {
  public:
     static constexpr size_t kSplitterNum = kMD;
     static constexpr size_t kNodeRegions = 1 << kMD;
@@ -103,6 +103,6 @@ class QuadTree : private BaseTree<Point, kBDO> {
 
 }  // namespace cpdd
 
-#include "quad_tree_impl/quad_build_tree.hpp"
-#include "quad_tree_impl/quad_inter_node.hpp"
-#include "quad_tree_impl/quad_override.hpp"
+#include "orth_tree_impl/orth_build_tree.hpp"
+#include "orth_tree_impl/orth_inter_node.hpp"
+#include "orth_tree_impl/orth_override.hpp"

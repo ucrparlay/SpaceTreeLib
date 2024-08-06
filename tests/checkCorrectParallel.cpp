@@ -1,8 +1,8 @@
 #include "cpdd/dependence/splitter.h"
 #include "cpdd/kd_tree.h"
-#include "cpdd/quad_tree.h"
+#include "cpdd/orth_tree.h"
 #include "testFramework.h"
-#include <CGAL/Quadtree.h>
+#include <CGAL/Orthtree.h>
 #include <CGAL/Cartesian_d.h>
 #include <CGAL/K_neighbor_search.h>
 #include <CGAL/Kernel_d/Point_d.h>
@@ -344,11 +344,11 @@ int main(int argc, char* argv[]) {
             wp, wi, kdknn, kdOut, queryNum);
     } else if (tree_type == 1 && Dim == 2) {
         LOG << "test quad tree" << ENDL;
-        runKDParallel<cpdd::QuadTree<point, cpdd::RotateDim<point>, 2>>(
+        runKDParallel<cpdd::OrthTree<point, cpdd::RotateDim<point>, 2>>(
             wp, wi, kdknn, kdOut, queryNum);
     } else if (tree_type == 1 && Dim == 3) {
         LOG << "test oct tree" << ENDL;
-        runKDParallel<cpdd::QuadTree<point, cpdd::RotateDim<point>, 3>>(
+        runKDParallel<cpdd::OrthTree<point, cpdd::RotateDim<point>, 3>>(
             wp, wi, kdknn, kdOut, queryNum);
     }
     runCGAL(wp, wi, cgknn, queryNum, cgOut);

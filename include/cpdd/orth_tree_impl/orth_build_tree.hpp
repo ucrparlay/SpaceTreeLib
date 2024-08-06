@@ -5,12 +5,12 @@
 #include <parlay/slice.h>
 #include <algorithm>
 #include "cpdd/dependence/tree_node.h"
-#include "cpdd/quad_tree.h"
+#include "cpdd/orth_tree.h"
 
 namespace cpdd {
 template<typename Point, typename SplitRule, uint8_t kMD, uint8_t kBDO>
 template<typename Range>
-void QuadTree<Point, SplitRule, kMD, kBDO>::Build(Range&& In, uint8_t DIM) {
+void OrthTree<Point, SplitRule, kMD, kBDO>::Build(Range&& In, uint8_t DIM) {
     static_assert(parlay::is_random_access_range_v<Range>);
     static_assert(parlay::is_less_than_comparable_v<
                   parlay::range_reference_type_t<Range>>);
@@ -25,7 +25,7 @@ void QuadTree<Point, SplitRule, kMD, kBDO>::Build(Range&& In, uint8_t DIM) {
 }
 
 template<typename Point, typename SplitRule, uint8_t kMD, uint8_t kBDO>
-void QuadTree<Point, SplitRule, kMD, kBDO>::DivideRotate(
+void OrthTree<Point, SplitRule, kMD, kBDO>::DivideRotate(
     HyperPlaneSeq& pivots, DimsType dim, BucketType idx, DimsType deep,
     BucketType& bucket, const DimsType DIM, BoxSeq& box_seq, const Box& box) {
     if (deep > BT::kBuildDepthOnce) {  // TODO: remove deep and use idx
@@ -55,7 +55,7 @@ void QuadTree<Point, SplitRule, kMD, kBDO>::DivideRotate(
 }
 
 template<typename Point, typename SplitRule, uint8_t kMD, uint8_t kBDO>
-void QuadTree<Point, SplitRule, kMD, kBDO>::SerialSplit(
+void OrthTree<Point, SplitRule, kMD, kBDO>::SerialSplit(
     Slice In, DimsType dim, DimsType DIM, DimsType idx, const Box& box,
     const Splitter& split, parlay::sequence<BallsType>& sums, BoxSeq& box_seq) {
     assert(dim <= DIM);
@@ -83,7 +83,7 @@ void QuadTree<Point, SplitRule, kMD, kBDO>::SerialSplit(
 }
 
 template<typename Point, typename SplitRule, uint8_t kMD, uint8_t kBDO>
-Node* QuadTree<Point, SplitRule, kMD, kBDO>::SerialBuildRecursive(
+Node* OrthTree<Point, SplitRule, kMD, kBDO>::SerialBuildRecursive(
     Slice In, Slice Out, const DimsType DIM, const Box& box,
     bool checked_duplicate) {
     assert(In.size() == 0 || BT::WithinBox(BT::GetBox(In), box));
@@ -141,7 +141,7 @@ Node* QuadTree<Point, SplitRule, kMD, kBDO>::SerialBuildRecursive(
 }
 
 template<typename Point, typename SplitRule, uint8_t kMD, uint8_t kBDO>
-Node* QuadTree<Point, SplitRule, kMD, kBDO>::QuadBuildInnerTree(
+Node* OrthTree<Point, SplitRule, kMD, kBDO>::QuadBuildInnerTree(
     BucketType idx, const HyperPlaneSeq& pivots,
     const parlay::sequence<Node*>& tree_nodes) {
     assert(idx < BT::kPivotNum + BT::kBucketNum + 1);
@@ -165,7 +165,7 @@ Node* QuadTree<Point, SplitRule, kMD, kBDO>::QuadBuildInnerTree(
 }
 
 template<typename Point, typename SplitRule, uint8_t kMD, uint8_t kBDO>
-Node* QuadTree<Point, SplitRule, kMD, kBDO>::BuildRecursive(Slice In, Slice Out,
+Node* OrthTree<Point, SplitRule, kMD, kBDO>::BuildRecursive(Slice In, Slice Out,
                                                             const DimsType DIM,
                                                             const Box& box) {
     // TODO: may ensure the bucket is corresponding the the splitter
@@ -221,7 +221,7 @@ Node* QuadTree<Point, SplitRule, kMD, kBDO>::BuildRecursive(Slice In, Slice Out,
 }
 
 template<typename Point, typename SplitRule, uint8_t kMD, uint8_t kBDO>
-void QuadTree<Point, SplitRule, kMD, kBDO>::Build_(Slice A,
+void OrthTree<Point, SplitRule, kMD, kBDO>::Build_(Slice A,
                                                    const DimsType DIM) {
     Points B = Points::uninitialized(A.size());
     this->tree_box_ = BT::GetBox(A);

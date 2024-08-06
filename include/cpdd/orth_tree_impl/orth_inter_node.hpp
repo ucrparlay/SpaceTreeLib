@@ -1,12 +1,12 @@
 #pragma once
 
 #include <array>
-#include "../quad_tree.h"
+#include "../orth_tree.h"
 #include "cpdd/dependence/tree_node.h"
 
 namespace cpdd {
 template<typename Point, typename SplitRule, uint8_t kMD, uint8_t kBDO>
-struct QuadTree<Point, SplitRule, kMD, kBDO>::QuadInteriorNode :
+struct OrthTree<Point, SplitRule, kMD, kBDO>::QuadInteriorNode :
     MultiNode<Point, kMD, Splitter, AugType> {
     using Nodes = std::array<Node*, 1 << kMD>;
     using PT = Point;

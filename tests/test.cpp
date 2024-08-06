@@ -407,13 +407,13 @@ struct wrapper {
     struct QadTree {
         template<class Point>
         struct Desc {
-            using TreeType = cpdd::QuadTree<Point, cpdd::RotateDim<Point>, 2>;
+            using TreeType = cpdd::OrthTree<Point, cpdd::RotateDim<Point>, 2>;
         };
     };
     struct OctTree {
         template<class Point>
         struct Desc {
-            using TreeType = cpdd::QuadTree<Point, cpdd::RotateDim<Point>, 3>;
+            using TreeType = cpdd::OrthTree<Point, cpdd::RotateDim<Point>, 3>;
         };
     };
     struct KDtree {
