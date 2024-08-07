@@ -162,6 +162,7 @@ void BaseTree<Point, kBDO>::KNNMulti(Node* T, const Point& q,
                                      kBoundedQueue<Point, Range>& bq,
                                      const Box& node_box,
                                      size_t& vis_node_num) {
+    // TODO: using MN::kNodeRegions
     constexpr size_t const kNodeRegions =
         std::tuple_size_v<typename Interior::Nodes>;
 
@@ -180,7 +181,7 @@ void BaseTree<Point, kBDO>::KNNMulti(Node* T, const Point& q,
 
     BoxSeq regions(kNodeRegions);
     std::array<std::pair<Coord, BucketType>, kNodeRegions> dists;
-    TI->compute_subregions(regions, node_box, 1, 0);
+    TI->ComputeSubregions(regions, node_box, 1, 0);
 
     std::ranges::generate(dists, [i = 0, &q, &regions, &DIM]() mutable {
         auto r = std::make_pair(P2BMinDistance(q, regions[i], DIM), i);

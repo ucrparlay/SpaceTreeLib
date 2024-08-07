@@ -12,8 +12,6 @@ namespace cpdd {
 struct AllocNormalLeafTag {};
 struct AllocDummyLeafTag {};
 struct AllocEmptyLeafTag {};
-struct BinaryInteriorTag {};
-struct MultiWayInteriorTag {};
 
 struct Node {
     Node() : is_leaf{false}, size{0} {};

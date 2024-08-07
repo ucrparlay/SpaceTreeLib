@@ -167,14 +167,13 @@ class BaseTree {
              bool granularity = true>
     static void FlattenRec(Node* T, Range Out);
 
-    template<IsBinaryNode BinaryInterior, IsMultiNode MultiInterior>
-    static Node* ExpandMultiNode(const typename MultiInterior::ST& split,
-                                 BucketType idx, BucketType deep,
+    template<IsBinaryNode BN, IsMultiNode MN>
+    static Node* ExpandMultiNode(const typename MN::ST& split, BucketType idx,
+                                 BucketType deep,
                                  const parlay::sequence<Node*>& tree_nodes);
 
-    template<IsBinaryNode BinaryInterior, IsMultiNode MultiInterior>
-        requires std::same_as<typename BinaryInterior::ST,
-                              typename MultiInterior::ST::value_type>
+    template<IsBinaryNode BN, IsMultiNode MN>
+        requires std::same_as<typename BN::ST, typename MN::ST::value_type>
     static Node* Expand2Binary(Node* T);
 
     // NOTE: validations
