@@ -7,6 +7,13 @@
 
 namespace cpdd {
 template<typename Point, uint8_t kBDO>
+template<SupportsForceParallel Interior, bool granularity>
+inline bool BaseTree<Point, kBDO>::ForceParallelRecursion(Interior* TI) {
+    return (granularity && TI->size > kSerialBuildCutoff) ||
+           (!granularity && TI->ForceParallel());
+}
+
+template<typename Point, uint8_t kBDO>
 template<IsBinaryNode Interior>
 Node* BaseTree<Point, kBDO>::BuildInnerTree(
     BucketType idx, HyperPlaneSeq& pivots,
@@ -41,8 +48,7 @@ void BaseTree<Point, kBDO>::FlattenRec(Node* T, Range Out) {
     assert(TI->size == TI->left->size + TI->right->size);
     parlay::par_do_if(
         // WARN: check parallelisim using node size can be biased
-        (granularity && TI->size > kSerialBuildCutoff) ||
-            (!granularity && TI->ForceParallel()),
+        ForceParallelRecursion<Interior, granularity>(TI),
         [&]() {
             FlattenRec<Leaf, Interior>(TI->left, Out.cut(0, TI->left->size));
         },
@@ -81,8 +87,7 @@ void BaseTree<Point, kBDO>::FlattenRec(Node* T, Range Out) {
                static_cast<size_t>(0),
                [](size_t acc, Node* n) -> size_t { return acc + n->size; }));
 
-    if ((granularity && TI->size > kSerialBuildCutoff) ||
-        (!granularity && TI->ForceParallel())) {
+    if (ForceParallelRecursion<Interior, granularity>(TI)) {
         parlay::parallel_for(0, TI->tree_nodes.size(), [&](BucketType i) {
             size_t start = 0;
             for (BucketType j = 0; j < i; ++j) {

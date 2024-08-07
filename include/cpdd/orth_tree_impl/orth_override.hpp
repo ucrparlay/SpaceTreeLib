@@ -50,7 +50,7 @@ size_t OrthTree<Point, SplitRule, kMD, kBDO>::RangeQuery(const Box& query_box,
 
 template<typename Point, typename SplitRule, uint8_t kMD, uint8_t kBDO>
 void OrthTree<Point, SplitRule, kMD, kBDO>::DeleteTree() {
-    this->template DeleteTreeWrapper<Leaf, Interior, MultiWayInteriorTag>();
+    BT::template DeleteTreeWrapper<Leaf, Interior>();
 }
 
 }  // namespace cpdd

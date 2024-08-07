@@ -96,21 +96,22 @@ class BaseTree {
     static Node* BuildInnerTree(BucketType idx, HyperPlaneSeq& pivots,
                                 parlay::sequence<Node*>& tree_nodes);
 
-    PointsIter SerialPartition(Slice In, DimsType d);
+    static PointsIter SerialPartition(Slice In, DimsType d);
 
     // NOTE: delete tree
+    template<SupportsForceParallel Interior, bool granularity>
+    inline static bool ForceParallelRecursion(Interior* T);
+
     virtual void DeleteTree() = 0;
 
-    template<typename Leaf, typename Interior, typename MultiWayInteriorTag>
+    template<typename Leaf, typename Interior>
     void DeleteTreeWrapper();
 
-    template<typename Leaf, typename Interior>
-    static void DeleteTreeRecursive(BinaryInteriorTag, Node* T,
-                                    bool granularity = true);
+    template<typename Leaf, IsBinaryNode Interior, bool granularity = true>
+    static void DeleteTreeRecursive(Node* T);
 
-    template<typename Leaf, typename Interior>
-    void DeleteTreeRecursive(MultiWayInteriorTag, Node* T,
-                             bool granularity = true);
+    template<typename Leaf, IsMultiNode Interior, bool granularity = true>
+    static void DeleteTreeRecursive(Node* T);
 
     // NOTE: KNN query stuffs
     static inline Coord P2PDistance(const Point& p, const Point& q,

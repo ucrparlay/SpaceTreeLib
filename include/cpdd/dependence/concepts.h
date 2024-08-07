@@ -25,6 +25,11 @@ concept IsMultiNode =
         MultiNode<typename T::PT, 6, typename T::ST, typename T::AT>, T>;
 
 template<typename T>
+concept SupportsForceParallel = requires(T t) {
+    { t.ForceParallel() } -> std::same_as<bool>;
+};
+
+template<typename T>
 concept IsMaxStretchSplit = requires(T t) {
     { t.MaxStretchTag() } -> std::same_as<void>;
 };
