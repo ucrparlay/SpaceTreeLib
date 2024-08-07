@@ -13,6 +13,7 @@ void OrthTree<Point, SplitRule, kMD, kBDO>::KNN(Node* T, const Point& q,
                                                 size_t& vis_node_num) {
     using BN = BinaryNode<Point, HyperPlane, bool>;
     Node* expanded_root = BT::template Expand2Binary<BN, Interior>(this->root_);
+    BT::template Validate<Leaf, BN, SplitRule>(DIM);
     BT::template KNNBinary<Leaf, BN>(expanded_root, q, DIM, bq, bx,
                                      vis_node_num);
     // BT::template KNNMulti<Leaf, Interior>(T, q, DIM, bq, bx, vis_node_num);

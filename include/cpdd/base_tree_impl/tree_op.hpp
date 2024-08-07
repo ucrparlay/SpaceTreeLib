@@ -116,7 +116,7 @@ Node* BaseTree<Point, kBDO>::ExpandMultiNode(
     const typename MN::ST& split, BucketType idx, BucketType deep,
     const parlay::sequence<Node*>& tree_nodes) {
     if (idx >= MN::kRegions) {
-        return tree_nodes[idx - MN::kRegions - 1];
+        return tree_nodes[idx - MN::kRegions];
     }
     Node *L, *R;
     L = ExpandMultiNode<BN, MN>(split, idx * 2, deep + 1, tree_nodes);
