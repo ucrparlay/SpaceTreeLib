@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Nodes=(1000000 5000000 8000000 10000000 50000000)
-Nodes=(10000000 50000000)
+Nodes=(1000000 5000000 8000000 10000000 50000000)
+# Nodes=(10000000 50000000)
 
 K=100
 tester="checkCorrectParallel"
@@ -11,14 +11,14 @@ out="log.in"
 : >${dest}
 tag=0
 count=1 # count the number of ok in the output
-dims=(3)
+dims=(2)
 queryTypes=(0)
 trees=(0 1)
 # queryTypes=(0 1 2)
 
 # Paths=("/ssd0/zmen002/kdtree/uniform_bigint/" "/ssd0/zmen002/kdtree/ss_varden/")
-# Paths=("/localdata/zmen002/kdtree/ss_varden/" "/localdata/zmen002/kdtree/uniform_bigint/")
-Paths=("/localdata/0/zmen002/kdtree/ss_varden/" "/localdata/0/zmen002/kdtree/uniform_bigint/")
+Paths=("/localdata/zmen002/kdtree/ss_varden/" "/localdata/zmen002/kdtree/uniform_bigint/")
+# Paths=("/localdata/0/zmen002/kdtree/ss_varden/" "/localdata/0/zmen002/kdtree/uniform_bigint/")
 
 #* check node
 for queryType in "${queryTypes[@]}"; do
