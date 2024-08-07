@@ -121,7 +121,9 @@ struct BinaryNode : Node {
 
 template<typename Point, uint8_t kMD, typename SplitType, typename AugType>
 struct MultiNode : Node {
-    using Nodes = std::array<Node*, 1 << kMD>;
+    static const constexpr uint8_t kRegions = 1 << kMD;
+
+    using Nodes = std::array<Node*, kRegions>;
     using ST = SplitType;
     using AT = AugType;
 
@@ -134,13 +136,24 @@ struct MultiNode : Node {
         split(_split),
         aug(_aug) {}
 
+    template<typename HyperPlaneSeq>
+    inline void GenerateHyperPlaneSeq(HyperPlaneSeq& hyper_seq, auto idx,
+                                      auto deep) {
+        if (idx >= kRegions) {
+            return;
+        }
+        hyper_seq[idx] = split[deep];
+        GenerateHyperPlaneSeq(hyper_seq, idx * 2, deep + 1);
+        GenerateHyperPlaneSeq(hyper_seq, idx * 2 + 1, deep + 1);
+        return;
+    }
+
     template<typename Box, typename BoxSeq>
-    void compute_subregions(BoxSeq& box_seq, const Box& box, auto idx,
-                            auto deep) {
+    void ComputeSubregions(BoxSeq& box_seq, const Box& box, auto idx,
+                           auto deep) {
         if (idx >= tree_nodes.size()) {
             assert(deep == kMD);
             assert(1 << kMD == tree_nodes.size());
-
             box_seq[idx - (1 << kMD)] = box;
             return;
         }
@@ -148,8 +161,8 @@ struct MultiNode : Node {
         Box lbox(box), rbox(box);
         lbox.second.pnt[split[deep].second] = split[deep].first;  // PERF: loose
         rbox.first.pnt[split[deep].second] = split[deep].first;
-        compute_subregions(box_seq, lbox, 2 * idx, deep + 1);
-        compute_subregions(box_seq, rbox, 2 * idx + 1, deep + 1);
+        ComputeSubregions(box_seq, lbox, 2 * idx, deep + 1);
+        ComputeSubregions(box_seq, rbox, 2 * idx + 1, deep + 1);
         return;
     }
 

@@ -7,7 +7,7 @@
 
 namespace cpdd {
 template<typename Point, uint8_t kBDO>
-template<typename Interior>
+template<IsBinaryNode Interior>
 Node* BaseTree<Point, kBDO>::BuildInnerTree(
     BucketType idx, HyperPlaneSeq& pivots,
     parlay::sequence<Node*>& tree_nodes) {
@@ -103,5 +103,39 @@ void BaseTree<Point, kBDO>::FlattenRec(Node* T, Range Out) {
     }
 
     return;
+}
+
+template<typename Point, uint8_t kBDO>
+template<IsBinaryNode BinaryInterior, IsMultiNode MultiInterior>
+Node* BaseTree<Point, kBDO>::ExpandMultiNode(
+    const typename MultiInterior::ST& split, BucketType idx, BucketType deep,
+    const parlay::sequence<Node*>& tree_nodes) {
+    if (idx >= MultiInterior::kRegions) {
+        return tree_nodes[idx - MultiInterior::kRegions - 1];
+    }
+    Node *L, *R;
+    L = ExpandMultiNode<BinaryInterior, MultiInterior>(split, idx * 2, deep + 1,
+                                                       tree_nodes);
+    R = ExpandMultiNode<BinaryInterior, MultiInterior>(split, idx * 2 + 1,
+                                                       deep + 1, tree_nodes);
+    return AllocInteriorNode<BinaryInterior>(L, R, split[deep],
+                                             typename BinaryInterior::AT());
+}
+
+template<typename Point, uint8_t kBDO>
+template<IsBinaryNode BinaryInterior, IsMultiNode MultiInterior>
+    requires std::same_as<typename BinaryInterior::ST,
+                          typename MultiInterior::ST::value_type>
+Node* BaseTree<Point, kBDO>::Expand2Binary(Node* T) {
+    if (T->is_leaf) {
+        return T;
+    }
+    MultiInterior* MI = static_cast<MultiInterior*>(T);
+    parlay::sequence<Node*> tree_nodes(MultiInterior::kRegions);
+    for (BucketType i = 0; i < MultiInterior::kRegions; ++i) {
+        tree_nodes[i] = Expand2Binary<BinaryInterior, MultiInterior>(T);
+    }
+    return ExpandMultiNode<BinaryInterior, MultiInterior>(MI->split, 1, 0,
+                                                          tree_nodes);
 }
 }  // namespace cpdd

@@ -198,9 +198,9 @@ if len(sys.argv) > 1 and int(sys.argv[1]) == 1:
     for file in files:
         csvWriter = csvSetup(file)
 
-        for node in Nodes:
-            for dim in Dims:
-                for bench in benchmarks:
+        for dim in Dims:
+            for bench in benchmarks:
+                for node in Nodes:
                     for solver in solverName:
                         P = (
                             path

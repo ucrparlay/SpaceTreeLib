@@ -33,12 +33,12 @@ class OrthTree : private BaseTree<Point, kBDO> {
     using SplitterSeq = parlay::sequence<Splitter>;
     using AugType = bool;
 
-    struct QuadInteriorNode;
+    struct OrthInteriorNode;
 
     using SplitRuleType = SplitRule;
     using Leaf =
         LeafNode<Point, Slice, BT::kLeaveWrap, parlay::move_assign_tag>;
-    using Interior = QuadInteriorNode;
+    using Interior = OrthInteriorNode;
     using Nodes = Interior::Nodes;
 
     // NOTE: expose basetree interface
@@ -52,8 +52,6 @@ class OrthTree : private BaseTree<Point, kBDO> {
     // NOTE: functions
     template<typename Range>
     void Build(Range&& In, uint8_t DIM);
-
-    void Build_(Slice In, const DimsType DIM);
 
     void DeleteTree() override;
 
@@ -73,6 +71,8 @@ class OrthTree : private BaseTree<Point, kBDO> {
     size_t RangeQuery(const Box& query_box, Range&& Out);
 
  private:
+    void Build_(Slice In, const DimsType DIM);
+
     void SerialSplit(Slice In, DimsType dim, DimsType DIM, DimsType idx,
                      const Box& box, const Splitter& split,
                      parlay::sequence<BallsType>& sums, BoxSeq& box_seq);
