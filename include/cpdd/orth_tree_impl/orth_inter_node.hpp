@@ -25,4 +25,17 @@ struct OrthTree<Point, SplitRule, kMD, kBDO>::OrthInteriorNode :
     inline bool ForceParallel() const { return this->aug; }
 };
 
+template<typename Point, typename SplitRule, uint8_t kMD, uint8_t kBDO>
+struct OrthTree<Point, SplitRule, kMD, kBDO>::KdInteriorNode :
+    BinaryNode<Point, HyperPlane, AugType> {
+    using PT = Point;
+    using ST = HyperPlane;
+    using AT = AugType;
+
+    KdInteriorNode(Node* _left, Node* _right, const ST& _split,
+                   const AT& _aug) :
+        BinaryNode<Point, HyperPlane, AugType>(_left, _right, _split, _aug) {}
+
+    inline bool ForceParallel() const { return this->aug; }
+};
 }  // namespace cpdd

@@ -205,8 +205,8 @@ class BaseTree {
     void CountTreeHeights(Node* T, size_t deep, size_t& idx,
                           parlay::sequence<size_t>& heights);
 
-    //@ kdtree interfaces
-    inline void SetRoot(Node* _root) { this->root_ = _root; }
+    // NOTE: interfaces
+    inline void SetRoot(Node* root) { this->root_ = root; }
 
     inline Node* GetRoot() { return this->root_; }
 

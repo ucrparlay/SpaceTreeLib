@@ -116,12 +116,14 @@ Node* BaseTree<Point, kBDO>::ExpandMultiNode(
     const typename MN::ST& split, BucketType idx, BucketType deep,
     const parlay::sequence<Node*>& tree_nodes) {
     if (idx >= MN::kRegions) {
-        return tree_nodes[idx - MN::kRegions - 1];
+        return tree_nodes[idx - MN::kRegions];
     }
     Node *L, *R;
     L = ExpandMultiNode<BN, MN>(split, idx * 2, deep + 1, tree_nodes);
     R = ExpandMultiNode<BN, MN>(split, idx * 2 + 1, deep + 1, tree_nodes);
-    return AllocInteriorNode<BN>(L, R, split[deep], typename BN::AT());
+    auto o = AllocInteriorNode<BN>(L, R, split[deep], typename BN::AT());
+    assert(o->size == L->size + R->size);
+    return o;
 }
 
 template<typename Point, uint8_t kBDO>
@@ -133,9 +135,16 @@ Node* BaseTree<Point, kBDO>::Expand2Binary(Node* T) {
     }
     MN* MI = static_cast<MN*>(T);
     parlay::sequence<Node*> tree_nodes(MN::kRegions);
+    assert(MI->tree_nodes.size() == MN::kRegions);
     for (BucketType i = 0; i < MN::kRegions; ++i) {
-        tree_nodes[i] = Expand2Binary<BN, MN>(T);
+        tree_nodes[i] = Expand2Binary<BN, MN>(MI->tree_nodes[i]);
     }
-    return ExpandMultiNode<BN, MN>(MI->split, 1, 0, tree_nodes);
+    assert(std::accumulate(tree_nodes.begin(), tree_nodes.end(), 0,
+                           [](size_t acc, Node* n) -> size_t {
+                               return acc + n->size;
+                           }) == MI->size);
+    auto split = MI->split;
+    // FreeNode<MN>(T);
+    return ExpandMultiNode<BN, MN>(split, 1, 0, tree_nodes);
 }
 }  // namespace cpdd

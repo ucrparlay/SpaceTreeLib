@@ -140,6 +140,7 @@ size_t BaseTree<Point, kBDO>::GetMaxTreeDepth(Node* T, size_t deep) {
 template<typename Point, uint8_t kBDO>
 template<typename Leaf, typename Interior>
 double BaseTree<Point, kBDO>::GetAveTreeHeight() {
+    LOG << IsBinaryNode<Interior> << ENDL;
     parlay::sequence<size_t> heights(this->root_->size);
     size_t idx = 0;
     CountTreeHeights<Leaf, Interior>(this->root_, 0, idx, heights);

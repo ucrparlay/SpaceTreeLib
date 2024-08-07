@@ -33,6 +33,7 @@ class OrthTree : private BaseTree<Point, kBDO> {
     using SplitterSeq = parlay::sequence<Splitter>;
     using AugType = bool;
 
+    struct KdInteriorNode;
     struct OrthInteriorNode;
 
     using SplitRuleType = SplitRule;
@@ -42,11 +43,13 @@ class OrthTree : private BaseTree<Point, kBDO> {
     using Nodes = Interior::Nodes;
 
     // NOTE: expose basetree interface
+    using BT::Expand2Binary;
     using BT::GetAveTreeHeight;
     using BT::GetBox;
     using BT::GetMaxTreeDepth;
     using BT::GetRoot;
     using BT::GetRootBox;
+    using BT::SetRoot;
     using BT::Validate;
 
     // NOTE: functions

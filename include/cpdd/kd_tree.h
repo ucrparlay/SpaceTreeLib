@@ -43,6 +43,7 @@ class KdTree : private BaseTree<Point, kBDO> {
     using BT::GetMaxTreeDepth;
     using BT::GetRoot;
     using BT::GetRootBox;
+    using BT::SetRoot;
     using BT::Validate;
 
     // NOTE: functions

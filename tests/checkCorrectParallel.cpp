@@ -17,7 +17,7 @@
 #include <tbb/parallel_for.h>
 #include <CGAL/Fuzzy_sphere.h>
 // using point = PointID<coord, 5>;
-using point = PointType<Coord, 3>;
+using point = PointType<Coord, 2>;
 using points = parlay::sequence<point>;
 
 typedef CGAL::Cartesian_d<Typename> Kernel;
