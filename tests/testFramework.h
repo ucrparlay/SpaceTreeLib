@@ -509,14 +509,14 @@ void queryKNN(const uint_fast8_t& Dim, const parlay::sequence<Point>& WP,
     auto* KDParallelRoot = pkd.GetRoot();
     auto* old = pkd.GetRoot();
     if constexpr (cpdd::IsMultiNode<Interior>) {
-        LOG << "start expanding the tree" << ENDL;
+        // LOG << "start expanding the tree" << ENDL;
         KDParallelRoot =
             pkd.template Expand2Binary<typename Tree::KdInteriorNode, Interior>(
                 KDParallelRoot);
-        pkd.SetRoot(KDParallelRoot);
-        LOG << "finish expanding the tree" << ENDL;
-        pkd.template Validate<Leaf, typename Tree::KdInteriorNode,
-                              typename Tree::SplitRuleType>(Dim);
+        // pkd.SetRoot(KDParallelRoot);
+        // LOG << "finish expanding the tree" << ENDL;
+        // pkd.template Validate<Leaf, typename Tree::KdInteriorNode,
+        //                       typename Tree::SplitRuleType>(Dim);
     }
 
     points wp = points::uninitialized(n);
@@ -562,7 +562,7 @@ void queryKNN(const uint_fast8_t& Dim, const parlay::sequence<Point>& WP,
         LOG << parlay::reduce(gen_box.cut(0, n)) / n << " " << std::flush;
         LOG << parlay::reduce(check_box.cut(0, n)) / n << " " << std::flush;
     }
-    pkd.SetRoot(old);
+    // pkd.SetRoot(old);
 
     return;
 }
