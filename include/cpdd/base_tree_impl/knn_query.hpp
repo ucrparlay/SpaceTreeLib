@@ -180,12 +180,12 @@ void BaseTree<Point, kBDO>::KNNMulti(Node* T, const Point& q,
 
     Interior* TI = static_cast<Interior*>(T);
 
-    BoxSeq regions(Interior::kNodeRegions);
-    std::array<std::pair<Coord, BucketType>, Interior::kNodeRegions> dists;
+    BoxSeq regions(Interior::kRegions);
+    std::array<std::pair<Coord, BucketType>, Interior::kRegions> dists;
     TI->ComputeSubregions(
         regions, node_box, 1,
         0);  // PERF: find better way to compute the bounding boxes
-    generate_box_num += Interior::kNodeRegions * 2 - 1;
+    generate_box_num += Interior::kRegions * 2 - 1;
 
     std::ranges::generate(dists, [i = 0, &q, &regions, &DIM]() mutable {
         auto r = std::make_pair(P2BMinDistance(q, regions[i], DIM), i);
@@ -198,7 +198,7 @@ void BaseTree<Point, kBDO>::KNNMulti(Node* T, const Point& q,
     KNNMulti<Leaf, Interior>(TI->tree_nodes[dists[0].second], q, DIM, bq,
                              regions[dists[0].second], vis_node_num,
                              generate_box_num, check_box_num);
-    for (BucketType i = 1; i < Interior::kNodeRegions; ++i) {
+    for (BucketType i = 1; i < Interior::kRegions; ++i) {
         check_box_num++;
         if (Num::Gt(dists[i].first, bq.top_value()) && bq.full()) {
             continue;
