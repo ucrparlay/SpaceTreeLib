@@ -528,7 +528,7 @@ void queryKNN(const uint_fast8_t& Dim, const parlay::sequence<Point>& WP,
         parlay::sequence<kBoundedQueue<Point, nn_pair>>::uninitialized(n);
     parlay::parallel_for(
         0, n, [&](size_t i) { bq[i].resize(Out.cut(i * K, i * K + K)); });
-    parlay::sequence<size_t> visNum(n);
+    parlay::sequence<size_t> vis_nodes(n), gen_box(n), check_box(n);
 
     double aveQuery = time_loop(
         rounds, loopLate,
@@ -537,13 +537,13 @@ void queryKNN(const uint_fast8_t& Dim, const parlay::sequence<Point>& WP,
             if (!flattenTreeTag) {  // WARN: Need ensure pkd.size() == wp.size()
                 pkd.Flatten(parlay::make_slice(wp));
             }
-            auto bx = pkd.GetRootBox();
-            double aveVisNum = 0.0;
             parlay::parallel_for(0, n, [&](size_t i) {
-                size_t visNodeNum = 0;
-                pkd.KNN(KDParallelRoot, wp[i], Dim, bq[i], bx, visNodeNum);
+                auto [vis_node_num, gen_box_num, check_box_num] =
+                    pkd.KNN(KDParallelRoot, wp[i], Dim, bq[i]);
                 kdknn[i] = bq[i].top().second;
-                visNum[i] = visNodeNum;
+                vis_nodes[i] = vis_node_num;
+                gen_box[i] = gen_box_num;
+                check_box[i] = check_box_num;
             });
         },
         [&]() {});
@@ -558,7 +558,9 @@ void queryKNN(const uint_fast8_t& Dim, const parlay::sequence<Point>& WP,
         LOG << deep << " " << std::flush;
     }
     if (printVisNode) {
-        LOG << parlay::reduce(visNum.cut(0, n)) / n << " " << std::flush;
+        LOG << parlay::reduce(vis_nodes.cut(0, n)) / n << " " << std::flush;
+        LOG << parlay::reduce(gen_box.cut(0, n)) / n << " " << std::flush;
+        LOG << parlay::reduce(check_box.cut(0, n)) / n << " " << std::flush;
     }
     pkd.SetRoot(old);
 

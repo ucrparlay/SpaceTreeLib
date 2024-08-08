@@ -62,9 +62,8 @@ class OrthTree : private BaseTree<Point, kBDO> {
     void Flatten(Range&& Out);
 
     template<typename Range>
-    void KNN(Node* T, const Point& q, const DimsType DIM,
-             kBoundedQueue<Point, Range>& bq, const Box& bx,
-             size_t& vis_node_num);
+    auto KNN(Node* T, const Point& q, const DimsType DIM,
+             kBoundedQueue<Point, Range>& bq);
 
     size_t RangeCount(const Box& query_box);
 

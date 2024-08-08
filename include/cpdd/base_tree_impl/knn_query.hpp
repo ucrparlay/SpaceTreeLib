@@ -91,9 +91,8 @@ template<typename Point, uint8_t kBDO>
 template<typename Leaf, typename Range>
 void BaseTree<Point, kBDO>::KNNLeaf(Node* T, const Point& q, const DimsType DIM,
                                     kBoundedQueue<Point, Range>& bq,
-                                    const Box& node_box, size_t& vis_node_num) {
+                                    const Box& node_box) {
     assert(T->is_leaf);
-    vis_node_num++;
 
     Leaf* TL = static_cast<Leaf*>(T);
     int i = 0;
@@ -122,12 +121,13 @@ template<typename Leaf, IsBinaryNode Interior, typename Range>
 void BaseTree<Point, kBDO>::KNNBinary(Node* T, const Point& q,
                                       const DimsType DIM,
                                       kBoundedQueue<Point, Range>& bq,
-                                      const Box& node_box,
-                                      size_t& vis_node_num) {
+                                      const Box& node_box, size_t& vis_node_num,
+                                      size_t& generate_box_num,
+                                      size_t& check_box_num) {
     vis_node_num++;
 
     if (T->is_leaf) {
-        KNNLeaf<Leaf>(T, q, DIM, bq, node_box, vis_node_num);
+        KNNLeaf<Leaf>(T, q, DIM, bq, node_box);
         return;
     }
 
@@ -135,6 +135,7 @@ void BaseTree<Point, kBDO>::KNNBinary(Node* T, const Point& q,
     bool go_left = Num::Gt(TI->split.first - q.pnt[TI->split.second], 0);
 
     Box first_box(node_box), second_box(node_box);
+    generate_box_num += 2;
 
     if (go_left) {  // NOTE: go left child
         first_box.second.pnt[TI->split.second] = TI->split.first;
@@ -145,13 +146,16 @@ void BaseTree<Point, kBDO>::KNNBinary(Node* T, const Point& q,
     }
 
     KNNBinary<Leaf, Interior>(go_left ? TI->left : TI->right, q, DIM, bq,
-                              first_box, vis_node_num);
+                              first_box, vis_node_num, generate_box_num,
+                              check_box_num);
+    check_box_num++;
     if (Num::Gt(P2BMinDistance(q, second_box, DIM), bq.top_value()) &&
         bq.full()) {
         return;
     }
     KNNBinary<Leaf, Interior>(go_left ? TI->right : TI->left, q, DIM, bq,
-                              second_box, vis_node_num);
+                              second_box, vis_node_num, generate_box_num,
+                              check_box_num);
     return;
 }
 
@@ -160,12 +164,9 @@ template<typename Leaf, IsMultiNode Interior, typename Range>
 void BaseTree<Point, kBDO>::KNNMulti(Node* T, const Point& q,
                                      const DimsType DIM,
                                      kBoundedQueue<Point, Range>& bq,
-                                     const Box& node_box,
-                                     size_t& vis_node_num) {
-    // TODO: using MN::kNodeRegions
-    constexpr size_t const kNodeRegions =
-        std::tuple_size_v<typename Interior::Nodes>;
-
+                                     const Box& node_box, size_t& vis_node_num,
+                                     size_t& generate_box_num,
+                                     size_t& check_box_num) {
     vis_node_num++;
 
     if (T->size == 0) {
@@ -173,15 +174,18 @@ void BaseTree<Point, kBDO>::KNNMulti(Node* T, const Point& q,
     }
 
     if (T->is_leaf) {
-        KNNLeaf<Leaf>(T, q, DIM, bq, node_box, vis_node_num);
+        KNNLeaf<Leaf>(T, q, DIM, bq, node_box);
         return;
     }
 
     Interior* TI = static_cast<Interior*>(T);
 
-    BoxSeq regions(kNodeRegions);
-    std::array<std::pair<Coord, BucketType>, kNodeRegions> dists;
-    TI->ComputeSubregions(regions, node_box, 1, 0);
+    BoxSeq regions(Interior::kNodeRegions);
+    std::array<std::pair<Coord, BucketType>, Interior::kNodeRegions> dists;
+    TI->ComputeSubregions(
+        regions, node_box, 1,
+        0);  // PERF: find better way to compute the bounding boxes
+    generate_box_num += Interior::kNodeRegions * 2 - 1;
 
     std::ranges::generate(dists, [i = 0, &q, &regions, &DIM]() mutable {
         auto r = std::make_pair(P2BMinDistance(q, regions[i], DIM), i);
@@ -192,13 +196,16 @@ void BaseTree<Point, kBDO>::KNNMulti(Node* T, const Point& q,
                       [&](const auto& box_pair) { return box_pair.first; });
 
     KNNMulti<Leaf, Interior>(TI->tree_nodes[dists[0].second], q, DIM, bq,
-                             regions[dists[0].second], vis_node_num);
-    for (BucketType i = 1; i < kNodeRegions; ++i) {
+                             regions[dists[0].second], vis_node_num,
+                             generate_box_num, check_box_num);
+    for (BucketType i = 1; i < Interior::kNodeRegions; ++i) {
+        check_box_num++;
         if (Num::Gt(dists[i].first, bq.top_value()) && bq.full()) {
             continue;
         }
         KNNMulti<Leaf, Interior>(TI->tree_nodes[dists[i].second], q, DIM, bq,
-                                 regions[dists[i].second], vis_node_num);
+                                 regions[dists[i].second], vis_node_num,
+                                 generate_box_num, check_box_num);
     }
 
     return;
