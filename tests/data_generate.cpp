@@ -18,8 +18,7 @@ long long numFile = 3;
 using Typename = Coord;
 const Typename dataRange = 1e6;
 
-// std::string path = "../benchmark/craft_var_node_integer";
-std::string path = "/data3/zmen002/kdtree/uniform";
+std::string path = "/localdata/0/zmen002/kdtree/uniform";
 
 inline std::string toString(const long long& a) {
     return std::to_string(a);
