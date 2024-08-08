@@ -17,7 +17,7 @@ void TestSpacialTree(const int& kDim, const parlay::sequence<Point>& wp,
 
     Tree tree;
 
-    buildTree<Point, Tree, 1>(kDim, wp, kRounds, tree);
+    buildTree<Point, Tree, 2>(kDim, wp, kRounds, tree);
 
     Typename* kdknn = nullptr;
 
