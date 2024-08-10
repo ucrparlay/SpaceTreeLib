@@ -104,13 +104,14 @@ Node* KdTree<Point, SplitRule, kBDO>::SerialBuildRecursive(Slice In, Slice Out,
                 return Num::Lt(p1.pnt[d], p2.pnt[d]);
             });
         split = Splitter(minEleIter->pnt[d], d);
-    } else if (In.end() ==
-               (diffEleIter = std::ranges::find_if_not(In, [&](const Point& p) {
-                    return p.sameDimension(In[0]);
-                }))) {  // NOTE: check whether all elements are identical
+    } else if (In.end() == std::ranges::find_if_not(In, [&](const Point& p) {
+                   return p.sameDimension(In[0]);
+               })) {  // NOTE: check whether all elements are identical
         return AllocDummyLeafNode<Slice, Leaf>(In);
     } else {  // NOTE: current dim d is same but other dims are not
+        // WARN: this will break the rotate dimension mannar
         auto [new_box, new_dim] = split_rule_.SwitchDimension(In, d, DIM, bx);
+        assert(IsMaxStretchSplit<SplitRule> || new_dim != d);
         return SerialBuildRecursive(In, Out, new_dim, DIM, new_box);
     }
 

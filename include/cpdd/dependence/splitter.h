@@ -86,14 +86,15 @@ struct RotateDim : BaseSplitterRule<Point> {
     };
 
     std::pair<Box, DimsType> SwitchDimension(
-        const Slice In, [[maybe_unused]] const DimsType dim, const DimsType DIM,
+        const Slice In, const DimsType dim, const DimsType DIM,
         [[maybe_unused]] const Box& bx) override {
-        DimsType d(0);
-        for (DimsType i = 0; i < DIM; ++i) {
-            if (!Num::Eq(In.begin()->pnt[i], std::prev(In.end())->pnt[i])) {
-                d = i;
-            }
-        }
+        DimsType d = (dim + 1) % DIM;
+        // for (DimsType i = 0; i < DIM; ++i, ++d) {
+        //     if (!Num::Eq(In.begin()->pnt[d], std::prev(In.end())->pnt[d])) {
+        //         break;
+        //     }
+        // }
+        assert(d != dim);
         return std::make_pair(bx, d);
     };
 };
