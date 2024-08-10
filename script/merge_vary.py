@@ -26,11 +26,11 @@ if type == "batch_update":
     files = ["build", "insert", "delete"]
     Dims = [3]
 elif type == "batch_knn_query":
-    solverName = ["kdtree", "orthtree"]
+    solverName = ["kdtree", "Expand", "Compress"]
     files = ["build", "knn"]
     Dims = [2, 3]
 elif type == "querys":
-    solverName = ["kdtree", "orthtree"]
+    solverName = ["kdtree", "Expand", "Compress"]
     files = ["build", "knn"]
     Dims = [2, 3]
     # solverName = ["test", "zdtree", "cgal", "LogTree", "BhlTree"]
@@ -48,7 +48,8 @@ elif type == "count":
 
 resMap = {
     "kdtree": "res_0_" + type + ".out",
-    "orthtree": "res_1_" + type + ".out",
+    "Expand": "res_1_" + type + ".out",
+    "Compress": "res_2_" + type + ".out",
 }
 
 common = [
@@ -90,14 +91,23 @@ delete_header = [
 ]
 knn_header = [
     "k=1",
+    "max-depth",
     "ave-depth",
-    "visNum",
+    "vis-node",
+    "generate-box",
+    "check-box",
     "k=10",
+    "max-depth",
     "ave-depth",
-    "visNum",
+    "vis-node",
+    "generate-box",
+    "check-box",
     "k=100",
+    "max-depth",
     "ave-depth",
-    "visNum",
+    "vis-node",
+    "generate-box",
+    "check-box",
 ]
 count_header = ["10000small", "10000medium", "10000large"]
 rquery_header = ["10000small", "10000medium", "10000large"]
