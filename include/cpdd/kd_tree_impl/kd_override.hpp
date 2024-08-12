@@ -9,12 +9,10 @@ template<typename Range>
 auto KdTree<Point, SplitRule, kBDO>::KNN(Node* T, const Point& q,
                                          const DimsType DIM,
                                          kBoundedQueue<Point, Range>& bq) {
-    size_t vis_node_num = 0, generate_box_num = 0, check_box_num = 0;
+    KNNLogger logger;
     BT::template KNNBinary<Leaf, Interior>(T, q, DIM, bq, this->tree_box_,
-                                           vis_node_num, generate_box_num,
-                                           check_box_num);
-    // BT::template KNNBinary<Leaf, Interior>(T, q, DIM, bq, bx, vis_node_num);
-    return std::make_tuple(vis_node_num, generate_box_num, check_box_num);
+                                           logger);
+    return logger;
 }
 
 template<typename Point, typename SplitRule, uint8_t kBDO>

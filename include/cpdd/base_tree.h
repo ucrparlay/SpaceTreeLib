@@ -133,14 +133,17 @@ class BaseTree {
     template<typename Leaf, IsBinaryNode Interior, typename Range>
     static void KNNBinary(Node* T, const Point& q, const DimsType DIM,
                           kBoundedQueue<Point, Range>& bq, const Box& bx,
-                          size_t& vis_node_num, size_t& generate_box_num,
-                          size_t& check_box_num);
+                          KNNLogger& logger);
+
+    template<typename Leaf, IsMultiNode Interior, typename Range>
+    static void KNNMultiExpand(Node* T, const Point& q, const DimsType DIM,
+                               kBoundedQueue<Point, Range>& bq, const Box& bx,
+                               KNNLogger& logger);
 
     template<typename Leaf, IsMultiNode Interior, typename Range>
     static void KNNMulti(Node* T, const Point& q, const DimsType DIM,
                          kBoundedQueue<Point, Range>& bq, const Box& bx,
-                         size_t& vis_node_num, size_t& generate_box_num,
-                         size_t& check_box_num);
+                         KNNLogger& logger);
 
     // NOTE: range count stuffs
     template<typename Leaf, typename Interior>
