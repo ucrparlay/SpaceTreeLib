@@ -126,20 +126,25 @@ class BaseTree {
     static inline Coord InterruptibleDistance(const Point& p, const Point& q,
                                               Coord up, DimsType DIM);
 
+    // NOTE: searech knn in the leaf
     template<typename Leaf, typename Range>
     static void KNNLeaf(Node* T, const Point& q, const DimsType DIM,
                         kBoundedQueue<Point, Range>& bq, const Box& bx);
 
+    // NOTE: search knn in the binary node
     template<typename Leaf, IsBinaryNode Interior, typename Range>
     static void KNNBinary(Node* T, const Point& q, const DimsType DIM,
                           kBoundedQueue<Point, Range>& bq, const Box& bx,
                           KNNLogger& logger);
 
+    // NOTE: search knn in the expanded multi node
     template<typename Leaf, IsMultiNode Interior, typename Range>
-    static void KNNMultiExpand(Node* T, const Point& q, const DimsType DIM,
+    static void KNNMultiExpand(Node* T, const Point& q, DimsType dim,
+                               BucketType idx, const DimsType DIM,
                                kBoundedQueue<Point, Range>& bq, const Box& bx,
                                KNNLogger& logger);
 
+    // NOTE: search knn in the multi node
     template<typename Leaf, IsMultiNode Interior, typename Range>
     static void KNNMulti(Node* T, const Point& q, const DimsType DIM,
                          kBoundedQueue<Point, Range>& bq, const Box& bx,
