@@ -160,6 +160,7 @@ template<typename Leaf, IsMultiNode Interior, typename Range>
 void BaseTree<Point, kBDO>::KNNMultiExpand(
     Node* T, const Point& q, DimsType dim, BucketType idx, const DimsType DIM,
     kBoundedQueue<Point, Range>& bq, const Box& node_box, KNNLogger& logger) {
+    // LOG << "here" << ENDL;
     logger.vis_node_num++;
 
     if (T->size == 0) {
@@ -178,8 +179,10 @@ void BaseTree<Point, kBDO>::KNNMultiExpand(
     BucketType first_idx = (idx << 1) + static_cast<BucketType>(!go_left);
     BucketType second_idx = (idx << 1) + static_cast<BucketType>(go_left);
     bool reach_leaf = first_idx >= Interior::kRegions;
-    Node* first_node = reach_leaf ? TI->tree_nodes[first_idx] : T;
-    Node* second_node = reach_leaf ? TI->tree_nodes[second_idx] : T;
+    Node* first_node =
+        reach_leaf ? TI->tree_nodes[first_idx - Interior::kRegions] : T;
+    Node* second_node =
+        reach_leaf ? TI->tree_nodes[second_idx - Interior::kRegions] : T;
     if (reach_leaf) {
         first_idx = second_idx = 1;
     }

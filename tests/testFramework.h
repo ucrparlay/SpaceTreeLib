@@ -508,16 +508,17 @@ void queryKNN(const uint_fast8_t& Dim, const parlay::sequence<Point>& WP,
     double loopLate = rounds > 1 ? 1.0 : -0.1;
     auto* KDParallelRoot = pkd.GetRoot();
     auto* old = pkd.GetRoot();
-    if constexpr (cpdd::IsMultiNode<Interior>) {
-        // LOG << "start expanding the tree" << ENDL;
-        KDParallelRoot =
-            pkd.template Expand2Binary<typename Tree::KdInteriorNode, Interior>(
-                KDParallelRoot);
-        pkd.SetRoot(KDParallelRoot);
-        // LOG << "finish expanding the tree" << ENDL;
-        // pkd.template Validate<Leaf, typename Tree::KdInteriorNode,
-        //                       typename Tree::SplitRuleType>(Dim);
-    }
+    // if constexpr (cpdd::IsMultiNode<Interior>) {
+    //     // LOG << "start expanding the tree" << ENDL;
+    //     KDParallelRoot =
+    //         pkd.template Expand2Binary<typename Tree::KdInteriorNode,
+    //         Interior>(
+    //             KDParallelRoot);
+    //     pkd.SetRoot(KDParallelRoot);
+    //     // LOG << "finish expanding the tree" << ENDL;
+    //     // pkd.template Validate<Leaf, typename Tree::KdInteriorNode,
+    //     //                       typename Tree::SplitRuleType>(Dim);
+    // }
 
     points wp = points::uninitialized(n);
     parlay::copy(WP, wp);
@@ -553,19 +554,19 @@ void queryKNN(const uint_fast8_t& Dim, const parlay::sequence<Point>& WP,
     LOG << aveQuery << " " << std::flush;
     if (printHeight) {
         // WARN: change when using multi-node
-        // size_t max_deep = 0;
-        // LOG << pkd.template GetMaxTreeDepth<Leaf, Interior>(pkd.GetRoot(),
-        //                                                     max_deep)
-        //     << " " << pkd.template GetAveTreeHeight<Leaf, Interior>() << " "
-        //     << std::flush;
         size_t max_deep = 0;
-        LOG << pkd.template GetMaxTreeDepth<Leaf,
-                                            typename Tree::KdInteriorNode>(
-                   pkd.GetRoot(), max_deep)
-            << " "
-            << pkd.template GetAveTreeHeight<Leaf,
-                                             typename Tree::KdInteriorNode>()
-            << " " << std::flush;
+        LOG << pkd.template GetMaxTreeDepth<Leaf, Interior>(pkd.GetRoot(),
+                                                            max_deep)
+            << " " << pkd.template GetAveTreeHeight<Leaf, Interior>() << " "
+            << std::flush;
+        // size_t max_deep = 0;
+        // LOG << pkd.template GetMaxTreeDepth<Leaf,
+        //                                     typename Tree::KdInteriorNode>(
+        //            pkd.GetRoot(), max_deep)
+        //     << " "
+        //     << pkd.template GetAveTreeHeight<Leaf,
+        //                                      typename Tree::KdInteriorNode>()
+        //     << " " << std::flush;
     }
     if (printVisNode) {
         LOG << parlay::reduce(vis_nodes.cut(0, n)) / n << " " << std::flush;
@@ -573,7 +574,7 @@ void queryKNN(const uint_fast8_t& Dim, const parlay::sequence<Point>& WP,
         LOG << parlay::reduce(check_box.cut(0, n)) / n << " " << std::flush;
         LOG << parlay::reduce(skip_box.cut(0, n)) / n << " " << std::flush;
     }
-    pkd.SetRoot(old);
+    // pkd.SetRoot(old);
 
     return;
 }

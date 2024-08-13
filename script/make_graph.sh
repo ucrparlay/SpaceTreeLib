@@ -15,11 +15,11 @@
 # ./gen_ss_varden.sh -g 2 -n 100000000 -d 9 -v 1
 
 #* N DIM NUM_FILE SERIAL
-./../build/data_generator /localdata/0/zmen002/kdtree/uniform 1000000 2 10 0
-./../build/data_generator /localdata/0/zmen002/kdtree/uniform 5000000 2 10 0
-./../build/data_generator /localdata/0/zmen002/kdtree/uniform 8000000 2 10 0
-./../build/data_generator /localdata/0/zmen002/kdtree/uniform 10000000 2 10 0
-./../build/data_generator /localdata/0/zmen002/kdtree/uniform 50000000 2 10 0
+./../build/data_generator /localdata/zmen002/kdtree/uniform 1000000 2 10 0
+./../build/data_generator /localdata/zmen002/kdtree/uniform 5000000 2 10 0
+./../build/data_generator /localdata/zmen002/kdtree/uniform 8000000 2 10 0
+./../build/data_generator /localdata/zmen002/kdtree/uniform 10000000 2 10 0
+./../build/data_generator /localdata/zmen002/kdtree/uniform 50000000 2 10 0
 
 # ./../build/data_generator 5000000 5 10 0
 # ./../build/data_generator 8000000 5 10 0

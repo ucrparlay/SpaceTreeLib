@@ -95,7 +95,7 @@ void BaseTree<Point, kBDO>::Validate(const DimsType DIM) {
     // NOTE: used to check rotate dimension
 
     if constexpr (IsRotateDimSplit<SplitRule>) {
-        CheckTreeSameSequential<Leaf>(this->root_, 0, DIM);
+        CheckTreeSameSequential<Leaf, Interior>(this->root_, 0, DIM);
         std::cout << "Correct rotate dimension" << std::endl << std::flush;
     }
 

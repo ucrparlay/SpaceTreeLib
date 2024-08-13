@@ -34,6 +34,8 @@ struct MaxStretchDim : BaseSplitterRule<Point> {
     using Coord = BSR::Coord;
     using Num = BSR::Num;
 
+    void MaxStretchTag() {}
+
     DimsType FindCuttingDimension(const Box& bx,
                                   [[maybe_unused]] const DimsType dim,
                                   const DimsType DIM) override {
@@ -72,6 +74,8 @@ struct RotateDim : BaseSplitterRule<Point> {
     using Coord = BSR::Coord;
     using Num = BSR::Num;
     using PointsIter = BT::PointsIter;
+
+    void RotateDimTag() {}
 
     DimsType FindCuttingDimension(
         [[maybe_unused]] const Box& bx, const DimsType dim,
