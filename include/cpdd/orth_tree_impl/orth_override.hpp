@@ -14,8 +14,11 @@ auto OrthTree<Point, SplitRule, kMD, kBDO>::KNN(
     // BT::template KNNMulti<Leaf, Interior>(T, q, DIM, bq, this->tree_box_,
     //                                       vis_node_num, generate_box_num,
     //                                       check_box_num);
-    BT::template KNNBinary<Leaf, KdInteriorNode>(T, q, DIM, bq, this->tree_box_,
-                                                 logger);
+    // BT::template KNNBinary<Leaf, KdInteriorNode>(T, q, DIM, bq,
+    // this->tree_box_,
+    //                                              logger);
+    BT::template KNNMultiExpand<Leaf, Interior>(T, q, 0, 1, DIM, bq,
+                                                this->tree_box_, logger);
     return logger;
 }
 

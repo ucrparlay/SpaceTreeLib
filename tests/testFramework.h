@@ -528,7 +528,8 @@ void queryKNN(const uint_fast8_t& Dim, const parlay::sequence<Point>& WP,
         parlay::sequence<kBoundedQueue<Point, nn_pair>>::uninitialized(n);
     parlay::parallel_for(
         0, n, [&](size_t i) { bq[i].resize(Out.cut(i * K, i * K + K)); });
-    parlay::sequence<size_t> vis_nodes(n), gen_box(n), check_box(n);
+    parlay::sequence<size_t> vis_nodes(n), gen_box(n), check_box(n),
+        skip_box(n);
 
     double aveQuery = time_loop(
         rounds, loopLate,
@@ -538,12 +539,13 @@ void queryKNN(const uint_fast8_t& Dim, const parlay::sequence<Point>& WP,
                 pkd.Flatten(parlay::make_slice(wp));
             }
             parlay::parallel_for(0, n, [&](size_t i) {
-                auto [vis_node_num, gen_box_num, check_box_num] =
+                auto [vis_node_num, gen_box_num, check_box_num, skip_box_num] =
                     pkd.KNN(KDParallelRoot, wp[i], Dim, bq[i]);
                 kdknn[i] = bq[i].top().second;
                 vis_nodes[i] = vis_node_num;
                 gen_box[i] = gen_box_num;
                 check_box[i] = check_box_num;
+                skip_box[i] = skip_box_num;
             });
         },
         [&]() {});
@@ -569,6 +571,7 @@ void queryKNN(const uint_fast8_t& Dim, const parlay::sequence<Point>& WP,
         LOG << parlay::reduce(vis_nodes.cut(0, n)) / n << " " << std::flush;
         LOG << parlay::reduce(gen_box.cut(0, n)) / n << " " << std::flush;
         LOG << parlay::reduce(check_box.cut(0, n)) / n << " " << std::flush;
+        LOG << parlay::reduce(skip_box.cut(0, n)) / n << " " << std::flush;
     }
     pkd.SetRoot(old);
 

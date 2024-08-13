@@ -1,6 +1,7 @@
 #pragma once
 #include <algorithm>
 #include <tuple>
+#include <utility>
 #include "../base_tree.h"
 #include "cpdd/dependence/tree_node.h"
 
@@ -134,13 +135,11 @@ void BaseTree<Point, kBDO>::KNNBinary(Node* T, const Point& q,
 
     Box first_box(node_box), second_box(node_box);
     logger.generate_box_num += 2;
+    first_box.second.pnt[TI->split.second] = TI->split.first;
+    second_box.first.pnt[TI->split.second] = TI->split.first;
 
-    if (go_left) {  // NOTE: go left child
-        first_box.second.pnt[TI->split.second] = TI->split.first;
-        second_box.first.pnt[TI->split.second] = TI->split.first;
-    } else {  // NOTE: go right child
-        first_box.first.pnt[TI->split.second] = TI->split.first;
-        second_box.second.pnt[TI->split.second] = TI->split.first;
+    if (!go_left) {  // NOTE: go left child
+        std::swap(first_box, second_box);
     }
 
     KNNBinary<Leaf, Interior>(go_left ? TI->left : TI->right, q, DIM, bq,
@@ -148,6 +147,7 @@ void BaseTree<Point, kBDO>::KNNBinary(Node* T, const Point& q,
     logger.check_box_num++;
     if (Num::Gt(P2BMinDistance(q, second_box, DIM), bq.top_value()) &&
         bq.full()) {
+        logger.skip_box_num++;
         return;
     }
     KNNBinary<Leaf, Interior>(go_left ? TI->right : TI->left, q, DIM, bq,
@@ -172,47 +172,37 @@ void BaseTree<Point, kBDO>::KNNMultiExpand(
     }
 
     Interior* TI = static_cast<Interior*>(T);
+
     bool go_left =
         Num::Gt(TI->split[dim].first - q.pnt[TI->split[dim].second], 0);
+    BucketType first_idx = (idx << 1) + static_cast<BucketType>(!go_left);
+    BucketType second_idx = (idx << 1) + static_cast<BucketType>(go_left);
+    bool reach_leaf = first_idx >= Interior::kRegions;
+    Node* first_node = reach_leaf ? TI->tree_nodes[first_idx] : T;
+    Node* second_node = reach_leaf ? TI->tree_nodes[second_idx] : T;
+    if (reach_leaf) {
+        first_idx = second_idx = 1;
+    }
 
     Box first_box(node_box), second_box(node_box);
-    Node *first_node, *second_node;
-    BucketType first_idx, second_idx;
     logger.generate_box_num += 2;
-
-    if (go_left) {  // NOTE: go left child
-        if (idx < Interior::kRegions) {
-            first_node = second_node = T;
-        } else {
-            first_node = TI->tree_nodes[idx * 2];
-            second_node = TI->tree_nodes[idx * 2 + 1];
-        }
-        first_idx = idx * 2;
-        second_idx = idx * 2 + 1;
-        first_box.second.pnt[TI->split[dim].second] = TI->split[dim].first;
-        second_box.first.pnt[TI->split[dim].second] = TI->split[dim].first;
-    } else {  // NOTE: go right child
-        if (idx < Interior::kRegions) {
-            first_node = second_node = T;
-        } else {
-            first_node = TI->tree_nodes[idx * 2 + 1];
-            second_node = TI->tree_nodes[idx * 2];
-        }
-        first_idx = idx * 2 + 1;
-        second_idx = idx * 2;
-        first_box.first.pnt[TI->split[dim].second] = TI->split[dim].first;
-        second_box.second.pnt[TI->split[dim].second] = TI->split[dim].first;
+    first_box.second.pnt[TI->split[dim].second] = TI->split[dim].first;
+    second_box.first.pnt[TI->split[dim].second] = TI->split[dim].first;
+    if (!go_left) {
+        std::swap(first_box, second_box);
     }
 
     dim = (dim + 1) % DIM;  // WARN: value of dim changes afterwards
+    assert(dim != 0 || (first_idx == 1 && second_idx == 1));
+
     KNNMultiExpand<Leaf, Interior>(first_node, q, dim, first_idx, DIM, bq,
                                    first_box, logger);
     logger.check_box_num++;
     if (Num::Gt(P2BMinDistance(q, second_box, DIM), bq.top_value()) &&
         bq.full()) {
+        logger.skip_box_num++;
         return;
     }
-
     KNNMultiExpand<Leaf, Interior>(second_node, q, dim, second_idx, DIM, bq,
                                    second_box, logger);
     return;
@@ -257,6 +247,7 @@ void BaseTree<Point, kBDO>::KNNMulti(Node* T, const Point& q,
     for (BucketType i = 1; i < Interior::kRegions; ++i) {
         logger.check_box_num++;
         if (Num::Gt(dists[i].first, bq.top_value()) && bq.full()) {
+            logger.skip_box_num++;
             continue;
         }
         KNNMulti<Leaf, Interior>(TI->tree_nodes[dists[i].second], q, DIM, bq,
