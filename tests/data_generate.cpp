@@ -1,6 +1,28 @@
 #include <string>
-#include "kdTree.h"
 #include <filesystem>
+#include <iostream>
+#include "testFramework.h"
+
+constexpr int MAX_DIM = 10;
+
+template<typename T>
+class Point {
+ public:
+    void print() {
+        for (int i = 0; i < 3; i++) {
+            std::cout << x[i] << " ";
+        }
+    };
+    void print(int d) {
+        for (int i = 0; i < d; i++) {
+            std::cout << x[i] << " ";
+        }
+    }
+
+ public:
+    int id;
+    T x[MAX_DIM];
+};
 
 const double EPS = 1e-9;
 #define rep(i, a, b) for (int i = (a); i < (b); i++)

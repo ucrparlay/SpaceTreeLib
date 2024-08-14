@@ -21,13 +21,16 @@ inline void BaseTree<Point, kBDO>::SamplePoints(Slice In, Points& arr) {
 }
 
 template<typename Point, uint8_t kBDO>
-inline uint_fast8_t BaseTree<Point, kBDO>::FindBucket(
-    const Point& p, const HyperPlaneSeq& pivots) {
-    uint_fast8_t k = 1;
+inline typename BaseTree<Point, kBDO>::BucketType
+BaseTree<Point, kBDO>::FindBucket(const Point& p, const HyperPlaneSeq& pivots) {
+    BucketType k(1);
     while (k <= kPivotNum) {
         // TODO: remove conditional judge
-        k = Num::Lt(p.pnt[pivots[k].second], pivots[k].first) ? k << 1
-                                                              : k << 1 | 1;
+        // k = Num::Lt(p.pnt[pivots[k].second], pivots[k].first) ? k << 1
+        //                                                       : k << 1 | 1;
+        k = k * 2 + 1 -
+            static_cast<BucketType>(
+                Num::Lt(p.pnt[pivots[k].second], pivots[k].first));
     }
     assert(pivots[k].first == -1);
     return pivots[k].second;

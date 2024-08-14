@@ -53,7 +53,8 @@ void BaseTree<Point, kBDO>::CheckTreeSameSequential(Node* T, int dim,
     if constexpr (IsBinaryNode<Interior>) {
         Interior* TI = static_cast<Interior*>(T);
         if (TI->split.second != dim) {
-            LOG << int(TI->split.second) << " " << int(dim) << TI->size << ENDL;
+            LOG << int(TI->split.second) << " " << int(dim) << " " << TI->size
+                << ENDL;
         }
         assert(TI->split.second == dim);
         dim = (dim + 1) % DIM;
@@ -73,9 +74,9 @@ void BaseTree<Point, kBDO>::CheckTreeSameSequential(Node* T, int dim,
             assert(TI->split[i].second == dim);
             dim += 1;
         }
+        assert(dim == DIM);
         for (int i = 0; i < TI->tree_nodes.size(); i++) {
-            CheckTreeSameSequential<Leaf, Interior>(TI->tree_nodes[i], dim,
-                                                    DIM);
+            CheckTreeSameSequential<Leaf, Interior>(TI->tree_nodes[i], 0, DIM);
         }
     }
     return;
@@ -93,8 +94,8 @@ void BaseTree<Point, kBDO>::Validate(const DimsType DIM) {
     }
 
     // NOTE: used to check rotate dimension
-
-    if constexpr (IsRotateDimSplit<SplitRule>) {
+    // For kdtree binary node, the dummy node may break the rotation manner
+    if constexpr (IsRotateDimSplit<SplitRule> && IsMultiNode<Interior>) {
         CheckTreeSameSequential<Leaf, Interior>(this->root_, 0, DIM);
         std::cout << "Correct rotate dimension" << std::endl << std::flush;
     }

@@ -340,7 +340,8 @@ int main(int argc, char* argv[]) {
     parlay::sequence<Point_d> cgOut;
     if (tree_type == 0) {
         LOG << "test kd tree" << ENDL;
-        runKDParallel<cpdd::KdTree<point, cpdd::MaxStretchDim<point>>>(
+        // runKDParallel<cpdd::KdTree<point, cpdd::MaxStretchDim<point>>>(
+        runKDParallel<cpdd::KdTree<point, cpdd::RotateDim<point>>>(
             wp, wi, kdknn, kdOut, queryNum);
     } else if (tree_type == 1 && Dim == 2) {
         LOG << "test quad tree" << ENDL;
