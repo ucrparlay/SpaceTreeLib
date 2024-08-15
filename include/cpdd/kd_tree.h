@@ -6,7 +6,7 @@
 
 namespace cpdd {
 
-template<typename Point, typename SplitRule, uint8_t kBDO = 6>
+template<typename Point, typename SplitRule, uint_fast8_t kBDO = 6>
 class KdTree : private BaseTree<Point, kBDO> {
  public:
     using BT = BaseTree<Point, kBDO>;

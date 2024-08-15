@@ -5,7 +5,7 @@
 #include "cpdd/dependence/tree_node.h"
 
 namespace cpdd {
-template<typename Point, typename SplitRule, uint8_t kMD, uint8_t kBDO>
+template<typename Point, typename SplitRule, uint_fast8_t kMD, uint_fast8_t kBDO>
 struct OrthTree<Point, SplitRule, kMD, kBDO>::OrthInteriorNode :
     MultiNode<Point, kMD, Splitter, AugType> {
     using MNode = MultiNode<Point, kMD, Splitter, AugType>;
@@ -25,7 +25,7 @@ struct OrthTree<Point, SplitRule, kMD, kBDO>::OrthInteriorNode :
     inline bool ForceParallel() const { return this->aug; }
 };
 
-template<typename Point, typename SplitRule, uint8_t kMD, uint8_t kBDO>
+template<typename Point, typename SplitRule, uint_fast8_t kMD, uint_fast8_t kBDO>
 struct OrthTree<Point, SplitRule, kMD, kBDO>::KdInteriorNode :
     BinaryNode<Point, HyperPlane, AugType> {
     using PT = Point;

@@ -4,7 +4,7 @@
 
 namespace cpdd {
 
-template<typename Point, uint8_t kBDO>
+template<typename Point, uint_fast8_t kBDO>
 inline size_t BaseTree<Point, kBDO>::GetImbalanceRatio() {
     if (const auto env_p = std::getenv("kInbalanceRatio")) {
         return static_cast<size_t>(std::stoi(env_p));
@@ -13,7 +13,7 @@ inline size_t BaseTree<Point, kBDO>::GetImbalanceRatio() {
     }
 }
 
-template<typename Point, uint8_t kBDO>
+template<typename Point, uint_fast8_t kBDO>
 inline bool BaseTree<Point, kBDO>::ImbalanceNode(const size_t l,
                                                  const size_t n) {
     if (n == 0) return true;

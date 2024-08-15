@@ -7,7 +7,7 @@
 #include "cpdd/dependence/tree_node.h"
 
 namespace cpdd {
-template<typename Point, typename SplitRule, uint8_t kBDO>
+template<typename Point, typename SplitRule, uint_fast8_t kBDO>
 template<typename Range>
 void KdTree<Point, SplitRule, kBDO>::Build(Range&& In) {
     static_assert(parlay::is_random_access_range_v<Range>);
@@ -21,7 +21,7 @@ void KdTree<Point, SplitRule, kBDO>::Build(Range&& In) {
     Build_(A);
 }
 
-template<typename Point, typename SplitRule, uint8_t kBDO>
+template<typename Point, typename SplitRule, uint_fast8_t kBDO>
 void KdTree<Point, SplitRule, kBDO>::DivideRotate(Slice In, SplitterSeq& pivots,
                                                   DimsType dim, BucketType idx,
                                                   BucketType deep,
@@ -59,7 +59,7 @@ void KdTree<Point, SplitRule, kBDO>::DivideRotate(Slice In, SplitterSeq& pivots,
 }
 
 // NOTE: starting at dimesion dim and pick pivots in a rotation manner
-template<typename Point, typename SplitRule, uint8_t kBDO>
+template<typename Point, typename SplitRule, uint_fast8_t kBDO>
 void KdTree<Point, SplitRule, kBDO>::PickPivots(Slice In, const size_t& n,
                                                 SplitterSeq& pivots,
                                                 const DimsType dim,
@@ -77,7 +77,7 @@ void KdTree<Point, SplitRule, kBDO>::PickPivots(Slice In, const size_t& n,
     return;
 }
 
-template<typename Point, typename SplitRule, uint8_t kBDO>
+template<typename Point, typename SplitRule, uint_fast8_t kBDO>
 Node* KdTree<Point, SplitRule, kBDO>::SerialBuildRecursive(Slice In, Slice Out,
                                                            DimsType dim,
                                                            const Box& bx) {
@@ -133,7 +133,7 @@ Node* KdTree<Point, SplitRule, kBDO>::SerialBuildRecursive(Slice In, Slice Out,
     return AllocInteriorNode<Interior>(L, R, split, false);
 }
 
-template<typename Point, typename SplitRule, uint8_t kBDO>
+template<typename Point, typename SplitRule, uint_fast8_t kBDO>
 Node* KdTree<Point, SplitRule, kBDO>::BuildRecursive(Slice In, Slice Out,
                                                      DimsType dim,
                                                      const Box& bx) {
@@ -193,7 +193,7 @@ Node* KdTree<Point, SplitRule, kBDO>::BuildRecursive(Slice In, Slice Out,
     return BT::template BuildInnerTree<Interior>(1, pivots, tree_nodes);
 }
 
-template<typename Point, typename SplitRule, uint8_t kBDO>
+template<typename Point, typename SplitRule, uint_fast8_t kBDO>
 void KdTree<Point, SplitRule, kBDO>::Build_(Slice A) {
     Points B = Points::uninitialized(A.size());
     this->tree_box_ = BT::GetBox(A);

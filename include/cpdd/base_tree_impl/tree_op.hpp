@@ -6,14 +6,14 @@
 #include "cpdd/dependence/tree_node.h"
 
 namespace cpdd {
-template<typename Point, uint8_t kBDO>
+template<typename Point, uint_fast8_t kBDO>
 template<SupportsForceParallel Interior, bool granularity>
 inline bool BaseTree<Point, kBDO>::ForceParallelRecursion(Interior* TI) {
     return (granularity && TI->size > kSerialBuildCutoff) ||
            (!granularity && TI->ForceParallel());
 }
 
-template<typename Point, uint8_t kBDO>
+template<typename Point, uint_fast8_t kBDO>
 template<IsBinaryNode Interior>
 Node* BaseTree<Point, kBDO>::BuildInnerTree(
     BucketType idx, HyperPlaneSeq& pivots,
@@ -29,7 +29,7 @@ Node* BaseTree<Point, kBDO>::BuildInnerTree(
                                        typename Interior::AT());
 }
 
-template<typename Point, uint8_t kBDO>
+template<typename Point, uint_fast8_t kBDO>
 template<typename Leaf, IsBinaryNode Interior, typename Range, bool granularity>
 void BaseTree<Point, kBDO>::FlattenRec(Node* T, Range Out) {
     assert(T->size == Out.size());
@@ -60,7 +60,7 @@ void BaseTree<Point, kBDO>::FlattenRec(Node* T, Range Out) {
     return;
 }
 
-template<typename Point, uint8_t kBDO>
+template<typename Point, uint_fast8_t kBDO>
 template<typename Leaf, IsMultiNode Interior, typename Range, bool granularity>
 void BaseTree<Point, kBDO>::FlattenRec(Node* T, Range Out) {
     if (T->size != Out.size()) {
@@ -110,7 +110,7 @@ void BaseTree<Point, kBDO>::FlattenRec(Node* T, Range Out) {
     return;
 }
 
-template<typename Point, uint8_t kBDO>
+template<typename Point, uint_fast8_t kBDO>
 template<typename Leaf, IsMultiNode Interior, typename Range, bool granularity>
 void BaseTree<Point, kBDO>::PartialFlatten(Node* T, Range Out, BucketType idx) {
 
@@ -143,7 +143,7 @@ void BaseTree<Point, kBDO>::PartialFlatten(Node* T, Range Out, BucketType idx) {
     return;
 }
 
-template<typename Point, uint8_t kBDO>
+template<typename Point, uint_fast8_t kBDO>
 template<IsBinaryNode BN, IsMultiNode MN>
 Node* BaseTree<Point, kBDO>::ExpandMultiNode(
     const typename MN::ST& split, BucketType idx, BucketType deep,
@@ -159,7 +159,7 @@ Node* BaseTree<Point, kBDO>::ExpandMultiNode(
     return o;
 }
 
-template<typename Point, uint8_t kBDO>
+template<typename Point, uint_fast8_t kBDO>
 template<IsBinaryNode BN, IsMultiNode MN>
     requires std::same_as<typename BN::ST, typename MN::ST::value_type>
 Node* BaseTree<Point, kBDO>::Expand2Binary(Node* T) {

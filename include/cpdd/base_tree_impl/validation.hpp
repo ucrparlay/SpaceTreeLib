@@ -5,7 +5,7 @@
 
 namespace cpdd {
 
-template<typename Point, uint8_t kBDO>
+template<typename Point, uint_fast8_t kBDO>
 template<typename Leaf, typename Interior>
 bool BaseTree<Point, kBDO>::CheckBox(Node* T, const Box& bx) {
     assert(T != nullptr);
@@ -18,7 +18,7 @@ bool BaseTree<Point, kBDO>::CheckBox(Node* T, const Box& bx) {
     return WithinBox(b, bx);
 }
 
-template<typename Point, uint8_t kBDO>
+template<typename Point, uint_fast8_t kBDO>
 template<typename Leaf, typename Interior>
 size_t BaseTree<Point, kBDO>::CheckSize(Node* T) {
     if (T->is_leaf) {
@@ -42,7 +42,7 @@ size_t BaseTree<Point, kBDO>::CheckSize(Node* T) {
     }
 }
 
-template<typename Point, uint8_t kBDO>
+template<typename Point, uint_fast8_t kBDO>
 template<typename Leaf, typename Interior>
 void BaseTree<Point, kBDO>::CheckTreeSameSequential(Node* T, int dim) {
     if (T->is_leaf) {
@@ -77,7 +77,7 @@ void BaseTree<Point, kBDO>::CheckTreeSameSequential(Node* T, int dim) {
     return;
 }
 
-template<typename Point, uint8_t kBDO>
+template<typename Point, uint_fast8_t kBDO>
 template<typename Leaf, typename Interior, typename SplitRule>
 void BaseTree<Point, kBDO>::Validate() {
     if (CheckBox<Leaf, Interior>(this->root_, this->tree_box_) &&
@@ -104,14 +104,14 @@ void BaseTree<Point, kBDO>::Validate() {
     return;
 }
 
-template<typename Point, uint8_t kBDO>
+template<typename Point, uint_fast8_t kBDO>
 template<typename Leaf, typename Interior>
 size_t BaseTree<Point, kBDO>::GetTreeHeight() {
     size_t deep = 0;
     return GetMaxTreeDepth<Leaf, Interior>(this->root_, deep);
 }
 
-template<typename Point, uint8_t kBDO>
+template<typename Point, uint_fast8_t kBDO>
 template<typename Leaf, typename Interior>
 size_t BaseTree<Point, kBDO>::GetMaxTreeDepth(Node* T, size_t deep) {
     if (T->is_leaf) {
@@ -133,7 +133,7 @@ size_t BaseTree<Point, kBDO>::GetMaxTreeDepth(Node* T, size_t deep) {
     }
 }
 
-template<typename Point, uint8_t kBDO>
+template<typename Point, uint_fast8_t kBDO>
 template<typename Leaf, typename Interior>
 double BaseTree<Point, kBDO>::GetAveTreeHeight() {
     // LOG << IsBinaryNode<Interior> << ENDL;
@@ -148,7 +148,7 @@ double BaseTree<Point, kBDO>::GetAveTreeHeight() {
     return double(1.0 * parlay::reduce(heights.cut(0, idx)) / idx);
 }
 
-template<typename Point, uint8_t kBDO>
+template<typename Point, uint_fast8_t kBDO>
 template<typename Leaf, typename Interior>
 size_t BaseTree<Point, kBDO>::CountTreeNodesNum(Node* T) {
     if (T->is_leaf) {
@@ -171,7 +171,7 @@ size_t BaseTree<Point, kBDO>::CountTreeNodesNum(Node* T) {
     }
 }
 
-template<typename Point, uint8_t kBDO>
+template<typename Point, uint_fast8_t kBDO>
 template<typename Leaf, typename Interior>
 void BaseTree<Point, kBDO>::CountTreeHeights(
     Node* T, size_t deep, size_t& idx, parlay::sequence<size_t>& heights) {

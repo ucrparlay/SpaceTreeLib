@@ -5,7 +5,7 @@
 #include <utility>
 
 namespace cpdd {
-template<typename Point, uint8_t kBDO>
+template<typename Point, uint_fast8_t kBDO>
 inline void BaseTree<Point, kBDO>::SamplePoints(Slice In, Points& arr) {
     auto size = arr.size();
     auto n = In.size();
@@ -20,7 +20,7 @@ inline void BaseTree<Point, kBDO>::SamplePoints(Slice In, Points& arr) {
     return;
 }
 
-template<typename Point, uint8_t kBDO>
+template<typename Point, uint_fast8_t kBDO>
 inline typename BaseTree<Point, kBDO>::BucketType
 BaseTree<Point, kBDO>::FindBucket(const Point& p, const HyperPlaneSeq& pivots) {
     BucketType k(1);
@@ -33,7 +33,7 @@ BaseTree<Point, kBDO>::FindBucket(const Point& p, const HyperPlaneSeq& pivots) {
     return pivots[k].second;
 }
 
-template<typename Point, uint8_t kBDO>
+template<typename Point, uint_fast8_t kBDO>
 void BaseTree<Point, kBDO>::Partition(Slice A, Slice B, const size_t n,
                                       const HyperPlaneSeq& pivots,
                                       parlay::sequence<BallsType>& sums) {
@@ -80,7 +80,7 @@ void BaseTree<Point, kBDO>::Partition(Slice A, Slice B, const size_t n,
     return;
 }
 
-template<typename Point, uint8_t kBDO>
+template<typename Point, uint_fast8_t kBDO>
 typename BaseTree<Point, kBDO>::PointsIter
 BaseTree<Point, kBDO>::SerialPartition(Slice In, DimsType d) {
     size_t n = In.size();

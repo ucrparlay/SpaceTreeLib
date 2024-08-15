@@ -4,7 +4,7 @@
 #include "cpdd/dependence/tree_node.h"
 
 namespace cpdd {
-template<typename Point, typename SplitRule, uint8_t kBDO>
+template<typename Point, typename SplitRule, uint_fast8_t kBDO>
 struct KdTree<Point, SplitRule, kBDO>::KdInteriorNode :
     BinaryNode<Point, Splitter, AugType> {
     using PT = Point;

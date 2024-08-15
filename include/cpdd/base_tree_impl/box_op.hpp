@@ -2,7 +2,7 @@
 
 namespace cpdd {
 
-template<typename Point, uint8_t kBDO>
+template<typename Point, uint_fast8_t kBDO>
 inline bool BaseTree<Point, kBDO>::LegalBox(const Box& bx) {
     if (bx == GetEmptyBox()) return true;
     for (DimsType i = 0; i < bx.first.get_dim(); i++) {
@@ -13,7 +13,7 @@ inline bool BaseTree<Point, kBDO>::LegalBox(const Box& bx) {
     return true;
 }
 
-template<typename Point, uint8_t kBDO>
+template<typename Point, uint_fast8_t kBDO>
 inline bool BaseTree<Point, kBDO>::WithinBox(const Box& a, const Box& b) {
     assert(LegalBox(a));
     assert(LegalBox(b));
@@ -26,7 +26,7 @@ inline bool BaseTree<Point, kBDO>::WithinBox(const Box& a, const Box& b) {
     return true;
 }
 
-template<typename Point, uint8_t kBDO>
+template<typename Point, uint_fast8_t kBDO>
 inline bool BaseTree<Point, kBDO>::WithinBox(const Point& p, const Box& bx) {
     assert(LegalBox(bx));
     for (DimsType i = 0; i < p.get_dim(); i++) {
@@ -38,7 +38,7 @@ inline bool BaseTree<Point, kBDO>::WithinBox(const Point& p, const Box& bx) {
     return true;
 }
 
-template<typename Point, uint8_t kBDO>
+template<typename Point, uint_fast8_t kBDO>
 inline bool BaseTree<Point, kBDO>::BoxIntersectBox(const Box& a, const Box& b) {
     assert(LegalBox(a) && LegalBox(b));
     for (DimsType i = 0; i < a.first.get_dim(); i++) {
@@ -50,20 +50,20 @@ inline bool BaseTree<Point, kBDO>::BoxIntersectBox(const Box& a, const Box& b) {
     return true;
 }
 
-template<typename Point, uint8_t kBDO>
+template<typename Point, uint_fast8_t kBDO>
 inline typename BaseTree<Point, kBDO>::Box
 BaseTree<Point, kBDO>::GetEmptyBox() {
     return Box(Point(std::numeric_limits<Coord>::max()),
                Point(std::numeric_limits<Coord>::min()));
 }
 
-template<typename Point, uint8_t kBDO>
+template<typename Point, uint_fast8_t kBDO>
 typename BaseTree<Point, kBDO>::Box BaseTree<Point, kBDO>::GetBox(
     const Box& x, const Box& y) {
     return Box(x.first.minCoords(y.first), x.second.maxCoords(y.second));
 }
 
-template<typename Point, uint8_t kBDO>
+template<typename Point, uint_fast8_t kBDO>
 typename BaseTree<Point, kBDO>::Box BaseTree<Point, kBDO>::GetBox(Slice V) {
     if (V.size() == 0) {
         return GetEmptyBox();
@@ -78,14 +78,14 @@ typename BaseTree<Point, kBDO>::Box BaseTree<Point, kBDO>::GetBox(Slice V) {
     }
 }
 
-template<typename Point, uint8_t kBDO>
+template<typename Point, uint_fast8_t kBDO>
 typename BaseTree<Point, kBDO>::Box BaseTree<Point, kBDO>::GetBox(Node* T) {
     Points wx = Points::uninitialized(T->size);
     Flatten(T, parlay::make_slice(wx));
     return GetBox(parlay::make_slice(wx));
 }
 
-template<typename Point, uint8_t kBDO>
+template<typename Point, uint_fast8_t kBDO>
 inline bool BaseTree<Point, kBDO>::WithinCircle(const Box& bx,
                                                 const Circle& cl) {
     //* the logical is same as p2b_max_distance <= radius
@@ -105,7 +105,7 @@ inline bool BaseTree<Point, kBDO>::WithinCircle(const Box& bx,
     return true;
 }
 
-template<typename Point, uint8_t kBDO>
+template<typename Point, uint_fast8_t kBDO>
 inline bool BaseTree<Point, kBDO>::WithinCircle(const Point& p,
                                                 const Circle& cl) {
     Coord r = 0;
@@ -117,7 +117,7 @@ inline bool BaseTree<Point, kBDO>::WithinCircle(const Point& p,
     return true;
 }
 
-template<typename Point, uint8_t kBDO>
+template<typename Point, uint_fast8_t kBDO>
 inline bool BaseTree<Point, kBDO>::CircleIntersectBox(const Circle& cl,
                                                       const Box& bx) {
     //* the logical is same as p2b_min_distance > radius

@@ -124,9 +124,9 @@ struct BinaryNode : Node {
     AT aug;
 };
 
-template<typename Point, uint8_t kMD, typename SplitType, typename AugType>
+template<typename Point, uint_fast8_t kMD, typename SplitType, typename AugType>
 struct MultiNode : Node {
-    static const constexpr uint8_t kRegions = 1 << kMD;
+    static const constexpr uint_fast8_t kRegions = 1 << kMD;
 
     using Nodes = std::array<Node*, kRegions>;
     using ST = SplitType;
@@ -153,7 +153,7 @@ struct MultiNode : Node {
         return;
     }
 
-    inline size_t ReduceSums(const uint8_t idx) {
+    inline size_t ReduceSums(const uint_fast8_t idx) {
         if (idx == 1) {
             return this->size;
         } else if (idx >= kRegions) {

@@ -13,7 +13,7 @@ namespace cpdd {
 #define LOG  std::cout
 #define ENDL std::endl << std::flush
 
-template<typename Point, uint8_t kBDO = 6>
+template<typename Point, uint_fast8_t kBDO = 6>
 class BaseTree {
  public:
     using BucketType = uint_fast8_t;
@@ -77,10 +77,6 @@ class BaseTree {
     static inline bool WithinCircle(const Box& bx, const Circle& cl);
     static inline bool WithinCircle(const Point& p, const Circle& cl);
     static inline bool CircleIntersectBox(const Circle& cl, const Box& bx);
-
-    // NOTE: dimensionality
-    template<typename SplitRule>
-    inline DimsType PickRebuildDim(const Node* T, const DimsType d);
 
     // NOTE: build tree
     static inline void SamplePoints(Slice In, Points& arr);

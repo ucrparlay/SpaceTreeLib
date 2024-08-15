@@ -5,7 +5,7 @@
 #include "cpdd/dependence/tree_node.h"
 
 namespace cpdd {
-template<typename Point, typename SplitRule, uint8_t kMD, uint8_t kBDO>
+template<typename Point, typename SplitRule, uint_fast8_t kMD, uint_fast8_t kBDO>
 template<typename Range>
 auto OrthTree<Point, SplitRule, kMD, kBDO>::KNN(
     Node* T, const Point& q, kBoundedQueue<Point, Range>& bq) {
@@ -21,26 +21,26 @@ auto OrthTree<Point, SplitRule, kMD, kBDO>::KNN(
     return logger;
 }
 
-template<typename Point, typename SplitRule, uint8_t kMD, uint8_t kBDO>
+template<typename Point, typename SplitRule, uint_fast8_t kMD, uint_fast8_t kBDO>
 template<typename Range>
 void OrthTree<Point, SplitRule, kMD, kBDO>::Flatten(Range&& Out) {
     BT::template FlattenRec<Leaf, Interior>(this->root_,
                                             parlay::make_slice(Out));
 }
 
-template<typename Point, typename SplitRule, uint8_t kMD, uint8_t kBDO>
+template<typename Point, typename SplitRule, uint_fast8_t kMD, uint_fast8_t kBDO>
 size_t OrthTree<Point, SplitRule, kMD, kBDO>::RangeCount(const Box& bx) {
     return BT::template RangeCountRectangle<Leaf, Interior>(
         this->root_, bx, this->tree_box_, 0, 1);
 }
 
-template<typename Point, typename SplitRule, uint8_t kMD, uint8_t kBDO>
+template<typename Point, typename SplitRule, uint_fast8_t kMD, uint_fast8_t kBDO>
 size_t OrthTree<Point, SplitRule, kMD, kBDO>::RangeCount(const Circle& cl) {
     return BT::template RangeCountRadius<Leaf, Interior>(this->root_, cl,
                                                          this->tree_box_);
 }
 
-template<typename Point, typename SplitRule, uint8_t kMD, uint8_t kBDO>
+template<typename Point, typename SplitRule, uint_fast8_t kMD, uint_fast8_t kBDO>
 template<typename Range>
 size_t OrthTree<Point, SplitRule, kMD, kBDO>::RangeQuery(const Box& query_box,
                                                          Range&& Out) {
@@ -51,7 +51,7 @@ size_t OrthTree<Point, SplitRule, kMD, kBDO>::RangeQuery(const Box& query_box,
     return s;
 }
 
-template<typename Point, typename SplitRule, uint8_t kMD, uint8_t kBDO>
+template<typename Point, typename SplitRule, uint_fast8_t kMD, uint_fast8_t kBDO>
 void OrthTree<Point, SplitRule, kMD, kBDO>::DeleteTree() {
     BT::template DeleteTreeWrapper<Leaf, Interior>();
 }

@@ -4,7 +4,7 @@
 #include <utility>
 
 namespace cpdd {
-template<typename Point, uint8_t kBDO>
+template<typename Point, uint_fast8_t kBDO>
 template<typename Leaf>
 size_t BaseTree<Point, kBDO>::RangeCountRectangleLeaf(Node* T,
                                                       const Box& query_box,
@@ -27,7 +27,7 @@ size_t BaseTree<Point, kBDO>::RangeCountRectangleLeaf(Node* T,
     return cnt;
 }
 
-template<typename Point, uint8_t kBDO>
+template<typename Point, uint_fast8_t kBDO>
 template<typename Leaf, IsBinaryNode Interior>
 size_t BaseTree<Point, kBDO>::RangeCountRectangle(Node* T, const Box& query_box,
                                                   const Box& node_box) {
@@ -61,7 +61,7 @@ size_t BaseTree<Point, kBDO>::RangeCountRectangle(Node* T, const Box& query_box,
     return l + r;
 }
 
-template<typename Point, uint8_t kBDO>
+template<typename Point, uint_fast8_t kBDO>
 template<typename Leaf, IsMultiNode Interior>
 size_t BaseTree<Point, kBDO>::RangeCountRectangle(Node* T, const Box& query_box,
                                                   const Box& node_box,
@@ -110,7 +110,7 @@ size_t BaseTree<Point, kBDO>::RangeCountRectangle(Node* T, const Box& query_box,
 }
 
 // TODO: as range_count_rectangle
-template<typename Point, uint8_t kBDO>
+template<typename Point, uint_fast8_t kBDO>
 template<typename Leaf, IsBinaryNode Interior>
 size_t BaseTree<Point, kBDO>::RangeCountRadius(Node* T, const Circle& cl,
                                                const Box& node_box) {
@@ -142,7 +142,7 @@ size_t BaseTree<Point, kBDO>::RangeCountRadius(Node* T, const Circle& cl,
     return l + r;
 };
 
-template<typename Point, uint8_t kBDO>
+template<typename Point, uint_fast8_t kBDO>
 template<typename Leaf, typename Range>
 void BaseTree<Point, kBDO>::RangeQueryLeaf(Node* T, Range Out, size_t& s,
                                            const Box& query_box,
@@ -164,7 +164,7 @@ void BaseTree<Point, kBDO>::RangeQueryLeaf(Node* T, Range Out, size_t& s,
     return;
 }
 
-template<typename Point, uint8_t kBDO>
+template<typename Point, uint_fast8_t kBDO>
 template<typename Leaf, IsBinaryNode Interior, typename Range>
 void BaseTree<Point, kBDO>::RangeQuerySerialRecursive(Node* T, Range Out,
                                                       size_t& s,
@@ -204,7 +204,7 @@ void BaseTree<Point, kBDO>::RangeQuerySerialRecursive(Node* T, Range Out,
     return;
 }
 
-template<typename Point, uint8_t kBDO>
+template<typename Point, uint_fast8_t kBDO>
 template<typename Leaf, IsMultiNode Interior, typename Range>
 void BaseTree<Point, kBDO>::RangeQuerySerialRecursive(
     Node* T, Range Out, size_t& s, const Box& query_box, const Box& node_box,

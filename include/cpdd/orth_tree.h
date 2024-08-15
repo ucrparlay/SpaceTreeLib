@@ -6,7 +6,7 @@
 
 namespace cpdd {
 
-template<typename Point, typename SplitRule, uint8_t kMD = 2, uint8_t kBDO = 6>
+template<typename Point, typename SplitRule, uint_fast8_t kMD = 2, uint_fast8_t kBDO = 6>
 class OrthTree : private BaseTree<Point, kBDO> {
  public:
     static constexpr size_t kSplitterNum = kMD;
