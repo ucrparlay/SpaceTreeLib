@@ -209,7 +209,7 @@ void runKDParallel(points& wp, const points& wi, Typename* kdknn, points& p,
             parlay::reduce(parlay::delayed_tabulate(
                                queryNum, [&](size_t i) { return kdknn[i]; }),
                            parlay::maximum<Typename>());
-        LOG << maxReduceSize << ENDL;
+        LOG << "max size " << maxReduceSize << ENDL;
         p.resize(queryNum * maxReduceSize);
         rangeQuery<point>(wp, pkd, kdknn, rounds, queryNum, p);
     }
@@ -396,8 +396,11 @@ int main(int argc, char* argv[]) {
             }
 
             size_t s = i * maxReduceSize;
-            std::sort(kdans.begin() + s, kdans.begin() + s + size_t(kdknn[i]));
-            std::sort(cgOut.begin() + s, cgOut.begin() + s + size_t(cgknn[i]));
+            parlay::sort_inplace(kdans.cut(s, s + size_t(kdknn[i])));
+            parlay::sort_inplace(cgOut.cut(s, s + size_t(cgknn[i])));
+            // std::sort(kdans.begin() + s, kdans.begin() + s +
+            // size_t(kdknn[i])); std::sort(cgOut.begin() + s, cgOut.begin() + s
+            // + size_t(cgknn[i]));
 
             for (int j = 0; j < kdknn[i]; j++) {
                 if (kdans[j + s] != cgOut[j + s]) {

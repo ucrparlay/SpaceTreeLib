@@ -74,34 +74,38 @@ size_t BaseTree<Point, kBDO>::RangeCountRectangle(Node* T, const Box& query_box,
     Interior* TI = static_cast<Interior*>(T);
     Box abox(node_box);
 
+    auto recurse = [&query_box, &DIM](Node* Ts, const Box& box, size_t& counter,
+                                      DimsType next_dim,
+                                      DimsType next_idx) -> void {
+        if (!BoxIntersectBox(box, query_box)) {
+            counter = 0;
+        } else if (WithinBox(box, query_box)) {
+            // NOTE: when reach leaf, Ts is the children
+            counter = static_cast<Interior*>(Ts)->ReduceSums(next_idx);
+        } else {
+            counter = RangeCountRectangle<Leaf, Interior>(
+                Ts, query_box, box, next_dim, next_idx, DIM);
+        }
+    };
+
     size_t l, r;
     idx <<= 1;
     bool reach_leaf = idx >= Interior::kRegions;
 
-    auto recurse = [&](Node* Ts, const Box& box, size_t& counter,
-                       DimsType next_dim) -> void {
-        if (!BoxIntersectBox(box, query_box)) {
-            counter = 0;
-        } else if (WithinBox(box, query_box)) {
-            counter = Ts->is_leaf ? Ts->size
-                                  : static_cast<Interior*>(Ts)->ReduceSums(idx);
-        } else {
-            counter = RangeCountRectangle<Leaf, Interior>(
-                Ts, query_box, box, next_dim, reach_leaf ? 1 : idx, DIM);
-        }
-    };
-
+    // NOTE: visit left half
+    assert(TI->split[dim].second == dim);
     auto& mod_dim = abox.second.pnt[TI->split[dim].second];
     auto split = TI->split[dim].first;
     std::ranges::swap(mod_dim, split);
     recurse(reach_leaf ? TI->tree_nodes[idx - Interior::kRegions] : T, abox, l,
-            (dim + 1) % DIM);
+            (dim + 1) % DIM, reach_leaf ? 1 : idx);
 
     idx |= 1;
     std::ranges::swap(mod_dim, split);
+    assert(abox == node_box);
     abox.first.pnt[TI->split[dim].second] = split;
     recurse(reach_leaf ? TI->tree_nodes[idx - Interior::kRegions] : T, abox, r,
-            (dim + 1) % DIM);
+            (dim + 1) % DIM, reach_leaf ? 1 : idx);
 
     return l + r;
 }
@@ -212,38 +216,43 @@ void BaseTree<Point, kBDO>::RangeQuerySerialRecursive(
     }
 
     Interior* TI = static_cast<Interior*>(T);
-    idx <<= 1;
-    bool reach_leaf = idx >= Interior::kRegions;
-    Box abox(node_box);
 
-    auto recurse = [&](Node* Ts, const Box& box, DimsType next_dim) -> void {
+    auto recurse = [&query_box, &s, &DIM, &Out](Node* Ts, const Box& box,
+                                                DimsType next_dim,
+                                                BucketType next_idx) -> void {
         if (!BoxIntersectBox(box, query_box)) {
             return;
         } else if (WithinBox(box, query_box)) {
-            size_t candidate_size = static_cast<Interior*>(Ts)->ReduceSums(idx);
+            size_t candidate_size =
+                static_cast<Interior*>(Ts)->ReduceSums(next_idx);
             PartialFlatten<Leaf, Interior>(Ts, Out.cut(s, s + candidate_size),
-                                           idx);
+                                           next_idx);
             s += candidate_size;
             return;
         } else {
             RangeQuerySerialRecursive<Leaf, Interior>(
-                Ts, Out, s, query_box, box, next_dim, reach_leaf ? 1 : idx,
-                DIM);
+                Ts, Out, s, query_box, box, next_dim, next_idx, DIM);
             return;
         }
     };
 
+    idx <<= 1;
+    bool reach_leaf = idx >= Interior::kRegions;
+    Box abox(node_box);
+
+    // NOTE: visit left half
     auto& mod_dim = abox.second.pnt[TI->split[dim].second];
     auto split = TI->split[dim].first;
     std::ranges::swap(mod_dim, split);
     recurse(reach_leaf ? TI->tree_nodes[idx - Interior::kRegions] : T, abox,
-            (dim + 1) % DIM);
+            (dim + 1) % DIM, reach_leaf ? 1 : idx);
 
+    // NOTE: visit right
     idx |= 1;
     std::ranges::swap(mod_dim, split);
     abox.first.pnt[TI->split[dim].second] = split;
     recurse(reach_leaf ? TI->tree_nodes[idx - Interior::kRegions] : T, abox,
-            (dim + 1) % DIM);
+            (dim + 1) % DIM, reach_leaf ? 1 : idx);
 
     return;
 }

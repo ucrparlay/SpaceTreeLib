@@ -119,8 +119,9 @@ void BaseTree<Point, kBDO>::PartialFlatten(Node* T, Range Out, BucketType idx) {
         FlattenRec<Leaf, Interior>(T, Out.cut(0, T->size));
         return;
     } else if (idx >= Interior::kRegions) {
-        auto ns =
+        Node* ns =
             static_cast<Interior*>(T)->tree_nodes[idx - Interior::kRegions];
+        assert(ns->size == Out.size());
         FlattenRec<Leaf, Interior>(ns, Out.cut(0, ns->size));
         return;
     }
