@@ -44,10 +44,9 @@ size_t BaseTree<Point, kBDO>::CheckSize(Node* T) {
 
 template<typename Point, uint8_t kBDO>
 template<typename Leaf, typename Interior>
-void BaseTree<Point, kBDO>::CheckTreeSameSequential(Node* T, int dim,
-                                                    const int& DIM) {
+void BaseTree<Point, kBDO>::CheckTreeSameSequential(Node* T, int dim) {
     if (T->is_leaf) {
-        // assert( PickRebuildDim( T, DIM ) == dim );
+        // assert( PickRebuildDim( T, kDim ) == dim );
         return;
     }
     if constexpr (IsBinaryNode<Interior>) {
@@ -57,15 +56,11 @@ void BaseTree<Point, kBDO>::CheckTreeSameSequential(Node* T, int dim,
                 << ENDL;
         }
         assert(TI->split.second == dim);
-        dim = (dim + 1) % DIM;
+        dim = (dim + 1) % kDim;
         parlay::par_do_if(
             T->size > 1000,
-            [&]() {
-                CheckTreeSameSequential<Leaf, Interior>(TI->left, dim, DIM);
-            },
-            [&]() {
-                CheckTreeSameSequential<Leaf, Interior>(TI->right, dim, DIM);
-            });
+            [&]() { CheckTreeSameSequential<Leaf, Interior>(TI->left, dim); },
+            [&]() { CheckTreeSameSequential<Leaf, Interior>(TI->right, dim); });
     } else {
         assert(IsMultiNode<Interior>);
         Interior* TI = static_cast<Interior*>(T);
@@ -74,9 +69,9 @@ void BaseTree<Point, kBDO>::CheckTreeSameSequential(Node* T, int dim,
             assert(TI->split[i].second == dim);
             dim += 1;
         }
-        assert(dim == DIM);
+        assert(dim == kDim);
         for (int i = 0; i < TI->tree_nodes.size(); i++) {
-            CheckTreeSameSequential<Leaf, Interior>(TI->tree_nodes[i], 0, DIM);
+            CheckTreeSameSequential<Leaf, Interior>(TI->tree_nodes[i], 0);
         }
     }
     return;
@@ -84,7 +79,7 @@ void BaseTree<Point, kBDO>::CheckTreeSameSequential(Node* T, int dim,
 
 template<typename Point, uint8_t kBDO>
 template<typename Leaf, typename Interior, typename SplitRule>
-void BaseTree<Point, kBDO>::Validate(const DimsType DIM) {
+void BaseTree<Point, kBDO>::Validate() {
     if (CheckBox<Leaf, Interior>(this->root_, this->tree_box_) &&
         LegalBox(this->tree_box_)) {
         std::cout << "Correct bounding Box" << std::endl << std::flush;
@@ -96,7 +91,7 @@ void BaseTree<Point, kBDO>::Validate(const DimsType DIM) {
     // NOTE: used to check rotate dimension
     // For kdtree binary node, the dummy node may break the rotation manner
     if constexpr (IsRotateDimSplit<SplitRule> && IsMultiNode<Interior>) {
-        CheckTreeSameSequential<Leaf, Interior>(this->root_, 0, DIM);
+        CheckTreeSameSequential<Leaf, Interior>(this->root_, 0);
         std::cout << "Correct rotate dimension" << std::endl << std::flush;
     }
 

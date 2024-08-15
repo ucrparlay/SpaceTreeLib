@@ -173,7 +173,7 @@ void runKDParallel(points& wp, const points& wi, Typename* kdknn, points& p,
     buildTree<point>(Dim, wp, rounds, pkd);
     cpdd::Node* KDParallelRoot = pkd.GetRoot();
     pkd.template Validate<typename Tree::Leaf, typename Tree::Interior,
-                          typename Tree::SplitRuleType>(Dim);
+                          typename Tree::SplitRuleType>();
 
     /*if (tag >= 1) {*/
     /*    batchInsert<point, true>(pkd, wp, wi, Dim, 2,

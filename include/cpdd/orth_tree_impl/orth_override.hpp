@@ -8,8 +8,7 @@ namespace cpdd {
 template<typename Point, typename SplitRule, uint8_t kMD, uint8_t kBDO>
 template<typename Range>
 auto OrthTree<Point, SplitRule, kMD, kBDO>::KNN(
-    Node* T, const Point& q, const DimsType DIM,
-    kBoundedQueue<Point, Range>& bq) {
+    Node* T, const Point& q, kBoundedQueue<Point, Range>& bq) {
     KNNLogger logger;
     // BT::template KNNMulti<Leaf, Interior>(T, q, DIM, bq, this->tree_box_,
     //                                       vis_node_num, generate_box_num,
@@ -17,8 +16,8 @@ auto OrthTree<Point, SplitRule, kMD, kBDO>::KNN(
     // BT::template KNNBinary<Leaf, KdInteriorNode>(T, q, DIM, bq,
     // this->tree_box_,
     //                                              logger);
-    BT::template KNNMultiExpand<Leaf, Interior>(T, q, 0, 1, DIM, bq,
-                                                this->tree_box_, logger);
+    BT::template KNNMultiExpand<Leaf, Interior>(T, q, 0, 1, bq, this->tree_box_,
+                                                logger);
     return logger;
 }
 
@@ -32,7 +31,7 @@ void OrthTree<Point, SplitRule, kMD, kBDO>::Flatten(Range&& Out) {
 template<typename Point, typename SplitRule, uint8_t kMD, uint8_t kBDO>
 size_t OrthTree<Point, SplitRule, kMD, kBDO>::RangeCount(const Box& bx) {
     return BT::template RangeCountRectangle<Leaf, Interior>(
-        this->root_, bx, this->tree_box_, 0, 1, kMD);
+        this->root_, bx, this->tree_box_, 0, 1);
 }
 
 template<typename Point, typename SplitRule, uint8_t kMD, uint8_t kBDO>
@@ -48,7 +47,7 @@ size_t OrthTree<Point, SplitRule, kMD, kBDO>::RangeQuery(const Box& query_box,
     size_t s = 0;
     BT::template RangeQuerySerialRecursive<Leaf, Interior>(
         this->root_, parlay::make_slice(Out), s, query_box, this->tree_box_, 0,
-        1, kMD);
+        1);
     return s;
 }
 

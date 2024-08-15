@@ -40,8 +40,8 @@ class BaseTree {
     // NOTE: Const variables
     // NOTE: uint32t handle up to 4e9 at least
     // WARN: bucket num should smaller than 1<<8 to handle type overflow
-    static const constexpr BucketType kBuildDepthOnce = 6;
-    // static const constexpr BucketType kBuildDepthOnce = kBDO;
+    static const constexpr DimsType kDim = std::tuple_size_v<Coords>;
+    static const constexpr BucketType kBuildDepthOnce = kBDO;
     static const constexpr BucketType kPivotNum = (1 << kBuildDepthOnce) - 1;
     static const constexpr BucketType kBucketNum = 1 << kBuildDepthOnce;
 
@@ -80,8 +80,7 @@ class BaseTree {
 
     // NOTE: dimensionality
     template<typename SplitRule>
-    inline DimsType PickRebuildDim(const Node* T, const DimsType d,
-                                   const DimsType DIM);
+    inline DimsType PickRebuildDim(const Node* T, const DimsType d);
 
     // NOTE: build tree
     static inline void SamplePoints(Slice In, Points& arr);
@@ -115,39 +114,35 @@ class BaseTree {
     static void DeleteTreeRecursive(Node* T);
 
     // NOTE: KNN query stuffs
-    static inline Coord P2PDistance(const Point& p, const Point& q,
-                                    const DimsType DIM);
+    static inline Coord P2PDistance(const Point& p, const Point& q);
 
-    static inline Coord P2BMinDistance(const Point& p, const Box& a,
-                                       const DimsType DIM);
+    static inline Coord P2BMinDistance(const Point& p, const Box& a);
 
-    static inline Coord P2BMaxDistance(const Point& p, const Box& a,
-                                       const DimsType DIM);
+    static inline Coord P2BMaxDistance(const Point& p, const Box& a);
 
     static inline Coord InterruptibleDistance(const Point& p, const Point& q,
-                                              Coord up, DimsType DIM);
+                                              Coord up);
 
     // NOTE: searech knn in the leaf
     template<typename Leaf, typename Range>
-    static void KNNLeaf(Node* T, const Point& q, const DimsType DIM,
+    static void KNNLeaf(Node* T, const Point& q,
                         kBoundedQueue<Point, Range>& bq, const Box& bx);
 
     // NOTE: search knn in the binary node
     template<typename Leaf, IsBinaryNode Interior, typename Range>
-    static void KNNBinary(Node* T, const Point& q, const DimsType DIM,
+    static void KNNBinary(Node* T, const Point& q,
                           kBoundedQueue<Point, Range>& bq, const Box& bx,
                           KNNLogger& logger);
 
     // NOTE: search knn in the expanded multi node
     template<typename Leaf, IsMultiNode Interior, typename Range>
     static void KNNMultiExpand(Node* T, const Point& q, DimsType dim,
-                               BucketType idx, const DimsType DIM,
-                               kBoundedQueue<Point, Range>& bq, const Box& bx,
-                               KNNLogger& logger);
+                               BucketType idx, kBoundedQueue<Point, Range>& bq,
+                               const Box& bx, KNNLogger& logger);
 
     // NOTE: search knn in the multi node
     template<typename Leaf, IsMultiNode Interior, typename Range>
-    static void KNNMulti(Node* T, const Point& q, const DimsType DIM,
+    static void KNNMulti(Node* T, const Point& q,
                          kBoundedQueue<Point, Range>& bq, const Box& bx,
                          KNNLogger& logger);
 
@@ -163,7 +158,7 @@ class BaseTree {
     template<typename Leaf, IsMultiNode Interior>
     static size_t RangeCountRectangle(Node* T, const Box& query_box,
                                       const Box& node_box, DimsType dim,
-                                      BucketType idx, const DimsType DIM);
+                                      BucketType idx);
 
     template<typename Leaf, IsBinaryNode Interior>
     static size_t RangeCountRadius(Node* T, const Circle& cl,
@@ -188,7 +183,7 @@ class BaseTree {
     static void RangeQuerySerialRecursive(Node* T, Range Out, size_t& s,
                                           const Box& query_box,
                                           const Box& node_box, DimsType dim,
-                                          BucketType idx, const DimsType DIM);
+                                          BucketType idx);
 
     // NOTE: utility
     // TODO: better evaluate the parallel recursion function
@@ -221,10 +216,10 @@ class BaseTree {
     size_t CheckSize(Node* T);
 
     template<typename Leaf, typename Interior>
-    void CheckTreeSameSequential(Node* T, int dim, const int& DIM);
+    void CheckTreeSameSequential(Node* T, int dim);
 
     template<typename Leaf, typename Interior, typename SplitRule>
-    void Validate(const DimsType DIM);
+    void Validate();
 
     template<typename Leaf, typename Interior>
     size_t GetTreeHeight();

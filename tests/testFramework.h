@@ -196,11 +196,11 @@ void buildTree(const int& Dim, const parlay::sequence<Point>& WP,
     pkd.DeleteTree();
     double aveBuild = time_loop(
         rounds, loopLate, [&]() { parlay::copy(WP.cut(0, n), wp.cut(0, n)); },
-        [&]() { pkd.Build(wp.cut(0, n), Dim); }, [&]() { pkd.DeleteTree(); });
+        [&]() { pkd.Build(wp.cut(0, n)); }, [&]() { pkd.DeleteTree(); });
 
     //* return a built tree
     parlay::copy(WP.cut(0, n), wp.cut(0, n));
-    pkd.Build(wp.cut(0, n), Dim);
+    pkd.Build(wp.cut(0, n));
 
     if (kPrint == 1) {
         LOG << aveBuild << " " << std::flush;
@@ -541,7 +541,7 @@ void queryKNN(const uint_fast8_t& Dim, const parlay::sequence<Point>& WP,
             }
             parlay::parallel_for(0, n, [&](size_t i) {
                 auto [vis_node_num, gen_box_num, check_box_num, skip_box_num] =
-                    pkd.KNN(KDParallelRoot, wp[i], Dim, bq[i]);
+                    pkd.KNN(KDParallelRoot, wp[i], bq[i]);
                 kdknn[i] = bq[i].top().second;
                 vis_nodes[i] = vis_node_num;
                 gen_box[i] = gen_box_num;

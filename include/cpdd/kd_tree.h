@@ -48,9 +48,9 @@ class KdTree : private BaseTree<Point, kBDO> {
 
     // NOTE: functions
     template<typename Range>
-    void Build(Range&& In, int DIM);
+    void Build(Range&& In);
 
-    void Build_(Slice In, const DimsType DIM);
+    void Build_(Slice In);
 
     void DeleteTree() override;
 
@@ -58,8 +58,7 @@ class KdTree : private BaseTree<Point, kBDO> {
     void Flatten(Range&& Out);
 
     template<typename Range>
-    auto KNN(Node* T, const Point& q, const DimsType DIM,
-             kBoundedQueue<Point, Range>& bq);
+    auto KNN(Node* T, const Point& q, kBoundedQueue<Point, Range>& bq);
 
     size_t RangeCount(const Box& query_box);
 
@@ -71,17 +70,15 @@ class KdTree : private BaseTree<Point, kBDO> {
  private:
     void DivideRotate(Slice In, SplitterSeq& pivots, DimsType dim,
                       BucketType idx, BucketType deep, BucketType& bucket,
-                      const DimsType DIM, BoxSeq& boxs, const Box& bx);
+                      BoxSeq& boxs, const Box& bx);
 
     void PickPivots(Slice In, const size_t& n, SplitterSeq& pivots,
-                    const DimsType dim, const DimsType DIM, BoxSeq& boxs,
-                    const Box& bx);
+                    const DimsType dim, BoxSeq& boxs, const Box& bx);
 
-    Node* BuildRecursive(Slice In, Slice Out, DimsType dim, const DimsType DIM,
-                         const Box& bx);
+    Node* BuildRecursive(Slice In, Slice Out, DimsType dim, const Box& bx);
 
     Node* SerialBuildRecursive(Slice In, Slice Out, DimsType dim,
-                               const DimsType DIM, const Box& bx);
+                               const Box& bx);
 
     SplitRule split_rule_;
 };

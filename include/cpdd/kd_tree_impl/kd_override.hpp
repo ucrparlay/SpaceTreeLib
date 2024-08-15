@@ -7,11 +7,9 @@ namespace cpdd {
 template<typename Point, typename SplitRule, uint8_t kBDO>
 template<typename Range>
 auto KdTree<Point, SplitRule, kBDO>::KNN(Node* T, const Point& q,
-                                         const DimsType DIM,
                                          kBoundedQueue<Point, Range>& bq) {
     KNNLogger logger;
-    BT::template KNNBinary<Leaf, Interior>(T, q, DIM, bq, this->tree_box_,
-                                           logger);
+    BT::template KNNBinary<Leaf, Interior>(T, q, bq, this->tree_box_, logger);
     return logger;
 }
 

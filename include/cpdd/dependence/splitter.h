@@ -12,16 +12,14 @@ struct BaseSplitterRule {
     using Num = BT::Num;
     using Coord = BT::Coord;
 
-    virtual DimsType FindCuttingDimension(const Box& bx, const DimsType dim,
-                                          const DimsType DIM) = 0;
+    virtual DimsType FindCuttingDimension(const Box& bx,
+                                          const DimsType dim) = 0;
 
     virtual std::pair<Box, DimsType> SwitchDimension(const Slice In,
                                                      const DimsType dim,
-                                                     const DimsType DIM,
                                                      const Box& bx) = 0;
 
-    virtual DimsType FindRebuildDimension(const DimsType dim,
-                                          const DimsType DIM) = 0;
+    virtual DimsType FindRebuildDimension(const DimsType dim) = 0;
 };
 
 template<typename Point>
@@ -36,13 +34,12 @@ struct MaxStretchDim : BaseSplitterRule<Point> {
 
     void MaxStretchTag() {}
 
-    DimsType FindCuttingDimension(const Box& bx,
-                                  [[maybe_unused]] const DimsType dim,
-                                  const DimsType DIM) override {
+    DimsType FindCuttingDimension(
+        const Box& bx, [[maybe_unused]] const DimsType dim) override {
         DimsType d(0);
         Coord diff(bx.second.pnt[0] - bx.first.pnt[0]);
         assert(Num::Geq(diff, 0));
-        for (DimsType i = 1; i < DIM; ++i) {
+        for (DimsType i = 1; i < BT::kDim; ++i) {
             if (Num::Gt(bx.second.pnt[i] - bx.first.pnt[i], diff)) {
                 diff = bx.second.pnt[i] - bx.first.pnt[i];
                 d = i;
@@ -52,13 +49,12 @@ struct MaxStretchDim : BaseSplitterRule<Point> {
     };
 
     DimsType FindRebuildDimension(
-        [[maybe_unused]] const DimsType dim,
-        [[maybe_unused]] const DimsType DIM) override {
+        [[maybe_unused]] const DimsType dim) override {
         return 0;
     };
 
     std::pair<Box, DimsType> SwitchDimension(
-        const Slice In, const DimsType dim, [[maybe_unused]] const DimsType DIM,
+        const Slice In, const DimsType dim,
         [[maybe_unused]] const Box& bx) override {
         return std::make_pair(BT::GetBox(In), dim);
     };
@@ -77,23 +73,21 @@ struct RotateDim : BaseSplitterRule<Point> {
 
     void RotateDimTag() {}
 
-    DimsType FindCuttingDimension(
-        [[maybe_unused]] const Box& bx, const DimsType dim,
-        [[maybe_unused]] const DimsType DIM) override {
+    DimsType FindCuttingDimension([[maybe_unused]] const Box& bx,
+                                  const DimsType dim) override {
         return dim;
     };
 
     DimsType FindRebuildDimension(
-        [[maybe_unused]] const DimsType dim,
-        [[maybe_unused]] const DimsType DIM) override {
+        [[maybe_unused]] const DimsType dim) override {
         return dim;
     };
 
     std::pair<Box, DimsType> SwitchDimension(
-        const Slice In, const DimsType dim, const DimsType DIM,
+        const Slice In, const DimsType dim,
         [[maybe_unused]] const Box& bx) override {
-        DimsType d = (dim + 1) % DIM;
-        // for (DimsType i = 0; i < DIM; ++i, ++d) {
+        DimsType d = (dim + 1) % BT::kDim;
+        // for (DimsType i = 0; i < BT::kDim; ++i, ++d) {
         //     if (!Num::Eq(In.begin()->pnt[d], std::prev(In.end())->pnt[d])) {
         //         break;
         //     }

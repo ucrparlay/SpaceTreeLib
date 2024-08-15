@@ -65,8 +65,8 @@ template<typename Point, uint8_t kBDO>
 template<typename Leaf, IsMultiNode Interior>
 size_t BaseTree<Point, kBDO>::RangeCountRectangle(Node* T, const Box& query_box,
                                                   const Box& node_box,
-                                                  DimsType dim, BucketType idx,
-                                                  const DimsType DIM) {
+                                                  DimsType dim,
+                                                  BucketType idx) {
     if (T->is_leaf) {
         return RangeCountRectangleLeaf<Leaf>(T, query_box, node_box);
     }
@@ -74,17 +74,16 @@ size_t BaseTree<Point, kBDO>::RangeCountRectangle(Node* T, const Box& query_box,
     Interior* TI = static_cast<Interior*>(T);
     Box abox(node_box);
 
-    auto recurse = [&query_box, &DIM](Node* Ts, const Box& box, size_t& counter,
-                                      DimsType next_dim,
-                                      DimsType next_idx) -> void {
+    auto recurse = [&query_box](Node* Ts, const Box& box, size_t& counter,
+                                DimsType next_dim, DimsType next_idx) -> void {
         if (!BoxIntersectBox(box, query_box)) {
             counter = 0;
         } else if (WithinBox(box, query_box)) {
             // NOTE: when reach leaf, Ts is the children
             counter = static_cast<Interior*>(Ts)->ReduceSums(next_idx);
         } else {
-            counter = RangeCountRectangle<Leaf, Interior>(
-                Ts, query_box, box, next_dim, next_idx, DIM);
+            counter = RangeCountRectangle<Leaf, Interior>(Ts, query_box, box,
+                                                          next_dim, next_idx);
         }
     };
 
@@ -98,14 +97,14 @@ size_t BaseTree<Point, kBDO>::RangeCountRectangle(Node* T, const Box& query_box,
     auto split = TI->split[dim].first;
     std::ranges::swap(mod_dim, split);
     recurse(reach_leaf ? TI->tree_nodes[idx - Interior::kRegions] : T, abox, l,
-            (dim + 1) % DIM, reach_leaf ? 1 : idx);
+            (dim + 1) % kDim, reach_leaf ? 1 : idx);
 
     idx |= 1;
     std::ranges::swap(mod_dim, split);
     assert(abox == node_box);
     abox.first.pnt[TI->split[dim].second] = split;
     recurse(reach_leaf ? TI->tree_nodes[idx - Interior::kRegions] : T, abox, r,
-            (dim + 1) % DIM, reach_leaf ? 1 : idx);
+            (dim + 1) % kDim, reach_leaf ? 1 : idx);
 
     return l + r;
 }
@@ -209,7 +208,7 @@ template<typename Point, uint8_t kBDO>
 template<typename Leaf, IsMultiNode Interior, typename Range>
 void BaseTree<Point, kBDO>::RangeQuerySerialRecursive(
     Node* T, Range Out, size_t& s, const Box& query_box, const Box& node_box,
-    DimsType dim, BucketType idx, const DimsType DIM) {
+    DimsType dim, BucketType idx) {
     if (T->is_leaf) {
         RangeQueryLeaf<Leaf>(T, Out, s, query_box, node_box);
         return;
@@ -217,9 +216,9 @@ void BaseTree<Point, kBDO>::RangeQuerySerialRecursive(
 
     Interior* TI = static_cast<Interior*>(T);
 
-    auto recurse = [&query_box, &s, &DIM, &Out](Node* Ts, const Box& box,
-                                                DimsType next_dim,
-                                                BucketType next_idx) -> void {
+    auto recurse = [&query_box, &s, &Out](Node* Ts, const Box& box,
+                                          DimsType next_dim,
+                                          BucketType next_idx) -> void {
         if (!BoxIntersectBox(box, query_box)) {
             return;
         } else if (WithinBox(box, query_box)) {
@@ -230,8 +229,8 @@ void BaseTree<Point, kBDO>::RangeQuerySerialRecursive(
             s += candidate_size;
             return;
         } else {
-            RangeQuerySerialRecursive<Leaf, Interior>(
-                Ts, Out, s, query_box, box, next_dim, next_idx, DIM);
+            RangeQuerySerialRecursive<Leaf, Interior>(Ts, Out, s, query_box,
+                                                      box, next_dim, next_idx);
             return;
         }
     };
@@ -245,14 +244,14 @@ void BaseTree<Point, kBDO>::RangeQuerySerialRecursive(
     auto split = TI->split[dim].first;
     std::ranges::swap(mod_dim, split);
     recurse(reach_leaf ? TI->tree_nodes[idx - Interior::kRegions] : T, abox,
-            (dim + 1) % DIM, reach_leaf ? 1 : idx);
+            (dim + 1) % kDim, reach_leaf ? 1 : idx);
 
     // NOTE: visit right
     idx |= 1;
     std::ranges::swap(mod_dim, split);
     abox.first.pnt[TI->split[dim].second] = split;
     recurse(reach_leaf ? TI->tree_nodes[idx - Interior::kRegions] : T, abox,
-            (dim + 1) % DIM, reach_leaf ? 1 : idx);
+            (dim + 1) % kDim, reach_leaf ? 1 : idx);
 
     return;
 }

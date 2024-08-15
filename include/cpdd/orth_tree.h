@@ -54,7 +54,7 @@ class OrthTree : private BaseTree<Point, kBDO> {
 
     // NOTE: functions
     template<typename Range>
-    void Build(Range&& In, uint8_t DIM);
+    void Build(Range&& In);
 
     void DeleteTree() override;
 
@@ -62,8 +62,7 @@ class OrthTree : private BaseTree<Point, kBDO> {
     void Flatten(Range&& Out);
 
     template<typename Range>
-    auto KNN(Node* T, const Point& q, const DimsType DIM,
-             kBoundedQueue<Point, Range>& bq);
+    auto KNN(Node* T, const Point& q, kBoundedQueue<Point, Range>& bq);
 
     size_t RangeCount(const Box& query_box);
 
@@ -73,25 +72,23 @@ class OrthTree : private BaseTree<Point, kBDO> {
     size_t RangeQuery(const Box& query_box, Range&& Out);
 
  private:
-    void Build_(Slice In, const DimsType DIM);
+    void Build_(Slice In);
 
-    void SerialSplit(Slice In, DimsType dim, DimsType DIM, DimsType idx,
-                     const Box& box, const Splitter& split,
-                     parlay::sequence<BallsType>& sums, BoxSeq& box_seq);
+    void SerialSplit(Slice In, DimsType dim, DimsType idx, const Box& box,
+                     const Splitter& split, parlay::sequence<BallsType>& sums,
+                     BoxSeq& box_seq);
 
     void DivideRotate(HyperPlaneSeq& pivots, DimsType dim, BucketType idx,
-                      DimsType deep, BucketType& bucket, const DimsType DIM,
-                      BoxSeq& box_seq, const Box& box);
+                      DimsType deep, BucketType& bucket, BoxSeq& box_seq,
+                      const Box& box);
 
     void PickPivots(Slice In, const size_t& n, HyperPlaneSeq& pivots,
-                    const DimsType dim, const DimsType DIM, BoxSeq& boxs,
-                    const Box& bx);
+                    const DimsType dim, BoxSeq& boxs, const Box& bx);
 
-    Node* BuildRecursive(Slice In, Slice Out, const DimsType DIM,
-                         const Box& bx);
+    Node* BuildRecursive(Slice In, Slice Out, const Box& bx);
 
-    Node* SerialBuildRecursive(Slice In, Slice Out, const DimsType DIM,
-                               const Box& bx, bool checked_duplicate);
+    Node* SerialBuildRecursive(Slice In, Slice Out, const Box& bx,
+                               bool checked_duplicate);
 
     static Node* QuadBuildInnerTree(BucketType idx, const HyperPlaneSeq& pivots,
                                     const parlay::sequence<Node*>& tree_nodes);

@@ -1,5 +1,6 @@
 #pragma once
 #include <parlay/slice.h>
+#include <algorithm>
 #include <array>
 #include <cstdint>
 #include <numeric>
@@ -35,9 +36,12 @@ struct LeafNode : Node {
         is_dummy(false),
         pts(Points::uninitialized(kDefaultWrap)) {
         assert(In.size() <= kDefaultWrap);
-        for (int i = 0; i < In.size(); i++) {
-            parlay::assign_dispatch(pts[i], In[i], PointAssignTag());
-        }
+        std::ranges::for_each(In, [&, i = 0](auto&& x) mutable {
+            parlay::assign_dispatch(pts[i++], x, PointAssignTag());
+        });
+        // for (int i = 0; i < In.size(); i++) {
+        //     parlay::assign_dispatch(pts[i], In[i], PointAssignTag());
+        // }
     }
 
     // NOTE: alloc a normal leaf with specific size
@@ -46,9 +50,12 @@ struct LeafNode : Node {
         is_dummy(false),
         pts(Points::uninitialized(alloc_size)) {
         assert(In.size() <= alloc_size);
-        for (int i = 0; i < In.size(); i++) {
-            parlay::assign_dispatch(pts[i], In[i], PointAssignTag());
-        }
+        std::ranges::for_each(In, [&, i = 0](auto&& x) mutable {
+            parlay::assign_dispatch(pts[i++], x, PointAssignTag());
+        });
+        // for (int i = 0; i < In.size(); i++) {
+        //     parlay::assign_dispatch(pts[i], In[i], PointAssignTag());
+        // }
     }
 
     // NOTE: alloc a dummy leaf
