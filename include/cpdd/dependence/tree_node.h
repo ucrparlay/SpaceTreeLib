@@ -146,6 +146,16 @@ struct MultiNode : Node {
         return;
     }
 
+    inline size_t ReduceSums(const uint8_t idx) {
+        if (idx == 1) {
+            return this->size;
+        } else if (idx >= kRegions) {
+            return tree_nodes[idx - kRegions]->size;
+        } else {
+            return ReduceSums(2 * idx) + ReduceSums(2 * idx + 1);
+        }
+    }
+
     template<typename Box, typename BoxSeq>
     void ComputeSubregions(BoxSeq& box_seq, const Box& box, auto idx,
                            auto deep) {

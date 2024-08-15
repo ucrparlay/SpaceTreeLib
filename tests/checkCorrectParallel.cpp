@@ -200,20 +200,19 @@ void runKDParallel(points& wp, const points& wi, Typename* kdknn, points& p,
         points new_wp(batchQuerySize);
         parlay::copy(wp.cut(0, batchQuerySize), new_wp.cut(0, batchQuerySize));
         queryKNN<point>(Dim, wp, rounds, pkd, kdknn, K, true);
+    } else if (queryType == 1) {
+        rangeCount<point>(wp, pkd, kdknn, rounds, queryNum);
+        // rangeCountRadius<point>( wp, pkd, kdknn, rounds, queryNum );
+    } else if (queryType == 2) {
+        rangeCount<point>(wp, pkd, kdknn, rounds, queryNum);
+        maxReduceSize =
+            parlay::reduce(parlay::delayed_tabulate(
+                               queryNum, [&](size_t i) { return kdknn[i]; }),
+                           parlay::maximum<Typename>());
+        LOG << maxReduceSize << ENDL;
+        p.resize(queryNum * maxReduceSize);
+        rangeQuery<point>(wp, pkd, kdknn, rounds, queryNum, p);
     }
-    // else if (queryType == 1) {
-    //     rangeCount<point>(wp, pkd, kdknn, rounds, queryNum);
-    //     // rangeCountRadius<point>( wp, pkd, kdknn, rounds, queryNum );
-    // } else if (queryType == 2) {
-    //     rangeCount<point>(wp, pkd, kdknn, rounds, queryNum);
-    //     maxReduceSize =
-    //         parlay::reduce(parlay::delayed_tabulate(
-    //                            queryNum, [&](size_t i) { return kdknn[i]; }),
-    //                        parlay::maximum<Typename>());
-    //     LOG << maxReduceSize << ENDL;
-    //     p.resize(queryNum * maxReduceSize);
-    //     rangeQuery<point>(wp, pkd, kdknn, rounds, queryNum, p);
-    // }
 
     if (tag == 1) wp.pop_tail(wi.size() * batchInsertCheckRatio);
     assert(wp.size() == N);

@@ -31,9 +31,8 @@ void OrthTree<Point, SplitRule, kMD, kBDO>::Flatten(Range&& Out) {
 
 template<typename Point, typename SplitRule, uint8_t kMD, uint8_t kBDO>
 size_t OrthTree<Point, SplitRule, kMD, kBDO>::RangeCount(const Box& bx) {
-    size_t vis_leaf_num = 0, vis_inter_num = 0;
     return BT::template RangeCountRectangle<Leaf, Interior>(
-        this->root_, bx, this->tree_box_, vis_leaf_num, vis_inter_num);
+        this->root_, bx, this->tree_box_, 0, 1, kMD);
 }
 
 template<typename Point, typename SplitRule, uint8_t kMD, uint8_t kBDO>
@@ -48,7 +47,8 @@ size_t OrthTree<Point, SplitRule, kMD, kBDO>::RangeQuery(const Box& query_box,
                                                          Range&& Out) {
     size_t s = 0;
     BT::template RangeQuerySerialRecursive<Leaf, Interior>(
-        this->root_, parlay::make_slice(Out), s, query_box, this->tree_box_);
+        this->root_, parlay::make_slice(Out), s, query_box, this->tree_box_, 0,
+        1, kMD);
     return s;
 }
 

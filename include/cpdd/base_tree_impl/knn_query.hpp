@@ -139,7 +139,7 @@ void BaseTree<Point, kBDO>::KNNBinary(Node* T, const Point& q,
     second_box.first.pnt[TI->split.second] = TI->split.first;
 
     if (!go_left) {  // NOTE: go left child
-        std::swap(first_box, second_box);
+        std::ranges::swap(first_box, second_box);
     }
 
     KNNBinary<Leaf, Interior>(go_left ? TI->left : TI->right, q, DIM, bq,
@@ -160,7 +160,6 @@ template<typename Leaf, IsMultiNode Interior, typename Range>
 void BaseTree<Point, kBDO>::KNNMultiExpand(
     Node* T, const Point& q, DimsType dim, BucketType idx, const DimsType DIM,
     kBoundedQueue<Point, Range>& bq, const Box& node_box, KNNLogger& logger) {
-    // LOG << "here" << ENDL;
     logger.vis_node_num++;
 
     if (T->size == 0) {
@@ -192,7 +191,7 @@ void BaseTree<Point, kBDO>::KNNMultiExpand(
     first_box.second.pnt[TI->split[dim].second] = TI->split[dim].first;
     second_box.first.pnt[TI->split[dim].second] = TI->split[dim].first;
     if (!go_left) {
-        std::swap(first_box, second_box);
+        std::ranges::swap(first_box, second_box);
     }
 
     dim = (dim + 1) % DIM;  // WARN: value of dim changes afterwards
@@ -206,6 +205,7 @@ void BaseTree<Point, kBDO>::KNNMultiExpand(
         logger.skip_box_num++;
         return;
     }
+    // TODO: try compute the value of second_node etc lazily
     KNNMultiExpand<Leaf, Interior>(second_node, q, dim, second_idx, DIM, bq,
                                    second_box, logger);
     return;

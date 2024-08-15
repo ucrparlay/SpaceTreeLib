@@ -6,6 +6,7 @@
 #include "dependence/tree_node.h"
 #include "dependence/search_container.h"
 #include "dependence/concepts.h"
+#include "dependence/loggers.h"
 
 namespace cpdd {
 
@@ -151,20 +152,43 @@ class BaseTree {
                          KNNLogger& logger);
 
     // NOTE: range count stuffs
-    template<typename Leaf, typename Interior>
-    static size_t RangeCountRectangle(Node* T, const Box& query_box,
-                                      const Box& node_box, size_t& vis_leaf_num,
-                                      size_t& vis_inter_num);
+    template<typename Leaf>
+    static size_t RangeCountRectangleLeaf(Node* T, const Box& query_box,
+                                          const Box& node_box);
 
-    template<typename Leaf, typename Interior>
+    template<typename Leaf, IsBinaryNode Interior>
+    static size_t RangeCountRectangle(Node* T, const Box& query_box,
+                                      const Box& node_box);
+
+    template<typename Leaf, IsMultiNode Interior>
+    static size_t RangeCountRectangle(Node* T, const Box& query_box,
+                                      const Box& node_box, DimsType dim,
+                                      BucketType idx, const DimsType DIM);
+
+    template<typename Leaf, IsBinaryNode Interior>
     static size_t RangeCountRadius(Node* T, const Circle& cl,
                                    const Box& node_box);
 
     // NOTE: range query stuffs
-    template<typename Leaf, typename Interior, typename Range>
+    template<typename Leaf, typename Range>
+    static void RangeQueryLeaf(Node* T, Range Out, size_t& s,
+                               const Box& query_box, const Box& node_box);
+
+    template<typename Leaf, IsBinaryNode Interior, typename Range>
     static void RangeQuerySerialRecursive(Node* T, Range Out, size_t& s,
                                           const Box& query_box,
                                           const Box& node_box);
+
+    template<typename Leaf, IsMultiNode Interior>
+    static size_t RangeCountRadius(Node* T, const Circle& cl,
+                                   const Box& node_box);
+
+    // NOTE: range query stuffs
+    template<typename Leaf, IsMultiNode Interior, typename Range>
+    static void RangeQuerySerialRecursive(Node* T, Range Out, size_t& s,
+                                          const Box& query_box,
+                                          const Box& node_box, DimsType dim,
+                                          BucketType idx, const DimsType DIM);
 
     // NOTE: utility
     // TODO: better evaluate the parallel recursion function
@@ -175,6 +199,10 @@ class BaseTree {
     template<typename Leaf, IsMultiNode Interior, typename Range,
              bool granularity = true>
     static void FlattenRec(Node* T, Range Out);
+
+    template<typename Leaf, IsMultiNode Interior, typename Range,
+             bool granularity = true>
+    static void PartialFlatten(Node* T, Range Out, BucketType idx);
 
     template<IsBinaryNode BN, IsMultiNode MN>
     static Node* ExpandMultiNode(const typename MN::ST& split, BucketType idx,

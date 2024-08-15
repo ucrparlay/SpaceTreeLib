@@ -111,6 +111,38 @@ void BaseTree<Point, kBDO>::FlattenRec(Node* T, Range Out) {
 }
 
 template<typename Point, uint8_t kBDO>
+template<typename Leaf, IsMultiNode Interior, typename Range, bool granularity>
+void BaseTree<Point, kBDO>::PartialFlatten(Node* T, Range Out, BucketType idx) {
+
+    if (idx == 1) {
+        assert(T->size == Out.size());
+        FlattenRec<Leaf, Interior>(T, Out.cut(0, T->size));
+        return;
+    } else if (idx >= Interior::kRegions) {
+        auto ns =
+            static_cast<Interior*>(T)->tree_nodes[idx - Interior::kRegions];
+        FlattenRec<Leaf, Interior>(ns, Out.cut(0, ns->size));
+        return;
+    }
+
+    Interior* TI = static_cast<Interior*>(T);
+    size_t l_size = TI->ReduceSums(idx << 1),
+           r_size = TI->ReduceSums(idx << 1 | 1);
+    assert(l_size + r_size == Out.size());
+    parlay::par_do_if(
+        ForceParallelRecursion<Interior, granularity>(
+            static_cast<Interior*>(T)),
+        [&]() {
+            PartialFlatten<Leaf, Interior>(T, Out.cut(0, l_size), idx << 1);
+        },
+        [&]() {
+            PartialFlatten<Leaf, Interior>(T, Out.cut(l_size, l_size + r_size),
+                                           idx << 1 | 1);
+        });
+    return;
+}
+
+template<typename Point, uint8_t kBDO>
 template<IsBinaryNode BN, IsMultiNode MN>
 Node* BaseTree<Point, kBDO>::ExpandMultiNode(
     const typename MN::ST& split, BucketType idx, BucketType deep,

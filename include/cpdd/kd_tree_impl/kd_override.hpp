@@ -24,9 +24,8 @@ void KdTree<Point, SplitRule, kBDO>::Flatten(Range&& Out) {
 
 template<typename Point, typename SplitRule, uint8_t kBDO>
 size_t KdTree<Point, SplitRule, kBDO>::RangeCount(const Box& bx) {
-    size_t vis_leaf_num = 0, vis_inter_num = 0;
-    return BT::template RangeCountRectangle<Leaf, Interior>(
-        this->root_, bx, this->tree_box_, vis_leaf_num, vis_inter_num);
+    return BT::template RangeCountRectangle<Leaf, Interior>(this->root_, bx,
+                                                            this->tree_box_);
 }
 
 template<typename Point, typename SplitRule, uint8_t kBDO>
