@@ -39,4 +39,6 @@ concept IsRotateDimSplit = requires(T t) {
     { t.RotateDimTag() } -> std::same_as<void>;
 };
 
+struct FullCoveredTag {};
+struct PartialCoverTag {};
 }  // namespace cpdd

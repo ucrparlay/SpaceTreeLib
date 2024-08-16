@@ -26,10 +26,10 @@ void TestSpacialTree(const int& kDim, const parlay::sequence<Point>& wp,
     //     if (summary) {
     //         const parlay::sequence<double> ratios = {0.0001, 0.001, 0.01,
     //         0.1}; for (int i = 0; i < ratios.size(); i++) {
-    //             batchInsert<point>(pkd, wp, wi, Dim, rounds, ratios[i]);
+    //             BatchInsert<point>(pkd, wp, wi, Dim, rounds, ratios[i]);
     //         }
     //     } else {
-    //         batchInsert<point>(pkd, wp, wi, Dim, rounds, batchInsertRatio);
+    //         BatchInsert<point>(pkd, wp, wi, Dim, rounds, batchInsertRatio);
     //     }
     // }
     //
@@ -135,7 +135,7 @@ void TestSpacialTree(const int& kDim, const parlay::sequence<Point>& wp,
     //                                              0.02,   0.05,   0.1,    0.2,
     //                                              0.5,   1.0};
     //     for (int i = 0; i < ratios.size(); i++) {
-    //         batchInsert<point>(pkd, wp, wi, Dim, rounds, ratios[i]);
+    //         BatchInsert<point>(pkd, wp, wi, Dim, rounds, ratios[i]);
     //     }
     // }
     //
@@ -369,7 +369,7 @@ void TestSpacialTree(const int& kDim, const parlay::sequence<Point>& wp,
     //                                              1e-4, 2e-4, 5e-4, 1e-3,
     //                                              2e-3, 5e-3, 1e-2};
     //     // LOG << ENDL << "serial ";
-    //     // batchInsert<point, true>(pkd, wp, wi, Dim, rounds,
+    //     // BatchInsert<point, true>(pkd, wp, wi, Dim, rounds,
     //     *ratios.rbegin()); LOG << ENDL; for (int i = 0; i < ratios.size();
     //     i++) {
     //         LOG << wi.size() * ratios[i] << " ";

@@ -176,7 +176,7 @@ void runKDParallel(points& wp, const points& wi, Typename* kdknn, points& p,
                           typename Tree::SplitRuleType>();
 
     /*if (tag >= 1) {*/
-    /*    batchInsert<point, true>(pkd, wp, wi, Dim, 2,
+    /*    BatchInsert<point, true>(pkd, wp, wi, Dim, 2,
      * batchInsertCheckRatio);*/
     /*    if (tag == 1) wp.append(wi.cut(0, wp.size() *
      * batchInsertCheckRatio));*/

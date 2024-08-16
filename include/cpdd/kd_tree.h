@@ -26,6 +26,9 @@ class KdTree : private BaseTree<Point, kBDO> {
 
     using HyperPlane = BT::HyperPlane;
     using HyperPlaneSeq = BT::HyperPlaneSeq;
+    using NodeTag = BT::NodeTag;
+    using TagNodes = BT::TagNodes;
+    using NodeBox = BT::NodeBox;
     using Splitter = HyperPlane;
     using SplitterSeq = HyperPlaneSeq;
 
@@ -50,9 +53,47 @@ class KdTree : private BaseTree<Point, kBDO> {
     template<typename Range>
     void Build(Range&& In);
 
-    void Build_(Slice In);
-
     void DeleteTree() override;
+
+    void BatchInsert(Slice In, const DimsType BT::kDim);
+
+    Node* RebuildWithInsert(Node* T, Slice In, const DimsType d,
+                            const DimsType BT::kDim);
+
+    static inline void UpdateInterior(Node* T, Node* L, Node* R);
+
+    Node* BatchInsertRecursive(Node* T, Slice In, Slice Out, DimsType d,
+                               const DimsType BT::kDim);
+
+    static Node* UpdateInnerTreeByTag(BucketType idx, const NodeTag& tags,
+                                      parlay::sequence<Node*>& treeNodes,
+                                      BucketType& p, const TagNodes& rev_tag);
+
+    // NOTE: batch delete
+    // NOTE: in default, all Points to be deleted are assumed in the tree
+    void BatchDelete(Slice In, const DimsType BT::kDim);
+
+    // NOTE: explicitly specify all Points to be deleted are in the tree
+    void BatchDelete(Slice In, const DimsType BT::kDim, FullCoveredTag);
+
+    // NOTE: for the case that some Points to be deleted are not in the tree
+    void BatchDelete(Slice In, const DimsType BT::kDim, PartialCoverTag);
+
+    //  PERF: try pass a reference to bx
+    NodeBox BatchDeleteRecursive(Node* T, const Box& bx, Slice In, Slice Out,
+                                  DimsType d, const DimsType BT::kDim, bool hasTomb,
+                                  FullCoveredTag);
+
+    // TODO: add bounding Box for batch delete recursive as well
+    // WARN: fix the possible in partial deletion as well
+    NodeBox BatchDeleteRecursive(Node* T, const Box& bx, Slice In, Slice Out,
+                                  DimsType d, const DimsType BT::kDim,
+                                  PartialCoverTag);
+
+    NodeBox DeleteInnerTree(BucketType idx, const NodeTag& tags,
+                              parlay::sequence<NodeBox>& treeNodes,
+                              BucketType& p, const TagNodes& rev_tag,
+                              const DimsType d, const DimsType BT::kDim);
 
     template<typename Range>
     void Flatten(Range&& Out);
@@ -78,6 +119,8 @@ class KdTree : private BaseTree<Point, kBDO> {
 
     Node* SerialBuildRecursive(Slice In, Slice Out, DimsType dim,
                                const Box& bx);
+
+    void Build_(Slice In);
 
     SplitRule split_rule_;
 };
