@@ -319,51 +319,48 @@ void buildTree(const int& Dim, const parlay::sequence<Point>& WP,
 //     return;
 // }
 //
-// template<typename point, bool serial = false>
-// void BatchInsert(BaseTree<point>& pkd, const parlay::sequence<point>& WP,
-// const parlay::sequence<point>& WI,
-//                  const uint_fast8_t& DIM, const int& rounds, double ratio
-//                  = 1.0) {
-//     using tree = BaseTree<point>;
-//     using points = typename tree::points;
-//     using node = typename tree::node;
-//     points wp = points::uninitialized(WP.size());
-//     points wi = points::uninitialized(WI.size());
-//
-//     pkd.delete_tree();
-//
-//     double aveInsert = time_loop(
-//         rounds, 1.0,
-//         [&]() {
-//             parlay::copy(WP, wp), parlay::copy(WI, wi);
-//             pkd.build(parlay::make_slice(wp), DIM);
-//         },
-//         [&]() {
-//             if (!serial) {
-//                 pkd.BatchInsert(wi.cut(0, size_t(wi.size() * ratio)), DIM);
-//             } else {
-//                 for (size_t i = 0; i < wi.size() * ratio; i++) {
-//                     pkd.pointInsert(wi[i], DIM);
-//                 }
-//             }
-//         },
-//         [&]() { pkd.delete_tree(); });
-//
-//     //* set status to be finish insert
-//     parlay::copy(WP, wp), parlay::copy(WI, wi);
-//     pkd.build(parlay::make_slice(wp), DIM);
-//     if (!serial) {
-//         pkd.BatchInsert(wi.cut(0, size_t(wi.size() * ratio)), DIM);
-//     } else {
-//         for (size_t i = 0; i < wi.size() * ratio; i++) {
-//             pkd.pointInsert(wi[i], DIM);
-//         }
-//     }
-//
-//     LOG << aveInsert << " " << std::flush;
-//
-//     return;
-// }
+template<typename point, typename Tree, bool serial = false>
+void BatchInsert(Tree& pkd, const parlay::sequence<point>& WP,
+                 const parlay::sequence<point>& WI, const uint_fast8_t& DIM,
+                 const int& rounds, double ratio = 1.0) {
+    using points = typename Tree::Points;
+    points wp = points::uninitialized(WP.size());
+    points wi = points::uninitialized(WI.size());
+
+    pkd.DeleteTree();
+
+    double aveInsert = time_loop(
+        rounds, 1.0,
+        [&]() {
+            parlay::copy(WP, wp), parlay::copy(WI, wi);
+            pkd.Build(parlay::make_slice(wp));
+        },
+        [&]() {
+            // if (!serial) {
+            pkd.BatchInsert(wi.cut(0, size_t(wi.size() * ratio)));
+            // } else {
+            //     for (size_t i = 0; i < wi.size() * ratio; i++) {
+            //         pkd.pointInsert(wi[i], DIM);
+            //     }
+            // }
+        },
+        [&]() { pkd.DeleteTree(); });
+
+    //* set status to be finish insert
+    parlay::copy(WP, wp), parlay::copy(WI, wi);
+    pkd.Build(parlay::make_slice(wp));
+    // if (!serial) {
+    pkd.BatchInsert(wi.cut(0, size_t(wi.size() * ratio)));
+    // } else {
+    //     for (size_t i = 0; i < wi.size() * ratio; i++) {
+    //         pkd.pointInsert(wi[i], DIM);
+    //     }
+    // }
+
+    LOG << aveInsert << " " << std::flush;
+
+    return;
+}
 //
 // template<typename point, bool serial = false>
 // void batchDelete(BaseTree<point>& pkd, const parlay::sequence<point>& WP,

@@ -2,27 +2,25 @@
 
 #include "../kd_tree.h"
 
-namespace cppd {
-template<typename Point>
-void KdTree<Point>::BatchInsert(Slice A, const DimsType BT::kDim) {
-    if (this->root == nullptr) {
-        return build(A, BT::kDim);
+namespace cpdd {
+template<typename Point, typename SplitRule, uint_fast8_t kBDO>
+void KdTree<Point, SplitRule, kBDO>::BatchInsert(Slice A) {
+    if (this->root_ == nullptr) {
+        return Build_(A);  // BUG:check
     }
 
     Points B = Points::uninitialized(A.size());
-    Node* T = this->root;
-    /*box b = get_box(A);*/
-    this->bbox = get_box(this->bbox, get_box(A));
+    Node* T = this->root_;
+    this->tree_box_ = BT::GetBox(this->tree_box_, BT::GetBox(A));
     DimsType d = T->is_leaf ? 0 : static_cast<Interior*>(T)->split.second;
-    this->root = BatchInsertRecursive(T, A, B.cut(0, A.size()), d, BT::kDim);
-    assert(this->root != NULL);
+    this->root_ = BatchInsertRecursive(T, A, B.cut(0, A.size()), d);
+    assert(this->root_ != NULL);
     return;
 }
 
-template<typename Point>
-typename KdTree<Point>::Node*
-KdTree<Point>::UpdateInnerTreeByTag(
-    BucketType idx, const NodeTag& tags, parlay::sequence<Node*>& treeNodes,
+template<typename Point, typename SplitRule, uint_fast8_t kBDO>
+Node* KdTree<Point, SplitRule, kBDO>::UpdateInnerTreeByTag(
+    BucketType idx, const NodeTagSeq& tags, parlay::sequence<Node*>& treeNodes,
     BucketType& p, const TagNodes& rev_tag) {
 
     if (tags[idx].second == BT::kBucketNum + 1 ||
@@ -40,35 +38,34 @@ KdTree<Point>::UpdateInnerTreeByTag(
     return tags[idx].first;
 }
 
-template<typename Point>
-typename KdTree<Point>::Node*
-KdTree<Point>::RebuildWithInsert(Node* T, Slice In, const DimsType d,
-                                           const DimsType BT::kDim) {
-    uint_fast8_t curDim = pick_rebuild_dim(T, d, BT::kDim);
+template<typename Point, typename SplitRule, uint_fast8_t kBDO>
+Node* KdTree<Point, SplitRule, kBDO>::RebuildWithInsert(Node* T, Slice In,
+                                                        const DimsType d) {
+    DimsType curDim = this->split_rule_.FindRebuildDimension(d);
     Points wo = Points::uninitialized(T->size + In.size());
     Points wx = Points::uninitialized(T->size + In.size());
     parlay::parallel_for(0, In.size(), [&](size_t j) { wx[j] = In[j]; });
-    flatten(T, wx.cut(In.size(), wx.size()));
-    delete_tree_recursive(T);
-    return build_recursive(parlay::make_slice(wx), parlay::make_slice(wo),
-                           curDim, BT::kDim, get_box(parlay::make_slice(wx)));
+    BT::template FlattenRec<Leaf, Interior>(T, wx.cut(In.size(), wx.size()));
+    BT::template DeleteTreeRecursive<Leaf, Interior>(T);
+    return BuildRecursive(parlay::make_slice(wx), parlay::make_slice(wo),
+                          curDim, BT::GetBox(parlay::make_slice(wx)));
 }
 
 //* return the updated Node
-template<typename Point>
-typename KdTree<Point>::Node*
-KdTree<Point>::BatchInsertRecursive(Node* T, Slice In, Slice Out,
-                                            DimsType d, const DimsType BT::kDim) {
+template<typename Point, typename SplitRule, uint_fast8_t kBDO>
+Node* KdTree<Point, SplitRule, kBDO>::BatchInsertRecursive(Node* T, Slice In,
+                                                           Slice Out,
+                                                           DimsType d) {
     size_t n = In.size();
 
     if (n == 0) return T;
 
     if (T->is_leaf) {
         Leaf* TL = static_cast<Leaf*>(T);
-        if (!TL->is_dummy && n + TL->size <= kLeaveWrap) {
+        if (!TL->is_dummy && n + TL->size <= BT::kLeaveWrap) {
             assert(T->size == TL->size);
             if (TL->pts.size() == 0) {
-                TL->pts = Points::uninitialized(kLeaveWrap);
+                TL->pts = Points::uninitialized(BT::kLeaveWrap);
             }
             for (int i = 0; i < n; i++) {
                 TL->pts[TL->size + i] = In[i];
@@ -76,46 +73,46 @@ KdTree<Point>::BatchInsertRecursive(Node* T, Slice In, Slice Out,
             TL->size += n;
             return T;
         } else {
-            return RebuildWithInsert(T, In, d, BT::kDim);
+            return RebuildWithInsert(T, In, d);
         }
     }
 
-    if (n <= BT::SerialBuildCutoff) {
+    if (n <= BT::kSerialBuildCutoff) {
         Interior* TI = static_cast<Interior*>(T);
         auto _2ndGroup = std::ranges::partition(In, [&](const Point& p) {
             return Num::Lt(p.pnt[TI->split.second], TI->split.first);
         });
 
-        //* rebuild
-        if (inbalance_node(TI->left->size + _2ndGroup.begin() - In.begin(),
-                           TI->size + n)) {
-            return RebuildWithInsert(T, In, d, BT::kDim);
+        // NOTE: rebuild
+        if (BT::ImbalanceNode(TI->left->size + _2ndGroup.begin() - In.begin(),
+                              TI->size + n)) {
+            return RebuildWithInsert(T, In, d);
         }
-        //* continue
+        // NOTE: continue
         Node *L, *R;
         d = (d + 1) % BT::kDim;
-        L = BatchInsertRecursive(
-            TI->left, In.cut(0, _2ndGroup.begin() - In.begin()),
-            Out.cut(0, _2ndGroup.begin() - In.begin()), d, BT::kDim);
-        R = BatchInsertRecursive(
-            TI->right, In.cut(_2ndGroup.begin() - In.begin(), n),
-            Out.cut(_2ndGroup.begin() - In.begin(), n), d, BT::kDim);
+        L = BatchInsertRecursive(TI->left,
+                                 In.cut(0, _2ndGroup.begin() - In.begin()),
+                                 Out.cut(0, _2ndGroup.begin() - In.begin()), d);
+        R = BatchInsertRecursive(TI->right,
+                                 In.cut(_2ndGroup.begin() - In.begin(), n),
+                                 Out.cut(_2ndGroup.begin() - In.begin(), n), d);
         UpdateInterior(T, L, R);
         assert(T->size == L->size + R->size && TI->split.second >= 0 &&
                TI->is_leaf == false);
         return T;
     }
 
-    //@ assign each Node a tag
-    InnerTree IT;
-    IT.init();
+    // NOTE: assign each Node a tag
+    typename BT::template InnerTree<Leaf, Interior> IT;
+    IT.Init();
     assert(IT.rev_tag.size() == BT::kBucketNum);
-    IT.assign_node_tag(T, 1);
+    IT.AssignNodeTag(T, 1);
     assert(IT.tagsNum > 0 && IT.tagsNum <= BT::kBucketNum);
 
-    seieve_points(In, Out, n, IT.tags, IT.sums, IT.tagsNum);
+    SeievePoints(In, Out, n, IT.tags, IT.sums, IT.tagsNum);
 
-    IT.tag_inbalance_node();
+    IT.TagInbalanceNode();
     assert(IT.tagsNum > 0 && IT.tagsNum <= BT::kBucketNum);
     auto treeNodes = parlay::sequence<Node*>::uninitialized(IT.tagsNum);
 
@@ -127,13 +124,14 @@ KdTree<Point>::BatchInsertRecursive(Node* T, Slice In, Slice Out,
                 s += IT.sums_tree[IT.rev_tag[j]];
             }
 
-            DimsType nextDim = (d + IT.get_depth_by_index(IT.rev_tag[i])) % BT::kDim;
+            DimsType nextDim =
+                (d + IT.GetDepthByIndex(IT.rev_tag[i])) % BT::kDim;
             if (IT.tags[IT.rev_tag[i]].second ==
                 BT::kBucketNum + 1) {  // NOTE: continue sieve
                 treeNodes[i] = BatchInsertRecursive(
                     IT.tags[IT.rev_tag[i]].first,
                     Out.cut(s, s + IT.sums_tree[IT.rev_tag[i]]),
-                    In.cut(s, s + IT.sums_tree[IT.rev_tag[i]]), nextDim, BT::kDim);
+                    In.cut(s, s + IT.sums_tree[IT.rev_tag[i]]), nextDim);
             } else {  // NOTE: launch rebuild subtree
                 assert(IT.tags[IT.rev_tag[i]].second == BT::kBucketNum + 2);
                 assert(IT.tags[IT.rev_tag[i]].first->size +
@@ -142,7 +140,7 @@ KdTree<Point>::BatchInsertRecursive(Node* T, Slice In, Slice Out,
 
                 treeNodes[i] = RebuildWithInsert(
                     IT.tags[IT.rev_tag[i]].first,
-                    Out.cut(s, s + IT.sums_tree[IT.rev_tag[i]]), nextDim, BT::kDim);
+                    Out.cut(s, s + IT.sums_tree[IT.rev_tag[i]]), nextDim);
             }
         },
         1);
@@ -151,11 +149,9 @@ KdTree<Point>::BatchInsertRecursive(Node* T, Slice In, Slice Out,
     return UpdateInnerTreeByTag(1, IT.tags, treeNodes, beatles, IT.rev_tag);
 }
 // NOTE: update the info of T by new children L and R
-template<typename Point>
-inline void KdTree<Point>::UpdateInterior(
-    typename KdTree<Point>::Node* T,
-    typename KdTree<Point>::Node* L,
-    typename KdTree<Point>::Node* R) {
+template<typename Point, typename SplitRule, uint_fast8_t kBDO>
+inline void KdTree<Point, SplitRule, kBDO>::UpdateInterior(Node* T, Node* L,
+                                                           Node* R) {
     assert(!T->is_leaf);
     Interior* TI = static_cast<Interior*>(T);
     TI->size = L->size + R->size;
@@ -165,12 +161,13 @@ inline void KdTree<Point>::UpdateInterior(
 }
 
 // NOTE: retrive the bucket tag of Point p from the skeleton tags
-template<typename Point>
-uint_fast8_t KdTree<Point>::retrive_tag(const Point& p,
-                                                const NodeTag& tags) {
-    uint_fast8_t k = 1;
+template<typename Point, typename SplitRule, uint_fast8_t kBDO>
+typename KdTree<Point, SplitRule, kBDO>::BucketType
+KdTree<Point, SplitRule, kBDO>::RetriveTag(const Point& p,
+                                           const NodeTagSeq& tags) {
+    BucketType k = 1;
     Interior* TI;
-    while (k <= PIVOT_NUM && (!tags[k].first->is_leaf)) {
+    while (k <= BT::kPivotNum && (!tags[k].first->is_leaf)) {
         TI = static_cast<Interior*>(tags[k].first);
         k = Num::Lt(p.pnt[TI->split.second], TI->split.first) ? k << 1
                                                               : k << 1 | 1;
@@ -182,24 +179,23 @@ uint_fast8_t KdTree<Point>::retrive_tag(const Point& p,
 // NOTE: seieve Points from range A to range B, using the skeleton tags. The
 // sums is the number of elemenets within each bucket, the tagsNum is the total
 // number of buckets in the skeleton
-template<typename Point>
-void KdTree<Point>::seieve_points(Slice A, Slice B, const size_t n,
-                                          const NodeTag& tags,
-                                          parlay::sequence<balls_type>& sums,
-                                          const BucketType tagsNum) {
-    size_t num_block = (n + BLOCK_SIZE - 1) >> LOG2_BASE;
-    parlay::sequence<parlay::sequence<balls_type>> offset(
-        num_block, parlay::sequence<balls_type>(tagsNum));
+template<typename Point, typename SplitRule, uint_fast8_t kBDO>
+void KdTree<Point, SplitRule, kBDO>::SeievePoints(
+    Slice A, Slice B, const size_t n, const NodeTagSeq& tags,
+    parlay::sequence<BallsType>& sums, const BucketType tagsNum) {
+    size_t num_block = (n + BT::kBlockSize - 1) >> BT::kLog2Base;
+    parlay::sequence<parlay::sequence<BallsType>> offset(
+        num_block, parlay::sequence<BallsType>(tagsNum));
     assert(offset.size() == num_block && offset[0].size() == tagsNum &&
            offset[0][0] == 0);
     parlay::parallel_for(0, num_block, [&](size_t i) {
-        for (size_t j = i << LOG2_BASE; j < std::min((i + 1) << LOG2_BASE, n);
-             j++) {
-            offset[i][std::move(retrive_tag(A[j], tags))]++;
+        for (size_t j = i << BT::kLog2Base;
+             j < std::min((i + 1) << BT::kLog2Base, n); j++) {
+            offset[i][std::move(RetriveTag(A[j], tags))]++;
         }
     });
 
-    sums = parlay::sequence<balls_type>(tagsNum);
+    sums = parlay::sequence<BallsType>(tagsNum);
     for (size_t i = 0; i < num_block; i++) {
         auto t = offset[i];
         offset[i] = sums;
@@ -209,17 +205,17 @@ void KdTree<Point>::seieve_points(Slice A, Slice B, const size_t n,
     }
 
     parlay::parallel_for(0, num_block, [&](size_t i) {
-        auto v = parlay::sequence<balls_type>::uninitialized(tagsNum);
+        auto v = parlay::sequence<BallsType>::uninitialized(tagsNum);
         int tot = 0, s_offset = 0;
         for (int k = 0; k < tagsNum - 1; k++) {
             v[k] = tot + offset[i][k];
             tot += sums[k];
             s_offset += offset[i][k];
         }
-        v[tagsNum - 1] = tot + ((i << LOG2_BASE) - s_offset);
-        for (size_t j = i << LOG2_BASE; j < std::min((i + 1) << LOG2_BASE, n);
-             j++) {
-            B[v[std::move(retrive_tag(A[j], tags))]++] = A[j];
+        v[tagsNum - 1] = tot + ((i << BT::kLog2Base) - s_offset);
+        for (size_t j = i << BT::kLog2Base;
+             j < std::min((i + 1) << BT::kLog2Base, n); j++) {
+            B[v[std::move(RetriveTag(A[j], tags))]++] = A[j];
         }
     });
 
@@ -228,12 +224,12 @@ void KdTree<Point>::seieve_points(Slice A, Slice B, const size_t n,
 
 // NOTE: traverse the skeleton tags recursively and update its children to new
 // ones
-template<typename Point>
-typename KdTree<Point>::node_box
-KdTree<Point>::update_inner_tree(BucketType idx, const NodeTag& tags,
-                                         parlay::sequence<node_box>& treeNodes,
-                                         BucketType& p,
-                                         const TagNodes& rev_tag) {
+template<typename Point, typename SplitRule, uint_fast8_t kBDO>
+typename KdTree<Point, SplitRule, kBDO>::NodeBox
+KdTree<Point, SplitRule, kBDO>::UpdateInnerTree(
+    BucketType idx, const NodeTagSeq& tags,
+    parlay::sequence<NodeBox>& treeNodes, BucketType& p,
+    const TagNodes& rev_tag) {
     if (tags[idx].second < BT::kBucketNum) {
         assert(rev_tag[p] == idx);
         return treeNodes[p++];
@@ -241,47 +237,46 @@ KdTree<Point>::update_inner_tree(BucketType idx, const NodeTag& tags,
 
     assert(tags[idx].second == BT::kBucketNum);
     assert(tags[idx].first != nullptr);
-    auto [L, Lbox] = update_inner_tree(idx << 1, tags, treeNodes, p, rev_tag);
-    auto [R, Rbox] =
-        update_inner_tree(idx << 1 | 1, tags, treeNodes, p, rev_tag);
+    auto [L, Lbox] = UpdateInnerTree(idx << 1, tags, treeNodes, p, rev_tag);
+    auto [R, Rbox] = UpdateInnerTree(idx << 1 | 1, tags, treeNodes, p, rev_tag);
     UpdateInterior(tags[idx].first, L, R);
-    return node_box(tags[idx].first, get_box(Lbox, Rbox));
+    return NodeBox(tags[idx].first, BT::GetBox(Lbox, Rbox));
 }
 
 // NOTE: flatten a tree then rebuild upon it
-template<typename Point>
-typename KdTree<Point>::node_box
-KdTree<Point>::rebuild_single_tree(Node* T, const DimsType d,
-                                           const DimsType BT::kDim,
-                                           const bool granularity) {
+template<typename Point, typename SplitRule, uint_fast8_t kBDO>
+typename KdTree<Point, SplitRule, kBDO>::NodeBox
+KdTree<Point, SplitRule, kBDO>::RebuildSingleTree(Node* T, const DimsType d,
+                                                  const bool granularity) {
     Points wo = Points::uninitialized(T->size);
     Points wx = Points::uninitialized(T->size);
     uint_fast8_t curDim = pick_rebuild_dim(T, d, BT::kDim);
-    flatten(T, wx.cut(0, T->size), granularity);
-    delete_tree_recursive(T, granularity);
-    box bx = get_box(parlay::make_slice(wx));
+    // flatten(T, wx.cut(0, T->size), granularity);
+    // delete_tree_recursive(T, granularity);
+    BT::template FlattenRec<Leaf, Interior>(T, wx.cut(0, T->size));
+    BT::template DeleteTreeRecursive<Leaf, Interior>(T);
+    Box bx = BT::GetBox(parlay::make_slice(wx));
     Node* o = build_recursive(parlay::make_slice(wx), parlay::make_slice(wo),
                               curDim, BT::kDim, bx);
-    return node_box(std::move(o), std::move(bx));
+    return NodeBox(std::move(o), std::move(bx));
 }
 
 // NOTE: traverse the tree in parallel and rebuild the imbalanced subtree
-template<typename Point>
-typename KdTree<Point>::node_box
-KdTree<Point>::rebuild_tree_recursive(Node* T, DimsType d,
-                                              const DimsType BT::kDim,
-                                              const bool granularity) {
+template<typename Point, typename SplitRule, uint_fast8_t kBDO>
+typename KdTree<Point, SplitRule, kBDO>::NodeBox
+KdTree<Point, SplitRule, kBDO>::RebuildTreeRecursive(Node* T, DimsType d,
+                                                     const bool granularity) {
     if (T->is_leaf) {
-        return node_box(T, get_box(T));
+        return NodeBox(T, BT::GetBox(T));
     }
 
     Interior* TI = static_cast<Interior*>(T);
-    if (inbalance_node(TI->left->size, TI->size)) {
-        return rebuild_single_tree(T, d, BT::kDim, granularity);
+    if (BT::ImBalanceNode(TI->left->size, TI->size)) {
+        return RebuildSingleTree(T, d, BT::kDim, granularity);
     }
 
     Node *L, *R;
-    box Lbox, Rbox;
+    Box Lbox, Rbox;
     d = (d + 1) % BT::kDim;
     parlay::par_do_if(
         // NOTE: if granularity is disabled, always traverse the tree in
@@ -290,16 +285,16 @@ KdTree<Point>::rebuild_tree_recursive(Node* T, DimsType d,
             (!granularity && TI->aug_flag),
         [&] {
             std::tie(L, Lbox) =
-                rebuild_tree_recursive(TI->left, d, BT::kDim, granularity);
+                RebuildTreeRecursive(TI->left, d, BT::kDim, granularity);
         },
         [&] {
             std::tie(R, Rbox) =
-                rebuild_tree_recursive(TI->right, d, BT::kDim, granularity);
+                RebuildTreeRecursive(TI->right, d, BT::kDim, granularity);
         });
 
     UpdateInterior(T, L, R);
 
-    return node_box(T, get_box(Lbox, Rbox));
+    return NodeBox(T, BT::GetBox(Lbox, Rbox));
 }
 
-}  // namespace cppd
+}  // namespace cpdd

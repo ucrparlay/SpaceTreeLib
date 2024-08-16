@@ -58,10 +58,11 @@ class BaseTree {
     static const constexpr uint_fast8_t kInbalanceRatio = 30;
 
     // NOTE: get the imbalance ratio
-    inline size_t GetImbalanceRatio();
-    inline bool ImbalanceNode(const size_t l, const size_t n);
+    static inline size_t GetImbalanceRatio();
+    static inline bool ImbalanceNode(const size_t l, const size_t n);
 
     // NOTE: array based inner tree for batch insertion and deletion
+    template<typename Leaf, typename Interior>
     struct InnerTree;
 
     // NOTE: Box operations
@@ -253,6 +254,7 @@ class BaseTree {
 #include "base_tree_impl/box_op.hpp"
 #include "base_tree_impl/validation.hpp"
 #include "base_tree_impl/delete_tree.hpp"
+#include "base_tree_impl/inner_tree.hpp"
 #include "base_tree_impl/dimensinality.hpp"
 #include "base_tree_impl/points_op.hpp"
 #include "base_tree_impl/tree_op.hpp"

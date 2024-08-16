@@ -1,58 +1,56 @@
 #pragma once
 
 #include "../kd_tree.h"
+#include "cpdd/dependence/tree_node.h"
 
 namespace cpdd {
 // NOTE: default batch delete
-template<typename Point>
-void KdTree<Point>::BatchDelete(Slice A, const DimsType BT::kDim) {
+template<typename Point, typename SplitRule, uint_fast8_t kBDO>
+void KdTree<Point, SplitRule, kBDO>::BatchDelete(Slice A) {
     BatchDelete(A, BT::kDim, FullCoveredTag());
     // BatchDelete(A, BT::kDim, PartialCoverTag());
     return;
 }
 
 // NOTE: assume all Points are fully covered in the tree
-template<typename Point>
-void KdTree<Point>::BatchDelete(Slice A, const DimsType BT::kDim,
-                                        FullCoveredTag) {
+template<typename Point, typename SplitRule, uint_fast8_t kBDO>
+void KdTree<Point, SplitRule, kBDO>::BatchDelete(Slice A, FullCoveredTag) {
     Points B = Points::uninitialized(A.size());
-    Node* T = this->root;
-    box bx = this->bbox;
+    Node* T = this->root_;
+    Box bx = this->tree_box_;
     DimsType d = T->is_leaf ? 0 : static_cast<Interior*>(T)->split.second;
-    std::tie(this->root, this->bbox) = BatchDeleteRecursive(
-        T, bx, A, parlay::make_slice(B), d, BT::kDim, 1, FullCoveredTag());
+    std::tie(this->root_, this->tree_box_) = BatchDeleteRecursive(
+        T, bx, A, parlay::make_slice(B), d, 1, FullCoveredTag());
     return;
 }
 
 // NOTE: batch delete suitable for Points that are pratially covered in the tree
-template<typename Point>
-void KdTree<Point>::BatchDelete(Slice A, const DimsType BT::kDim,
-                                        PartialCoverTag) {
+template<typename Point, typename SplitRule, uint_fast8_t kBDO>
+void KdTree<Point, SplitRule, kBDO>::BatchDelete(Slice A, PartialCoverTag) {
     Points B = Points::uninitialized(A.size());
     Node* T = this->root;
-    box bx = this->bbox;
+    Box bx = this->bbox;
     DimsType d = T->is_leaf ? 0 : static_cast<Interior*>(T)->split.second;
     // NOTE: first sieve the Points
     std::tie(T, this->bbox) = BatchDeleteRecursive(
-        T, bx, A, parlay::make_slice(B), d, BT::kDim, PartialCoverTag());
+        T, bx, A, parlay::make_slice(B), d, PartialCoverTag());
     // NOTE: then rebuild the tree with full parallelsim
-    std::tie(this->root, bx) = rebuild_tree_recursive(T, d, BT::kDim, false);
+    std::tie(this->root, bx) = RebuildTreeRecursive(T, d, false);
     assert(bx == this->bbox);
 
     return;
 }
 
 // NOTE: the Node which needs to be rebuilt has tag BT::kBucketNum+3
-// NOTE: the bucket Node whose ancestor has been rebuilt has tag BT::kBucketNum+2
-// NOTE: the bucket Node whose ancestor has not been ... has BT::kBucketNum+1
-// NOTE: otherwise, it's BT::kBucketNum
-template<typename Point>
-typename KdTree<Point>::node_box
-KdTree<Point>::DeleteInnerTree(BucketType idx, const NodeTag& tags,
-                                         parlay::sequence<node_box>& treeNodes,
-                                         BucketType& p,
-                                         const TagNodes& rev_tag, DimsType d,
-                                         const DimsType BT::kDim) {
+// NOTE: the bucket Node whose ancestor has been rebuilt has tag
+// BT::kBucketNum+2 NOTE: the bucket Node whose ancestor has not been ... has
+// BT::kBucketNum+1 NOTE: otherwise, it's BT::kBucketNum
+template<typename Point, typename SplitRule, uint_fast8_t kBDO>
+typename KdTree<Point, SplitRule, kBDO>::NodeBox
+KdTree<Point, SplitRule, kBDO>::DeleteInnerTree(
+    BucketType idx, const NodeTagSeq& tags,
+    parlay::sequence<NodeBox>& treeNodes, BucketType& p,
+    const TagNodes& rev_tag, DimsType d) {
     if (tags[idx].second == BT::kBucketNum + 1 ||
         tags[idx].second == BT::kBucketNum + 2) {
         assert(rev_tag[p] == idx);
@@ -63,9 +61,9 @@ KdTree<Point>::DeleteInnerTree(BucketType idx, const NodeTag& tags,
     }
 
     auto [L, Lbox] = DeleteInnerTree(idx << 1, tags, treeNodes, p, rev_tag,
-                                       (d + 1) % BT::kDim, BT::kDim);
-    auto [R, Rbox] = DeleteInnerTree(idx << 1 | 1, tags, treeNodes, p,
-                                       rev_tag, (d + 1) % BT::kDim, BT::kDim);
+                                     (d + 1) % BT::kDim, BT::kDim);
+    auto [R, Rbox] = DeleteInnerTree(idx << 1 | 1, tags, treeNodes, p, rev_tag,
+                                     (d + 1) % BT::kDim, BT::kDim);
 
     assert(tags[idx].first->size > BT::SerialBuildCutoff ==
            static_cast<Interior*>(tags[idx].first)->aug_flag);
@@ -74,41 +72,42 @@ KdTree<Point>::DeleteInnerTree(BucketType idx, const NodeTag& tags,
     if (tags[idx].second == BT::kBucketNum + 3) {  // NOTE: launch rebuild
         Interior const* TI = static_cast<Interior*>(tags[idx].first);
         assert(inbalance_node(TI->left->size, TI->size) ||
-               TI->size < THIN_LEAVE_WRAP);
+               TI->size < BT::kThinLeaveWrap);
 
         if (tags[idx].first->size == 0) {  // NOTE: special judge for empty tree
             delete_tree_recursive(tags[idx].first, false);
-            return node_box(alloc_empty_leaf(), get_empty_box());
+            return NodeBox(AllocEmptyLeafNode<Slice, Leaf>(),
+                           BT::GetEmptyBox());
         }
 
         return rebuild_single_tree(tags[idx].first, d, BT::kDim, false);
     }
 
-    return node_box(tags[idx].first, get_box(Lbox, Rbox));
+    return NodeBox(tags[idx].first, BT::GetBox(Lbox, Rbox));
 }
 
 // NOTE: delete with rebuild, with the assumption that all Points are in the
 // tree WARN: the param d can be only used when rotate cutting is applied
-template<typename Point>
-typename KdTree<Point>::node_box
-KdTree<Point>::BatchDeleteRecursive(
-    Node* T, const typename KdTree<Point>::box& bx, Slice In, Slice Out,
-    DimsType d, const DimsType BT::kDim, bool hasTomb, FullCoveredTag) {
+template<typename Point, typename SplitRule, uint_fast8_t kBDO>
+typename KdTree<Point, SplitRule, kBDO>::NodeBox
+KdTree<Point, SplitRule, kBDO>::BatchDeleteRecursive(
+    Node* T, const typename KdTree<Point, SplitRule, kBDO>::Box& bx, Slice In,
+    Slice Out, DimsType d, bool hasTomb, FullCoveredTag) {
     size_t n = In.size();
 
     if (n == 0) {
-        assert(within_box(get_box(T), bx));
-        return node_box(T, bx);
+        assert(within_box(BT::GetBox(T), bx));
+        return NodeBox(T, bx);
     }
 
     // INFO: may can be used to accelerate the whole deletion process
     // if ( n == T->size ) {
     //     if ( hasTomb ) {
     //         delete_tree_recursive( T );
-    //         return node_box( alloc_empty_leaf(), get_empty_box() );
+    //         return NodeBox( alloc_empty_leaf(), get_empty_box() );
     //     }
     //     T->size = 0;  //* lazy mark
-    //     return node_box( T, get_empty_box() );
+    //     return NodeBox( T, get_empty_box() );
     // }
 
     if (T->is_leaf) {
@@ -120,7 +119,7 @@ KdTree<Point>::BatchDeleteRecursive(
             assert(In.size() <=
                    T->size);  // WARN: cannot delete more Points then there are
             T->size -= In.size();  // WARN: this assumes that In\in T
-            return node_box(T, box(TL->pts[0], TL->pts[0]));
+            return NodeBox(T, box(TL->pts[0], TL->pts[0]));
         }
 
         auto it = TL->pts.begin(), end = TL->pts.begin() + TL->size;
@@ -133,7 +132,7 @@ KdTree<Point>::BatchDeleteRecursive(
         assert(std::distance(TL->pts.begin(), end) == TL->size - In.size());
         TL->size -= In.size();
         assert(TL->size >= 0);
-        return node_box(T, get_box(TL->pts.cut(0, TL->size)));
+        return NodeBox(T, BT::GetBox(TL->pts.cut(0, TL->size)));
     }
 
     if (In.size() <= BT::SerialBuildCutoff) {
@@ -146,25 +145,25 @@ KdTree<Point>::BatchDeleteRecursive(
             hasTomb &&
             (inbalance_node(TI->left->size - (_2ndGroup.begin() - In.begin()),
                             TI->size - In.size()) ||
-             TI->size - In.size() < THIN_LEAVE_WRAP);
+             TI->size - In.size() < BT::kThinLeaveWrap);
         hasTomb = putTomb ? false : hasTomb;
         assert(putTomb ? (!hasTomb) : true);
 
-        assert(this->_split_rule == MAX_STRETCH_DIM ||
-               (this->_split_rule == ROTATE_DIM && d == TI->split.second));
+        // assert(this->_split_rule == MAX_STRETCH_DIM ||
+        //        (this->_split_rule == ROTATE_DIM && d == TI->split.second));
         DimsType nextDim = (d + 1) % BT::kDim;
 
-        box lbox(bx), rbox(bx);
+        Box lbox(bx), rbox(bx);
         lbox.second.pnt[TI->split.second] = TI->split.first;  //* loose
         rbox.first.pnt[TI->split.second] = TI->split.first;
 
         auto [L, Lbox] = BatchDeleteRecursive(
             TI->left, lbox, In.cut(0, _2ndGroup.begin() - In.begin()),
-            Out.cut(0, _2ndGroup.begin() - In.begin()), nextDim, BT::kDim, hasTomb,
+            Out.cut(0, _2ndGroup.begin() - In.begin()), nextDim, hasTomb,
             FullCoveredTag());
         auto [R, Rbox] = BatchDeleteRecursive(
             TI->right, rbox, In.cut(_2ndGroup.begin() - In.begin(), n),
-            Out.cut(_2ndGroup.begin() - In.begin(), n), nextDim, BT::kDim, hasTomb,
+            Out.cut(_2ndGroup.begin() - In.begin(), n), nextDim, hasTomb,
             FullCoveredTag());
 
         TI->aug_flag = hasTomb ? false : TI->size > this->BT::SerialBuildCutoff;
@@ -176,21 +175,21 @@ KdTree<Point>::BatchDeleteRecursive(
         if (putTomb) {
             assert(TI->size == T->size);
             assert(inbalance_node(TI->left->size, TI->size) ||
-                   TI->size < THIN_LEAVE_WRAP);
+                   TI->size < BT::kThinLeaveWrap);
             return rebuild_single_tree(T, d, BT::kDim, false);
         }
 
-        return node_box(T, get_box(Lbox, Rbox));
+        return NodeBox(T, BT::GetBox(Lbox, Rbox));
     }
 
-    InnerTree IT;
+    typename BT::template InnerTree<Leaf, Interior> IT;
     IT.init();
     IT.assign_node_tag(T, 1);
     assert(IT.tagsNum > 0 && IT.tagsNum <= BT::kBucketNum);
     seieve_points(In, Out, n, IT.tags, IT.sums, IT.tagsNum);
 
-    auto treeNodes = parlay::sequence<node_box>::uninitialized(IT.tagsNum);
-    auto boxs = parlay::sequence<box>::uninitialized(IT.tagsNum);
+    auto treeNodes = parlay::sequence<NodeBox>::uninitialized(IT.tagsNum);
+    auto boxs = parlay::sequence<Box>::uninitialized(IT.tagsNum);
 
     IT.tag_inbalance_node_deletion(boxs, bx, hasTomb);
 
@@ -204,10 +203,11 @@ KdTree<Point>::BatchDeleteRecursive(
 
             assert(IT.sums_tree[IT.rev_tag[i]] == IT.sums[i]);
             assert(IT.tags[IT.rev_tag[i]].first->size >= IT.sums[i]);
-            assert(within_box(get_box(Out.cut(start, start + IT.sums[i])),
-                              get_box(IT.tags[IT.rev_tag[i]].first)));
+            assert(within_box(BT::GetBox(Out.cut(start, start + IT.sums[i])),
+                              BT::GetBox(IT.tags[IT.rev_tag[i]].first)));
 
-            DimsType nextDim = (d + IT.get_depth_by_index(IT.rev_tag[i])) % BT::kDim;
+            DimsType nextDim =
+                (d + IT.get_depth_by_index(IT.rev_tag[i])) % BT::kDim;
 
             treeNodes[i] = BatchDeleteRecursive(
                 IT.tags[IT.rev_tag[i]].first, boxs[i],
@@ -220,18 +220,18 @@ KdTree<Point>::BatchDeleteRecursive(
 
     BucketType beatles = 0;
     return DeleteInnerTree(1, IT.tags, treeNodes, beatles, IT.rev_tag, d,
-                             BT::kDim);
+                           BT::kDim);
 }
 
 // NOTE: only sieve the Points, without rebuilding the tree
-template<typename Point>
-typename KdTree<Point>::node_box
-KdTree<Point>::BatchDeleteRecursive(
-    Node* T, const typename KdTree<Point>::box& bx, Slice In, Slice Out,
-    DimsType d, const DimsType BT::kDim, PartialCoverTag) {
+template<typename Point, typename SplitRule, uint_fast8_t kBDO>
+typename KdTree<Point, SplitRule, kBDO>::NodeBox
+KdTree<Point, SplitRule, kBDO>::BatchDeleteRecursive(
+    Node* T, const typename KdTree<Point, SplitRule, kBDO>::Box& bx, Slice In,
+    Slice Out, DimsType d, PartialCoverTag) {
     size_t n = In.size();
 
-    if (n == 0) return node_box(T, bx);
+    if (n == 0) return NodeBox(T, bx);
 
     if (T->is_leaf) {
         Leaf* TL = static_cast<Leaf*>(T);
@@ -247,7 +247,7 @@ KdTree<Point>::BatchDeleteRecursive(
                 }
             }
             assert(TL->size >= 0);
-            return node_box(T, box(TL->pts[0], TL->pts[0]));
+            return NodeBox(T, box(TL->pts[0], TL->pts[0]));
         }
 
         auto it = TL->pts.begin(), end = TL->pts.begin() + TL->size;
@@ -258,7 +258,7 @@ KdTree<Point>::BatchDeleteRecursive(
                 TL->size -= 1;
             }
         }
-        return node_box(T, get_box(TL->pts.cut(0, TL->size)));
+        return NodeBox(T, BT::GetBox(TL->pts.cut(0, TL->size)));
     }
 
     if (In.size() <= BT::SerialBuildCutoff) {
@@ -270,7 +270,7 @@ KdTree<Point>::BatchDeleteRecursive(
 
         DimsType nextDim = (d + 1) % BT::kDim;
 
-        box lbox(bx), rbox(bx);
+        Box lbox(bx), rbox(bx);
         lbox.second.pnt[TI->split.second] = TI->split.first;  //* loose
         rbox.first.pnt[TI->split.second] = TI->split.first;
 
@@ -287,17 +287,17 @@ KdTree<Point>::BatchDeleteRecursive(
         assert(T->size == L->size + R->size && TI->split.second >= 0 &&
                TI->is_leaf == false);
 
-        return node_box(T, get_box(Lbox, Rbox));
+        return NodeBox(T, BT::GetBox(Lbox, Rbox));
     }
 
-    InnerTree IT;
+    typename BT::template InnerTree<Leaf, Interior> IT;
     IT.init();
     IT.assign_node_tag(T, 1);
     assert(IT.tagsNum > 0 && IT.tagsNum <= BT::kBucketNum);
     seieve_points(In, Out, n, IT.tags, IT.sums, IT.tagsNum);
 
-    auto treeNodes = parlay::sequence<node_box>::uninitialized(IT.tagsNum);
-    auto boxs = parlay::sequence<box>::uninitialized(IT.tagsNum);
+    auto treeNodes = parlay::sequence<NodeBox>::uninitialized(IT.tagsNum);
+    auto boxs = parlay::sequence<Box>::uninitialized(IT.tagsNum);
 
     // NOTE: never set tomb, this equivalent to only calcualte the bounding box,
     IT.tag_inbalance_node_deletion(boxs, bx, false);
@@ -312,12 +312,13 @@ KdTree<Point>::BatchDeleteRecursive(
                 start += IT.sums[j];
             }
 
-            DimsType nextDim = (d + IT.get_depth_by_index(IT.rev_tag[i])) % BT::kDim;
+            DimsType nextDim =
+                (d + IT.get_depth_by_index(IT.rev_tag[i])) % BT::kDim;
             treeNodes[i] =
                 BatchDeleteRecursive(IT.tags[IT.rev_tag[i]].first, boxs[i],
-                                      Out.cut(start, start + IT.sums[i]),
-                                      In.cut(start, start + IT.sums[i]),
-                                      nextDim, BT::kDim, PartialCoverTag());
+                                     Out.cut(start, start + IT.sums[i]),
+                                     In.cut(start, start + IT.sums[i]), nextDim,
+                                     BT::kDim, PartialCoverTag());
         },
         1);
 

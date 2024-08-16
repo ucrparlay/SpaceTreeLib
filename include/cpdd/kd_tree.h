@@ -27,6 +27,7 @@ class KdTree : private BaseTree<Point, kBDO> {
     using HyperPlane = BT::HyperPlane;
     using HyperPlaneSeq = BT::HyperPlaneSeq;
     using NodeTag = BT::NodeTag;
+    using NodeTagSeq = BT::NodeTagSeq;
     using TagNodes = BT::TagNodes;
     using NodeBox = BT::NodeBox;
     using Splitter = HyperPlane;
@@ -55,45 +56,57 @@ class KdTree : private BaseTree<Point, kBDO> {
 
     void DeleteTree() override;
 
-    void BatchInsert(Slice In, const DimsType BT::kDim);
+    static void SeievePoints(Slice A, Slice B, const size_t n,
+                             const NodeTagSeq& tags,
+                             parlay::sequence<BallsType>& sums,
+                             const BucketType tagsNum);
 
-    Node* RebuildWithInsert(Node* T, Slice In, const DimsType d,
-                            const DimsType BT::kDim);
+    static inline BucketType RetriveTag(const Point& p, const NodeTagSeq& tags);
+
+    static NodeBox UpdateInnerTree(BucketType idx, const NodeTagSeq& tags,
+                                   parlay::sequence<NodeBox>& treeNodes,
+                                   BucketType& p, const TagNodes& rev_tag);
+
+    NodeBox RebuildSingleTree(Node* T, const DimsType d,
+                              const bool granularity = true);
+
+    NodeBox RebuildTreeRecursive(Node* T, DimsType d,
+                                 const bool granularity = true);
+
+    void BatchInsert(Slice In);
+
+    Node* RebuildWithInsert(Node* T, Slice In, const DimsType d);
 
     static inline void UpdateInterior(Node* T, Node* L, Node* R);
 
-    Node* BatchInsertRecursive(Node* T, Slice In, Slice Out, DimsType d,
-                               const DimsType BT::kDim);
+    Node* BatchInsertRecursive(Node* T, Slice In, Slice Out, DimsType d);
 
-    static Node* UpdateInnerTreeByTag(BucketType idx, const NodeTag& tags,
+    static Node* UpdateInnerTreeByTag(BucketType idx, const NodeTagSeq& tags,
                                       parlay::sequence<Node*>& treeNodes,
                                       BucketType& p, const TagNodes& rev_tag);
 
     // NOTE: batch delete
     // NOTE: in default, all Points to be deleted are assumed in the tree
-    void BatchDelete(Slice In, const DimsType BT::kDim);
+    void BatchDelete(Slice In);
 
     // NOTE: explicitly specify all Points to be deleted are in the tree
-    void BatchDelete(Slice In, const DimsType BT::kDim, FullCoveredTag);
+    void BatchDelete(Slice In, FullCoveredTag);
 
     // NOTE: for the case that some Points to be deleted are not in the tree
-    void BatchDelete(Slice In, const DimsType BT::kDim, PartialCoverTag);
+    void BatchDelete(Slice In, PartialCoverTag);
 
     //  PERF: try pass a reference to bx
     NodeBox BatchDeleteRecursive(Node* T, const Box& bx, Slice In, Slice Out,
-                                  DimsType d, const DimsType BT::kDim, bool hasTomb,
-                                  FullCoveredTag);
+                                 DimsType d, bool hasTomb, FullCoveredTag);
 
     // TODO: add bounding Box for batch delete recursive as well
     // WARN: fix the possible in partial deletion as well
     NodeBox BatchDeleteRecursive(Node* T, const Box& bx, Slice In, Slice Out,
-                                  DimsType d, const DimsType BT::kDim,
-                                  PartialCoverTag);
+                                 DimsType d, PartialCoverTag);
 
-    NodeBox DeleteInnerTree(BucketType idx, const NodeTag& tags,
-                              parlay::sequence<NodeBox>& treeNodes,
-                              BucketType& p, const TagNodes& rev_tag,
-                              const DimsType d, const DimsType BT::kDim);
+    NodeBox DeleteInnerTree(BucketType idx, const NodeTagSeq& tags,
+                            parlay::sequence<NodeBox>& treeNodes, BucketType& p,
+                            const TagNodes& rev_tag, const DimsType d);
 
     template<typename Range>
     void Flatten(Range&& Out);
@@ -130,3 +143,5 @@ class KdTree : private BaseTree<Point, kBDO> {
 #include "kd_tree_impl/kd_build_tree.hpp"
 #include "kd_tree_impl/kd_inter_node.hpp"
 #include "kd_tree_impl/kd_override.hpp"
+#include "kd_tree_impl/kd_batch_insert.hpp"
+#include "kd_tree_impl/kd_batch_delete.hpp"
