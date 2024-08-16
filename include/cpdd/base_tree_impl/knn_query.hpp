@@ -200,7 +200,7 @@ void BaseTree<Point, kBDO>::KNNMultiExpand(Node* T, const Point& q,
     //     std::ranges::swap(first_box, second_box);
     // }
 
-    assert(dim != 0 || (first_idx == 1 && second_idx == 1));
+    assert((dim + 1) % kDim != 0 || (first_idx == 1 && second_idx == 1));
 
     KNNMultiExpand<Leaf, Interior>(first_node, q, (dim + 1) % kDim, first_idx,
                                    bq, next_box, logger);
