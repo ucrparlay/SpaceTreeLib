@@ -180,4 +180,16 @@ Node* BaseTree<Point, kBDO>::Expand2Binary(Node* T) {
     // FreeNode<MN>(T);
     return ExpandMultiNode<BN, MN>(split, 1, 0, tree_nodes);
 }
+
+// NOTE: update the info of T by new children L and R
+template<typename Point, uint_fast8_t kBDO>
+template<IsBinaryNode Interior>
+inline void BaseTree<Point, kBDO>::UpdateInterior(Node* T, Node* L, Node* R) {
+    assert(!T->is_leaf);
+    Interior* TI = static_cast<Interior*>(T);
+    TI->size = L->size + R->size;
+    TI->left = L;
+    TI->right = R;
+    return;
+}
 }  // namespace cpdd

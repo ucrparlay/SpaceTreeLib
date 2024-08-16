@@ -85,9 +85,24 @@ class BaseTree {
     static inline BucketType FindBucket(const Point& p,
                                         const HyperPlaneSeq& pivots);
 
+    template<IsBinaryNode Interior>
+    static inline void UpdateInterior(Node* T, Node* L, Node* R);
+
+    template<typename Leaf, typename Interior, bool granularity = true>
+    static void PrepareRebuild(Node* T, Slice In, Points& wx, Points& wo);
+
     static void Partition(Slice A, Slice B, const size_t n,
                           const HyperPlaneSeq& pivots,
                           parlay::sequence<BallsType>& sums);
+
+    template<IsBinaryNode Interior>
+    static inline BucketType RetriveTag(const Point& p, const NodeTagSeq& tags);
+
+    template<typename Interior>
+    static void SeievePoints(Slice A, Slice B, const size_t n,
+                             const NodeTagSeq& tags,
+                             parlay::sequence<BallsType>& sums,
+                             const BucketType tags_num);
 
     template<IsBinaryNode Interior>
     static Node* BuildInnerTree(BucketType idx, HyperPlaneSeq& pivots,

@@ -34,16 +34,16 @@ struct BaseTree<Point, kBDO>::InnerTree {
     }
 
     //@ cores
-    inline void ResetTagsNum() { tagsNum = 0; }
+    inline void ResetTagsNum() { tags_num = 0; }
 
     // NOTE: Each Node in the skeleton receives a tag
     // NOTE: A Leaf Node receives the tag < BUCKETNUM
     // NOTE: All internal Node has tag == BUCKETNUM
     void AssignNodeTag(Node* T, BucketType idx) {
         if (T->is_leaf || idx > kPivotNum) {
-            assert(tagsNum < kBucketNum);
-            tags[idx] = NodeTag(T, tagsNum);
-            rev_tag[tagsNum++] = idx;
+            assert(tags_num < kBucketNum);
+            tags[idx] = NodeTag(T, tags_num);
+            rev_tag[tags_num++] = idx;
             return;
         }
         // INFO: BUCKET ID in [0, kBucketNum)
@@ -78,7 +78,7 @@ struct BaseTree<Point, kBDO>::InnerTree {
     void PickTag(BucketType idx) {
         if (idx > kPivotNum || tags[idx].first->is_leaf) {
             tags[idx].second = kBucketNum + 1;
-            rev_tag[tagsNum++] = idx;
+            rev_tag[tags_num++] = idx;
             return;
         }
         assert(tags[idx].second == kBucketNum && (!tags[idx].first->is_leaf));
@@ -87,7 +87,7 @@ struct BaseTree<Point, kBDO>::InnerTree {
         if (ImbalanceNode(TI->left->size + sums_tree[idx << 1],
                           TI->size + sums_tree[idx])) {
             tags[idx].second = kBucketNum + 2;
-            rev_tag[tagsNum++] = idx;
+            rev_tag[tags_num++] = idx;
             return;
         }
         PickTag(idx << 1);
@@ -124,8 +124,8 @@ struct BaseTree<Point, kBDO>::InnerTree {
             } else {
                 tags[idx].second = kBucketNum + 1;
             }
-            boxs[tagsNum] = bx;
-            rev_tag[tagsNum++] = idx;
+            boxs[tags_num] = bx;
+            rev_tag[tags_num++] = idx;
             return;
         }
 
@@ -160,7 +160,13 @@ struct BaseTree<Point, kBDO>::InnerTree {
         return;
     }
 
-    void Init() {
+    InnerTree() :
+        tags_num(0),
+        tags(NodeTagSeq::uninitialized(kPivotNum + kBucketNum + 1)),
+        sums_tree(parlay::sequence<BallsType>(kPivotNum + kBucketNum + 1)),
+        rev_tag(TagNodes::uninitialized(kBucketNum)) {}
+
+    void Reset() {
         ResetTagsNum();
         tags = NodeTagSeq::uninitialized(kPivotNum + kBucketNum + 1);
         sums_tree = parlay::sequence<BallsType>(kPivotNum + kBucketNum + 1);
@@ -172,7 +178,7 @@ struct BaseTree<Point, kBDO>::InnerTree {
     parlay::sequence<BallsType> sums;
     mutable parlay::sequence<BallsType> sums_tree;
     mutable TagNodes rev_tag;
-    BucketType tagsNum;
+    BucketType tags_num;
 };
 
 };  // namespace cpdd

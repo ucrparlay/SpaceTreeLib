@@ -56,15 +56,8 @@ class KdTree : private BaseTree<Point, kBDO> {
 
     void DeleteTree() override;
 
-    static void SeievePoints(Slice A, Slice B, const size_t n,
-                             const NodeTagSeq& tags,
-                             parlay::sequence<BallsType>& sums,
-                             const BucketType tagsNum);
-
-    static inline BucketType RetriveTag(const Point& p, const NodeTagSeq& tags);
-
     static NodeBox UpdateInnerTree(BucketType idx, const NodeTagSeq& tags,
-                                   parlay::sequence<NodeBox>& treeNodes,
+                                   parlay::sequence<NodeBox>& tree_nodes,
                                    BucketType& p, const TagNodes& rev_tag);
 
     NodeBox RebuildSingleTree(Node* T, const DimsType d,
@@ -77,12 +70,10 @@ class KdTree : private BaseTree<Point, kBDO> {
 
     Node* RebuildWithInsert(Node* T, Slice In, const DimsType d);
 
-    static inline void UpdateInterior(Node* T, Node* L, Node* R);
-
     Node* BatchInsertRecursive(Node* T, Slice In, Slice Out, DimsType d);
 
     static Node* UpdateInnerTreeByTag(BucketType idx, const NodeTagSeq& tags,
-                                      parlay::sequence<Node*>& treeNodes,
+                                      parlay::sequence<Node*>& tree_nodes,
                                       BucketType& p, const TagNodes& rev_tag);
 
     // NOTE: batch delete
@@ -105,8 +96,9 @@ class KdTree : private BaseTree<Point, kBDO> {
                                  DimsType d, PartialCoverTag);
 
     NodeBox DeleteInnerTree(BucketType idx, const NodeTagSeq& tags,
-                            parlay::sequence<NodeBox>& treeNodes, BucketType& p,
-                            const TagNodes& rev_tag, const DimsType d);
+                            parlay::sequence<NodeBox>& tree_nodes,
+                            BucketType& p, const TagNodes& rev_tag,
+                            const DimsType d);
 
     template<typename Range>
     void Flatten(Range&& Out);

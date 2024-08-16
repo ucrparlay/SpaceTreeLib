@@ -102,4 +102,87 @@ BaseTree<Point, kBDO>::SerialPartition(Slice In, DimsType d) {
     return _2ndGroup.begin();
 }
 
+template<typename Point, uint_fast8_t kBDO>
+template<typename Leaf, typename Interior, bool granularity>
+void BaseTree<Point, kBDO>::PrepareRebuild(Node* T, Slice In, Points& wx,
+                                           Points& wo) {
+    // TODO: add dispatch tag
+    wo = Points::uninitialized(T->size + In.size());
+    wx = Points::uninitialized(T->size + In.size());
+    parlay::parallel_for(0, In.size(), [&](size_t j) { wx[j] = In[j]; });
+    FlattenRec<Leaf, Interior, Slice, granularity>(
+        T, wx.cut(In.size(), wx.size()));
+    DeleteTreeRecursive<Leaf, Interior, granularity>(T);
+    return;
+}
+
+// NOTE: retrive the bucket tag of Point p from the skeleton tags
+template<typename Point, uint_fast8_t kBDO>
+template<IsBinaryNode Interior>
+typename BaseTree<Point, kBDO>::BucketType BaseTree<Point, kBDO>::RetriveTag(
+    const Point& p, const NodeTagSeq& tags) {
+    BucketType k(1);
+    // Interior* TI;
+    while (k <= kPivotNum && (!tags[k].first->is_leaf)) {
+        // TI = static_cast<Interior*>(tags[k].first);
+        // k = Num::Lt(p.pnt[TI->split.second], TI->split.first) ? k << 1
+        //                                                       : k << 1 | 1;
+        k = k * 2 + 1 -
+            static_cast<BucketType>(Num::Lt(
+                p.pnt[static_cast<Interior*>(tags[k].first)->split.second],
+                static_cast<Interior*>(tags[k].first)->split.first));
+    }
+    assert(tags[k].second < kBucketNum);
+    return tags[k].second;
+}
+
+// NOTE: seieve Points from range A to range B, using the skeleton tags. The
+// sums is the number of elemenets within each bucket, the tags_num is the total
+// number of buckets in the skeleton
+template<typename Point, uint_fast8_t kBDO>
+template<typename Interior>
+void BaseTree<Point, kBDO>::SeievePoints(Slice A, Slice B, const size_t n,
+                                         const NodeTagSeq& tags,
+                                         parlay::sequence<BallsType>& sums,
+                                         const BucketType tags_num) {
+    size_t num_block = (n + kBlockSize - 1) >> kLog2Base;
+    parlay::sequence<parlay::sequence<BallsType>> offset(
+        num_block, parlay::sequence<BallsType>(tags_num));
+    assert(offset.size() == num_block && offset[0].size() == tags_num &&
+           offset[0][0] == 0);
+    parlay::parallel_for(0, num_block, [&](size_t i) {
+        for (size_t j = i << kLog2Base; j < std::min((i + 1) << kLog2Base, n);
+             j++) {
+            auto k = RetriveTag<Interior>(A[j], tags);
+            offset[i][k]++;
+        }
+    });
+
+    sums = parlay::sequence<BallsType>(tags_num);
+    for (size_t i = 0; i < num_block; i++) {
+        auto t = offset[i];
+        offset[i] = sums;
+        for (int j = 0; j < tags_num; j++) {
+            sums[j] += t[j];
+        }
+    }
+
+    parlay::parallel_for(0, num_block, [&](size_t i) {
+        auto v = parlay::sequence<BallsType>::uninitialized(tags_num);
+        int tot = 0, s_offset = 0;
+        for (int k = 0; k < tags_num - 1; k++) {
+            v[k] = tot + offset[i][k];
+            tot += sums[k];
+            s_offset += offset[i][k];
+        }
+        v[tags_num - 1] = tot + ((i << kLog2Base) - s_offset);
+        for (size_t j = i << kLog2Base; j < std::min((i + 1) << kLog2Base, n);
+             j++) {
+            auto k = RetriveTag<Interior>(A[j], tags);
+            B[v[k]++] = A[j];
+        }
+    });
+
+    return;
+}
 }  // namespace cpdd
