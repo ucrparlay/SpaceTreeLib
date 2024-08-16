@@ -24,19 +24,17 @@ void KdTree<Point, SplitRule, kBDO>::Build(Range&& In) {
 template<typename Point, typename SplitRule, uint_fast8_t kBDO>
 void KdTree<Point, SplitRule, kBDO>::DivideRotate(Slice In, SplitterSeq& pivots,
                                                   DimsType dim, BucketType idx,
-                                                  BucketType deep,
-                                                  BucketType& bucket,
                                                   BoxSeq& boxs, const Box& bx) {
-    if (deep > BT::kBuildDepthOnce) {
+    if (idx > BT::kPivotNum) {
         // WARN: sometimes cut dimension can be -1
         //  never use pivots[idx].first to check whether it is in bucket;
         //  instead, use idx > PIVOT_NUM
-        boxs[bucket] = bx;
-        pivots[idx] = Splitter(-1, bucket++);
+        boxs[idx - BT::kBucketNum] = bx;
+        pivots[idx] = Splitter(-1, idx - BT::kBucketNum);
         return;
     }
     size_t n = In.size();
-    uint_fast8_t d = split_rule_.FindCuttingDimension(bx, dim);
+    DimsType d = split_rule_.FindCuttingDimension(bx, dim);
     assert(d < BT::kDim);
 
     std::ranges::nth_element(In, In.begin() + n / 2,
@@ -51,10 +49,8 @@ void KdTree<Point, SplitRule, kBDO>::DivideRotate(Slice In, SplitterSeq& pivots,
     rbox.first.pnt[d] = pivots[idx].first;
 
     d = (d + 1) % BT::kDim;
-    DivideRotate(In.cut(0, n / 2), pivots, d, 2 * idx, deep + 1, bucket, boxs,
-                 lbox);
-    DivideRotate(In.cut(n / 2, n), pivots, d, 2 * idx + 1, deep + 1, bucket,
-                 boxs, rbox);
+    DivideRotate(In.cut(0, n / 2), pivots, d, 2 * idx, boxs, lbox);
+    DivideRotate(In.cut(n / 2, n), pivots, d, 2 * idx + 1, boxs, rbox);
     return;
 }
 
@@ -71,9 +67,7 @@ void KdTree<Point, SplitRule, kBDO>::PickPivots(Slice In, const size_t& n,
     BT::SamplePoints(In, arr);
 
     // NOTE: pick pivots
-    BucketType bucket = 0;
-    DivideRotate(arr.cut(0, size), pivots, dim, 1, 1, bucket, boxs, bx);
-    assert(bucket == BT::kBucketNum);
+    DivideRotate(arr.cut(0, size), pivots, dim, 1, boxs, bx);
     return;
 }
 
@@ -89,7 +83,6 @@ Node* KdTree<Point, SplitRule, kBDO>::SerialBuildRecursive(Slice In, Slice Out,
 
     DimsType d = split_rule_.FindCuttingDimension(bx, dim);
     PointsIter splitIter = BT::SerialPartition(In, d);
-    PointsIter diffEleIter;  // TODO: we can remove this iter
 
     Splitter split;
 

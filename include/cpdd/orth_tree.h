@@ -6,7 +6,8 @@
 
 namespace cpdd {
 
-template<typename Point, typename SplitRule, uint_fast8_t kMD = 2, uint_fast8_t kBDO = 6>
+template<typename Point, typename SplitRule, uint_fast8_t kMD = 2,
+         uint_fast8_t kBDO = 6>
 class OrthTree : private BaseTree<Point, kBDO> {
  public:
     static constexpr size_t kSplitterNum = kMD;
@@ -79,8 +80,7 @@ class OrthTree : private BaseTree<Point, kBDO> {
                      BoxSeq& box_seq);
 
     void DivideRotate(HyperPlaneSeq& pivots, DimsType dim, BucketType idx,
-                      DimsType deep, BucketType& bucket, BoxSeq& box_seq,
-                      const Box& box);
+                      BoxSeq& box_seq, const Box& box);
 
     void PickPivots(Slice In, const size_t& n, HyperPlaneSeq& pivots,
                     const DimsType dim, BoxSeq& boxs, const Box& bx);

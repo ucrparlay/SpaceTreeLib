@@ -69,8 +69,7 @@ class KdTree : private BaseTree<Point, kBDO> {
 
  private:
     void DivideRotate(Slice In, SplitterSeq& pivots, DimsType dim,
-                      BucketType idx, BucketType deep, BucketType& bucket,
-                      BoxSeq& boxs, const Box& bx);
+                      BucketType idx, BoxSeq& boxs, const Box& bx);
 
     void PickPivots(Slice In, const size_t& n, SplitterSeq& pivots,
                     const DimsType dim, BoxSeq& boxs, const Box& bx);

@@ -8,7 +8,8 @@
 #include "cpdd/orth_tree.h"
 
 namespace cpdd {
-template<typename Point, typename SplitRule, uint_fast8_t kMD, uint_fast8_t kBDO>
+template<typename Point, typename SplitRule, uint_fast8_t kMD,
+         uint_fast8_t kBDO>
 template<typename Range>
 void OrthTree<Point, SplitRule, kMD, kBDO>::Build(Range&& In) {
     static_assert(parlay::is_random_access_range_v<Range>);
@@ -24,17 +25,19 @@ void OrthTree<Point, SplitRule, kMD, kBDO>::Build(Range&& In) {
     Build_(A);
 }
 
-template<typename Point, typename SplitRule, uint_fast8_t kMD, uint_fast8_t kBDO>
-void OrthTree<Point, SplitRule, kMD, kBDO>::DivideRotate(
-    HyperPlaneSeq& pivots, DimsType dim, BucketType idx, DimsType deep,
-    BucketType& bucket, BoxSeq& box_seq, const Box& box) {
-    if (deep > BT::kBuildDepthOnce) {  // TODO: remove deep and use idx
+template<typename Point, typename SplitRule, uint_fast8_t kMD,
+         uint_fast8_t kBDO>
+void OrthTree<Point, SplitRule, kMD, kBDO>::DivideRotate(HyperPlaneSeq& pivots,
+                                                         DimsType dim,
+                                                         BucketType idx,
+                                                         BoxSeq& box_seq,
+                                                         const Box& box) {
+    if (idx > BT::kPivotNum) {
         // WARN: sometimes cut dimension can be -1
-        //  never use pivots[idx].first to check whether it is in bucket;
+        //  never use pivots[idx].first == -1 to check whether it is in bucket;
         //  instead, use idx > PIVOT_NUM
-        box_seq[bucket] = box;
-        pivots[idx] = HyperPlane(
-            -1, bucket++);  // TODO: remove bucket++ using idx-kRegions
+        box_seq[idx - BT::kBucketNum] = box;
+        pivots[idx] = HyperPlane(-1, idx - BT::kBucketNum);
         return;
     }
 
@@ -47,13 +50,14 @@ void OrthTree<Point, SplitRule, kMD, kBDO>::DivideRotate(
     rbox.first.pnt[dim] = pivots[idx].first;
 
     dim = (dim + 1) % BT::kDim;
-    DivideRotate(pivots, dim, 2 * idx, deep + 1, bucket, box_seq, lbox);
-    DivideRotate(pivots, dim, 2 * idx + 1, deep + 1, bucket, box_seq, rbox);
+    DivideRotate(pivots, dim, 2 * idx, box_seq, lbox);
+    DivideRotate(pivots, dim, 2 * idx + 1, box_seq, rbox);
 
     return;
 }
 
-template<typename Point, typename SplitRule, uint_fast8_t kMD, uint_fast8_t kBDO>
+template<typename Point, typename SplitRule, uint_fast8_t kMD,
+         uint_fast8_t kBDO>
 void OrthTree<Point, SplitRule, kMD, kBDO>::SerialSplit(
     Slice In, DimsType dim, DimsType idx, const Box& box, const Splitter& split,
     parlay::sequence<BallsType>& sums, BoxSeq& box_seq) {
@@ -81,7 +85,8 @@ void OrthTree<Point, SplitRule, kMD, kBDO>::SerialSplit(
                 idx << 1 | 1, rbox, split, sums, box_seq);
 }
 
-template<typename Point, typename SplitRule, uint_fast8_t kMD, uint_fast8_t kBDO>
+template<typename Point, typename SplitRule, uint_fast8_t kMD,
+         uint_fast8_t kBDO>
 Node* OrthTree<Point, SplitRule, kMD, kBDO>::SerialBuildRecursive(
     Slice In, Slice Out, const Box& box, bool checked_duplicate) {
     assert(In.size() == 0 || BT::WithinBox(BT::GetBox(In), box));
@@ -138,7 +143,8 @@ Node* OrthTree<Point, SplitRule, kMD, kBDO>::SerialBuildRecursive(
     return AllocInteriorNode<Interior>(tree_nodes, split, false);
 }
 
-template<typename Point, typename SplitRule, uint_fast8_t kMD, uint_fast8_t kBDO>
+template<typename Point, typename SplitRule, uint_fast8_t kMD,
+         uint_fast8_t kBDO>
 Node* OrthTree<Point, SplitRule, kMD, kBDO>::QuadBuildInnerTree(
     BucketType idx, const HyperPlaneSeq& pivots,
     const parlay::sequence<Node*>& tree_nodes) {
@@ -162,13 +168,12 @@ Node* OrthTree<Point, SplitRule, kMD, kBDO>::QuadBuildInnerTree(
     return AllocInteriorNode<Interior>(multi_nodes, split, false);
 }
 
-template<typename Point, typename SplitRule, uint_fast8_t kMD, uint_fast8_t kBDO>
+template<typename Point, typename SplitRule, uint_fast8_t kMD,
+         uint_fast8_t kBDO>
 Node* OrthTree<Point, SplitRule, kMD, kBDO>::BuildRecursive(Slice In, Slice Out,
                                                             const Box& box) {
     // TODO: may ensure the bucket is corresponding the the splitter
     assert(In.size() == 0 || BT::WithinBox(BT::GetBox(In), box));
-
-    const DimsType dim = 0;
 
     // if (In.size()) {
     if (In.size() <= BT::kSerialBuildCutoff) {
@@ -180,8 +185,7 @@ Node* OrthTree<Point, SplitRule, kMD, kBDO>::BuildRecursive(Slice In, Slice Out,
     auto box_seq = BoxSeq::uninitialized(BT::kBucketNum);
     parlay::sequence<BallsType> sums;
 
-    BucketType bucket = 0;
-    DivideRotate(pivots, dim, 1, 1, bucket, box_seq, box);
+    DivideRotate(pivots, 0, 1, box_seq, box);
     BT::Partition(In, Out, In.size(), pivots, sums);
 
     // NOTE: if random sampling failed to split points, re-partitions using
@@ -217,7 +221,8 @@ Node* OrthTree<Point, SplitRule, kMD, kBDO>::BuildRecursive(Slice In, Slice Out,
     return QuadBuildInnerTree(1, pivots, tree_nodes);
 }
 
-template<typename Point, typename SplitRule, uint_fast8_t kMD, uint_fast8_t kBDO>
+template<typename Point, typename SplitRule, uint_fast8_t kMD,
+         uint_fast8_t kBDO>
 void OrthTree<Point, SplitRule, kMD, kBDO>::Build_(Slice A) {
     Points B = Points::uninitialized(A.size());
     this->tree_box_ = BT::GetBox(A);
