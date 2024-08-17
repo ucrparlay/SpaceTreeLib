@@ -1,4 +1,4 @@
-# A library for spatial partition trees
+# PSPT: A library for Parallel Spatial Partition Trees
 
 ## Requirements
 
@@ -20,8 +20,8 @@ Try:
 1. Clone the repository.
 
 ```{bash}
-git clone git@github.com:ucrparlay/KDtree.git
-cd KDtree
+git clone git@github.com:ucrparlay/SpaceTreeLib.git
+cd SpaceTreeLib
 ```
 
 2. Initialize the submodule:
@@ -44,7 +44,7 @@ File structure:
 |    Name     |          Usage          |
 | :---------: | :---------------------: |
 | `benchmark` | Stores sample benchmark |
-|  `include`  |  Source of `Pkd-tree`   |
+|  `include`  |  Source of `PSPT`   |
 | `parlaylib` |   Provide parallelism   |
 |  `scipts`   | Scripts for experiments |
 |   `tests`   |   Helpers for testing   |
@@ -115,7 +115,7 @@ To parse the output, see [ Test Framework Format ](#test-framework-format) below
 
 ### Default setting
 
-In default, the Pkd-tree stores all coordinates of points in 64-bit integer (`long`). The balancing parameter is set to $0.3$, the leaf wrap is $32$. It builds $6$ levels of tree at once. Different values on different machine may influence the performance dramatically. See our paper for more explanation.
+In default, the PSPTs stores all coordinates of points in 64-bit integer (`long`). The balancing parameter is set to $0.3$, the leaf wrap is $32$. It builds $6$ levels of tree at once. Different values on different machine may influence the performance dramatically. See our paper for more explanation.
 
 ## Test Framework Format
 
