@@ -4,7 +4,8 @@ set -o xtrace
 # Solvers=("zdtree" "test" "cgal")
 Solvers=("test")
 Node=(100000000 1000000000)
-Tree=(0 1)
+# Tree=(0 1)
+Tree=(0)
 Dim=(2 3)
 declare -A datas
 # datas["/data3/zmen002/kdtree/ss_varden/"]="../benchmark/ss_varden/"
