@@ -30,8 +30,8 @@ elif type == "batch_knn_query":
     files = ["build", "knn"]
     Dims = [2, 3]
 elif type == "querys":
-    solverName = ["kdtree", "Expand", "Compress"]
-    files = ["build", "knn"]
+    solverName = ["kdtree", "orth"]
+    files = ["build", "knn", "count", "rquery"]
     Dims = [2, 3]
     # solverName = ["test", "zdtree", "cgal", "LogTree", "BhlTree"]
     # files = ["build", "knn", "count", "rquery"]
@@ -48,8 +48,7 @@ elif type == "count":
 
 resMap = {
     "kdtree": "res_0_" + type + ".out",
-    "Expand": "res_1_" + type + ".out",
-    "Compress": "res_2_" + type + ".out",
+    "orth": "res_1_" + type + ".out",
 }
 
 common = [
@@ -93,24 +92,27 @@ knn_header = [
     "k=1",
     "max-depth",
     "ave-depth",
-    "vis-node",
-    "generate-box",
-    "check-box",
+    "vis",
+    "gen",
+    "check",
+    "skip",
     "k=10",
     "max-depth",
     "ave-depth",
-    "vis-node",
-    "generate-box",
-    "check-box",
+    "vis",
+    "gen",
+    "check",
+    "skip",
     "k=100",
     "max-depth",
     "ave-depth",
-    "vis-node",
-    "generate-box",
-    "check-box",
+    "vis",
+    "gen",
+    "check",
+    "skip",
 ]
-count_header = ["10000small", "10000medium", "10000large"]
-rquery_header = ["10000small", "10000medium", "10000large"]
+count_header = ["S", "M", "L"]
+rquery_header = ["S", "M", "L"]
 increBuild_header = [
     "step=0.1",
     "ave-depth",
@@ -146,6 +148,10 @@ file_header = {
     "decreBuild": increBuild_header,
     "increKNN": increKNN_header,
 }
+nodes_map = {
+    100000000: "100M",
+    1000000000: "1000M",
+}
 
 prefix = [0] * len(files)
 
@@ -176,13 +182,14 @@ def combine(P, file, csvWriter, solver, benchName, node, dim):
             # print([solver, benchName, node, dim] + list(map(lambda x: round(x, 5), line)))
 
         csvWriter.writerow(
-            [solver, benchName, node, dim] + list(map(lambda x: round(x, 5), line))
+            [solver, benchName, nodes_map[node], dim]
+            + list(map(lambda x: round(x, 5), line))
         )
 
 
-def csvSetup(solver):
-    print(solver)
-    csvFilePointer = open(storePrefix + solver + ".csv", "w", newline="")
+def csvSetup(file):
+    print(file)
+    csvFilePointer = open(storePrefix + file + ".csv", "w", newline="")
     csvFilePointer.truncate()
     print(csvFilePointer)
     csvWriter = csv.writer(csvFilePointer)

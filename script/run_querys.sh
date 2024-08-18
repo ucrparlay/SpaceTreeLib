@@ -15,7 +15,7 @@ datas["/localdata/zmen002/kdtree/uniform/"]="../benchmark/uniform/"
 tag=0
 k=100
 insNum=2
-queryType=$((2#0001)) # 1110000
+queryType=$((2#1101)) # 1110000
 type="querys"
 resFile=""
 
