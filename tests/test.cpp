@@ -424,8 +424,8 @@ struct wrapper {
     struct KDtree {
         template<class Point>
         struct Desc {
-            // using TreeType = cpdd::KdTree<Point, cpdd::MaxStretchDim<Point>>;
-            using TreeType = cpdd::KdTree<Point, cpdd::RotateDim<Point>>;
+            using TreeType = cpdd::KdTree<Point, cpdd::MaxStretchDim<Point>>;
+            // using TreeType = cpdd::KdTree<Point, cpdd::RotateDim<Point>>;
         };
     };
 };

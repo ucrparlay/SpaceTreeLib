@@ -90,29 +90,55 @@ delete_header = [
 ]
 knn_header = [
     "k=1",
-    "max-depth",
-    "ave-depth",
     "vis",
     "gen",
     "check",
     "skip",
     "k=10",
-    "max-depth",
-    "ave-depth",
     "vis",
     "gen",
     "check",
     "skip",
     "k=100",
-    "max-depth",
-    "ave-depth",
     "vis",
     "gen",
     "check",
     "skip",
 ]
-count_header = ["S", "M", "L"]
-rquery_header = ["S", "M", "L"]
+count_header = [
+    "S",
+    "vis",
+    "gen",
+    "check",
+    "skip",
+    "M",
+    "vis",
+    "gen",
+    "check",
+    "skip",
+    "L",
+    "vis",
+    "gen",
+    "check",
+    "skip",
+]
+rquery_header = [
+    "S",
+    "vis",
+    "gen",
+    "check",
+    "skip",
+    "M",
+    "vis",
+    "gen",
+    "check",
+    "skip",
+    "L",
+    "vis",
+    "gen",
+    "check",
+    "skip",
+]
 increBuild_header = [
     "step=0.1",
     "ave-depth",
@@ -158,7 +184,7 @@ prefix = [0] * len(files)
 
 def combine(P, file, csvWriter, solver, benchName, node, dim):
     if not os.path.isfile(P):
-        print("No file fonund: " + P)
+        print("No file found: " + P)
         return
 
     lines = open(P, "r").readlines()
