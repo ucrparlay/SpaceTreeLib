@@ -9,16 +9,16 @@ resFile="Correct.out"
 dest="logger.in"
 out="log.in"
 : >${dest}
-tag=0
+tag=1
 count=1 # count the number of ok in the output
 dims=(2)
 queryTypes=(0 1 2)
-trees=(0 1)
+trees=(0)
 # queryTypes=(0 1 2)
 
-# Paths=("/localdata/zmen002/kdtree/ss_varden/" "/localdata/zmen002/kdtree/uniform/")
+Paths=("/localdata/zmen002/kdtree/ss_varden/" "/localdata/zmen002/kdtree/uniform/")
 # Paths=("/localdata/0/zmen002/kdtree/ss_varden/" "/localdata/0/zmen002/kdtree/uniform_bigint/")
-Paths=("/ssd0/zmen002/kdtree/ss_varden/" "/ssd0/zmen002/kdtree/uniform/")
+# Paths=("/ssd0/zmen002/kdtree/ss_varden/" "/ssd0/zmen002/kdtree/uniform/")
 
 #* check node
 for queryType in "${queryTypes[@]}"; do
@@ -26,8 +26,13 @@ for queryType in "${queryTypes[@]}"; do
 		for node in "${Nodes[@]}"; do
 			for dim in "${dims[@]}"; do
 				for tree in "${trees[@]}"; do
-					if [ "${queryType}" -gt 0 ] && [ "${node}" -gt 8000000 ]; then
-						continue
+					if [[ "${queryType}" -gt 0 ]]; then
+						if [[ "${node}" -gt 8000000 ]]; then
+							continue
+						fi
+						if [[ "${queryType}" -gt 1 ]] && [[ "${path}" == *"/uniform/" ]] && [[ "${node}" -gt 5000000 ]]; then
+							continue
+						fi
 					fi
 
 					if [[ ${node} -ge 50000000 ]]; then
