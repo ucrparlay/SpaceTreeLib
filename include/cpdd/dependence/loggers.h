@@ -12,9 +12,9 @@ struct KNNLogger {
 };
 
 struct RangeQueryLogger {
-    size_t vis_leaf_num = 0;
-    size_t vis_interior_num = 0;
+    size_t vis_node_num = 0;
     size_t generate_box_num = 0;
+    size_t full_box_num = 0;
     size_t skip_box_num = 0;
 };
 

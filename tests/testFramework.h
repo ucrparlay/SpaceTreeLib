@@ -27,7 +27,7 @@ using namespace cpdd;
 static constexpr double batchQueryRatio = 0.01;
 static constexpr size_t batchQueryOsmSize = 10000000;
 // NOTE: rectangle numbers
-static constexpr int rangeQueryNum = 10000;
+static constexpr int rangeQueryNum = 50000;
 static constexpr int singleQueryLogRepeatNum = 100;
 
 // NOTE: rectangle numbers for inba ratio
@@ -567,7 +567,8 @@ void rangeCount(const parlay::sequence<Point>& wp, Tree& pkd, Typename* kdknn,
                 box queryBox =
                     pkd.GetBox(box(wp[i], wp[i]),
                                box(wp[(i + n / 2) % n], wp[(i + n / 2) % n]));
-                kdknn[i] = pkd.RangeCount(queryBox);
+                auto [size, logger] = pkd.RangeCount(queryBox);
+                kdknn[i] = size;
             });
         },
         [&]() {});
@@ -629,8 +630,9 @@ void rangeQuery(const parlay::sequence<point>& wp, Tree& pkd, Typename* kdknn,
                 box queryBox =
                     pkd.GetBox(box(wp[i], wp[i]),
                                box(wp[(i + n / 2) % n], wp[(i + n / 2) % n]));
-                kdknn[i] = pkd.RangeQuery(
+                auto [size, logger] = pkd.RangeQuery(
                     queryBox, out_ref.cut(i * step, (i + 1) * step));
+                kdknn[i] = size;
             });
         },
         [&]() {});
@@ -658,12 +660,20 @@ void rangeCountFix(const parlay::sequence<point>& WP, Tree& pkd,
 
     auto [queryBox, maxSize] =
         gen_rectangles<point, Tree>(recNum, recType, WP, DIM);
+    parlay::sequence<size_t> vis_nodes(recNum), gen_box(recNum),
+        full_box(recNum), skip_box(recNum);
 
     double aveCount = time_loop(
         rounds, 1.0, [&]() {},
         [&]() {
             parlay::parallel_for(0, recNum, [&](size_t i) {
-                kdknn[i] = pkd.RangeCount(queryBox[i].first);
+                auto [size, logger] = pkd.RangeCount(queryBox[i].first);
+
+                kdknn[i] = size;
+                vis_nodes[i] = logger.vis_node_num;
+                gen_box[i] = logger.generate_box_num;
+                full_box[i] = logger.full_box_num;
+                skip_box[i] = logger.skip_box_num;
             });
             // for (int i = 0; i < recNum; i++) {
             //     kdknn[i] = pkd.RangeCount(queryBox[i].first);
@@ -672,6 +682,13 @@ void rangeCountFix(const parlay::sequence<point>& WP, Tree& pkd,
         [&]() {});
 
     LOG << aveCount << " " << std::flush;
+    LOG << parlay::reduce(vis_nodes.cut(0, recNum)) / recNum << " "
+        << std::flush;
+    LOG << parlay::reduce(gen_box.cut(0, recNum)) / recNum << " " << std::flush;
+    LOG << parlay::reduce(full_box.cut(0, recNum)) / recNum << " "
+        << std::flush;
+    LOG << parlay::reduce(skip_box.cut(0, recNum)) / recNum << " "
+        << std::flush;
 
     return;
 }
@@ -719,7 +736,8 @@ void rangeQueryFix(const parlay::sequence<point>& WP, Tree& pkd,
 
     auto [queryBox, maxSize] =
         gen_rectangles<point, Tree>(recNum, recType, WP, DIM);
-    // LOG << maxSize << ENDL;
+    parlay::sequence<size_t> vis_nodes(recNum), gen_box(recNum),
+        full_box(recNum), skip_box(recNum);
     Out.resize(recNum * maxSize);
 
     int n = WP.size();
@@ -731,13 +749,26 @@ void rangeQueryFix(const parlay::sequence<point>& WP, Tree& pkd,
         rounds, 1.0, [&]() {},
         [&]() {
             parlay::parallel_for(0, recNum, [&](size_t i) {
-                kdknn[i] = pkd.RangeQuery(queryBox[i].first,
-                                          Out.cut(i * step, (i + 1) * step));
+                auto [size, logger] = pkd.RangeQuery(
+                    queryBox[i].first, Out.cut(i * step, (i + 1) * step));
+
+                kdknn[i] = size;
+                vis_nodes[i] = logger.vis_node_num;
+                gen_box[i] = logger.generate_box_num;
+                full_box[i] = logger.full_box_num;
+                skip_box[i] = logger.skip_box_num;
             });
         },
         [&]() {});
 
     LOG << aveQuery << " " << std::flush;
+    LOG << parlay::reduce(vis_nodes.cut(0, recNum)) / recNum << " "
+        << std::flush;
+    LOG << parlay::reduce(gen_box.cut(0, recNum)) / recNum << " " << std::flush;
+    LOG << parlay::reduce(full_box.cut(0, recNum)) / recNum << " "
+        << std::flush;
+    LOG << parlay::reduce(skip_box.cut(0, recNum)) / recNum << " "
+        << std::flush;
     return;
 }
 //

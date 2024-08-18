@@ -65,12 +65,12 @@ class OrthTree : private BaseTree<Point, kBDO> {
     template<typename Range>
     auto KNN(Node* T, const Point& q, kBoundedQueue<Point, Range>& bq);
 
-    size_t RangeCount(const Box& query_box);
+    auto RangeCount(const Box& query_box);
 
-    size_t RangeCount(const Circle& cl);
+    auto RangeCount(const Circle& cl);
 
     template<typename Range>
-    size_t RangeQuery(const Box& query_box, Range&& Out);
+    auto RangeQuery(const Box& query_box, Range&& Out);
 
  private:
     void Build_(Slice In);

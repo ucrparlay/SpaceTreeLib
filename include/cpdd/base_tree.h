@@ -165,12 +165,13 @@ class BaseTree {
 
     template<typename Leaf, IsBinaryNode Interior>
     static size_t RangeCountRectangle(Node* T, const Box& query_box,
-                                      const Box& node_box);
+                                      const Box& node_box,
+                                      RangeQueryLogger& logger);
 
     template<typename Leaf, IsMultiNode Interior>
     static size_t RangeCountRectangle(Node* T, const Box& query_box,
                                       const Box& node_box, DimsType dim,
-                                      BucketType idx);
+                                      BucketType idx, RangeQueryLogger& logger);
 
     template<typename Leaf, IsBinaryNode Interior>
     static size_t RangeCountRadius(Node* T, const Circle& cl,
@@ -184,7 +185,8 @@ class BaseTree {
     template<typename Leaf, IsBinaryNode Interior, typename Range>
     static void RangeQuerySerialRecursive(Node* T, Range Out, size_t& s,
                                           const Box& query_box,
-                                          const Box& node_box);
+                                          const Box& node_box,
+                                          RangeQueryLogger& logger);
 
     template<typename Leaf, IsMultiNode Interior>
     static size_t RangeCountRadius(Node* T, const Circle& cl,
@@ -195,7 +197,8 @@ class BaseTree {
     static void RangeQuerySerialRecursive(Node* T, Range Out, size_t& s,
                                           const Box& query_box,
                                           const Box& node_box, DimsType dim,
-                                          BucketType idx);
+                                          BucketType idx,
+                                          RangeQueryLogger& logger);
 
     // NOTE: utility
     // TODO: better evaluate the parallel recursion function

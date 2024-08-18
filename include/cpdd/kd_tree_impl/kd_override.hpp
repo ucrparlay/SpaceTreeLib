@@ -1,6 +1,7 @@
 #include <type_traits>
 #include <utility>
 #include "../kd_tree.h"
+#include "cpdd/dependence/loggers.h"
 #include "cpdd/dependence/tree_node.h"
 
 namespace cpdd {
@@ -21,25 +22,29 @@ void KdTree<Point, SplitRule, kBDO>::Flatten(Range&& Out) {
 }
 
 template<typename Point, typename SplitRule, uint_fast8_t kBDO>
-size_t KdTree<Point, SplitRule, kBDO>::RangeCount(const Box& bx) {
-    return BT::template RangeCountRectangle<Leaf, Interior>(this->root_, bx,
-                                                            this->tree_box_);
+auto KdTree<Point, SplitRule, kBDO>::RangeCount(const Box& bx) {
+    RangeQueryLogger logger;
+    size_t size = BT::template RangeCountRectangle<Leaf, Interior>(
+        this->root_, bx, this->tree_box_, logger);
+    return std::make_pair(size, logger);
 }
 
 template<typename Point, typename SplitRule, uint_fast8_t kBDO>
-size_t KdTree<Point, SplitRule, kBDO>::RangeCount(const Circle& cl) {
+auto KdTree<Point, SplitRule, kBDO>::RangeCount(const Circle& cl) {
     return BT::template RangeCountRadius<Leaf, Interior>(this->root_, cl,
                                                          this->tree_box_);
 }
 
 template<typename Point, typename SplitRule, uint_fast8_t kBDO>
 template<typename Range>
-size_t KdTree<Point, SplitRule, kBDO>::RangeQuery(const Box& query_box,
-                                                  Range&& Out) {
+auto KdTree<Point, SplitRule, kBDO>::RangeQuery(const Box& query_box,
+                                                Range&& Out) {
+    RangeQueryLogger logger;
     size_t s = 0;
     BT::template RangeQuerySerialRecursive<Leaf, Interior>(
-        this->root_, parlay::make_slice(Out), s, query_box, this->tree_box_);
-    return s;
+        this->root_, parlay::make_slice(Out), s, query_box, this->tree_box_,
+        logger);
+    return std::make_pair(s, logger);
 }
 
 template<typename Point, typename SplitRule, uint_fast8_t kBDO>

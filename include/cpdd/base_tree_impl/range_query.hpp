@@ -30,22 +30,28 @@ size_t BaseTree<Point, kBDO>::RangeCountRectangleLeaf(Node* T,
 template<typename Point, uint_fast8_t kBDO>
 template<typename Leaf, IsBinaryNode Interior>
 size_t BaseTree<Point, kBDO>::RangeCountRectangle(Node* T, const Box& query_box,
-                                                  const Box& node_box) {
+                                                  const Box& node_box,
+                                                  RangeQueryLogger& logger) {
+    logger.vis_node_num++;
     if (T->is_leaf) {
         return RangeCountRectangleLeaf<Leaf>(T, query_box, node_box);
     }
 
     Interior* TI = static_cast<Interior*>(T);
+    logger.generate_box_num++;
     Box abox(node_box);
 
     size_t l, r;
     auto recurse = [&](Node* Ts, const Box& box, size_t& counter) -> void {
         if (!BoxIntersectBox(box, query_box)) {
+            logger.skip_box_num++;
             counter = 0;
         } else if (WithinBox(box, query_box)) {
+            logger.full_box_num++;
             counter = Ts->size;
         } else {
-            counter = RangeCountRectangle<Leaf, Interior>(Ts, query_box, box);
+            counter =
+                RangeCountRectangle<Leaf, Interior>(Ts, query_box, box, logger);
         }
     };
 
@@ -65,25 +71,30 @@ template<typename Point, uint_fast8_t kBDO>
 template<typename Leaf, IsMultiNode Interior>
 size_t BaseTree<Point, kBDO>::RangeCountRectangle(Node* T, const Box& query_box,
                                                   const Box& node_box,
-                                                  DimsType dim,
-                                                  BucketType idx) {
+                                                  DimsType dim, BucketType idx,
+                                                  RangeQueryLogger& logger) {
+    logger.vis_node_num++;
     if (T->is_leaf) {
         return RangeCountRectangleLeaf<Leaf>(T, query_box, node_box);
     }
 
     Interior* TI = static_cast<Interior*>(T);
+    logger.generate_box_num++;
     Box abox(node_box);
 
-    auto recurse = [&query_box](Node* Ts, const Box& box, size_t& counter,
-                                DimsType next_dim, DimsType next_idx) -> void {
+    auto recurse = [&query_box, &logger](Node* Ts, const Box& box,
+                                         size_t& counter, DimsType next_dim,
+                                         DimsType next_idx) -> void {
         if (!BoxIntersectBox(box, query_box)) {
+            logger.skip_box_num++;
             counter = 0;
         } else if (WithinBox(box, query_box)) {
+            logger.full_box_num++;
             // NOTE: when reach leaf, Ts is the children
             counter = static_cast<Interior*>(Ts)->ReduceSums(next_idx);
         } else {
-            counter = RangeCountRectangle<Leaf, Interior>(Ts, query_box, box,
-                                                          next_dim, next_idx);
+            counter = RangeCountRectangle<Leaf, Interior>(
+                Ts, query_box, box, next_dim, next_idx, logger);
         }
     };
 
@@ -166,28 +177,31 @@ void BaseTree<Point, kBDO>::RangeQueryLeaf(Node* T, Range Out, size_t& s,
 
 template<typename Point, uint_fast8_t kBDO>
 template<typename Leaf, IsBinaryNode Interior, typename Range>
-void BaseTree<Point, kBDO>::RangeQuerySerialRecursive(Node* T, Range Out,
-                                                      size_t& s,
-                                                      const Box& query_box,
-                                                      const Box& node_box) {
+void BaseTree<Point, kBDO>::RangeQuerySerialRecursive(
+    Node* T, Range Out, size_t& s, const Box& query_box, const Box& node_box,
+    RangeQueryLogger& logger) {
+    logger.vis_node_num++;
     if (T->is_leaf) {
         RangeQueryLeaf<Leaf>(T, Out, s, query_box, node_box);
         return;
     }
 
     Interior* TI = static_cast<Interior*>(T);
+    logger.generate_box_num++;
     Box abox(node_box);
 
     auto recurse = [&](Node* Ts, const Box& box) -> void {
         if (!BoxIntersectBox(box, query_box)) {
+            logger.skip_box_num++;
             return;
         } else if (WithinBox(box, query_box)) {
+            logger.full_box_num++;
             FlattenRec<Leaf, Interior>(Ts, Out.cut(s, s + Ts->size));
             s += Ts->size;
             return;
         } else {
             RangeQuerySerialRecursive<Leaf, Interior>(Ts, Out, s, query_box,
-                                                      box);
+                                                      box, logger);
             return;
         }
     };
@@ -208,7 +222,8 @@ template<typename Point, uint_fast8_t kBDO>
 template<typename Leaf, IsMultiNode Interior, typename Range>
 void BaseTree<Point, kBDO>::RangeQuerySerialRecursive(
     Node* T, Range Out, size_t& s, const Box& query_box, const Box& node_box,
-    DimsType dim, BucketType idx) {
+    DimsType dim, BucketType idx, RangeQueryLogger& logger) {
+    logger.vis_node_num++;
     if (T->is_leaf) {
         RangeQueryLeaf<Leaf>(T, Out, s, query_box, node_box);
         return;
@@ -216,12 +231,14 @@ void BaseTree<Point, kBDO>::RangeQuerySerialRecursive(
 
     Interior* TI = static_cast<Interior*>(T);
 
-    auto recurse = [&query_box, &s, &Out](Node* Ts, const Box& box,
-                                          DimsType next_dim,
-                                          BucketType next_idx) -> void {
+    auto recurse = [&query_box, &s, &Out, &logger](
+                       Node* Ts, const Box& box, DimsType next_dim,
+                       BucketType next_idx) -> void {
         if (!BoxIntersectBox(box, query_box)) {
+            logger.skip_box_num++;
             return;
         } else if (WithinBox(box, query_box)) {
+            logger.full_box_num++;
             size_t candidate_size =
                 static_cast<Interior*>(Ts)->ReduceSums(next_idx);
             PartialFlatten<Leaf, Interior>(Ts, Out.cut(s, s + candidate_size),
@@ -229,14 +246,15 @@ void BaseTree<Point, kBDO>::RangeQuerySerialRecursive(
             s += candidate_size;
             return;
         } else {
-            RangeQuerySerialRecursive<Leaf, Interior>(Ts, Out, s, query_box,
-                                                      box, next_dim, next_idx);
+            RangeQuerySerialRecursive<Leaf, Interior>(
+                Ts, Out, s, query_box, box, next_dim, next_idx, logger);
             return;
         }
     };
 
     idx <<= 1;
     bool reach_leaf = idx >= Interior::kRegions;
+    logger.generate_box_num++;
     Box abox(node_box);
 
     // NOTE: visit left half
