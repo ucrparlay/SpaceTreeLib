@@ -88,6 +88,10 @@ class BaseTree {
     template<IsBinaryNode Interior>
     static inline void UpdateInterior(Node* T, Node* L, Node* R);
 
+    template<IsMultiNode Interior>
+    static inline void UpdateInterior(Node* T,
+                                      typename Interior::Nodes& new_nodes);
+
     template<typename Leaf, typename Interior, bool granularity = true>
     static void PrepareRebuild(Node* T, Slice In, Points& wx, Points& wo);
 
@@ -95,7 +99,14 @@ class BaseTree {
                           const HyperPlaneSeq& pivots,
                           parlay::sequence<BallsType>& sums);
 
+    // NOTE: batch insert
+    template<typename Leaf>
+    static Node* InsertPoints2Leaf(Node* T, Slice In);
+
     template<IsBinaryNode Interior>
+    static inline BucketType RetriveTag(const Point& p, const NodeTagSeq& tags);
+
+    template<IsMultiNode Interior>
     static inline BucketType RetriveTag(const Point& p, const NodeTagSeq& tags);
 
     template<typename Interior>

@@ -192,4 +192,31 @@ inline void BaseTree<Point, kBDO>::UpdateInterior(Node* T, Node* L, Node* R) {
     TI->right = R;
     return;
 }
+
+template<typename Point, uint_fast8_t kBDO>
+template<IsMultiNode Interior>
+inline void BaseTree<Point, kBDO>::UpdateInterior(
+    Node* T, typename Interior::Nodes& new_nodes) {
+    assert(!T->is_leaf);
+    Interior* TI = static_cast<Interior*>(T);
+    TI->size = std::accumulate(
+        new_nodes.begin(), new_nodes.end(), 0,
+        [](size_t acc, Node* n) -> size_t { return acc + n->size; });
+    TI->tree_nodes = new_nodes;
+    return;
+}
+
+template<typename Point, uint_fast8_t kBDO>
+template<typename Leaf>
+Node* BaseTree<Point, kBDO>::InsertPoints2Leaf(Node* T, Slice In) {
+    Leaf* TL = static_cast<Leaf*>(T);
+    if (TL->pts.size() == 0) {
+        TL->pts = Points::uninitialized(kLeaveWrap);
+    }
+    for (int i = 0; i < In.size(); i++) {
+        TL->pts[TL->size + i] = In[i];
+    }
+    TL->size += In.size();
+    return T;
+}
 }  // namespace cpdd

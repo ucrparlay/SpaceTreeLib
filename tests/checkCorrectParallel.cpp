@@ -334,16 +334,15 @@ int main(int argc, char* argv[]) {
         runKDParallel<cpdd::KdTree<point, cpdd::MaxStretchDim<point>>>(
             // runKDParallel<cpdd::KdTree<point, cpdd::RotateDim<point>>>(
             wp, wi, kdknn, kdOut, queryNum);
+    } else if (tree_type == 1 && Dim == 2) {
+        LOG << "test quad tree" << ENDL;
+        runKDParallel<cpdd::OrthTree<point, cpdd::RotateDim<point>, 2>>(
+            wp, wi, kdknn, kdOut, queryNum);
+    } else if (tree_type == 1 && Dim == 3) {
+        LOG << "test oct tree" << ENDL;
+        runKDParallel<cpdd::OrthTree<point, cpdd::RotateDim<point>, 3>>(
+            wp, wi, kdknn, kdOut, queryNum);
     }
-    // else if (tree_type == 1 && Dim == 2) {
-    //     LOG << "test quad tree" << ENDL;
-    //     runKDParallel<cpdd::OrthTree<point, cpdd::RotateDim<point>, 2>>(
-    //         wp, wi, kdknn, kdOut, queryNum);
-    // } else if (tree_type == 1 && Dim == 3) {
-    //     LOG << "test oct tree" << ENDL;
-    //     runKDParallel<cpdd::OrthTree<point, cpdd::RotateDim<point>, 3>>(
-    //         wp, wi, kdknn, kdOut, queryNum);
-    // }
     runCGAL(wp, wi, cgknn, queryNum, cgOut);
 
     //* verify

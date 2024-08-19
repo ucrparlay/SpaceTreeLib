@@ -32,6 +32,7 @@ class OrthTree : private BaseTree<Point, kBDO> {
     using HyperPlaneSeq = BT::HyperPlaneSeq;
     using Splitter = std::array<HyperPlane, kSplitterNum>;
     using SplitterSeq = parlay::sequence<Splitter>;
+    using NodeTagSeq = BT::NodeTagSeq;
     using AugType = bool;
 
     struct KdInteriorNode;
@@ -57,6 +58,9 @@ class OrthTree : private BaseTree<Point, kBDO> {
     template<typename Range>
     void Build(Range&& In);
 
+    template<typename Range>
+    void BatchInsert(Range&& In);
+
     void DeleteTree() override;
 
     template<typename Range>
@@ -79,6 +83,9 @@ class OrthTree : private BaseTree<Point, kBDO> {
                      const Splitter& split, parlay::sequence<BallsType>& sums,
                      BoxSeq& box_seq);
 
+    void SerialSplitSkeleton(Node* T, Slice In, DimsType dim, DimsType idx,
+                             parlay::sequence<BallsType>& sums);
+
     void DivideRotate(HyperPlaneSeq& pivots, DimsType dim, BucketType idx,
                       BoxSeq& box_seq, const Box& box);
 
@@ -90,8 +97,18 @@ class OrthTree : private BaseTree<Point, kBDO> {
     Node* SerialBuildRecursive(Slice In, Slice Out, const Box& bx,
                                bool checked_duplicate);
 
-    static Node* QuadBuildInnerTree(BucketType idx, const HyperPlaneSeq& pivots,
+    static Node* OrthBuildInnerTree(BucketType idx, const HyperPlaneSeq& pivots,
                                     const parlay::sequence<Node*>& tree_nodes);
+
+    void BatchInsert_(Slice In);
+
+    Node* BatchInsertRecursive(Node* T, Slice In, Slice Out);
+
+    Node* RebuildWithInsert(Node* T, Slice In);
+
+    static Node* UpdateInnerTreeByTag(BucketType idx, const NodeTagSeq& tags,
+                                      parlay::sequence<Node*>& tree_nodes,
+                                      BucketType& p);
 
     SplitRule split_rule_;
     size_t alloc_dummy_num_ = 0;
@@ -105,3 +122,4 @@ class OrthTree : private BaseTree<Point, kBDO> {
 #include "orth_tree_impl/orth_build_tree.hpp"
 #include "orth_tree_impl/orth_inter_node.hpp"
 #include "orth_tree_impl/orth_override.hpp"
+#include "orth_tree_impl/orth_batch_insert.hpp"

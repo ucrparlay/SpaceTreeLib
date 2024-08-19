@@ -19,11 +19,11 @@ void KdTree<Point, SplitRule, kBDO>::BatchInsert(Slice A) {
     return;
 }
 
+// TODO: we can remove this to base tree
 template<typename Point, typename SplitRule, uint_fast8_t kBDO>
 Node* KdTree<Point, SplitRule, kBDO>::UpdateInnerTreeByTag(
     BucketType idx, const NodeTagSeq& tags, parlay::sequence<Node*>& tree_nodes,
     BucketType& p, const TagNodes& rev_tag) {
-
     if (tags[idx].second == BT::kBucketNum + 1 ||
         tags[idx].second == BT::kBucketNum + 2) {
         assert(rev_tag[p] == idx);
@@ -61,15 +61,7 @@ Node* KdTree<Point, SplitRule, kBDO>::BatchInsertRecursive(Node* T, Slice In,
     if (T->is_leaf) {
         Leaf* TL = static_cast<Leaf*>(T);
         if (!TL->is_dummy && n + TL->size <= BT::kLeaveWrap) {
-            assert(T->size == TL->size);
-            if (TL->pts.size() == 0) {
-                TL->pts = Points::uninitialized(BT::kLeaveWrap);
-            }
-            for (int i = 0; i < n; i++) {
-                TL->pts[TL->size + i] = In[i];
-            }
-            TL->size += n;
-            return T;
+            return BT::template InsertPoints2Leaf<Leaf>(T, In);
         } else {
             return RebuildWithInsert(T, In, d);
         }
@@ -77,25 +69,25 @@ Node* KdTree<Point, SplitRule, kBDO>::BatchInsertRecursive(Node* T, Slice In,
 
     if (n <= BT::kSerialBuildCutoff) {
         Interior* TI = static_cast<Interior*>(T);
-        auto _2ndGroup = std::ranges::partition(In, [&](const Point& p) {
-            return Num::Lt(p.pnt[TI->split.second], TI->split.first);
-        });
+        std::ranges::subrange _2ndGroup =
+            std::ranges::partition(In, [&](const Point& p) {
+                return Num::Lt(p.pnt[TI->split.second], TI->split.first);
+            });
+        size_t split_pos = static_cast<PointsIter>(_2ndGroup.begin()) -
+                           static_cast<PointsIter>(In.begin());
 
         // NOTE: rebuild
-        if (BT::ImbalanceNode(TI->left->size + _2ndGroup.begin() - In.begin(),
-                              TI->size + n)) {
+        if (BT::ImbalanceNode(TI->left->size + split_pos, TI->size + n)) {
             return RebuildWithInsert(T, In, d);
         }
 
         // NOTE: continue
         Node *L, *R;
         d = (d + 1) % BT::kDim;
-        L = BatchInsertRecursive(TI->left,
-                                 In.cut(0, _2ndGroup.begin() - In.begin()),
-                                 Out.cut(0, _2ndGroup.begin() - In.begin()), d);
-        R = BatchInsertRecursive(TI->right,
-                                 In.cut(_2ndGroup.begin() - In.begin(), n),
-                                 Out.cut(_2ndGroup.begin() - In.begin(), n), d);
+        L = BatchInsertRecursive(TI->left, In.cut(0, split_pos),
+                                 Out.cut(0, split_pos), d);
+        R = BatchInsertRecursive(TI->right, In.cut(split_pos, n),
+                                 Out.cut(split_pos, n), d);
         BT::template UpdateInterior<Interior>(T, L, R);
         assert(T->size == L->size + R->size && TI->split.second >= 0 &&
                TI->is_leaf == false);

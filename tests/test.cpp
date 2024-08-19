@@ -21,20 +21,20 @@ void TestSpacialTree(const int& kDim, const parlay::sequence<Point>& wp,
 
     Typename* kdknn = nullptr;
 
-    // //* batch insert
-    // if (kTag >= 1) {
-    //     if (kSummary) {
-    //         const parlay::sequence<double> ratios = {0.0001, 0.001, 0.01,
-    //         0.1}; for (int i = 0; i < ratios.size(); i++) {
-    //             BatchInsert<Point, Tree>(tree, wp, wi, kDim, kRounds,
-    //                                      ratios[i]);
-    //         }
-    //     } else {
-    //         BatchInsert<Point, Tree>(tree, wp, wi, kDim, kRounds,
-    //                                  batchInsertRatio);
-    //     }
-    // }
-    //
+    //* batch insert
+    if (kTag >= 1) {
+        if (kSummary) {
+            const parlay::sequence<double> ratios = {0.0001, 0.001, 0.01, 0.1};
+            for (int i = 0; i < ratios.size(); i++) {
+                BatchInsert<Point, Tree>(tree, wp, wi, kDim, kRounds,
+                                         ratios[i]);
+            }
+        } else {
+            BatchInsert<Point, Tree>(tree, wp, wi, kDim, kRounds,
+                                     batchInsertRatio);
+        }
+    }
+
     // //* batch delete
     // if (tag >= 2) {
     //     if (kSummary) {

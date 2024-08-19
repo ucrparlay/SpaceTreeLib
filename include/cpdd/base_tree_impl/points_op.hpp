@@ -122,15 +122,31 @@ template<IsBinaryNode Interior>
 typename BaseTree<Point, kBDO>::BucketType BaseTree<Point, kBDO>::RetriveTag(
     const Point& p, const NodeTagSeq& tags) {
     BucketType k(1);
-    // Interior* TI;
     while (k <= kPivotNum && (!tags[k].first->is_leaf)) {
-        // TI = static_cast<Interior*>(tags[k].first);
-        // k = Num::Lt(p.pnt[TI->split.second], TI->split.first) ? k << 1
-        //                                                       : k << 1 | 1;
         k = k * 2 + 1 -
             static_cast<BucketType>(Num::Lt(
                 p.pnt[static_cast<Interior*>(tags[k].first)->split.second],
                 static_cast<Interior*>(tags[k].first)->split.first));
+    }
+    assert(tags[k].second < kBucketNum);
+    return tags[k].second;
+}
+
+template<typename Point, uint_fast8_t kBDO>
+template<IsMultiNode Interior>
+typename BaseTree<Point, kBDO>::BucketType BaseTree<Point, kBDO>::RetriveTag(
+    const Point& p, const NodeTagSeq& tags) {
+    BucketType k(1);
+    while (k <= kPivotNum && (!tags[k].first->is_leaf)) {
+        assert(!tags[k].first->is_leaf);
+        for (DimsType dim = 0; dim < kDim; ++dim) {
+            k = k * 2 + 1 -
+                static_cast<BucketType>(Num::Lt(
+                    p.pnt[static_cast<Interior*>(tags[k].first)
+                              ->split[dim]
+                              .second],
+                    static_cast<Interior*>(tags[k].first)->split[dim].first));
+        }
     }
     assert(tags[k].second < kBucketNum);
     return tags[k].second;

@@ -6,7 +6,7 @@ namespace cpdd {
 template<typename Point, uint_fast8_t kBDO>
 template<typename Leaf, typename Interior>
 struct BaseTree<Point, kBDO>::InnerTree {
-    //@ helpers
+    // NOTE: helpers
     bool AssertSize(Node* T) const {
         if (T->is_leaf) {
             Leaf* TI = static_cast<Leaf*>(T);
@@ -33,7 +33,7 @@ struct BaseTree<Point, kBDO>::InnerTree {
         return GetNodeIdx(idx << 1 | 1, T);
     }
 
-    //@ cores
+    // NOTE: cores
     inline void ResetTagsNum() { tags_num = 0; }
 
     // NOTE: Each Node in the skeleton receives a tag
@@ -42,15 +42,23 @@ struct BaseTree<Point, kBDO>::InnerTree {
     void AssignNodeTag(Node* T, BucketType idx) {
         if (T->is_leaf || idx > kPivotNum) {
             assert(tags_num < kBucketNum);
-            tags[idx] = NodeTag(T, tags_num);
-            rev_tag[tags_num++] = idx;
+            tags[idx] = NodeTag(T, tags_num++);
+            // rev_tag[tags_num++] = idx;
             return;
         }
         // INFO: BUCKET ID in [0, kBucketNum)
         tags[idx] = NodeTag(T, kBucketNum);
         Interior* TI = static_cast<Interior*>(T);
-        AssignNodeTag(TI->left, idx << 1);
-        AssignNodeTag(TI->right, idx << 1 | 1);
+        if constexpr (IsBinaryNode<Interior>) {
+            AssignNodeTag(TI->left, idx << 1);
+            AssignNodeTag(TI->right, idx << 1 | 1);
+        } else if constexpr (IsMultiNode<Interior>) {
+            for (BucketType i = 0; i < Interior::kRegions; ++i) {
+                AssignNodeTag(TI->tree_nodes[i], idx * Interior::kRegions + i);
+            }
+        } else {
+            ;
+        }
         return;
     }
 
@@ -160,11 +168,19 @@ struct BaseTree<Point, kBDO>::InnerTree {
         return;
     }
 
-    InnerTree() :
+    InnerTree()
+        requires IsBinaryNode<Interior>
+        :
         tags_num(0),
         tags(NodeTagSeq::uninitialized(kPivotNum + kBucketNum + 1)),
         sums_tree(parlay::sequence<BallsType>(kPivotNum + kBucketNum + 1)),
         rev_tag(TagNodes::uninitialized(kBucketNum)) {}
+
+    InnerTree()
+        requires IsMultiNode<Interior>
+        :
+        tags_num(0),
+        tags(NodeTagSeq::uninitialized(kPivotNum + kBucketNum + 1)) {}
 
     void Reset() {
         ResetTagsNum();
@@ -173,7 +189,7 @@ struct BaseTree<Point, kBDO>::InnerTree {
         rev_tag = TagNodes::uninitialized(kBucketNum);
     }
 
-    //@ variables
+    // NOTE: variables
     NodeTagSeq tags;
     parlay::sequence<BallsType> sums;
     mutable parlay::sequence<BallsType> sums_tree;
