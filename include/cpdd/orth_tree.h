@@ -104,7 +104,14 @@ class OrthTree : private BaseTree<Point, kBDO> {
 
     Node* BatchInsertRecursive(Node* T, Slice In, Slice Out);
 
-    Node* RebuildWithInsert(Node* T, Slice In);
+    Node* BuildRecursiveWrapper() override { return nullptr; };
+
+    template<typename... Args>
+    Node* BuildRecursiveWrapper(Args&&... args) {
+        return BuildRecursive(args...);
+    };
+
+    // Node* RebuildWithInsert(Node* T, Slice In);
 
     static Node* UpdateInnerTreeByTag(BucketType idx, const NodeTagSeq& tags,
                                       parlay::sequence<Node*>& tree_nodes,

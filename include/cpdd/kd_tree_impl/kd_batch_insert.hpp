@@ -39,15 +39,15 @@ Node* KdTree<Point, SplitRule, kBDO>::UpdateInnerTreeByTag(
     return tags[idx].first;
 }
 
-template<typename Point, typename SplitRule, uint_fast8_t kBDO>
-Node* KdTree<Point, SplitRule, kBDO>::RebuildWithInsert(Node* T, Slice In,
-                                                        const DimsType d) {
-    DimsType curDim = this->split_rule_.FindRebuildDimension(d);
-    Points wx, wo;
-    BT::template PrepareRebuild<Leaf, Interior>(T, In, wx, wo);
-    return BuildRecursive(parlay::make_slice(wx), parlay::make_slice(wo),
-                          curDim, BT::GetBox(parlay::make_slice(wx)));
-}
+// template<typename Point, typename SplitRule, uint_fast8_t kBDO>
+// Node* KdTree<Point, SplitRule, kBDO>::RebuildWithInsert(Node* T, Slice In,
+//                                                         const DimsType d) {
+//     DimsType curDim = this->split_rule_.FindRebuildDimension(d);
+//     Points wx, wo;
+//     BT::template PrepareRebuild<Leaf, Interior>(T, In, wx, wo);
+//     return BuildRecursive(parlay::make_slice(wx), parlay::make_slice(wo),
+//                           curDim, BT::GetBox(parlay::make_slice(wx)));
+// }
 
 // NOTE: return the updated Node
 template<typename Point, typename SplitRule, uint_fast8_t kBDO>
@@ -63,7 +63,7 @@ Node* KdTree<Point, SplitRule, kBDO>::BatchInsertRecursive(Node* T, Slice In,
         if (!TL->is_dummy && n + TL->size <= BT::kLeaveWrap) {
             return BT::template InsertPoints2Leaf<Leaf>(T, In);
         } else {
-            return RebuildWithInsert(T, In, d);
+            return BT::template RebuildWithInsert<Leaf, Interior>(T, In, d);
         }
     }
 
@@ -78,7 +78,7 @@ Node* KdTree<Point, SplitRule, kBDO>::BatchInsertRecursive(Node* T, Slice In,
 
         // NOTE: rebuild
         if (BT::ImbalanceNode(TI->left->size + split_pos, TI->size + n)) {
-            return RebuildWithInsert(T, In, d);
+            return BT::template RebuildWithInsert<Leaf, Interior>(T, In, d);
         }
 
         // NOTE: continue
@@ -130,7 +130,7 @@ Node* KdTree<Point, SplitRule, kBDO>::BatchInsertRecursive(Node* T, Slice In,
                            IT.sums_tree[IT.rev_tag[i]] >=
                        0);
 
-                tree_nodes[i] = RebuildWithInsert(
+                tree_nodes[i] = BT::template RebuildWithInsert<Leaf, Interior>(
                     IT.tags[IT.rev_tag[i]].first,
                     Out.cut(s, s + IT.sums_tree[IT.rev_tag[i]]), nextDim);
             }

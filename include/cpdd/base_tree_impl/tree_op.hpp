@@ -4,8 +4,20 @@
 #include <numeric>
 #include "../base_tree.h"
 #include "cpdd/dependence/tree_node.h"
+#include "parlay/slice.h"
 
 namespace cpdd {
+template<typename Point, uint_fast8_t kBDO>
+template<typename Leaf, typename Interior, typename... Args>
+Node* BaseTree<Point, kBDO>::RebuildWithInsert(Node* T, Slice In,
+                                               Args&&... args) {
+    Points wx, wo;
+    PrepareRebuild<Leaf, Interior>(T, In, wx, wo);
+    return BuildRecursiveWrapper(parlay::make_slice(wx), parlay::make_slice(wo),
+                                 std::forward<Args>(args)...,
+                                 GetBox(parlay::make_slice(wx)));
+}
+
 template<typename Point, uint_fast8_t kBDO>
 template<SupportsForceParallel Interior, bool granularity>
 inline bool BaseTree<Point, kBDO>::ForceParallelRecursion(Interior* TI) {

@@ -36,15 +36,15 @@ void OrthTree<Point, SplitRule, kMD, kBDO>::BatchInsert_(Slice A) {
 }
 
 // TODO: ask GPT what can we do if all derived class has same function
-template<typename Point, typename SplitRule, uint_fast8_t kMD,
-         uint_fast8_t kBDO>
-Node* OrthTree<Point, SplitRule, kMD, kBDO>::RebuildWithInsert(Node* T,
-                                                               Slice In) {
-    Points wx, wo;
-    BT::template PrepareRebuild<Leaf, Interior>(T, In, wx, wo);
-    return BuildRecursive(parlay::make_slice(wx), parlay::make_slice(wo),
-                          BT::GetBox(parlay::make_slice(wx)));
-}
+// template<typename Point, typename SplitRule, uint_fast8_t kMD,
+//          uint_fast8_t kBDO>
+// Node* OrthTree<Point, SplitRule, kMD, kBDO>::RebuildWithInsert(Node* T,
+//                                                                Slice In) {
+//     Points wx, wo;
+//     BT::template PrepareRebuild<Leaf, Interior>(T, In, wx, wo);
+//     return BuildRecursive(parlay::make_slice(wx), parlay::make_slice(wo),
+//                           BT::GetBox(parlay::make_slice(wx)));
+// }
 
 template<typename Point, typename SplitRule, uint_fast8_t kMD,
          uint_fast8_t kBDO>
@@ -103,7 +103,7 @@ Node* OrthTree<Point, SplitRule, kMD, kBDO>::BatchInsertRecursive(Node* T,
         if (!static_cast<Leaf*>(T)->is_dummy && n + T->size <= BT::kLeaveWrap) {
             return BT::template InsertPoints2Leaf<Leaf>(T, In);
         } else {
-            return RebuildWithInsert(T, In);
+            return BT::template RebuildWithInsert<Leaf, Interior>(T, In);
         }
     }
 

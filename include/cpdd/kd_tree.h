@@ -68,7 +68,12 @@ class KdTree : private BaseTree<Point, kBDO> {
 
     void BatchInsert(Slice In);
 
-    Node* RebuildWithInsert(Node* T, Slice In, const DimsType d);
+    // Node* RebuildWithInsert(Node* T, Slice In, const DimsType d);
+
+    template<typename... Args>
+    Node* BuildRecursiveWrapper(Args&&... args) override {
+        return BuildRecursive(args...);
+    };
 
     Node* BatchInsertRecursive(Node* T, Slice In, Slice Out, DimsType d);
 

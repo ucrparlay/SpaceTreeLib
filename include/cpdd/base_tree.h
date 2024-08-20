@@ -115,6 +115,11 @@ class BaseTree {
                              parlay::sequence<BallsType>& sums,
                              const BucketType tags_num);
 
+    template<typename Leaf, typename Interior>
+    Node* RebuildWithInsert(Node* T, Slice In, Args&&... args);
+
+    virtual Node* BuildRecursiveWrapper();
+
     template<IsBinaryNode Interior>
     static Node* BuildInnerTree(BucketType idx, HyperPlaneSeq& pivots,
                                 parlay::sequence<Node*>& tree_nodes);
