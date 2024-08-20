@@ -104,11 +104,9 @@ class OrthTree : private BaseTree<Point, kBDO> {
 
     Node* BatchInsertRecursive(Node* T, Slice In, Slice Out);
 
-    Node* BuildRecursiveWrapper() override { return nullptr; };
-
-    template<typename... Args>
-    Node* BuildRecursiveWrapper(Args&&... args) {
-        return BuildRecursive(args...);
+    Node* BuildRecursiveWrapper(Slice In, Slice Out, const Box& box,
+                                DimsType dim) override {
+        return BuildRecursive(In, Out, box);
     };
 
     // Node* RebuildWithInsert(Node* T, Slice In);

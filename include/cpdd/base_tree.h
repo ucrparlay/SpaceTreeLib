@@ -116,9 +116,10 @@ class BaseTree {
                              const BucketType tags_num);
 
     template<typename Leaf, typename Interior>
-    Node* RebuildWithInsert(Node* T, Slice In, Args&&... args);
+    Node* RebuildWithInsert(Node* T, Slice In, DimsType dim);
 
-    virtual Node* BuildRecursiveWrapper();
+    virtual Node* BuildRecursiveWrapper(Slice In, Slice Out, const Box& bx,
+                                        DimsType dim) = 0;
 
     template<IsBinaryNode Interior>
     static Node* BuildInnerTree(BucketType idx, HyperPlaneSeq& pivots,

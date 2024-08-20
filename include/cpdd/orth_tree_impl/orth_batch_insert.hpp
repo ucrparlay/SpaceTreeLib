@@ -103,7 +103,7 @@ Node* OrthTree<Point, SplitRule, kMD, kBDO>::BatchInsertRecursive(Node* T,
         if (!static_cast<Leaf*>(T)->is_dummy && n + T->size <= BT::kLeaveWrap) {
             return BT::template InsertPoints2Leaf<Leaf>(T, In);
         } else {
-            return BT::template RebuildWithInsert<Leaf, Interior>(T, In);
+            return BT::template RebuildWithInsert<Leaf, Interior>(T, In, 0);
         }
     }
 
