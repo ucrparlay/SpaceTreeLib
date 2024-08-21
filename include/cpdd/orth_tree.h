@@ -54,9 +54,11 @@ class OrthTree : private BaseTree<Point, kBDO> {
     using BT::SetRoot;
     using BT::Validate;
 
+    void OrthTreeTag();
+
     // NOTE: functions
-    template<typename Range>
-    void Build(Range&& In);
+    template<typename Range, typename... Args>
+    void Build(Range&& In, Args&&... args);
 
     template<typename Range>
     void BatchInsert(Range&& In);
@@ -78,6 +80,8 @@ class OrthTree : private BaseTree<Point, kBDO> {
 
  private:
     void Build_(Slice In);
+
+    void Build_(Slice In, const Box& box);
 
     void SerialSplit(Slice In, DimsType dim, DimsType idx, const Box& box,
                      const Splitter& split, parlay::sequence<BallsType>& sums,

@@ -16,10 +16,12 @@ void OrthTree<Point, SplitRule, kMD, kBDO>::BatchInsert(Range&& In) {
                                 parlay::range_reference_type_t<Range>>);
     static_assert(BT::kBuildDepthOnce % kMD == 0);
     assert(kMD == BT::kDim);
+    assert(BT::WithinBox(BT::GetBox(In), this->tree_box_));
 
     Slice A = parlay::make_slice(In);
     BatchInsert_(A);
 }
+
 template<typename Point, typename SplitRule, uint_fast8_t kMD,
          uint_fast8_t kBDO>
 void OrthTree<Point, SplitRule, kMD, kBDO>::BatchInsert_(Slice A) {
@@ -34,17 +36,6 @@ void OrthTree<Point, SplitRule, kMD, kBDO>::BatchInsert_(Slice A) {
     assert(this->root_ != NULL);
     return;
 }
-
-// TODO: ask GPT what can we do if all derived class has same function
-// template<typename Point, typename SplitRule, uint_fast8_t kMD,
-//          uint_fast8_t kBDO>
-// Node* OrthTree<Point, SplitRule, kMD, kBDO>::RebuildWithInsert(Node* T,
-//                                                                Slice In) {
-//     Points wx, wo;
-//     BT::template PrepareRebuild<Leaf, Interior>(T, In, wx, wo);
-//     return BuildRecursive(parlay::make_slice(wx), parlay::make_slice(wo),
-//                           BT::GetBox(parlay::make_slice(wx)));
-// }
 
 template<typename Point, typename SplitRule, uint_fast8_t kMD,
          uint_fast8_t kBDO>
@@ -107,6 +98,7 @@ Node* OrthTree<Point, SplitRule, kMD, kBDO>::BatchInsertRecursive(Node* T,
         }
     }
 
+    // if (n) {
     if (n <= BT::kSerialBuildCutoff) {
         parlay::sequence<BallsType> sums(kNodeRegions, 0);
         SerialSplitSkeleton(T, In, 0, 1, sums);
@@ -149,7 +141,7 @@ Node* OrthTree<Point, SplitRule, kMD, kBDO>::BatchInsertRecursive(Node* T,
                 s += IT.sums[j];
             }
 
-            tree_nodes[i] = BatchInsertRecursive(IT.tags[i].first,
+            tree_nodes[i] = BatchInsertRecursive(IT.tags[IT.rev_tag[i]].first,
                                                  Out.cut(s, s + IT.sums[i]),
                                                  In.cut(s, s + IT.sums[i]));
         },

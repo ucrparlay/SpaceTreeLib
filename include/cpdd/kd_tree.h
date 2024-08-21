@@ -50,6 +50,8 @@ class KdTree : private BaseTree<Point, kBDO> {
     using BT::SetRoot;
     using BT::Validate;
 
+    void KdTreeTag();
+
     // NOTE: functions
     template<typename Range>
     void Build(Range&& In);

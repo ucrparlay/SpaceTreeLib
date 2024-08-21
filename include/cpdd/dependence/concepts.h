@@ -25,6 +25,16 @@ concept IsMultiNode =
         MultiNode<typename T::PT, 6, typename T::ST, typename T::AT>, T>;
 
 template<typename T>
+concept IsOrthTree = requires(T t) {
+    { t.OrthTreeTag() } -> std::same_as<void>;
+};
+
+template<typename T>
+concept IsKdTree = requires(T t) {
+    { t.KdTreeTag() } -> std::same_as<void>;
+};
+
+template<typename T>
 concept SupportsForceParallel = requires(T t) {
     { t.ForceParallel() } -> std::same_as<bool>;
 };

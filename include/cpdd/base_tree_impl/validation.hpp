@@ -80,6 +80,7 @@ void BaseTree<Point, kBDO>::CheckTreeSameSequential(Node* T, int dim) {
 template<typename Point, uint_fast8_t kBDO>
 template<typename Leaf, typename Interior, typename SplitRule>
 void BaseTree<Point, kBDO>::Validate() {
+    std::cout << ">>> begin validate tree" << std::endl << std::flush;
     if (CheckBox<Leaf, Interior>(this->root_, this->tree_box_) &&
         LegalBox(this->tree_box_)) {
         std::cout << "Correct bounding Box" << std::endl << std::flush;
@@ -101,6 +102,7 @@ void BaseTree<Point, kBDO>::Validate() {
         std::cout << "wrong tree size" << std::endl << std::flush;
         abort();
     }
+    std::cout << "<<< end validate tree" << std::endl << std::flush;
     return;
 }
 

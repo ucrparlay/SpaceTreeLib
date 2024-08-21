@@ -7,6 +7,7 @@
 #include <type_traits>
 #include "basic_point.h"
 #include "parlay/utilities.h"
+#include "comparator.h"
 
 namespace cpdd {
 
@@ -128,6 +129,9 @@ template<typename Point, uint_fast8_t kMD, typename SplitType, typename AugType>
 struct MultiNode : Node {
     static const constexpr uint_fast8_t kRegions = 1 << kMD;
 
+    using BucketType = uint_fast8_t;
+    using Coord = typename Point::Coord;
+    using Num = Num_Comparator<Coord>;
     using Nodes = std::array<Node*, kRegions>;
     using ST = SplitType;
     using AT = AugType;
@@ -153,7 +157,16 @@ struct MultiNode : Node {
         return;
     }
 
-    inline size_t ReduceSums(const uint_fast8_t idx) {
+    inline BucketType SeievePoint(const Point& p, BucketType idx) {
+        for (BucketType i = 0; i < kMD; ++i) {
+            idx = 2 * idx + 1 -
+                  static_cast<BucketType>(
+                      Num::Lt(p.pnt[split[i].second], split[i].first));
+        }
+        return idx;
+    }
+
+    inline size_t ReduceSums(const BucketType idx) {
         if (idx == 1) {
             return this->size;
         } else if (idx >= kRegions) {

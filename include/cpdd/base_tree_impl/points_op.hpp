@@ -138,15 +138,7 @@ typename BaseTree<Point, kBDO>::BucketType BaseTree<Point, kBDO>::RetriveTag(
     const Point& p, const NodeTagSeq& tags) {
     BucketType k(1);
     while (k <= kPivotNum && (!tags[k].first->is_leaf)) {
-        assert(!tags[k].first->is_leaf);
-        for (DimsType dim = 0; dim < kDim; ++dim) {
-            k = k * 2 + 1 -
-                static_cast<BucketType>(Num::Lt(
-                    p.pnt[static_cast<Interior*>(tags[k].first)
-                              ->split[dim]
-                              .second],
-                    static_cast<Interior*>(tags[k].first)->split[dim].first));
-        }
+        k = static_cast<Interior*>(tags[k].first)->SeievePoint(p, k);
     }
     assert(tags[k].second < kBucketNum);
     return tags[k].second;

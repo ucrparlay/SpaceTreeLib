@@ -42,8 +42,8 @@ struct BaseTree<Point, kBDO>::InnerTree {
     void AssignNodeTag(Node* T, BucketType idx) {
         if (T->is_leaf || idx > kPivotNum) {
             assert(tags_num < kBucketNum);
-            tags[idx] = NodeTag(T, tags_num++);
-            // rev_tag[tags_num++] = idx;
+            tags[idx] = NodeTag(T, tags_num);
+            rev_tag[tags_num++] = idx;  // WARN: cannot remove
             return;
         }
         // INFO: BUCKET ID in [0, kBucketNum)
@@ -180,7 +180,8 @@ struct BaseTree<Point, kBDO>::InnerTree {
         requires IsMultiNode<Interior>
         :
         tags_num(0),
-        tags(NodeTagSeq::uninitialized(kPivotNum + kBucketNum + 1)) {}
+        tags(NodeTagSeq::uninitialized(kPivotNum + kBucketNum + 1)),
+        rev_tag(TagNodes::uninitialized(kBucketNum)) {}
 
     void Reset() {
         ResetTagsNum();
@@ -190,10 +191,10 @@ struct BaseTree<Point, kBDO>::InnerTree {
     }
 
     // NOTE: variables
-    NodeTagSeq tags;
+    NodeTagSeq tags;  //@ Assign each node a tag, aka skeleton
     parlay::sequence<BallsType> sums;
     mutable parlay::sequence<BallsType> sums_tree;
-    mutable TagNodes rev_tag;
+    mutable TagNodes rev_tag;  //@ maps tag to the position in skeleton
     BucketType tags_num;
 };
 

@@ -297,6 +297,7 @@ void BatchInsert(Tree& pkd, const parlay::sequence<point>& WP,
                  const parlay::sequence<point>& WI, const uint_fast8_t& DIM,
                  const int& rounds, double ratio = 1.0) {
     using points = typename Tree::Points;
+    using Box = typename Tree::Box;
     points wp = points::uninitialized(WP.size());
     points wi = points::uninitialized(WI.size());
 
@@ -305,8 +306,17 @@ void BatchInsert(Tree& pkd, const parlay::sequence<point>& WP,
     double aveInsert = time_loop(
         rounds, 1.0,
         [&]() {
-            parlay::copy(WP, wp), parlay::copy(WI, wi);
-            pkd.Build(parlay::make_slice(wp));
+            if constexpr (cpdd::IsKdTree<Tree>) {
+                parlay::copy(WP, wp), parlay::copy(WI, wi);
+                pkd.Build(parlay::make_slice(wp));
+            } else if constexpr (cpdd::IsOrthTree<Tree>) {
+                parlay::copy(WP, wp), parlay::copy(WI, wi);
+                Box box = Tree::GetBox(Tree::GetBox(parlay::make_slice(wp)),
+                                       Tree::GetBox(parlay::make_slice(wi)));
+                pkd.Build(parlay::make_slice(wp), box);
+            } else {
+                LOG << "Not supported tree type" << ENDL;
+            }
         },
         [&]() {
             // if (!serial) {
@@ -319,10 +329,19 @@ void BatchInsert(Tree& pkd, const parlay::sequence<point>& WP,
         },
         [&]() { pkd.DeleteTree(); });
 
-    //* set status to be finish insert
-    parlay::copy(WP, wp), parlay::copy(WI, wi);
-    pkd.Build(parlay::make_slice(wp));
-    // if (!serial) {
+    if constexpr (cpdd::IsKdTree<Tree>) {
+        parlay::copy(WP, wp), parlay::copy(WI, wi);
+        pkd.Build(parlay::make_slice(wp));
+    } else if constexpr (cpdd::IsOrthTree<Tree>) {
+        parlay::copy(WP, wp), parlay::copy(WI, wi);
+        Box box =
+            Tree::GetBox(Tree::GetBox(parlay::make_slice(wp)),
+                         Tree::GetBox(wi.cut(0, size_t(wi.size() * ratio))));
+        pkd.Build(parlay::make_slice(wp), box);
+    } else {
+        LOG << "Not supported tree type" << ENDL;
+    }
+
     pkd.BatchInsert(wi.cut(0, size_t(wi.size() * ratio)));
     // } else {
     //     for (size_t i = 0; i < wi.size() * ratio; i++) {

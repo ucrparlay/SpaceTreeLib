@@ -19,7 +19,7 @@ void KdTree<Point, SplitRule, kBDO>::BatchInsert(Slice A) {
     return;
 }
 
-// TODO: we can remove this to base tree
+// TODO: remove rev_tag
 template<typename Point, typename SplitRule, uint_fast8_t kBDO>
 Node* KdTree<Point, SplitRule, kBDO>::UpdateInnerTreeByTag(
     BucketType idx, const NodeTagSeq& tags, parlay::sequence<Node*>& tree_nodes,

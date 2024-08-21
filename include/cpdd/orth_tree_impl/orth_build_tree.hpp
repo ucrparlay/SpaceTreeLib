@@ -10,8 +10,8 @@
 namespace cpdd {
 template<typename Point, typename SplitRule, uint_fast8_t kMD,
          uint_fast8_t kBDO>
-template<typename Range>
-void OrthTree<Point, SplitRule, kMD, kBDO>::Build(Range&& In) {
+template<typename Range, typename... Args>
+void OrthTree<Point, SplitRule, kMD, kBDO>::Build(Range&& In, Args&&... args) {
     static_assert(parlay::is_random_access_range_v<Range>);
     static_assert(parlay::is_less_than_comparable_v<
                   parlay::range_reference_type_t<Range>>);
@@ -22,7 +22,7 @@ void OrthTree<Point, SplitRule, kMD, kBDO>::Build(Range&& In) {
     assert(kMD == BT::kDim);
 
     Slice A = parlay::make_slice(In);
-    Build_(A);
+    Build_(A, std::forward<Args>(args)...);
 }
 
 template<typename Point, typename SplitRule, uint_fast8_t kMD,
@@ -226,6 +226,20 @@ template<typename Point, typename SplitRule, uint_fast8_t kMD,
 void OrthTree<Point, SplitRule, kMD, kBDO>::Build_(Slice A) {
     Points B = Points::uninitialized(A.size());
     this->tree_box_ = BT::GetBox(A);
+    this->root_ = BuildRecursive(A, B.cut(0, A.size()), this->tree_box_);
+    // this->root_ = SerialBuildRecursive(A, B.cut(0, A.size()), BT::kDim,
+    //                                    this->tree_box_, false);
+    assert(this->root_ != nullptr);
+    return;
+}
+
+template<typename Point, typename SplitRule, uint_fast8_t kMD,
+         uint_fast8_t kBDO>
+void OrthTree<Point, SplitRule, kMD, kBDO>::Build_(Slice A, const Box& box) {
+    assert(BT::WithinBox(BT::GetBox(A), box));
+
+    Points B = Points::uninitialized(A.size());
+    this->tree_box_ = box;
     this->root_ = BuildRecursive(A, B.cut(0, A.size()), this->tree_box_);
     // this->root_ = SerialBuildRecursive(A, B.cut(0, A.size()), BT::kDim,
     //                                    this->tree_box_, false);
