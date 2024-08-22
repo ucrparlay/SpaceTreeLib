@@ -35,20 +35,20 @@ void TestSpacialTree(const int& kDim, const parlay::sequence<Point>& wp,
         }
     }
 
-    // //* batch delete
-    // if (tag >= 2) {
-    //     if (kSummary) {
-    //         const parlay::sequence<double> ratios = {0.0001, 0.001, 0.01,
-    //         0.1}; for (int i = 0; i < ratios.size(); i++) {
-    //             batchDelete<Point>(tree, wp, wi, kDim, kRounds, 0,
-    //             ratios[i]);
-    //         }
-    //     } else {
-    //         batchDelete<Point>(tree, wp, wi, kDim, kRounds, 0,
-    //         batchInsertRatio);
-    //     }
-    // }
-    //
+    //* batch delete
+    if (kTag >= 2) {
+        if (kSummary) {
+            const parlay::sequence<double> ratios = {0.0001, 0.001, 0.01, 0.1};
+            for (int i = 0; i < ratios.size(); i++) {
+                batchDelete<Point, Tree>(tree, wp, wi, kDim, kRounds, 0,
+                                         ratios[i]);
+            }
+        } else {
+            batchDelete<Point, Tree>(tree, wp, wi, kDim, kRounds, 0,
+                                     batchInsertRatio);
+        }
+    }
+
     if (kQueryType & (1 << 0)) {  // NOTE: KNN
         auto run_batch_knn = [&](const Points& pts, int kth, size_t batchSize) {
             Points newPts(batchSize);
@@ -504,11 +504,12 @@ int main(int argc, char* argv[]) {
 
     if (tree_type == 0) {
         run_test(wrapper::KDtree{});
-    } else if (tree_type == 1 && kDim == 2) {
-        run_test(wrapper::QadTree{});
-    } else if (tree_type == 1 && kDim == 3) {
-        run_test(wrapper::OctTree{});
     }
+    // else if (tree_type == 1 && kDim == 2) {
+    //     run_test(wrapper::QadTree{});
+    // } else if (tree_type == 1 && kDim == 3) {
+    //     run_test(wrapper::OctTree{});
+    // }
 
     return 0;
 }

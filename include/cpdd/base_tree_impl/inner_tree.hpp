@@ -126,7 +126,7 @@ struct BaseTree<Point, kBDO>::InnerTree {
                 if (!tags[idx].first->is_leaf) {
                     assert(static_cast<Interior*>(tags[idx].first)->aug_flag =
                                false);
-                    static_cast<Interior*>(tags[idx].first)->aug_flag =
+                    static_cast<Interior*>(tags[idx].first)->aug =
                         tags[idx].first->size > kSerialBuildCutoff;
                 }
             } else {
@@ -139,8 +139,8 @@ struct BaseTree<Point, kBDO>::InnerTree {
 
         assert(tags[idx].second == kBucketNum && (!tags[idx].first->is_leaf));
         Interior* TI = static_cast<Interior*>(tags[idx].first);
-        if (hasTomb && (inbalance_node(TI->left->size - sums_tree[idx << 1],
-                                       TI->size - sums_tree[idx]) ||
+        if (hasTomb && (ImbalanceNode(TI->left->size - sums_tree[idx << 1],
+                                      TI->size - sums_tree[idx]) ||
                         (TI->size - sums_tree[idx] < kThinLeaveWrap))) {
             assert(hasTomb != 0);
             assert(TI->aug_flag == 0);
@@ -149,7 +149,7 @@ struct BaseTree<Point, kBDO>::InnerTree {
         }
 
         // NOTE: hasTomb == false => need to rebuild
-        TI->aug_flag = hasTomb ? false : TI->size > kSerialBuildCutoff;
+        TI->aug = hasTomb ? false : TI->size > kSerialBuildCutoff;
 
         Box lbox(bx), rbox(bx);
         lbox.second.pnt[TI->split.second] = TI->split.first;  //* loose

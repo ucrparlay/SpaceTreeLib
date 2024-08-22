@@ -158,7 +158,7 @@ KdTree<Point, SplitRule, kBDO>::UpdateInnerTree(
     auto [L, Lbox] = UpdateInnerTree(idx << 1, tags, tree_nodes, p, rev_tag);
     auto [R, Rbox] =
         UpdateInnerTree(idx << 1 | 1, tags, tree_nodes, p, rev_tag);
-    UpdateInterior(tags[idx].first, L, R);
+    BT::template UpdateInterior<Interior>(tags[idx].first, L, R);
     return NodeBox(tags[idx].first, BT::GetBox(Lbox, Rbox));
 }
 
