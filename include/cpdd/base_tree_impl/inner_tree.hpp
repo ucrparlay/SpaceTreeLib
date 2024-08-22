@@ -124,7 +124,7 @@ struct BaseTree<Point, kBDO>::InnerTree {
                              // by assign to aug_flag
                 tags[idx].second = kBucketNum + 2;
                 if (!tags[idx].first->is_leaf) {
-                    assert(static_cast<Interior*>(tags[idx].first)->aug_flag =
+                    assert(static_cast<Interior*>(tags[idx].first)->aug =
                                false);
                     static_cast<Interior*>(tags[idx].first)->aug =
                         tags[idx].first->size > kSerialBuildCutoff;
@@ -143,7 +143,7 @@ struct BaseTree<Point, kBDO>::InnerTree {
                                       TI->size - sums_tree[idx]) ||
                         (TI->size - sums_tree[idx] < kThinLeaveWrap))) {
             assert(hasTomb != 0);
-            assert(TI->aug_flag == 0);
+            assert(TI->aug == 0);
             tags[idx].second = kBucketNum + 3;
             hasTomb = false;
         }
