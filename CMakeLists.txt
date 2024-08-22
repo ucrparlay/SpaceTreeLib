@@ -53,7 +53,7 @@ elseif(JEMA)
 	set(CMAKE_BUILD_RPATH "/usr/local/lib")
 endif()
 
-add_subdirectory(parlaylib)
+add_subdirectory(include/parlaylib)
 # add_subdirectory(libmorton)
 
 # set(source_files
