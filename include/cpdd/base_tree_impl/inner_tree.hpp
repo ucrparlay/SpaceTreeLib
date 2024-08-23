@@ -125,10 +125,11 @@ struct BaseTree<Point, kBDO>::InnerTree {
                 tags[idx].second = kBucketNum + 2;
                 if (!tags[idx].first->is_leaf) {
                     // TODO: use api to assign parallel tag
-                    assert(static_cast<Interior*>(tags[idx].first)->aug =
-                               false);
-                    static_cast<Interior*>(tags[idx].first)->aug =
-                        tags[idx].first->size > kSerialBuildCutoff;
+                    assert(static_cast<Interior*>(tags[idx].first)
+                               ->ForceParallel() == false);
+                    static_cast<Interior*>(tags[idx].first)
+                        ->SetParallelFlag(tags[idx].first->size >
+                                          kSerialBuildCutoff);
                 }
             } else {
                 tags[idx].second = kBucketNum + 1;
@@ -144,13 +145,13 @@ struct BaseTree<Point, kBDO>::InnerTree {
                                       TI->size - sums_tree[idx]) ||
                         (TI->size - sums_tree[idx] < kThinLeaveWrap))) {
             assert(hasTomb != 0);
-            assert(TI->aug == 0);
+            assert(TI->ForceParallel() == 0);
             tags[idx].second = kBucketNum + 3;
             hasTomb = false;
         }
 
         // NOTE: hasTomb == false => need to rebuild
-        TI->aug = hasTomb ? false : TI->size > kSerialBuildCutoff;
+        TI->SetParallelFlag(hasTomb ? false : TI->size > kSerialBuildCutoff);
 
         // TODO: rewrite for write efficient manner
         Box lbox(bx), rbox(bx);

@@ -9,7 +9,7 @@ resFile="Correct.out"
 dest="logger.in"
 out="log.in"
 : >${dest}
-tag=1
+tag=2
 count=1 # count the number of ok in the output
 dims=(2)
 queryTypes=(0 1 2)

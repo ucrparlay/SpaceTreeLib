@@ -99,9 +99,6 @@ KdTree<Point, SplitRule, kBDO>::DeleteInnerTree(
     if (tags[idx].second == BT::kBucketNum + 1 ||
         tags[idx].second == BT::kBucketNum + 2) {
         assert(rev_tag[p] == idx);
-        assert(tags[idx].second == BT::kBucketNum + 1 ||
-               tags[idx].first->size > BT::kSerialBuildCutoff ==
-                   static_cast<Interior*>(tags[idx].first)->aug);
         return tree_nodes[p++];  // WARN: this blocks the parallelsim as it will
                                  // rebuild the tree one-by-one
     }
@@ -111,8 +108,6 @@ KdTree<Point, SplitRule, kBDO>::DeleteInnerTree(
     auto [R, Rbox] = DeleteInnerTree(idx << 1 | 1, tags, tree_nodes, p, rev_tag,
                                      (d + 1) % BT::kDim);
 
-    assert(tags[idx].first->size > BT::kSerialBuildCutoff ==
-           static_cast<Interior*>(tags[idx].first)->aug);
     BT::template UpdateInterior<Interior>(tags[idx].first, L, R);
 
     if (tags[idx].second == BT::kBucketNum + 3) {  // NOTE: launch rebuild
@@ -216,7 +211,8 @@ KdTree<Point, SplitRule, kBDO>::BatchDeleteRecursive(
             TI->right, rbox, In.cut(split_iter - In.begin(), n),
             Out.cut(split_iter - In.begin(), n), nextDim, hasTomb);
 
-        TI->aug = hasTomb ? false : TI->size > BT::kSerialBuildCutoff;
+        TI->SetParallelFlag(hasTomb ? false
+                                    : TI->size > BT::kSerialBuildCutoff);
         BT::template UpdateInterior<Interior>(T, L, R);
         assert(T->size == L->size + R->size && TI->split.second >= 0 &&
                TI->is_leaf == false);

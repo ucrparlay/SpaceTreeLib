@@ -15,6 +15,7 @@ struct KdTree<Point, SplitRule, kBDO>::KdInteriorNode :
                    const AT& _aug) :
         BinaryNode<Point, Splitter, AugType>(_left, _right, _split, _aug) {}
 
+    inline void SetParallelFlag(bool flag) { this->aug = flag; }
     inline bool ForceParallel() const { return this->aug; }
 };
 
