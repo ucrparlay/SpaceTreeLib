@@ -102,7 +102,8 @@ KdTree<Point, SplitRule, kBDO>::DeleteInnerTree(
         assert(tags[idx].second == BT::kBucketNum + 1 ||
                tags[idx].first->size > BT::kSerialBuildCutoff ==
                    static_cast<Interior*>(tags[idx].first)->aug);
-        return tree_nodes[p++];  // WARN: this blocks the parallelsim
+        return tree_nodes[p++];  // WARN: this blocks the parallelsim as it will
+                                 // rebuild the tree one-by-one
     }
 
     auto [L, Lbox] = DeleteInnerTree(idx << 1, tags, tree_nodes, p, rev_tag,
