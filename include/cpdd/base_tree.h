@@ -73,6 +73,7 @@ class BaseTree {
     static inline Box GetEmptyBox();
     static Box GetBox(const Box& x, const Box& y);
     static Box GetBox(Slice V);
+    template<typename Leaf, typename Interior>
     static Box GetBox(Node* T);
 
     static inline bool WithinCircle(const Box& bx, const Circle& cl);
@@ -95,6 +96,9 @@ class BaseTree {
     template<typename Leaf, typename Interior, bool granularity = true>
     static void PrepareRebuild(Node* T, Slice In, Points& wx, Points& wo);
 
+    template<typename Leaf, typename Interior, bool granularity = true>
+    static void PrepareRebuild(Node* T, Points& wx, Points& wo);
+
     static void Partition(Slice A, Slice B, const size_t n,
                           const HyperPlaneSeq& pivots,
                           parlay::sequence<BallsType>& sums);
@@ -115,8 +119,12 @@ class BaseTree {
                              parlay::sequence<BallsType>& sums,
                              const BucketType tags_num);
 
+    // TODO: maybe we can unify the interface
     template<typename Leaf, typename Interior>
     Node* RebuildWithInsert(Node* T, Slice In, DimsType dim);
+
+    template<typename Leaf, typename Interior, bool granularity = true>
+    NodeBox RebuildSingleTree(Node* T, DimsType dim);
 
     virtual Node* BuildRecursiveWrapper(Slice In, Slice Out, const Box& bx,
                                         DimsType dim) = 0;

@@ -62,9 +62,6 @@ class KdTree : private BaseTree<Point, kBDO> {
                                    parlay::sequence<NodeBox>& tree_nodes,
                                    BucketType& p, const TagNodes& rev_tag);
 
-    NodeBox RebuildSingleTree(Node* T, const DimsType d,
-                              const bool granularity = true);
-
     NodeBox RebuildTreeRecursive(Node* T, DimsType d,
                                  const bool granularity = true);
 
@@ -85,17 +82,18 @@ class KdTree : private BaseTree<Point, kBDO> {
 
     // NOTE: batch delete
     // NOTE: in default, all Points to be deleted are assumed in the tree
-    void BatchDelete(Slice In);
+    template<typename Range>
+    void BatchDelete(Range&& In);
 
     // NOTE: explicitly specify all Points to be deleted are in the tree
-    void BatchDelete(Slice In, FullCoveredTag);
+    void BatchDelete_(Slice In);
 
     // NOTE: for the case that some Points to be deleted are not in the tree
     void BatchDelete(Slice In, PartialCoverTag);
 
     //  PERF: try pass a reference to bx
     NodeBox BatchDeleteRecursive(Node* T, const Box& bx, Slice In, Slice Out,
-                                 DimsType d, bool hasTomb, FullCoveredTag);
+                                 DimsType d, bool hasTomb);
 
     // TODO: add bounding Box for batch delete recursive as well
     // WARN: fix the possible in partial deletion as well

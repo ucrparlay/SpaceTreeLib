@@ -176,12 +176,13 @@ void runKDParallel(points& wp, const points& wi, Typename* kdknn, points& p,
         LOG << "finish insert" << ENDL;
     }
 
-    /*if (tag >= 2) {*/
-    /*    batchDelete<point, true>(pkd, wp, wi, Dim, 2, true,*/
-    /*                             batchInsertCheckRatio);*/
-    /*    pkd.validate(Dim);*/
-    /*    LOG << "finish delete" << ENDL;*/
-    /*}*/
+    if (tag >= 2) {
+        batchDelete<point, Tree, false>(pkd, wp, wi, Dim, 2, true,
+                                        batchInsertCheckRatio);
+        pkd.template Validate<typename Tree::Leaf, typename Tree::Interior,
+                              typename Tree::SplitRuleType>();
+        LOG << "finish delete" << ENDL;
+    }
 
     //* query phase
 
@@ -334,15 +335,16 @@ int main(int argc, char* argv[]) {
         runKDParallel<cpdd::KdTree<point, cpdd::MaxStretchDim<point>>>(
             // runKDParallel<cpdd::KdTree<point, cpdd::RotateDim<point>>>(
             wp, wi, kdknn, kdOut, queryNum);
-    } else if (tree_type == 1 && Dim == 2) {
-        LOG << "test quad tree" << ENDL;
-        runKDParallel<cpdd::OrthTree<point, cpdd::RotateDim<point>, 2>>(
-            wp, wi, kdknn, kdOut, queryNum);
-    } else if (tree_type == 1 && Dim == 3) {
-        LOG << "test oct tree" << ENDL;
-        runKDParallel<cpdd::OrthTree<point, cpdd::RotateDim<point>, 3>>(
-            wp, wi, kdknn, kdOut, queryNum);
     }
+    // else if (tree_type == 1 && Dim == 2) {
+    //     LOG << "test quad tree" << ENDL;
+    //     runKDParallel<cpdd::OrthTree<point, cpdd::RotateDim<point>, 2>>(
+    //         wp, wi, kdknn, kdOut, queryNum);
+    // } else if (tree_type == 1 && Dim == 3) {
+    //     LOG << "test oct tree" << ENDL;
+    //     runKDParallel<cpdd::OrthTree<point, cpdd::RotateDim<point>, 3>>(
+    //         wp, wi, kdknn, kdOut, queryNum);
+    // }
     runCGAL(wp, wi, cgknn, queryNum, cgOut);
 
     //* verify

@@ -124,6 +124,7 @@ struct BaseTree<Point, kBDO>::InnerTree {
                              // by assign to aug_flag
                 tags[idx].second = kBucketNum + 2;
                 if (!tags[idx].first->is_leaf) {
+                    // TODO: use api to assign parallel tag
                     assert(static_cast<Interior*>(tags[idx].first)->aug =
                                false);
                     static_cast<Interior*>(tags[idx].first)->aug =
@@ -151,6 +152,7 @@ struct BaseTree<Point, kBDO>::InnerTree {
         // NOTE: hasTomb == false => need to rebuild
         TI->aug = hasTomb ? false : TI->size > kSerialBuildCutoff;
 
+        // TODO: rewrite for write efficient manner
         Box lbox(bx), rbox(bx);
         lbox.second.pnt[TI->split.second] = TI->split.first;  //* loose
         rbox.first.pnt[TI->split.second] = TI->split.first;

@@ -80,9 +80,10 @@ typename BaseTree<Point, kBDO>::Box BaseTree<Point, kBDO>::GetBox(Slice V) {
 }
 
 template<typename Point, uint_fast8_t kBDO>
+template<typename Leaf, typename Interior>
 typename BaseTree<Point, kBDO>::Box BaseTree<Point, kBDO>::GetBox(Node* T) {
     Points wx = Points::uninitialized(T->size);
-    FlattenRec(T, parlay::make_slice(wx));
+    FlattenRec<Leaf, Interior>(T, parlay::make_slice(wx));
     return GetBox(parlay::make_slice(wx));
 }
 

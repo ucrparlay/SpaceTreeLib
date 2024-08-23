@@ -104,6 +104,17 @@ BaseTree<Point, kBDO>::SerialPartition(Slice In, DimsType d) {
 
 template<typename Point, uint_fast8_t kBDO>
 template<typename Leaf, typename Interior, bool granularity>
+void BaseTree<Point, kBDO>::PrepareRebuild(Node* T, Points& wx, Points& wo) {
+    // TODO: add dispatch tag
+    wo = Points::uninitialized(T->size);
+    wx = Points::uninitialized(T->size);
+    FlattenRec<Leaf, Interior, Slice, granularity>(T, parlay::make_slice(wx));
+    DeleteTreeRecursive<Leaf, Interior, granularity>(T);
+    return;
+}
+
+template<typename Point, uint_fast8_t kBDO>
+template<typename Leaf, typename Interior, bool granularity>
 void BaseTree<Point, kBDO>::PrepareRebuild(Node* T, Slice In, Points& wx,
                                            Points& wo) {
     // TODO: add dispatch tag
