@@ -67,8 +67,7 @@ class KdTree : private BaseTree<Point, kBDO> {
 
     void BatchInsert(Slice In);
 
-    // Node* RebuildWithInsert(Node* T, Slice In, const DimsType d);
-
+    // TODO: rewrite in wrapper
     Node* BuildRecursiveWrapper(Slice In, Slice Out, const Box& bx,
                                 DimsType dim) override {
         return BuildRecursive(In, Out, dim, bx);
@@ -85,20 +84,22 @@ class KdTree : private BaseTree<Point, kBDO> {
     template<typename Range>
     void BatchDelete(Range&& In);
 
-    // NOTE: explicitly specify all Points to be deleted are in the tree
     void BatchDelete_(Slice In);
 
-    // NOTE: for the case that some Points to be deleted are not in the tree
-    void BatchDelete(Slice In, PartialCoverTag);
-
-    //  PERF: try pass a reference to bx
     NodeBox BatchDeleteRecursive(Node* T, const Box& bx, Slice In, Slice Out,
                                  DimsType d, bool hasTomb);
 
+    // NOTE: batch diff
+    // NOTE: for the case that some Points to be deleted are not in the tree
+    template<typename Range>
+    void BatchDiff(Range&& In);
+
+    void BatchDiff_(Slice In);
+
     // TODO: add bounding Box for batch delete recursive as well
     // WARN: fix the possible in partial deletion as well
-    NodeBox BatchDeleteRecursive(Node* T, const Box& bx, Slice In, Slice Out,
-                                 DimsType d, PartialCoverTag);
+    NodeBox BatchDiffRecursive(Node* T, const Box& bx, Slice In, Slice Out,
+                               DimsType d);
 
     NodeBox DeleteInnerTree(BucketType idx, const NodeTagSeq& tags,
                             parlay::sequence<NodeBox>& tree_nodes,
@@ -142,3 +143,4 @@ class KdTree : private BaseTree<Point, kBDO> {
 #include "kd_tree_impl/kd_override.hpp"
 #include "kd_tree_impl/kd_batch_insert.hpp"
 #include "kd_tree_impl/kd_batch_delete.hpp"
+#include "kd_tree_impl/kd_batch_diff.hpp"

@@ -40,12 +40,12 @@ void TestSpacialTree(const int& kDim, const parlay::sequence<Point>& wp,
         if (kSummary) {
             const parlay::sequence<double> ratios = {0.0001, 0.001, 0.01, 0.1};
             for (int i = 0; i < ratios.size(); i++) {
-                batchDelete<Point, Tree>(tree, wp, wi, kDim, kRounds, 0,
-                                         ratios[i]);
+                batchDelete<Point, Tree, kBatchDelete>(tree, wp, wi, kDim,
+                                                       kRounds, 0, ratios[i]);
             }
         } else {
-            batchDelete<Point, Tree>(tree, wp, wi, kDim, kRounds, 0,
-                                     batchInsertRatio);
+            batchDelete<Point, Tree, kBatchDelete>(tree, wp, wi, kDim, kRounds,
+                                                   0, batchInsertRatio);
         }
     }
 

@@ -44,6 +44,9 @@ static constexpr int summaryRangeQueryType = 2;
 // NOTE: range query num in summary
 static constexpr int summaryRangeQueryNum = 10000;
 
+// NOTE: helper for delete type
+enum DeleteType { kBatchDelete, kBatchDiff };
+
 // * [a,b)
 inline size_t get_random_index(size_t a, size_t b, int seed) {
     return size_t((rand() % (b - a)) + a);
@@ -354,7 +357,7 @@ void BatchInsert(Tree& pkd, const parlay::sequence<point>& WP,
     return;
 }
 
-template<typename point, typename Tree, bool serial = false>
+template<typename point, typename Tree, DeleteType kDeleteType = kBatchDelete>
 void batchDelete(Tree& pkd, const parlay::sequence<point>& WP,
                  const parlay::sequence<point>& WI, const uint_fast8_t& DIM,
                  const int& rounds, bool afterInsert = 1, double ratio = 1.0) {
@@ -382,9 +385,11 @@ void batchDelete(Tree& pkd, const parlay::sequence<point>& WP,
             }
         },
         [&]() {
-            // if (!serial) {
-            pkd.BatchDelete(wi.cut(0, batchSize));
-            // }
+            if constexpr (kDeleteType == kBatchDelete) {
+                pkd.BatchDelete(wi.cut(0, batchSize));
+            } else if constexpr (kDeleteType == kBatchDiff) {
+                pkd.BatchDiff(wi.cut(0, batchSize));
+            }
             // else {
             //     for (size_t i = 0; i < batchSize; i++) {
             // pkd.pointDelete(wi[i], DIM);

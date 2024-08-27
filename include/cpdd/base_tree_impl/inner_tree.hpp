@@ -118,10 +118,9 @@ struct BaseTree<Point, kBDO>::InnerTree {
     void MarkTomb(BucketType idx, BoxSeq& boxs, Box bx, bool hasTomb) {
         if (idx > kPivotNum || tags[idx].first->is_leaf) {
             assert(tags[idx].second >= 0 && tags[idx].second < kBucketNum);
-            // tags[idx].second = (!hasTomb) ? kBucketNum + 2 : kBucketNum + 1;
             if (!hasTomb) {  // NOTE: this subtree needs to be rebuilt in the
-                             // future, therefore ensure the granularity control
-                             // by assign to aug_flag
+                             // future, therefore, ensure the granularity
+                             // control by assign to aug_flag
                 tags[idx].second = kBucketNum + 2;
                 if (!tags[idx].first->is_leaf) {
                     // TODO: use api to assign parallel tag
