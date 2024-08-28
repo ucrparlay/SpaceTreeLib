@@ -23,7 +23,7 @@ void KdTree<Point, SplitRule, kBDO>::BatchInsert(Slice A) {
 template<typename Point, typename SplitRule, uint_fast8_t kBDO>
 Node* KdTree<Point, SplitRule, kBDO>::UpdateInnerTreeByTag(
     BucketType idx, const NodeTagSeq& tags, parlay::sequence<Node*>& tree_nodes,
-    BucketType& p, const TagNodes& rev_tag) {
+    BucketType& p, const Tag2Node& rev_tag) {
     if (tags[idx].second == BT::kBucketNum + 1 ||
         tags[idx].second == BT::kBucketNum + 2) {
         assert(rev_tag[p] == idx);
@@ -139,27 +139,6 @@ Node* KdTree<Point, SplitRule, kBDO>::BatchInsertRecursive(Node* T, Slice In,
 
     BucketType beatles = 0;
     return UpdateInnerTreeByTag(1, IT.tags, tree_nodes, beatles, IT.rev_tag);
-}
-
-// NOTE: traverse the skeleton tags and update its children to new ones
-template<typename Point, typename SplitRule, uint_fast8_t kBDO>
-typename KdTree<Point, SplitRule, kBDO>::NodeBox
-KdTree<Point, SplitRule, kBDO>::UpdateInnerTree(
-    BucketType idx, const NodeTagSeq& tags,
-    parlay::sequence<NodeBox>& tree_nodes, BucketType& p,
-    const TagNodes& rev_tag) {
-    if (tags[idx].second < BT::kBucketNum) {
-        assert(rev_tag[p] == idx);
-        return tree_nodes[p++];
-    }
-
-    assert(tags[idx].second == BT::kBucketNum);
-    assert(tags[idx].first != nullptr);
-    auto [L, Lbox] = UpdateInnerTree(idx << 1, tags, tree_nodes, p, rev_tag);
-    auto [R, Rbox] =
-        UpdateInnerTree(idx << 1 | 1, tags, tree_nodes, p, rev_tag);
-    BT::template UpdateInterior<Interior>(tags[idx].first, L, R);
-    return NodeBox(tags[idx].first, BT::GetBox(Lbox, Rbox));
 }
 
 }  // namespace cpdd

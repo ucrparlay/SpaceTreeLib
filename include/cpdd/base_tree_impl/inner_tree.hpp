@@ -176,27 +176,27 @@ struct BaseTree<Point, kBDO>::InnerTree {
         tags_num(0),
         tags(NodeTagSeq::uninitialized(kPivotNum + kBucketNum + 1)),
         sums_tree(parlay::sequence<BallsType>(kPivotNum + kBucketNum + 1)),
-        rev_tag(TagNodes::uninitialized(kBucketNum)) {}
+        rev_tag(Tag2Node::uninitialized(kBucketNum)) {}
 
     InnerTree()
         requires IsMultiNode<Interior>
         :
         tags_num(0),
         tags(NodeTagSeq::uninitialized(kPivotNum + kBucketNum + 1)),
-        rev_tag(TagNodes::uninitialized(kBucketNum)) {}
+        rev_tag(Tag2Node::uninitialized(kBucketNum)) {}
 
     void Reset() {
         ResetTagsNum();
         tags = NodeTagSeq::uninitialized(kPivotNum + kBucketNum + 1);
         sums_tree = parlay::sequence<BallsType>(kPivotNum + kBucketNum + 1);
-        rev_tag = TagNodes::uninitialized(kBucketNum);
+        rev_tag = Tag2Node::uninitialized(kBucketNum);
     }
 
     // NOTE: variables
     NodeTagSeq tags;  //@ Assign each node a tag, aka skeleton
     parlay::sequence<BallsType> sums;
     mutable parlay::sequence<BallsType> sums_tree;
-    mutable TagNodes rev_tag;  //@ maps tag to the position in skeleton
+    mutable Tag2Node rev_tag;  //@ maps tag to the position in skeleton
     BucketType tags_num;
 };
 

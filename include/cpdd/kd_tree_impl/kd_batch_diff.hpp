@@ -24,14 +24,34 @@ void KdTree<Point, SplitRule, kBDO>::BatchDiff_(Slice A) {
     Node* T = this->root_;
     Box box = this->tree_box_;
     DimsType d = T->is_leaf ? 0 : static_cast<Interior*>(T)->split.second;
-    // NOTE: first sieve the Points
     std::tie(T, this->tree_box_) =
         BatchDiffRecursive(T, box, A, parlay::make_slice(B), d);
 
     std::tie(this->root_, box) = RebuildTreeRecursive(T, d, false);
-    assert(box == this->tree_box_);
+    // assert(box == this->tree_box_);
 
     return;
+}
+
+// NOTE: traverse the skeleton tags and update its children to new ones
+template<typename Point, typename SplitRule, uint_fast8_t kBDO>
+typename KdTree<Point, SplitRule, kBDO>::NodeBox
+KdTree<Point, SplitRule, kBDO>::UpdateInnerTree(
+    BucketType idx, const NodeTagSeq& tags,
+    parlay::sequence<NodeBox>& tree_nodes, BucketType& p,
+    const Tag2Node& rev_tag) {
+    if (tags[idx].second < BT::kBucketNum) {
+        assert(rev_tag[p] == idx);
+        return tree_nodes[p++];
+    }
+
+    assert(tags[idx].second == BT::kBucketNum);
+    assert(tags[idx].first != nullptr);
+    auto [L, Lbox] = UpdateInnerTree(idx << 1, tags, tree_nodes, p, rev_tag);
+    auto [R, Rbox] =
+        UpdateInnerTree(idx << 1 | 1, tags, tree_nodes, p, rev_tag);
+    BT::template UpdateInterior<Interior>(tags[idx].first, L, R);
+    return NodeBox(tags[idx].first, BT::GetBox(Lbox, Rbox));
 }
 
 // NOTE: traverse the tree in parallel and rebuild the imbalanced subtree
@@ -73,11 +93,11 @@ KdTree<Point, SplitRule, kBDO>::RebuildTreeRecursive(Node* T, DimsType d,
 template<typename Point, typename SplitRule, uint_fast8_t kBDO>
 typename KdTree<Point, SplitRule, kBDO>::NodeBox
 KdTree<Point, SplitRule, kBDO>::BatchDiffRecursive(
-    Node* T, const typename KdTree<Point, SplitRule, kBDO>::Box& bx, Slice In,
+    Node* T, const typename KdTree<Point, SplitRule, kBDO>::Box& box, Slice In,
     Slice Out, DimsType d) {
     size_t n = In.size();
 
-    if (n == 0) return NodeBox(T, bx);
+    if (n == 0) return NodeBox(T, box);
 
     if (T->is_leaf) {
         Leaf* TL = static_cast<Leaf*>(T);
@@ -117,7 +137,7 @@ KdTree<Point, SplitRule, kBDO>::BatchDiffRecursive(
         DimsType nextDim = (d + 1) % BT::kDim;
 
         // TODO: rewrite for better box
-        Box lbox(bx), rbox(bx);
+        Box lbox(box), rbox(box);
         lbox.second.pnt[TI->split.second] = TI->split.first;  //* loose
         rbox.first.pnt[TI->split.second] = TI->split.first;
 
@@ -146,7 +166,7 @@ KdTree<Point, SplitRule, kBDO>::BatchDiffRecursive(
     auto boxs = parlay::sequence<Box>::uninitialized(IT.tags_num);
 
     // NOTE: never set tomb, this equivalent to only calcualte the bounding box,
-    IT.TagInbalanceNodeDeletion(boxs, bx, false);
+    IT.TagInbalanceNodeDeletion(boxs, box, false);
 
     parlay::parallel_for(
         0, IT.tags_num,

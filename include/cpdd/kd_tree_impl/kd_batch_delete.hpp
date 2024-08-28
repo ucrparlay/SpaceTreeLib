@@ -44,7 +44,7 @@ typename KdTree<Point, SplitRule, kBDO>::NodeBox
 KdTree<Point, SplitRule, kBDO>::DeleteInnerTree(
     BucketType idx, const NodeTagSeq& tags,
     parlay::sequence<NodeBox>& tree_nodes, BucketType& p,
-    const TagNodes& rev_tag, DimsType d) {
+    const Tag2Node& rev_tag, DimsType d) {
     if (tags[idx].second == BT::kBucketNum + 1 ||
         tags[idx].second == BT::kBucketNum + 2) {
         assert(rev_tag[p] == idx);
