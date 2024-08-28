@@ -156,7 +156,6 @@ KdTree<Point, SplitRule, kBDO>::BatchDiffRecursive(
     }
 
     typename BT::template InnerTree<Leaf, Interior> IT;
-    // IT.init();
     IT.AssignNodeTag(T, 1);
     assert(IT.tags_num > 0 && IT.tags_num <= BT::kBucketNum);
     BT::template SeievePoints<Interior>(In, Out, n, IT.tags, IT.sums,
@@ -166,6 +165,8 @@ KdTree<Point, SplitRule, kBDO>::BatchDiffRecursive(
     auto boxs = parlay::sequence<Box>::uninitialized(IT.tags_num);
 
     // NOTE: never set tomb, this equivalent to only calcualte the bounding box,
+    // BUG: cannot direct pass false here,
+    // TODO: remove bounding boxes
     IT.TagInbalanceNodeDeletion(boxs, box, false);
 
     parlay::parallel_for(

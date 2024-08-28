@@ -48,10 +48,10 @@ KdTree<Point, SplitRule, kBDO>::DeleteInnerTree(
     if (tags[idx].second == BT::kBucketNum + 1 ||
         tags[idx].second == BT::kBucketNum + 2) {
         assert(rev_tag[p] == idx);
-        return tree_nodes[p++];  // WARN: this blocks the parallelsim as it will
-                                 // rebuild the tree one-by-one
+        return tree_nodes[p++];
     }
 
+    // TODO: use auto&
     auto [L, Lbox] = DeleteInnerTree(idx << 1, tags, tree_nodes, p, rev_tag,
                                      (d + 1) % BT::kDim);
     auto [R, Rbox] = DeleteInnerTree(idx << 1 | 1, tags, tree_nodes, p, rev_tag,
@@ -59,6 +59,7 @@ KdTree<Point, SplitRule, kBDO>::DeleteInnerTree(
 
     BT::template UpdateInterior<Interior>(tags[idx].first, L, R);
 
+    // WARN: this blocks the parallelsim as it will rebuild the tree one-by-one
     if (tags[idx].second == BT::kBucketNum + 3) {  // NOTE: launch rebuild
         Interior const* TI = static_cast<Interior*>(tags[idx].first);
         assert(BT::ImbalanceNode(TI->left->size, TI->size) ||
@@ -109,11 +110,11 @@ KdTree<Point, SplitRule, kBDO>::BatchDeleteRecursive(
         Leaf* TL = static_cast<Leaf*>(T);
 
         if (TL->is_dummy) {
-            assert(T->is_leaf);
             assert(In.size() <=
-                   T->size);  // WARN: cannot delete more Points then there are
+                   T->size);  // NOTE: cannot delete more Points then there are
             T->size -= In.size();  // WARN: this assumes that In\in T
-            return NodeBox(T, Box(TL->pts[0], TL->pts[0]));
+            return NodeBox(
+                T, T->size ? Box(TL->pts[0], TL->pts[0]) : BT::AllocEmptyBox());
         }
 
         auto it = TL->pts.begin(), end = TL->pts.begin() + TL->size;

@@ -123,7 +123,7 @@ Node* KdTree<Point, SplitRule, kBDO>::SerialBuildRecursive(Slice In, Slice Out,
                              Out.cut(0, splitIter - In.begin()), d, lbox);
     R = SerialBuildRecursive(In.cut(splitIter - In.begin(), n),
                              Out.cut(splitIter - In.begin(), n), d, rbox);
-    return AllocInteriorNode<Interior>(L, R, split, false);
+    return AllocInteriorNode<Interior>(L, R, split, AugType());
 }
 
 template<typename Point, typename SplitRule, uint_fast8_t kBDO>

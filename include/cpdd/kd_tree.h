@@ -2,6 +2,7 @@
 
 #include <functional>
 #include <utility>
+#include <optional>
 #include "base_tree.h"
 
 namespace cpdd {
@@ -33,7 +34,7 @@ class KdTree : private BaseTree<Point, kBDO> {
     using Splitter = HyperPlane;
     using SplitterSeq = HyperPlaneSeq;
 
-    using AugType = bool;
+    using AugType = std::optional<bool>;
     struct KdInteriorNode;
 
     using SplitRuleType = SplitRule;
