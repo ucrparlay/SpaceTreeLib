@@ -73,7 +73,7 @@ KdTree<Point, SplitRule, kBDO>::DeleteInnerTree(
         }
 
         return BT::template RebuildSingleTree<Leaf, Interior, false>(
-            tags[idx].first, d);
+            tags[idx].first, d, BT::GetBox(Lbox, Rbox));
     }
 
     return NodeBox(tags[idx].first, BT::GetBox(Lbox, Rbox));
@@ -114,7 +114,7 @@ KdTree<Point, SplitRule, kBDO>::BatchDeleteRecursive(
                    T->size);  // NOTE: cannot delete more Points then there are
             T->size -= In.size();  // WARN: this assumes that In\in T
             return NodeBox(
-                T, T->size ? Box(TL->pts[0], TL->pts[0]) : BT::AllocEmptyBox());
+                T, T->size ? Box(TL->pts[0], TL->pts[0]) : BT::GetEmptyBox());
         }
 
         auto it = TL->pts.begin(), end = TL->pts.begin() + TL->size;
@@ -172,7 +172,8 @@ KdTree<Point, SplitRule, kBDO>::BatchDeleteRecursive(
             assert(TI->size == T->size);
             assert(BT::ImbalanceNode(TI->left->size, TI->size) ||
                    TI->size < BT::kThinLeaveWrap);
-            return BT::template RebuildSingleTree<Leaf, Interior, false>(T, d);
+            return BT::template RebuildSingleTree<Leaf, Interior, false>(
+                T, d, BT::GetBox(Lbox, Rbox));
         }
 
         return NodeBox(T, BT::GetBox(Lbox, Rbox));

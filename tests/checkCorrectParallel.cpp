@@ -177,8 +177,8 @@ void runKDParallel(points& wp, const points& wi, Typename* kdknn, points& p,
     }
 
     if (tag >= 2) {
-        batchDelete<point, Tree, kBatchDiff>(pkd, wp, wi, Dim, 2, true,
-                                             batchInsertCheckRatio);
+        batchDelete<point, Tree, kBatchDelete>(pkd, wp, wi, Dim, 2, true,
+                                               batchInsertCheckRatio);
         pkd.template Validate<typename Tree::Leaf, typename Tree::Interior,
                               typename Tree::SplitRuleType>();
         LOG << "finish delete" << ENDL;

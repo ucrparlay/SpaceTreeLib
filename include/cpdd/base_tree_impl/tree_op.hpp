@@ -21,10 +21,11 @@ Node* BaseTree<Point, kBDO>::RebuildWithInsert(Node* T, Slice In,
 template<typename Point, uint_fast8_t kBDO>
 template<typename Leaf, typename Interior, bool granularity>
 typename BaseTree<Point, kBDO>::NodeBox
-BaseTree<Point, kBDO>::RebuildSingleTree(Node* T, DimsType dim) {
+BaseTree<Point, kBDO>::RebuildSingleTree(Node* T, DimsType dim,
+                                         const Box& box) {
     Points wx, wo;
     PrepareRebuild<Leaf, Interior, granularity>(T, wx, wo);
-    Box box = GetBox(parlay::make_slice(wx));
+    assert(GetBox(parlay::make_slice(wx)) == box);
     Node* node = BuildRecursiveWrapper(parlay::make_slice(wx),
                                        parlay::make_slice(wo), box, dim);
     return NodeBox(std::move(node), std::move(box));
