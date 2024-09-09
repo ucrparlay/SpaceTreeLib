@@ -180,7 +180,6 @@ KdTree<Point, SplitRule, kBDO>::BatchDeleteRecursive(
     }
 
     typename BT::template InnerTree<Leaf, Interior> IT;
-    // IT.init();
     IT.AssignNodeTag(T, 1);
     assert(IT.tags_num > 0 && IT.tags_num <= BT::kBucketNum);
     BT::template SeievePoints<Interior>(In, Out, n, IT.tags, IT.sums,
@@ -217,6 +216,8 @@ KdTree<Point, SplitRule, kBDO>::BatchDeleteRecursive(
         1);
 
     BucketType beatles = 0;
+    // TODO: we can use the total_rebuild_size/total_rebuild_num
+    // > SERIAL_BUILD_CUTOFF to judge whether to rebuild the tree in parallel
     return DeleteInnerTree(1, IT.tags, tree_nodes, beatles, IT.rev_tag, d);
 }
 
