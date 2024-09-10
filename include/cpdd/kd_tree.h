@@ -59,9 +59,15 @@ class KdTree : private BaseTree<Point, kBDO> {
 
     void DeleteTree() override;
 
-    static NodeBox UpdateInnerTree(BucketType idx, const NodeTagSeq& tags,
-                                   parlay::sequence<NodeBox>& tree_nodes,
-                                   BucketType& p, const Tag2Node& rev_tag);
+    // TODO: move it to inner tree
+    static NodeBox UpdateInnerTreePointerBox(
+        BucketType idx, const NodeTagSeq& tags,
+        parlay::sequence<NodeBox>& tree_nodes, BucketType& p);
+
+    // TODO: move it to inner tree
+    static Node* UpdateInnerTreePointer(BucketType idx, const NodeTagSeq& tags,
+                                        parlay::sequence<Node*>& tree_nodes,
+                                        BucketType& p);
 
     NodeBox RebuildTreeRecursive(Node* T, DimsType d,
                                  const bool granularity = true);
@@ -75,10 +81,6 @@ class KdTree : private BaseTree<Point, kBDO> {
     };
 
     Node* BatchInsertRecursive(Node* T, Slice In, Slice Out, DimsType d);
-
-    static Node* UpdateInnerTreeByTag(BucketType idx, const NodeTagSeq& tags,
-                                      parlay::sequence<Node*>& tree_nodes,
-                                      BucketType& p, const Tag2Node& rev_tag);
 
     // NOTE: batch delete
     // NOTE: in default, all Points to be deleted are assumed in the tree
@@ -104,8 +106,7 @@ class KdTree : private BaseTree<Point, kBDO> {
 
     NodeBox DeleteInnerTree(BucketType idx, const NodeTagSeq& tags,
                             parlay::sequence<NodeBox>& tree_nodes,
-                            BucketType& p, const Tag2Node& rev_tag,
-                            const DimsType d);
+                            BucketType& p, const DimsType d);
 
     template<typename Range>
     void Flatten(Range&& Out);

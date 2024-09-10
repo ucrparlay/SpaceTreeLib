@@ -43,19 +43,17 @@ template<typename Point, typename SplitRule, uint_fast8_t kBDO>
 typename KdTree<Point, SplitRule, kBDO>::NodeBox
 KdTree<Point, SplitRule, kBDO>::DeleteInnerTree(
     BucketType idx, const NodeTagSeq& tags,
-    parlay::sequence<NodeBox>& tree_nodes, BucketType& p,
-    const Tag2Node& rev_tag, DimsType d) {
+    parlay::sequence<NodeBox>& tree_nodes, BucketType& p, DimsType d) {
     if (tags[idx].second == BT::kBucketNum + 1 ||
         tags[idx].second == BT::kBucketNum + 2) {
-        assert(rev_tag[p] == idx);
         return tree_nodes[p++];
     }
 
     // TODO: use auto&
-    auto [L, Lbox] = DeleteInnerTree(idx << 1, tags, tree_nodes, p, rev_tag,
-                                     (d + 1) % BT::kDim);
-    auto [R, Rbox] = DeleteInnerTree(idx << 1 | 1, tags, tree_nodes, p, rev_tag,
-                                     (d + 1) % BT::kDim);
+    auto [L, Lbox] =
+        DeleteInnerTree(idx << 1, tags, tree_nodes, p, (d + 1) % BT::kDim);
+    auto [R, Rbox] =
+        DeleteInnerTree(idx << 1 | 1, tags, tree_nodes, p, (d + 1) % BT::kDim);
 
     BT::template UpdateInterior<Interior>(tags[idx].first, L, R);
 
@@ -190,6 +188,17 @@ KdTree<Point, SplitRule, kBDO>::BatchDeleteRecursive(
 
     IT.TagInbalanceNodeDeletion(boxs, bx, hasTomb);
 
+    BucketType rebuild_num = 0;
+    size_t total_rebuild_size = 0;
+    auto rebuild_tree_idx =
+        parlay::sequence<BucketType>::uninitialized(BT::kBucketNum + 1);
+    for (BucketType i = 1; i < BT::kPivotNum + BT::kBucketNum; i++) {
+        if (IT.tags[i].second == BT::kBucketNum + 3) {
+            rebuild_tree_idx[rebuild_num++] = i;
+            total_rebuild_size += IT.tags[i].first->size;
+        }
+    }
+
     parlay::parallel_for(
         0, IT.tags_num,
         [&](size_t i) {
@@ -215,10 +224,40 @@ KdTree<Point, SplitRule, kBDO>::BatchDeleteRecursive(
         },
         1);
 
-    BucketType beatles = 0;
     // TODO: we can use the total_rebuild_size/total_rebuild_num
     // > SERIAL_BUILD_CUTOFF to judge whether to rebuild the tree in parallel
-    return DeleteInnerTree(1, IT.tags, tree_nodes, beatles, IT.rev_tag, d);
+    BucketType beatles = 0;
+    if (total_rebuild_size > BT::kSerialBuildCutoff) {
+        // TODO: we can add a function to compute the bounding box of the tree
+        // Or we can template the function for either pointer/pointer+box/box
+        UpdateInnerTreePointerBox(1, IT.tags, tree_nodes, beatles);
+
+        parlay::parallel_for(0, rebuild_num, [&](size_t i) {
+            assert(IT.tags[rebuild_tree_idx[i]].second == BT::kBucketNum + 3);
+            Interior const* TI =
+                static_cast<Interior*>(IT.tags[rebuild_tree_idx[i]].first);
+            assert(BT::ImbalanceNode(TI->left->size, TI->size) ||
+                   TI->size < BT::kThinLeaveWrap);
+
+            if (IT.tags[rebuild_tree_idx[i]].first->size ==
+                0) {  // NOTE: empty tree
+                BT::template DeleteTreeRecursive<Leaf, Interior, false>(
+                    IT.tags[rebuild_tree_idx[i]].first);
+                tree_nodes[rebuild_tree_idx[i]] = NodeBox(
+                    AllocEmptyLeafNode<Slice, Leaf>(), BT::GetEmptyBox());
+            } else {
+                tree_nodes[rebuild_tree_idx[i]] =
+                    BT::template RebuildSingleTree<Leaf, Interior, false>(
+                        IT.tags[rebuild_tree_idx[i]].first, d,
+                        tree_nodes[rebuild_tree_idx[i]].second);
+            }
+        });
+        beatles = 0;
+        UpdateInnerTreePointer(1, IT.tags, tree_nodes, beatles);
+        return tree_nodes[1];
+    } else {
+        return DeleteInnerTree(1, IT.tags, tree_nodes, beatles, d);
+    }
 }
 
 }  // namespace cpdd

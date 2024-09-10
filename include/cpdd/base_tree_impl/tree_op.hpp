@@ -18,6 +18,8 @@ Node* BaseTree<Point, kBDO>::RebuildWithInsert(Node* T, Slice In,
                                  GetBox(parlay::make_slice(wx)), dim);
 }
 
+// TODO: if the bounding box has already been provided, we should not return one
+// with box
 template<typename Point, uint_fast8_t kBDO>
 template<typename Leaf, typename Interior, bool granularity>
 typename BaseTree<Point, kBDO>::NodeBox

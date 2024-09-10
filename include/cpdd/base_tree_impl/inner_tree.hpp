@@ -83,6 +83,9 @@ struct BaseTree<Point, kBDO>::InnerTree {
         return h;
     }
 
+    // NOTE: a bucket/leaf has id kBucketNum+1
+    // a node needs to be rebuilt has id kBucketNum+2
+    // otherwise, it has id kBucketNum
     void PickTag(BucketType idx) {
         if (idx > kPivotNum || tags[idx].first->is_leaf) {
             tags[idx].second = kBucketNum + 1;

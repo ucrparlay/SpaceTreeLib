@@ -21,20 +21,20 @@ void KdTree<Point, SplitRule, kBDO>::BatchInsert(Slice A) {
 
 // TODO: remove rev_tag
 template<typename Point, typename SplitRule, uint_fast8_t kBDO>
-Node* KdTree<Point, SplitRule, kBDO>::UpdateInnerTreeByTag(
+Node* KdTree<Point, SplitRule, kBDO>::UpdateInnerTreePointer(
     BucketType idx, const NodeTagSeq& tags, parlay::sequence<Node*>& tree_nodes,
-    BucketType& p, const Tag2Node& rev_tag) {
+    BucketType& p) {
     if (tags[idx].second == BT::kBucketNum + 1 ||
         tags[idx].second == BT::kBucketNum + 2) {
-        assert(rev_tag[p] == idx);
+        // assert(rev_tag[p] == idx);
         return tree_nodes[p++];
     }
 
-    assert(tags[idx].second == BT::kBucketNum);
+    // assert(tags[idx].second == BT::kBucketNum);
     assert(tags[idx].first != NULL);
     Node *L, *R;
-    L = UpdateInnerTreeByTag(idx << 1, tags, tree_nodes, p, rev_tag);
-    R = UpdateInnerTreeByTag(idx << 1 | 1, tags, tree_nodes, p, rev_tag);
+    L = UpdateInnerTreePointer(idx << 1, tags, tree_nodes, p);
+    R = UpdateInnerTreePointer(idx << 1 | 1, tags, tree_nodes, p);
     BT::template UpdateInterior<Interior>(tags[idx].first, L, R);
     return tags[idx].first;
 }
@@ -138,7 +138,7 @@ Node* KdTree<Point, SplitRule, kBDO>::BatchInsertRecursive(Node* T, Slice In,
         1);
 
     BucketType beatles = 0;
-    return UpdateInnerTreeByTag(1, IT.tags, tree_nodes, beatles, IT.rev_tag);
+    return UpdateInnerTreePointer(1, IT.tags, tree_nodes, beatles);
 }
 
 }  // namespace cpdd
