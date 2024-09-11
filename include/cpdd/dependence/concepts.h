@@ -1,3 +1,4 @@
+#include <concepts>
 #include <type_traits>
 #include <tuple>
 #include "tree_node.h"
@@ -5,11 +6,26 @@
 namespace cpdd {
 
 // NOTE: check whether the type is a pair
-template<typename>
-struct is_pair : std::false_type {};
+// template<typename>
+// struct is_pair : std::false_type {};
+// template<typename T, typename U>
+// struct is_pair<std::pair<T, U>> : std::true_type {};
+// template<typename T>
+// concept IsPair = is_pair<T>::value;
+template<typename T>
+concept IsPair = requires {
+    requires std::same_as<
+        T, std::pair<typename T::first_type, typename T::second_type>>;
+};
 
-template<typename T, typename U>
-struct is_pair<std::pair<T, U>> : std::true_type {};
+template<typename T, typename Point>
+concept IsBox = requires {
+    requires IsPair<T> && std::same_as<typename T::first_type, Point> &&
+                 std::same_as<typename T::second_type, Point>;
+};
+
+template<typename T>
+concept IsPointer = std::is_pointer_v<T>;
 
 template<typename T>
 concept IsBinaryNode = std::is_base_of_v<

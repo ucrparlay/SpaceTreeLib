@@ -188,6 +188,24 @@ struct BaseTree<Point, kBDO>::InnerTree {
         tags(NodeTagSeq::uninitialized(kPivotNum + kBucketNum + 1)),
         rev_tag(Tag2Node::uninitialized(kBucketNum)) {}
 
+    enum kUpdateTerm { kPointer, kBox, kPointerBox };
+
+    template<typename Node, kUpdateTerm kUT>
+        requires(kUT == kPointer && IsPointer<Node>) ||
+                (IsPair<Node> && IsBox<typename Node::second_type, Point> &&
+                 (kUT != kPointer || IsPointer<typename Node::first_type>))
+    Node UpdateInnerTree(BucketType idx, parlay::sequence<Node>& tree_nodes,
+                         BucketType& p) {
+        if (tags[idx].second == kBucketNum + 1 ||
+            tags[idx].second == kBucketNum + 2) {
+            return tree_nodes[p++];
+        }
+
+        // TODO:: perf
+        Node L = UpdateInnerTree(idx << 1, tree_nodes, p);
+        Node R = UpdateInnerTree(idx << 1 | 1, tree_nodes, p);
+    }
+
     void Reset() {
         ResetTagsNum();
         tags = NodeTagSeq::uninitialized(kPivotNum + kBucketNum + 1);
