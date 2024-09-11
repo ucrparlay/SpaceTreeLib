@@ -119,7 +119,7 @@ Node* OrthTree<Point, SplitRule, kMD, kBDO>::BatchInsertRecursive(Node* T,
     }
 
     // NOTE: assign each Node a tag
-    typename BT::template InnerTree<Leaf, Interior> IT;
+    InnerTree IT;
     // IT.Init();
     // assert(IT.rev_tag.size() == BT::kBucketNum);
     IT.AssignNodeTag(T, 1);

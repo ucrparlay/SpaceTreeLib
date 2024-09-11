@@ -95,8 +95,7 @@ Node* KdTree<Point, SplitRule, kBDO>::BatchInsertRecursive(Node* T, Slice In,
     }
 
     // NOTE: assign each Node a tag
-    typename BT::template InnerTree<Leaf, Interior> IT;
-    // IT.Init();
+    InnerTree IT;
     assert(IT.rev_tag.size() == BT::kBucketNum);
     IT.AssignNodeTag(T, 1);
     assert(IT.tags_num > 0 && IT.tags_num <= BT::kBucketNum);
@@ -137,8 +136,10 @@ Node* KdTree<Point, SplitRule, kBDO>::BatchInsertRecursive(Node* T, Slice In,
         },
         1);
 
-    BucketType beatles = 0;
-    return UpdateInnerTreePointer(1, IT.tags, tree_nodes, beatles);
+    return IT.UpdateInnerTree(
+        tree_nodes, [&](Node* L, Node* R, BucketType idx) {
+            BT::template UpdateInterior<Interior>(IT.tags[idx].first, L, R);
+        });
 }
 
 }  // namespace cpdd

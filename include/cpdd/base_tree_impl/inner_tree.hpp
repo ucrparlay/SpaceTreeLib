@@ -190,20 +190,45 @@ struct BaseTree<Point, kBDO>::InnerTree {
 
     enum kUpdateTerm { kPointer, kBox, kPointerBox };
 
-    template<typename Node, kUpdateTerm kUT>
-        requires(kUT == kPointer && IsPointer<Node>) ||
-                (IsPair<Node> && IsBox<typename Node::second_type, Point> &&
-                 (kUT != kPointer || IsPointer<typename Node::first_type>))
-    Node UpdateInnerTree(BucketType idx, parlay::sequence<Node>& tree_nodes,
-                         BucketType& p) {
-        if (tags[idx].second == kBucketNum + 1 ||
-            tags[idx].second == kBucketNum + 2) {
+    template<typename Base, typename Func, kUpdateTerm kUT>
+        requires(kUT == kPointer && IsPointer<Base>) ||
+                (IsPair<Base> && IsBox<typename Base::second_type, Point> &&
+                 IsPointer<typename Base::first_type>)
+    Base UpdateInnerTree(parlay::sequence<Base>&& tree_nodes,
+                         const Func&& func) {
+        BucketType p = 0;
+        return UpdateInnerTreeRecursive<kUT>(
+            1, std::forward<parlay::sequence<Base>>(tree_nodes), p,
+            std::forward<Func>(func));
+    }
+
+    template<typename Base, typename Func, kUpdateTerm kUT>
+    Base UpdateInnerTreeRecursive(BucketType idx,
+                                  parlay::sequence<Base>& tree_nodes,
+                                  BucketType& p, const Func& func) {
+        if (this->tags[idx].second == kBucketNum + 1 ||
+            this->tags[idx].second == kBucketNum + 2) {
+            assert(this->rev_tag[p] == idx);
             return tree_nodes[p++];
         }
 
         // TODO:: perf
-        Node L = UpdateInnerTree(idx << 1, tree_nodes, p);
-        Node R = UpdateInnerTree(idx << 1 | 1, tree_nodes, p);
+        Base left = UpdateInnerTreeRecursive<kUT>(idx << 1, tree_nodes, p);
+        Base right = UpdateInnerTreeRecursive<kUT>(idx << 1 | 1, tree_nodes, p);
+
+        // using ReturnType = std::invoke_result_t<Func, Args...>;
+        // std::is_void_v<ReturnType> == true
+        func(left, right, idx);
+
+        if constexpr (kUT == kPointer) {
+            return this->tags[idx].first;
+        } else if constexpr (kUT == kBox) {
+            return NodeBox(this->tags[idx].first,
+                           GetBox(left.second, right.second));
+        } else {
+            return NodeBox(this->tags[idx].first,
+                           GetBox(left.second, right.second));
+        }
     }
 
     void Reset() {

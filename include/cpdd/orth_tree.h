@@ -43,6 +43,7 @@ class OrthTree : private BaseTree<Point, kBDO> {
         LeafNode<Point, Slice, BT::kLeaveWrap, parlay::move_assign_tag>;
     using Interior = OrthInteriorNode;
     using Nodes = Interior::Nodes;
+    using InnerTree = typename BT::template InnerTree<Leaf, Interior>;
 
     // NOTE: expose basetree interface
     using BT::Expand2Binary;

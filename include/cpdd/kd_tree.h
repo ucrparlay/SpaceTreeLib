@@ -41,6 +41,7 @@ class KdTree : private BaseTree<Point, kBDO> {
     using Leaf =
         LeafNode<Point, Slice, BT::kLeaveWrap, parlay::move_assign_tag>;
     using Interior = KdInteriorNode;
+    using InnerTree = typename BT::template InnerTree<Leaf, Interior>;
 
     // NOTE: expose basetree interface
     using BT::GetAveTreeHeight;

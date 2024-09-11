@@ -177,27 +177,30 @@ KdTree<Point, SplitRule, kBDO>::BatchDeleteRecursive(
         return NodeBox(T, BT::GetBox(Lbox, Rbox));
     }
 
-    typename BT::template InnerTree<Leaf, Interior> IT;
+    InnerTree IT;
     IT.AssignNodeTag(T, 1);
     assert(IT.tags_num > 0 && IT.tags_num <= BT::kBucketNum);
     BT::template SeievePoints<Interior>(In, Out, n, IT.tags, IT.sums,
                                         IT.tags_num);
 
     auto tree_nodes = parlay::sequence<NodeBox>::uninitialized(IT.tags_num);
-    auto boxs = parlay::sequence<Box>::uninitialized(IT.tags_num);
+    auto box_seq = parlay::sequence<Box>::uninitialized(IT.tags_num);
 
-    IT.TagInbalanceNodeDeletion(boxs, bx, hasTomb);
+    IT.TagInbalanceNodeDeletion(box_seq, bx, hasTomb);
 
+    // TODO: can rewrite below using the std::algorithms
+    // BUG: needs to move it using binary heap traverse
     BucketType rebuild_num = 0;
     size_t total_rebuild_size = 0;
     auto rebuild_tree_idx =
-        parlay::sequence<BucketType>::uninitialized(BT::kBucketNum + 1);
-    for (BucketType i = 1; i < BT::kPivotNum + BT::kBucketNum; i++) {
+        parlay::sequence<BucketType>::uninitialized(IT.tags_num);
+    for (BucketType i = 1; i <= BT::kPivotNum + BT::kBucketNum; ++i) {
         if (IT.tags[i].second == BT::kBucketNum + 3) {
             rebuild_tree_idx[rebuild_num++] = i;
             total_rebuild_size += IT.tags[i].first->size;
         }
     }
+    assert(rebuild_num <= IT.tags_num);
 
     parlay::parallel_for(
         0, IT.tags_num,
@@ -217,7 +220,7 @@ KdTree<Point, SplitRule, kBDO>::BatchDeleteRecursive(
                 (d + IT.GetDepthByIndex(IT.rev_tag[i])) % BT::kDim;
 
             tree_nodes[i] = BatchDeleteRecursive(
-                IT.tags[IT.rev_tag[i]].first, boxs[i],
+                IT.tags[IT.rev_tag[i]].first, box_seq[i],
                 Out.cut(start, start + IT.sums[i]),
                 In.cut(start, start + IT.sums[i]), nextDim,
                 IT.tags[IT.rev_tag[i]].second == BT::kBucketNum + 1);
@@ -226,11 +229,16 @@ KdTree<Point, SplitRule, kBDO>::BatchDeleteRecursive(
 
     // TODO: we can use the total_rebuild_size/total_rebuild_num
     // > SERIAL_BUILD_CUTOFF to judge whether to rebuild the tree in parallel
-    BucketType beatles = 0;
     if (total_rebuild_size > BT::kSerialBuildCutoff) {
-        // TODO: we can add a function to compute the bounding box of the tree
-        // Or we can template the function for either pointer/pointer+box/box
-        UpdateInnerTreePointerBox(1, IT.tags, tree_nodes, beatles);
+        BucketType p = 0;
+        auto& [_, new_box] =
+            IT.template UpdateInnerTree<InnerTree::kPointerBox>(
+                tree_nodes, [&](NodeBox& left, NodeBox& right, BucketType idx) {
+                    if (IT.tags[idx].second == BT::kBucketNum + 3) {
+                        box_seq[p++] = BT::GetBox(left, right);
+                    }
+                });
+        assert(p == rebuild_num);
 
         parlay::parallel_for(0, rebuild_num, [&](size_t i) {
             assert(IT.tags[rebuild_tree_idx[i]].second == BT::kBucketNum + 3);
@@ -239,22 +247,25 @@ KdTree<Point, SplitRule, kBDO>::BatchDeleteRecursive(
             assert(BT::ImbalanceNode(TI->left->size, TI->size) ||
                    TI->size < BT::kThinLeaveWrap);
 
-            if (IT.tags[rebuild_tree_idx[i]].first->size ==
-                0) {  // NOTE: empty tree
+            if (IT.tags[rebuild_tree_idx[i]].first->size == 0) {  // NOTE: empty
                 BT::template DeleteTreeRecursive<Leaf, Interior, false>(
                     IT.tags[rebuild_tree_idx[i]].first);
                 tree_nodes[rebuild_tree_idx[i]] = NodeBox(
                     AllocEmptyLeafNode<Slice, Leaf>(), BT::GetEmptyBox());
-            } else {
+            } else {  // NOTE: rebuild
                 tree_nodes[rebuild_tree_idx[i]] =
                     BT::template RebuildSingleTree<Leaf, Interior, false>(
                         IT.tags[rebuild_tree_idx[i]].first, d,
                         tree_nodes[rebuild_tree_idx[i]].second);
             }
         });
-        beatles = 0;
-        UpdateInnerTreePointer(1, IT.tags, tree_nodes, beatles);
-        return tree_nodes[1];
+
+        Node* new_root = IT.UpdateInnerTree(
+            tree_nodes, [&](Node* L, Node* R, BucketType idx) {
+                BT::template UpdateInterior<Interior>(IT.tags[idx].first, L, R);
+            });
+
+        return NodeBox(new_root, new_box);
     } else {
         return DeleteInnerTree(1, IT.tags, tree_nodes, beatles, d);
     }
