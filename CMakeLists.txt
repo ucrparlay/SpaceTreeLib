@@ -11,6 +11,8 @@ project(
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON) # works
+# add_compile_options(-Wall -Wextra -Werror)
+add_compile_options(-Wall -Wextra)
 # set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c++20 ")
 # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++20 ")
 

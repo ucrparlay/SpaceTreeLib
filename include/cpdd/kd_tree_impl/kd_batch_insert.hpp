@@ -137,8 +137,9 @@ Node* KdTree<Point, SplitRule, kBDO>::BatchInsertRecursive(Node* T, Slice In,
         1);
 
     return IT.UpdateInnerTree(
-        tree_nodes, [&](Node* L, Node* R, BucketType idx) {
-            BT::template UpdateInterior<Interior>(IT.tags[idx].first, L, R);
+        tree_nodes, [&](Node* L, Node* R, NodeTag& root_tag, ...) -> Node* {
+            BT::template UpdateInterior<Interior>(root_tag.first, L, R);
+            return root_tag.first;
         });
 }
 

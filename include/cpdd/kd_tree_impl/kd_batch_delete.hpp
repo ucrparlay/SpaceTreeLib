@@ -190,17 +190,11 @@ KdTree<Point, SplitRule, kBDO>::BatchDeleteRecursive(
 
     // TODO: can rewrite below using the std::algorithms
     // BUG: needs to move it using binary heap traverse
-    BucketType rebuild_num = 0;
-    size_t total_rebuild_size = 0;
-    auto rebuild_tree_idx =
-        parlay::sequence<BucketType>::uninitialized(IT.tags_num);
-    for (BucketType i = 1; i <= BT::kPivotNum + BT::kBucketNum; ++i) {
-        if (IT.tags[i].second == BT::kBucketNum + 3) {
-            rebuild_tree_idx[rebuild_num++] = i;
-            total_rebuild_size += IT.tags[i].first->size;
-        }
-    }
-    assert(rebuild_num <= IT.tags_num);
+    BucketType re_num = 0;
+    size_t tot_re_size = 0;
+    auto re_idx = parlay::sequence<BucketType>::uninitialized(IT.tags_num);
+    IT.RetriveRebuildTreeIdx(1, re_idx, tot_re_size, re_num);
+    assert(re_num <= IT.tags_num);
 
     parlay::parallel_for(
         0, IT.tags_num,
@@ -227,47 +221,83 @@ KdTree<Point, SplitRule, kBDO>::BatchDeleteRecursive(
         },
         1);
 
-    // TODO: we can use the total_rebuild_size/total_rebuild_num
+    // NOTE: handling of rebuild
+    // TODO: we can use the tot_re_size/total_rebuild_num
     // > SERIAL_BUILD_CUTOFF to judge whether to rebuild the tree in parallel
-    if (total_rebuild_size > BT::kSerialBuildCutoff) {
+    if (tot_re_size > BT::kSerialBuildCutoff) {  // NOTE: parallel rebuild
         BucketType p = 0;
-        auto& [_, new_box] =
-            IT.template UpdateInnerTree<InnerTree::kPointerBox>(
-                tree_nodes, [&](NodeBox& left, NodeBox& right, BucketType idx) {
-                    if (IT.tags[idx].second == BT::kBucketNum + 3) {
-                        box_seq[p++] = BT::GetBox(left, right);
-                    }
-                });
-        assert(p == rebuild_num);
+        const auto& [_, new_box] = IT.UpdateInnerTree(
+            tree_nodes,
+            [&](const NodeBox& lnb, const NodeBox& rnb, NodeTag& root_tag,
+                ...) -> NodeBox {
+                auto new_box = BT::GetBox(lnb.second, rnb.second);
+                if (root_tag.second == BT::kBucketNum + 3) {
+                    box_seq[p++] = new_box;
+                }
+                return NodeBox(root_tag.first, new_box);
+            });
+        assert(p == re_num);
 
-        parlay::parallel_for(0, rebuild_num, [&](size_t i) {
-            assert(IT.tags[rebuild_tree_idx[i]].second == BT::kBucketNum + 3);
+        parlay::parallel_for(0, re_num, [&](size_t i) {
+            assert(IT.tags[re_idx[i]].second == BT::kBucketNum + 3);
             Interior const* TI =
-                static_cast<Interior*>(IT.tags[rebuild_tree_idx[i]].first);
+                static_cast<Interior*>(IT.tags[re_idx[i]].first);
             assert(BT::ImbalanceNode(TI->left->size, TI->size) ||
                    TI->size < BT::kThinLeaveWrap);
 
-            if (IT.tags[rebuild_tree_idx[i]].first->size == 0) {  // NOTE: empty
+            if (IT.tags[re_idx[i]].first->size == 0) {  // NOTE: empty
                 BT::template DeleteTreeRecursive<Leaf, Interior, false>(
-                    IT.tags[rebuild_tree_idx[i]].first);
-                tree_nodes[rebuild_tree_idx[i]] = NodeBox(
+                    IT.tags[re_idx[i]].first);
+                tree_nodes[re_idx[i]] = NodeBox(
                     AllocEmptyLeafNode<Slice, Leaf>(), BT::GetEmptyBox());
             } else {  // NOTE: rebuild
-                tree_nodes[rebuild_tree_idx[i]] =
+                tree_nodes[re_idx[i]] =
                     BT::template RebuildSingleTree<Leaf, Interior, false>(
-                        IT.tags[rebuild_tree_idx[i]].first, d,
-                        tree_nodes[rebuild_tree_idx[i]].second);
+                        IT.tags[re_idx[i]].first, d,
+                        tree_nodes[re_idx[i]].second);
             }
         });
 
-        Node* new_root = IT.UpdateInnerTree(
-            tree_nodes, [&](Node* L, Node* R, BucketType idx) {
-                BT::template UpdateInterior<Interior>(IT.tags[idx].first, L, R);
+        const auto& [new_root, _] = IT.UpdateInnerTree(
+            tree_nodes,
+            [&](NodeBox& lnb, NodeBox& rnb, NodeTag& root_tag, ...) {
+                BT::template UpdateInterior<Interior>(root_tag.first, lnb.first,
+                                                      rnb.first);
+                return NodeBox(root_tag.first, Box());
             });
 
         return NodeBox(new_root, new_box);
-    } else {
-        return DeleteInnerTree(1, IT.tags, tree_nodes, beatles, d);
+    } else {  // NOTE: update tree in serial
+        return IT.UpdateInnerTree(
+            tree_nodes,
+            [&](const NodeBox& lnb, const NodeBox& rnb, NodeTag& root_tag,
+                BucketType idx) -> NodeBox {
+                BT::template UpdateInterior<Interior>(root_tag.first, lnb.first,
+                                                      rnb.first);
+
+                if (root_tag.second == BT::kBucketNum + 3) {  // NOTE: rebuild
+                    Interior const* TI = static_cast<Interior*>(root_tag.first);
+                    assert(BT::ImbalanceNode(TI->left->size, TI->size) ||
+                           TI->size < BT::kThinLeaveWrap);
+
+                    if (root_tag.first->size == 0) {  // NOTE: empty tree
+                        BT::template DeleteTreeRecursive<Leaf, Interior, false>(
+                            root_tag.first);
+                        return NodeBox(AllocEmptyLeafNode<Slice, Leaf>(),
+                                       BT::GetEmptyBox());
+                    }
+
+                    DimsType nextDim =
+                        (d + InnerTree::GetDepthByIndex(idx)) % BT::kDim;
+                    return BT::template RebuildSingleTree<Leaf, Interior,
+                                                          false>(
+                        root_tag.first, nextDim,
+                        BT::GetBox(lnb.second, rnb.second));
+                }
+
+                return NodeBox(root_tag.first,
+                               BT::GetBox(lnb.second, rnb.second));
+            });
     }
 }
 

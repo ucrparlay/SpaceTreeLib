@@ -74,7 +74,7 @@ struct BaseTree<Point, kBDO>::InnerTree {
         return;
     }
 
-    DimsType GetDepthByIndex(BucketType tag) {
+    static inline DimsType GetDepthByIndex(BucketType tag) {
         DimsType h = 0;
         while (tag > 1) {
             tag >>= 1;
@@ -114,11 +114,26 @@ struct BaseTree<Point, kBDO>::InnerTree {
         return;
     }
 
+    void RetriveRebuildTreeIdx(BucketType idx,
+                               parlay::sequence<BucketType>& re_idx,
+                               size_t& tot_re_sz, BucketType& p) {
+        if (tags[idx].second == kBucketNum + 3) {
+            tot_re_sz += tags[idx].first->size;
+            re_idx[p++] = idx;
+        }
+        if (idx > kPivotNum || tags[idx].first->is_leaf) {
+            return;
+        }
+        RetriveRebuildTreeIdx(idx << 1, re_idx, tot_re_sz, p);
+        RetriveRebuildTreeIdx(idx << 1 | 1, re_idx, tot_re_sz, p);
+        return;
+    }
+
     // NOTE: the Node which needs to be rebuilt has tag kBucketNum+3
     // the bucket Node whose ancestor has been rebuilt has tag kBucketNum+2
     // the bucket Node whose ancestor has not been ... has kBucketNum+1
     // otherwise, it's kBucketNum
-    void MarkTomb(BucketType idx, BoxSeq& boxs, Box bx, bool hasTomb) {
+    void MarkTomb(BucketType idx, BoxSeq& box_seq, Box bx, bool hasTomb) {
         if (idx > kPivotNum || tags[idx].first->is_leaf) {
             assert(tags[idx].second >= 0 && tags[idx].second < kBucketNum);
             if (!hasTomb) {  // NOTE: this subtree needs to be rebuilt in the
@@ -136,7 +151,7 @@ struct BaseTree<Point, kBDO>::InnerTree {
             } else {
                 tags[idx].second = kBucketNum + 1;
             }
-            boxs[tags_num] = bx;
+            box_seq[tags_num] = bx;
             rev_tag[tags_num++] = idx;
             return;
         }
@@ -160,15 +175,15 @@ struct BaseTree<Point, kBDO>::InnerTree {
         lbox.second.pnt[TI->split.second] = TI->split.first;  //* loose
         rbox.first.pnt[TI->split.second] = TI->split.first;
 
-        MarkTomb(idx << 1, boxs, lbox, hasTomb);
-        MarkTomb(idx << 1 | 1, boxs, rbox, hasTomb);
+        MarkTomb(idx << 1, box_seq, lbox, hasTomb);
+        MarkTomb(idx << 1 | 1, box_seq, rbox, hasTomb);
         return;
     }
 
-    void TagInbalanceNodeDeletion(BoxSeq& boxs, Box bx, bool hasTomb) {
+    void TagInbalanceNodeDeletion(BoxSeq& box_seq, Box bx, bool hasTomb) {
         ReduceSums(1);
         ResetTagsNum();
-        MarkTomb(1, boxs, bx, hasTomb);
+        MarkTomb(1, box_seq, bx, hasTomb);
         assert(AssertSize(tags[1].first));
         return;
     }
@@ -188,24 +203,19 @@ struct BaseTree<Point, kBDO>::InnerTree {
         tags(NodeTagSeq::uninitialized(kPivotNum + kBucketNum + 1)),
         rev_tag(Tag2Node::uninitialized(kBucketNum)) {}
 
-    enum kUpdateTerm { kPointer, kBox, kPointerBox };
+    // enum UpdateType { kPointer, kPointerBox };
 
-    template<typename Base, typename Func, kUpdateTerm kUT>
-        requires(kUT == kPointer && IsPointer<Base>) ||
-                (IsPair<Base> && IsBox<typename Base::second_type, Point> &&
-                 IsPointer<typename Base::first_type>)
-    Base UpdateInnerTree(parlay::sequence<Base>&& tree_nodes,
-                         const Func&& func) {
+    template<typename Base, typename Func>
+    Base UpdateInnerTree(parlay::sequence<Base>& tree_nodes, Func&& func) {
         BucketType p = 0;
-        return UpdateInnerTreeRecursive<kUT>(
-            1, std::forward<parlay::sequence<Base>>(tree_nodes), p,
-            std::forward<Func>(func));
+        return UpdateInnerTreeRecursive(1, tree_nodes, p,
+                                        std::forward<Func>(func));
     }
 
-    template<typename Base, typename Func, kUpdateTerm kUT>
+    template<typename Base, typename Func>
     Base UpdateInnerTreeRecursive(BucketType idx,
                                   parlay::sequence<Base>& tree_nodes,
-                                  BucketType& p, const Func& func) {
+                                  BucketType& p, Func&& func) {
         if (this->tags[idx].second == kBucketNum + 1 ||
             this->tags[idx].second == kBucketNum + 2) {
             assert(this->rev_tag[p] == idx);
@@ -213,22 +223,14 @@ struct BaseTree<Point, kBDO>::InnerTree {
         }
 
         // TODO:: perf
-        Base left = UpdateInnerTreeRecursive<kUT>(idx << 1, tree_nodes, p);
-        Base right = UpdateInnerTreeRecursive<kUT>(idx << 1 | 1, tree_nodes, p);
+        Base left = UpdateInnerTreeRecursive(idx << 1, tree_nodes, p, func);
+        Base right =
+            UpdateInnerTreeRecursive(idx << 1 | 1, tree_nodes, p, func);
 
-        // using ReturnType = std::invoke_result_t<Func, Args...>;
-        // std::is_void_v<ReturnType> == true
-        func(left, right, idx);
-
-        if constexpr (kUT == kPointer) {
-            return this->tags[idx].first;
-        } else if constexpr (kUT == kBox) {
-            return NodeBox(this->tags[idx].first,
-                           GetBox(left.second, right.second));
-        } else {
-            return NodeBox(this->tags[idx].first,
-                           GetBox(left.second, right.second));
-        }
+        static_assert(
+            std::is_same_v<Base,
+                           decltype(func(left, right, this->tags[idx], idx))>);
+        return func(left, right, this->tags[idx], idx);
     }
 
     void Reset() {
