@@ -38,7 +38,7 @@ template<typename Point, typename SplitRule, uint_fast8_t kBDO>
 typename KdTree<Point, SplitRule, kBDO>::NodeBox
 KdTree<Point, SplitRule, kBDO>::UpdateInnerTreePointerBox(
     BucketType idx, const NodeTagSeq& tags,
-    parlay::sequence<NodeBox>& tree_nodes, BucketType& p) {
+    NodeBoxSeq& tree_nodes, BucketType& p) {
     if (tags[idx].second == BT::kBucketNum + 1 ||
         tags[idx].second == BT::kBucketNum + 2) {
         return tree_nodes[p++];
@@ -162,7 +162,7 @@ KdTree<Point, SplitRule, kBDO>::BatchDiffRecursive(
     BT::template SeievePoints<Interior>(In, Out, n, IT.tags, IT.sums,
                                         IT.tags_num);
 
-    auto tree_nodes = parlay::sequence<NodeBox>::uninitialized(IT.tags_num);
+    auto tree_nodes = NodeBoxSeq::uninitialized(IT.tags_num);
     auto boxs = parlay::sequence<Box>::uninitialized(IT.tags_num);
 
     // NOTE: never set tomb, this equivalent to only calcualte the bounding box,

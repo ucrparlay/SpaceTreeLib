@@ -6,6 +6,21 @@ namespace cpdd {
 template<typename Point, uint_fast8_t kBDO>
 template<typename Leaf, typename Interior>
 struct BaseTree<Point, kBDO>::InnerTree {
+    InnerTree()
+        requires IsBinaryNode<Interior>
+        :
+        tags_num(0),
+        tags(NodeTagSeq::uninitialized(kPivotNum + kBucketNum + 1)),
+        sums_tree(parlay::sequence<BallsType>(kPivotNum + kBucketNum + 1)),
+        rev_tag(Tag2Node::uninitialized(kBucketNum)) {}
+
+    InnerTree()
+        requires IsMultiNode<Interior>
+        :
+        tags_num(0),
+        tags(NodeTagSeq::uninitialized(kPivotNum + kBucketNum + 1)),
+        rev_tag(Tag2Node::uninitialized(kBucketNum)) {}
+
     // NOTE: helpers
     bool AssertSize(Node* T) const {
         if (T->is_leaf) {
@@ -114,24 +129,23 @@ struct BaseTree<Point, kBDO>::InnerTree {
         return;
     }
 
-    void RetriveRebuildTreeIdx(BucketType idx,
-                               parlay::sequence<BucketType>& re_idx,
-                               size_t& tot_re_sz, BucketType& p) {
-        if (tags[idx].second == kBucketNum + 3) {
-            tot_re_sz += tags[idx].first->size;
-            re_idx[p++] = idx;
-        }
-        if (idx > kPivotNum || tags[idx].first->is_leaf) {
+    inline void RetagInbalanceNode(BucketType idx,
+                                   parlay::sequence<BucketType>& re_idx,
+                                   BucketType& id, NodeBoxSeq& tree_nodes,
+                                   const BoxSeq& box_seq) const {
+        if (tags[idx].second != kBucketNum) {
+            tree_nodes[id] = NodeBox(tags[idx].first, box_seq[id]);
+            re_idx[id++] = idx;
             return;
         }
-        RetriveRebuildTreeIdx(idx << 1, re_idx, tot_re_sz, p);
-        RetriveRebuildTreeIdx(idx << 1 | 1, re_idx, tot_re_sz, p);
+        RetagInbalanceNode(idx << 1, re_idx, id);
+        RetagInbalanceNode(idx << 1 | 1, re_idx, id);
         return;
     }
 
     // NOTE: the Node which needs to be rebuilt has tag kBucketNum+3
-    // the bucket Node whose ancestor has been rebuilt has tag kBucketNum+2
-    // the bucket Node whose ancestor has not been ... has kBucketNum+1
+    // the *bucket* Node whose ancestor has been rebuilt has tag kBucketNum+2
+    // the *bucket* Node whose ancestor has not been ... has kBucketNum+1
     // otherwise, it's kBucketNum
     void MarkTomb(BucketType idx, BoxSeq& box_seq, Box bx, bool hasTomb) {
         if (idx > kPivotNum || tags[idx].first->is_leaf) {
@@ -156,6 +170,7 @@ struct BaseTree<Point, kBDO>::InnerTree {
             return;
         }
 
+        // NOTE: no need to mark the internal nodes with tag kBucketNum
         assert(tags[idx].second == kBucketNum && (!tags[idx].first->is_leaf));
         Interior* TI = static_cast<Interior*>(tags[idx].first);
         if (hasTomb && (ImbalanceNode(TI->left->size - sums_tree[idx << 1],
@@ -188,25 +203,10 @@ struct BaseTree<Point, kBDO>::InnerTree {
         return;
     }
 
-    InnerTree()
-        requires IsBinaryNode<Interior>
-        :
-        tags_num(0),
-        tags(NodeTagSeq::uninitialized(kPivotNum + kBucketNum + 1)),
-        sums_tree(parlay::sequence<BallsType>(kPivotNum + kBucketNum + 1)),
-        rev_tag(Tag2Node::uninitialized(kBucketNum)) {}
-
-    InnerTree()
-        requires IsMultiNode<Interior>
-        :
-        tags_num(0),
-        tags(NodeTagSeq::uninitialized(kPivotNum + kBucketNum + 1)),
-        rev_tag(Tag2Node::uninitialized(kBucketNum)) {}
-
-    // enum UpdateType { kPointer, kPointerBox };
-
+    // TODO: extract Basefrom tree_nodes
     template<typename Base, typename Func>
-    Base UpdateInnerTree(parlay::sequence<Base>& tree_nodes, Func&& func) {
+    Base UpdateInnerTree(const parlay::sequence<Base>& tree_nodes,
+                         Func&& func) {
         BucketType p = 0;
         return UpdateInnerTreeRecursive(1, tree_nodes, p,
                                         std::forward<Func>(func));
@@ -214,7 +214,7 @@ struct BaseTree<Point, kBDO>::InnerTree {
 
     template<typename Base, typename Func>
     Base UpdateInnerTreeRecursive(BucketType idx,
-                                  parlay::sequence<Base>& tree_nodes,
+                                  const parlay::sequence<Base>& tree_nodes,
                                   BucketType& p, Func&& func) {
         if (this->tags[idx].second == kBucketNum + 1 ||
             this->tags[idx].second == kBucketNum + 2) {
@@ -222,9 +222,9 @@ struct BaseTree<Point, kBDO>::InnerTree {
             return tree_nodes[p++];
         }
 
-        // TODO:: perf
-        Base left = UpdateInnerTreeRecursive(idx << 1, tree_nodes, p, func);
-        Base right =
+        const Base& left =
+            UpdateInnerTreeRecursive(idx << 1, tree_nodes, p, func);
+        const Base& right =
             UpdateInnerTreeRecursive(idx << 1 | 1, tree_nodes, p, func);
 
         static_assert(

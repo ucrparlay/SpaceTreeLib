@@ -41,9 +41,10 @@ void KdTree<Point, SplitRule, kBDO>::BatchDelete_(Slice A) {
 // NOTE: otherwise, it's BT::kBucketNum
 template<typename Point, typename SplitRule, uint_fast8_t kBDO>
 typename KdTree<Point, SplitRule, kBDO>::NodeBox
-KdTree<Point, SplitRule, kBDO>::DeleteInnerTree(
-    BucketType idx, const NodeTagSeq& tags,
-    parlay::sequence<NodeBox>& tree_nodes, BucketType& p, DimsType d) {
+KdTree<Point, SplitRule, kBDO>::DeleteInnerTree(BucketType idx,
+                                                const NodeTagSeq& tags,
+                                                NodeBoxSeq& tree_nodes,
+                                                BucketType& p, DimsType d) {
     if (tags[idx].second == BT::kBucketNum + 1 ||
         tags[idx].second == BT::kBucketNum + 2) {
         return tree_nodes[p++];
@@ -183,17 +184,15 @@ KdTree<Point, SplitRule, kBDO>::BatchDeleteRecursive(
     BT::template SeievePoints<Interior>(In, Out, n, IT.tags, IT.sums,
                                         IT.tags_num);
 
-    auto tree_nodes = parlay::sequence<NodeBox>::uninitialized(IT.tags_num);
+    auto tree_nodes = NodeBoxSeq::uninitialized(IT.tags_num);
     auto box_seq = parlay::sequence<Box>::uninitialized(IT.tags_num);
 
     IT.TagInbalanceNodeDeletion(box_seq, bx, hasTomb);
 
-    // TODO: can rewrite below using the std::algorithms
-    // BUG: needs to move it using binary heap traverse
     BucketType re_num = 0;
     size_t tot_re_size = 0;
-    auto re_idx = parlay::sequence<BucketType>::uninitialized(IT.tags_num);
-    IT.RetriveRebuildTreeIdx(1, re_idx, tot_re_size, re_num);
+    // TODO: no need to compute, compute uing std::accumulate
+    // IT.RetriveRebuildTreeIdx(1, re_idx, tot_re_size, re_num);
     assert(re_num <= IT.tags_num);
 
     parlay::parallel_for(
@@ -222,50 +221,73 @@ KdTree<Point, SplitRule, kBDO>::BatchDeleteRecursive(
         1);
 
     // NOTE: handling of rebuild
-    // TODO: we can use the tot_re_size/total_rebuild_num
+    // TODO: maybe we can use the tot_re_size/total_rebuild_num
     // > SERIAL_BUILD_CUTOFF to judge whether to rebuild the tree in parallel
+    // WARN: the rebuild node is on top
     if (tot_re_size > BT::kSerialBuildCutoff) {  // NOTE: parallel rebuild
-        BucketType p = 0;
-        const auto& [_, new_box] = IT.UpdateInnerTree(
+        // NOTE: 1. update the pointers forward until meets a rebuild
+        // 2. retag the node and launch the rebuild
+        BucketType id = 0;
+        const auto new_box = std::get<1>(IT.UpdateInnerTree(
             tree_nodes,
             [&](const NodeBox& lnb, const NodeBox& rnb, NodeTag& root_tag,
                 ...) -> NodeBox {
+                BT::template UpdateInterior<Interior>(root_tag.first, lnb.first,
+                                                      rnb.first);
                 auto new_box = BT::GetBox(lnb.second, rnb.second);
                 if (root_tag.second == BT::kBucketNum + 3) {
-                    box_seq[p++] = new_box;
+                    box_seq[id++] = new_box;
                 }
+                assert(root_tag.second == BT::kBucketNum);
                 return NodeBox(root_tag.first, new_box);
-            });
-        assert(p == re_num);
+            }));
+
+        id = 0;
+        auto re_idx = parlay::sequence<BucketType>::uninitialized(IT.tags_num);
+        // TODO: reorder tree nodes to the layout in the final position
+        IT.RetagInbalanceNode(1, re_idx, id, tree_nodes);
+        assert(id >= re_num);
 
         parlay::parallel_for(0, re_num, [&](size_t i) {
-            assert(IT.tags[re_idx[i]].second == BT::kBucketNum + 3);
-            Interior const* TI =
-                static_cast<Interior*>(IT.tags[re_idx[i]].first);
-            assert(BT::ImbalanceNode(TI->left->size, TI->size) ||
-                   TI->size < BT::kThinLeaveWrap);
+            BucketType count = 0;
+            auto j = std::ranges::find_if(
+                         re_idx, re_idx.begin() + id,
+                         [&count, &tag = IT.tags, &i](BucketType idx) {
+                             return tag[idx].second == BT::kBucketNum &&
+                                    count++ == i;
+                         }) -
+                     re_idx.begin();
 
-            if (IT.tags[re_idx[i]].first->size == 0) {  // NOTE: empty
+            assert(IT.tags[re_idx[i]].second == BT::kBucketNum + 3);
+            assert(std::ranges::count(
+                       re_idx.begin(), re_idx.begin() + j, [&](auto idx) {
+                           return IT.tags[idx] == BT::kBucketNum + 3;
+                       }) == i);
+            // Interior const* TI =
+            //     static_cast<Interior*>(IT.tags[re_idx[i]].first);
+            // assert(BT::ImbalanceNode(TI->left->size, TI->size) ||
+            //        TI->size < BT::kThinLeaveWrap);
+
+            if (IT.tags[re_idx[j]].first->size == 0) {  // NOTE: empty
                 BT::template DeleteTreeRecursive<Leaf, Interior, false>(
-                    IT.tags[re_idx[i]].first);
-                tree_nodes[re_idx[i]] = NodeBox(
-                    AllocEmptyLeafNode<Slice, Leaf>(), BT::GetEmptyBox());
+                    IT.tags[re_idx[j]].first);
+                IT.tags[re_idx[j]] = NodeBox(AllocEmptyLeafNode<Slice, Leaf>(),
+                                             BT::GetEmptyBox());
             } else {  // NOTE: rebuild
-                tree_nodes[re_idx[i]] =
+                IT.tags[re_idx[j]] =
                     BT::template RebuildSingleTree<Leaf, Interior, false>(
                         IT.tags[re_idx[i]].first, d,
                         tree_nodes[re_idx[i]].second);
             }
         });
 
-        const auto& [new_root, _] = IT.UpdateInnerTree(
+        const auto new_root = std::get<0>(IT.UpdateInnerTree(
             tree_nodes,
             [&](NodeBox& lnb, NodeBox& rnb, NodeTag& root_tag, ...) {
                 BT::template UpdateInterior<Interior>(root_tag.first, lnb.first,
                                                       rnb.first);
                 return NodeBox(root_tag.first, Box());
-            });
-
+            }));
         return NodeBox(new_root, new_box);
     } else {  // NOTE: update tree in serial
         return IT.UpdateInnerTree(

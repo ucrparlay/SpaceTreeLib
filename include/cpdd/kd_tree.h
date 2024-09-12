@@ -15,6 +15,8 @@ class KdTree : private BaseTree<Point, kBDO> {
     using BucketType = BT::BucketType;
     using BallsType = BT::BallsType;
     using DimsType = BT::DimsType;
+    using BucketSeq = BT::BucketSeq;
+    using BallSeq = BT::BallSeq;
     using Coord = typename Point::Coord;
     using Coords = typename Point::Coords;
     using Num = Num_Comparator<Coord>;
@@ -31,6 +33,7 @@ class KdTree : private BaseTree<Point, kBDO> {
     using NodeTagSeq = BT::NodeTagSeq;
     using Tag2Node = BT::Tag2Node;
     using NodeBox = BT::NodeBox;
+    using NodeBoxSeq = BT::NodeBoxSeq;
     using Splitter = HyperPlane;
     using SplitterSeq = HyperPlaneSeq;
 
@@ -61,9 +64,10 @@ class KdTree : private BaseTree<Point, kBDO> {
     void DeleteTree() override;
 
     // TODO: move it to inner tree
-    static NodeBox UpdateInnerTreePointerBox(
-        BucketType idx, const NodeTagSeq& tags,
-        parlay::sequence<NodeBox>& tree_nodes, BucketType& p);
+    static NodeBox UpdateInnerTreePointerBox(BucketType idx,
+                                             const NodeTagSeq& tags,
+                                             NodeBoxSeq& tree_nodes,
+                                             BucketType& p);
 
     // TODO: move it to inner tree
     static Node* UpdateInnerTreePointer(BucketType idx, const NodeTagSeq& tags,
@@ -106,8 +110,8 @@ class KdTree : private BaseTree<Point, kBDO> {
                                DimsType d);
 
     NodeBox DeleteInnerTree(BucketType idx, const NodeTagSeq& tags,
-                            parlay::sequence<NodeBox>& tree_nodes,
-                            BucketType& p, const DimsType d);
+                            NodeBoxSeq& tree_nodes, BucketType& p,
+                            const DimsType d);
 
     template<typename Range>
     void Flatten(Range&& Out);

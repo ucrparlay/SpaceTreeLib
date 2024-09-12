@@ -19,6 +19,8 @@ class BaseTree {
     using BucketType = uint_fast8_t;
     using BallsType = uint_fast32_t;
     using DimsType = uint_fast8_t;
+    using BucketSeq = parlay::sequence<BucketType>;
+    using BallSeq = parlay::sequence<BallsType>;
 
     using Coord = typename Point::Coord;
     using Coords = typename Point::Coords;
@@ -33,6 +35,7 @@ class BaseTree {
     using Circle = std::pair<Point, Coord>;
 
     using NodeBox = std::pair<Node*, Box>;
+    using NodeBoxSeq = parlay::sequence<NodeBox>;
     using NodeTag = std::pair<Node*, uint_fast8_t>;
     using NodeTagSeq = parlay::sequence<NodeTag>;
     using Tag2Node = parlay::sequence<BallsType>;
