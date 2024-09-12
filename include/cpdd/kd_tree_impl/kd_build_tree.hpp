@@ -149,7 +149,7 @@ Node* KdTree<Point, SplitRule, kBDO>::BuildRecursive(Slice In, Slice Out,
     // serail approach
     auto tree_nodes = parlay::sequence<Node*>::uninitialized(BT::kBucketNum);
     auto nodes_map =
-        parlay::sequence<BucketType>::uninitialized(BT::kBucketNum);
+        BucketSeq::uninitialized(BT::kBucketNum);
     BucketType zeros = std::ranges::count(sums, 0), cnt = 0;
 
     if (zeros == BT::kBucketNum - 1) {  // NOTE: switch to seral

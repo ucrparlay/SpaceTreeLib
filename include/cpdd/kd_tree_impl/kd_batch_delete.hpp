@@ -243,7 +243,7 @@ KdTree<Point, SplitRule, kBDO>::BatchDeleteRecursive(
             }));
 
         id = 0;
-        auto re_idx = parlay::sequence<BucketType>::uninitialized(IT.tags_num);
+        auto re_idx = BucketSeq::uninitialized(IT.tags_num);
         // TODO: reorder tree nodes to the layout in the final position
         IT.RetagInbalanceNode(1, re_idx, id, tree_nodes);
         assert(id >= re_num);

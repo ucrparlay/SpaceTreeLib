@@ -17,6 +17,8 @@ class OrthTree : private BaseTree<Point, kBDO> {
 
     using BucketType = BT::BucketType;
     using BallsType = BT::BallsType;
+    using BucketSeq = BT::BucketSeq;
+    using BallSeq = BT::BallSeq;
     using DimsType = BT::DimsType;
     using Coord = typename Point::Coord;
     using Coords = typename Point::Coords;
@@ -33,6 +35,9 @@ class OrthTree : private BaseTree<Point, kBDO> {
     using Splitter = std::array<HyperPlane, kSplitterNum>;
     using SplitterSeq = parlay::sequence<Splitter>;
     using NodeTagSeq = BT::NodeTagSeq;
+    using NodeBoxSeq = BT::NodeBoxSeq;
+    using NodeBox = BT::NodeBox;
+    using Tag2Node = BT::Tag2Node;
     using AugType = bool;
 
     struct KdInteriorNode;

@@ -129,8 +129,7 @@ struct BaseTree<Point, kBDO>::InnerTree {
         return;
     }
 
-    inline void RetagInbalanceNode(BucketType idx,
-                                   parlay::sequence<BucketType>& re_idx,
+    inline void RetagInbalanceNode(BucketType idx, BucketSeq& re_idx,
                                    BucketType& id, NodeBoxSeq& tree_nodes,
                                    const BoxSeq& box_seq) const {
         if (tags[idx].second != kBucketNum) {

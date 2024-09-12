@@ -38,7 +38,7 @@ class BaseTree {
     using NodeBoxSeq = parlay::sequence<NodeBox>;
     using NodeTag = std::pair<Node*, uint_fast8_t>;
     using NodeTagSeq = parlay::sequence<NodeTag>;
-    using Tag2Node = parlay::sequence<BallsType>;
+    using Tag2Node = parlay::sequence<BallsType>;  // TODO:check inside type
 
     // NOTE: Const variables
     // NOTE: uint32t handle up to 4e9 at least

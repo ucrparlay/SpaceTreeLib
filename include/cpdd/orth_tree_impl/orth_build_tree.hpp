@@ -192,7 +192,7 @@ Node* OrthTree<Point, SplitRule, kMD, kBDO>::BuildRecursive(Slice In, Slice Out,
     // serail approach
     auto tree_nodes = parlay::sequence<Node*>::uninitialized(BT::kBucketNum);
     auto nodes_map =
-        parlay::sequence<BucketType>::uninitialized(BT::kBucketNum);
+        BucketSeq::uninitialized(BT::kBucketNum);
     BucketType zeros = 0, cnt = 0;
     for (BucketType i = 0; i < BT::kBucketNum; ++i) {
         if (!sums[i]) {
