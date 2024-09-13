@@ -156,7 +156,7 @@ KdTree<Point, SplitRule, kBDO>::BatchDiffRecursive(
         return NodeBox(T, BT::GetBox(Lbox, Rbox));
     }
 
-    InnerTree IT;
+    InnerTree IT(*this);
     IT.AssignNodeTag(T, 1);
     assert(IT.tags_num > 0 && IT.tags_num <= BT::kBucketNum);
     BT::template SeievePoints<Interior>(In, Out, n, IT.tags, IT.sums,
