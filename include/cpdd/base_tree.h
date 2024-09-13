@@ -127,7 +127,7 @@ class BaseTree {
     Node* RebuildWithInsert(Node* T, Slice In, DimsType dim);
 
     template<typename Leaf, typename Interior, bool granularity = true>
-    NodeBox RebuildSingleTree(Node* T, DimsType dim, const Box& box) const;
+    NodeBox RebuildSingleTree(Node* T, DimsType dim, const Box& box);
 
     virtual Node* BuildRecursiveWrapper(Slice In, Slice Out, const Box& bx,
                                         DimsType dim) = 0;

@@ -5,7 +5,8 @@
 #include "cpdd/dependence/tree_node.h"
 
 namespace cpdd {
-template<typename Point, typename SplitRule, uint_fast8_t kMD, uint_fast8_t kBDO>
+template<typename Point, typename SplitRule, uint_fast8_t kMD,
+         uint_fast8_t kBDO>
 struct OrthTree<Point, SplitRule, kMD, kBDO>::OrthInteriorNode :
     MultiNode<Point, kMD, Splitter, AugType> {
     using MNode = MultiNode<Point, kMD, Splitter, AugType>;
@@ -25,7 +26,8 @@ struct OrthTree<Point, SplitRule, kMD, kBDO>::OrthInteriorNode :
     inline bool ForceParallel() const { return this->aug; }
 };
 
-template<typename Point, typename SplitRule, uint_fast8_t kMD, uint_fast8_t kBDO>
+template<typename Point, typename SplitRule, uint_fast8_t kMD,
+         uint_fast8_t kBDO>
 struct OrthTree<Point, SplitRule, kMD, kBDO>::KdInteriorNode :
     BinaryNode<Point, HyperPlane, AugType> {
     using PT = Point;
@@ -36,6 +38,12 @@ struct OrthTree<Point, SplitRule, kMD, kBDO>::KdInteriorNode :
                    const AT& _aug) :
         BinaryNode<Point, HyperPlane, AugType>(_left, _right, _split, _aug) {}
 
-    inline bool ForceParallel() const { return this->aug; }
+    inline void SetParallelFlag(bool flag) { this->aug = AT(flag); }
+
+    inline void ResetParallelFlag() { this->aug = false; }
+
+    inline bool ForceParallel() const {
+        return this->aug ? *(this->aug) : this->size > BT::kSerialBuildCutoff;
+    }
 };
 }  // namespace cpdd

@@ -17,6 +17,8 @@ struct KdTree<Point, SplitRule, kBDO>::KdInteriorNode :
 
     inline void SetParallelFlag(bool flag) { this->aug = AT(flag); }
 
+    inline void ResetParallelFlag() { this->aug = false; }
+
     inline bool ForceParallel() const {
         return this->aug ? *(this->aug) : this->size > BT::kSerialBuildCutoff;
     }

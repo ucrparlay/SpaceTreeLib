@@ -214,6 +214,7 @@ template<IsBinaryNode Interior>
 inline void BaseTree<Point, kBDO>::UpdateInterior(Node* T, Node* L, Node* R) {
     assert(!T->is_leaf);
     Interior* TI = static_cast<Interior*>(T);
+    TI->ResetParallelFlag();
     TI->size = L->size + R->size;
     TI->left = L;
     TI->right = R;
@@ -226,6 +227,7 @@ inline void BaseTree<Point, kBDO>::UpdateInterior(
     Node* T, typename Interior::Nodes& new_nodes) {
     assert(!T->is_leaf);
     Interior* TI = static_cast<Interior*>(T);
+    TI->ResetParallelFlag();
     TI->size = std::accumulate(
         new_nodes.begin(), new_nodes.end(), 0,
         [](size_t acc, Node* n) -> size_t { return acc + n->size; });
