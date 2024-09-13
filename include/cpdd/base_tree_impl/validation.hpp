@@ -5,9 +5,9 @@
 
 namespace cpdd {
 
-template<typename Point, uint_fast8_t kBDO>
+template<typename Point, typename DerivedTree, uint_fast8_t kBDO>
 template<typename Leaf, typename Interior>
-bool BaseTree<Point, kBDO>::CheckBox(Node* T, const Box& bx) {
+bool BaseTree<Point, DerivedTree, kBDO>::CheckBox(Node* T, const Box& bx) {
     assert(T != nullptr);
     assert(LegalBox(bx));
     Points wx = Points::uninitialized(T->size);
@@ -18,9 +18,9 @@ bool BaseTree<Point, kBDO>::CheckBox(Node* T, const Box& bx) {
     return WithinBox(b, bx);
 }
 
-template<typename Point, uint_fast8_t kBDO>
+template<typename Point, typename DerivedTree, uint_fast8_t kBDO>
 template<typename Leaf, typename Interior>
-size_t BaseTree<Point, kBDO>::CheckSize(Node* T) {
+size_t BaseTree<Point, DerivedTree, kBDO>::CheckSize(Node* T) {
     if (T->is_leaf) {
         return T->size;
     }
@@ -42,9 +42,9 @@ size_t BaseTree<Point, kBDO>::CheckSize(Node* T) {
     }
 }
 
-template<typename Point, uint_fast8_t kBDO>
+template<typename Point, typename DerivedTree, uint_fast8_t kBDO>
 template<typename Leaf, typename Interior>
-void BaseTree<Point, kBDO>::CheckTreeSameSequential(Node* T, int dim) {
+void BaseTree<Point, DerivedTree, kBDO>::CheckTreeSameSequential(Node* T, int dim) {
     if (T->is_leaf) {
         // assert( PickRebuildDim( T, kDim ) == dim );
         return;
@@ -77,9 +77,9 @@ void BaseTree<Point, kBDO>::CheckTreeSameSequential(Node* T, int dim) {
     return;
 }
 
-template<typename Point, uint_fast8_t kBDO>
+template<typename Point, typename DerivedTree, uint_fast8_t kBDO>
 template<typename Leaf, typename Interior, typename SplitRule>
-void BaseTree<Point, kBDO>::Validate() {
+void BaseTree<Point, DerivedTree, kBDO>::Validate() {
     std::cout << ">>> begin validate tree" << std::endl << std::flush;
     if (CheckBox<Leaf, Interior>(this->root_, this->tree_box_) &&
         LegalBox(this->tree_box_)) {
@@ -106,16 +106,16 @@ void BaseTree<Point, kBDO>::Validate() {
     return;
 }
 
-template<typename Point, uint_fast8_t kBDO>
+template<typename Point, typename DerivedTree, uint_fast8_t kBDO>
 template<typename Leaf, typename Interior>
-size_t BaseTree<Point, kBDO>::GetTreeHeight() {
+size_t BaseTree<Point, DerivedTree, kBDO>::GetTreeHeight() {
     size_t deep = 0;
     return GetMaxTreeDepth<Leaf, Interior>(this->root_, deep);
 }
 
-template<typename Point, uint_fast8_t kBDO>
+template<typename Point, typename DerivedTree, uint_fast8_t kBDO>
 template<typename Leaf, typename Interior>
-size_t BaseTree<Point, kBDO>::GetMaxTreeDepth(Node* T, size_t deep) {
+size_t BaseTree<Point, DerivedTree, kBDO>::GetMaxTreeDepth(Node* T, size_t deep) {
     if (T->is_leaf) {
         return deep;
     }
@@ -135,9 +135,9 @@ size_t BaseTree<Point, kBDO>::GetMaxTreeDepth(Node* T, size_t deep) {
     }
 }
 
-template<typename Point, uint_fast8_t kBDO>
+template<typename Point, typename DerivedTree, uint_fast8_t kBDO>
 template<typename Leaf, typename Interior>
-double BaseTree<Point, kBDO>::GetAveTreeHeight() {
+double BaseTree<Point, DerivedTree, kBDO>::GetAveTreeHeight() {
     // LOG << IsBinaryNode<Interior> << ENDL;
     parlay::sequence<size_t> heights(this->root_->size);
     size_t idx = 0;
@@ -150,9 +150,9 @@ double BaseTree<Point, kBDO>::GetAveTreeHeight() {
     return double(1.0 * parlay::reduce(heights.cut(0, idx)) / idx);
 }
 
-template<typename Point, uint_fast8_t kBDO>
+template<typename Point, typename DerivedTree, uint_fast8_t kBDO>
 template<typename Leaf, typename Interior>
-size_t BaseTree<Point, kBDO>::CountTreeNodesNum(Node* T) {
+size_t BaseTree<Point, DerivedTree, kBDO>::CountTreeNodesNum(Node* T) {
     if (T->is_leaf) {
         return 1;
     }
@@ -173,9 +173,9 @@ size_t BaseTree<Point, kBDO>::CountTreeNodesNum(Node* T) {
     }
 }
 
-template<typename Point, uint_fast8_t kBDO>
+template<typename Point, typename DerivedTree, uint_fast8_t kBDO>
 template<typename Leaf, typename Interior>
-void BaseTree<Point, kBDO>::CountTreeHeights(
+void BaseTree<Point, DerivedTree, kBDO>::CountTreeHeights(
     Node* T, size_t deep, size_t& idx, parlay::sequence<size_t>& heights) {
     if (T->is_leaf) {
         heights[idx++] = deep;

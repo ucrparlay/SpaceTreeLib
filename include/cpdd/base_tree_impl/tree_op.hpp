@@ -8,10 +8,10 @@
 #include "parlay/slice.h"
 
 namespace cpdd {
-template<typename Point, uint_fast8_t kBDO>
+template<typename Point, typename DerivedTree, uint_fast8_t kBDO>
 template<typename Leaf, typename Interior>
-Node* BaseTree<Point, kBDO>::RebuildWithInsert(Node* T, Slice In,
-                                               DimsType dim) {
+Node* BaseTree<Point, DerivedTree, kBDO>::RebuildWithInsert(Node* T, Slice In,
+                                                            DimsType dim) {
     Points wx, wo;
     PrepareRebuild<Leaf, Interior>(T, In, wx, wo);
     return BuildRecursiveWrapper(parlay::make_slice(wx), parlay::make_slice(wo),
@@ -20,11 +20,11 @@ Node* BaseTree<Point, kBDO>::RebuildWithInsert(Node* T, Slice In,
 
 // TODO: if the bounding box has already been provided, we should not return one
 // with box
-template<typename Point, uint_fast8_t kBDO>
+template<typename Point, typename DerivedTree, uint_fast8_t kBDO>
 template<typename Leaf, typename Interior, bool granularity>
-typename BaseTree<Point, kBDO>::NodeBox
-BaseTree<Point, kBDO>::RebuildSingleTree(Node* T, DimsType dim,
-                                         const Box& box) {
+typename BaseTree<Point, DerivedTree, kBDO>::NodeBox
+BaseTree<Point, DerivedTree, kBDO>::RebuildSingleTree(Node* T, DimsType dim,
+                                                      const Box& box) {
     Points wx, wo;
     PrepareRebuild<Leaf, Interior, granularity>(T, wx, wo);
     assert(GetBox(parlay::make_slice(wx)) == box);
@@ -33,16 +33,17 @@ BaseTree<Point, kBDO>::RebuildSingleTree(Node* T, DimsType dim,
     return NodeBox(std::move(node), std::move(box));
 }
 
-template<typename Point, uint_fast8_t kBDO>
+template<typename Point, typename DerivedTree, uint_fast8_t kBDO>
 template<SupportsForceParallel Interior, bool granularity>
-inline bool BaseTree<Point, kBDO>::ForceParallelRecursion(Interior* TI) {
+inline bool BaseTree<Point, DerivedTree, kBDO>::ForceParallelRecursion(
+    Interior* TI) {
     return (granularity && TI->size > kSerialBuildCutoff) ||
            (!granularity && TI->ForceParallel());
 }
 
-template<typename Point, uint_fast8_t kBDO>
+template<typename Point, typename DerivedTree, uint_fast8_t kBDO>
 template<IsBinaryNode Interior>
-Node* BaseTree<Point, kBDO>::BuildInnerTree(
+Node* BaseTree<Point, DerivedTree, kBDO>::BuildInnerTree(
     BucketType idx, HyperPlaneSeq& pivots,
     parlay::sequence<Node*>& tree_nodes) {
     if (idx > kPivotNum) {
@@ -56,9 +57,9 @@ Node* BaseTree<Point, kBDO>::BuildInnerTree(
                                        typename Interior::AT());
 }
 
-template<typename Point, uint_fast8_t kBDO>
+template<typename Point, typename DerivedTree, uint_fast8_t kBDO>
 template<typename Leaf, IsBinaryNode Interior, typename Range, bool granularity>
-void BaseTree<Point, kBDO>::FlattenRec(Node* T, Range Out) {
+void BaseTree<Point, DerivedTree, kBDO>::FlattenRec(Node* T, Range Out) {
     assert(T->size == Out.size());
 
     if (T->size == 0) return;
@@ -87,9 +88,9 @@ void BaseTree<Point, kBDO>::FlattenRec(Node* T, Range Out) {
     return;
 }
 
-template<typename Point, uint_fast8_t kBDO>
+template<typename Point, typename DerivedTree, uint_fast8_t kBDO>
 template<typename Leaf, IsMultiNode Interior, typename Range, bool granularity>
-void BaseTree<Point, kBDO>::FlattenRec(Node* T, Range Out) {
+void BaseTree<Point, DerivedTree, kBDO>::FlattenRec(Node* T, Range Out) {
     if (T->size != Out.size()) {
         std::cout << "T->size: " << T->size << " Out.size(): " << Out.size()
                   << std::endl;
@@ -137,9 +138,10 @@ void BaseTree<Point, kBDO>::FlattenRec(Node* T, Range Out) {
     return;
 }
 
-template<typename Point, uint_fast8_t kBDO>
+template<typename Point, typename DerivedTree, uint_fast8_t kBDO>
 template<typename Leaf, IsMultiNode Interior, typename Range, bool granularity>
-void BaseTree<Point, kBDO>::PartialFlatten(Node* T, Range Out, BucketType idx) {
+void BaseTree<Point, DerivedTree, kBDO>::PartialFlatten(Node* T, Range Out,
+                                                        BucketType idx) {
 
     if (idx == 1) {
         assert(T->size == Out.size());
@@ -170,9 +172,9 @@ void BaseTree<Point, kBDO>::PartialFlatten(Node* T, Range Out, BucketType idx) {
     return;
 }
 
-template<typename Point, uint_fast8_t kBDO>
+template<typename Point, typename DerivedTree, uint_fast8_t kBDO>
 template<IsBinaryNode BN, IsMultiNode MN>
-Node* BaseTree<Point, kBDO>::ExpandMultiNode(
+Node* BaseTree<Point, DerivedTree, kBDO>::ExpandMultiNode(
     const typename MN::ST& split, BucketType idx, BucketType deep,
     const parlay::sequence<Node*>& tree_nodes) {
     if (idx >= MN::kRegions) {
@@ -186,10 +188,10 @@ Node* BaseTree<Point, kBDO>::ExpandMultiNode(
     return o;
 }
 
-template<typename Point, uint_fast8_t kBDO>
+template<typename Point, typename DerivedTree, uint_fast8_t kBDO>
 template<IsBinaryNode BN, IsMultiNode MN>
     requires std::same_as<typename BN::ST, typename MN::ST::value_type>
-Node* BaseTree<Point, kBDO>::Expand2Binary(Node* T) {
+Node* BaseTree<Point, DerivedTree, kBDO>::Expand2Binary(Node* T) {
     if (T->is_leaf) {
         return T;
     }
@@ -209,9 +211,10 @@ Node* BaseTree<Point, kBDO>::Expand2Binary(Node* T) {
 }
 
 // NOTE: update the info of T by new children L and R
-template<typename Point, uint_fast8_t kBDO>
+template<typename Point, typename DerivedTree, uint_fast8_t kBDO>
 template<IsBinaryNode Interior>
-inline void BaseTree<Point, kBDO>::UpdateInterior(Node* T, Node* L, Node* R) {
+inline void BaseTree<Point, DerivedTree, kBDO>::UpdateInterior(Node* T, Node* L,
+                                                               Node* R) {
     assert(!T->is_leaf);
     Interior* TI = static_cast<Interior*>(T);
     TI->ResetParallelFlag();
@@ -221,9 +224,9 @@ inline void BaseTree<Point, kBDO>::UpdateInterior(Node* T, Node* L, Node* R) {
     return;
 }
 
-template<typename Point, uint_fast8_t kBDO>
+template<typename Point, typename DerivedTree, uint_fast8_t kBDO>
 template<IsMultiNode Interior>
-inline void BaseTree<Point, kBDO>::UpdateInterior(
+inline void BaseTree<Point, DerivedTree, kBDO>::UpdateInterior(
     Node* T, typename Interior::Nodes& new_nodes) {
     assert(!T->is_leaf);
     Interior* TI = static_cast<Interior*>(T);
@@ -235,9 +238,9 @@ inline void BaseTree<Point, kBDO>::UpdateInterior(
     return;
 }
 
-template<typename Point, uint_fast8_t kBDO>
+template<typename Point, typename DerivedTree, uint_fast8_t kBDO>
 template<typename Leaf>
-Node* BaseTree<Point, kBDO>::InsertPoints2Leaf(Node* T, Slice In) {
+Node* BaseTree<Point, DerivedTree, kBDO>::InsertPoints2Leaf(Node* T, Slice In) {
     Leaf* TL = static_cast<Leaf*>(T);
     if (TL->pts.size() == 0) {
         TL->pts = Points::uninitialized(kLeaveWrap);

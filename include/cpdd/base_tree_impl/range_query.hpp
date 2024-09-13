@@ -4,9 +4,9 @@
 #include <utility>
 
 namespace cpdd {
-template<typename Point, uint_fast8_t kBDO>
+template<typename Point, typename DerivedTree, uint_fast8_t kBDO>
 template<typename Leaf>
-size_t BaseTree<Point, kBDO>::RangeCountRectangleLeaf(Node* T,
+size_t BaseTree<Point, DerivedTree, kBDO>::RangeCountRectangleLeaf(Node* T,
                                                       const Box& query_box,
                                                       const Box& node_box) {
     assert(T->is_leaf);
@@ -27,9 +27,9 @@ size_t BaseTree<Point, kBDO>::RangeCountRectangleLeaf(Node* T,
     return cnt;
 }
 
-template<typename Point, uint_fast8_t kBDO>
+template<typename Point, typename DerivedTree, uint_fast8_t kBDO>
 template<typename Leaf, IsBinaryNode Interior>
-size_t BaseTree<Point, kBDO>::RangeCountRectangle(Node* T, const Box& query_box,
+size_t BaseTree<Point, DerivedTree, kBDO>::RangeCountRectangle(Node* T, const Box& query_box,
                                                   const Box& node_box,
                                                   RangeQueryLogger& logger) {
     logger.vis_node_num++;
@@ -67,9 +67,9 @@ size_t BaseTree<Point, kBDO>::RangeCountRectangle(Node* T, const Box& query_box,
     return l + r;
 }
 
-template<typename Point, uint_fast8_t kBDO>
+template<typename Point, typename DerivedTree, uint_fast8_t kBDO>
 template<typename Leaf, IsMultiNode Interior>
-size_t BaseTree<Point, kBDO>::RangeCountRectangle(Node* T, const Box& query_box,
+size_t BaseTree<Point, DerivedTree, kBDO>::RangeCountRectangle(Node* T, const Box& query_box,
                                                   const Box& node_box,
                                                   DimsType dim, BucketType idx,
                                                   RangeQueryLogger& logger) {
@@ -121,9 +121,9 @@ size_t BaseTree<Point, kBDO>::RangeCountRectangle(Node* T, const Box& query_box,
 }
 
 // TODO: as range_count_rectangle
-template<typename Point, uint_fast8_t kBDO>
+template<typename Point, typename DerivedTree, uint_fast8_t kBDO>
 template<typename Leaf, IsBinaryNode Interior>
-size_t BaseTree<Point, kBDO>::RangeCountRadius(Node* T, const Circle& cl,
+size_t BaseTree<Point, DerivedTree, kBDO>::RangeCountRadius(Node* T, const Circle& cl,
                                                const Box& node_box) {
     if (!circle_intersect_box(cl, node_box)) return 0;
     if (within_circle(node_box, cl)) return T->size;
@@ -153,9 +153,9 @@ size_t BaseTree<Point, kBDO>::RangeCountRadius(Node* T, const Circle& cl,
     return l + r;
 };
 
-template<typename Point, uint_fast8_t kBDO>
+template<typename Point, typename DerivedTree, uint_fast8_t kBDO>
 template<typename Leaf, typename Range>
-void BaseTree<Point, kBDO>::RangeQueryLeaf(Node* T, Range Out, size_t& s,
+void BaseTree<Point, DerivedTree, kBDO>::RangeQueryLeaf(Node* T, Range Out, size_t& s,
                                            const Box& query_box,
                                            const Box& node_box) {
     assert(T->is_leaf);
@@ -175,9 +175,9 @@ void BaseTree<Point, kBDO>::RangeQueryLeaf(Node* T, Range Out, size_t& s,
     return;
 }
 
-template<typename Point, uint_fast8_t kBDO>
+template<typename Point, typename DerivedTree, uint_fast8_t kBDO>
 template<typename Leaf, IsBinaryNode Interior, typename Range>
-void BaseTree<Point, kBDO>::RangeQuerySerialRecursive(
+void BaseTree<Point, DerivedTree, kBDO>::RangeQuerySerialRecursive(
     Node* T, Range Out, size_t& s, const Box& query_box, const Box& node_box,
     RangeQueryLogger& logger) {
     logger.vis_node_num++;
@@ -218,9 +218,9 @@ void BaseTree<Point, kBDO>::RangeQuerySerialRecursive(
     return;
 }
 
-template<typename Point, uint_fast8_t kBDO>
+template<typename Point, typename DerivedTree, uint_fast8_t kBDO>
 template<typename Leaf, IsMultiNode Interior, typename Range>
-void BaseTree<Point, kBDO>::RangeQuerySerialRecursive(
+void BaseTree<Point, DerivedTree, kBDO>::RangeQuerySerialRecursive(
     Node* T, Range Out, size_t& s, const Box& query_box, const Box& node_box,
     DimsType dim, BucketType idx, RangeQueryLogger& logger) {
     logger.vis_node_num++;

@@ -600,10 +600,10 @@ void rangeCount(const parlay::sequence<Point>& wp, Tree& pkd, Typename* kdknn,
     return;
 }
 
-template<typename point>
-void rangeCountRadius(const parlay::sequence<point>& wp, BaseTree<point>& pkd,
+template<typename point, typename Tree>
+void rangeCountRadius(const parlay::sequence<point>& wp, Tree& pkd,
                       Typename* kdknn, const int& rounds, const int& queryNum) {
-    using tree = BaseTree<point>;
+    using tree = Tree;
     using points = typename tree::points;
     using node = typename tree::node;
     using box = typename tree::box;
@@ -618,8 +618,8 @@ void rangeCountRadius(const parlay::sequence<point>& wp, BaseTree<point>& pkd,
                 box queryBox =
                     pkd.get_box(box(wp[i], wp[i]),
                                 box(wp[(i + n / 2) % n], wp[(i + n / 2) % n]));
-                auto d = cpdd::BaseTree<point>::p2p_distance(
-                    wp[i], wp[(i + n / 2) % n], wp[i].get_dim());
+                auto d = tree::p2p_distance(wp[i], wp[(i + n / 2) % n],
+                                            wp[i].get_dim());
                 d = static_cast<Coord>(std::sqrt(d));
                 circle cl = circle(wp[i], d);
                 kdknn[i] = pkd.range_count(cl);

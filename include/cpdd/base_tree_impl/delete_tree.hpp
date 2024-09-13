@@ -4,9 +4,9 @@
 
 namespace cpdd {
 
-template<typename Point, uint_fast8_t kBDO>
+template<typename Point, typename DerivedTree, uint_fast8_t kBDO>
 template<typename Leaf, typename Interior>
-void BaseTree<Point, kBDO>::DeleteTreeWrapper() {
+void BaseTree<Point, DerivedTree, kBDO>::DeleteTreeWrapper() {
     if (this->root_ == nullptr) {
         return;
     }
@@ -15,9 +15,9 @@ void BaseTree<Point, kBDO>::DeleteTreeWrapper() {
     return;
 }
 
-template<typename Point, uint_fast8_t kBDO>  //* delete tree in parallel
+template<typename Point, typename DerivedTree, uint_fast8_t kBDO>  //* delete tree in parallel
 template<typename Leaf, IsBinaryNode Interior, bool granularity>
-void BaseTree<Point, kBDO>::DeleteTreeRecursive(Node* T) {
+void BaseTree<Point, DerivedTree, kBDO>::DeleteTreeRecursive(Node* T) {
     if (T == nullptr) {
         LOG << "empty ptr" << ENDL;
         return;
@@ -36,9 +36,9 @@ void BaseTree<Point, kBDO>::DeleteTreeRecursive(Node* T) {
     }
 }
 
-template<typename Point, uint_fast8_t kBDO>  //* delete tree in parallel
+template<typename Point, typename DerivedTree, uint_fast8_t kBDO>  //* delete tree in parallel
 template<typename Leaf, IsMultiNode Interior, bool granularity>
-void BaseTree<Point, kBDO>::DeleteTreeRecursive(Node* T) {
+void BaseTree<Point, DerivedTree, kBDO>::DeleteTreeRecursive(Node* T) {
     if (T == nullptr) return;
     if (T->is_leaf) {
         FreeNode<Leaf>(T);

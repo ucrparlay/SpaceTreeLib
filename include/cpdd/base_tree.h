@@ -13,7 +13,7 @@ namespace cpdd {
 #define LOG  std::cout
 #define ENDL std::endl << std::flush
 
-template<typename Point, uint_fast8_t kBDO = 6>
+template<typename Point, typename DeriveTree, uint_fast8_t kBDO = 6>
 class BaseTree {
  public:
     using BucketType = uint_fast8_t;

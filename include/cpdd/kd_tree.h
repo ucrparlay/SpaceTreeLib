@@ -8,9 +8,9 @@
 namespace cpdd {
 
 template<typename Point, typename SplitRule, uint_fast8_t kBDO = 6>
-class KdTree : private BaseTree<Point, kBDO> {
+class KdTree : private BaseTree<Point, KdTree<Point, SplitRule, kBDO>, kBDO> {
  public:
-    using BT = BaseTree<Point, kBDO>;
+    using BT = BaseTree<Point, KdTree<Point, SplitRule, kBDO>, kBDO>;
 
     using BucketType = BT::BucketType;
     using BallsType = BT::BallsType;

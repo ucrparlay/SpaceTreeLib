@@ -5,7 +5,7 @@
 namespace cpdd {
 template<typename Point>
 struct BaseSplitterRule {
-    using BT = BaseTree<Point>;
+    using BT = BaseTree<Point, BaseSplitterRule<Point>>;
     using Slice = BT::Slice;
     using DimsType = BT::DimsType;
     using Box = BT::Box;

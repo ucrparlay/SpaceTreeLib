@@ -3,10 +3,10 @@
 #include "../base_tree.h"
 
 namespace cpdd {
-template<typename Point, uint_fast8_t kBDO>
+template<typename Point, typename DerivedTree, uint_fast8_t kBDO>
 template<typename Leaf, typename Interior>
-struct BaseTree<Point, kBDO>::InnerTree {
-    using BT = BaseTree<Point, kBDO>;
+struct BaseTree<Point, DerivedTree, kBDO>::InnerTree {
+    using BT = BaseTree<Point, DerivedTree, kBDO>;
     InnerTree(BT& _BTRef)
         requires IsBinaryNode<Interior>
         :

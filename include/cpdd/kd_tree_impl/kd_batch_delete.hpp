@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include <boost/mpl/assert.hpp>
 #include "../kd_tree.h"
 #include "cpdd/dependence/tree_node.h"
 
