@@ -61,6 +61,13 @@ class OrthTree :
     using BT::SetRoot;
     using BT::Validate;
 
+    template<typename Leaf, typename Interior, bool granularity,
+             typename... Args>
+    friend Node* BT::RebuildSingleTree(Node* T, Args&&... args);
+
+    template<typename Leaf, typename Interior, typename... Args>
+    friend Node* BT::RebuildWithInsert(Node* T, Slice In, Args&&... args);
+
     void OrthTreeTag();
 
     // NOTE: functions

@@ -37,8 +37,8 @@ void KdTree<Point, SplitRule, kBDO>::BatchDiff_(Slice A) {
 template<typename Point, typename SplitRule, uint_fast8_t kBDO>
 typename KdTree<Point, SplitRule, kBDO>::NodeBox
 KdTree<Point, SplitRule, kBDO>::UpdateInnerTreePointerBox(
-    BucketType idx, const NodeTagSeq& tags,
-    NodeBoxSeq& tree_nodes, BucketType& p) {
+    BucketType idx, const NodeTagSeq& tags, NodeBoxSeq& tree_nodes,
+    BucketType& p) {
     if (tags[idx].second == BT::kBucketNum + 1 ||
         tags[idx].second == BT::kBucketNum + 2) {
         return tree_nodes[p++];
@@ -67,6 +67,7 @@ KdTree<Point, SplitRule, kBDO>::RebuildTreeRecursive(Node* T, DimsType d,
     Interior* TI = static_cast<Interior*>(T);
     if (BT::ImbalanceNode(TI->left->size, TI->size)) {
         // WARN: this disables the parallelism in default
+        // TODO add box support
         return BT::template RebuildSingleTree<Leaf, Interior, false>(T, d);
     }
 

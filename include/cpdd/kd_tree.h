@@ -55,6 +55,13 @@ class KdTree : private BaseTree<Point, KdTree<Point, SplitRule, kBDO>, kBDO> {
     using BT::SetRoot;
     using BT::Validate;
 
+    template<typename Leaf, typename Interior, bool granularity,
+             typename... Args>
+    friend Node* BT::RebuildSingleTree(Node* T, Args&&... args);
+
+    template<typename Leaf, typename Interior, typename... Args>
+    friend Node* BT::RebuildWithInsert(Node* T, Slice In, Args&&... args);
+
     void KdTreeTag();
 
     // NOTE: functions
@@ -78,12 +85,6 @@ class KdTree : private BaseTree<Point, KdTree<Point, SplitRule, kBDO>, kBDO> {
                                  const bool granularity = true);
 
     void BatchInsert(Slice In);
-
-    // TODO: rewrite in wrapper
-    Node* BuildRecursiveWrapper(Slice In, Slice Out, const Box& bx,
-                                DimsType dim) override {
-        return BuildRecursive(In, Out, dim, bx);
-    };
 
     Node* BatchInsertRecursive(Node* T, Slice In, Slice Out, DimsType d);
 

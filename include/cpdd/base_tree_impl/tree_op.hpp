@@ -1,6 +1,7 @@
 
 #pragma once
 
+#include <cassert>
 #include <numeric>
 #include <utility>
 #include "../base_tree.h"
@@ -9,28 +10,32 @@
 
 namespace cpdd {
 template<typename Point, typename DerivedTree, uint_fast8_t kBDO>
-template<typename Leaf, typename Interior>
+template<typename Leaf, typename Interior, typename... Args>
 Node* BaseTree<Point, DerivedTree, kBDO>::RebuildWithInsert(Node* T, Slice In,
-                                                            DimsType dim) {
+                                                            Args&&... args) {
     Points wx, wo;
     PrepareRebuild<Leaf, Interior>(T, In, wx, wo);
-    return BuildRecursiveWrapper(parlay::make_slice(wx), parlay::make_slice(wo),
-                                 GetBox(parlay::make_slice(wx)), dim);
+    static_assert(
+        std::is_invocable_v<decltype(&DerivedTree::BuildRecursive),
+                            DerivedTree*, Slice, Slice, Args&&..., Box>);
+    return static_cast<DerivedTree*>(this)->BuildRecursive(
+        parlay::make_slice(wx), parlay::make_slice(wo),
+        std::forward<Args>(args)..., GetBox(parlay::make_slice(wx)));
 }
 
 // TODO: if the bounding box has already been provided, we should not return one
 // with box
 template<typename Point, typename DerivedTree, uint_fast8_t kBDO>
-template<typename Leaf, typename Interior, bool granularity>
-typename BaseTree<Point, DerivedTree, kBDO>::NodeBox
-BaseTree<Point, DerivedTree, kBDO>::RebuildSingleTree(Node* T, DimsType dim,
-                                                      const Box& box) {
+template<typename Leaf, typename Interior, bool granularity, typename... Args>
+Node* BaseTree<Point, DerivedTree, kBDO>::RebuildSingleTree(Node* T,
+                                                            Args&&... args) {
     Points wx, wo;
     PrepareRebuild<Leaf, Interior, granularity>(T, wx, wo);
-    assert(GetBox(parlay::make_slice(wx)) == box);
-    Node* node = BuildRecursiveWrapper(parlay::make_slice(wx),
-                                       parlay::make_slice(wo), box, dim);
-    return NodeBox(std::move(node), std::move(box));
+    static_assert(std::is_invocable_v<decltype(&DerivedTree::BuildRecursive),
+                                      DerivedTree*, Slice, Slice, Args&&...>);
+    return static_cast<DerivedTree*>(this)->BuildRecursive(
+        parlay::make_slice(wx), parlay::make_slice(wo),
+        std::forward<Args>(args)...);
 }
 
 template<typename Point, typename DerivedTree, uint_fast8_t kBDO>

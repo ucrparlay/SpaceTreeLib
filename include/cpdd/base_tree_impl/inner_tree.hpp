@@ -310,9 +310,11 @@ struct BaseTree<Point, DerivedTree, kBDO>::InnerTree {
                                    GetEmptyBox());
                 }
                 static_assert(std::is_same_v<DimsType, decltype(func(idx))>);
-                return BTRef.template RebuildSingleTree<Leaf, Interior, false>(
-                    this->tags[idx].first, func(idx),
-                    GetBox(left.second, right.second));
+                const auto& new_box = GetBox(left.second, right.second);
+                Node* new_root =
+                    BTRef.template RebuildSingleTree<Leaf, Interior, false>(
+                        this->tags[idx].first, func(idx), new_box);
+                return NodeBox(new_root, new_box);
             }
             return NodeBox(this->tags[idx].first,
                            GetBox(left.second, right.second));

@@ -123,14 +123,15 @@ class BaseTree {
                              const BucketType tags_num);
 
     // TODO: maybe we can unify the interface
-    template<typename Leaf, typename Interior>
-    Node* RebuildWithInsert(Node* T, Slice In, DimsType dim);
+    template<typename Leaf, typename Interior, typename... Args>
+    Node* RebuildWithInsert(Node* T, Slice In, Args&&... args);
 
-    template<typename Leaf, typename Interior, bool granularity = true>
-    NodeBox RebuildSingleTree(Node* T, DimsType dim, const Box& box);
+    template<typename Leaf, typename Interior, bool granularity = true,
+             typename... Args>
+    Node* RebuildSingleTree(Node* T, Args&&... args);
 
-    virtual Node* BuildRecursiveWrapper(Slice In, Slice Out, const Box& bx,
-                                        DimsType dim) = 0;
+    // virtual Node* BuildRecursiveWrapper(Slice In, Slice Out, const Box& bx,
+    //                                     DimsType dim) = 0;
 
     template<IsBinaryNode Interior>
     static Node* BuildInnerTree(BucketType idx, HyperPlaneSeq& pivots,

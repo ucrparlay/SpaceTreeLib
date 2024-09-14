@@ -173,8 +173,11 @@ KdTree<Point, SplitRule, kBDO>::BatchDeleteRecursive(
             assert(TI->size == T->size);
             assert(BT::ImbalanceNode(TI->left->size, TI->size) ||
                    TI->size < BT::kThinLeaveWrap);
-            return BT::template RebuildSingleTree<Leaf, Interior, false>(
-                T, d, BT::GetBox(Lbox, Rbox));
+            const auto new_box = BT::GetBox(Lbox, Rbox);
+            return NodeBox(
+                BT::template RebuildSingleTree<Leaf, Interior, false>(T, d,
+                                                                      new_box),
+                new_box);
         }
 
         return NodeBox(T, BT::GetBox(Lbox, Rbox));
@@ -248,9 +251,9 @@ KdTree<Point, SplitRule, kBDO>::BatchDeleteRecursive(
                 IT.tags[re_idx[i]].first = AllocEmptyLeafNode<Slice, Leaf>();
             } else {  // NOTE: rebuild
                 auto next_dim = (d + IT.GetDepthByIndex(re_idx[id])) % BT::kDim;
-                IT.tags[re_idx[i]].first = std::get<0>(
+                IT.tags[re_idx[i]].first =
                     BT::template RebuildSingleTree<Leaf, Interior, false>(
-                        IT.tags[re_idx[i]].first, d, box_seq[i]));
+                        IT.tags[re_idx[i]].first, d, box_seq[i]);
             }
         });
         bool under_rebuild_tree = false;
