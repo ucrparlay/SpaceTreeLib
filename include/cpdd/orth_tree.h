@@ -79,6 +79,27 @@ class OrthTree :
 
     void DeleteTree() override;
 
+    // NOTE: batch delete
+    // NOTE: in default, all Points to be deleted are assumed in the tree
+    template<typename Range>
+    void BatchDelete(Range&& In);
+
+    void BatchDelete_(Slice In);
+
+    Node* BatchDeleteRecursive(Node* T, Slice In, Slice Out, bool hasTomb);
+
+    // NOTE: batch diff
+    // NOTE: for the case that some Points to be deleted are not in the tree
+    template<typename Range>
+    void BatchDiff(Range&& In);
+
+    void BatchDiff_(Slice In);
+
+    // TODO: add bounding Box for batch delete recursive as well
+    // WARN: fix the possible in partial deletion as well
+    NodeBox BatchDiffRecursive(Node* T, const Box& bx, Slice In, Slice Out,
+                               DimsType d);
+
     template<typename Range>
     void Flatten(Range&& Out);
 
@@ -121,13 +142,6 @@ class OrthTree :
     void BatchInsert_(Slice In);
 
     Node* BatchInsertRecursive(Node* T, Slice In, Slice Out);
-
-    Node* BuildRecursiveWrapper(Slice In, Slice Out, const Box& box,
-                                DimsType dim) override {
-        return BuildRecursive(In, Out, box);
-    };
-
-    // Node* RebuildWithInsert(Node* T, Slice In);
 
     static Node* UpdateInnerTreeByTag(BucketType idx, const NodeTagSeq& tags,
                                       parlay::sequence<Node*>& tree_nodes,

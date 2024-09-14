@@ -6,7 +6,7 @@ namespace cpdd {
 
 template<typename Point, typename T>
 class NN_Comparator {
-    using Coord = Point::Coord;
+    using Coord = typename Point::Coord;
     using Num = Num_Comparator<Coord>;
 
  public:

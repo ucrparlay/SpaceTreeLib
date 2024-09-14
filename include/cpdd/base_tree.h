@@ -110,6 +110,9 @@ class BaseTree {
     template<typename Leaf>
     static Node* InsertPoints2Leaf(Node* T, Slice In);
 
+    template<typename Leaf, typename ReturnType>
+    static ReturnType DeletePoints4Leaf(Node* T, Slice In);
+
     template<IsBinaryNode Interior>
     static inline BucketType RetriveTag(const Point& p, const NodeTagSeq& tags);
 

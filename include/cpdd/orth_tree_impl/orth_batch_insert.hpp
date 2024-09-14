@@ -16,6 +16,7 @@ void OrthTree<Point, SplitRule, kMD, kBDO>::BatchInsert(Range&& In) {
                                 parlay::range_reference_type_t<Range>>);
     static_assert(BT::kBuildDepthOnce % kMD == 0);
     assert(kMD == BT::kDim);
+    // TODO: handling the case that insert box is no in the tree box
     assert(BT::WithinBox(BT::GetBox(In), this->tree_box_));
 
     Slice A = parlay::make_slice(In);
@@ -31,7 +32,8 @@ void OrthTree<Point, SplitRule, kMD, kBDO>::BatchInsert_(Slice A) {
 
     Points B = Points::uninitialized(A.size());
     Node* T = this->root_;
-    this->tree_box_ = BT::GetBox(this->tree_box_, BT::GetBox(A));
+    // this->tree_box_ = BT::GetBox(this->tree_box_, BT::GetBox(A));
+    // PERF: no need to compute bounding box here, checked previously
     this->root_ = BatchInsertRecursive(T, A, B.cut(0, A.size()));
     assert(this->root_ != NULL);
     return;
@@ -94,7 +96,7 @@ Node* OrthTree<Point, SplitRule, kMD, kBDO>::BatchInsertRecursive(Node* T,
         if (!static_cast<Leaf*>(T)->is_dummy && n + T->size <= BT::kLeaveWrap) {
             return BT::template InsertPoints2Leaf<Leaf>(T, In);
         } else {
-            return BT::template RebuildWithInsert<Leaf, Interior>(T, In, 0);
+            return BT::template RebuildWithInsert<Leaf, Interior>(T, In);
         }
     }
 
@@ -148,6 +150,7 @@ Node* OrthTree<Point, SplitRule, kMD, kBDO>::BatchInsertRecursive(Node* T,
         1);
 
     BucketType beatles = 0;
+    // TODO: rewrite to use the one in inner tree
     return UpdateInnerTreeByTag(1, IT.tags, tree_nodes, beatles);
 }
 }  // namespace cpdd

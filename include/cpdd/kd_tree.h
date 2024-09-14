@@ -12,28 +12,28 @@ class KdTree : private BaseTree<Point, KdTree<Point, SplitRule, kBDO>, kBDO> {
  public:
     using BT = BaseTree<Point, KdTree<Point, SplitRule, kBDO>, kBDO>;
 
-    using BucketType = BT::BucketType;
-    using BallsType = BT::BallsType;
-    using DimsType = BT::DimsType;
-    using BucketSeq = BT::BucketSeq;
-    using BallSeq = BT::BallSeq;
+    using BucketType = typename BT::BucketType;
+    using BallsType = typename BT::BallsType;
+    using DimsType = typename BT::DimsType;
+    using BucketSeq = typename BT::BucketSeq;
+    using BallSeq = typename BT::BallSeq;
     using Coord = typename Point::Coord;
     using Coords = typename Point::Coords;
     using Num = Num_Comparator<Coord>;
-    using Slice = BT::Slice;
-    using Points = BT::Points;
-    using PointsIter = BT::PointsIter;
-    using Box = BT::Box;
-    using BoxSeq = BT::BoxSeq;
-    using Circle = BT::Circle;
+    using Slice = typename BT::Slice;
+    using Points = typename BT::Points;
+    using PointsIter = typename BT::PointsIter;
+    using Box = typename BT::Box;
+    using BoxSeq = typename BT::BoxSeq;
+    using Circle = typename BT::Circle;
 
-    using HyperPlane = BT::HyperPlane;
-    using HyperPlaneSeq = BT::HyperPlaneSeq;
-    using NodeTag = BT::NodeTag;
-    using NodeTagSeq = BT::NodeTagSeq;
-    using Tag2Node = BT::Tag2Node;
-    using NodeBox = BT::NodeBox;
-    using NodeBoxSeq = BT::NodeBoxSeq;
+    using HyperPlane = typename BT::HyperPlane;
+    using HyperPlaneSeq = typename BT::HyperPlaneSeq;
+    using NodeTag = typename BT::NodeTag;
+    using NodeTagSeq = typename BT::NodeTagSeq;
+    using Tag2Node = typename BT::Tag2Node;
+    using NodeBox = typename BT::NodeBox;
+    using NodeBoxSeq = typename BT::NodeBoxSeq;
     using Splitter = HyperPlane;
     using SplitterSeq = HyperPlaneSeq;
 

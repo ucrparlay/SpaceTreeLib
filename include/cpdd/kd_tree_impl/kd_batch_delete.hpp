@@ -102,33 +102,14 @@ KdTree<Point, SplitRule, kBDO>::BatchDeleteRecursive(
             return NodeBox(AllocEmptyLeafNode<Slice, Leaf>(),
                            BT::GetEmptyBox());
         }
-        T->size = 0;
+        auto TI = static_cast<Interior*>(T);
+        TI->SetParallelFlag(T->size > BT::kSerialBuildCutoff);
+        TI->size = 0;
         return NodeBox(T, BT::GetEmptyBox());
     }
 
     if (T->is_leaf) {
-        assert(T->size >= In.size());
-        Leaf* TL = static_cast<Leaf*>(T);
-
-        if (TL->is_dummy) {
-            assert(In.size() <=
-                   T->size);  // NOTE: cannot delete more Points then there are
-            T->size -= In.size();  // WARN: this assumes that In\in T
-            return NodeBox(
-                T, T->size ? Box(TL->pts[0], TL->pts[0]) : BT::GetEmptyBox());
-        }
-
-        auto it = TL->pts.begin(), end = TL->pts.begin() + TL->size;
-        for (int i = 0; i < In.size(); i++) {
-            it = std::ranges::find(TL->pts.begin(), end, In[i]);
-            assert(it != end);
-            std::ranges::iter_swap(it, --end);
-        }
-
-        assert(std::distance(TL->pts.begin(), end) == TL->size - In.size());
-        TL->size -= In.size();
-        assert(TL->size >= 0);
-        return NodeBox(T, BT::GetBox(TL->pts.cut(0, TL->size)));
+        return BT::template DeletePoints4Leaf<Leaf, NodeBox>(T, In);
     }
 
     if (In.size() <= BT::kSerialBuildCutoff) {
