@@ -87,7 +87,7 @@ template<typename Point, typename SplitRule, uint_fast8_t kBDO>
 typename KdTree<Point, SplitRule, kBDO>::NodeBox
 KdTree<Point, SplitRule, kBDO>::BatchDeleteRecursive(
     Node* T, const typename KdTree<Point, SplitRule, kBDO>::Box& bx, Slice In,
-    Slice Out, DimsType d, bool hasTomb) {
+    Slice Out, DimsType d, bool has_tomb) {
     size_t n = In.size();
 
     if (n == 0) {
@@ -97,7 +97,7 @@ KdTree<Point, SplitRule, kBDO>::BatchDeleteRecursive(
 
     // INFO: may can be used to accelerate the whole deletion process
     if (n == T->size) {
-        if (hasTomb) {
+        if (has_tomb) {
             BT::template DeleteTreeRecursive<Leaf, Interior>(T);
             return NodeBox(AllocEmptyLeafNode<Slice, Leaf>(),
                            BT::GetEmptyBox());
@@ -120,12 +120,12 @@ KdTree<Point, SplitRule, kBDO>::BatchDeleteRecursive(
             }).begin();
 
         bool putTomb =
-            hasTomb &&
+            has_tomb &&
             (BT::ImbalanceNode(TI->left->size - (split_iter - In.begin()),
                                TI->size - In.size()) ||
              TI->size - In.size() < BT::kThinLeaveWrap);
-        hasTomb = putTomb ? false : hasTomb;
-        assert(putTomb ? (!hasTomb) : true);
+        has_tomb = putTomb ? false : has_tomb;
+        assert(putTomb ? (!has_tomb) : true);
 
         // assert(this->_split_rule == MAX_STRETCH_DIM ||
         //        (this->_split_rule == ROTATE_DIM && d == TI->split.second));
@@ -138,12 +138,12 @@ KdTree<Point, SplitRule, kBDO>::BatchDeleteRecursive(
 
         auto [L, Lbox] = BatchDeleteRecursive(
             TI->left, lbox, In.cut(0, split_iter - In.begin()),
-            Out.cut(0, split_iter - In.begin()), nextDim, hasTomb);
+            Out.cut(0, split_iter - In.begin()), nextDim, has_tomb);
         auto [R, Rbox] = BatchDeleteRecursive(
             TI->right, rbox, In.cut(split_iter - In.begin(), n),
-            Out.cut(split_iter - In.begin(), n), nextDim, hasTomb);
+            Out.cut(split_iter - In.begin(), n), nextDim, has_tomb);
 
-        TI->SetParallelFlag(hasTomb ? false
+        TI->SetParallelFlag(has_tomb ? false
                                     : TI->size > BT::kSerialBuildCutoff);
         BT::template UpdateInterior<Interior>(T, L, R);
         assert(T->size == L->size + R->size && TI->split.second >= 0 &&
@@ -174,7 +174,7 @@ KdTree<Point, SplitRule, kBDO>::BatchDeleteRecursive(
     auto box_seq = parlay::sequence<Box>::uninitialized(IT.tags_num);
 
     auto [re_num, tot_re_size] =
-        IT.TagInbalanceNodeDeletion(box_seq, bx, hasTomb);
+        IT.TagInbalanceNodeDeletion(box_seq, bx, has_tomb);
 
     // TODO: no need to compute, compute uing std::accumulate
     // IT.RetriveRebuildTreeIdx(1, re_idx, tot_re_size, re_num);

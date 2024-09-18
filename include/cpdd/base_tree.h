@@ -13,7 +13,7 @@ namespace cpdd {
 #define LOG  std::cout
 #define ENDL std::endl << std::flush
 
-template<typename Point, typename DeriveTree, uint_fast8_t kBDO = 6>
+template<typename Point, typename DerivedTree, uint_fast8_t kBDO = 6>
 class BaseTree {
  public:
     using BucketType = uint_fast8_t;
@@ -63,6 +63,7 @@ class BaseTree {
     // NOTE: get the imbalance ratio
     static inline size_t GetImbalanceRatio();
     static inline bool ImbalanceNode(const size_t l, const size_t n);
+    static inline bool SparcyNode(const size_t l, const size_t n);
 
     // NOTE: array based inner tree for batch insertion and deletion
     template<typename Leaf, typename Interior>
@@ -110,8 +111,8 @@ class BaseTree {
     template<typename Leaf>
     static Node* InsertPoints2Leaf(Node* T, Slice In);
 
-    template<typename Leaf, typename ReturnType>
-    static ReturnType DeletePoints4Leaf(Node* T, Slice In);
+    template<typename Leaf, typename RT>
+    static RT DeletePoints4Leaf(Node* T, Slice In);
 
     template<IsBinaryNode Interior>
     static inline BucketType RetriveTag(const Point& p, const NodeTagSeq& tags);

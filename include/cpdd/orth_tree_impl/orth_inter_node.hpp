@@ -23,7 +23,13 @@ struct OrthTree<Point, SplitRule, kMD, kBDO>::OrthInteriorNode :
                      const AT& _aug) :
         MNode(_tree_nodes, _split, _aug) {}
 
-    inline bool ForceParallel() const { return this->aug; }
+    inline void SetParallelFlag(bool flag) { this->aug = AT(flag); }
+
+    inline void ResetParallelFlag() { this->aug = false; }
+
+    inline bool ForceParallel() const {
+        return this->aug ? *(this->aug) : this->size > BT::kSerialBuildCutoff;
+    }
 };
 
 template<typename Point, typename SplitRule, uint_fast8_t kMD,

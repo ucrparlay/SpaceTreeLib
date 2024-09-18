@@ -7,21 +7,11 @@ template<typename Point, typename DerivedTree, uint_fast8_t kBDO>
 template<typename Leaf, typename Interior>
 struct BaseTree<Point, DerivedTree, kBDO>::InnerTree {
     using BT = BaseTree<Point, DerivedTree, kBDO>;
-    InnerTree(BT& _BTRef)
-        requires IsBinaryNode<Interior>
-        :
+    InnerTree(BT& _BTRef) :
         BTRef(_BTRef),
         tags_num(0),
         tags(NodeTagSeq::uninitialized(kPivotNum + kBucketNum + 1)),
         sums_tree(parlay::sequence<BallsType>(kPivotNum + kBucketNum + 1)),
-        rev_tag(Tag2Node::uninitialized(kBucketNum)) {}
-
-    InnerTree(BT& _BTRef)
-        requires IsMultiNode<Interior>
-        :
-        BTRef(_BTRef),
-        tags_num(0),
-        tags(NodeTagSeq::uninitialized(kPivotNum + kBucketNum + 1)),
         rev_tag(Tag2Node::uninitialized(kBucketNum)) {}
 
     // NOTE: helpers
@@ -75,7 +65,7 @@ struct BaseTree<Point, DerivedTree, kBDO>::InnerTree {
                 AssignNodeTag(TI->tree_nodes[i], idx * Interior::kRegions + i);
             }
         } else {
-            ;
+            static_assert(IsBinaryNode<Interior> || IsMultiNode<Interior>);
         }
         return;
     }
@@ -163,13 +153,16 @@ struct BaseTree<Point, DerivedTree, kBDO>::InnerTree {
     // the *bucket* Node whose ancestor has been rebuilt has tag kBucketNum+2
     // the *bucket* Node whose ancestor has not been ... has kBucketNum+1
     // otherwise, it's kBucketNum
-    void MarkTomb(BucketType idx, BoxSeq& box_seq, Box bx, bool hasTomb,
-                  BucketType& re_num, size_t& tot_re_size) {
+    // TODO: write by slice out the corresponding type and do the modification
+    void MarkTomb(BucketType idx, BoxSeq& box_seq, const Box& bx, bool has_tomb,
+                  BucketType& re_num, size_t& tot_re_size)
+        requires IsBinaryNode<Interior>
+    {
         if (idx > kPivotNum || tags[idx].first->is_leaf) {
             assert(tags[idx].second >= 0 && tags[idx].second < kBucketNum);
-            if (!hasTomb) {  // NOTE: this subtree needs to be rebuilt in the
-                             // future, therefore, ensure the granularity
-                             // control by assign to aug_flag
+            if (!has_tomb) {  // NOTE: this subtree needs to be rebuilt in the
+                              // future, therefore, ensure the granularity
+                              // control by assign to aug_flag
                 tags[idx].second = kBucketNum + 2;
                 if (!tags[idx].first->is_leaf) {
                     auto TI = static_cast<Interior*>(tags[idx].first);
@@ -188,36 +181,42 @@ struct BaseTree<Point, DerivedTree, kBDO>::InnerTree {
         // NOTE: no need to mark the internal nodes with tag kBucketNum
         assert(tags[idx].second == kBucketNum && (!tags[idx].first->is_leaf));
         Interior* TI = static_cast<Interior*>(tags[idx].first);
-        if (hasTomb && (ImbalanceNode(TI->left->size - sums_tree[idx << 1],
-                                      TI->size - sums_tree[idx]) ||
-                        (TI->size - sums_tree[idx] < kThinLeaveWrap))) {
-            assert(hasTomb != 0);
+        if (has_tomb && (ImbalanceNode(TI->left->size - sums_tree[idx << 1],
+                                       TI->size - sums_tree[idx]) ||
+                         (TI->size - sums_tree[idx] < kThinLeaveWrap))) {
+            assert(has_tomb != 0);
             assert(TI->ForceParallel() == 0);
             tags[idx].second = kBucketNum + 3;
-            hasTomb = false;
+            has_tomb = false;
             re_num++;
             tot_re_size += TI->size;
         }
 
-        // NOTE: hasTomb == false => need to rebuild
-        TI->SetParallelFlag(hasTomb ? false : TI->size > kSerialBuildCutoff);
+        // NOTE: has_tomb == false => need to rebuild
+        TI->SetParallelFlag(has_tomb ? false : TI->size > kSerialBuildCutoff);
 
         // TODO: rewrite for write efficient manner
         Box lbox(bx), rbox(bx);
         lbox.second.pnt[TI->split.second] = TI->split.first;  //* loose
         rbox.first.pnt[TI->split.second] = TI->split.first;
 
-        MarkTomb(idx << 1, box_seq, lbox, hasTomb, re_num, tot_re_size);
-        MarkTomb(idx << 1 | 1, box_seq, rbox, hasTomb, re_num, tot_re_size);
+        MarkTomb(idx << 1, box_seq, lbox, has_tomb, re_num, tot_re_size);
+        MarkTomb(idx << 1 | 1, box_seq, rbox, has_tomb, re_num, tot_re_size);
         return;
     }
 
-    auto TagInbalanceNodeDeletion(BoxSeq& box_seq, Box bx, bool hasTomb) {
+    // NOTE: the Node which needs to be rebuilt has tag kBucketNum+3
+    // the *bucket* Node whose ancestor has been rebuilt has tag kBucketNum+2
+    // the *bucket* Node whose ancestor has not been ... has kBucketNum+1
+    // otherwise, it's kBucketNum
+
+    template<typename... Args>
+    auto TagInbalanceNodeDeletion(Args&&... args) {
         ReduceSums(1);
         ResetTagsNum();
         BucketType re_num = 0;
         size_t tot_re_size = 0;
-        MarkTomb(1, box_seq, bx, hasTomb, re_num, tot_re_size);
+        MarkTomb(1, std::forward<Args>(args)..., re_num, tot_re_size);
         assert(AssertSize(tags[1].first));
         return std::make_pair(re_num, tot_re_size);
     }

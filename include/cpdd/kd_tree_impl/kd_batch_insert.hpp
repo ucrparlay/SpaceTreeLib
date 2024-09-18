@@ -60,9 +60,13 @@ Node* KdTree<Point, SplitRule, kBDO>::BatchInsertRecursive(Node* T, Slice In,
 
     if (T->is_leaf) {
         Leaf* TL = static_cast<Leaf*>(T);
-        if (!TL->is_dummy && n + TL->size <= BT::kLeaveWrap) {
+        if ((!TL->is_dummy && n + T->size <= BT::kLeaveWrap) ||
+            (TL->is_dummy && parlay::all_of(In, [&](const Point& p) {
+                 return p == TL->pts[0];
+             }))) {
             return BT::template InsertPoints2Leaf<Leaf>(T, In);
-        } else {
+        } else {  // PERF: if a nomarl leaf TL cannot handle more duplicates,
+                  // leave them here
             return BT::template RebuildWithInsert<Leaf, Interior>(T, In, d);
         }
     }

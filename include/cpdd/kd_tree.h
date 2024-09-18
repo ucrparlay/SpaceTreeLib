@@ -96,7 +96,7 @@ class KdTree : private BaseTree<Point, KdTree<Point, SplitRule, kBDO>, kBDO> {
     void BatchDelete_(Slice In);
 
     NodeBox BatchDeleteRecursive(Node* T, const Box& bx, Slice In, Slice Out,
-                                 DimsType d, bool hasTomb);
+                                 DimsType d, bool has_tomb);
 
     // NOTE: batch diff
     // NOTE: for the case that some Points to be deleted are not in the tree

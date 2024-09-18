@@ -40,7 +40,7 @@ void OrthTree<Point, SplitRule, kMD, kBDO>::BatchDelete_(Slice A) {
 template<typename Point, typename SplitRule, uint_fast8_t kMD,
          uint_fast8_t kBDO>
 Node* OrthTree<Point, SplitRule, kMD, kBDO>::BatchDeleteRecursive(
-    Node* T, Slice In, Slice Out, bool hasTomb) {
+    Node* T, Slice In, Slice Out, bool has_tomb) {
     size_t n = In.size();
 
     if (n == 0) {
@@ -49,7 +49,7 @@ Node* OrthTree<Point, SplitRule, kMD, kBDO>::BatchDeleteRecursive(
 
     // INFO: may can be used to accelerate the whole deletion process
     if (n == T->size) {
-        if (hasTomb) {
+        if (has_tomb) {
             BT::template DeleteTreeRecursive<Leaf, Interior>(T);
             return AllocEmptyLeafNode<Slice, Leaf>();
         }
@@ -68,8 +68,10 @@ Node* OrthTree<Point, SplitRule, kMD, kBDO>::BatchDeleteRecursive(
         SerialSplitSkeleton(T, In, 0, 1, sums);
         assert(std::accumulate(sums.begin(), sums.end(), 0) == n);
 
-        // TODO: rebuild the tree if the current tree in the bb fallen behind
-        // leave wrap
+        bool putTomb = has_tomb && (BT::SparcyNode(In.size(), T->size));
+        has_tomb = putTomb ? false : has_tomb;
+        assert(putTomb ? (!has_tomb) : true);
+
         Nodes new_nodes;
         size_t start = 0;
         for (DimsType i = 0; i < kNodeRegions; ++i) {
@@ -81,6 +83,13 @@ Node* OrthTree<Point, SplitRule, kMD, kBDO>::BatchDeleteRecursive(
         }
         BT::template UpdateInterior<Interior>(T, new_nodes);
         assert(T->is_leaf == false);
+
+        if (putTomb) {
+            // PERF: rebuild size is at most BT::kLeaveWrap, we can get the box
+            // by traversing the tree
+            return BT::template RebuildSingleTree<Leaf, Interior, false>(
+                T, BT::GetBox(T));
+        }
         return T;
     }
 
@@ -92,9 +101,8 @@ Node* OrthTree<Point, SplitRule, kMD, kBDO>::BatchDeleteRecursive(
 
     auto tree_nodes = NodeBoxSeq::uninitialized(IT.tags_num);
     auto box_seq = parlay::sequence<Box>::uninitialized(IT.tags_num);
-
     auto [re_num, tot_re_size] =
-        IT.TagInbalanceNodeDeletion(box_seq, bx, hasTomb);
+        IT.TagInbalanceNodeDeletion(box_seq, bx, has_tomb);
 
     // TODO: no need to compute, compute uing std::accumulate
     // IT.RetriveRebuildTreeIdx(1, re_idx, tot_re_size, re_num);

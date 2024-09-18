@@ -15,7 +15,8 @@ inline bool BaseTree<Point, DerivedTree, kBDO>::LegalBox(const Box& bx) {
 }
 
 template<typename Point, typename DerivedTree, uint_fast8_t kBDO>
-inline bool BaseTree<Point, DerivedTree, kBDO>::WithinBox(const Box& a, const Box& b) {
+inline bool BaseTree<Point, DerivedTree, kBDO>::WithinBox(const Box& a,
+                                                          const Box& b) {
     assert(LegalBox(a));
     assert(LegalBox(b));
     for (DimsType i = 0; i < a.first.get_dim(); ++i) {
@@ -28,7 +29,8 @@ inline bool BaseTree<Point, DerivedTree, kBDO>::WithinBox(const Box& a, const Bo
 }
 
 template<typename Point, typename DerivedTree, uint_fast8_t kBDO>
-inline bool BaseTree<Point, DerivedTree, kBDO>::WithinBox(const Point& p, const Box& bx) {
+inline bool BaseTree<Point, DerivedTree, kBDO>::WithinBox(const Point& p,
+                                                          const Box& bx) {
     assert(LegalBox(bx));
     for (DimsType i = 0; i < p.get_dim(); ++i) {
         if (Num::Lt(p.pnt[i], bx.first.pnt[i]) ||
@@ -40,7 +42,8 @@ inline bool BaseTree<Point, DerivedTree, kBDO>::WithinBox(const Point& p, const 
 }
 
 template<typename Point, typename DerivedTree, uint_fast8_t kBDO>
-inline bool BaseTree<Point, DerivedTree, kBDO>::BoxIntersectBox(const Box& a, const Box& b) {
+inline bool BaseTree<Point, DerivedTree, kBDO>::BoxIntersectBox(const Box& a,
+                                                                const Box& b) {
     assert(LegalBox(a) && LegalBox(b));
     for (DimsType i = 0; i < a.first.get_dim(); ++i) {
         if (Num::Lt(a.second.pnt[i], b.first.pnt[i]) ||
@@ -59,13 +62,14 @@ BaseTree<Point, DerivedTree, kBDO>::GetEmptyBox() {
 }
 
 template<typename Point, typename DerivedTree, uint_fast8_t kBDO>
-typename BaseTree<Point, DerivedTree, kBDO>::Box BaseTree<Point, DerivedTree, kBDO>::GetBox(
-    const Box& x, const Box& y) {
+typename BaseTree<Point, DerivedTree, kBDO>::Box
+BaseTree<Point, DerivedTree, kBDO>::GetBox(const Box& x, const Box& y) {
     return Box(x.first.minCoords(y.first), x.second.maxCoords(y.second));
 }
 
 template<typename Point, typename DerivedTree, uint_fast8_t kBDO>
-typename BaseTree<Point, DerivedTree, kBDO>::Box BaseTree<Point, DerivedTree, kBDO>::GetBox(Slice V) {
+typename BaseTree<Point, DerivedTree, kBDO>::Box
+BaseTree<Point, DerivedTree, kBDO>::GetBox(Slice V) {
     if (V.size() == 0) {
         return GetEmptyBox();
     } else {
@@ -81,7 +85,9 @@ typename BaseTree<Point, DerivedTree, kBDO>::Box BaseTree<Point, DerivedTree, kB
 
 template<typename Point, typename DerivedTree, uint_fast8_t kBDO>
 template<typename Leaf, typename Interior>
-typename BaseTree<Point, DerivedTree, kBDO>::Box BaseTree<Point, DerivedTree, kBDO>::GetBox(Node* T) {
+typename BaseTree<Point, DerivedTree, kBDO>::Box
+BaseTree<Point, DerivedTree, kBDO>::GetBox(Node* T) {
+    // TODO: we can just traverse the tree to get the box
     Points wx = Points::uninitialized(T->size);
     FlattenRec<Leaf, Interior>(T, parlay::make_slice(wx));
     return GetBox(parlay::make_slice(wx));
@@ -89,7 +95,7 @@ typename BaseTree<Point, DerivedTree, kBDO>::Box BaseTree<Point, DerivedTree, kB
 
 template<typename Point, typename DerivedTree, uint_fast8_t kBDO>
 inline bool BaseTree<Point, DerivedTree, kBDO>::WithinCircle(const Box& bx,
-                                                const Circle& cl) {
+                                                             const Circle& cl) {
     //* the logical is same as p2b_max_distance <= radius
     Coord r = 0;
     for (DimsType i = 0; i < cl.first.get_dim(); ++i) {
@@ -109,7 +115,7 @@ inline bool BaseTree<Point, DerivedTree, kBDO>::WithinCircle(const Box& bx,
 
 template<typename Point, typename DerivedTree, uint_fast8_t kBDO>
 inline bool BaseTree<Point, DerivedTree, kBDO>::WithinCircle(const Point& p,
-                                                const Circle& cl) {
+                                                             const Circle& cl) {
     Coord r = 0;
     for (DimsType i = 0; i < cl.first.get_dim(); ++i) {
         r += (p.pnt[i] - cl.first.pnt[i]) * (p.pnt[i] - cl.first.pnt[i]);
@@ -120,8 +126,8 @@ inline bool BaseTree<Point, DerivedTree, kBDO>::WithinCircle(const Point& p,
 }
 
 template<typename Point, typename DerivedTree, uint_fast8_t kBDO>
-inline bool BaseTree<Point, DerivedTree, kBDO>::CircleIntersectBox(const Circle& cl,
-                                                      const Box& bx) {
+inline bool BaseTree<Point, DerivedTree, kBDO>::CircleIntersectBox(
+    const Circle& cl, const Box& bx) {
     //* the logical is same as p2b_min_distance > radius
     Coord r = 0;
     for (DimsType i = 0; i < cl.first.get_dim(); ++i) {

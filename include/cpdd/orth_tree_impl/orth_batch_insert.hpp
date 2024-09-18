@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../orth_tree.h"
+#include "parlay/primitives.h"
 
 namespace cpdd {
 
@@ -93,7 +94,11 @@ Node* OrthTree<Point, SplitRule, kMD, kBDO>::BatchInsertRecursive(Node* T,
     if (n == 0) return T;
 
     if (T->is_leaf) {
-        if (!static_cast<Leaf*>(T)->is_dummy && n + T->size <= BT::kLeaveWrap) {
+        Leaf* TL = static_cast<Leaf*>(T);
+        if ((!TL->is_dummy && n + T->size <= BT::kLeaveWrap) ||
+            (TL->is_dummy && parlay::all_of(In, [&](const Point& p) {
+                 return p == TL->pts[0];
+             }))) {
             return BT::template InsertPoints2Leaf<Leaf>(T, In);
         } else {
             return BT::template RebuildWithInsert<Leaf, Interior>(T, In);

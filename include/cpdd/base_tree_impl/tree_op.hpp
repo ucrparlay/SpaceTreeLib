@@ -247,6 +247,11 @@ template<typename Point, typename DerivedTree, uint_fast8_t kBDO>
 template<typename Leaf>
 Node* BaseTree<Point, DerivedTree, kBDO>::InsertPoints2Leaf(Node* T, Slice In) {
     Leaf* TL = static_cast<Leaf*>(T);
+    if (TL->is_dummy) {
+        T->size += In.size();
+        return T;
+    }
+
     if (TL->pts.size() == 0) {
         TL->pts = Points::uninitialized(kLeaveWrap);
     }
@@ -257,25 +262,28 @@ Node* BaseTree<Point, DerivedTree, kBDO>::InsertPoints2Leaf(Node* T, Slice In) {
     return T;
 }
 
-template<typename Point, uint_fast8_t kBDO>
-template<typename Leaf, typename ReturnType>
-ReturnType BaseTree<Point, kBDO>::DeletePoints4Leaf(Node* T, Slice In) {
+template<typename Point, typename DerivedTree, uint_fast8_t kBDO>
+template<typename Leaf, typename RT>
+RT BaseTree<Point, DerivedTree, kBDO>::DeletePoints4Leaf(Node* T, Slice In) {
     assert(T->size >= In.size());
     Leaf* TL = static_cast<Leaf*>(T);
 
     if (TL->is_dummy) {
         assert(In.size() <=
-               T->size);       // NOTE: cannot delete more Points then there are
-        T->size -= In.size();  // WARN: this assumes that In\in T
+               T->size);  // NOTE: cannot delete more Points then there are
+        TL->size -= In.size();  // WARN: this assumes that In\in T
+        if (TL->size == 0) {
+            TL->is_dummy = false;
+            TL->pts = Points::uninitialized(kLeaveWrap);
+        }
 
-        if constexpr (std::is_same_v<ReturnType, Node*>) {
+        if constexpr (std::same_as<RT, Node*>) {
             return T;
-        } else if constexpr (std::is_same_v<ReturnType, NodeBox>) {
+        } else if constexpr (std::same_as<RT, NodeBox>) {
             return NodeBox(
                 T, T->size ? Box(TL->pts[0], TL->pts[0]) : GetEmptyBox());
         } else {
-            static_assert(std::is_same_v<ReturnType, Node*> ||
-                          std::is_same_v<ReturnType, NodeBox>);
+            static_assert(std::same_as<RT, Node*> || std::same_as<RT, NodeBox>);
         }
     }
 
@@ -290,13 +298,12 @@ ReturnType BaseTree<Point, kBDO>::DeletePoints4Leaf(Node* T, Slice In) {
     TL->size -= In.size();
     assert(TL->size >= 0);
 
-    if constexpr (std::is_same_v<ReturnType, Node*>) {
+    if constexpr (std::same_as<RT, Node*>) {
         return T;
-    } else if constexpr (std::is_same_v<ReturnType, NodeBox>) {
+    } else if constexpr (std::same_as<RT, NodeBox>) {
         return NodeBox(T, GetBox(TL->pts.cut(0, TL->size)));
     } else {
-        static_assert(std::is_same_v<ReturnType, Node*> ||
-                      std::is_same_v<ReturnType, NodeBox>);
+        static_assert(std::same_as<RT, Node*> || std::same_as<RT, NodeBox>);
     }
 }
 }  // namespace cpdd

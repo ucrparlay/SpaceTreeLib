@@ -5,13 +5,14 @@
 
 namespace cpdd {
 
-// NOTE: check whether the type is a pair
+// NOTE: In memory of SFINE
 // template<typename>
 // struct is_pair : std::false_type {};
 // template<typename T, typename U>
 // struct is_pair<std::pair<T, U>> : std::true_type {};
 // template<typename T>
 // concept IsPair = is_pair<T>::value;
+
 template<typename T>
 concept IsPair = requires {
     requires std::same_as<
@@ -26,6 +27,33 @@ concept IsBox = requires {
 
 template<typename T>
 concept IsPointer = std::is_pointer_v<T>;
+
+// Concept to check if a type is present in a parameter pack
+template<typename T, typename... Args>
+concept ContainsType = (std::is_same_v<T, Args> || ...);
+
+// Helper function to find and return the variable of the specified type
+template<typename T, typename First, typename... Rest>
+consteval T& findVariable(First& first, Rest&... rest) {
+    if constexpr (std::is_same_v<T, First>) {
+        return first;
+    } else {
+        return findVariable<T>(rest...);
+    }
+}
+
+// Overload for the case when the type is not found
+template<typename T>
+consteval T& findVariable() {
+    throw std::runtime_error("Type not found in parameter pack");
+}
+
+// Example usage
+// template<typename T, typename... Args>
+//     requires ContainsType<T, Args...>
+// consteval T& getVariable(Args&... args) {
+//     return findVariable<T>(args...);
+// }
 
 template<typename T>
 concept IsBinaryNode = std::is_base_of_v<

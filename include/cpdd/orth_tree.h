@@ -39,7 +39,7 @@ class OrthTree :
     using NodeBoxSeq = BT::NodeBoxSeq;
     using NodeBox = BT::NodeBox;
     using Tag2Node = BT::Tag2Node;
-    using AugType = bool;
+    using AugType = std::optional<bool>;
 
     struct KdInteriorNode;
     struct OrthInteriorNode;
@@ -86,7 +86,7 @@ class OrthTree :
 
     void BatchDelete_(Slice In);
 
-    Node* BatchDeleteRecursive(Node* T, Slice In, Slice Out, bool hasTomb);
+    Node* BatchDeleteRecursive(Node* T, Slice In, Slice Out, bool has_tomb);
 
     // NOTE: batch diff
     // NOTE: for the case that some Points to be deleted are not in the tree
