@@ -10,16 +10,16 @@ template<typename Point, typename SplitRule, uint_fast8_t kMD,
 struct OrthTree<Point, SplitRule, kMD, kBDO>::OrthInteriorNode :
     MultiNode<Point, kMD, Splitter, AugType> {
     using MNode = MultiNode<Point, kMD, Splitter, AugType>;
-    using Nodes = std::array<Node*, MNode::kRegions>;
+    using OrthNodeSeq = std::array<Node*, MNode::kRegions>;
     using PT = Point;
     using ST = Splitter;
     using AT = AugType;
 
     static_assert(
-        Nodes().size() ==
-        typename MultiNode<Point, kMD, Splitter, AugType>::Nodes().size());
+        OrthNodeSeq().size() ==
+        typename MultiNode<Point, kMD, Splitter, AugType>::OrthNodeSeq().size());
 
-    OrthInteriorNode(const Nodes& _tree_nodes, const ST& _split,
+    OrthInteriorNode(const OrthNodeSeq& _tree_nodes, const ST& _split,
                      const AT& _aug) :
         MNode(_tree_nodes, _split, _aug) {}
 

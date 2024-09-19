@@ -48,7 +48,7 @@ class OrthTree :
     using Leaf =
         LeafNode<Point, Slice, BT::kLeaveWrap, parlay::move_assign_tag>;
     using Interior = OrthInteriorNode;
-    using Nodes = Interior::Nodes;
+    using OrthNodeSeq = Interior::OrthNodeSeq;
     using InnerTree = typename BT::template InnerTree<Leaf, Interior>;
 
     // NOTE: expose basetree interface

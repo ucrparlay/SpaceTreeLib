@@ -1,4 +1,4 @@
-#pragma once
+#pragma oncebatchdele
 
 #include <algorithm>
 #include <boost/mpl/assert.hpp>
@@ -144,7 +144,7 @@ KdTree<Point, SplitRule, kBDO>::BatchDeleteRecursive(
             Out.cut(split_iter - In.begin(), n), nextDim, has_tomb);
 
         TI->SetParallelFlag(has_tomb ? false
-                                    : TI->size > BT::kSerialBuildCutoff);
+                                     : TI->size > BT::kSerialBuildCutoff);
         BT::template UpdateInterior<Interior>(T, L, R);
         assert(T->size == L->size + R->size && TI->split.second >= 0 &&
                TI->is_leaf == false);
@@ -173,8 +173,13 @@ KdTree<Point, SplitRule, kBDO>::BatchDeleteRecursive(
     auto tree_nodes = NodeBoxSeq::uninitialized(IT.tags_num);
     auto box_seq = parlay::sequence<Box>::uninitialized(IT.tags_num);
 
-    auto [re_num, tot_re_size] =
-        IT.TagInbalanceNodeDeletion(box_seq, bx, has_tomb);
+    auto [re_num, tot_re_size] = IT.TagInbalanceNodeDeletion(
+        box_seq, bx, has_tomb, [&](BucketType idx) -> bool {
+            Interior* TI = static_cast<Interior*>(IT.tags[idx].first);
+            return BT::ImbalanceNode(TI->left->size - IT.sums_tree[idx << 1],
+                                     TI->size - IT.sums_tree[idx]) ||
+                   (TI->size - IT.sums_tree[idx] < BT::kThinLeaveWrap);
+        });
 
     // TODO: no need to compute, compute uing std::accumulate
     // IT.RetriveRebuildTreeIdx(1, re_idx, tot_re_size, re_num);
@@ -215,7 +220,7 @@ KdTree<Point, SplitRule, kBDO>::BatchDeleteRecursive(
         auto re_idx = BucketSeq::uninitialized(IT.tags_num);
         BucketType id = 0;  // PARA: the number of boxs needs to rebuild
         const Box new_box =
-            std::get<1>(IT.template UpdateInnerTree<InnerTree::kSaveBox>(
+            std::get<1>(IT.template UpdateInnerTree<InnerTree::kTagReNode>(
                 tree_nodes,
                 [&](const Box& new_box, const BucketType idx) -> void {
                     re_idx[id] = idx;

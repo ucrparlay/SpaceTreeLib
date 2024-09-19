@@ -72,7 +72,7 @@ Node* OrthTree<Point, SplitRule, kMD, kBDO>::BatchDeleteRecursive(
         has_tomb = putTomb ? false : has_tomb;
         assert(putTomb ? (!has_tomb) : true);
 
-        Nodes new_nodes;
+        OrthNodeSeq new_nodes;
         size_t start = 0;
         for (DimsType i = 0; i < kNodeRegions; ++i) {
             new_nodes[i] =
@@ -99,15 +99,14 @@ Node* OrthTree<Point, SplitRule, kMD, kBDO>::BatchDeleteRecursive(
     BT::template SeievePoints<Interior>(In, Out, n, IT.tags, IT.sums,
                                         IT.tags_num);
 
-    auto tree_nodes = NodeBoxSeq::uninitialized(IT.tags_num);
-    auto box_seq = parlay::sequence<Box>::uninitialized(IT.tags_num);
     auto [re_num, tot_re_size] =
-        IT.TagInbalanceNodeDeletion(box_seq, bx, has_tomb);
+        IT.TagInbalanceNodeDeletion(has_tomb, [&](BucketType idx) -> bool {
+            return BT::SparcyNode(IT.sums_tree[idx], IT.tags[idx].first->size);
+        });
 
-    // TODO: no need to compute, compute uing std::accumulate
-    // IT.RetriveRebuildTreeIdx(1, re_idx, tot_re_size, re_num);
     assert(re_num <= IT.tags_num);
 
+    auto tree_nodes = parlay::sequence<Node*>::uninitialized(IT.tags_num);
     parlay::parallel_for(
         0, IT.tags_num,
         [&](size_t i) {
@@ -122,13 +121,10 @@ Node* OrthTree<Point, SplitRule, kMD, kBDO>::BatchDeleteRecursive(
                                  BT::template GetBox<Leaf, Interior>(
                                      IT.tags[IT.rev_tag[i]].first)));
 
-            DimsType nextDim =
-                (d + IT.GetDepthByIndex(IT.rev_tag[i])) % BT::kDim;
-
             tree_nodes[i] = BatchDeleteRecursive(
-                IT.tags[IT.rev_tag[i]].first, box_seq[i],
+                IT.tags[IT.rev_tag[i]].first,
                 Out.cut(start, start + IT.sums[i]),
-                In.cut(start, start + IT.sums[i]), nextDim,
+                In.cut(start, start + IT.sums[i]),
                 IT.tags[IT.rev_tag[i]].second == BT::kBucketNum + 1);
         },
         1);
@@ -138,17 +134,13 @@ Node* OrthTree<Point, SplitRule, kMD, kBDO>::BatchDeleteRecursive(
     // > SERIAL_BUILD_CUTOFF to judge whether to rebuild the tree in parallel
     // WARN: the rebuild node is on top
     if (tot_re_size > BT::kSerialBuildCutoff) {  // NOTE: parallel rebuild
-
         // NOTE: get new box for skeleton root and rebuild nodes
         auto re_idx = BucketSeq::uninitialized(IT.tags_num);
-        BucketType id = 0;  // PARA: the number of boxs needs to rebuild
-        const Box new_box =
-            std::get<1>(IT.template UpdateInnerTree<InnerTree::kSaveBox>(
-                tree_nodes,
-                [&](const Box& new_box, const BucketType idx) -> void {
-                    re_idx[id] = idx;
-                    box_seq[id++] = new_box;
-                }));
+        BucketType id = 0;  // PARA: the number of nodes needs to rebuild
+        Node* new_node = IT.template UpdateInnerTree<InnerTree::kTagReNode>(
+            tree_nodes, [&](const Box& new_box, const BucketType idx) -> void {
+                re_idx[id++] = idx;
+            });
         assert(id == re_num);
 
         parlay::parallel_for(0, re_num, [&](size_t i) {

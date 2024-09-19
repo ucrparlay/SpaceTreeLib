@@ -34,17 +34,17 @@ concept ContainsType = (std::is_same_v<T, Args> || ...);
 
 // Helper function to find and return the variable of the specified type
 template<typename T, typename First, typename... Rest>
-consteval T& findVariable(First& first, Rest&... rest) {
+consteval T& FindVar(First& first, Rest&... rest) {
     if constexpr (std::is_same_v<T, First>) {
         return first;
     } else {
-        return findVariable<T>(rest...);
+        return FindVar<T>(rest...);
     }
 }
 
 // Overload for the case when the type is not found
 template<typename T>
-consteval T& findVariable() {
+consteval T& FindVar() {
     throw std::runtime_error("Type not found in parameter pack");
 }
 

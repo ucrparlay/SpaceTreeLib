@@ -129,7 +129,7 @@ Node* OrthTree<Point, SplitRule, kMD, kBDO>::SerialBuildRecursive(
         checked_duplicate = false;
     }
 
-    Nodes tree_nodes;
+    OrthNodeSeq tree_nodes;
     size_t start = 0;
     for (DimsType i = 0; i < kNodeRegions; ++i) {
         // NOTE: iterate through non-empty partitions, put them into the
@@ -154,7 +154,7 @@ Node* OrthTree<Point, SplitRule, kMD, kBDO>::OrthBuildInnerTree(
         return tree_nodes[idx - BT::kPivotNum - 1];
     }
 
-    Nodes multi_nodes;
+    OrthNodeSeq multi_nodes;
     Splitter split;
     for (DimsType i = 0; i < kNodeRegions; ++i) {
         multi_nodes[i] =
