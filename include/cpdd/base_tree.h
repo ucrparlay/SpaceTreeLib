@@ -16,7 +16,8 @@ namespace cpdd {
 template<typename Point, typename DerivedTree, uint_fast8_t kBDO = 6>
 class BaseTree {
  public:
-    using BucketType = uint_fast8_t;
+    using BucketType =
+        uint_fast8_t;  // TODO: add static enforce using 16_t when large kBDO
     using BallsType = uint_fast32_t;
     using DimsType = uint_fast8_t;
     using BucketSeq = parlay::sequence<BucketType>;
@@ -92,6 +93,10 @@ class BaseTree {
 
     template<IsBinaryNode Interior>
     static inline void UpdateInterior(Node* T, Node* L, Node* R);
+
+    template<IsBinaryNode Interior>
+    static inline void UpdateInterior(Node* T, const NodeBox& L,
+                                      const NodeBox& R);
 
     template<IsMultiNode Interior>
     static inline void UpdateInterior(Node* T,

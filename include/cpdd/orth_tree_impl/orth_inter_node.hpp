@@ -17,7 +17,8 @@ struct OrthTree<Point, SplitRule, kMD, kBDO>::OrthInteriorNode :
 
     static_assert(
         OrthNodeSeq().size() ==
-        typename MultiNode<Point, kMD, Splitter, AugType>::OrthNodeSeq().size());
+        typename MultiNode<Point, kMD, Splitter, AugType>::OrthNodeSeq()
+            .size());
 
     OrthInteriorNode(const OrthNodeSeq& _tree_nodes, const ST& _split,
                      const AT& _aug) :
@@ -32,6 +33,7 @@ struct OrthTree<Point, SplitRule, kMD, kBDO>::OrthInteriorNode :
     }
 };
 
+// NOTE: To expand as a kdtree node
 template<typename Point, typename SplitRule, uint_fast8_t kMD,
          uint_fast8_t kBDO>
 struct OrthTree<Point, SplitRule, kMD, kBDO>::KdInteriorNode :

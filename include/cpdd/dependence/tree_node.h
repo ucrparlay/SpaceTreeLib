@@ -176,9 +176,11 @@ struct MultiNode : Node {
         }
     }
 
+    // TODO: maybe we can initialize the box to be input one and every time only
+    // modify the cut position
     template<typename Box, typename BoxSeq>
-    void ComputeSubregions(BoxSeq& box_seq, const Box& box, auto idx,
-                           auto deep) {
+    void ComputeSubregionsRec(BoxSeq& box_seq, const Box& box, auto idx,
+                              auto deep) {
         if (idx >= tree_nodes.size()) {
             assert(deep == kMD);
             assert(1 << kMD == tree_nodes.size());
@@ -186,12 +188,21 @@ struct MultiNode : Node {
             return;
         }
 
+        // TODO: add correct check for split and bounding box
+        //  TODO: perf box
         Box lbox(box), rbox(box);
         lbox.second.pnt[split[deep].second] = split[deep].first;  // PERF: loose
         rbox.first.pnt[split[deep].second] = split[deep].first;
-        ComputeSubregions(box_seq, lbox, 2 * idx, deep + 1);
-        ComputeSubregions(box_seq, rbox, 2 * idx + 1, deep + 1);
+        ComputeSubregionsRec(box_seq, lbox, 2 * idx, deep + 1);
+        ComputeSubregionsRec(box_seq, rbox, 2 * idx + 1, deep + 1);
         return;
+    }
+
+    template<typename Box, typename BoxSeq>
+    BoxSeq ComputeSubregions(const Box& box) {
+        auto box_seq = BoxSeq::uninitialized(kRegions);
+        ComputeSubregionsRec(box_seq, box, 1, 0);
+        return std::move(box_seq);
     }
 
     Nodes tree_nodes;

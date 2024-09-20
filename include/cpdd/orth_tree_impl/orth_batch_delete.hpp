@@ -31,7 +31,7 @@ void OrthTree<Point, SplitRule, kMD, kBDO>::BatchDelete_(Slice A) {
     Node* T = this->root_;
     Box bx = this->tree_box_;
     std::tie(this->root_, this->tree_box_) =
-        BatchDeleteRecursive(T, bx, A, parlay::make_slice(B), 1);
+        BatchDeleteRecursive(T, A, parlay::make_slice(B), bx, 1);
     return;
 }
 
@@ -40,7 +40,7 @@ void OrthTree<Point, SplitRule, kMD, kBDO>::BatchDelete_(Slice A) {
 template<typename Point, typename SplitRule, uint_fast8_t kMD,
          uint_fast8_t kBDO>
 Node* OrthTree<Point, SplitRule, kMD, kBDO>::BatchDeleteRecursive(
-    Node* T, Slice In, Slice Out, bool has_tomb) {
+    Node* T, Slice In, Slice Out, const Box& box, bool has_tomb) {
     size_t n = In.size();
 
     if (n == 0) {
@@ -72,13 +72,15 @@ Node* OrthTree<Point, SplitRule, kMD, kBDO>::BatchDeleteRecursive(
         has_tomb = putTomb ? false : has_tomb;
         assert(putTomb ? (!has_tomb) : true);
 
+        auto TI = static_cast<Interior*>(T);
         OrthNodeSeq new_nodes;
+        BoxSeq new_box(TI->ComputeSubregions(box));
+
         size_t start = 0;
         for (DimsType i = 0; i < kNodeRegions; ++i) {
-            new_nodes[i] =
-                BatchDeleteRecursive(static_cast<Interior*>(T)->tree_nodes[i],
-                                     In.cut(start, start + sums[i]),
-                                     Out.cut(start, start + sums[i]));
+            new_nodes[i] = BatchDeleteRecursive(
+                TI->tree_nodes[i], In.cut(start, start + sums[i]),
+                Out.cut(start, start + sums[i]), new_box[i], has_tomb);
             start += sums[i];
         }
         BT::template UpdateInterior<Interior>(T, new_nodes);
@@ -87,8 +89,9 @@ Node* OrthTree<Point, SplitRule, kMD, kBDO>::BatchDeleteRecursive(
         if (putTomb) {
             // PERF: rebuild size is at most BT::kLeaveWrap, we can get the box
             // by traversing the tree
-            return BT::template RebuildSingleTree<Leaf, Interior, false>(
-                T, BT::GetBox(T));
+            assert(T->size <= BT::kLeaveWrap);
+            return BT::template RebuildSingleTree<Leaf, Interior, false>(T,
+                                                                         box);
         }
         return T;
     }
@@ -99,8 +102,9 @@ Node* OrthTree<Point, SplitRule, kMD, kBDO>::BatchDeleteRecursive(
     BT::template SeievePoints<Interior>(In, Out, n, IT.tags, IT.sums,
                                         IT.tags_num);
 
-    auto [re_num, tot_re_size] =
-        IT.TagInbalanceNodeDeletion(has_tomb, [&](BucketType idx) -> bool {
+    BoxSeq box_seq(IT.tags_num);
+    auto [re_num, tot_re_size] = IT.TagInbalanceNodeDeletion(
+        box_seq, box, has_tomb, [&](BucketType idx) -> bool {
             return BT::SparcyNode(IT.sums_tree[idx], IT.tags[idx].first->size);
         });
 
@@ -124,7 +128,7 @@ Node* OrthTree<Point, SplitRule, kMD, kBDO>::BatchDeleteRecursive(
             tree_nodes[i] = BatchDeleteRecursive(
                 IT.tags[IT.rev_tag[i]].first,
                 Out.cut(start, start + IT.sums[i]),
-                In.cut(start, start + IT.sums[i]),
+                In.cut(start, start + IT.sums[i]), box_seq[i],
                 IT.tags[IT.rev_tag[i]].second == BT::kBucketNum + 1);
         },
         1);
@@ -133,44 +137,37 @@ Node* OrthTree<Point, SplitRule, kMD, kBDO>::BatchDeleteRecursive(
     // TODO: maybe we can use the tot_re_size/total_rebuild_num
     // > SERIAL_BUILD_CUTOFF to judge whether to rebuild the tree in parallel
     // WARN: the rebuild node is on top
-    if (tot_re_size > BT::kSerialBuildCutoff) {  // NOTE: parallel rebuild
-        // NOTE: get new box for skeleton root and rebuild nodes
-        auto re_idx = BucketSeq::uninitialized(IT.tags_num);
-        BucketType id = 0;  // PARA: the number of nodes needs to rebuild
-        Node* new_node = IT.template UpdateInnerTree<InnerTree::kTagReNode>(
-            tree_nodes, [&](const Box& new_box, const BucketType idx) -> void {
-                re_idx[id++] = idx;
-            });
-        assert(id == re_num);
-
-        parlay::parallel_for(0, re_num, [&](size_t i) {
-            assert(IT.tags[re_idx[i]].second == BT::kBucketNum + 3);
-
-            if (IT.tags[re_idx[i]].first->size == 0) {  // NOTE: empty
-                BT::template DeleteTreeRecursive<Leaf, Interior, false>(
-                    IT.tags[re_idx[i]].first);
-                IT.tags[re_idx[i]].first = AllocEmptyLeafNode<Slice, Leaf>();
-            } else {  // NOTE: rebuild
-                auto next_dim = (d + IT.GetDepthByIndex(re_idx[id])) % BT::kDim;
-                IT.tags[re_idx[i]].first = std::get<0>(
-                    BT::template RebuildSingleTree<Leaf, Interior, false>(
-                        IT.tags[re_idx[i]].first, d, box_seq[i]));
-            }
+    // if (tot_re_size > BT::kSerialBuildCutoff) {  // NOTE: parallel rebuild
+    // NOTE: retag the inba-nodes and save the bounding boxes
+    IT.ResetTagsNum();
+    Node* new_node = IT.template UpdateInnerTree<InnerTree::kTagReNode>(
+        tree_nodes, [&](const Box& box, const BucketType idx) -> void {
+            box_seq[IT.tags_num] = box;
+            IT.rev_tag[IT.tags_num++] = idx;
         });
-        bool under_rebuild_tree = false;
-        const auto new_root =
-            std::get<0>(IT.template UpdateInnerTree<InnerTree::kReturnRebuild>(
-                tree_nodes, [&](bool op) -> bool {
-                    return op == 0 ? (under_rebuild_tree = !under_rebuild_tree)
-                                   : under_rebuild_tree;
-                }));
-        return NodeBox(new_root, new_box);
-    } else {  // NOTE: update tree in serial
-        return IT.template UpdateInnerTree<InnerTree::kDelete>(
-            tree_nodes, [&](BucketType idx) -> DimsType {
-                return (d + IT.GetDepthByIndex(idx)) % BT::kDim;
-            });
-    }
+    assert(IT.tags_num == re_num);
+
+    parlay::parallel_for(0, IT.tags_num, [&](size_t i) {
+        assert(IT.tags[IT.rev_tag[i]].second == BT::kBucketNum + 3);
+
+        if (IT.tags[IT.rev_tag[i]].first->size == 0) {  // NOTE: empty
+            BT::template DeleteTreeRecursive<Leaf, Interior, false>(
+                IT.tags[IT.rev_tag[i]].first);
+            IT.tags[IT.rev_tag[i]].first = AllocEmptyLeafNode<Slice, Leaf>();
+        } else {  // NOTE: rebuild
+            IT.tags[IT.rev_tag[i]].first =
+                BT::template RebuildSingleTree<Leaf, Interior, false>(
+                    IT.tags[IT.rev_tag[i]].first, box_seq[i]);
+        }
+    });  // PERF: allow the parlay decide the granularity to accelerate the
+         // small tree rebuild
+
+    bool under_rebuild_tree = false;
+    return IT.template UpdateInnerTree<InnerTree::kReturnRebuild>(
+        tree_nodes, [&](bool op) -> bool {
+            return op == 0 ? (under_rebuild_tree = !under_rebuild_tree)
+                           : under_rebuild_tree;
+        });
 }
 
 }  // namespace cpdd

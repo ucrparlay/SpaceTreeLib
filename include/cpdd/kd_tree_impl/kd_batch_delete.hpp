@@ -182,7 +182,7 @@ KdTree<Point, SplitRule, kBDO>::BatchDeleteRecursive(
         });
 
     // TODO: no need to compute, compute uing std::accumulate
-    // IT.RetriveRebuildTreeIdx(1, re_idx, tot_re_size, re_num);
+    // IT.RetriveRebuildTreeIdx(1, IT.rev_tag, tot_re_size, re_num);
     assert(re_num <= IT.tags_num);
 
     parlay::parallel_for(
@@ -213,49 +213,39 @@ KdTree<Point, SplitRule, kBDO>::BatchDeleteRecursive(
     // NOTE: handling of rebuild
     // TODO: maybe we can use the tot_re_size/total_rebuild_num
     // > SERIAL_BUILD_CUTOFF to judge whether to rebuild the tree in parallel
-    // WARN: the rebuild node is on top
-    if (tot_re_size > BT::kSerialBuildCutoff) {  // NOTE: parallel rebuild
+    // NOTE: get new box for skeleton root and rebuild nodes
+    IT.ResetTagsNum();
+    const Box new_box =
+        std::get<1>(IT.template UpdateInnerTree<InnerTree::kTagReNode>(
+            tree_nodes, [&](const Box& new_box, const BucketType idx) -> void {
+                IT.rev_tag[IT.tags_num] = idx;
+                box_seq[IT.tags_num++] = new_box;
+            }));
+    assert(IT.tags_num == re_num);
 
-        // NOTE: get new box for skeleton root and rebuild nodes
-        auto re_idx = BucketSeq::uninitialized(IT.tags_num);
-        BucketType id = 0;  // PARA: the number of boxs needs to rebuild
-        const Box new_box =
-            std::get<1>(IT.template UpdateInnerTree<InnerTree::kTagReNode>(
-                tree_nodes,
-                [&](const Box& new_box, const BucketType idx) -> void {
-                    re_idx[id] = idx;
-                    box_seq[id++] = new_box;
-                }));
-        assert(id == re_num);
+    parlay::parallel_for(0, IT.tags_num, [&](size_t i) {
+        assert(IT.tags[IT.rev_tag[i]].second == BT::kBucketNum + 3);
 
-        parlay::parallel_for(0, re_num, [&](size_t i) {
-            assert(IT.tags[re_idx[i]].second == BT::kBucketNum + 3);
+        if (IT.tags[IT.rev_tag[i]].first->size == 0) {  // NOTE: empty
+            BT::template DeleteTreeRecursive<Leaf, Interior, false>(
+                IT.tags[IT.rev_tag[i]].first);
+            IT.tags[IT.rev_tag[i]].first = AllocEmptyLeafNode<Slice, Leaf>();
+        } else {  // NOTE: rebuild
+            auto next_dim = (d + IT.GetDepthByIndex(IT.rev_tag[i])) % BT::kDim;
+            IT.tags[IT.rev_tag[i]].first =
+                BT::template RebuildSingleTree<Leaf, Interior, false>(
+                    IT.tags[IT.rev_tag[i]].first, d, box_seq[i]);
+        }
+    });
 
-            if (IT.tags[re_idx[i]].first->size == 0) {  // NOTE: empty
-                BT::template DeleteTreeRecursive<Leaf, Interior, false>(
-                    IT.tags[re_idx[i]].first);
-                IT.tags[re_idx[i]].first = AllocEmptyLeafNode<Slice, Leaf>();
-            } else {  // NOTE: rebuild
-                auto next_dim = (d + IT.GetDepthByIndex(re_idx[id])) % BT::kDim;
-                IT.tags[re_idx[i]].first =
-                    BT::template RebuildSingleTree<Leaf, Interior, false>(
-                        IT.tags[re_idx[i]].first, d, box_seq[i]);
-            }
-        });
-        bool under_rebuild_tree = false;
-        const auto new_root =
-            std::get<0>(IT.template UpdateInnerTree<InnerTree::kReturnRebuild>(
-                tree_nodes, [&](bool op) -> bool {
-                    return op == 0 ? (under_rebuild_tree = !under_rebuild_tree)
-                                   : under_rebuild_tree;
-                }));
-        return NodeBox(new_root, new_box);
-    } else {  // NOTE: update tree in serial
-        return IT.template UpdateInnerTree<InnerTree::kDelete>(
-            tree_nodes, [&](BucketType idx) -> DimsType {
-                return (d + IT.GetDepthByIndex(idx)) % BT::kDim;
-            });
-    }
+    bool under_rebuild_tree = false;
+    const auto new_root =
+        std::get<0>(IT.template UpdateInnerTree<InnerTree::kReturnRebuild>(
+            tree_nodes, [&](bool op) -> bool {
+                return op == 0 ? (under_rebuild_tree = !under_rebuild_tree)
+                               : under_rebuild_tree;
+            }));
+    return NodeBox(new_root, new_box);
 }
 
 }  // namespace cpdd

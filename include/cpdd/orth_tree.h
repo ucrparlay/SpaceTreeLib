@@ -86,7 +86,8 @@ class OrthTree :
 
     void BatchDelete_(Slice In);
 
-    Node* BatchDeleteRecursive(Node* T, Slice In, Slice Out, bool has_tomb);
+    Node* BatchDeleteRecursive(Node* T, Slice In, Slice Out, const Box& box,
+                               bool has_tomb);
 
     // NOTE: batch diff
     // NOTE: for the case that some Points to be deleted are not in the tree

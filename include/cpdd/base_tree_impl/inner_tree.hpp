@@ -126,9 +126,10 @@ struct BaseTree<Point, DerivedTree, kBDO>::InnerTree {
     // the *bucket* Node whose ancestor has been rebuilt has tag kBucketNum+2
     // the *bucket* Node whose ancestor has not been ... has kBucketNum+1
     // otherwise, it's kBucketNum
-    template<typename... Args, typename ViolateFunc>
+    template<typename ViolateFunc>
     void MarkTomb(BucketType idx, BucketType& re_num, size_t& tot_re_size,
-                  Args&&... args, bool has_tomb, ViolateFunc&& func) {
+                  BoxSeq& box_seq, const Box& box, bool has_tomb,
+                  ViolateFunc&& func) {
         if (idx > kPivotNum || tags[idx].first->is_leaf) {
             assert(tags[idx].second >= 0 && tags[idx].second < kBucketNum);
             if (!has_tomb) {  // NOTE: this subtree needs to be rebuilt in the
@@ -145,12 +146,7 @@ struct BaseTree<Point, DerivedTree, kBDO>::InnerTree {
                 tags[idx].second = kBucketNum + 1;
             }
 
-            // NOTE: storing the box if necessary
-            if constexpr (ContainsType<Box, Args...> &&
-                          ContainsType<BoxSeq, Args...>) {
-                FindVar<BoxSeq>(args...)[tags_num] = FindVar<Box>(args...);
-            }
-            // box_seq[tags_num] = box;
+            box_seq[tags_num] = box;
             rev_tag[tags_num++] = idx;
             return;
         }
@@ -158,9 +154,6 @@ struct BaseTree<Point, DerivedTree, kBDO>::InnerTree {
         // NOTE: no need to mark the internal nodes with tag kBucketNum
         assert(tags[idx].second == kBucketNum && (!tags[idx].first->is_leaf));
         Interior* TI = static_cast<Interior*>(tags[idx].first);
-        // if (has_tomb && (ImbalanceNode(TI->left->size - sums_tree[idx << 1],
-        //                                TI->size - sums_tree[idx]) ||
-        //                  (TI->size - sums_tree[idx] < kThinLeaveWrap))) {
         if (has_tomb && func(idx)) {
             assert(has_tomb != 0);
             assert(TI->ForceParallel() == 0);
@@ -173,22 +166,20 @@ struct BaseTree<Point, DerivedTree, kBDO>::InnerTree {
         // NOTE: has_tomb == false => need to rebuild
         TI->SetParallelFlag(has_tomb ? false : TI->size > kSerialBuildCutoff);
 
-        if constexpr (ContainsType<Box, Args...> &&
-                      ContainsType<BoxSeq, Args...>) {
-            // TODO: rewrite for reduce write
-            static_assert(IsBinaryNode<Interior>);
-            Box lbox(FindVar<Box>(args...)), rbox(FindVar<Box>(args...));
+        if constexpr (IsBinaryNode<Interior>) {
+            // TODO: rewrite to reduce work
+            Box lbox(box), rbox(box);
             lbox.second.pnt[TI->split.second] = TI->split.first;  //* loose
             rbox.first.pnt[TI->split.second] = TI->split.first;
-            MarkTomb(idx << 1, re_num, tot_re_size, FindVar<BoxSeq>(args...),
-                     lbox, has_tomb, func);
-            MarkTomb(idx << 1 | 1, re_num, tot_re_size,
-                     FindVar<BoxSeq>(args...), rbox, has_tomb, func);
-        } else {
-            static_assert(IsMultiNode<Interior>);
+            MarkTomb(idx << 1, re_num, tot_re_size, box_seq, lbox, has_tomb,
+                     func);
+            MarkTomb(idx << 1 | 1, re_num, tot_re_size, box_seq, rbox, has_tomb,
+                     func);
+        } else if constexpr (IsMultiNode<Interior>) {
+            BoxSeq new_box(TI->ComputeSubregions(box));
             for (BucketType i = 0; i < Interior::kRegions; ++i) {
                 MarkTomb(idx * Interior::kRegions + i, re_num, tot_re_size,
-                         std::forward<Args>(args)..., has_tomb, func);
+                         box_seq, new_box[i], has_tomb, func);
             }
         }
         return;
@@ -234,7 +225,7 @@ struct BaseTree<Point, DerivedTree, kBDO>::InnerTree {
         // WARN: needs to ensure this success for both insert and delete
         if (this->tags[idx].second == kBucketNum + 1 ||
             this->tags[idx].second == kBucketNum + 2) {
-            assert(this->rev_tag[p] == idx);
+            // assert(this->rev_tag[p] == idx);
             return tree_nodes[p++];
         }
 
@@ -251,18 +242,15 @@ struct BaseTree<Point, DerivedTree, kBDO>::InnerTree {
             UpdateInnerTreeRecursive<kUT>(idx << 1 | 1, tree_nodes, p, func);
 
         if constexpr (kUT == kPointer) {  // NOTE: only update the pointers
+            UpdateInterior<Interior>(this->tags[idx].first, left, right);
             if constexpr (IsPointer<Base>) {
-                UpdateInterior<Interior>(this->tags[idx].first, left, right);
                 return this->tags[idx].first;
             } else {  // update pointer for node_box
-                UpdateInterior<Interior>(this->tags[idx].first, left.first,
-                                         right.first);
                 return NodeBox(this->tags[idx].first, Box());
             }
         } else if constexpr (kUT == kTagReNode) {  // NOTE: retag and save box
                                                    // for rebuild
-            UpdateInterior<Interior>(this->tags[idx].first, left.first,
-                                     right.first);
+            UpdateInterior<Interior>(this->tags[idx].first, left, right);
             auto new_box = BT::GetBox(left.second, right.second);
             if (this->tags[idx].second == BT::kBucketNum + 3) {
                 func(new_box, idx);
@@ -272,8 +260,7 @@ struct BaseTree<Point, DerivedTree, kBDO>::InnerTree {
                              kReturnRebuild) {  // NOTE: avoid update pointers
                                                 // for deleted trees
             if (!func(1)) {  // query whether under the rebuild_tree
-                UpdateInterior<Interior>(this->tags[idx].first, left.first,
-                                         right.first);
+                UpdateInterior<Interior>(this->tags[idx].first, left, right);
                 return NodeBox(this->tags[idx].first,
                                Box());  // box has been computed before
             } else if (this->tags[idx].second == kBucketNum + 3) {  // back
@@ -285,8 +272,7 @@ struct BaseTree<Point, DerivedTree, kBDO>::InnerTree {
             }
         } else {  // NOTE: update tree meanwhile delete the old ones
             static_assert(kUT == kDelete);
-            UpdateInterior<Interior>(this->tags[idx].first, left.first,
-                                     right.first);
+            UpdateInterior<Interior>(this->tags[idx].first, left, right);
             if (this->tags[idx].second == kBucketNum + 3) {  // rebuild
                 Interior const* TI =
                     static_cast<Interior*>(this->tags[idx].first);
@@ -320,6 +306,13 @@ struct BaseTree<Point, DerivedTree, kBDO>::InnerTree {
             return tree_nodes[p++];
         }
 
+        if constexpr (kUT == kReturnRebuild) {
+            if (this->tags[idx].second == kBucketNum + 3) {
+                func(0);  // close the under_rebuild_tree flag
+                assert(func(0) == true);
+            }
+        }
+
         assert(tags[idx].second == BT::kBucketNum);
         assert(tags[idx].first != NULL);
         typename Interior::OrthNodeSeq new_nodes;
@@ -327,22 +320,44 @@ struct BaseTree<Point, DerivedTree, kBDO>::InnerTree {
             new_nodes[i] = UpdateInnerTreeByTag(
                 idx * Interior::kNodeRegions + i, tags, tree_nodes, p);
         }
+
         BT::template UpdateInterior<Interior>(tags[idx].first, new_nodes);
-        return tags[idx].first;
+        if constexpr (kUT == kTagReNode) {
+            UpdateInterior<Interior>(this->tags[idx].first, new_nodes);
+            if (this->tags[idx].second == BT::kBucketNum + 3) {
+                func(idx);
+            }
+            return this->tags[idx].first;
+        } else if constexpr (kUT ==
+                             kReturnRebuild) {  // NOTE: avoid update pointers
+                                                // for deleted trees
+            if (!func(1)) {                     // not under rebuild tree
+                UpdateInterior<Interior>(this->tags[idx].first, new_nodes);
+                return this->tags[idx].first;  // box has been computed before
+            } else if (this->tags[idx].second == kBucketNum + 3) {  // back
+                func(0);  // disable the under_rebuild_tree flag
+                assert(func(1) == false);
+                return this->tags[idx].first;
+            } else {  // the tree has been deleted
+                return nullptr;
+            }
+        } else {
+            return tags[idx].first;
+        }
     }
 
     void Reset() {
         ResetTagsNum();
         tags = NodeTagSeq::uninitialized(kPivotNum + kBucketNum + 1);
         sums_tree = parlay::sequence<BallsType>(kPivotNum + kBucketNum + 1);
-        rev_tag = Tag2Node::uninitialized(kBucketNum);
+        rev_tag = BucketSeq::uninitialized(kBucketNum);
     }
 
     // NOTE: variables
     NodeTagSeq tags;  //@ Assign each node a tag, aka skeleton
     parlay::sequence<BallsType> sums;
     mutable parlay::sequence<BallsType> sums_tree;
-    mutable Tag2Node rev_tag;  //@ maps tag to the position in skeleton
+    mutable BucketSeq rev_tag;  //@ maps tag to the position in skeleton
     BucketType tags_num;
     BT& BTRef;
 };

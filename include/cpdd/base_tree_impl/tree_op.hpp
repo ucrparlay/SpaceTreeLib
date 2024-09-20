@@ -230,6 +230,19 @@ inline void BaseTree<Point, DerivedTree, kBDO>::UpdateInterior(Node* T, Node* L,
 }
 
 template<typename Point, typename DerivedTree, uint_fast8_t kBDO>
+template<IsBinaryNode Interior>
+inline void BaseTree<Point, DerivedTree, kBDO>::UpdateInterior(
+    Node* T, const NodeBox& L, const NodeBox& R) {
+    assert(!T->is_leaf);
+    Interior* TI = static_cast<Interior*>(T);
+    TI->ResetParallelFlag();
+    TI->size = L.first->size + R.first->size;
+    TI->left = L.first;
+    TI->right = R.first;
+    return;
+}
+
+template<typename Point, typename DerivedTree, uint_fast8_t kBDO>
 template<IsMultiNode Interior>
 inline void BaseTree<Point, DerivedTree, kBDO>::UpdateInterior(
     Node* T, typename Interior::Nodes& new_nodes) {
