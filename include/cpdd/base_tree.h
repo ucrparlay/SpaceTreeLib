@@ -99,8 +99,8 @@ class BaseTree {
                                       const NodeBox& R);
 
     template<IsMultiNode Interior>
-    static inline void UpdateInterior(Node* T,
-                                      typename Interior::Nodes& new_nodes);
+    static inline void UpdateInterior(
+        Node* T, const typename Interior::NodeArr& new_nodes);
 
     template<typename Leaf, typename Interior, bool granularity = true>
     static void PrepareRebuild(Node* T, Slice In, Points& wx, Points& wo);

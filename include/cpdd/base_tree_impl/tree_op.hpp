@@ -245,7 +245,7 @@ inline void BaseTree<Point, DerivedTree, kBDO>::UpdateInterior(
 template<typename Point, typename DerivedTree, uint_fast8_t kBDO>
 template<IsMultiNode Interior>
 inline void BaseTree<Point, DerivedTree, kBDO>::UpdateInterior(
-    Node* T, typename Interior::Nodes& new_nodes) {
+    Node* T, const typename Interior::NodeArr& new_nodes) {
     assert(!T->is_leaf);
     Interior* TI = static_cast<Interior*>(T);
     TI->ResetParallelFlag();

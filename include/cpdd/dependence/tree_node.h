@@ -132,11 +132,11 @@ struct MultiNode : Node {
     using BucketType = uint_fast8_t;
     using Coord = typename Point::Coord;
     using Num = Num_Comparator<Coord>;
-    using Nodes = std::array<Node*, kRegions>;
+    using NodeArr = std::array<Node*, kRegions>;
     using ST = SplitType;
     using AT = AugType;
 
-    MultiNode(const Nodes& _tree_nodes, const ST& _split, const AT& _aug) :
+    MultiNode(const NodeArr& _tree_nodes, const ST& _split, const AT& _aug) :
         Node{false,
              std::accumulate(
                  _tree_nodes.begin(), _tree_nodes.end(), static_cast<size_t>(0),
@@ -205,7 +205,7 @@ struct MultiNode : Node {
         return std::move(box_seq);
     }
 
-    Nodes tree_nodes;
+    NodeArr tree_nodes;
     ST split;
     AT aug;
 };
@@ -220,7 +220,7 @@ static Interior* AllocInteriorNode(Node* L, Node* R,
 }
 
 template<typename Interior>
-static Interior* AllocInteriorNode(const typename Interior::Nodes& tree_nodes,
+static Interior* AllocInteriorNode(const typename Interior::NodeArr& tree_nodes,
                                    const typename Interior::ST& split,
                                    const typename Interior::AT& aug) {
     Interior* o = parlay::type_allocator<Interior>::alloc();

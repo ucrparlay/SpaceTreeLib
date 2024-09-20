@@ -1,5 +1,6 @@
 #pragma once
 
+#include <utility>
 #include "../base_tree.h"
 
 namespace cpdd {
@@ -12,7 +13,7 @@ struct BaseTree<Point, DerivedTree, kBDO>::InnerTree {
         tags_num(0),
         tags(NodeTagSeq::uninitialized(kPivotNum + kBucketNum + 1)),
         sums_tree(parlay::sequence<BallsType>(kPivotNum + kBucketNum + 1)),
-        rev_tag(Tag2Node::uninitialized(kBucketNum)) {}
+        rev_tag(BucketSeq::uninitialized(kBucketNum)) {}
 
     // NOTE: helpers
     bool AssertSize(Node* T) const {
@@ -190,15 +191,13 @@ struct BaseTree<Point, DerivedTree, kBDO>::InnerTree {
     // the *bucket* Node whose ancestor has not been ... has kBucketNum+1
     // otherwise, it's kBucketNum
 
-    template<typename... Args, typename ViolateFunc>
-    auto TagInbalanceNodeDeletion(Args&&... args, ViolateFunc&& func) {
+    template<typename... Args>
+    auto TagInbalanceNodeDeletion(Args&&... args) {
         ReduceSums(1);
         ResetTagsNum();
         BucketType re_num = 0;
         size_t tot_re_size = 0;
-        MarkTomb(1, re_num, tot_re_size, std::forward<Args>(args)...,
-                 std::forward<ViolateFunc>(func));
-        assert(AssertSize(tags[1].first));
+        MarkTomb(1, re_num, tot_re_size, std::forward<Args>(args)...);
         return std::make_pair(re_num, tot_re_size);
     }
 
@@ -206,10 +205,9 @@ struct BaseTree<Point, DerivedTree, kBDO>::InnerTree {
 
     // NOTE: update the skeleton based on the @UpdateType
     template<UpdateType kUT, typename Base, typename Func>
-        requires IsPointer<Base> ||
-                 (IsPair<Base> && IsPointer<typename Base::first_type> &&
-                  IsBox<typename Base::second_type, Point>)
-    Base
+    requires IsPointer<Base> ||
+        (IsPair<Base>&& IsPointer<typename Base::first_type>&&
+             IsBox<typename Base::second_type, Point>)Base
         UpdateInnerTree(const parlay::sequence<Base>& tree_nodes, Func&& func) {
         BucketType p = 0;
         return UpdateInnerTreeRecursive<kUT>(1, tree_nodes, p,
@@ -218,10 +216,9 @@ struct BaseTree<Point, DerivedTree, kBDO>::InnerTree {
 
     // NOTE: udpate inner tree for binary nodes
     template<UpdateType kUT, typename Base, typename Func>
-        requires IsBinaryNode<Interior>
-    Base UpdateInnerTreeRecursive(BucketType idx,
-                                  const parlay::sequence<Base>& tree_nodes,
-                                  BucketType& p, Func&& func) {
+    requires IsBinaryNode<Interior> Base UpdateInnerTreeRecursive(
+        BucketType idx, const parlay::sequence<Base>& tree_nodes, BucketType& p,
+        Func&& func) {
         // WARN: needs to ensure this success for both insert and delete
         if (this->tags[idx].second == kBucketNum + 1 ||
             this->tags[idx].second == kBucketNum + 2) {
@@ -298,10 +295,9 @@ struct BaseTree<Point, DerivedTree, kBDO>::InnerTree {
     }
 
     template<UpdateType kUT, typename Base, typename Func>
-        requires IsMultiNode<Interior>
-    Base UpdateInnerTreeRecursive(BucketType idx,
-                                  const parlay::sequence<Base>& tree_nodes,
-                                  BucketType& p, Func&& func) {
+    requires IsMultiNode<Interior> Base UpdateInnerTreeRecursive(
+        BucketType idx, const parlay::sequence<Base>& tree_nodes, BucketType& p,
+        Func&& func) {
         if (tags[idx].second < BT::kBucketNum) {
             return tree_nodes[p++];
         }
@@ -315,14 +311,16 @@ struct BaseTree<Point, DerivedTree, kBDO>::InnerTree {
 
         assert(tags[idx].second == BT::kBucketNum);
         assert(tags[idx].first != NULL);
-        typename Interior::OrthNodeSeq new_nodes;
-        for (BucketType i = 0; i < Interior::kNodeRegions; ++i) {
-            new_nodes[i] = UpdateInnerTreeByTag(
-                idx * Interior::kNodeRegions + i, tags, tree_nodes, p);
+        typename Interior::OrthNodeArr new_nodes;
+        for (BucketType i = 0; i < Interior::kRegions; ++i) {
+            new_nodes[i] = UpdateInnerTreeRecursive<kUT>(
+                idx * Interior::kRegions + i, tree_nodes, p, func);
         }
 
-        BT::template UpdateInterior<Interior>(tags[idx].first, new_nodes);
-        if constexpr (kUT == kTagReNode) {
+        if constexpr (kUT == kPointer) {
+            BT::template UpdateInterior<Interior>(tags[idx].first, new_nodes);
+            return this->tags[idx].first;
+        } else if constexpr (kUT == kTagReNode) {
             UpdateInterior<Interior>(this->tags[idx].first, new_nodes);
             if (this->tags[idx].second == BT::kBucketNum + 3) {
                 func(idx);
@@ -342,7 +340,7 @@ struct BaseTree<Point, DerivedTree, kBDO>::InnerTree {
                 return nullptr;
             }
         } else {
-            return tags[idx].first;
+            static_assert(false);
         }
     }
 

@@ -1,7 +1,6 @@
 #pragma once
 
 #include "../orth_tree.h"
-#include "parlay/primitives.h"
 
 namespace cpdd {
 
@@ -75,7 +74,7 @@ Node* OrthTree<Point, SplitRule, kMD, kBDO>::UpdateInnerTreeByTag(
 
     assert(tags[idx].second == BT::kBucketNum);
     assert(tags[idx].first != NULL);
-    OrthNodeSeq new_nodes;
+    OrthNodeArr new_nodes;
     for (BucketType i = 0; i < kNodeRegions; ++i) {
         new_nodes[i] =
             UpdateInnerTreeByTag(idx * kNodeRegions + i, tags, tree_nodes, p);
@@ -111,7 +110,7 @@ Node* OrthTree<Point, SplitRule, kMD, kBDO>::BatchInsertRecursive(Node* T,
         SerialSplitSkeleton(T, In, 0, 1, sums);
         assert(std::accumulate(sums.begin(), sums.end(), 0) == n);
 
-        OrthNodeSeq new_nodes;
+        OrthNodeArr new_nodes;
         size_t start = 0;
         for (DimsType i = 0; i < kNodeRegions; ++i) {
             new_nodes[i] =
@@ -154,8 +153,7 @@ Node* OrthTree<Point, SplitRule, kMD, kBDO>::BatchInsertRecursive(Node* T,
         },
         1);
 
-    BucketType beatles = 0;
-    // TODO: rewrite to use the one in inner tree
-    return UpdateInnerTreeByTag(1, IT.tags, tree_nodes, beatles);
+    return IT.template UpdateInnerTree<InnerTree::kPointer>(tree_nodes,
+                                                            []() {});
 }
 }  // namespace cpdd

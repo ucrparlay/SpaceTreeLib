@@ -48,7 +48,7 @@ class OrthTree :
     using Leaf =
         LeafNode<Point, Slice, BT::kLeaveWrap, parlay::move_assign_tag>;
     using Interior = OrthInteriorNode;
-    using OrthNodeSeq = Interior::OrthNodeSeq;
+    using OrthNodeArr = Interior::OrthNodeArr;
     using InnerTree = typename BT::template InnerTree<Leaf, Interior>;
 
     // NOTE: expose basetree interface
@@ -161,3 +161,4 @@ class OrthTree :
 #include "orth_tree_impl/orth_inter_node.hpp"
 #include "orth_tree_impl/orth_override.hpp"
 #include "orth_tree_impl/orth_batch_insert.hpp"
+#include "orth_tree_impl/orth_batch_delete.hpp"

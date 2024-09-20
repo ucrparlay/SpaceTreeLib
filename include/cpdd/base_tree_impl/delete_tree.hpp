@@ -1,6 +1,6 @@
+#pragma once
+
 #include "../base_tree.h"
-#include "cpdd/dependence/tree_node.h"
-#include "parlay/parallel.h"
 
 namespace cpdd {
 
@@ -15,7 +15,8 @@ void BaseTree<Point, DerivedTree, kBDO>::DeleteTreeWrapper() {
     return;
 }
 
-template<typename Point, typename DerivedTree, uint_fast8_t kBDO>  //* delete tree in parallel
+template<typename Point, typename DerivedTree,
+         uint_fast8_t kBDO>  //* delete tree in parallel
 template<typename Leaf, IsBinaryNode Interior, bool granularity>
 void BaseTree<Point, DerivedTree, kBDO>::DeleteTreeRecursive(Node* T) {
     if (T == nullptr) {
@@ -36,7 +37,8 @@ void BaseTree<Point, DerivedTree, kBDO>::DeleteTreeRecursive(Node* T) {
     }
 }
 
-template<typename Point, typename DerivedTree, uint_fast8_t kBDO>  //* delete tree in parallel
+template<typename Point, typename DerivedTree,
+         uint_fast8_t kBDO>  //* delete tree in parallel
 template<typename Leaf, IsMultiNode Interior, bool granularity>
 void BaseTree<Point, DerivedTree, kBDO>::DeleteTreeRecursive(Node* T) {
     if (T == nullptr) return;

@@ -1,8 +1,6 @@
 #pragma once
 
-#include <algorithm>
 #include "../orth_tree.h"
-#include "cpdd/dependence/tree_node.h"
 
 namespace cpdd {
 
@@ -19,7 +17,7 @@ void OrthTree<Point, SplitRule, kMD, kBDO>::BatchDelete(Range&& In) {
                                 parlay::range_reference_type_t<Range>>);
 
     Slice A = parlay::make_slice(In);
-    BatchDelete_(A);
+    // BatchDelete_(A);
     return;
 }
 
@@ -73,7 +71,7 @@ Node* OrthTree<Point, SplitRule, kMD, kBDO>::BatchDeleteRecursive(
         assert(putTomb ? (!has_tomb) : true);
 
         auto TI = static_cast<Interior*>(T);
-        OrthNodeSeq new_nodes;
+        OrthNodeArr new_nodes;
         BoxSeq new_box(TI->ComputeSubregions(box));
 
         size_t start = 0;
