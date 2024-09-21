@@ -87,21 +87,34 @@ KdTree<Point, SplitRule, kBDO>::BatchDeleteRecursive(
     Node* T, const typename KdTree<Point, SplitRule, kBDO>::Box& bx, Slice In,
     Slice Out, DimsType d, bool has_tomb) {
     size_t n = In.size();
+    // if (T->size == 515805) {
+    //     std::cout << "visit n: " << n << std::endl;
+    // }
+    // if (!T->is_leaf) {
+    //     auto TI = static_cast<Interior*>(T);
+    //     // if (TI->left->size + TI->right->size != T->size) {
+    //     LOG << TI->left->size << " " << TI->right->size << " " << T->size
+    //         << ENDL;
+    //     // assert(0);
+    //     // }
+    // }
 
     if (n == 0) {
-        LOG << "n==0" << ENDL;
+        LOG << "n: " << T->size << " " << has_tomb << ENDL;
         assert(BT::WithinBox(BT::template GetBox<Leaf, Interior>(T), bx));
-        LOG << "end n==0" << ENDL;
+        LOG << "end" << ENDL;
         return NodeBox(T, bx);
     }
 
     // INFO: may can be used to accelerate the whole deletion process
     if (n == T->size) {
         if (has_tomb) {
+            LOG << "direct delete " << T->size << ENDL;
             BT::template DeleteTreeRecursive<Leaf, Interior>(T);
             return NodeBox(AllocEmptyLeafNode<Slice, Leaf>(),
                            BT::GetEmptyBox());
         }
+        // LOG << "mark " << T->size << ENDL;
         auto TI = static_cast<Interior*>(T);
         TI->SetParallelFlag(T->size > BT::kSerialBuildCutoff);
         TI->size = 0;
@@ -109,13 +122,7 @@ KdTree<Point, SplitRule, kBDO>::BatchDeleteRecursive(
     }
 
     if (T->is_leaf) {
-        // return BT::template DeletePoints4Leaf<Leaf, NodeBox>(T, In);
-        auto [tmpt, tmpb] =
-            BT::template DeletePoints4Leaf<Leaf, NodeBox>(T, In);
-        LOG << " after leaf " << ENDL;
-        assert(BT::WithinBox(BT::template GetBox<Leaf, Interior>(tmpt), tmpb));
-        LOG << "end leaf" << ENDL;
-        return NodeBox(tmpt, tmpb);
+        return BT::template DeletePoints4Leaf<Leaf, NodeBox>(T, In);
     }
 
     if (1) {
@@ -150,8 +157,8 @@ KdTree<Point, SplitRule, kBDO>::BatchDeleteRecursive(
             TI->right, rbox, In.cut(split_iter - In.begin(), n),
             Out.cut(split_iter - In.begin(), n), nextDim, has_tomb);
 
-        // TI->SetParallelFlag(has_tomb ? false
-        //                              : TI->size > BT::kSerialBuildCutoff);
+        TI->SetParallelFlag(has_tomb ? false
+                                     : TI->size > BT::kSerialBuildCutoff);
         bool par_flag = TI->size > BT::kSerialBuildCutoff;
         BT::template UpdateInterior<Interior>(T, L, R);
         if (!has_tomb) {  // WARN: The update will reset parallel flag

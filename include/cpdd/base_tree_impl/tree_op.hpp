@@ -41,7 +41,7 @@ Node* BaseTree<Point, DerivedTree, kBDO>::RebuildSingleTree(Node* T,
 template<typename Point, typename DerivedTree, uint_fast8_t kBDO>
 template<SupportsForceParallel Interior, bool granularity>
 inline bool BaseTree<Point, DerivedTree, kBDO>::ForceParallelRecursion(
-    Interior* TI) {
+    const Interior* TI) {
     return (granularity && TI->size > kSerialBuildCutoff) ||
            (!granularity && TI->ForceParallel());
 }

@@ -150,7 +150,7 @@ class BaseTree {
 
     // NOTE: delete tree
     template<SupportsForceParallel Interior, bool granularity>
-    inline static bool ForceParallelRecursion(Interior* T);
+    inline static bool ForceParallelRecursion(const Interior* T);
 
     virtual void DeleteTree() = 0;
 
@@ -266,7 +266,7 @@ class BaseTree {
     bool CheckBox(Node* T, const Box& bx);
 
     template<typename Leaf, typename Interior>
-    size_t CheckSize(Node* T);
+    static size_t CheckSize(Node* T);
 
     template<typename Leaf, typename Interior>
     void CheckTreeSameSequential(Node* T, int dim);
