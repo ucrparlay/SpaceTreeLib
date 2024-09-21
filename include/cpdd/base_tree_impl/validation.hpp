@@ -44,7 +44,8 @@ size_t BaseTree<Point, DerivedTree, kBDO>::CheckSize(Node* T) {
 
 template<typename Point, typename DerivedTree, uint_fast8_t kBDO>
 template<typename Leaf, typename Interior>
-void BaseTree<Point, DerivedTree, kBDO>::CheckTreeSameSequential(Node* T, int dim) {
+void BaseTree<Point, DerivedTree, kBDO>::CheckTreeSameSequential(Node* T,
+                                                                 int dim) {
     if (T->is_leaf) {
         // assert( PickRebuildDim( T, kDim ) == dim );
         return;
@@ -80,7 +81,7 @@ void BaseTree<Point, DerivedTree, kBDO>::CheckTreeSameSequential(Node* T, int di
 template<typename Point, typename DerivedTree, uint_fast8_t kBDO>
 template<typename Leaf, typename Interior, typename SplitRule>
 void BaseTree<Point, DerivedTree, kBDO>::Validate() {
-    std::cout << ">>> begin validate tree" << std::endl << std::flush;
+    std::cout << "\n>>> begin validate tree" << std::endl << std::flush;
     if (CheckBox<Leaf, Interior>(this->root_, this->tree_box_) &&
         LegalBox(this->tree_box_)) {
         std::cout << "Correct bounding Box" << std::endl << std::flush;
@@ -115,7 +116,8 @@ size_t BaseTree<Point, DerivedTree, kBDO>::GetTreeHeight() {
 
 template<typename Point, typename DerivedTree, uint_fast8_t kBDO>
 template<typename Leaf, typename Interior>
-size_t BaseTree<Point, DerivedTree, kBDO>::GetMaxTreeDepth(Node* T, size_t deep) {
+size_t BaseTree<Point, DerivedTree, kBDO>::GetMaxTreeDepth(Node* T,
+                                                           size_t deep) {
     if (T->is_leaf) {
         return deep;
     }

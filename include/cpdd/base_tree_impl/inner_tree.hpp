@@ -139,9 +139,9 @@ struct BaseTree<Point, DerivedTree, kBDO>::InnerTree {
                 tags[idx].second = kBucketNum + 2;
                 if (!tags[idx].first->is_leaf) {
                     auto TI = static_cast<Interior*>(tags[idx].first);
-                    assert(TI->ForceParallel() == false);
-                    TI->SetParallelFlag(tags[idx].first->size >
-                                        kSerialBuildCutoff);
+                    assert(!TI->GetParallelFlagIniStatus());
+                    TI->SetParallelFlag(TI->size > kSerialBuildCutoff);
+                    assert(TI->GetParallelFlagIniStatus());
                 }
             } else {
                 tags[idx].second = kBucketNum + 1;
@@ -157,15 +157,13 @@ struct BaseTree<Point, DerivedTree, kBDO>::InnerTree {
         Interior* TI = static_cast<Interior*>(tags[idx].first);
         if (has_tomb && func(idx)) {
             assert(has_tomb != 0);
-            assert(TI->ForceParallel() == 0);
+            assert(!TI->GetParallelFlagIniStatus());
             tags[idx].second = kBucketNum + 3;
             has_tomb = false;
+            TI->SetParallelFlag(TI->size > kSerialBuildCutoff);
             re_num++;
             tot_re_size += TI->size;
         }
-
-        // NOTE: has_tomb == false => need to rebuild
-        TI->SetParallelFlag(has_tomb ? false : TI->size > kSerialBuildCutoff);
 
         if constexpr (IsBinaryNode<Interior>) {
             // TODO: rewrite to reduce work
@@ -205,9 +203,10 @@ struct BaseTree<Point, DerivedTree, kBDO>::InnerTree {
 
     // NOTE: update the skeleton based on the @UpdateType
     template<UpdateType kUT, typename Base, typename Func>
-    requires IsPointer<Base> ||
-        (IsPair<Base>&& IsPointer<typename Base::first_type>&&
-             IsBox<typename Base::second_type, Point>)Base
+        requires IsPointer<Base> ||
+                 (IsPair<Base> && IsPointer<typename Base::first_type> &&
+                  IsBox<typename Base::second_type, Point>)
+    Base
         UpdateInnerTree(const parlay::sequence<Base>& tree_nodes, Func&& func) {
         BucketType p = 0;
         return UpdateInnerTreeRecursive<kUT>(1, tree_nodes, p,
@@ -216,9 +215,10 @@ struct BaseTree<Point, DerivedTree, kBDO>::InnerTree {
 
     // NOTE: udpate inner tree for binary nodes
     template<UpdateType kUT, typename Base, typename Func>
-    requires IsBinaryNode<Interior> Base UpdateInnerTreeRecursive(
-        BucketType idx, const parlay::sequence<Base>& tree_nodes, BucketType& p,
-        Func&& func) {
+        requires IsBinaryNode<Interior>
+    Base UpdateInnerTreeRecursive(BucketType idx,
+                                  const parlay::sequence<Base>& tree_nodes,
+                                  BucketType& p, Func&& func) {
         // WARN: needs to ensure this success for both insert and delete
         if (this->tags[idx].second == kBucketNum + 1 ||
             this->tags[idx].second == kBucketNum + 2) {
@@ -295,9 +295,10 @@ struct BaseTree<Point, DerivedTree, kBDO>::InnerTree {
     }
 
     template<UpdateType kUT, typename Base, typename Func>
-    requires IsMultiNode<Interior> Base UpdateInnerTreeRecursive(
-        BucketType idx, const parlay::sequence<Base>& tree_nodes, BucketType& p,
-        Func&& func) {
+        requires IsMultiNode<Interior>
+    Base UpdateInnerTreeRecursive(BucketType idx,
+                                  const parlay::sequence<Base>& tree_nodes,
+                                  BucketType& p, Func&& func) {
         if (tags[idx].second < BT::kBucketNum) {
             return tree_nodes[p++];
         }

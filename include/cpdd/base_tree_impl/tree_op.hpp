@@ -78,6 +78,11 @@ void BaseTree<Point, DerivedTree, kBDO>::FlattenRec(Node* T, Range Out) {
     }
 
     Interior* TI = static_cast<Interior*>(T);
+    if (T->size != TI->left->size + TI->right->size) {
+        std::cout << "T->size: " << T->size
+                  << " TI->left->size: " << TI->left->size
+                  << " TI->right->size: " << TI->right->size << std::flush;
+    }
     assert(TI->size == TI->left->size + TI->right->size);
     parlay::par_do_if(
         // WARN: check parallelisim using node size can be biased
@@ -282,8 +287,7 @@ RT BaseTree<Point, DerivedTree, kBDO>::DeletePoints4Leaf(Node* T, Slice In) {
     Leaf* TL = static_cast<Leaf*>(T);
 
     if (TL->is_dummy) {
-        assert(In.size() <=
-               T->size);  // NOTE: cannot delete more Points then there are
+        assert(In.size() <= T->size);
         TL->size -= In.size();  // WARN: this assumes that In\in T
         if (TL->size == 0) {
             TL->is_dummy = false;
@@ -297,6 +301,7 @@ RT BaseTree<Point, DerivedTree, kBDO>::DeletePoints4Leaf(Node* T, Slice In) {
                 T, T->size ? Box(TL->pts[0], TL->pts[0]) : GetEmptyBox());
         } else {
             static_assert(std::same_as<RT, Node*> || std::same_as<RT, NodeBox>);
+            return T;
         }
     }
 

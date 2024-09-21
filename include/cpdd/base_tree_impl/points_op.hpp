@@ -6,12 +6,14 @@
 
 namespace cpdd {
 template<typename Point, typename DerivedTree, uint_fast8_t kBDO>
-inline void BaseTree<Point, DerivedTree, kBDO>::SamplePoints(Slice In, Points& arr) {
+inline void BaseTree<Point, DerivedTree, kBDO>::SamplePoints(Slice In,
+                                                             Points& arr) {
     auto size = arr.size();
     auto n = In.size();
     auto indexs = parlay::sequence<uint64_t>::uninitialized(size);
     for (size_t i = 0; i < size; i++) {
-        indexs[i] = parlay::hash64(i) % n;
+        // indexs[i] = parlay::hash64(i) % n;
+        indexs[i] = i;
     }
     std::sort(indexs.begin(), indexs.end());
     for (size_t i = 0; i < size; i++) {
@@ -22,7 +24,8 @@ inline void BaseTree<Point, DerivedTree, kBDO>::SamplePoints(Slice In, Points& a
 
 template<typename Point, typename DerivedTree, uint_fast8_t kBDO>
 inline typename BaseTree<Point, DerivedTree, kBDO>::BucketType
-BaseTree<Point, DerivedTree, kBDO>::FindBucket(const Point& p, const HyperPlaneSeq& pivots) {
+BaseTree<Point, DerivedTree, kBDO>::FindBucket(const Point& p,
+                                               const HyperPlaneSeq& pivots) {
     BucketType k(1);
     while (k <= kPivotNum) {
         k = k * 2 + 1 -
@@ -34,9 +37,9 @@ BaseTree<Point, DerivedTree, kBDO>::FindBucket(const Point& p, const HyperPlaneS
 }
 
 template<typename Point, typename DerivedTree, uint_fast8_t kBDO>
-void BaseTree<Point, DerivedTree, kBDO>::Partition(Slice A, Slice B, const size_t n,
-                                      const HyperPlaneSeq& pivots,
-                                      parlay::sequence<BallsType>& sums) {
+void BaseTree<Point, DerivedTree, kBDO>::Partition(
+    Slice A, Slice B, const size_t n, const HyperPlaneSeq& pivots,
+    parlay::sequence<BallsType>& sums) {
     size_t num_block = (n + kBlockSize - 1) >> kLog2Base;
     parlay::sequence<parlay::sequence<BallsType>> offset(
         num_block, parlay::sequence<BallsType>(kBucketNum));
@@ -102,9 +105,11 @@ BaseTree<Point, DerivedTree, kBDO>::SerialPartition(Slice In, DimsType d) {
     return _2ndGroup.begin();
 }
 
+// NOTE: rebuild the tree
 template<typename Point, typename DerivedTree, uint_fast8_t kBDO>
 template<typename Leaf, typename Interior, bool granularity>
-void BaseTree<Point, DerivedTree, kBDO>::PrepareRebuild(Node* T, Points& wx, Points& wo) {
+void BaseTree<Point, DerivedTree, kBDO>::PrepareRebuild(Node* T, Points& wx,
+                                                        Points& wo) {
     // TODO: add dispatch tag
     wo = Points::uninitialized(T->size);
     wx = Points::uninitialized(T->size);
@@ -113,10 +118,12 @@ void BaseTree<Point, DerivedTree, kBDO>::PrepareRebuild(Node* T, Points& wx, Poi
     return;
 }
 
+// NOTE: rebuild with new input In
 template<typename Point, typename DerivedTree, uint_fast8_t kBDO>
 template<typename Leaf, typename Interior, bool granularity>
-void BaseTree<Point, DerivedTree, kBDO>::PrepareRebuild(Node* T, Slice In, Points& wx,
-                                           Points& wo) {
+void BaseTree<Point, DerivedTree, kBDO>::PrepareRebuild(Node* T, Slice In,
+                                                        Points& wx,
+                                                        Points& wo) {
     // TODO: add dispatch tag
     wo = Points::uninitialized(T->size + In.size());
     wx = Points::uninitialized(T->size + In.size());
@@ -130,8 +137,9 @@ void BaseTree<Point, DerivedTree, kBDO>::PrepareRebuild(Node* T, Slice In, Point
 // NOTE: retrive the bucket tag of Point p from the skeleton tags
 template<typename Point, typename DerivedTree, uint_fast8_t kBDO>
 template<IsBinaryNode Interior>
-typename BaseTree<Point, DerivedTree, kBDO>::BucketType BaseTree<Point, DerivedTree, kBDO>::RetriveTag(
-    const Point& p, const NodeTagSeq& tags) {
+typename BaseTree<Point, DerivedTree, kBDO>::BucketType
+BaseTree<Point, DerivedTree, kBDO>::RetriveTag(const Point& p,
+                                               const NodeTagSeq& tags) {
     BucketType k(1);
     while (k <= kPivotNum && (!tags[k].first->is_leaf)) {
         k = k * 2 + 1 -
@@ -145,8 +153,9 @@ typename BaseTree<Point, DerivedTree, kBDO>::BucketType BaseTree<Point, DerivedT
 
 template<typename Point, typename DerivedTree, uint_fast8_t kBDO>
 template<IsMultiNode Interior>
-typename BaseTree<Point, DerivedTree, kBDO>::BucketType BaseTree<Point, DerivedTree, kBDO>::RetriveTag(
-    const Point& p, const NodeTagSeq& tags) {
+typename BaseTree<Point, DerivedTree, kBDO>::BucketType
+BaseTree<Point, DerivedTree, kBDO>::RetriveTag(const Point& p,
+                                               const NodeTagSeq& tags) {
     BucketType k(1);
     while (k <= kPivotNum && (!tags[k].first->is_leaf)) {
         k = static_cast<Interior*>(tags[k].first)->SeievePoint(p, k);
@@ -160,10 +169,9 @@ typename BaseTree<Point, DerivedTree, kBDO>::BucketType BaseTree<Point, DerivedT
 // number of buckets in the skeleton
 template<typename Point, typename DerivedTree, uint_fast8_t kBDO>
 template<typename Interior>
-void BaseTree<Point, DerivedTree, kBDO>::SeievePoints(Slice A, Slice B, const size_t n,
-                                         const NodeTagSeq& tags,
-                                         parlay::sequence<BallsType>& sums,
-                                         const BucketType tags_num) {
+void BaseTree<Point, DerivedTree, kBDO>::SeievePoints(
+    Slice A, Slice B, const size_t n, const NodeTagSeq& tags,
+    parlay::sequence<BallsType>& sums, const BucketType tags_num) {
     size_t num_block = (n + kBlockSize - 1) >> kLog2Base;
     parlay::sequence<parlay::sequence<BallsType>> offset(
         num_block, parlay::sequence<BallsType>(tags_num));

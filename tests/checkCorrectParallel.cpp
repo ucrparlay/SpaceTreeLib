@@ -2,7 +2,6 @@
 #include "cpdd/kd_tree.h"
 #include "cpdd/orth_tree.h"
 #include "testFramework.h"
-#include <CGAL/Orthtree.h>
 #include <CGAL/Cartesian_d.h>
 #include <CGAL/K_neighbor_search.h>
 #include <CGAL/Kernel_d/Point_d.h>
@@ -11,7 +10,6 @@
 #include <CGAL/Timer.h>
 #include <CGAL/point_generators_d.h>
 #include <CGAL/Fuzzy_iso_box.h>
-#include <bits/stdc++.h>
 #include <iterator>
 #include <tbb/blocked_range.h>
 #include <tbb/parallel_for.h>

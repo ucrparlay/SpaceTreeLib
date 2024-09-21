@@ -15,6 +15,7 @@ void KdTree<Point, SplitRule, kBDO>::BatchDelete(Range&& In) {
         std::is_constructible_v<parlay::range_value_type_t<Range>,
                                 parlay::range_reference_type_t<Range>>);
 
+    BT::template Validate<Leaf, Interior, SplitRule>();
     Slice A = parlay::make_slice(In);
     BatchDelete_(A);
     return;
@@ -88,7 +89,9 @@ KdTree<Point, SplitRule, kBDO>::BatchDeleteRecursive(
     size_t n = In.size();
 
     if (n == 0) {
+        LOG << "n==0" << ENDL;
         assert(BT::WithinBox(BT::template GetBox<Leaf, Interior>(T), bx));
+        LOG << "end n==0" << ENDL;
         return NodeBox(T, bx);
     }
 
@@ -106,10 +109,17 @@ KdTree<Point, SplitRule, kBDO>::BatchDeleteRecursive(
     }
 
     if (T->is_leaf) {
-        return BT::template DeletePoints4Leaf<Leaf, NodeBox>(T, In);
+        // return BT::template DeletePoints4Leaf<Leaf, NodeBox>(T, In);
+        auto [tmpt, tmpb] =
+            BT::template DeletePoints4Leaf<Leaf, NodeBox>(T, In);
+        LOG << " after leaf " << ENDL;
+        assert(BT::WithinBox(BT::template GetBox<Leaf, Interior>(tmpt), tmpb));
+        LOG << "end leaf" << ENDL;
+        return NodeBox(tmpt, tmpb);
     }
 
-    if (In.size() <= BT::kSerialBuildCutoff) {
+    if (1) {
+        // if (In.size() <= BT::kSerialBuildCutoff) {
         Interior* TI = static_cast<Interior*>(T);
         PointsIter split_iter =
             std::ranges::partition(In, [&](const Point& p) {
@@ -140,18 +150,26 @@ KdTree<Point, SplitRule, kBDO>::BatchDeleteRecursive(
             TI->right, rbox, In.cut(split_iter - In.begin(), n),
             Out.cut(split_iter - In.begin(), n), nextDim, has_tomb);
 
-        TI->SetParallelFlag(has_tomb ? false
-                                     : TI->size > BT::kSerialBuildCutoff);
+        // TI->SetParallelFlag(has_tomb ? false
+        //                              : TI->size > BT::kSerialBuildCutoff);
+        bool par_flag = TI->size > BT::kSerialBuildCutoff;
         BT::template UpdateInterior<Interior>(T, L, R);
+        if (!has_tomb) {  // WARN: The update will reset parallel flag
+            TI->SetParallelFlag(par_flag);
+        }
+
         assert(T->size == L->size + R->size && TI->split.second >= 0 &&
                TI->is_leaf == false);
 
         // NOTE: rebuild
         if (putTomb) {
+            LOG << "begin rebuild" << ENDL;
             assert(TI->size == T->size);
             assert(BT::ImbalanceNode(TI->left->size, TI->size) ||
                    TI->size < BT::kThinLeaveWrap);
             const auto new_box = BT::GetBox(Lbox, Rbox);
+            assert(
+                BT::WithinBox(BT::template GetBox<Leaf, Interior>(T), new_box));
             return NodeBox(
                 BT::template RebuildSingleTree<Leaf, Interior, false>(T, d,
                                                                       new_box),
@@ -160,6 +178,8 @@ KdTree<Point, SplitRule, kBDO>::BatchDeleteRecursive(
 
         return NodeBox(T, BT::GetBox(Lbox, Rbox));
     }
+
+    LOG << "in parallel" << ENDL;
 
     InnerTree IT(*this);
     IT.AssignNodeTag(T, 1);
