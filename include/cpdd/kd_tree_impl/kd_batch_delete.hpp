@@ -17,6 +17,7 @@ void KdTree<Point, SplitRule, kBDO>::BatchDelete(Range&& In) {
 
     BT::template Validate<Leaf, Interior, SplitRule>();
     Slice A = parlay::make_slice(In);
+    LOG << "-------------------------------------------------" << ENDL;
     BatchDelete_(A);
     return;
 }
@@ -101,8 +102,10 @@ KdTree<Point, SplitRule, kBDO>::BatchDeleteRecursive(
 
     if (n == 0) {
         LOG << "n: " << T->size << " " << has_tomb << ENDL;
+        BT::template CheckSize<Leaf, Interior>(pt);
+        LOG << "end check" << ENDL;
         assert(BT::WithinBox(BT::template GetBox<Leaf, Interior>(T), bx));
-        LOG << "end" << ENDL;
+        LOG << "end withinbox" << ENDL;
         return NodeBox(T, bx);
     }
 
@@ -114,15 +117,22 @@ KdTree<Point, SplitRule, kBDO>::BatchDeleteRecursive(
             return NodeBox(AllocEmptyLeafNode<Slice, Leaf>(),
                            BT::GetEmptyBox());
         }
-        // LOG << "mark " << T->size << ENDL;
+        LOG << "mark " << T->size << ENDL;
         auto TI = static_cast<Interior*>(T);
+        BT::template CheckSize<Leaf, Interior>(pt);
+        LOG << "pass first" << ENDL;
         TI->SetParallelFlag(T->size > BT::kSerialBuildCutoff);
-        TI->size = 0;
-        return NodeBox(T, BT::GetEmptyBox());
+        BT::template CheckSize<Leaf, Interior>(pt);
+        LOG << "pass second" << ENDL;
+        // TI->size = 0;
+        // 0x7fea02463700
+        // return NodeBox(T, BT::GetEmptyBox());
+        return NodeBox(T, bx);
     }
 
     if (T->is_leaf) {
-        return BT::template DeletePoints4Leaf<Leaf, NodeBox>(T, In);
+        // return BT::template DeletePoints4Leaf<Leaf, NodeBox>(T, In);
+        return NodeBox(T, bx);
     }
 
     if (1) {
@@ -157,31 +167,32 @@ KdTree<Point, SplitRule, kBDO>::BatchDeleteRecursive(
             TI->right, rbox, In.cut(split_iter - In.begin(), n),
             Out.cut(split_iter - In.begin(), n), nextDim, has_tomb);
 
-        TI->SetParallelFlag(has_tomb ? false
-                                     : TI->size > BT::kSerialBuildCutoff);
-        bool par_flag = TI->size > BT::kSerialBuildCutoff;
-        BT::template UpdateInterior<Interior>(T, L, R);
-        if (!has_tomb) {  // WARN: The update will reset parallel flag
-            TI->SetParallelFlag(par_flag);
-        }
+        // TI->SetParallelFlag(has_tomb ? false
+        //                              : TI->size > BT::kSerialBuildCutoff);
+        // bool par_flag = TI->size > BT::kSerialBuildCutoff;
+        // BT::template UpdateInterior<Interior>(T, L, R);
+        // if (!has_tomb) {  // WARN: The update will reset parallel flag
+        //     TI->SetParallelFlag(par_flag);
+        // }
 
         assert(T->size == L->size + R->size && TI->split.second >= 0 &&
                TI->is_leaf == false);
 
         // NOTE: rebuild
-        if (putTomb) {
-            LOG << "begin rebuild" << ENDL;
-            assert(TI->size == T->size);
-            assert(BT::ImbalanceNode(TI->left->size, TI->size) ||
-                   TI->size < BT::kThinLeaveWrap);
-            const auto new_box = BT::GetBox(Lbox, Rbox);
-            assert(
-                BT::WithinBox(BT::template GetBox<Leaf, Interior>(T), new_box));
-            return NodeBox(
-                BT::template RebuildSingleTree<Leaf, Interior, false>(T, d,
-                                                                      new_box),
-                new_box);
-        }
+        // if (putTomb) {
+        //     LOG << "begin rebuild" << ENDL;
+        //     assert(TI->size == T->size);
+        //     assert(BT::ImbalanceNode(TI->left->size, TI->size) ||
+        //            TI->size < BT::kThinLeaveWrap);
+        //     const auto new_box = BT::GetBox(Lbox, Rbox);
+        //     assert(
+        //         BT::WithinBox(BT::template GetBox<Leaf, Interior>(T),
+        //         new_box));
+        //     return NodeBox(
+        //         BT::template RebuildSingleTree<Leaf, Interior, false>(T, d,
+        //                                                               new_box),
+        //         new_box);
+        // }
 
         return NodeBox(T, BT::GetBox(Lbox, Rbox));
     }

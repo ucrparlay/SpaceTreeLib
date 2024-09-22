@@ -15,12 +15,15 @@ struct KdTree<Point, SplitRule, kBDO>::KdInteriorNode :
                    const AT& _aug) :
         BinaryNode<Point, Splitter, AugType>(_left, _right, _split, _aug) {}
 
-    inline void SetParallelFlag(const bool flag) { this->aug = AT(flag); }
+    // inline void SetParallelFlag(const bool flag) { this->aug.emplace(flag); }
+    inline void SetParallelFlag(const bool flag) { this->aug = flag; }
 
-    inline void ResetParallelFlag() { this->aug.reset(); }
+    // inline void ResetParallelFlag() { this->aug.reset(); }
+    inline void ResetParallelFlag() { this->aug = false; }
 
     inline const bool GetParallelFlagIniStatus() {
-        return this->aug.has_value();
+        // return this->aug.has_value();
+        return this->aug == false;
     }
 
     // NOTE: use a tri-state bool to indicate whether a subtree needs to be
@@ -28,7 +31,9 @@ struct KdTree<Point, SplitRule, kBDO>::KdInteriorNode :
     // rebuild; otherwise, the value depends on the initial tree size before
     // rebuilding.
     inline bool ForceParallel() const {
-        return this->aug ? *(this->aug) : this->size > BT::kSerialBuildCutoff;
+        return this->aug;
+        // return this->aug.has_value() ? this->aug.value()
+        //                              : this->size > BT::kSerialBuildCutoff;
     }
 };
 
