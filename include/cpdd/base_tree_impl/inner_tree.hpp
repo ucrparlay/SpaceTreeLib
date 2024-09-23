@@ -277,14 +277,15 @@ struct BaseTree<Point, DerivedTree, kBDO>::InnerTree {
     Base UpdateInnerTreeRecursive(BucketType idx,
                                   const parlay::sequence<Base>& tree_nodes,
                                   BucketType& p, Func&& func) {
-        if (tags[idx].second < BT::kBucketNum) {
+        if (tags[idx].second == BT::kBucketNum + 1 ||
+            tags[idx].second == BT::kBucketNum + 2) {
             return tree_nodes[p++];
         }
 
         if constexpr (kUT == kReturnRebuild) {
             if (this->tags[idx].second == kBucketNum + 3) {
                 func(0);  // close the under_rebuild_tree flag
-                assert(func(0) == true);
+                assert(func(1) == true);
             }
         }
 

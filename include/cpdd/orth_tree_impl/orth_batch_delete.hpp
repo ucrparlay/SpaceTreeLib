@@ -17,7 +17,7 @@ void OrthTree<Point, SplitRule, kMD, kBDO>::BatchDelete(Range&& In) {
                                 parlay::range_reference_type_t<Range>>);
 
     Slice A = parlay::make_slice(In);
-    // BatchDelete_(A);
+    BatchDelete_(A);
     return;
 }
 
@@ -51,9 +51,11 @@ Node* OrthTree<Point, SplitRule, kMD, kBDO>::BatchDeleteRecursive(
             BT::template DeleteTreeRecursive<Leaf, Interior>(T);
             return AllocEmptyLeafNode<Slice, Leaf>();
         }
-        auto TI = static_cast<Interior*>(T);
-        TI->SetParallelFlag(T->size > BT::kSerialBuildCutoff);
-        TI->size = 0;
+        if (!T->is_leaf) {
+            auto TI = static_cast<Interior*>(T);
+            TI->SetParallelFlag(T->size > BT::kSerialBuildCutoff);
+        }
+        T->size = 0;
         return T;
     }
 
@@ -81,13 +83,19 @@ Node* OrthTree<Point, SplitRule, kMD, kBDO>::BatchDeleteRecursive(
                 Out.cut(start, start + sums[i]), new_box[i], has_tomb);
             start += sums[i];
         }
+
+        bool par_flag = TI->size > BT::kSerialBuildCutoff;
         BT::template UpdateInterior<Interior>(T, new_nodes);
+        if (!has_tomb) {  // WARN: Above update will reset parallel flag
+            TI->SetParallelFlag(par_flag);
+        }
         assert(T->is_leaf == false);
 
         if (putTomb) {
             // PERF: rebuild size is at most BT::kLeaveWrap, we can get the box
             // by traversing the tree
             assert(T->size <= BT::kLeaveWrap);
+            assert(WithinBox(BT::template GetBox<Leaf, Interior>(T), box));
             return BT::template RebuildSingleTree<Leaf, Interior, false>(T,
                                                                          box);
         }
@@ -132,10 +140,7 @@ Node* OrthTree<Point, SplitRule, kMD, kBDO>::BatchDeleteRecursive(
         1);
 
     // NOTE: handling of rebuild
-    // TODO: maybe we can use the tot_re_size/total_rebuild_num
-    // > SERIAL_BUILD_CUTOFF to judge whether to rebuild the tree in parallel
     // WARN: the rebuild node is on top
-    // if (tot_re_size > BT::kSerialBuildCutoff) {  // NOTE: parallel rebuild
     // NOTE: retag the inba-nodes and save the bounding boxes
     IT.ResetTagsNum();
     Node* new_node = IT.template UpdateInnerTree<InnerTree::kTagRebuildNode>(
