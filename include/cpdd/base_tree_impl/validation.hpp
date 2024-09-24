@@ -1,21 +1,45 @@
 #pragma once
 
 #include <parlay/parallel.h>
+#include <cwchar>
 #include "../base_tree.h"
 
 namespace cpdd {
 
 template<typename Point, typename DerivedTree, uint_fast8_t kBDO>
 template<typename Leaf, typename Interior>
-bool BaseTree<Point, DerivedTree, kBDO>::CheckBox(Node* T, const Box& bx) {
-    assert(T != nullptr);
-    assert(LegalBox(bx));
-    Points wx = Points::uninitialized(T->size);
-    LOG << T->size << ENDL;
-    FlattenRec<Leaf, Interior>(T, parlay::make_slice(wx));
-    auto b = GetBox(parlay::make_slice(wx));
-    // LOG << b.first << b.second << ENDL;
-    return WithinBox(b, bx);
+typename BaseTree<Point, DerivedTree, kBDO>::Box
+BaseTree<Point, DerivedTree, kBDO>::CheckBox(Node* T, const Box& box) {
+    if (T->is_leaf) {
+        return GetBox<Leaf, Interior>(T);
+    }
+    Interior* TI = static_cast<Interior*>(T);
+    if constexpr (IsBinaryNode<Interior>) {
+        // TODO: optimize
+        Box lbox(box), rbox(box);
+        lbox.second.pnt[TI->split.second] = TI->split.first;  //* loose
+        rbox.first.pnt[TI->split.second] = TI->split.first;
+        const Box left_return_box = CheckBox<Leaf, Interior>(TI->left, lbox);
+        const Box right_return_box = CheckBox<Leaf, Interior>(TI->right, rbox);
+        const Box new_box = GetBox(left_return_box, right_return_box);
+
+        assert(WithinBox(left_return_box, lbox));
+        assert(WithinBox(right_return_box, rbox));
+        assert(WithinBox(new_box, box));
+        return new_box;
+    } else {
+        BoxSeq new_box(TI->ComputeSubregions(box));
+        BoxSeq return_box_seq(new_box.size());
+        assert(new_box.size() == TI->tree_nodes.size());
+        for (int i = 0; i < TI->tree_nodes.size(); i++) {
+            return_box_seq[i] =
+                CheckBox<Leaf, Interior>(TI->tree_nodes[i], new_box[i]);
+            assert(WithinBox(return_box_seq[i], new_box[i]));
+        }
+        auto return_box = GetBox(return_box_seq);
+        assert(WithinBox(return_box, box));
+        return return_box;
+    }
 }
 
 template<typename Point, typename DerivedTree, uint_fast8_t kBDO>
@@ -28,8 +52,9 @@ size_t BaseTree<Point, DerivedTree, kBDO>::CheckSize(Node* T) {
     }
     if constexpr (IsBinaryNode<Interior>) {
         Interior* TI = static_cast<Interior*>(T);
-        size_t l = CheckSize<Leaf, Interior>(TI->left);
-        size_t r = CheckSize<Leaf, Interior>(TI->right);
+        size_t l, r;
+        parlay::par_do([&] { l = CheckSize<Leaf, Interior>(TI->left); },
+                       [&] { r = CheckSize<Leaf, Interior>(TI->right); });
         assert(l + r == T->size);
         return T->size;
     } else {
@@ -84,8 +109,7 @@ template<typename Point, typename DerivedTree, uint_fast8_t kBDO>
 template<typename Leaf, typename Interior, typename SplitRule>
 void BaseTree<Point, DerivedTree, kBDO>::Validate() {
     std::cout << "\n>>> begin validate tree" << std::endl << std::flush;
-    if (CheckBox<Leaf, Interior>(this->root_, this->tree_box_) &&
-        LegalBox(this->tree_box_)) {
+    if (LegalBox(CheckBox<Leaf, Interior>(this->root_, this->tree_box_))) {
         std::cout << "Correct bounding Box" << std::endl << std::flush;
     } else {
         std::cout << "wrong bounding Box" << std::endl << std::flush;
@@ -93,7 +117,9 @@ void BaseTree<Point, DerivedTree, kBDO>::Validate() {
     }
 
     // NOTE: used to check rotate dimension
-    // For kdtree binary node, the dummy node may break the rotation manner
+    // For kdtree binary node, the dummy node may break the rotation manner,
+    // since if current dimension is un-splitable, one has to switch to another
+    // dimension
     if constexpr (IsRotateDimSplit<SplitRule> && IsMultiNode<Interior>) {
         CheckTreeSameSequential<Leaf, Interior>(this->root_, 0);
         std::cout << "Correct rotate dimension" << std::endl << std::flush;

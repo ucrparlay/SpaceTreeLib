@@ -94,6 +94,16 @@ BaseTree<Point, DerivedTree, kBDO>::GetBox(Node* T) {
 }
 
 template<typename Point, typename DerivedTree, uint_fast8_t kBDO>
+typename BaseTree<Point, DerivedTree, kBDO>::Box
+BaseTree<Point, DerivedTree, kBDO>::GetBox(const BoxSeq& box_seq) {
+    Box box = Box();
+    for (const auto& b : box_seq) {
+        box = GetBox(box, b);
+    }
+    return std::move(box);
+}
+
+template<typename Point, typename DerivedTree, uint_fast8_t kBDO>
 inline bool BaseTree<Point, DerivedTree, kBDO>::WithinCircle(const Box& bx,
                                                              const Circle& cl) {
     //* the logical is same as p2b_max_distance <= radius

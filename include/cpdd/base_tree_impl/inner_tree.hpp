@@ -130,7 +130,7 @@ struct BaseTree<Point, DerivedTree, kBDO>::InnerTree {
     template<typename ViolateFunc>
     void MarkTomb(BucketType idx, BucketType& re_num, size_t& tot_re_size,
                   BoxSeq& box_seq, const Box& box, bool has_tomb,
-                  ViolateFunc&& func) {
+                  ViolateFunc&& violat_func) {
         if (idx > kPivotNum || tags[idx].first->is_leaf) {
             assert(tags[idx].second >= 0 && tags[idx].second < kBucketNum);
             if (!has_tomb) {  // NOTE: this subtree needs to be rebuilt in the
@@ -155,7 +155,7 @@ struct BaseTree<Point, DerivedTree, kBDO>::InnerTree {
         // NOTE: no need to mark the internal nodes with tag kBucketNum
         assert(tags[idx].second == kBucketNum && (!tags[idx].first->is_leaf));
         Interior* TI = static_cast<Interior*>(tags[idx].first);
-        if (has_tomb && func(idx)) {
+        if (has_tomb && violat_func(idx)) {
             assert(has_tomb != 0);
             assert(!TI->GetParallelFlagIniStatus());
             tags[idx].second = kBucketNum + 3;
@@ -171,14 +171,14 @@ struct BaseTree<Point, DerivedTree, kBDO>::InnerTree {
             lbox.second.pnt[TI->split.second] = TI->split.first;  //* loose
             rbox.first.pnt[TI->split.second] = TI->split.first;
             MarkTomb(idx << 1, re_num, tot_re_size, box_seq, lbox, has_tomb,
-                     func);
+                     violat_func);
             MarkTomb(idx << 1 | 1, re_num, tot_re_size, box_seq, rbox, has_tomb,
-                     func);
+                     violat_func);
         } else if constexpr (IsMultiNode<Interior>) {
             BoxSeq new_box(TI->ComputeSubregions(box));
             for (BucketType i = 0; i < Interior::kRegions; ++i) {
                 MarkTomb(idx * Interior::kRegions + i, re_num, tot_re_size,
-                         box_seq, new_box[i], has_tomb, func);
+                         box_seq, new_box[i], has_tomb, violat_func);
             }
         }
         return;
@@ -199,7 +199,7 @@ struct BaseTree<Point, DerivedTree, kBDO>::InnerTree {
         return std::make_pair(re_num, tot_re_size);
     }
 
-    enum UpdateType { kPointer, kDelete, kTagReNode, kReturnRebuild };
+    enum UpdateType { kPointer, kDelete, kTagRebuildNode, kReturnRebuild };
 
     // NOTE: update the skeleton based on the @UpdateType
     template<UpdateType kUT, typename Base, typename Func>
@@ -229,7 +229,7 @@ struct BaseTree<Point, DerivedTree, kBDO>::InnerTree {
         if constexpr (kUT == kReturnRebuild) {
             if (this->tags[idx].second == kBucketNum + 3) {
                 func(0);  // close the under_rebuild_tree flag
-                assert(func(0) == true);
+                assert(func(1) == true);
             }
         }
 
@@ -242,11 +242,11 @@ struct BaseTree<Point, DerivedTree, kBDO>::InnerTree {
             UpdateInterior<Interior>(this->tags[idx].first, left, right);
             if constexpr (IsPointer<Base>) {
                 return this->tags[idx].first;
-            } else {  // update pointer for node_box
+            } else {  // WARN: if only update pointer, then avoid update box
                 return NodeBox(this->tags[idx].first, Box());
             }
-        } else if constexpr (kUT == kTagReNode) {  // NOTE: retag and save box
-                                                   // for rebuild
+        } else if constexpr (kUT == kTagRebuildNode) {  // NOTE: retag and save
+                                                        // box for rebuild
             UpdateInterior<Interior>(this->tags[idx].first, left, right);
             auto new_box = BT::GetBox(left.second, right.second);
             if (this->tags[idx].second == BT::kBucketNum + 3) {
@@ -267,30 +267,8 @@ struct BaseTree<Point, DerivedTree, kBDO>::InnerTree {
             } else {  // the tree has been deleted
                 return NodeBox(nullptr, Box());
             }
-        } else {  // NOTE: update tree meanwhile delete the old ones
-            static_assert(kUT == kDelete);
-            UpdateInterior<Interior>(this->tags[idx].first, left, right);
-            if (this->tags[idx].second == kBucketNum + 3) {  // rebuild
-                Interior const* TI =
-                    static_cast<Interior*>(this->tags[idx].first);
-                assert(ImbalanceNode(TI->left->size, TI->size) ||
-                       TI->size < kThinLeaveWrap);
-
-                if (this->tags[idx].first->size == 0) {  // empty tree
-                    DeleteTreeRecursive<Leaf, Interior, false>(
-                        this->tags[idx].first);
-                    return NodeBox(AllocEmptyLeafNode<Slice, Leaf>(),
-                                   GetEmptyBox());
-                }
-                static_assert(std::is_same_v<DimsType, decltype(func(idx))>);
-                const auto& new_box = GetBox(left.second, right.second);
-                Node* new_root =
-                    BTRef.template RebuildSingleTree<Leaf, Interior, false>(
-                        this->tags[idx].first, func(idx), new_box);
-                return NodeBox(new_root, new_box);
-            }
-            return NodeBox(this->tags[idx].first,
-                           GetBox(left.second, right.second));
+        } else {
+            static_assert(0);
         }
     }
 
@@ -321,7 +299,7 @@ struct BaseTree<Point, DerivedTree, kBDO>::InnerTree {
         if constexpr (kUT == kPointer) {
             BT::template UpdateInterior<Interior>(tags[idx].first, new_nodes);
             return this->tags[idx].first;
-        } else if constexpr (kUT == kTagReNode) {
+        } else if constexpr (kUT == kTagRebuildNode) {
             UpdateInterior<Interior>(this->tags[idx].first, new_nodes);
             if (this->tags[idx].second == BT::kBucketNum + 3) {
                 func(idx);

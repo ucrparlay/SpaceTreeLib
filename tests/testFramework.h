@@ -373,12 +373,10 @@ void batchDelete(Tree& pkd, const parlay::sequence<point>& WP,
         rounds, 1.0,
         [&]() {
             if (afterInsert) {  //* first insert wi then delete wi
-                LOG << "before pre" << ENDL;
                 parlay::copy(WP, wp), parlay::copy(WI, wi);
                 pkd.Build(parlay::make_slice(wp));
                 pkd.BatchInsert(wi.cut(0, batchSize));
                 parlay::copy(WP, wp), parlay::copy(WI, wi);
-                LOG << " after pre" << ENDL;
             } else {  //* only build wp and then delete from wp
                 // LOG << " after insert " << ENDL;
                 parlay::copy(WP, wp);

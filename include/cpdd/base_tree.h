@@ -81,6 +81,7 @@ class BaseTree {
     static Box GetBox(Slice V);
     template<typename Leaf, typename Interior>
     static Box GetBox(Node* T);
+    static Box GetBox(const BoxSeq& box_seq);
 
     static inline bool WithinCircle(const Box& bx, const Circle& cl);
     static inline bool WithinCircle(const Point& p, const Circle& cl);
@@ -264,7 +265,7 @@ class BaseTree {
 
     // NOTE: validations
     template<typename Leaf, typename Interior>
-    bool CheckBox(Node* T, const Box& bx);
+    Box CheckBox(Node* T, const Box& box);
 
     template<typename Leaf, typename Interior>
     static size_t CheckSize(Node* T);

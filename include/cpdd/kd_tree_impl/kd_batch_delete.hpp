@@ -15,9 +15,7 @@ void KdTree<Point, SplitRule, kBDO>::BatchDelete(Range&& In) {
         std::is_constructible_v<parlay::range_value_type_t<Range>,
                                 parlay::range_reference_type_t<Range>>);
 
-    BT::template Validate<Leaf, Interior, SplitRule>();
     Slice A = parlay::make_slice(In);
-    LOG << "-------------------------------------------------" << ENDL;
     BatchDelete_(A);
     return;
 }
@@ -115,8 +113,8 @@ KdTree<Point, SplitRule, kBDO>::BatchDeleteRecursive(
         return BT::template DeletePoints4Leaf<Leaf, NodeBox>(T, In);
     }
 
-    if (1) {
-        // if (In.size() <= BT::kSerialBuildCutoff) {
+    // if (1) {
+    if (In.size() <= BT::kSerialBuildCutoff) {
         Interior* TI = static_cast<Interior*>(T);
         PointsIter split_iter =
             std::ranges::partition(In, [&](const Point& p) {
@@ -176,8 +174,6 @@ KdTree<Point, SplitRule, kBDO>::BatchDeleteRecursive(
         return NodeBox(T, BT::GetBox(Lbox, Rbox));
     }
 
-    LOG << "in parallel" << ENDL;
-
     InnerTree IT(*this);
     IT.AssignNodeTag(T, 1);
     assert(IT.tags_num > 0 && IT.tags_num <= BT::kBucketNum);
@@ -225,12 +221,10 @@ KdTree<Point, SplitRule, kBDO>::BatchDeleteRecursive(
         1);
 
     // NOTE: handling of rebuild
-    // TODO: maybe we can use the tot_re_size/total_rebuild_num
-    // > SERIAL_BUILD_CUTOFF to judge whether to rebuild the tree in parallel
     // NOTE: get new box for skeleton root and rebuild nodes
     IT.ResetTagsNum();
     const Box new_box =
-        std::get<1>(IT.template UpdateInnerTree<InnerTree::kTagReNode>(
+        std::get<1>(IT.template UpdateInnerTree<InnerTree::kTagRebuildNode>(
             tree_nodes, [&](const Box& new_box, const BucketType idx) -> void {
                 IT.rev_tag[IT.tags_num] = idx;
                 box_seq[IT.tags_num++] = new_box;
@@ -248,10 +242,12 @@ KdTree<Point, SplitRule, kBDO>::BatchDeleteRecursive(
             auto next_dim = (d + IT.GetDepthByIndex(IT.rev_tag[i])) % BT::kDim;
             IT.tags[IT.rev_tag[i]].first =
                 BT::template RebuildSingleTree<Leaf, Interior, false>(
-                    IT.tags[IT.rev_tag[i]].first, d, box_seq[i]);
+                    IT.tags[IT.rev_tag[i]].first, next_dim, box_seq[i]);
         }
     });
 
+    // PARA: op == 0 -> toggle whether under a rebuild tree
+    // op == 1 -> query current status
     bool under_rebuild_tree = false;
     const auto new_root =
         std::get<0>(IT.template UpdateInnerTree<InnerTree::kReturnRebuild>(

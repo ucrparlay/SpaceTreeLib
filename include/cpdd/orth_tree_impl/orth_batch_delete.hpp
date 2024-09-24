@@ -138,7 +138,7 @@ Node* OrthTree<Point, SplitRule, kMD, kBDO>::BatchDeleteRecursive(
     // if (tot_re_size > BT::kSerialBuildCutoff) {  // NOTE: parallel rebuild
     // NOTE: retag the inba-nodes and save the bounding boxes
     IT.ResetTagsNum();
-    Node* new_node = IT.template UpdateInnerTree<InnerTree::kTagReNode>(
+    Node* new_node = IT.template UpdateInnerTree<InnerTree::kTagRebuildNode>(
         tree_nodes, [&](const Box& box, const BucketType idx) -> void {
             box_seq[IT.tags_num] = box;
             IT.rev_tag[IT.tags_num++] = idx;
