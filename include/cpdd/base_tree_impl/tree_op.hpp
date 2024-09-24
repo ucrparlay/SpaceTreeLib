@@ -320,7 +320,6 @@ RT BaseTree<Point, DerivedTree, kBDO>::DeletePoints4Leaf(Node* T, Slice In) {
                 T, T->size ? Box(TL->pts[0], TL->pts[0]) : GetEmptyBox());
         } else {
             static_assert(std::same_as<RT, Node*> || std::same_as<RT, NodeBox>);
-            return T;
         }
     }
 

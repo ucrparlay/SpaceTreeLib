@@ -37,8 +37,8 @@ class KdTree : private BaseTree<Point, KdTree<Point, SplitRule, kBDO>, kBDO> {
     using Splitter = HyperPlane;
     using SplitterSeq = HyperPlaneSeq;
 
-    // using AugType = std::optional<bool>;
-    using AugType = bool;
+    using AugType = std::optional<bool>;
+    // using AugType = bool;
     struct KdInteriorNode;
 
     using SplitRuleType = SplitRule;

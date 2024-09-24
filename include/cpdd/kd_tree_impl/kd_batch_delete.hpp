@@ -88,51 +88,31 @@ KdTree<Point, SplitRule, kBDO>::BatchDeleteRecursive(
     Node* T, const typename KdTree<Point, SplitRule, kBDO>::Box& bx, Slice In,
     Slice Out, DimsType d, bool has_tomb) {
     size_t n = In.size();
-    // if (T->size == 515805) {
-    //     std::cout << "visit n: " << n << std::endl;
-    // }
-    // if (!T->is_leaf) {
-    //     auto TI = static_cast<Interior*>(T);
-    //     // if (TI->left->size + TI->right->size != T->size) {
-    //     LOG << TI->left->size << " " << TI->right->size << " " << T->size
-    //         << ENDL;
-    //     // assert(0);
-    //     // }
-    // }
 
     if (n == 0) {
-        LOG << "n: " << T->size << " " << has_tomb << ENDL;
-        BT::template CheckSize<Leaf, Interior>(pt);
-        LOG << "end check" << ENDL;
         assert(BT::WithinBox(BT::template GetBox<Leaf, Interior>(T), bx));
-        LOG << "end withinbox" << ENDL;
         return NodeBox(T, bx);
     }
 
     // INFO: may can be used to accelerate the whole deletion process
     if (n == T->size) {
-        if (has_tomb) {
-            LOG << "direct delete " << T->size << ENDL;
+        if (has_tomb) {  // rebuild this subtree
             BT::template DeleteTreeRecursive<Leaf, Interior>(T);
             return NodeBox(AllocEmptyLeafNode<Slice, Leaf>(),
                            BT::GetEmptyBox());
         }
-        LOG << "mark " << T->size << ENDL;
-        auto TI = static_cast<Interior*>(T);
-        BT::template CheckSize<Leaf, Interior>(pt);
-        LOG << "pass first" << ENDL;
-        TI->SetParallelFlag(T->size > BT::kSerialBuildCutoff);
-        BT::template CheckSize<Leaf, Interior>(pt);
-        LOG << "pass second" << ENDL;
-        // TI->size = 0;
-        // 0x7fea02463700
-        // return NodeBox(T, BT::GetEmptyBox());
+        // wihtin a rebuild tree
+        if (!T->is_leaf) {
+            auto TI = static_cast<Interior*>(T);
+            // WARN: only set the flag for root ,rather than the whole sub-tree
+            TI->SetParallelFlag(T->size > BT::kSerialBuildCutoff);
+        }
+        T->size = 0;
         return NodeBox(T, bx);
     }
 
     if (T->is_leaf) {
-        // return BT::template DeletePoints4Leaf<Leaf, NodeBox>(T, In);
-        return NodeBox(T, bx);
+        return BT::template DeletePoints4Leaf<Leaf, NodeBox>(T, In);
     }
 
     if (1) {
@@ -169,30 +149,29 @@ KdTree<Point, SplitRule, kBDO>::BatchDeleteRecursive(
 
         // TI->SetParallelFlag(has_tomb ? false
         //                              : TI->size > BT::kSerialBuildCutoff);
-        // bool par_flag = TI->size > BT::kSerialBuildCutoff;
-        // BT::template UpdateInterior<Interior>(T, L, R);
-        // if (!has_tomb) {  // WARN: The update will reset parallel flag
-        //     TI->SetParallelFlag(par_flag);
-        // }
+        bool par_flag = TI->size > BT::kSerialBuildCutoff;
+        BT::template UpdateInterior<Interior>(T, L, R);
+        if (!has_tomb) {  // WARN: Above update will reset parallel flag
+            TI->SetParallelFlag(par_flag);
+        }
 
         assert(T->size == L->size + R->size && TI->split.second >= 0 &&
                TI->is_leaf == false);
 
         // NOTE: rebuild
-        // if (putTomb) {
-        //     LOG << "begin rebuild" << ENDL;
-        //     assert(TI->size == T->size);
-        //     assert(BT::ImbalanceNode(TI->left->size, TI->size) ||
-        //            TI->size < BT::kThinLeaveWrap);
-        //     const auto new_box = BT::GetBox(Lbox, Rbox);
-        //     assert(
-        //         BT::WithinBox(BT::template GetBox<Leaf, Interior>(T),
-        //         new_box));
-        //     return NodeBox(
-        //         BT::template RebuildSingleTree<Leaf, Interior, false>(T, d,
-        //                                                               new_box),
-        //         new_box);
-        // }
+        if (putTomb) {
+            assert(BT::ImbalanceNode(TI->left->size, TI->size) ||
+                   TI->size < BT::kThinLeaveWrap);
+
+            const auto new_box = BT::GetBox(Lbox, Rbox);
+            assert(
+                BT::WithinBox(BT::template GetBox<Leaf, Interior>(T), new_box));
+
+            return NodeBox(
+                BT::template RebuildSingleTree<Leaf, Interior, false>(T, d,
+                                                                      new_box),
+                new_box);
+        }
 
         return NodeBox(T, BT::GetBox(Lbox, Rbox));
     }
