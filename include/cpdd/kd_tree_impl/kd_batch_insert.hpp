@@ -140,8 +140,7 @@ Node* KdTree<Point, SplitRule, kBDO>::BatchInsertRecursive(Node* T, Slice In,
         },
         1);
 
-    return IT.template UpdateInnerTree<InnerTree::kPointer>(tree_nodes,
-                                                            [&]() {});
+    return IT.template UpdateInnerTree<InnerTree::kUpdatePointer>(tree_nodes);
 }
 
 }  // namespace cpdd

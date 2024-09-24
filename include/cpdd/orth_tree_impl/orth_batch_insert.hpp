@@ -153,7 +153,6 @@ Node* OrthTree<Point, SplitRule, kMD, kBDO>::BatchInsertRecursive(Node* T,
         },
         1);
 
-    return IT.template UpdateInnerTree<InnerTree::kPointer>(tree_nodes,
-                                                            []() {});
+    return IT.template UpdateInnerTree<InnerTree::kUpdatePointer>(tree_nodes);
 }
 }  // namespace cpdd

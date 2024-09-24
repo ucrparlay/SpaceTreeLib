@@ -30,12 +30,12 @@ concept IsPointer = std::is_pointer_v<T>;
 
 // Concept to check if a type is present in a parameter pack
 template<typename T, typename... Args>
-concept ContainsType = (std::is_same_v<T, Args> || ...);
+concept ContainsType = (std::same_as<T, Args> || ...);
 
 // Helper function to find and return the variable of the specified type
 template<typename T, typename First, typename... Rest>
-consteval T& FindVar(First& first, Rest&... rest) {
-    if constexpr (std::is_same_v<T, First>) {
+constexpr T& FindVar(First& first, Rest&... rest) {
+    if constexpr (std::same_as<T, First>) {
         return first;
     } else {
         return FindVar<T>(rest...);
@@ -44,8 +44,9 @@ consteval T& FindVar(First& first, Rest&... rest) {
 
 // Overload for the case when the type is not found
 template<typename T>
-consteval T& FindVar() {
-    throw std::runtime_error("Type not found in parameter pack");
+constexpr T& FindVar() {
+    static_assert(!std::same_as<T, T>, "Type not found in parameter pack");
+    return *reinterpret_cast<T*>(nullptr);
 }
 
 // Example usage

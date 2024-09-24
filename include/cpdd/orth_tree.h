@@ -41,7 +41,7 @@ class OrthTree :
     using Tag2Node = BT::Tag2Node;
     using AugType = std::optional<bool>;
 
-    struct KdInteriorNode;
+    // struct KdInteriorNode;
     struct OrthInteriorNode;
 
     using SplitRuleType = SplitRule;

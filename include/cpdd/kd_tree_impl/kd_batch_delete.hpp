@@ -222,13 +222,9 @@ KdTree<Point, SplitRule, kBDO>::BatchDeleteRecursive(
 
     // NOTE: handling of rebuild
     // NOTE: get new box for skeleton root and rebuild nodes
-    IT.ResetTagsNum();
     const Box new_box =
         std::get<1>(IT.template UpdateInnerTree<InnerTree::kTagRebuildNode>(
-            tree_nodes, [&](const Box& new_box, const BucketType idx) -> void {
-                IT.rev_tag[IT.tags_num] = idx;
-                box_seq[IT.tags_num++] = new_box;
-            }));
+            tree_nodes, box_seq));
     assert(IT.tags_num == re_num);
 
     parlay::parallel_for(0, IT.tags_num, [&](size_t i) {
@@ -239,6 +235,10 @@ KdTree<Point, SplitRule, kBDO>::BatchDeleteRecursive(
                 IT.tags[IT.rev_tag[i]].first);
             IT.tags[IT.rev_tag[i]].first = AllocEmptyLeafNode<Slice, Leaf>();
         } else {  // NOTE: rebuild
+            assert(BT::WithinBox(BT::template GetBox<Leaf, Interior>(
+                                     IT.tags[IT.rev_tag[i]].first),
+                                 box_seq[i]));
+
             auto next_dim = (d + IT.GetDepthByIndex(IT.rev_tag[i])) % BT::kDim;
             IT.tags[IT.rev_tag[i]].first =
                 BT::template RebuildSingleTree<Leaf, Interior, false>(
@@ -249,12 +249,8 @@ KdTree<Point, SplitRule, kBDO>::BatchDeleteRecursive(
     // PARA: op == 0 -> toggle whether under a rebuild tree
     // op == 1 -> query current status
     bool under_rebuild_tree = false;
-    const auto new_root =
-        std::get<0>(IT.template UpdateInnerTree<InnerTree::kReturnRebuild>(
-            tree_nodes, [&](bool op) -> bool {
-                return op == 0 ? (under_rebuild_tree = !under_rebuild_tree)
-                               : under_rebuild_tree;
-            }));
+    const auto new_root = std::get<0>(
+        IT.template UpdateInnerTree<InnerTree::kPostRebuild>(tree_nodes));
     return NodeBox(new_root, new_box);
 }
 
