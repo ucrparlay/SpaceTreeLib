@@ -107,7 +107,11 @@ Node* KdTree<Point, SplitRule, kBDO>::BatchInsertRecursive(Node* T, Slice In,
     BT::template SeievePoints<Interior>(In, Out, n, IT.tags, IT.sums,
                                         IT.tags_num);
 
-    IT.TagInbalanceNode();
+    IT.TagInbalanceNode([&](BucketType idx) -> bool {
+        const auto TI = static_cast<Interior*>(IT.tags[idx].first);
+        return BT::ImbalanceNode(TI->left->size + IT.sums_tree[idx << 1],
+                                 TI->size + IT.sums_tree[idx]);
+    });
     assert(IT.tags_num > 0 && IT.tags_num <= BT::kBucketNum);
     auto tree_nodes = parlay::sequence<Node*>::uninitialized(IT.tags_num);
 

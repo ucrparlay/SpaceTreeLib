@@ -134,8 +134,11 @@ Node* OrthTree<Point, SplitRule, kMD, kBDO>::BatchInsertRecursive(Node* T,
     BT::template SeievePoints<Interior>(In, Out, n, IT.tags, IT.sums,
                                         IT.tags_num);
 
-    // IT.TagInbalanceNode();
-    // assert(IT.tags_num > 0 && IT.tags_num <= BT::kBucketNum);
+    // NOTE: no need to tag imbalance node, used to remap the bucket node tag to
+    // kBucketNum+1
+    // TODO: this may incur extra work e.g., reduce sum
+    IT.TagInbalanceNode([](BucketType idx) -> bool { return false; });
+
     auto tree_nodes = parlay::sequence<Node*>::uninitialized(IT.tags_num);
 
     // TODO: if none points are sieved into bucket, skip that nodes
@@ -144,12 +147,14 @@ Node* OrthTree<Point, SplitRule, kMD, kBDO>::BatchInsertRecursive(Node* T,
         [&](size_t i) {
             size_t s = 0;
             for (int j = 0; j < i; j++) {
-                s += IT.sums[j];
+                s += IT.sums_tree[IT.rev_tag[j]];
             }
 
-            tree_nodes[i] = BatchInsertRecursive(IT.tags[IT.rev_tag[i]].first,
-                                                 Out.cut(s, s + IT.sums[i]),
-                                                 In.cut(s, s + IT.sums[i]));
+            assert(IT.tags[IT.rev_tag[i]].second == BT::kBucketNum + 1);
+            tree_nodes[i] = BatchInsertRecursive(
+                IT.tags[IT.rev_tag[i]].first,
+                Out.cut(s, s + IT.sums_tree[IT.rev_tag[i]]),
+                In.cut(s, s + IT.sums_tree[IT.rev_tag[i]]));
         },
         1);
 

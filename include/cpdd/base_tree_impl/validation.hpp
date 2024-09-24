@@ -28,7 +28,7 @@ BaseTree<Point, DerivedTree, kBDO>::CheckBox(Node* T, const Box& box) {
         assert(WithinBox(new_box, box));
         return new_box;
     } else {
-        BoxSeq new_box(TI->ComputeSubregions(box));
+        BoxSeq new_box(TI->template ComputeSubregions<BoxSeq>(box));
         BoxSeq return_box_seq(new_box.size());
         assert(new_box.size() == TI->tree_nodes.size());
         for (int i = 0; i < TI->tree_nodes.size(); i++) {

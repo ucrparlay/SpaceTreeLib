@@ -131,6 +131,7 @@ struct MultiNode : Node {
 
     using BucketType = uint_fast8_t;
     using Coord = typename Point::Coord;
+
     using Num = Num_Comparator<Coord>;
     using NodeArr = std::array<Node*, kRegions>;
     using ST = SplitType;
@@ -198,7 +199,7 @@ struct MultiNode : Node {
         return;
     }
 
-    template<typename Box, typename BoxSeq>
+    template<typename BoxSeq, typename Box>
     BoxSeq ComputeSubregions(const Box& box) {
         auto box_seq = BoxSeq::uninitialized(kRegions);
         ComputeSubregionsRec(box_seq, box, 1, 0);

@@ -26,10 +26,8 @@ template<typename Point, typename SplitRule, uint_fast8_t kMD,
          uint_fast8_t kBDO>
 void OrthTree<Point, SplitRule, kMD, kBDO>::BatchDelete_(Slice A) {
     Points B = Points::uninitialized(A.size());
-    Node* T = this->root_;
-    Box bx = this->tree_box_;
-    std::tie(this->root_, this->tree_box_) =
-        BatchDeleteRecursive(T, A, parlay::make_slice(B), bx, 1);
+    this->root_ = BatchDeleteRecursive(this->root_, A, parlay::make_slice(B),
+                                       this->tree_box_, 1);
     return;
 }
 
@@ -74,7 +72,7 @@ Node* OrthTree<Point, SplitRule, kMD, kBDO>::BatchDeleteRecursive(
 
         auto TI = static_cast<Interior*>(T);
         OrthNodeArr new_nodes;
-        BoxSeq new_box(TI->ComputeSubregions(box));
+        BoxSeq new_box(TI->template ComputeSubregions<BoxSeq>(box));
 
         size_t start = 0;
         for (DimsType i = 0; i < kNodeRegions; ++i) {
@@ -95,7 +93,7 @@ Node* OrthTree<Point, SplitRule, kMD, kBDO>::BatchDeleteRecursive(
             // PERF: rebuild size is at most BT::kLeaveWrap, we can get the box
             // by traversing the tree
             assert(T->size <= BT::kLeaveWrap);
-            assert(WithinBox(BT::template GetBox<Leaf, Interior>(T), box));
+            assert(BT::WithinBox(BT::template GetBox<Leaf, Interior>(T), box));
             return BT::template RebuildSingleTree<Leaf, Interior, false>(T,
                                                                          box);
         }

@@ -96,7 +96,7 @@ BaseTree<Point, DerivedTree, kBDO>::GetBox(Node* T) {
 template<typename Point, typename DerivedTree, uint_fast8_t kBDO>
 typename BaseTree<Point, DerivedTree, kBDO>::Box
 BaseTree<Point, DerivedTree, kBDO>::GetBox(const BoxSeq& box_seq) {
-    Box box = Box();
+    Box box = GetEmptyBox();
     for (const auto& b : box_seq) {
         box = GetBox(box, b);
     }

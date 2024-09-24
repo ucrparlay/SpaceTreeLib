@@ -16,9 +16,9 @@ queryTypes=(0 1 2)
 trees=(0)
 # queryTypes=(0 1 2)
 
-Paths=("/localdata/zmen002/kdtree/ss_varden/" "/localdata/zmen002/kdtree/uniform/")
+# Paths=("/localdata/zmen002/kdtree/ss_varden/" "/localdata/zmen002/kdtree/uniform/")
 # Paths=("/localdata/0/zmen002/kdtree/ss_varden/" "/localdata/0/zmen002/kdtree/uniform_bigint/")
-# Paths=("/ssd0/zmen002/kdtree/ss_varden/" "/ssd0/zmen002/kdtree/uniform/")
+Paths=("/ssd0/zmen002/kdtree/ss_varden/" "/ssd0/zmen002/kdtree/uniform/")
 
 #* check node
 for queryType in "${queryTypes[@]}"; do
