@@ -231,7 +231,6 @@ static Interior* AllocInteriorNode(const typename Interior::NodeArr& tree_nodes,
 
 template<typename NodeType>
 static void FreeNode(Node* T) {
-    // TODO: add static type check
     parlay::type_allocator<NodeType>::retire(static_cast<NodeType*>(T));
 }
 

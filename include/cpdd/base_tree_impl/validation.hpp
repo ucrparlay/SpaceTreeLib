@@ -52,6 +52,7 @@ size_t BaseTree<Point, DerivedTree, kBDO>::CheckSize(Node* T) {
     }
     if constexpr (IsBinaryNode<Interior>) {
         Interior* TI = static_cast<Interior*>(T);
+        assert(!TI->GetParallelFlagIniStatus());
         size_t l, r;
         parlay::par_do([&] { l = CheckSize<Leaf, Interior>(TI->left); },
                        [&] { r = CheckSize<Leaf, Interior>(TI->right); });
@@ -60,6 +61,7 @@ size_t BaseTree<Point, DerivedTree, kBDO>::CheckSize(Node* T) {
     } else {
         assert(IsMultiNode<Interior>);
         Interior* TI = static_cast<Interior*>(T);
+        assert(!TI->GetParallelFlagIniStatus());
         size_t sum = 0;
         for (BucketType i = 0; i < TI->tree_nodes.size(); ++i) {
             sum += CheckSize<Leaf, Interior>(TI->tree_nodes[i]);

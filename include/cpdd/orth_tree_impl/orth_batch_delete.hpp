@@ -106,7 +106,7 @@ Node* OrthTree<Point, SplitRule, kMD, kBDO>::BatchDeleteRecursive(
     BT::template SeievePoints<Interior>(In, Out, n, IT.tags, IT.sums,
                                         IT.tags_num);
 
-    BoxSeq box_seq(IT.tags_num);
+    BoxSeq box_seq(IT.tags_num);  // PARA: the box for bucket nodes
     auto [re_num, tot_re_size] = IT.TagInbalanceNodeDeletion(
         box_seq, box, has_tomb, [&](BucketType idx) -> bool {
             return BT::SparcyNode(IT.sums_tree[idx], IT.tags[idx].first->size);
@@ -152,9 +152,10 @@ Node* OrthTree<Point, SplitRule, kMD, kBDO>::BatchDeleteRecursive(
                 IT.tags[IT.rev_tag[i]].first);
             IT.tags[IT.rev_tag[i]].first = AllocEmptyLeafNode<Slice, Leaf>();
         } else {  // NOTE: rebuild
-            assert(BT::WithinBox(BT::template GetBox<Leaf, Interior>(
-                                     IT.tags[IT.rev_tag[i]].first),
-                                 box_seq[i]));
+            assert(BT::WithinBox(
+                BT::template GetBox<Leaf, Interior>(
+                    IT.tags[IT.rev_tag[i]].first),
+                box_seq[i]));  // BUG: the bouding box has been retaged
             IT.tags[IT.rev_tag[i]].first =
                 BT::template RebuildSingleTree<Leaf, Interior, false>(
                     IT.tags[IT.rev_tag[i]].first, box_seq[i]);

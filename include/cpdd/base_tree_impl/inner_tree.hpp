@@ -345,8 +345,6 @@ struct BaseTree<Point, DerivedTree, kBDO>::InnerTree {
             }
         }
 
-        assert(tags[idx].second == BT::kBucketNum);
-        assert(tags[idx].first != NULL);
         typename Interior::OrthNodeArr new_nodes;
         for (BucketType i = 0; i < Interior::kRegions; ++i) {
             new_nodes[i] = UpdateInnerTreeRecursive<kUT>(

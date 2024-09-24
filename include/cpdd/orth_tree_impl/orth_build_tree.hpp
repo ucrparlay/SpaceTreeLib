@@ -140,7 +140,7 @@ Node* OrthTree<Point, SplitRule, kMD, kBDO>::SerialBuildRecursive(
         start += sums[i];
     }
 
-    return AllocInteriorNode<Interior>(tree_nodes, split, false);
+    return AllocInteriorNode<Interior>(tree_nodes, split, AugType());
 }
 
 template<typename Point, typename SplitRule, uint_fast8_t kMD,
@@ -165,7 +165,7 @@ Node* OrthTree<Point, SplitRule, kMD, kBDO>::OrthBuildInnerTree(
         assert(i == 0 || pivots[idx * (1 << i)] == pivots[idx * (1 << i) + 1]);
     }
 
-    return AllocInteriorNode<Interior>(multi_nodes, split, false);
+    return AllocInteriorNode<Interior>(multi_nodes, split, AugType());
 }
 
 template<typename Point, typename SplitRule, uint_fast8_t kMD,
@@ -191,8 +191,7 @@ Node* OrthTree<Point, SplitRule, kMD, kBDO>::BuildRecursive(Slice In, Slice Out,
     // NOTE: if random sampling failed to split points, re-partitions using
     // serail approach
     auto tree_nodes = parlay::sequence<Node*>::uninitialized(BT::kBucketNum);
-    auto nodes_map =
-        BucketSeq::uninitialized(BT::kBucketNum);
+    auto nodes_map = BucketSeq::uninitialized(BT::kBucketNum);
     BucketType zeros = 0, cnt = 0;
     for (BucketType i = 0; i < BT::kBucketNum; ++i) {
         if (!sums[i]) {
