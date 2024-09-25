@@ -180,9 +180,8 @@ struct MultiNode : Node {
 
     // TODO: maybe we can initialize the box to be input one and every time only
     // modify the cut position
-    template<typename Box, typename BoxSeqSlice>
-    void ComputeSubregionsRec(BoxSeqSlice& box_seq, const Box& box, auto idx,
-                              auto deep) {
+    template<typename BoxSeqSlice>
+    void ComputeSubregionsRec(BoxSeqSlice box_seq, BucketType deep) {
         if (deep == kMD) {
             assert(box_seq.size() == 1);
             return;
@@ -191,10 +190,10 @@ struct MultiNode : Node {
         BucketType n = box_seq.size();
         assert(n - n / 2 == n / 2);
 
-        std::for_each_n(box_seq.begin(), n / 2, [&](Box& bx) {
+        std::for_each_n(box_seq.begin(), n / 2, [&](auto& bx) {
             bx.second.pnt[split[deep].second] = split[deep].first;
         });
-        std::for_each_n(box_seq.begin() + n / 2, n - n / 2, [&](Box& bx) {
+        std::for_each_n(box_seq.begin() + n / 2, n - n / 2, [&](auto& bx) {
             bx.first.pnt[split[deep].second] = split[deep].first;
         });
 

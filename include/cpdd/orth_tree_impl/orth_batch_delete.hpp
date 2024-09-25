@@ -140,8 +140,8 @@ Node* OrthTree<Point, SplitRule, kMD, kBDO>::BatchDeleteRecursive(
     // NOTE: handling of rebuild
     // WARN: the rebuild node is on top
     // NOTE: retag the inba-nodes and save the bounding boxes
-    Node* new_node = IT.template UpdateInnerTree<InnerTree::kTagRebuildNode>(
-        tree_nodes, box_seq);
+    Node* new_node =
+        IT.template UpdateInnerTree<InnerTree::kTagRebuildNode>(tree_nodes);
     assert(IT.tags_num == re_num);
 
     parlay::parallel_for(0, IT.tags_num, [&](size_t i) {
@@ -152,13 +152,13 @@ Node* OrthTree<Point, SplitRule, kMD, kBDO>::BatchDeleteRecursive(
                 IT.tags[IT.rev_tag[i]].first);
             IT.tags[IT.rev_tag[i]].first = AllocEmptyLeafNode<Slice, Leaf>();
         } else {  // NOTE: rebuild
-            assert(BT::WithinBox(
-                BT::template GetBox<Leaf, Interior>(
-                    IT.tags[IT.rev_tag[i]].first),
-                box_seq[i]));  // BUG: the bouding box has been retaged
+            assert(BT::WithinBox(BT::template GetBox<Leaf, Interior>(
+                                     IT.tags[IT.rev_tag[i]].first),
+                                 IT.GetBoxByIdx(IT.rev_tag[i], box)));
             IT.tags[IT.rev_tag[i]].first =
                 BT::template RebuildSingleTree<Leaf, Interior, false>(
-                    IT.tags[IT.rev_tag[i]].first, box_seq[i]);
+                    IT.tags[IT.rev_tag[i]].first,
+                    IT.GetBoxByIdx(IT.rev_tag[i], box));
         }
     });  // PERF: allow the parlay decide the granularity to accelerate the
          // small tree rebuild

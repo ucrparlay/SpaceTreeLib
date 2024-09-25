@@ -51,7 +51,7 @@ struct BaseTree<Point, DerivedTree, kBDO>::InnerTree {
         requires IsMultiNode<Interior>
     {
         assert(GetDepthByIndex(19) == 4);
-        assert(kDim = std::log2(Interior::kRegions));
+        assert(kDim == static_cast<BucketType>(std::log2(Interior::kRegions)));
 
         Box bx(box);
         BucketType h = GetDepthByIndex(idx);
