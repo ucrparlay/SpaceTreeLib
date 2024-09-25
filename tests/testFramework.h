@@ -321,15 +321,7 @@ void BatchInsert(Tree& pkd, const parlay::sequence<point>& WP,
                 LOG << "Not supported tree type" << ENDL;
             }
         },
-        [&]() {
-            // if (!serial) {
-            pkd.BatchInsert(wi.cut(0, size_t(wi.size() * ratio)));
-            // } else {
-            //     for (size_t i = 0; i < wi.size() * ratio; i++) {
-            //         pkd.pointInsert(wi[i], DIM);
-            //     }
-            // }
-        },
+        [&]() { pkd.BatchInsert(wi.cut(0, size_t(wi.size() * ratio))); },
         [&]() { pkd.DeleteTree(); });
 
     if constexpr (cpdd::IsKdTree<Tree>) {
@@ -346,11 +338,6 @@ void BatchInsert(Tree& pkd, const parlay::sequence<point>& WP,
     }
 
     pkd.BatchInsert(wi.cut(0, size_t(wi.size() * ratio)));
-    // } else {
-    //     for (size_t i = 0; i < wi.size() * ratio; i++) {
-    //         pkd.pointInsert(wi[i], DIM);
-    //     }
-    // }
 
     LOG << aveInsert << " " << std::flush;
 
@@ -362,6 +349,7 @@ void batchDelete(Tree& pkd, const parlay::sequence<point>& WP,
                  const parlay::sequence<point>& WI, const uint_fast8_t& DIM,
                  const int& rounds, bool afterInsert = 1, double ratio = 1.0) {
     using points = typename Tree::Points;
+    using Box = typename Tree::Box;
     points wp = points::uninitialized(WP.size());
     points wi = points::uninitialized(
         WP.size());  //! warnning need to adjust space if necessary
@@ -374,14 +362,19 @@ void batchDelete(Tree& pkd, const parlay::sequence<point>& WP,
         [&]() {
             if (afterInsert) {  //* first insert wi then delete wi
                 parlay::copy(WP, wp), parlay::copy(WI, wi);
-                pkd.Build(parlay::make_slice(wp));
+                if constexpr (cpdd::IsKdTree<Tree>) {
+                    pkd.Build(parlay::make_slice(wp));
+                } else if constexpr (cpdd::IsOrthTree<Tree>) {
+                    Box box = Tree::GetBox(Tree::GetBox(parlay::make_slice(wp)),
+                                           Tree::GetBox(wi.cut(0, batchSize)));
+                    pkd.Build(parlay::make_slice(wp), box);
+                }
                 pkd.BatchInsert(wi.cut(0, batchSize));
                 parlay::copy(WP, wp), parlay::copy(WI, wi);
             } else {  //* only build wp and then delete from wp
-                // LOG << " after insert " << ENDL;
-                parlay::copy(WP, wp);
-                parlay::copy(WP, wi);
+                parlay::copy(WP, wp), parlay::copy(WP, wi);
                 pkd.Build(parlay::make_slice(wp));
+                // parlay::copy(WP, wp), parlay::copy(WP, wi);
             }
         },
         [&]() {
@@ -390,28 +383,26 @@ void batchDelete(Tree& pkd, const parlay::sequence<point>& WP,
             } else if constexpr (kDeleteType == kBatchDiff) {
                 pkd.BatchDiff(wi.cut(0, batchSize));
             }
-            // else {
-            //     for (size_t i = 0; i < batchSize; i++) {
-            // pkd.pointDelete(wi[i], DIM);
-            // }
-            // }
         },
         [&]() { pkd.DeleteTree(); });
 
-    //* set status to be finish delete
-
     if (afterInsert) {
+        //* first insert wi then delete wi
         parlay::copy(WP, wp), parlay::copy(WI, wi);
-        pkd.Build(parlay::make_slice(wp));
-        pkd.BatchInsert(wi.cut(0, size_t(wi.size() * ratio)));
+        if constexpr (cpdd::IsKdTree<Tree>) {
+            pkd.Build(parlay::make_slice(wp));
+        } else if constexpr (cpdd::IsOrthTree<Tree>) {
+            Box box = Tree::GetBox(Tree::GetBox(parlay::make_slice(wp)),
+                                   Tree::GetBox(wi.cut(0, batchSize)));
+            pkd.Build(parlay::make_slice(wp), box);
+        }
+        pkd.BatchInsert(wi.cut(0, batchSize));
         parlay::copy(WP, wp), parlay::copy(WI, wi);
-        // if (!serial) {
-        pkd.BatchDelete(wi.cut(0, batchSize));
-        // } else {
-        //     for (size_t i = 0; i < batchSize; i++) {
-        //         pkd.pointDelete(wi[i], DIM);
-        //     }
-        // }
+        if constexpr (kDeleteType == kBatchDelete) {
+            pkd.BatchDelete(wi.cut(0, batchSize));
+        } else if constexpr (kDeleteType == kBatchDiff) {
+            pkd.BatchDiff(wi.cut(0, batchSize));
+        }
     } else {
         parlay::copy(WP, wp);
         pkd.Build(parlay::make_slice(wp));

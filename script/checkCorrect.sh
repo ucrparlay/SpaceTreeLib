@@ -4,7 +4,7 @@ Nodes=(1000000 5000000 8000000 10000000 50000000)
 # Nodes=(50000000)
 
 K=100
-tester="checkCorrectParallel"
+tester="ccp"
 resFile="Correct.out"
 dest="logger.in"
 out="log.in"
@@ -13,7 +13,7 @@ tag=2
 count=1 # count the number of ok in the output
 dims=(2)
 queryTypes=(0 1 2)
-trees=(0)
+trees=(0 1)
 # queryTypes=(0 1 2)
 
 # Paths=("/localdata/zmen002/kdtree/ss_varden/" "/localdata/zmen002/kdtree/uniform/")
