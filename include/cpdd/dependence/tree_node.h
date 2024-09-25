@@ -1,6 +1,7 @@
 #pragma once
 #include <parlay/slice.h>
 #include <algorithm>
+#include <bitset>
 #include <array>
 #include <cstdint>
 #include <numeric>
@@ -179,31 +180,65 @@ struct MultiNode : Node {
 
     // TODO: maybe we can initialize the box to be input one and every time only
     // modify the cut position
-    template<typename Box, typename BoxSeq>
-    void ComputeSubregionsRec(BoxSeq& box_seq, const Box& box, auto idx,
+    template<typename Box, typename BoxSeqSlice>
+    void ComputeSubregionsRec(BoxSeqSlice& box_seq, const Box& box, auto idx,
                               auto deep) {
-        if (idx >= tree_nodes.size()) {
-            assert(deep == kMD);
-            assert(1 << kMD == tree_nodes.size());
-            box_seq[idx - (1 << kMD)] = box;
+        if (deep == kMD) {
+            assert(box_seq.size() == 1);
             return;
         }
 
-        // TODO: add correct check for split and bounding box
-        //  TODO: perf box
-        Box lbox(box), rbox(box);
-        lbox.second.pnt[split[deep].second] = split[deep].first;  // PERF: loose
-        rbox.first.pnt[split[deep].second] = split[deep].first;
-        ComputeSubregionsRec(box_seq, lbox, 2 * idx, deep + 1);
-        ComputeSubregionsRec(box_seq, rbox, 2 * idx + 1, deep + 1);
+        BucketType n = box_seq.size();
+        assert(n - n / 2 == n / 2);
+
+        std::for_each_n(box_seq.begin(), n / 2, [&](Box& bx) {
+            bx.second.pnt[split[deep].second] = split[deep].first;
+        });
+        std::for_each_n(box_seq.begin() + n / 2, n - n / 2, [&](Box& bx) {
+            bx.first.pnt[split[deep].second] = split[deep].first;
+        });
+
+        ComputeSubregionsRec(box_seq.cut(0, n / 2), deep + 1);
+        ComputeSubregionsRec(box_seq.cut(n / 2, n), deep + 1);
         return;
     }
 
     template<typename BoxSeq, typename Box>
     BoxSeq ComputeSubregions(const Box& box) {
-        auto box_seq = BoxSeq::uninitialized(kRegions);
-        ComputeSubregionsRec(box_seq, box, 1, 0);
+        auto box_seq = BoxSeq(kRegions, box);
+        ComputeSubregionsRec(parlay::make_slice(box_seq), 0);
         return std::move(box_seq);
+    }
+
+    template<typename Box>
+    inline Box GetBoxById(BucketType id, const Box& box) {
+        Box bx(box);
+        assert(id >= 0 && id <= kRegions);
+
+        // PERF: cannot set i>=0 as it is unsigned int
+        // idx 9 -> 101 -> RLR
+        for (BucketType i = kMD; i > 0; --i) {
+            if (id & (1 << (i - 1))) {  //
+                bx.first.pnt[split[kMD - i].second] = split[kMD - i].first;
+            } else {
+                bx.second.pnt[split[kMD - i].second] = split[kMD - i].first;
+            }
+        }
+
+        return std::move(bx);
+    }
+
+    template<typename Box>
+    inline void ModifyBoxById(BucketType id, Box& box) {
+        assert(id >= 0 && id <= kRegions);
+        for (BucketType i = kMD; i > 0; --i) {
+            if (id & (1 << (i - 1))) {  //
+                box.first.pnt[split[kMD - i].second] = split[kMD - i].first;
+            } else {
+                box.second.pnt[split[kMD - i].second] = split[kMD - i].first;
+            }
+        }
+        return;
     }
 
     NodeArr tree_nodes;

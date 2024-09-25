@@ -62,18 +62,10 @@ Node* BaseTree<Point, DerivedTree, kBDO>::BuildInnerTree(
                                        typename Interior::AT());
 }
 
-bool flag = false;
 template<typename Point, typename DerivedTree, uint_fast8_t kBDO>
 template<typename Leaf, IsBinaryNode Interior, typename Range, bool granularity>
 void BaseTree<Point, DerivedTree, kBDO>::FlattenRec(Node* T, Range Out) {
     assert(T->size == Out.size());
-
-    if (T->size == 515805) {
-        pt = T;
-        std::cout << "visit in rec: " << T->size << std::endl;
-        LOG << T << ENDL;
-        flag = true;
-    }
 
     if (T->size == 0) return;
 
@@ -86,26 +78,10 @@ void BaseTree<Point, DerivedTree, kBDO>::FlattenRec(Node* T, Range Out) {
     }
 
     Interior* TI = static_cast<Interior*>(T);
-    if (T->size != TI->left->size + TI->right->size) {
-        std::cout << "T->size: " << T->size
-                  << " TI->left->size: " << TI->left->size
-                  << " TI->right->size: " << TI->right->size << std::flush;
-
-        // CheckSize<Leaf, Interior>(T);
-
-        if (TI->right->is_leaf) {
-            auto TL = static_cast<Leaf*>(TI->right);
-            LOG << " is _leaf " << TL->is_dummy << ENDL;
-        } else {
-            auto TI2 = static_cast<Interior*>(TI->right);
-            LOG << TI2->split.first << " " << TI2->split.second << ENDL;
-        }
-    }
     assert(TI->size == TI->left->size + TI->right->size);
     parlay::par_do_if(
         // WARN: check parallelisim using node size can be biased
-        // ForceParallelRecursion<Interior, granularity>(TI),
-        0,
+        ForceParallelRecursion<Interior, granularity>(TI),
         [&]() {
             FlattenRec<Leaf, Interior>(TI->left, Out.cut(0, TI->left->size));
         },

@@ -47,6 +47,35 @@ struct BaseTree<Point, DerivedTree, kBDO>::InnerTree {
     // NOTE: cores
     inline void ResetTagsNum() { tags_num = 0; }
 
+    Box GetBoxByIdx(BucketType idx, const Box& box)
+        requires IsMultiNode<Interior>
+    {
+        assert(GetDepthByIndex(19) == 4);
+        assert(kDim = std::log2(Interior::kRegions));
+
+        Box bx(box);
+        BucketType h = GetDepthByIndex(idx);
+        // idx -= (1 << h);
+        // for (BucketType i = h, new_idx = 1; i > 0; i -= kDim) {
+        //     auto TI = static_cast<Interior*>(tags[new_idx].first);
+        //     BucketType local_id = 1;
+        //     for (BucketType j = 0; j < kDim; j++) {
+        //         bool bit_set = idx & (1 << (i - 1 - j));
+        //         local_id = (local_id << 1) | bit_set;
+        //         new_idx = (new_idx << 1) | bit_set;
+        //     }
+        //     TI->ModifyBoxById(local_id - Interior::kRegions, bx);
+        // }
+
+        for (BucketType i = h, new_idx = 1; i > 0; i -= kDim) {
+            BucketType local_id = (idx >> (i - kDim)) & ((1 << kDim) - 1);
+            auto TI = static_cast<Interior*>(tags[new_idx].first);
+            TI->ModifyBoxById(local_id, bx);
+            new_idx = new_idx << kDim | local_id;
+        }
+        return std::move(bx);
+    }
+
     // NOTE: Each Node in the skeleton receives a tag
     // NOTE: A Leaf Node receives the tag < BUCKETNUM
     // NOTE: All internal Node has tag == BUCKETNUM
@@ -57,6 +86,7 @@ struct BaseTree<Point, DerivedTree, kBDO>::InnerTree {
             rev_tag[tags_num++] = idx;  // WARN: cannot remove
             return;
         }
+
         // INFO: BUCKET ID in [0, kBucketNum)
         tags[idx] = NodeTag(T, kBucketNum);
         Interior* TI = static_cast<Interior*>(T);
@@ -94,10 +124,10 @@ struct BaseTree<Point, DerivedTree, kBDO>::InnerTree {
         return;
     }
 
-    static inline DimsType GetDepthByIndex(BucketType tag) {
-        DimsType h = 0;
-        while (tag > 1) {
-            tag >>= 1;
+    static inline BucketType GetDepthByIndex(BucketType idx) {
+        BucketType h = 0;
+        while (idx > 1) {
+            idx >>= 1;
             ++h;
         }
         return h;
@@ -255,8 +285,8 @@ struct BaseTree<Point, DerivedTree, kBDO>::InnerTree {
             this->ResetTagsNum();
             return UpdateInnerTreeRecursive<kUT>(1, tree_nodes, p, func);
         } else if constexpr (kUT ==
-                             kPostRebuild) {  // NOTE: avoid touch the node that
-                                              // has been deleted
+                             kPostRebuild) {  // NOTE: avoid touch the node
+                                              // that has been deleted
             bool under_rebuild_tree = false;
             return UpdateInnerTreeRecursive<kUT>(
                 1, tree_nodes, p, [&](bool op) -> bool {
