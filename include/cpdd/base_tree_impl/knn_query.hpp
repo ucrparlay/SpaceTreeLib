@@ -9,8 +9,9 @@ namespace cpdd {
 
 // NOTE: distance between two Points
 template<typename Point, typename DerivedTree, uint_fast8_t kBDO>
-inline typename BaseTree<Point, DerivedTree, kBDO>::Coord BaseTree<Point, DerivedTree, kBDO>::P2PDistance(
-    const Point& p, const Point& q) {
+inline typename BaseTree<Point, DerivedTree, kBDO>::Coord
+BaseTree<Point, DerivedTree, kBDO>::P2PDistance(const Point& p,
+                                                const Point& q) {
     Coord r = 0;
     for (DimsType i = 0; i < kDim; ++i) {
         r += (p.pnt[i] - q.pnt[i]) * (p.pnt[i] - q.pnt[i]);
@@ -55,8 +56,9 @@ BaseTree<Point, DerivedTree, kBDO>::P2BMaxDistance(
 // r else return the distance between p and q
 template<typename Point, typename DerivedTree, uint_fast8_t kBDO>
 inline typename BaseTree<Point, DerivedTree, kBDO>::Coord
-BaseTree<Point, DerivedTree, kBDO>::InterruptibleDistance(const Point& p, const Point& q,
-                                             Coord up) {
+BaseTree<Point, DerivedTree, kBDO>::InterruptibleDistance(const Point& p,
+                                                          const Point& q,
+                                                          Coord up) {
     Coord r = 0;
     DimsType i = 0;
     if (kDim >= 6) {
@@ -88,9 +90,9 @@ BaseTree<Point, DerivedTree, kBDO>::InterruptibleDistance(const Point& p, const 
 // NOTE: KNN search for Point q
 template<typename Point, typename DerivedTree, uint_fast8_t kBDO>
 template<typename Leaf, typename Range>
-void BaseTree<Point, DerivedTree, kBDO>::KNNLeaf(Node* T, const Point& q,
-                                    kBoundedQueue<Point, Range>& bq,
-                                    const Box& node_box) {
+void BaseTree<Point, DerivedTree, kBDO>::KNNLeaf(
+    Node* T, const Point& q, kBoundedQueue<Point, Range>& bq,
+    const Box& node_box) {
     assert(T->is_leaf);
 
     Leaf* TL = static_cast<Leaf*>(T);
@@ -116,9 +118,9 @@ void BaseTree<Point, DerivedTree, kBDO>::KNNLeaf(Node* T, const Point& q,
 
 template<typename Point, typename DerivedTree, uint_fast8_t kBDO>
 template<typename Leaf, IsBinaryNode Interior, typename Range>
-void BaseTree<Point, DerivedTree, kBDO>::KNNBinary(Node* T, const Point& q,
-                                      kBoundedQueue<Point, Range>& bq,
-                                      const Box& node_box, KNNLogger& logger) {
+void BaseTree<Point, DerivedTree, kBDO>::KNNBinary(
+    Node* T, const Point& q, kBoundedQueue<Point, Range>& bq,
+    const Box& node_box, KNNLogger& logger) {
     logger.vis_node_num++;
 
     if (T->is_leaf) {
@@ -128,39 +130,37 @@ void BaseTree<Point, DerivedTree, kBDO>::KNNBinary(Node* T, const Point& q,
 
     Interior* TI = static_cast<Interior*>(T);
     bool go_left = Num::Gt(TI->split.first - q.pnt[TI->split.second], 0);
-
-    // Box first_box(node_box), second_box(node_box);
-    Box next_box(node_box);
-    Coord* mod_dim = go_left ? &next_box.second.pnt[TI->split.second]
-                             : &next_box.first.pnt[TI->split.second];
-    auto split = TI->split.first;
-    std::ranges::swap(split, *mod_dim);
+    BoxCut box_cut(node_box, TI->split, go_left);
+    // Box next_box(node_box);
+    // Coord* mod_dim = go_left ? &next_box.second.pnt[TI->split.second]
+    //                          : &next_box.first.pnt[TI->split.second];
+    // auto split = TI->split.first;
+    // std::ranges::swap(split, *mod_dim);
     logger.generate_box_num += 1;
 
-    KNNBinary<Leaf, Interior>(go_left ? TI->left : TI->right, q, bq, next_box,
-                              logger);
+    KNNBinary<Leaf, Interior>(go_left ? TI->left : TI->right, q, bq,
+                              box_cut.GetFirstBoxCut(), logger);
 
     logger.check_box_num++;
-    std::ranges::swap(split, *mod_dim);
-    mod_dim = go_left ? &next_box.first.pnt[TI->split.second]
-                      : &next_box.second.pnt[TI->split.second];
-    *mod_dim = split;
-    if (Num::Gt(P2BMinDistance(q, next_box), bq.top_value()) && bq.full()) {
+    // std::ranges::swap(split, *mod_dim);
+    // mod_dim = go_left ? &next_box.first.pnt[TI->split.second]
+    //                   : &next_box.second.pnt[TI->split.second];
+    // *mod_dim = split;
+    if (Num::Gt(P2BMinDistance(q, box_cut.GetSecondBoxCut()), bq.top_value()) &&
+        bq.full()) {
         logger.skip_box_num++;
         return;
     }
-    KNNBinary<Leaf, Interior>(go_left ? TI->right : TI->left, q, bq, next_box,
-                              logger);
+    KNNBinary<Leaf, Interior>(go_left ? TI->right : TI->left, q, bq,
+                              box_cut.GetBox(), logger);
     return;
 }
 
 template<typename Point, typename DerivedTree, uint_fast8_t kBDO>
 template<typename Leaf, IsMultiNode Interior, typename Range>
-void BaseTree<Point, DerivedTree, kBDO>::KNNMultiExpand(Node* T, const Point& q,
-                                           DimsType dim, BucketType idx,
-                                           kBoundedQueue<Point, Range>& bq,
-                                           const Box& node_box,
-                                           KNNLogger& logger) {
+void BaseTree<Point, DerivedTree, kBDO>::KNNMultiExpand(
+    Node* T, const Point& q, DimsType dim, BucketType idx,
+    kBoundedQueue<Point, Range>& bq, const Box& node_box, KNNLogger& logger) {
     logger.vis_node_num++;
 
     if (T->size == 0) {
@@ -222,9 +222,9 @@ void BaseTree<Point, DerivedTree, kBDO>::KNNMultiExpand(Node* T, const Point& q,
 
 template<typename Point, typename DerivedTree, uint_fast8_t kBDO>
 template<typename Leaf, IsMultiNode Interior, typename Range>
-void BaseTree<Point, DerivedTree, kBDO>::KNNMulti(Node* T, const Point& q,
-                                     kBoundedQueue<Point, Range>& bq,
-                                     const Box& node_box, KNNLogger& logger) {
+void BaseTree<Point, DerivedTree, kBDO>::KNNMulti(
+    Node* T, const Point& q, kBoundedQueue<Point, Range>& bq,
+    const Box& node_box, KNNLogger& logger) {
     logger.vis_node_num++;
 
     if (T->size == 0) {

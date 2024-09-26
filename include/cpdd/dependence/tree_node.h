@@ -178,8 +178,6 @@ struct MultiNode : Node {
         }
     }
 
-    // TODO: maybe we can initialize the box to be input one and every time only
-    // modify the cut position
     template<typename BoxSeqSlice>
     void ComputeSubregionsRec(BoxSeqSlice box_seq, BucketType deep) {
         if (deep == kMD) {

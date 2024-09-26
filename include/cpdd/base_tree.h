@@ -13,7 +13,6 @@ namespace cpdd {
 #define LOG  std::cout
 #define ENDL std::endl << std::flush
 
-Node* pt;
 template<typename Point, typename DerivedTree, uint_fast8_t kBDO = 6>
 class BaseTree {
  public:
@@ -70,6 +69,8 @@ class BaseTree {
     // NOTE: array based inner tree for batch insertion and deletion
     template<typename Leaf, typename Interior>
     struct InnerTree;
+
+    struct BoxCut;
 
     // NOTE: Box operations
     static inline bool LegalBox(const Box& bx);
@@ -318,3 +319,4 @@ class BaseTree {
 #include "base_tree_impl/tree_op.hpp"
 #include "base_tree_impl/knn_query.hpp"
 #include "base_tree_impl/range_query.hpp"
+#include "base_tree_impl/box_cut.hpp"
