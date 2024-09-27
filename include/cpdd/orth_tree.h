@@ -50,6 +50,7 @@ class OrthTree :
     using Interior = OrthInteriorNode;
     using OrthNodeArr = Interior::OrthNodeArr;
     using InnerTree = typename BT::template InnerTree<Leaf, Interior>;
+    using BoxCut = typename BT::BoxCut;
 
     // NOTE: expose basetree interface
     using BT::Expand2Binary;

@@ -49,10 +49,9 @@ KdTree<Point, SplitRule, kBDO>::DeleteInnerTree(BucketType idx,
         return tree_nodes[p++];
     }
 
-    // TODO: use auto&
-    auto [L, Lbox] =
+    auto& [L, Lbox] =
         DeleteInnerTree(idx << 1, tags, tree_nodes, p, (d + 1) % BT::kDim);
-    auto [R, Rbox] =
+    auto& [R, Rbox] =
         DeleteInnerTree(idx << 1 | 1, tags, tree_nodes, p, (d + 1) % BT::kDim);
 
     BT::template UpdateInterior<Interior>(tags[idx].first, L, R);
@@ -129,24 +128,18 @@ KdTree<Point, SplitRule, kBDO>::BatchDeleteRecursive(
         has_tomb = putTomb ? false : has_tomb;
         assert(putTomb ? (!has_tomb) : true);
 
-        // assert(this->_split_rule == MAX_STRETCH_DIM ||
-        //        (this->_split_rule == ROTATE_DIM && d == TI->split.second));
         DimsType nextDim = (d + 1) % BT::kDim;
-
-        // TODO: change this to optimized serial version
-        Box lbox(bx), rbox(bx);
-        lbox.second.pnt[TI->split.second] = TI->split.first;  //* loose
-        rbox.first.pnt[TI->split.second] = TI->split.first;
+        BoxCut box_cut(bx, TI->split, true);
 
         auto [L, Lbox] = BatchDeleteRecursive(
-            TI->left, lbox, In.cut(0, split_iter - In.begin()),
+            TI->left, box_cut.GetFirstBoxCut(),
+            In.cut(0, split_iter - In.begin()),
             Out.cut(0, split_iter - In.begin()), nextDim, has_tomb);
         auto [R, Rbox] = BatchDeleteRecursive(
-            TI->right, rbox, In.cut(split_iter - In.begin(), n),
+            TI->right, box_cut.GetSecondBoxCut(),
+            In.cut(split_iter - In.begin(), n),
             Out.cut(split_iter - In.begin(), n), nextDim, has_tomb);
 
-        // TI->SetParallelFlag(has_tomb ? false
-        //                              : TI->size > BT::kSerialBuildCutoff);
         bool par_flag = TI->size > BT::kSerialBuildCutoff;
         BT::template UpdateInterior<Interior>(T, L, R);
         if (!has_tomb) {  // WARN: Above update will reset parallel flag
@@ -191,8 +184,6 @@ KdTree<Point, SplitRule, kBDO>::BatchDeleteRecursive(
                    (TI->size - IT.sums_tree[idx] < BT::kThinLeaveWrap);
         });
 
-    // TODO: no need to compute, compute uing std::accumulate
-    // IT.RetriveRebuildTreeIdx(1, IT.rev_tag, tot_re_size, re_num);
     assert(re_num <= IT.tags_num);
 
     parlay::parallel_for(

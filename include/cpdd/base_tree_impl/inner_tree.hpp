@@ -216,14 +216,14 @@ struct BaseTree<Point, DerivedTree, kBDO>::InnerTree {
         }
 
         if constexpr (IsBinaryNode<Interior>) {
-            // TODO: rewrite to reduce work
-            Box lbox(box), rbox(box);
-            lbox.second.pnt[TI->split.second] = TI->split.first;  //* loose
-            rbox.first.pnt[TI->split.second] = TI->split.first;
-            MarkTomb(idx << 1, re_num, tot_re_size, box_seq, lbox, has_tomb,
-                     violat_func);
-            MarkTomb(idx << 1 | 1, re_num, tot_re_size, box_seq, rbox, has_tomb,
-                     violat_func);
+            BoxCut box_cut(box, TI->split, true);
+            // Box lbox(box), rbox(box);
+            // lbox.second.pnt[TI->split.second] = TI->split.first;  //* loose
+            // rbox.first.pnt[TI->split.second] = TI->split.first;
+            MarkTomb(idx << 1, re_num, tot_re_size, box_seq,
+                     box_cut.GetFirstBoxCut(), has_tomb, violat_func);
+            MarkTomb(idx << 1 | 1, re_num, tot_re_size, box_seq,
+                     box_cut.GetSecondBoxCut(), has_tomb, violat_func);
         } else if constexpr (IsMultiNode<Interior>) {
             BoxSeq new_box(TI->template ComputeSubregions<BoxSeq>(box));
             for (BucketType i = 0; i < Interior::kRegions; ++i) {

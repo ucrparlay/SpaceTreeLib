@@ -47,9 +47,8 @@ KdTree<Point, SplitRule, kBDO>::UpdateInnerTreePointerBox(
     assert(tags[idx].second == BT::kBucketNum);
     assert(tags[idx].first != nullptr);
 
-    // TODO: add &
-    auto [L, Lbox] = UpdateInnerTreePointerBox(idx << 1, tags, tree_nodes, p);
-    auto [R, Rbox] =
+    auto& [L, Lbox] = UpdateInnerTreePointerBox(idx << 1, tags, tree_nodes, p);
+    auto& [R, Rbox] =
         UpdateInnerTreePointerBox(idx << 1 | 1, tags, tree_nodes, p);
     BT::template UpdateInterior<Interior>(tags[idx].first, L, R);
     return NodeBox(tags[idx].first, BT::GetBox(Lbox, Rbox));
@@ -138,17 +137,15 @@ KdTree<Point, SplitRule, kBDO>::BatchDiffRecursive(
 
         DimsType nextDim = (d + 1) % BT::kDim;
 
-        // TODO: rewrite for better box
-        Box lbox(box), rbox(box);
-        lbox.second.pnt[TI->split.second] = TI->split.first;  //* loose
-        rbox.first.pnt[TI->split.second] = TI->split.first;
-
-        auto [L, Lbox] = BatchDiffRecursive(
-            TI->left, lbox, In.cut(0, split_iter - In.begin()),
-            Out.cut(0, split_iter - In.begin()), nextDim);
-        auto [R, Rbox] = BatchDiffRecursive(
-            TI->right, rbox, In.cut(split_iter - In.begin(), n),
-            Out.cut(split_iter - In.begin(), n), nextDim);
+        BoxCut box_cut(box, TI->split, true);
+        auto& [L, Lbox] =
+            BatchDiffRecursive(TI->left, box_cut.GetFirstBoxCut(),
+                               In.cut(0, split_iter - In.begin()),
+                               Out.cut(0, split_iter - In.begin()), nextDim);
+        auto& [R, Rbox] =
+            BatchDiffRecursive(TI->right, box_cut.GetSecondBoxCut(),
+                               In.cut(split_iter - In.begin(), n),
+                               Out.cut(split_iter - In.begin(), n), nextDim);
 
         BT::template UpdateInterior<Interior>(T, L, R);
         assert(T->size == L->size + R->size && TI->split.second >= 0 &&

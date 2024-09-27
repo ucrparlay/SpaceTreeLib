@@ -15,7 +15,6 @@ BaseTree<Point, DerivedTree, kBDO>::CheckBox(Node* T, const Box& box) {
     }
     Interior* TI = static_cast<Interior*>(T);
     if constexpr (IsBinaryNode<Interior>) {
-        // TODO: optimize
         Box lbox(box), rbox(box);
         lbox.second.pnt[TI->split.second] = TI->split.first;  //* loose
         rbox.first.pnt[TI->split.second] = TI->split.first;

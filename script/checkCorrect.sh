@@ -30,7 +30,7 @@ for queryType in "${queryTypes[@]}"; do
 						if [[ "${node}" -gt 8000000 ]]; then
 							continue
 						fi
-						if [[ "${queryType}" -gt 1 ]] && [[ "${path}" == *"/uniform/" ]] && [[ "${node}" -gt 5000000 ]]; then
+						if [[ "${queryType}" -gt 1 ]] && [[ "${path}" == *"/uniform/" ]] && [[ "${node}" -gt 1000000 ]]; then
 							continue
 						fi
 					fi
