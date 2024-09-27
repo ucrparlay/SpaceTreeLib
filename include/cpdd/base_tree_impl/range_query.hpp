@@ -6,9 +6,8 @@
 namespace cpdd {
 template<typename Point, typename DerivedTree, uint_fast8_t kBDO>
 template<typename Leaf>
-size_t BaseTree<Point, DerivedTree, kBDO>::RangeCountRectangleLeaf(Node* T,
-                                                      const Box& query_box,
-                                                      const Box& node_box) {
+size_t BaseTree<Point, DerivedTree, kBDO>::RangeCountRectangleLeaf(
+    Node* T, const Box& query_box, const Box& node_box) {
     assert(T->is_leaf);
 
     Leaf* TL = static_cast<Leaf*>(T);
@@ -29,9 +28,9 @@ size_t BaseTree<Point, DerivedTree, kBDO>::RangeCountRectangleLeaf(Node* T,
 
 template<typename Point, typename DerivedTree, uint_fast8_t kBDO>
 template<typename Leaf, IsBinaryNode Interior>
-size_t BaseTree<Point, DerivedTree, kBDO>::RangeCountRectangle(Node* T, const Box& query_box,
-                                                  const Box& node_box,
-                                                  RangeQueryLogger& logger) {
+size_t BaseTree<Point, DerivedTree, kBDO>::RangeCountRectangle(
+    Node* T, const Box& query_box, const Box& node_box,
+    RangeQueryLogger& logger) {
     logger.vis_node_num++;
     if (T->is_leaf) {
         return RangeCountRectangleLeaf<Leaf>(T, query_box, node_box);
@@ -55,24 +54,18 @@ size_t BaseTree<Point, DerivedTree, kBDO>::RangeCountRectangle(Node* T, const Bo
         }
     };
 
-    auto& mod_dim = abox.second.pnt[TI->split.second];
-    auto split = TI->split.first;
-    std::ranges::swap(mod_dim, split);
-    recurse(TI->left, abox, l);
-
-    std::ranges::swap(mod_dim, split);
-    abox.first.pnt[TI->split.second] = split;
-    recurse(TI->right, abox, r);
+    BoxCut box_cut(node_box, TI->split, true);
+    recurse(TI->left, box_cut.GetFirstBoxCut(), l);
+    recurse(TI->right, box_cut.GetSecondBoxCut(), r);
 
     return l + r;
 }
 
 template<typename Point, typename DerivedTree, uint_fast8_t kBDO>
 template<typename Leaf, IsMultiNode Interior>
-size_t BaseTree<Point, DerivedTree, kBDO>::RangeCountRectangle(Node* T, const Box& query_box,
-                                                  const Box& node_box,
-                                                  DimsType dim, BucketType idx,
-                                                  RangeQueryLogger& logger) {
+size_t BaseTree<Point, DerivedTree, kBDO>::RangeCountRectangle(
+    Node* T, const Box& query_box, const Box& node_box, DimsType dim,
+    BucketType idx, RangeQueryLogger& logger) {
     logger.vis_node_num++;
     if (T->is_leaf) {
         return RangeCountRectangleLeaf<Leaf>(T, query_box, node_box);
@@ -80,7 +73,6 @@ size_t BaseTree<Point, DerivedTree, kBDO>::RangeCountRectangle(Node* T, const Bo
 
     Interior* TI = static_cast<Interior*>(T);
     logger.generate_box_num++;
-    Box abox(node_box);
 
     auto recurse = [&query_box, &logger](Node* Ts, const Box& box,
                                          size_t& counter, DimsType next_dim,
@@ -101,21 +93,19 @@ size_t BaseTree<Point, DerivedTree, kBDO>::RangeCountRectangle(Node* T, const Bo
     size_t l, r;
     idx <<= 1;
     bool reach_leaf = idx >= Interior::kRegions;
+    BoxCut box_cut(node_box, TI->split[dim], true);
 
     // NOTE: visit left half
     assert(TI->split[dim].second == dim);
-    auto& mod_dim = abox.second.pnt[TI->split[dim].second];
-    auto split = TI->split[dim].first;
-    std::ranges::swap(mod_dim, split);
-    recurse(reach_leaf ? TI->tree_nodes[idx - Interior::kRegions] : T, abox, l,
-            (dim + 1) % kDim, reach_leaf ? 1 : idx);
+
+    recurse(reach_leaf ? TI->tree_nodes[idx - Interior::kRegions] : T,
+            box_cut.GetFirstBoxCut(), l, (dim + 1) % kDim,
+            reach_leaf ? 1 : idx);
 
     idx |= 1;
-    std::ranges::swap(mod_dim, split);
-    assert(abox == node_box);
-    abox.first.pnt[TI->split[dim].second] = split;
-    recurse(reach_leaf ? TI->tree_nodes[idx - Interior::kRegions] : T, abox, r,
-            (dim + 1) % kDim, reach_leaf ? 1 : idx);
+    recurse(reach_leaf ? TI->tree_nodes[idx - Interior::kRegions] : T,
+            box_cut.GetSecondBoxCut(), r, (dim + 1) % kDim,
+            reach_leaf ? 1 : idx);
 
     return l + r;
 }
@@ -123,8 +113,8 @@ size_t BaseTree<Point, DerivedTree, kBDO>::RangeCountRectangle(Node* T, const Bo
 // TODO: as range_count_rectangle
 template<typename Point, typename DerivedTree, uint_fast8_t kBDO>
 template<typename Leaf, IsBinaryNode Interior>
-size_t BaseTree<Point, DerivedTree, kBDO>::RangeCountRadius(Node* T, const Circle& cl,
-                                               const Box& node_box) {
+size_t BaseTree<Point, DerivedTree, kBDO>::RangeCountRadius(
+    Node* T, const Circle& cl, const Box& node_box) {
     if (!circle_intersect_box(cl, node_box)) return 0;
     if (within_circle(node_box, cl)) return T->size;
 
@@ -155,9 +145,10 @@ size_t BaseTree<Point, DerivedTree, kBDO>::RangeCountRadius(Node* T, const Circl
 
 template<typename Point, typename DerivedTree, uint_fast8_t kBDO>
 template<typename Leaf, typename Range>
-void BaseTree<Point, DerivedTree, kBDO>::RangeQueryLeaf(Node* T, Range Out, size_t& s,
-                                           const Box& query_box,
-                                           const Box& node_box) {
+void BaseTree<Point, DerivedTree, kBDO>::RangeQueryLeaf(Node* T, Range Out,
+                                                        size_t& s,
+                                                        const Box& query_box,
+                                                        const Box& node_box) {
     assert(T->is_leaf);
 
     Leaf* TL = static_cast<Leaf*>(T);
@@ -188,7 +179,6 @@ void BaseTree<Point, DerivedTree, kBDO>::RangeQuerySerialRecursive(
 
     Interior* TI = static_cast<Interior*>(T);
     logger.generate_box_num++;
-    Box abox(node_box);
 
     auto recurse = [&](Node* Ts, const Box& box) -> void {
         if (!BoxIntersectBox(box, query_box)) {
@@ -206,14 +196,9 @@ void BaseTree<Point, DerivedTree, kBDO>::RangeQuerySerialRecursive(
         }
     };
 
-    auto& mod_dim = abox.second.pnt[TI->split.second];
-    auto split = TI->split.first;
-    std::ranges::swap(mod_dim, split);
-    recurse(TI->left, abox);
-
-    std::ranges::swap(mod_dim, split);
-    abox.first.pnt[TI->split.second] = split;
-    recurse(TI->right, abox);
+    BoxCut box_cut(node_box, TI->split, true);
+    recurse(TI->left, box_cut.GetFirstBoxCut());
+    recurse(TI->right, box_cut.GetSecondBoxCut());
 
     return;
 }
@@ -255,21 +240,15 @@ void BaseTree<Point, DerivedTree, kBDO>::RangeQuerySerialRecursive(
     idx <<= 1;
     bool reach_leaf = idx >= Interior::kRegions;
     logger.generate_box_num++;
-    Box abox(node_box);
+    BoxCut box_cut(node_box, TI->split[dim], true);
 
-    // NOTE: visit left half
-    auto& mod_dim = abox.second.pnt[TI->split[dim].second];
-    auto split = TI->split[dim].first;
-    std::ranges::swap(mod_dim, split);
-    recurse(reach_leaf ? TI->tree_nodes[idx - Interior::kRegions] : T, abox,
-            (dim + 1) % kDim, reach_leaf ? 1 : idx);
+    recurse(reach_leaf ? TI->tree_nodes[idx - Interior::kRegions] : T,
+            box_cut.GetFirstBoxCut(), (dim + 1) % kDim, reach_leaf ? 1 : idx);
 
     // NOTE: visit right
     idx |= 1;
-    std::ranges::swap(mod_dim, split);
-    abox.first.pnt[TI->split[dim].second] = split;
-    recurse(reach_leaf ? TI->tree_nodes[idx - Interior::kRegions] : T, abox,
-            (dim + 1) % kDim, reach_leaf ? 1 : idx);
+    recurse(reach_leaf ? TI->tree_nodes[idx - Interior::kRegions] : T,
+            box_cut.GetSecondBoxCut(), (dim + 1) % kDim, reach_leaf ? 1 : idx);
 
     return;
 }

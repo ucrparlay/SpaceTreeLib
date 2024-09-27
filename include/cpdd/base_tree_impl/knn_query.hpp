@@ -131,21 +131,12 @@ void BaseTree<Point, DerivedTree, kBDO>::KNNBinary(
     Interior* TI = static_cast<Interior*>(T);
     bool go_left = Num::Gt(TI->split.first - q.pnt[TI->split.second], 0);
     BoxCut box_cut(node_box, TI->split, go_left);
-    // Box next_box(node_box);
-    // Coord* mod_dim = go_left ? &next_box.second.pnt[TI->split.second]
-    //                          : &next_box.first.pnt[TI->split.second];
-    // auto split = TI->split.first;
-    // std::ranges::swap(split, *mod_dim);
     logger.generate_box_num += 1;
 
     KNNBinary<Leaf, Interior>(go_left ? TI->left : TI->right, q, bq,
                               box_cut.GetFirstBoxCut(), logger);
 
     logger.check_box_num++;
-    // std::ranges::swap(split, *mod_dim);
-    // mod_dim = go_left ? &next_box.first.pnt[TI->split.second]
-    //                   : &next_box.second.pnt[TI->split.second];
-    // *mod_dim = split;
     if (Num::Gt(P2BMinDistance(q, box_cut.GetSecondBoxCut()), bq.top_value()) &&
         bq.full()) {
         logger.skip_box_num++;
@@ -187,36 +178,21 @@ void BaseTree<Point, DerivedTree, kBDO>::KNNMultiExpand(
         first_idx = second_idx = 1;
     }
 
-    // Box first_box(node_box), second_box(node_box);
-    Box next_box(node_box);
-    logger.generate_box_num += 1;
-    Coord* mod_dim = go_left ? &next_box.second.pnt[TI->split[dim].second]
-                             : &next_box.first.pnt[TI->split[dim].second];
-    auto split = TI->split[dim].first;
-    std::ranges::swap(split, *mod_dim);
-    // first_box.second.pnt[TI->split[dim].second] = TI->split[dim].first;
-    // second_box.first.pnt[TI->split[dim].second] = TI->split[dim].first;
-    // if (!go_left) {
-    //     std::ranges::swap(first_box, second_box);
-    // }
-
+    BoxCut box_cut(node_box, TI->split[dim], go_left);
     assert((dim + 1) % kDim != 0 || (first_idx == 1 && second_idx == 1));
 
     KNNMultiExpand<Leaf, Interior>(first_node, q, (dim + 1) % kDim, first_idx,
-                                   bq, next_box, logger);
+                                   bq, box_cut.GetFirstBoxCut(), logger);
 
     // NOTE: compute the other bounding box
     logger.check_box_num++;
-    std::ranges::swap(split, *mod_dim);
-    mod_dim = go_left ? &next_box.first.pnt[TI->split[dim].second]
-                      : &next_box.second.pnt[TI->split[dim].second];
-    *mod_dim = split;
-    if (Num::Gt(P2BMinDistance(q, next_box), bq.top_value()) && bq.full()) {
+    if (Num::Gt(P2BMinDistance(q, box_cut.GetSecondBoxCut()), bq.top_value()) &&
+        bq.full()) {
         logger.skip_box_num++;
         return;
     }
     KNNMultiExpand<Leaf, Interior>(second_node, q, (dim + 1) % kDim, second_idx,
-                                   bq, next_box, logger);
+                                   bq, box_cut.GetBox(), logger);
     return;
 }
 
