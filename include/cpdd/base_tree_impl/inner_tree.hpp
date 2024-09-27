@@ -217,9 +217,6 @@ struct BaseTree<Point, DerivedTree, kBDO>::InnerTree {
 
         if constexpr (IsBinaryNode<Interior>) {
             BoxCut box_cut(box, TI->split, true);
-            // Box lbox(box), rbox(box);
-            // lbox.second.pnt[TI->split.second] = TI->split.first;  //* loose
-            // rbox.first.pnt[TI->split.second] = TI->split.first;
             MarkTomb(idx << 1, re_num, tot_re_size, box_seq,
                      box_cut.GetFirstBoxCut(), has_tomb, violat_func);
             MarkTomb(idx << 1 | 1, re_num, tot_re_size, box_seq,

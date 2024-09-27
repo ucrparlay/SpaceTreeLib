@@ -141,7 +141,6 @@ Node* OrthTree<Point, SplitRule, kMD, kBDO>::BatchInsertRecursive(Node* T,
 
     auto tree_nodes = parlay::sequence<Node*>::uninitialized(IT.tags_num);
 
-    // TODO: if none points are sieved into bucket, skip that nodes
     parlay::parallel_for(
         0, IT.tags_num,
         [&](size_t i) {

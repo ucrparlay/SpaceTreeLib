@@ -148,12 +148,12 @@ Node* KdTree<Point, SplitRule, kBDO>::BuildRecursive(Slice In, Slice Out,
     // NOTE: if random sampling failed to split points, re-partitions using
     // serail approach
     auto tree_nodes = parlay::sequence<Node*>::uninitialized(BT::kBucketNum);
-    auto nodes_map =
-        BucketSeq::uninitialized(BT::kBucketNum);
+    auto nodes_map = BucketSeq::uninitialized(BT::kBucketNum);
     BucketType zeros = std::ranges::count(sums, 0), cnt = 0;
 
     if (zeros == BT::kBucketNum - 1) {  // NOTE: switch to seral
         // TODO: add parallelsim within this call
+        // see parallel kth element
         return SerialBuildRecursive(In, Out, dim, bx);
     }
 

@@ -2,6 +2,7 @@
 
 #include <sys/types.h>
 #include <cstdint>
+#include <type_traits>
 #include "dependence/comparator.h"
 #include "dependence/tree_node.h"
 #include "dependence/search_container.h"
@@ -16,8 +17,9 @@ namespace cpdd {
 template<typename Point, typename DerivedTree, uint_fast8_t kBDO = 6>
 class BaseTree {
  public:
+    // NOTE: when kBDO >= 8, the # bucket is 255, total skeleton nodes >= 255*2
     using BucketType =
-        uint_fast8_t;  // TODO: add static enforce using 16_t when large kBDO
+        std::conditional_t<(kBDO > 7), uint_fast16_t, uint_fast8_t>;
     using BallsType = uint_fast32_t;
     using DimsType = uint_fast8_t;
     using BucketSeq = parlay::sequence<BucketType>;
@@ -39,7 +41,6 @@ class BaseTree {
     using NodeBoxSeq = parlay::sequence<NodeBox>;
     using NodeTag = std::pair<Node*, uint_fast8_t>;
     using NodeTagSeq = parlay::sequence<NodeTag>;
-    using Tag2Node = parlay::sequence<BallsType>;  // TODO:check inside type
 
     // NOTE: Const variables
     // NOTE: uint32t handle up to 4e9 at least
@@ -134,7 +135,6 @@ class BaseTree {
                              parlay::sequence<BallsType>& sums,
                              const BucketType tags_num);
 
-    // TODO: maybe we can unify the interface
     template<typename Leaf, typename Interior, typename... Args>
     Node* RebuildWithInsert(Node* T, Slice In, Args&&... args);
 

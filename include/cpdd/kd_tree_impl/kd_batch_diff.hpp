@@ -33,27 +33,6 @@ void KdTree<Point, SplitRule, kBDO>::BatchDiff_(Slice A) {
     return;
 }
 
-// NOTE: traverse the skeleton tags and update its children to new ones
-template<typename Point, typename SplitRule, uint_fast8_t kBDO>
-typename KdTree<Point, SplitRule, kBDO>::NodeBox
-KdTree<Point, SplitRule, kBDO>::UpdateInnerTreePointerBox(
-    BucketType idx, const NodeTagSeq& tags, NodeBoxSeq& tree_nodes,
-    BucketType& p) {
-    if (tags[idx].second == BT::kBucketNum + 1 ||
-        tags[idx].second == BT::kBucketNum + 2) {
-        return tree_nodes[p++];
-    }
-
-    assert(tags[idx].second == BT::kBucketNum);
-    assert(tags[idx].first != nullptr);
-
-    auto& [L, Lbox] = UpdateInnerTreePointerBox(idx << 1, tags, tree_nodes, p);
-    auto& [R, Rbox] =
-        UpdateInnerTreePointerBox(idx << 1 | 1, tags, tree_nodes, p);
-    BT::template UpdateInterior<Interior>(tags[idx].first, L, R);
-    return NodeBox(tags[idx].first, BT::GetBox(Lbox, Rbox));
-}
-
 // NOTE: traverse the tree in parallel and rebuild the imbalanced subtree
 template<typename Point, typename SplitRule, uint_fast8_t kBDO>
 typename KdTree<Point, SplitRule, kBDO>::NodeBox

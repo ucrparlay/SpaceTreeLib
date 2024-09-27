@@ -23,8 +23,6 @@ Node* BaseTree<Point, DerivedTree, kBDO>::RebuildWithInsert(Node* T, Slice In,
         std::forward<Args>(args)..., GetBox(parlay::make_slice(wx)));
 }
 
-// TODO: if the bounding box has already been provided, we should not return one
-// with box
 template<typename Point, typename DerivedTree, uint_fast8_t kBDO>
 template<typename Leaf, typename Interior, bool granularity, typename... Args>
 Node* BaseTree<Point, DerivedTree, kBDO>::RebuildSingleTree(Node* T,

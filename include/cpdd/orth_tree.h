@@ -38,7 +38,6 @@ class OrthTree :
     using NodeTagSeq = BT::NodeTagSeq;
     using NodeBoxSeq = BT::NodeBoxSeq;
     using NodeBox = BT::NodeBox;
-    using Tag2Node = BT::Tag2Node;
     using AugType = std::optional<bool>;
 
     // struct KdInteriorNode;

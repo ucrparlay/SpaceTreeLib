@@ -19,36 +19,6 @@ void KdTree<Point, SplitRule, kBDO>::BatchInsert(Slice A) {
     return;
 }
 
-// TODO: remove rev_tag
-template<typename Point, typename SplitRule, uint_fast8_t kBDO>
-Node* KdTree<Point, SplitRule, kBDO>::UpdateInnerTreePointer(
-    BucketType idx, const NodeTagSeq& tags, parlay::sequence<Node*>& tree_nodes,
-    BucketType& p) {
-    if (tags[idx].second == BT::kBucketNum + 1 ||
-        tags[idx].second == BT::kBucketNum + 2) {
-        // assert(rev_tag[p] == idx);
-        return tree_nodes[p++];
-    }
-
-    // assert(tags[idx].second == BT::kBucketNum);
-    assert(tags[idx].first != NULL);
-    Node *L, *R;
-    L = UpdateInnerTreePointer(idx << 1, tags, tree_nodes, p);
-    R = UpdateInnerTreePointer(idx << 1 | 1, tags, tree_nodes, p);
-    BT::template UpdateInterior<Interior>(tags[idx].first, L, R);
-    return tags[idx].first;
-}
-
-// template<typename Point, typename SplitRule, uint_fast8_t kBDO>
-// Node* KdTree<Point, SplitRule, kBDO>::RebuildWithInsert(Node* T, Slice In,
-//                                                         const DimsType d) {
-//     DimsType curDim = this->split_rule_.FindRebuildDimension(d);
-//     Points wx, wo;
-//     BT::template PrepareRebuild<Leaf, Interior>(T, In, wx, wo);
-//     return BuildRecursive(parlay::make_slice(wx), parlay::make_slice(wo),
-//                           curDim, BT::GetBox(parlay::make_slice(wx)));
-// }
-
 // NOTE: return the updated Node
 template<typename Point, typename SplitRule, uint_fast8_t kBDO>
 Node* KdTree<Point, SplitRule, kBDO>::BatchInsertRecursive(Node* T, Slice In,

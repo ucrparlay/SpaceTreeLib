@@ -31,7 +31,6 @@ class KdTree : private BaseTree<Point, KdTree<Point, SplitRule, kBDO>, kBDO> {
     using HyperPlaneSeq = typename BT::HyperPlaneSeq;
     using NodeTag = typename BT::NodeTag;
     using NodeTagSeq = typename BT::NodeTagSeq;
-    using Tag2Node = typename BT::Tag2Node;
     using NodeBox = typename BT::NodeBox;
     using NodeBoxSeq = typename BT::NodeBoxSeq;
     using Splitter = HyperPlane;
@@ -71,17 +70,6 @@ class KdTree : private BaseTree<Point, KdTree<Point, SplitRule, kBDO>, kBDO> {
     void Build(Range&& In);
 
     void DeleteTree() override;
-
-    // TODO: move it to inner tree
-    static NodeBox UpdateInnerTreePointerBox(BucketType idx,
-                                             const NodeTagSeq& tags,
-                                             NodeBoxSeq& tree_nodes,
-                                             BucketType& p);
-
-    // TODO: move it to inner tree
-    static Node* UpdateInnerTreePointer(BucketType idx, const NodeTagSeq& tags,
-                                        parlay::sequence<Node*>& tree_nodes,
-                                        BucketType& p);
 
     NodeBox RebuildTreeRecursive(Node* T, DimsType d,
                                  const bool granularity = true);
