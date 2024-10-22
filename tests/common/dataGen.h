@@ -7,36 +7,36 @@ namespace dataGen {
 
 // #define HASH_MAX_LONG ((unsigned long) 1 << 63)
 
-template<class T>
+template <class T>
 T hash(size_t i);
 
-template<>
+template <>
 inline int hash<int>(size_t i) {
-    return parlay::hash64(i) & ((((size_t)1) << 31) - 1);
+  return parlay::hash64(i) & ((((size_t)1) << 31) - 1);
 }
 
-template<>
+template <>
 inline long hash<long>(size_t i) {
-    return parlay::hash64(i) & ((((size_t)1) << 63) - 1);
+  return parlay::hash64(i) & ((((size_t)1) << 63) - 1);
 }
 
-template<>
+template <>
 inline unsigned int hash<unsigned int>(size_t i) {
-    return parlay::hash64(i);
+  return parlay::hash64(i);
 }
 
-template<>
+template <>
 inline size_t hash<size_t>(size_t i) {
-    return parlay::hash64(i);
+  return parlay::hash64(i);
 }
 
-template<>
+template <>
 inline double hash<double>(size_t i) {
-    return ((double)hash<int>(i) / ((double)((((size_t)1) << 31) - 1)));
+  return ((double)hash<int>(i) / ((double)((((size_t)1) << 31) - 1)));
 }
 
-template<>
+template <>
 inline float hash<float>(size_t i) {
-    return ((double)hash<int>(i) / ((double)((((size_t)1) << 31) - 1)));
+  return ((double)hash<int>(i) / ((double)((((size_t)1) << 31) - 1)));
 }
 };  // namespace dataGen
