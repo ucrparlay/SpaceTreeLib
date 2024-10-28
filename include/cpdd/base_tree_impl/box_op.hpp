@@ -58,7 +58,7 @@ template <typename Point, typename DerivedTree, uint_fast8_t kBDO>
 inline typename BaseTree<Point, DerivedTree, kBDO>::Box
 BaseTree<Point, DerivedTree, kBDO>::GetEmptyBox() {
   return Box(Point(std::numeric_limits<Coord>::max()),
-             Point(std::numeric_limits<Coord>::min()));
+             Point(std::numeric_limits<Coord>::lowest()));
 }
 
 template <typename Point, typename DerivedTree, uint_fast8_t kBDO>
