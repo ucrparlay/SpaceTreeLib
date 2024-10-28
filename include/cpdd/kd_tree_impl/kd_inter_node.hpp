@@ -18,7 +18,7 @@ struct KdTree<Point, SplitRule, kBDO>::KdInteriorNode
 
   inline void ResetParallelFlag() { this->aug.reset(); }
 
-  inline bool const GetParallelFlagIniStatus() { return this->aug.has_value(); }
+  inline bool GetParallelFlagIniStatus() { return this->aug.has_value(); }
 
   // NOTE: use a tri-state bool to indicate whether a subtree needs to be
   // rebuilt. If aug is not INITIALIZED, then it means there is no need to

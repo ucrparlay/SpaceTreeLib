@@ -2,6 +2,7 @@
 #pragma once
 
 #include <cassert>
+#include <cstddef>
 #include <numeric>
 #include <utility>
 
@@ -71,7 +72,7 @@ void BaseTree<Point, DerivedTree, kBDO>::FlattenRec(Node* T, Range Out) {
 
   if (T->is_leaf) {
     Leaf* TL = static_cast<Leaf*>(T);
-    for (int i = 0; i < TL->size; i++) {
+    for (size_t i = 0; i < TL->size; i++) {
       Out[i] = TL->pts[(!TL->is_dummy) * i];
     }
     return;
@@ -106,7 +107,7 @@ void BaseTree<Point, DerivedTree, kBDO>::FlattenRec(Node* T, Range Out) {
 
   if (T->is_leaf) {
     Leaf* TL = static_cast<Leaf*>(T);
-    for (int i = 0; i < TL->size; i++) {
+    for (size_t i = 0; i < TL->size; i++) {
       Out[i] = TL->pts[(!TL->is_dummy) * i];
     }
     return;
@@ -263,7 +264,7 @@ Node* BaseTree<Point, DerivedTree, kBDO>::InsertPoints2Leaf(Node* T, Slice In) {
   if (TL->pts.size() == 0) {
     TL->pts = Points::uninitialized(kLeaveWrap);
   }
-  for (int i = 0; i < In.size(); i++) {
+  for (size_t i = 0; i < In.size(); i++) {
     TL->pts[TL->size + i] = In[i];
   }
   TL->size += In.size();
@@ -294,13 +295,14 @@ RT BaseTree<Point, DerivedTree, kBDO>::DeletePoints4Leaf(Node* T, Slice In) {
   }
 
   auto it = TL->pts.begin(), end = TL->pts.begin() + TL->size;
-  for (int i = 0; i < In.size(); i++) {
+  for (size_t i = 0; i < In.size(); i++) {
     it = std::ranges::find(TL->pts.begin(), end, In[i]);
     assert(it != end);
     std::ranges::iter_swap(it, --end);
   }
 
-  assert(std::distance(TL->pts.begin(), end) == TL->size - In.size());
+  assert(std::cmp_equal(std::distance(TL->pts.begin(), end),
+                        TL->size - In.size()));
   TL->size -= In.size();
   assert(TL->size >= 0);
 

@@ -8,7 +8,7 @@ namespace cpdd {
 template <typename Point, typename DerivedTree, uint_fast8_t kBDO>
 template <typename Leaf>
 size_t BaseTree<Point, DerivedTree, kBDO>::RangeCountRectangleLeaf(
-    Node* T, Box const& query_box, Box const& node_box) {
+    Node* T, Box const& query_box) {
   assert(T->is_leaf);
 
   Leaf* TL = static_cast<Leaf*>(T);
@@ -18,7 +18,7 @@ size_t BaseTree<Point, DerivedTree, kBDO>::RangeCountRectangleLeaf(
       cnt = TL->size;
     }
   } else {
-    for (int i = 0; i < TL->size; i++) {
+    for (size_t i = 0; i < TL->size; i++) {
       if (WithinBox(TL->pts[i], query_box)) {
         cnt++;
       }
@@ -34,12 +34,11 @@ size_t BaseTree<Point, DerivedTree, kBDO>::RangeCountRectangle(
     RangeQueryLogger& logger) {
   logger.vis_node_num++;
   if (T->is_leaf) {
-    return RangeCountRectangleLeaf<Leaf>(T, query_box, node_box);
+    return RangeCountRectangleLeaf<Leaf>(T, query_box);
   }
 
   Interior* TI = static_cast<Interior*>(T);
   logger.generate_box_num++;
-  Box abox(node_box);
 
   size_t l, r;
   auto recurse = [&](Node* Ts, Box const& box, size_t& counter) -> void {
@@ -68,7 +67,7 @@ size_t BaseTree<Point, DerivedTree, kBDO>::RangeCountRectangle(
     BucketType idx, RangeQueryLogger& logger) {
   logger.vis_node_num++;
   if (T->is_leaf) {
-    return RangeCountRectangleLeaf<Leaf>(T, query_box, node_box);
+    return RangeCountRectangleLeaf<Leaf>(T, query_box);
   }
 
   Interior* TI = static_cast<Interior*>(T);
@@ -145,17 +144,18 @@ template <typename Point, typename DerivedTree, uint_fast8_t kBDO>
 template <typename Leaf, typename Range>
 void BaseTree<Point, DerivedTree, kBDO>::RangeQueryLeaf(Node* T, Range Out,
                                                         size_t& s,
-                                                        Box const& query_box,
-                                                        Box const& node_box) {
+                                                        Box const& query_box) {
   assert(T->is_leaf);
 
   Leaf* TL = static_cast<Leaf*>(T);
   if (TL->is_dummy) {
     if (WithinBox(TL->pts[0], query_box)) {
-      for (int i = 0; i < TL->size; i++) Out[s++] = TL->pts[0];
+      for (size_t i = 0; i < TL->size; i++) {
+        Out[s++] = TL->pts[0];
+      }
     }
   } else {
-    for (int i = 0; i < TL->size; i++)
+    for (size_t i = 0; i < TL->size; i++)
       if (WithinBox(TL->pts[i], query_box)) {
         Out[s++] = TL->pts[i];
       }
@@ -170,7 +170,7 @@ void BaseTree<Point, DerivedTree, kBDO>::RangeQuerySerialRecursive(
     RangeQueryLogger& logger) {
   logger.vis_node_num++;
   if (T->is_leaf) {
-    RangeQueryLeaf<Leaf>(T, Out, s, query_box, node_box);
+    RangeQueryLeaf<Leaf>(T, Out, s, query_box);
     return;
   }
 
@@ -207,7 +207,7 @@ void BaseTree<Point, DerivedTree, kBDO>::RangeQuerySerialRecursive(
     DimsType dim, BucketType idx, RangeQueryLogger& logger) {
   logger.vis_node_num++;
   if (T->is_leaf) {
-    RangeQueryLeaf<Leaf>(T, Out, s, query_box, node_box);
+    RangeQueryLeaf<Leaf>(T, Out, s, query_box);
     return;
   }
 

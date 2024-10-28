@@ -92,12 +92,11 @@ BaseTree<Point, DerivedTree, kBDO>::InterruptibleDistance(Point const& p,
 template <typename Point, typename DerivedTree, uint_fast8_t kBDO>
 template <typename Leaf, typename Range>
 void BaseTree<Point, DerivedTree, kBDO>::KNNLeaf(
-    Node* T, Point const& q, kBoundedQueue<Point, Range>& bq,
-    Box const& node_box) {
+    Node* T, Point const& q, kBoundedQueue<Point, Range>& bq) {
   assert(T->is_leaf);
 
   Leaf* TL = static_cast<Leaf*>(T);
-  int i = 0;
+  size_t i = 0;
   while (!bq.full() && i < TL->size) {
     bq.insert(std::make_pair(std::ref(TL->pts[(!TL->is_dummy) * i]),
                              P2PDistance(q, TL->pts[(!TL->is_dummy) * i])));
@@ -124,7 +123,7 @@ void BaseTree<Point, DerivedTree, kBDO>::KNNBinary(
   logger.vis_node_num++;
 
   if (T->is_leaf) {
-    KNNLeaf<Leaf>(T, q, bq, node_box);
+    KNNLeaf<Leaf>(T, q, bq);
     return;
   }
 
@@ -159,7 +158,7 @@ void BaseTree<Point, DerivedTree, kBDO>::KNNMultiExpand(
   }
 
   if (T->is_leaf) {
-    KNNLeaf<Leaf>(T, q, bq, node_box);
+    KNNLeaf<Leaf>(T, q, bq);
     return;
   }
 
@@ -208,7 +207,7 @@ void BaseTree<Point, DerivedTree, kBDO>::KNNMulti(
   }
 
   if (T->is_leaf) {
-    KNNLeaf<Leaf>(T, q, bq, node_box);
+    KNNLeaf<Leaf>(T, q, bq);
     return;
   }
 

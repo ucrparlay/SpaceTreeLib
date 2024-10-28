@@ -9,10 +9,12 @@
 
 template <class TreeDesc, typename Point>
 void TestSpacialTree(int const& kDim, parlay::sequence<Point> const& wp,
-                     parlay::sequence<Point> const& wi, size_t const& N,
-                     int const& K, int const& kRounds,
-                     string const& kInsertFile, int const& kTag,
-                     int const& kQueryType, int const kSummary) {
+                     parlay::sequence<Point> const& wi,
+                     [[maybe_unused]] size_t const& N, int const& K,
+                     int const& kRounds,
+                     [[maybe_unused]] string const& kInsertFile,
+                     int const& kTag, int const& kQueryType,
+                     int const kSummary) {
   using Tree = TreeDesc::TreeType;
   using Points = typename Tree::Points;
 
@@ -26,7 +28,7 @@ void TestSpacialTree(int const& kDim, parlay::sequence<Point> const& wp,
   if (kTag >= 1) {
     if (kSummary) {
       parlay::sequence<double> const ratios = {0.0001, 0.001, 0.01, 0.1};
-      for (int i = 0; i < ratios.size(); i++) {
+      for (size_t i = 0; i < ratios.size(); i++) {
         BatchInsert<Point, Tree>(tree, wp, wi, kDim, kRounds, ratios[i]);
       }
     } else {
@@ -38,7 +40,7 @@ void TestSpacialTree(int const& kDim, parlay::sequence<Point> const& wp,
   if (kTag >= 2) {
     if (kSummary) {
       parlay::sequence<double> const ratios = {0.0001, 0.001, 0.01, 0.1};
-      for (int i = 0; i < ratios.size(); i++) {
+      for (size_t i = 0; i < ratios.size(); i++) {
         batchDelete<Point, Tree, kBatchDelete>(tree, wp, wi, kDim, kRounds, 0,
                                                ratios[i]);
       }
@@ -93,7 +95,7 @@ void TestSpacialTree(int const& kDim, parlay::sequence<Point> const& wp,
   if (kQueryType & (1 << 2)) {  // NOTE: range count
     int recNum = rangeQueryNum;
     kdknn = new Typename[recNum];
-    int const type[3] = {0, 1, 2};
+    // int const type[3] = {0, 1, 2};
 
     // LOG << ENDL;
     for (int i = 0; i < 3; i++) {
@@ -111,7 +113,7 @@ void TestSpacialTree(int const& kDim, parlay::sequence<Point> const& wp,
     if (kSummary == 0) {
       int recNum = rangeQueryNum;
       kdknn = new Typename[recNum];
-      int const type[3] = {0, 1, 2};
+      // int const type[3] = {0, 1, 2};
 
       // LOG << ENDL;
       for (int i = 0; i < 3; i++) {

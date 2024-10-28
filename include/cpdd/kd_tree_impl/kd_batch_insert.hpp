@@ -86,9 +86,9 @@ Node* KdTree<Point, SplitRule, kBDO>::BatchInsertRecursive(Node* T, Slice In,
 
   parlay::parallel_for(
       0, IT.tags_num,
-      [&](size_t i) {
+      [&](decltype(IT.tags_num) i) {
         size_t s = 0;
-        for (int j = 0; j < i; j++) {
+        for (decltype(IT.tags_num) j = 0; j < i; j++) {
           s += IT.sums_tree[IT.rev_tag[j]];
         }
 

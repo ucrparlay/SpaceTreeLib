@@ -180,9 +180,9 @@ KdTree<Point, SplitRule, kBDO>::BatchDeleteRecursive(
 
   parlay::parallel_for(
       0, IT.tags_num,
-      [&](size_t i) {
+      [&](decltype(IT.tags_num) i) {
         size_t start = 0;
-        for (int j = 0; j < i; j++) {
+        for (decltype(IT.tags_num) j = 0; j < i; j++) {
           start += IT.sums[j];
         }
 
@@ -230,7 +230,6 @@ KdTree<Point, SplitRule, kBDO>::BatchDeleteRecursive(
 
   // PARA: op == 0 -> toggle whether under a rebuild tree
   // op == 1 -> query current status
-  bool under_rebuild_tree = false;
   auto const new_root = std::get<0>(
       IT.template UpdateInnerTree<InnerTree::kPostRebuild>(tree_nodes));
   return NodeBox(new_root, new_box);

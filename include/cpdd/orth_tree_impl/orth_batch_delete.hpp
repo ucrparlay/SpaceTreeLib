@@ -63,7 +63,7 @@ Node* OrthTree<Point, SplitRule, kMD, kBDO>::BatchDeleteRecursive(
   if (In.size() <= BT::kSerialBuildCutoff) {
     parlay::sequence<BallsType> sums(kNodeRegions, 0);
     SerialSplitSkeleton(T, In, 0, 1, sums);
-    assert(std::accumulate(sums.begin(), sums.end(), 0) == n);
+    assert(std::cmp_equal(std::accumulate(sums.begin(), sums.end(), 0), n));
 
     bool putTomb = has_tomb && (BT::SparcyNode(In.size(), T->size));
     has_tomb = putTomb ? false : has_tomb;
@@ -115,9 +115,9 @@ Node* OrthTree<Point, SplitRule, kMD, kBDO>::BatchDeleteRecursive(
   auto tree_nodes = parlay::sequence<Node*>::uninitialized(IT.tags_num);
   parlay::parallel_for(
       0, IT.tags_num,
-      [&](size_t i) {
+      [&](decltype(IT.tags_num) i) {
         size_t start = 0;
-        for (int j = 0; j < i; j++) {
+        for (decltype(IT.tags_num) j = 0; j < i; j++) {
           start += IT.sums[j];
         }
 
@@ -137,7 +137,7 @@ Node* OrthTree<Point, SplitRule, kMD, kBDO>::BatchDeleteRecursive(
   // NOTE: handling of rebuild
   // WARN: the rebuild node is on top
   // NOTE: retag the inba-nodes and save the bounding boxes
-  Node* new_node =
+  [[maybe_unused]] Node* new_node =
       IT.template UpdateInnerTree<InnerTree::kTagRebuildNode>(tree_nodes);
   assert(IT.tags_num == re_num);
 

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <utility>
+
 #include "../orth_tree.h"
 
 namespace cpdd {
@@ -106,7 +108,7 @@ Node* OrthTree<Point, SplitRule, kMD, kBDO>::BatchInsertRecursive(Node* T,
   if (n <= BT::kSerialBuildCutoff) {
     parlay::sequence<BallsType> sums(kNodeRegions, 0);
     SerialSplitSkeleton(T, In, 0, 1, sums);
-    assert(std::accumulate(sums.begin(), sums.end(), 0) == n);
+    assert(std::cmp_equal(std::accumulate(sums.begin(), sums.end(), 0), n));
 
     OrthNodeArr new_nodes;
     size_t start = 0;
@@ -131,18 +133,18 @@ Node* OrthTree<Point, SplitRule, kMD, kBDO>::BatchInsertRecursive(Node* T,
   BT::template SeievePoints<Interior>(In, Out, n, IT.tags, IT.sums,
                                       IT.tags_num);
 
-  // NOTE: no need to tag imbalance node, used to remap the bucket node tag to
-  // kBucketNum+1
+  // NOTE: no need to tag imbalance node in orth tree as it never rebuilds the
+  // tree, used to remap the bucket node tag to kBucketNum+1
   // TODO: this may incur extra work e.g., reduce sum
-  IT.TagInbalanceNode([](BucketType idx) -> bool { return false; });
+  IT.TagInbalanceNode([]() -> bool { return false; });
 
   auto tree_nodes = parlay::sequence<Node*>::uninitialized(IT.tags_num);
 
   parlay::parallel_for(
       0, IT.tags_num,
-      [&](size_t i) {
+      [&](decltype(IT.tags_num) i) {
         size_t s = 0;
-        for (int j = 0; j < i; j++) {
+        for (decltype(IT.tags_num) j = 0; j < i; j++) {
           s += IT.sums_tree[IT.rev_tag[j]];
         }
 

@@ -112,7 +112,7 @@ Node* OrthTree<Point, SplitRule, kMD, kBDO>::SerialBuildRecursive(
   parlay::sequence<BallsType> sums(kNodeRegions, 0);
   BoxSeq box_seq(kNodeRegions);
   SerialSplit(In, dim, 1, box, split, sums, box_seq);
-  assert(std::accumulate(sums.begin(), sums.end(), 0) == n);
+  assert(std::cmp_equal(std::accumulate(sums.begin(), sums.end(), 0), n));
 
   if (std::ranges::count(sums, 0) == kNodeRegions - 1) {
     // NOTE: avoid the repeat check as the last

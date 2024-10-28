@@ -181,8 +181,7 @@ class BaseTree {
 
   // NOTE: searech knn in the leaf
   template <typename Leaf, typename Range>
-  static void KNNLeaf(Node* T, Point const& q, kBoundedQueue<Point, Range>& bq,
-                      Box const& bx);
+  static void KNNLeaf(Node* T, Point const& q, kBoundedQueue<Point, Range>& bq);
 
   // NOTE: search knn in the binary node
   template <typename Leaf, IsBinaryNode Interior, typename Range>
@@ -203,8 +202,7 @@ class BaseTree {
 
   // NOTE: range count stuffs
   template <typename Leaf>
-  static size_t RangeCountRectangleLeaf(Node* T, Box const& query_box,
-                                        Box const& node_box);
+  static size_t RangeCountRectangleLeaf(Node* T, Box const& query_box);
 
   template <typename Leaf, IsBinaryNode Interior>
   static size_t RangeCountRectangle(Node* T, Box const& query_box,
@@ -223,7 +221,7 @@ class BaseTree {
   // NOTE: range query stuffs
   template <typename Leaf, typename Range>
   static void RangeQueryLeaf(Node* T, Range Out, size_t& s,
-                             Box const& query_box, Box const& node_box);
+                             Box const& query_box);
 
   template <typename Leaf, IsBinaryNode Interior, typename Range>
   static void RangeQuerySerialRecursive(Node* T, Range Out, size_t& s,

@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.15)
 
 project(
-	spatialTrees
-	VERSION 1.0
+	SpatialTrees
+	VERSION 0.1
 	DESCRIPTION "spatial partition tree"
 	HOMEPAGE_URL ""
 	LANGUAGES CXX
@@ -11,7 +11,7 @@ project(
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON) # works
-# add_compile_options(-Wall -Wextra -Werror)
+add_compile_options(-Wall -Wextra -Werror)
 # add_compile_options(-Wall -Wextra)
 # set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c++20 ")
 # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++20 ")
@@ -59,26 +59,26 @@ add_subdirectory(include/parlaylib)
 # add_subdirectory(libmorton)
 
 # set(source_files
-# ${PROJECT_SOURCE_DIR}/include/cpdd/spatialTrees.hpp
+# ${PROJECT_SOURCE_DIR}/include/cpdd/SpatialTrees.hpp
 # )
 
 # my kd
-add_library(spatialTrees INTERFACE)
-target_link_libraries(spatialTrees INTERFACE parlay)
-# target_link_libraries(spatialTrees INTERFACE libmorton)
-target_include_directories(spatialTrees INTERFACE ${PROJECT_SOURCE_DIR}/include)
+add_library(SpatialTrees INTERFACE)
+target_link_libraries(SpatialTrees INTERFACE parlay)
+# target_link_libraries(SpatialTrees INTERFACE libmorton)
+target_include_directories(SpatialTrees INTERFACE ${PROJECT_SOURCE_DIR}/include)
 
 include(GNUInstallDirs)
-install(TARGETS spatialTrees
+install(TARGETS SpatialTrees
 	LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
 	PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
 # add_executable(test ${PROJECT_SOURCE_DIR}/tests/test.cpp)
-# target_link_libraries(test PUBLIC spatialTrees)
+# target_link_libraries(test PUBLIC SpatialTrees)
 # target_include_directories(test PUBLIC ${PROJECT_SOURCE_DIR}/include)
 
 add_executable(test ${PROJECT_SOURCE_DIR}/tests/test.cpp)
-target_link_libraries(test PUBLIC spatialTrees)
+target_link_libraries(test PUBLIC SpatialTrees)
 target_include_directories(test PUBLIC ${PROJECT_SOURCE_DIR}/include)
 
 if(JEMA)
@@ -86,7 +86,7 @@ if(JEMA)
 endif()
 
 add_executable(data_generator ${PROJECT_SOURCE_DIR}/tests/data_generate.cpp)
-target_link_libraries(data_generator PUBLIC spatialTrees)
+target_link_libraries(data_generator PUBLIC SpatialTrees)
 target_include_directories(data_generator PUBLIC ${PROJECT_SOURCE_DIR}/include)
 
 # CGAL
@@ -114,11 +114,11 @@ if(CGAL)
 
 	# executables
 	# add_executable(cgal ${PROJECT_SOURCE_DIR}/tests/cgal.cpp)
-	# target_link_libraries(cgal PUBLIC spatialTrees CGAL::CGAL CGAL::TBB_support)
+	# target_link_libraries(cgal PUBLIC SpatialTrees CGAL::CGAL CGAL::TBB_support)
 	# target_include_directories(cgal PUBLIC ${PROJECT_SOURCE_DIR}/include )
 
 	add_executable(ccp ${PROJECT_SOURCE_DIR}/tests/checkCorrectParallel.cpp)
-	target_link_libraries(ccp PUBLIC spatialTrees CGAL::CGAL CGAL::TBB_support)
+	target_link_libraries(ccp PUBLIC SpatialTrees CGAL::CGAL CGAL::TBB_support)
 endif()
 
 set(all_files

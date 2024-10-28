@@ -25,7 +25,7 @@ class Point {
   T x[MAX_DIM];
 };
 
-double const EPS = 1e-9;
+// double const EPS = 1e-9;
 #define rep(i, a, b) for (int i = (a); i < (b); i++)
 #define per(i, a, b) for (int i = (a); i > (b); i--)
 #define LL long long
@@ -73,7 +73,7 @@ void generatePoints(std::ofstream& f) {
       1000);
 
   f << N << " " << Dim << std::endl;
-  for (size_t i = 0; i < N; i++) {
+  for (size_t i = 0; std::cmp_less(i, N); i++) {
     for (int j = 0; j < Dim; j++) {
       f << wp[i].x[j] << " ";
     }
@@ -107,7 +107,7 @@ void generatePointsSerial(std::ofstream& f) {
   node = (kd_node_t*)malloc(N * sizeof(kd_node_t));
   f << N << " " << Dim << std::endl;
   for (int i = 0; i < N; i++) {
-    int idx = 0;
+    // int idx = 0;
     Typename a;
     for (int j = 0; j < Dim; j++) {
       if constexpr (std::is_integral_v<Typename>)

@@ -32,7 +32,7 @@ BaseTree<Point, DerivedTree, kBDO>::CheckBox(Node* T, Box const& box) {
     BoxSeq new_box(TI->template ComputeSubregions<BoxSeq>(box));
     BoxSeq return_box_seq(new_box.size());
     assert(new_box.size() == TI->tree_nodes.size());
-    for (int i = 0; i < TI->tree_nodes.size(); i++) {
+    for (size_t i = 0; i < TI->tree_nodes.size(); i++) {
       return_box_seq[i] =
           CheckBox<Leaf, Interior>(TI->tree_nodes[i], new_box[i]);
       assert(WithinBox(return_box_seq[i], new_box[i]));
@@ -96,12 +96,12 @@ void BaseTree<Point, DerivedTree, kBDO>::CheckTreeSameSequential(Node* T,
     assert(IsMultiNode<Interior>);
     Interior* TI = static_cast<Interior*>(T);
     assert((1 << TI->split.size()) == TI->tree_nodes.size());
-    for (int i = 0; i < TI->split.size(); i++) {
+    for (size_t i = 0; i < TI->split.size(); i++) {
       assert(TI->split[i].second == dim);
       dim += 1;
     }
     assert(dim == kDim);
-    for (int i = 0; i < TI->tree_nodes.size(); i++) {
+    for (size_t i = 0; i < TI->tree_nodes.size(); i++) {
       CheckTreeSameSequential<Leaf, Interior>(TI->tree_nodes[i], 0);
     }
   }
@@ -160,7 +160,7 @@ size_t BaseTree<Point, DerivedTree, kBDO>::GetMaxTreeDepth(Node* T,
     return std::max(l, r);
   } else {
     size_t max_depth = 0;
-    for (int i = 0; i < TI->tree_nodes.size(); i++) {
+    for (size_t i = 0; i < TI->tree_nodes.size(); i++) {
       max_depth = std::max(max_depth, GetMaxTreeDepth<Leaf, Interior>(
                                           TI->tree_nodes[i], deep + 1));
     }
@@ -219,7 +219,7 @@ void BaseTree<Point, DerivedTree, kBDO>::CountTreeHeights(
     CountTreeHeights<Leaf, Interior>(TI->left, deep + 1, idx, heights);
     CountTreeHeights<Leaf, Interior>(TI->right, deep + 1, idx, heights);
   } else {
-    for (int i = 0; i < TI->tree_nodes.size(); i++) {
+    for (size_t i = 0; i < TI->tree_nodes.size(); i++) {
       CountTreeHeights<Leaf, Interior>(TI->tree_nodes[i], deep + 1, idx,
                                        heights);
     }

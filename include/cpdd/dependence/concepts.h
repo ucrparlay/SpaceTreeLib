@@ -29,11 +29,11 @@ concept IsBox = requires {
 template <typename T>
 concept IsPointer = std::is_pointer_v<T>;
 
-// Concept to check if a type is present in a parameter pack
+// NOTE:  Concept to check if a type is present in a parameter pack
 template <typename T, typename... Args>
 concept ContainsType = (std::same_as<T, Args> || ...);
 
-// Helper function to find and return the variable of the specified type
+// NOTE:: Helper function to find and return the variable of the specified type
 template <typename T, typename First, typename... Rest>
 constexpr T& FindVar(First& first, Rest&... rest) {
   if constexpr (std::same_as<T, First>) {
@@ -43,7 +43,7 @@ constexpr T& FindVar(First& first, Rest&... rest) {
   }
 }
 
-// Overload for the case when the type is not found
+// NOTE: Overload for the case when the type is not found
 template <typename T>
 constexpr T& FindVar() {
   static_assert(!std::same_as<T, T>, "Type not found in parameter pack");
@@ -56,6 +56,22 @@ constexpr T& FindVar() {
 // consteval T& getVariable(Args&... args) {
 //     return findVariable<T>(args...);
 // }
+
+// NOTE: Concept to check if a function can be called with a parameter
+template <typename ReturnType, typename Func, typename Arg>
+concept CallableWithArg = requires(Func func, Arg arg) {
+  { func(arg) } -> std::convertible_to<ReturnType>;
+};
+
+// NOTE: Function to handle the conditional call
+template <typename ReturnType, typename Func, typename Arg>
+ReturnType InvokeWithOptionalArg(Func&& func, Arg&& arg) {
+  if constexpr (CallableWithArg<ReturnType, Func, Arg>) {
+    return func(std::forward<Arg>(arg));
+  } else {
+    return func();
+  }
+}
 
 template <typename T>
 concept IsBinaryNode = std::is_base_of_v<

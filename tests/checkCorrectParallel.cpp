@@ -127,7 +127,7 @@ void runCGAL(points& wp, points& wi, Typename* cgknn, int queryNum,
       size_t cnt = 0;
       counter_iterator<size_t> cnt_iter(cnt);
 
-      auto it = tree.search(cnt_iter, fib);
+      [[maybe_unused]] auto it = tree.search(cnt_iter, fib);
       // auto it = tree.search( _ans.begin(), fib );
       cgknn[i] = cnt;
       // cgknn[i] = std::distance( _ans.begin(), it );
@@ -158,12 +158,12 @@ void runKDParallel(points& wp, points const& wi, Typename* kdknn, points& p,
                    int queryNum) {
   puts("build kd tree");
   using pkdtree = Tree;
-  using box = typename Tree::Box;
+  // using box = typename Tree::Box;
   pkdtree pkd;
-  size_t n = wp.size();
+  [[maybe_unused]] size_t n = wp.size();
 
   buildTree<point>(Dim, wp, rounds, pkd);
-  cpdd::Node* KDParallelRoot = pkd.GetRoot();
+  [[maybe_unused]] cpdd::Node* KDParallelRoot = pkd.GetRoot();
   pkd.template Validate<typename Tree::Leaf, typename Tree::Interior,
                         typename Tree::SplitRuleType>();
 
@@ -185,7 +185,7 @@ void runKDParallel(points& wp, points const& wi, Typename* kdknn, points& p,
 
   //* query phase
 
-  assert(N >= K);
+  // assert(N >= K);
   assert(tag == 1 || wp.size() == N);
   LOG << "begin kd query" << ENDL;
   if (queryType == 0) {
@@ -234,7 +234,7 @@ int main(int argc, char* argv[]) {
     puts("build, insert and query");
   }
 
-  int LEAVE_WRAP = 32;
+  // int LEAVE_WRAP = 32;
   points wp;
   std::string name, insertFile;
 
@@ -312,6 +312,9 @@ int main(int argc, char* argv[]) {
       puts("insert then delete points from file");
       cgknn = new Typename[N];
       kdknn = new Typename[N];
+    } else {
+      puts("wrong tag");
+      abort();
     }
   } else if (queryType == 1) {  //* range Count
     LOG << "---do range Count---" << ENDL;
@@ -323,6 +326,9 @@ int main(int argc, char* argv[]) {
 
     cgknn = new Typename[queryNum];
     kdknn = new Typename[queryNum];
+  } else {
+    puts("wrong query type");
+    abort();
   }
 
   points kdOut;
@@ -358,7 +364,7 @@ int main(int argc, char* argv[]) {
     }
   } else if (queryType == 1) {
     LOG << "check range count" << ENDL;
-    for (size_t i = 0; i < queryNum; i++) {
+    for (int i = 0; i < queryNum; i++) {
       if (std::abs(cgknn[i] - kdknn[i]) > 1e-4) {
         puts("");
         puts("wrong");

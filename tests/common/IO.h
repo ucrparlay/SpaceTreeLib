@@ -83,22 +83,22 @@ using charstring = typename parlay::sequence<char>;
 
 inline int xToStringLen(charstring const& a) { return a.size(); }
 inline void xToString(char* s, charstring const& a) {
-  for (int i = 0; i < a.size(); i++) s[i] = a[i];
+  for (int i = 0; std::cmp_less(i, a.size()); i++) s[i] = a[i];
 }
 
-inline int xToStringLen(long a) { return 21; }
+inline int xToStringLen([[maybe_unused]] long a) { return 21; }
 inline void xToString(char* s, long a) { sprintf(s, "%ld", a); }
 
-inline int xToStringLen(unsigned long a) { return 21; }
+inline int xToStringLen([[maybe_unused]] unsigned long a) { return 21; }
 inline void xToString(char* s, unsigned long a) { sprintf(s, "%lu", a); }
 
-inline uint xToStringLen(uint a) { return 12; }
+inline uint xToStringLen([[maybe_unused]] uint a) { return 12; }
 inline void xToString(char* s, uint a) { sprintf(s, "%u", a); }
 
-inline int xToStringLen(int a) { return 12; }
+inline int xToStringLen([[maybe_unused]] int a) { return 12; }
 inline void xToString(char* s, int a) { sprintf(s, "%d", a); }
 
-inline int xToStringLen(double a) { return 18; }
+inline int xToStringLen([[maybe_unused]] double a) { return 18; }
 inline void xToString(char* s, double a) { sprintf(s, "%.11le", a); }
 
 inline int xToStringLen(char* a) { return strlen(a) + 1; }

@@ -27,10 +27,10 @@ struct BaseTree<Point, DerivedTree, kBDO>::InnerTree {
     if constexpr (IsBinaryNode<Interior>) {
       assert(TI->size == TI->left->size + TI->right->size);
     } else if constexpr (IsMultiNode<Interior>) {
-      assert(
-          TI->size ==
+      assert(std::cmp_equal(
+          TI->size,
           std::accumulate(TI->tree_nodes.begin(), TI->tree_nodes.end(), 0,
-                          [](size_t sum, Node* T) { return sum + T->size; }));
+                          [](size_t sum, Node* T) { return sum + T->size; })));
     } else {
       static_assert(IsBinaryNode<Interior> || IsMultiNode<Interior>);
     }
@@ -126,7 +126,6 @@ struct BaseTree<Point, DerivedTree, kBDO>::InnerTree {
   // a node needs to be rebuilt has id kBucketNum+2
   // otherwise, it has id kBucketNum
   template <typename ViolateFunc>
-    requires std::is_invocable_r_v<bool, ViolateFunc, BucketType>
   void PickTag(BucketType idx, ViolateFunc&& violate_func) {
     if (idx > kPivotNum || tags[idx].first->is_leaf) {
       tags[idx].second = kBucketNum + 1;
@@ -135,7 +134,8 @@ struct BaseTree<Point, DerivedTree, kBDO>::InnerTree {
     }
 
     assert(tags[idx].second == kBucketNum && (!tags[idx].first->is_leaf));
-    if (violate_func(idx)) {
+    // if (violate_func(idx)) {
+    if (InvokeWithOptionalArg<bool>(violate_func, idx)) {
       tags[idx].second = kBucketNum + 2;
       rev_tag[tags_num++] = idx;
       return;
@@ -392,11 +392,11 @@ struct BaseTree<Point, DerivedTree, kBDO>::InnerTree {
   }
 
   // NOTE: variables
-  NodeTagSeq tags;  //@ Assign each node a tag, aka skeleton
-  parlay::sequence<BallsType> sums;
-  mutable parlay::sequence<BallsType> sums_tree;
-  mutable BucketSeq rev_tag;  //@ maps tag to the position in skeleton
-  BucketType tags_num;
   BT& BTRef;
+  BucketType tags_num;
+  NodeTagSeq tags;  // PARA: Assign each node a tag, aka skeleton
+  mutable parlay::sequence<BallsType> sums_tree;
+  mutable BucketSeq rev_tag;  // PARA: maps tag to the position in skeleton
+  parlay::sequence<BallsType> sums;
 };
 };  // namespace cpdd
