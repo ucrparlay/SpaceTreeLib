@@ -61,7 +61,7 @@ auto OrthTree<Point, SplitRule, kMD, kBDO>::RangeQuery(Box const& query_box,
 
 template <typename Point, typename SplitRule, uint_fast8_t kMD,
           uint_fast8_t kBDO>
-void OrthTree<Point, SplitRule, kMD, kBDO>::DeleteTree() {
+constexpr void OrthTree<Point, SplitRule, kMD, kBDO>::DeleteTree() {
   BT::template DeleteTreeWrapper<Leaf, Interior>();
 }
 

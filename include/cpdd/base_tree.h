@@ -157,7 +157,7 @@ class BaseTree {
   template <SupportsForceParallel Interior, bool granularity>
   inline static bool ForceParallelRecursion(Interior const* T);
 
-  virtual void DeleteTree() = 0;
+  constexpr virtual void DeleteTree() = 0;
 
   template <typename Leaf, typename Interior>
   void DeleteTreeWrapper();

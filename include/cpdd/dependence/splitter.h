@@ -12,13 +12,14 @@ struct BaseSplitterRule {
   using Num = BT::Num;
   using Coord = BT::Coord;
 
-  virtual DimsType FindCuttingDimension(Box const& bx, DimsType const dim) = 0;
+  constexpr virtual DimsType FindCuttingDimension(Box const& bx,
+                                                  DimsType const dim) = 0;
 
-  virtual std::pair<Box, DimsType> SwitchDimension(Slice const In,
-                                                   DimsType const dim,
-                                                   Box const& bx) = 0;
+  constexpr virtual std::pair<Box, DimsType> SwitchDimension(Slice const In,
+                                                             DimsType const dim,
+                                                             Box const& bx) = 0;
 
-  virtual DimsType FindRebuildDimension(DimsType const dim) = 0;
+  constexpr virtual DimsType FindRebuildDimension(DimsType const dim) = 0;
 };
 
 template <typename Point>
@@ -33,8 +34,8 @@ struct MaxStretchDim : BaseSplitterRule<Point> {
 
   void MaxStretchTag() {}
 
-  DimsType FindCuttingDimension(Box const& bx,
-                                [[maybe_unused]] DimsType const dim) override {
+  constexpr DimsType FindCuttingDimension(
+      Box const& bx, [[maybe_unused]] DimsType const dim) override {
     DimsType d(0);
     Coord diff(bx.second.pnt[0] - bx.first.pnt[0]);
     assert(Num::Geq(diff, 0));
@@ -47,11 +48,12 @@ struct MaxStretchDim : BaseSplitterRule<Point> {
     return d;
   };
 
-  DimsType FindRebuildDimension([[maybe_unused]] DimsType const dim) override {
+  constexpr DimsType FindRebuildDimension(
+      [[maybe_unused]] DimsType const dim) override {
     return 0;
   };
 
-  std::pair<Box, DimsType> SwitchDimension(
+  constexpr std::pair<Box, DimsType> SwitchDimension(
       Slice const In, DimsType const dim,
       [[maybe_unused]] Box const& bx) override {
     return std::make_pair(BT::GetBox(In), dim);
@@ -71,16 +73,17 @@ struct RotateDim : BaseSplitterRule<Point> {
 
   void RotateDimTag() {}
 
-  DimsType FindCuttingDimension([[maybe_unused]] Box const& bx,
-                                DimsType const dim) override {
+  constexpr DimsType FindCuttingDimension([[maybe_unused]] Box const& bx,
+                                          DimsType const dim) override {
     return dim;
   };
 
-  DimsType FindRebuildDimension([[maybe_unused]] DimsType const dim) override {
+  constexpr DimsType FindRebuildDimension(
+      [[maybe_unused]] DimsType const dim) override {
     return dim;
   };
 
-  std::pair<Box, DimsType> SwitchDimension(
+  constexpr std::pair<Box, DimsType> SwitchDimension(
       Slice const In, DimsType const dim,
       [[maybe_unused]] Box const& bx) override {
     DimsType d = (dim + 1) % BT::kDim;

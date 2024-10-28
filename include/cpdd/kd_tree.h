@@ -69,7 +69,7 @@ class KdTree : private BaseTree<Point, KdTree<Point, SplitRule, kBDO>, kBDO> {
   template <typename Range>
   void Build(Range&& In);
 
-  void DeleteTree() override;
+  constexpr void DeleteTree() override;
 
   NodeBox RebuildTreeRecursive(Node* T, DimsType d,
                                bool const granularity = true);

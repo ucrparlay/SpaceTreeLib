@@ -77,7 +77,7 @@ class OrthTree
   template <typename Range>
   void BatchInsert(Range&& In);
 
-  void DeleteTree() override;
+  constexpr void DeleteTree() override;
 
   // NOTE: batch delete
   // NOTE: in default, all Points to be deleted are assumed in the tree

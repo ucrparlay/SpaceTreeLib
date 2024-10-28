@@ -48,7 +48,7 @@ auto KdTree<Point, SplitRule, kBDO>::RangeQuery(Box const& query_box,
 }
 
 template <typename Point, typename SplitRule, uint_fast8_t kBDO>
-void KdTree<Point, SplitRule, kBDO>::DeleteTree() {
+constexpr void KdTree<Point, SplitRule, kBDO>::DeleteTree() {
   BT::template DeleteTreeWrapper<Leaf, Interior>();
 }
 
