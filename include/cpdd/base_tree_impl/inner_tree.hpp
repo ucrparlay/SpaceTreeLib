@@ -56,18 +56,6 @@ struct BaseTree<Point, DerivedTree, kBDO>::InnerTree {
 
     Box bx(box);
     BucketType h = GetDepthByIndex(idx);
-    // idx -= (1 << h);
-    // for (BucketType i = h, new_idx = 1; i > 0; i -= kDim) {
-    //     auto TI = static_cast<Interior*>(tags[new_idx].first);
-    //     BucketType local_id = 1;
-    //     for (BucketType j = 0; j < kDim; j++) {
-    //         bool bit_set = idx & (1 << (i - 1 - j));
-    //         local_id = (local_id << 1) | bit_set;
-    //         new_idx = (new_idx << 1) | bit_set;
-    //     }
-    //     TI->ModifyBoxById(local_id - Interior::kRegions, bx);
-    // }
-
     for (BucketType i = h, new_idx = 1; i > 0; i -= kDim) {
       BucketType local_id = (idx >> (i - kDim)) & ((1 << kDim) - 1);
       auto TI = static_cast<Interior*>(tags[new_idx].first);

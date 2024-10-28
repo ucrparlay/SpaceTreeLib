@@ -30,7 +30,7 @@ void KdTree<Point, SplitRule, kBDO>::DivideRotate(Slice In, SplitterSeq& pivots,
     //  never use pivots[idx].first to check whether it is in bucket;
     //  instead, use idx > PIVOT_NUM
     boxs[idx - BT::kBucketNum] = bx;
-    pivots[idx] = Splitter(-1, idx - BT::kBucketNum);
+    pivots[idx] = Splitter(0, idx - BT::kBucketNum);
     return;
   }
   size_t n = In.size();

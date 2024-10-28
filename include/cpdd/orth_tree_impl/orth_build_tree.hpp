@@ -38,7 +38,7 @@ void OrthTree<Point, SplitRule, kMD, kBDO>::DivideRotate(HyperPlaneSeq& pivots,
     //  never use pivots[idx].first == -1 to check whether it is in bucket;
     //  instead, use idx > PIVOT_NUM
     box_seq[idx - BT::kBucketNum] = box;
-    pivots[idx] = HyperPlane(-1, idx - BT::kBucketNum);
+    pivots[idx] = HyperPlane(0, idx - BT::kBucketNum);
     return;
   }
 

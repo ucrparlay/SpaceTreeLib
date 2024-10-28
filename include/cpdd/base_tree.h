@@ -73,6 +73,7 @@ class BaseTree {
   template <typename Leaf, typename Interior>
   struct InnerTree;
 
+  // NOTE: compute the bounding box on the fly
   struct BoxCut;
 
   // NOTE: Box operations
