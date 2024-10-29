@@ -126,6 +126,9 @@ class BaseTree {
   template <typename Leaf, typename RT>
   static RT DeletePoints4Leaf(Node* T, Slice In);
 
+  template <typename Leaf, typename RT>
+  static RT DiffPoints4Leaf(Node* T, Slice In);
+
   template <IsBinaryNode Interior>
   static inline BucketType RetriveTag(Point const& p, NodeTagSeq const& tags);
 

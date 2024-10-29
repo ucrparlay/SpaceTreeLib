@@ -13,20 +13,13 @@ size_t BaseTree<Point, DerivedTree, kBDO>::RangeCountRectangleLeaf(
   assert(T->is_leaf);
 
   Leaf* TL = static_cast<Leaf*>(T);
-  size_t cnt = 0;
   if (TL->is_dummy) {
-    if (WithinBox(TL->pts[0], query_box)) {
-      cnt = TL->size;
-    }
+    return WithinBox(TL->pts[0], query_box) ? TL->size : 0;
   } else {
-    std::for_each(TL->pts.begin(), TL->pts.begin() + TL->size,
-                  [&](auto const& p) {
-                    if (WithinBox(p, query_box)) {
-                      cnt++;
-                    }
-                  });
+    return std::ranges::count_if(
+        TL->pts.begin(), TL->pts.begin() + TL->size,
+        [&](auto const& p) { return WithinBox(p, query_box); });
   }
-  return cnt;
 }
 
 template <typename Point, typename DerivedTree, uint_fast8_t kBDO>
@@ -125,12 +118,12 @@ size_t BaseTree<Point, DerivedTree, kBDO>::RangeCountRadius(
         cnt += TL->size;
       }
     } else {
-      std::for_each(TL->pts.begin(), TL->pts.begin() + TL->size,
-                    [&](auto const& p) {
-                      if (within_circle(p, cl)) {
-                        cnt++;
-                      }
-                    });
+      std::ranges::for_each(TL->pts.begin(), TL->pts.begin() + TL->size,
+                            [&](auto const& p) {
+                              if (within_circle(p, cl)) {
+                                cnt++;
+                              }
+                            });
     }
     return cnt;
   }
@@ -163,9 +156,10 @@ void BaseTree<Point, DerivedTree, kBDO>::RangeQueryLeaf(Node* T, Range Out,
       s += TL->size;
     }
   } else {
-    s += std::copy_if(TL->pts.begin(), TL->pts.begin() + TL->size, Out.begin(),
-                      [&](auto const& p) { return WithinBox(p, query_box); }) -
-         Out.begin();
+    auto result = std::ranges::copy_if(
+        TL->pts.begin(), TL->pts.begin() + TL->size, Out.begin() + s,
+        [&](auto const& p) { return WithinBox(p, query_box); });
+    s += std::ranges::distance(Out.begin() + s, result.out);
   }
   return;
 }

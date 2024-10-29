@@ -79,7 +79,8 @@ class KdTree : private BaseTree<Point, KdTree<Point, SplitRule, kBDO>, kBDO> {
   Node* BatchInsertRecursive(Node* T, Slice In, Slice Out, DimsType d);
 
   // NOTE: batch delete
-  // NOTE: in default, all Points to be deleted are assumed in the tree
+  // NOTE: in default, all Points to be deleted are assumed in the tree, if that
+  // is not the case, using BatchDiff
   template <typename Range>
   void BatchDelete(Range&& In);
 

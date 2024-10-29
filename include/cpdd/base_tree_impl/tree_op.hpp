@@ -8,6 +8,7 @@
 
 #include "../base_tree.h"
 #include "cpdd/dependence/tree_node.h"
+#include "parlay/primitives.h"
 #include "parlay/slice.h"
 
 namespace cpdd {
@@ -68,9 +69,9 @@ void BaseTree<Point, DerivedTree, kBDO>::ExtractPointsInLeaf(Node* T,
                                                              Range Out) {
   Leaf* TL = static_cast<Leaf*>(T);
   if (TL->is_dummy) {
-    std::fill_n(Out.begin(), TL->size, TL->pts[0]);
+    std::ranges::fill_n(Out.begin(), TL->size, TL->pts[0]);
   } else {
-    std::copy(TL->pts.begin(), TL->pts.begin() + TL->size, Out.begin());
+    std::ranges::copy(TL->pts.begin(), TL->pts.begin() + TL->size, Out.begin());
   }
   return;
 }
@@ -321,4 +322,42 @@ RT BaseTree<Point, DerivedTree, kBDO>::DeletePoints4Leaf(Node* T, Slice In) {
     static_assert(std::same_as<RT, Node*> || std::same_as<RT, NodeBox>);
   }
 }
+
+template <typename Point, typename DerivedTree, uint_fast8_t kBDO>
+template <typename Leaf, typename RT>
+RT BaseTree<Point, DerivedTree, kBDO>::DiffPoints4Leaf(Node* T, Slice In) {
+  Leaf* TL = static_cast<Leaf*>(T);
+
+  if (TL->is_dummy) {
+    size_t cnt = parlay::count(In, TL->pts[0]);
+    TL->size = TL->size >= cnt ? TL->size - cnt : 0;
+    assert(TL->size >= 0);
+    if (TL->size == 0) {
+      TL->is_dummy = false;
+      TL->pts = Points::uninitialized(kLeaveWrap);
+    }
+
+    if constexpr (std::same_as<RT, Node*>) {
+      return T;
+    } else if constexpr (std::same_as<RT, NodeBox>) {
+      return NodeBox(T, TL->size ? Box(TL->pts[0], TL->pts[0]) : GetEmptyBox());
+    } else {
+      static_assert(std::same_as<RT, Node*> || std::same_as<RT, NodeBox>);
+    }
+  }
+
+  // NOTE: need to check whether all Points are in the Leaf
+  auto tmp_pts = parlay::uninitialized(TL->size);
+  std::ranges::copy_n(tmp_pts.begin(), TL->size, TL->pts.begin());
+  // auto it = TL->pts.begin(), end = TL->pts.begin() + TL->size;
+  // for (int i = 0; TL->size && i < In.size(); i++) {
+  //   it = std::ranges::find(TL->pts.begin(), end, In[i]);
+  //   if (it != end) {  // NOTE: find a Point
+  //     std::ranges::iter_swap(it, --end);
+  //     TL->size--;
+  //   }
+  // }
+  return NodeBox(T, GetBox(TL->pts.cut(0, TL->size)));
+}
+
 }  // namespace cpdd

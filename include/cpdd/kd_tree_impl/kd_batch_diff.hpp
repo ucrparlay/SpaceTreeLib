@@ -165,4 +165,5 @@ KdTree<Point, SplitRule, kBDO>::BatchDiffRecursive(
   BucketType beatles = 0;
   return UpdateInnerTreePointerBox(1, IT.tags, tree_nodes, beatles);
 }
+
 }  // namespace cpdd

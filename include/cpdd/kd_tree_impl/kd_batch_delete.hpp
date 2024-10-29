@@ -88,7 +88,7 @@ KdTree<Point, SplitRule, kBDO>::BatchDeleteRecursive(
     return NodeBox(T, bx);
   }
 
-  // INFO: may can be used to accelerate the whole deletion process
+  // INFO: it can be used to accelerate the whole deletion process
   if (n == T->size) {
     if (has_tomb) {  // rebuild this subtree
       BT::template DeleteTreeRecursive<Leaf, Interior>(T);

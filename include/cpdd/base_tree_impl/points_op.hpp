@@ -12,8 +12,8 @@ inline void BaseTree<Point, DerivedTree, kBDO>::SamplePoints(Slice In,
   auto size = arr.size();
   auto n = In.size();
   auto indexs = parlay::sequence<uint64_t>::uninitialized(size);
-  parlay::for_each(indexs, [&](auto& x) { x = parlay::hash64(x) % n; });
-  std::sort(indexs.begin(), indexs.end());
+  std::ranges::for_each(indexs, [&](auto& x) { x = parlay::hash64(x) % n; });
+  std::ranges::sort(indexs);
   for (size_t i = 0; i < size; i++) {
     arr[i] = In[indexs[i]];
   }
