@@ -652,6 +652,11 @@ void rangeQuery(parlay::sequence<Point> const& wp, Tree& pkd, Typename* kdknn,
 
   for (int i = 0; i < rec_num; i++) {
     assert(std::cmp_equal(kdknn[i], query_box_seq[i].second.size()));
+    parlay::sort_inplace(Out.cut(i * step, (i + 1) * step));
+    parlay::sort_inplace(query_box_seq[i].second);
+    for (size_t j = 0; j < Out.size(); j++) {
+      assert(Out[j] == query_box_seq[i].second.at(j));
+    }
   }
 
   LOG << aveQuery << " " << std::flush;
