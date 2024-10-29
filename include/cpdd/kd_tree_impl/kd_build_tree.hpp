@@ -95,7 +95,7 @@ Node* KdTree<Point, SplitRule, kBDO>::SerialBuildRecursive(Slice In, Slice Out,
         });
     split = Splitter(minEleIter->pnt[d], d);
   } else if (In.end() == std::ranges::find_if_not(In, [&](Point const& p) {
-               return p.sameDimension(In[0]);
+               return p.SameDimension(In[0]);
              })) {  // NOTE: check whether all elements are identical
     return AllocDummyLeafNode<Slice, Leaf>(In);
   } else {  // NOTE: current dim d is same but other dims are not

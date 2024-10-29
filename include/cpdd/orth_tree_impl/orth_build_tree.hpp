@@ -118,7 +118,7 @@ Node* OrthTree<Point, SplitRule, kMD, kBDO>::SerialBuildRecursive(
     // NOTE: avoid the repeat check as the last
     if (!checked_duplicate) {
       if (std::ranges::find_if_not(In, [&](Point const& p) {
-            return p.sameDimension(In[0]);
+            return p.SameDimension(In[0]);
           }) == In.end()) {
         // WARN: Need to pass full range
         return AllocDummyLeafNode<Slice, Leaf>(In);

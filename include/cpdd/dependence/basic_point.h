@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <tuple>
 
 #include "comparator.h"
 #include "parlay/alloc.h"
@@ -32,7 +33,7 @@ struct PointType {
     for (int i = 0; i < d; i++) pnt[i] = x[i];
   }
 
-  inline PointType const minCoords(PointType const& b) const {
+  inline PointType const MinCoords(PointType const& b) const {
     Coords pts;
     for (uint_fast8_t i = 0; i < d; i++) {
       pts[i] = Num::min(pnt[i], b.pnt[i]);
@@ -40,7 +41,7 @@ struct PointType {
     return std::move(PointType(pts));
   }
 
-  inline PointType const maxCoords(PointType const& b) const {
+  inline PointType const MaxCoords(PointType const& b) const {
     Coords pts;
     for (uint_fast8_t i = 0; i < d; i++) {
       pts[i] = Num::max(pnt[i], b.pnt[i]);
@@ -48,9 +49,9 @@ struct PointType {
     return std::move(PointType(pts));
   }
 
-  inline uint_fast8_t get_dim() const { return pnt.size(); }
+  constexpr auto GetDim() const { return std::tuple_size_v<Coords>; }
 
-  inline bool sameDimension(PointType const& b) const { return *this == b; }
+  inline bool SameDimension(PointType const& b) const { return *this == b; }
 
   inline bool operator==(PointType const& x) const {
     for (int i = 0; i < d; i++) {
@@ -102,7 +103,7 @@ struct PointID : PointType<T, d> {
 
   PointID(T const* x, ID _id) : PointType<T, d>(x), id(_id) {}
 
-  inline PointID const minCoords(PointID const& b) const {
+  inline PointID const MinCoords(PointID const& b) const {
     Coords pts;
     for (int i = 0; i < d; i++) {
       pts[i] = Num::min(this->pnt[i], b.pnt[i]);
@@ -110,7 +111,7 @@ struct PointID : PointType<T, d> {
     return std::move(PointID(pts));
   }
 
-  inline PointID const maxCoords(PointID const& b) const {
+  inline PointID const MaxCoords(PointID const& b) const {
     Coords pts;
     for (int i = 0; i < d; i++) {
       pts[i] = Num::max(this->pnt[i], b.pnt[i]);

@@ -120,7 +120,7 @@ void runCGAL(auto& wp, auto& wi, Typename* cgknn,
     //   Fuzzy_iso_box fib(a, b, 0.0);
     //   // auto d = cpdd::ParallelKDtree<point>::p2p_distance( wp[i], wp[( i
     //   // + n / 2 ) % n],
-    //   //                                                     wp[i].get_dim()
+    //   //                                                     wp[i].GetDim()
     //   //                                                     );
     //   // d = static_cast<coord>( std::sqrt( d ) );
     //   // if ( i == 0 ) {
