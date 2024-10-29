@@ -251,6 +251,9 @@ class BaseTree {
             bool granularity = true>
   static void FlattenRec(Node* T, Range Out);
 
+  template <typename Leaf, typename Range>
+  static void ExtractPointsInLeaf(Node* T, Range Out);
+
   template <typename Leaf, IsMultiNode Interior, typename Range,
             bool granularity = true>
   static void PartialFlatten(Node* T, Range Out, BucketType idx);

@@ -63,6 +63,19 @@ Node* BaseTree<Point, DerivedTree, kBDO>::BuildInnerTree(
 }
 
 template <typename Point, typename DerivedTree, uint_fast8_t kBDO>
+template <typename Leaf, typename Range>
+void BaseTree<Point, DerivedTree, kBDO>::ExtractPointsInLeaf(Node* T,
+                                                             Range Out) {
+  Leaf* TL = static_cast<Leaf*>(T);
+  if (TL->is_dummy) {
+    std::fill_n(Out.begin(), TL->size, TL->pts[0]);
+  } else {
+    std::copy(TL->pts.begin(), TL->pts.begin() + TL->size, Out.begin());
+  }
+  return;
+}
+
+template <typename Point, typename DerivedTree, uint_fast8_t kBDO>
 template <typename Leaf, IsBinaryNode Interior, typename Range,
           bool granularity>
 void BaseTree<Point, DerivedTree, kBDO>::FlattenRec(Node* T, Range Out) {
@@ -71,10 +84,7 @@ void BaseTree<Point, DerivedTree, kBDO>::FlattenRec(Node* T, Range Out) {
   if (T->size == 0) return;
 
   if (T->is_leaf) {
-    Leaf* TL = static_cast<Leaf*>(T);
-    for (size_t i = 0; i < TL->size; i++) {
-      Out[i] = TL->pts[(!TL->is_dummy) * i];
-    }
+    ExtractPointsInLeaf<Leaf>(T, Out);
     return;
   }
 
@@ -106,10 +116,7 @@ void BaseTree<Point, DerivedTree, kBDO>::FlattenRec(Node* T, Range Out) {
   if (T->size == 0) return;
 
   if (T->is_leaf) {
-    Leaf* TL = static_cast<Leaf*>(T);
-    for (size_t i = 0; i < TL->size; i++) {
-      Out[i] = TL->pts[(!TL->is_dummy) * i];
-    }
+    ExtractPointsInLeaf<Leaf>(T, Out);
     return;
   }
 
