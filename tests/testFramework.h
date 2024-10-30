@@ -1141,7 +1141,7 @@ std::pair<size_t, int> read_points(char const* iFile,
 }
 
 struct wrapper {
-  struct QadTree {
+  struct QuadTree {
     template <class Point>
     struct Desc {
       using TreeType = cpdd::OrthTree<Point, cpdd::RotateDim<Point>, 2>;

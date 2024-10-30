@@ -482,7 +482,7 @@ int main(int argc, char* argv[]) {
   if (tree_type == 0) {
     run_test(wrapper::KDtree{});
   } else if (tree_type == 1 && kDim == 2) {
-    run_test(wrapper::QadTree{});
+    run_test(wrapper::QuadTree{});
   }
   // else if (tree_type == 1 && kDim == 3) {
   //     run_test(wrapper::OctTree{});
