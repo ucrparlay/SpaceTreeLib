@@ -55,8 +55,8 @@ size_t BaseTree<Point, DerivedTree, kBDO>::CheckSize(Node* T) {
     Interior* TI = static_cast<Interior*>(T);
     assert(!TI->GetParallelFlagIniStatus());
     size_t l, r;
-    parlay::par_do([&] { l = CheckSize<Leaf, Interior>(TI->left); },
-                   [&] { r = CheckSize<Leaf, Interior>(TI->right); });
+    parlay::par_do([&l, &TI] { l = CheckSize<Leaf, Interior>(TI->left); },
+                   [&r, &TI] { r = CheckSize<Leaf, Interior>(TI->right); });
     assert(l + r == T->size);
     return T->size;
   } else {
