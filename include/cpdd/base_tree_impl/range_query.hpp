@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <utility>
 
 #include "../base_tree.h"
@@ -18,11 +19,12 @@ size_t BaseTree<Point, DerivedTree, kBDO>::RangeCountRectangleLeaf(
       cnt = TL->size;
     }
   } else {
-    for (size_t i = 0; i < TL->size; i++) {
-      if (WithinBox(TL->pts[i], query_box)) {
-        cnt++;
-      }
-    }
+    std::for_each(TL->pts.begin(), TL->pts.begin() + TL->size,
+                  [&](auto const& p) {
+                    if (WithinBox(p, query_box)) {
+                      cnt++;
+                    }
+                  });
   }
   return cnt;
 }
@@ -118,10 +120,17 @@ size_t BaseTree<Point, DerivedTree, kBDO>::RangeCountRadius(
   if (T->is_leaf) {
     size_t cnt = 0;
     Leaf* TL = static_cast<Leaf*>(T);
-    for (int i = 0; i < TL->size; i++) {
-      if (within_circle(TL->pts[(!TL->is_dummy) * i], cl)) {
-        cnt++;
+    if (TL->is_dummy) {
+      if (within_circle(TL->pts[0], cl)) {
+        cnt += TL->size;
       }
+    } else {
+      std::for_each(TL->pts.begin(), TL->pts.begin() + TL->size,
+                    [&](auto const& p) {
+                      if (within_circle(p, cl)) {
+                        cnt++;
+                      }
+                    });
     }
     return cnt;
   }
@@ -150,15 +159,13 @@ void BaseTree<Point, DerivedTree, kBDO>::RangeQueryLeaf(Node* T, Range Out,
   Leaf* TL = static_cast<Leaf*>(T);
   if (TL->is_dummy) {
     if (WithinBox(TL->pts[0], query_box)) {
-      for (size_t i = 0; i < TL->size; i++) {
-        Out[s++] = TL->pts[0];
-      }
+      std::fill_n(Out.begin() + s, TL->size, TL->pts[0]);
+      s += TL->size;
     }
   } else {
-    for (size_t i = 0; i < TL->size; i++)
-      if (WithinBox(TL->pts[i], query_box)) {
-        Out[s++] = TL->pts[i];
-      }
+    s += std::copy_if(TL->pts.begin(), TL->pts.begin() + TL->size, Out.begin(),
+                      [&](auto const& p) { return WithinBox(p, query_box); }) -
+         Out.begin();
   }
   return;
 }

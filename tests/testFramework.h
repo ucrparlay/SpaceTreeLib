@@ -613,7 +613,7 @@ void rangeCountRadius(parlay::sequence<Point> const& wp, Tree& pkd,
           Box query_box_seq = pkd.get_box(
               Box(wp[i], wp[i]), Box(wp[(i + n / 2) % n], wp[(i + n / 2) % n]));
           auto d =
-              Tree::p2p_distance(wp[i], wp[(i + n / 2) % n], wp[i].get_dim());
+              Tree::p2p_distance(wp[i], wp[(i + n / 2) % n], wp[i].GetDim());
           d = static_cast<Coord>(std::sqrt(d));
           circle cl = circle(wp[i], d);
           kdknn[i] = pkd.range_count(cl);

@@ -32,7 +32,7 @@
 // vtx must support v->pt
 // and v->pt must support pt.dimension(), pt[i],
 //    (pt1 - pt2).Length(), pt1 + (pt2 - pt3)
-//    pt1.minCoords(pt2), pt1.maxCoords(pt2),
+//    pt1.MinCoords(pt2), pt1.MaxCoords(pt2),
 template <typename vtx>
 struct oct_tree {
   using point = typename vtx::pointT;
@@ -72,7 +72,7 @@ struct oct_tree {
     if (V.size() == 0) abort();
     size_t n = V.size();
     auto minmax = [&](box x, box y) {
-      return box(x.first.minCoords(y.first), x.second.maxCoords(y.second));
+      return box(x.first.MinCoords(y.first), x.second.MaxCoords(y.second));
     };
     // uses a delayed sequence to avoid making a copy
     auto pts = parlay::delayed_seq<box>(
@@ -214,8 +214,8 @@ struct oct_tree {
     // construct an internal binary node
     node(node* L, node* R, int currentBit) : L(L), R(R) {
       parent = nullptr;
-      b = box(L->b.first.minCoords(R->b.first),
-              L->b.second.maxCoords(R->b.second));
+      b = box(L->b.first.MinCoords(R->b.first),
+              L->b.second.MaxCoords(R->b.second));
       n = L->size() + R->size();
       set_center();
       set_bit(currentBit);
@@ -497,7 +497,7 @@ struct oct_tree {
           n > 1000, [&]() { b_L = update_boxes(T->Left()); },
           [&]() { b_R = update_boxes(T->Right()); });
       box b_T =
-          box(b_L.first.minCoords(b_R.first), b_L.second.maxCoords(b_R.second));
+          box(b_L.first.MinCoords(b_R.first), b_L.second.MaxCoords(b_R.second));
       T->set_box(b_T);
       T->reset_center();
       T->set_flag(false);

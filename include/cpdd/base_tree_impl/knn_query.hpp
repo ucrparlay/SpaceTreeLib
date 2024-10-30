@@ -146,6 +146,7 @@ void BaseTree<Point, DerivedTree, kBDO>::KNNBinary(
   return;
 }
 
+// NOTE: compute knn for multinode as if a binary node
 template <typename Point, typename DerivedTree, uint_fast8_t kBDO>
 template <typename Leaf, IsMultiNode Interior, typename Range>
 void BaseTree<Point, DerivedTree, kBDO>::KNNMultiExpand(
@@ -195,6 +196,7 @@ void BaseTree<Point, DerivedTree, kBDO>::KNNMultiExpand(
   return;
 }
 
+// NOTE: compute KNN for multi-node by computing bounding boxes
 template <typename Point, typename DerivedTree, uint_fast8_t kBDO>
 template <typename Leaf, IsMultiNode Interior, typename Range>
 void BaseTree<Point, DerivedTree, kBDO>::KNNMulti(

@@ -71,10 +71,10 @@ class point3d {
     return vector(x - op2.x, y - op2.y, z - op2.z);
   }
   point operator+(vector op2) { return point(x + op2.x, y + op2.y, z + op2.z); }
-  point minCoords(point b) {
+  point MinCoords(point b) {
     return point(min(x, b.x), min(y, b.y), min(z, b.z));
   }
-  point maxCoords(point b) {
+  point MaxCoords(point b) {
     return point(max(x, b.x), max(y, b.y), max(z, b.z));
   }
   coord& operator[](int i) { return (i == 0) ? x : (i == 1) ? y : z; }
@@ -176,8 +176,8 @@ class point2d {
   vector operator-(point op2) { return vector(x - op2.x, y - op2.y); }
   point operator+(vector op2) { return point(x + op2.x, y + op2.y); }
   coord operator[](int i) { return (i == 0) ? x : y; };
-  point minCoords(point b) { return point(min(x, b.x), min(y, b.y)); }
-  point maxCoords(point b) { return point(max(x, b.x), max(y, b.y)); }
+  point MinCoords(point b) { return point(min(x, b.x), min(y, b.y)); }
+  point MaxCoords(point b) { return point(max(x, b.x), max(y, b.y)); }
   int quadrant(point center) {
     int index = 0;
     if (x > center.x) index += 1;

@@ -6,7 +6,7 @@ namespace cpdd {
 template <typename Point, typename DerivedTree, uint_fast8_t kBDO>
 inline bool BaseTree<Point, DerivedTree, kBDO>::LegalBox(Box const& bx) {
   if (bx == GetEmptyBox()) return true;
-  for (DimsType i = 0; i < bx.first.get_dim(); ++i) {
+  for (DimsType i = 0; i < kDim; ++i) {
     if (Num::Gt(bx.first.pnt[i], bx.second.pnt[i])) {
       return false;
     }
@@ -19,7 +19,7 @@ inline bool BaseTree<Point, DerivedTree, kBDO>::WithinBox(Box const& a,
                                                           Box const& b) {
   assert(LegalBox(a));
   assert(LegalBox(b));
-  for (DimsType i = 0; i < a.first.get_dim(); ++i) {
+  for (DimsType i = 0; i < kDim; ++i) {
     if (Num::Lt(a.first.pnt[i], b.first.pnt[i]) ||
         Num::Gt(a.second.pnt[i], b.second.pnt[i])) {
       return false;
@@ -32,7 +32,7 @@ template <typename Point, typename DerivedTree, uint_fast8_t kBDO>
 inline bool BaseTree<Point, DerivedTree, kBDO>::WithinBox(Point const& p,
                                                           Box const& bx) {
   assert(LegalBox(bx));
-  for (DimsType i = 0; i < p.get_dim(); ++i) {
+  for (DimsType i = 0; i < kDim; ++i) {
     if (Num::Lt(p.pnt[i], bx.first.pnt[i]) ||
         Num::Gt(p.pnt[i], bx.second.pnt[i])) {
       return false;
@@ -45,7 +45,7 @@ template <typename Point, typename DerivedTree, uint_fast8_t kBDO>
 inline bool BaseTree<Point, DerivedTree, kBDO>::BoxIntersectBox(Box const& a,
                                                                 Box const& b) {
   assert(LegalBox(a) && LegalBox(b));
-  for (DimsType i = 0; i < a.first.get_dim(); ++i) {
+  for (DimsType i = 0; i < kDim; ++i) {
     if (Num::Lt(a.second.pnt[i], b.first.pnt[i]) ||
         Num::Gt(a.first.pnt[i], b.second.pnt[i])) {
       return false;
@@ -64,7 +64,7 @@ BaseTree<Point, DerivedTree, kBDO>::GetEmptyBox() {
 template <typename Point, typename DerivedTree, uint_fast8_t kBDO>
 typename BaseTree<Point, DerivedTree, kBDO>::Box
 BaseTree<Point, DerivedTree, kBDO>::GetBox(Box const& x, Box const& y) {
-  return Box(x.first.minCoords(y.first), x.second.maxCoords(y.second));
+  return Box(x.first.MinCoords(y.first), x.second.MaxCoords(y.second));
 }
 
 template <typename Point, typename DerivedTree, uint_fast8_t kBDO>
@@ -74,7 +74,7 @@ BaseTree<Point, DerivedTree, kBDO>::GetBox(Slice V) {
     return GetEmptyBox();
   } else {
     auto minmax = [&](Box const& x, Box const& y) {
-      return Box(x.first.minCoords(y.first), x.second.maxCoords(y.second));
+      return Box(x.first.MinCoords(y.first), x.second.MaxCoords(y.second));
     };
     auto boxes = parlay::delayed_seq<Box>(
         V.size(), [&](size_t i) { return Box(V[i].pnt, V[i].pnt); });
@@ -107,7 +107,7 @@ inline bool BaseTree<Point, DerivedTree, kBDO>::WithinCircle(Box const& bx,
                                                              Circle const& cl) {
   //* the logical is same as p2b_max_distance <= radius
   Coord r = 0;
-  for (DimsType i = 0; i < cl.first.get_dim(); ++i) {
+  for (DimsType i = 0; i < kDim; ++i) {
     if (Num::Lt(cl.first.pnt[i], (bx.first.pnt[i] + bx.second.pnt[i]) / 2)) {
       r += (bx.second.pnt[i] - cl.first.pnt[i]) *
            (bx.second.pnt[i] - cl.first.pnt[i]);
@@ -125,7 +125,7 @@ template <typename Point, typename DerivedTree, uint_fast8_t kBDO>
 inline bool BaseTree<Point, DerivedTree, kBDO>::WithinCircle(Point const& p,
                                                              Circle const& cl) {
   Coord r = 0;
-  for (DimsType i = 0; i < cl.first.get_dim(); ++i) {
+  for (DimsType i = 0; i < kDim; ++i) {
     r += (p.pnt[i] - cl.first.pnt[i]) * (p.pnt[i] - cl.first.pnt[i]);
     if (Num::Gt(r, cl.second * cl.second)) return false;
   }
@@ -138,7 +138,7 @@ inline bool BaseTree<Point, DerivedTree, kBDO>::CircleIntersectBox(
     Circle const& cl, Box const& bx) {
   //* the logical is same as p2b_min_distance > radius
   Coord r = 0;
-  for (DimsType i = 0; i < cl.first.get_dim(); ++i) {
+  for (DimsType i = 0; i < kDim; ++i) {
     if (Num::Lt(cl.first.pnt[i], bx.first.pnt[i])) {
       r += (bx.first.pnt[i] - cl.first.pnt[i]) *
            (bx.first.pnt[i] - cl.first.pnt[i]);
