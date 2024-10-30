@@ -79,30 +79,7 @@ KdTree<Point, SplitRule, kBDO>::BatchDiffRecursive(
   if (n == 0) return NodeBox(T, box);
 
   if (T->is_leaf) {
-    Leaf* TL = static_cast<Leaf*>(T);
-
-    if (TL->is_dummy) {  // NOTE: need to check whether all Points are in
-                         // the Leaf
-      // TODO: slow when In.size() is large
-      for (size_t i = 0; TL->size && i < In.size(); i++) {
-        if (TL->pts[0] == In[i]) {
-          TL->size--;
-        }
-      }
-      assert(TL->size >= 0);
-      return NodeBox(
-          T, TL->size ? Box(TL->pts[0], TL->pts[0]) : BT::GetEmptyBox());
-    }
-
-    auto it = TL->pts.begin(), end = TL->pts.begin() + TL->size;
-    for (int i = 0; TL->size && i < In.size(); i++) {
-      it = std::ranges::find(TL->pts.begin(), end, In[i]);
-      if (it != end) {  // NOTE: find a Point
-        std::ranges::iter_swap(it, --end);
-        TL->size--;
-      }
-    }
-    return NodeBox(T, BT::GetBox(TL->pts.cut(0, TL->size)));
+    return BT::template DiffPoints4Leaf<Leaf>(T, In);
   }
 
   if (In.size() <= BT::kSerialBuildCutoff) {
@@ -138,12 +115,12 @@ KdTree<Point, SplitRule, kBDO>::BatchDiffRecursive(
                                       IT.tags_num);
 
   auto tree_nodes = NodeBoxSeq::uninitialized(IT.tags_num);
-  auto boxs = parlay::sequence<Box>::uninitialized(IT.tags_num);
+  auto box_seq = parlay::sequence<Box>::uninitialized(IT.tags_num);
 
   // NOTE: never set tomb, this equivalent to only calcualte the bounding box,
-  // BUG: cannot direct pass false here,
+  // BUG: cannot direct pass false here?
   // TODO: remove bounding boxes
-  IT.TagInbalanceNodeDeletion(boxs, box, false);
+  IT.TagInbalanceNodeDeletion(box_seq, box, false, []() {});
 
   parlay::parallel_for(
       0, IT.tags_num,
@@ -156,7 +133,7 @@ KdTree<Point, SplitRule, kBDO>::BatchDiffRecursive(
 
         DimsType nextDim = (d + IT.GetDepthByIndex(IT.rev_tag[i])) % BT::kDim;
         tree_nodes[i] =
-            BatchDiffRecursive(IT.tags[IT.rev_tag[i]].first, boxs[i],
+            BatchDiffRecursive(IT.tags[IT.rev_tag[i]].first, box_seq[i],
                                Out.cut(start, start + IT.sums[i]),
                                In.cut(start, start + IT.sums[i]), nextDim);
       },

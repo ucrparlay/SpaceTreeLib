@@ -347,17 +347,18 @@ RT BaseTree<Point, DerivedTree, kBDO>::DiffPoints4Leaf(Node* T, Slice In) {
   }
 
   // NOTE: need to check whether all Points are in the Leaf
-  auto tmp_pts = parlay::uninitialized(TL->size);
-  std::ranges::copy_n(tmp_pts.begin(), TL->size, TL->pts.begin());
-  // auto it = TL->pts.begin(), end = TL->pts.begin() + TL->size;
-  // for (int i = 0; TL->size && i < In.size(); i++) {
-  //   it = std::ranges::find(TL->pts.begin(), end, In[i]);
-  //   if (it != end) {  // NOTE: find a Point
-  //     std::ranges::iter_swap(it, --end);
-  //     TL->size--;
-  //   }
-  // }
-  return NodeBox(T, GetBox(TL->pts.cut(0, TL->size)));
+  auto diff_res = std::ranges::set_difference(
+      parlay::sort(TL->pts.begin(), TL->pts.begin() + TL->size),
+      parlay::sort(In), TL->pts.begin());
+  TL->size = std::ranges::distance(TL->pts.begin(), diff_res.out);
+
+  if constexpr (std::same_as<RT, Node*>) {
+    return T;
+  } else if constexpr (std::same_as<RT, NodeBox>) {
+    return NodeBox(T, GetBox(TL->pts.cut(0, TL->size)));
+  } else {
+    static_assert(std::same_as<RT, Node*> || std::same_as<RT, NodeBox>);
+  }
 }
 
 }  // namespace cpdd
