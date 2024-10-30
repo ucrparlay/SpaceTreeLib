@@ -12,6 +12,7 @@
 #include "common/time_loop.h"
 #include "cpdd/base_tree.h"
 #include "cpdd/dependence/splitter.h"
+#include "cpdd/kd_tree.h"
 #include "cpdd/orth_tree.h"
 #include "parlay/internal/group_by.h"
 #include "parlay/parallel.h"
@@ -566,14 +567,15 @@ void queryKNN([[maybe_unused]] uint_fast8_t const& Dim,
   return;
 }
 
+// NOTE: run range count and check the correct
 template <typename Point, typename Tree>
 void rangeCount(parlay::sequence<Point> const& wp, Tree& pkd, Typename* kdknn,
-                int const& rounds, int rec_num, int recType, int const DIM) {
+                int const& rounds, int rec_num, int rec_type, int const DIM) {
   // using Points = typename Tree::Points;
   // using Box = typename Tree::Box;
 
   auto [query_box_seq, max_size] =
-      gen_rectangles<Point, Tree, false>(rec_num, recType, wp, DIM);
+      gen_rectangles<Point, Tree, false>(rec_num, rec_type, wp, DIM);
 
   double aveCount = time_loop(
       rounds, 1.0, [&]() {},
@@ -586,6 +588,7 @@ void rangeCount(parlay::sequence<Point> const& wp, Tree& pkd, Typename* kdknn,
       [&]() {});
 
   // NOTE: verify the solutions
+  LOG << "check range count: " << rec_num << " " << rec_type << ENDL;
   for (int i = 0; i < rec_num; i++) {
     assert(std::cmp_equal(kdknn[i], query_box_seq[i].second));
   }
@@ -625,14 +628,15 @@ void rangeCountRadius(parlay::sequence<Point> const& wp, Tree& pkd,
   return;
 }
 
+// NOTE: run range query and check the correct
 template <typename Point, typename Tree>
 void rangeQuery(parlay::sequence<Point> const& wp, Tree& pkd, Typename* kdknn,
-                int const& rounds, int const rec_num, int const recType,
+                int const& rounds, int const rec_num, int const rec_type,
                 int const DIM, parlay::sequence<Point>& Out) {
   // using Points = typename Tree::Points;
 
   auto [query_box_seq, max_size] =
-      gen_rectangles<Point, Tree, true>(rec_num, recType, wp, DIM);
+      gen_rectangles<Point, Tree, true>(rec_num, rec_type, wp, DIM);
   Out.resize(rec_num * max_size);
   size_t step = Out.size() / rec_num;
   // using ref_t = std::reference_wrapper<Point>;
@@ -650,12 +654,20 @@ void rangeQuery(parlay::sequence<Point> const& wp, Tree& pkd, Typename* kdknn,
       },
       [&]() {});
 
+  LOG << "check range query: " << rec_num << " " << rec_type << " " << max_size
+      << ENDL;
   for (int i = 0; i < rec_num; i++) {
     assert(std::cmp_equal(kdknn[i], query_box_seq[i].second.size()));
-    parlay::sort_inplace(Out.cut(i * step, (i + 1) * step));
+    // LOG << kdknn[i] << " " << query_box_seq[i].second.size() << " "
+    //     << query_box_seq[i].first.first << query_box_seq[i].first.second
+    //     << ENDL;
+    parlay::sort_inplace(
+        Out.cut(i * step, i * step + query_box_seq[i].second.size()));
     parlay::sort_inplace(query_box_seq[i].second);
-    for (size_t j = 0; j < Out.size(); j++) {
-      assert(Out[j] == query_box_seq[i].second.at(j));
+    for (size_t j = 0; j < query_box_seq[i].second.size(); j++) {
+      assert(Out[i * step + j] == query_box_seq[i].second.at(j));
+      // if (Out[i * step + j] != query_box_seq[i].second.at(j)) LOG << "wrong
+      // "; LOG << Out[j] << " " << query_box_seq[i].second.at(j) << ENDL;
     }
   }
 
@@ -666,8 +678,8 @@ void rangeQuery(parlay::sequence<Point> const& wp, Tree& pkd, Typename* kdknn,
 //* test range count for fix rectangle
 template <typename Point, typename Tree>
 void rangeCountFix(parlay::sequence<Point> const& WP, Tree& pkd,
-                   Typename* kdknn, int const& rounds, int recType, int rec_num,
-                   int DIM) {
+                   Typename* kdknn, int const& rounds, int rec_type,
+                   int rec_num, int DIM) {
   // using Tree = Tree;
   // using Points = typename Tree::Points;
   // using Box = typename Tree::Box;
@@ -675,7 +687,7 @@ void rangeCountFix(parlay::sequence<Point> const& WP, Tree& pkd,
   // int n = WP.size();
 
   auto [query_box_seq, max_size] =
-      gen_rectangles<Point, Tree, false>(rec_num, recType, WP, DIM);
+      gen_rectangles<Point, Tree, false>(rec_num, rec_type, WP, DIM);
   parlay::sequence<size_t> vis_nodes(rec_num), gen_box(rec_num),
       full_box(rec_num), skip_box(rec_num);
 
@@ -712,7 +724,7 @@ void rangeCountFix(parlay::sequence<Point> const& WP, Tree& pkd,
 // template<typename Point>
 // void rangeCountFixWithLog(const parlay::sequence<Point>& WP, BaseTree<Point>&
 // pkd, Typename* kdknn, const int& rounds,
-//                           int recType, int rec_num, int DIM) {
+//                           int rec_type, int rec_num, int DIM) {
 //     using Tree = BaseTree<Point>;
 //     using Points = typename Tree::Points;
 //     using node = typename Tree::node;
@@ -720,7 +732,7 @@ void rangeCountFix(parlay::sequence<Point> const& WP, Tree& pkd,
 //
 //     int n = WP.size();
 //
-//     auto [query_box_seq, max_size] = gen_rectangles(rec_num, recType, WP,
+//     auto [query_box_seq, max_size] = gen_rectangles(rec_num, rec_type, WP,
 //     DIM); parlay::sequence<size_t> visLeafNum(rec_num, 0),
 //     visInterNum(rec_num, 0); parlay::internal::timer t; for (int i = 0; i <
 //     rec_num; i++) {
@@ -744,14 +756,14 @@ void rangeCountFix(parlay::sequence<Point> const& WP, Tree& pkd,
 template <typename Point, typename Tree>
 void rangeQueryFix(parlay::sequence<Point> const& WP, Tree& pkd,
                    Typename* kdknn, int const& rounds,
-                   parlay::sequence<Point>& Out, int recType, int rec_num,
+                   parlay::sequence<Point>& Out, int rec_type, int rec_num,
                    int DIM) {
   // using Tree = Tree;
   // using Points = typename Tree::Points;
   // using Box = typename Tree::Box;
 
   auto [query_box_seq, max_size] =
-      gen_rectangles<Point, Tree, false>(rec_num, recType, WP, DIM);
+      gen_rectangles<Point, Tree, false>(rec_num, rec_type, WP, DIM);
   parlay::sequence<size_t> vis_nodes(rec_num), gen_box(rec_num),
       full_box(rec_num), skip_box(rec_num);
   Out.resize(rec_num * max_size);
@@ -792,13 +804,13 @@ void rangeQueryFix(parlay::sequence<Point> const& WP, Tree& pkd,
 // void rangeQuerySerialWithLog(const parlay::sequence<Point>& WP,
 // BaseTree<Point>& pkd, Typename* kdknn,
 //                              const int& rounds, parlay::sequence<Point>& Out,
-//                              int recType, int rec_num, int DIM) {
+//                              int rec_type, int rec_num, int DIM) {
 //     using Tree = BaseTree<Point>;
 //     using Points = typename Tree::Points;
 //     using node = typename Tree::node;
 //     using Box = typename Tree::Box;
 //
-//     auto [query_box_seq, max_size] = gen_rectangles(rec_num, recType, WP,
+//     auto [query_box_seq, max_size] = gen_rectangles(rec_num, rec_type, WP,
 //     DIM); Out.resize(rec_num * max_size);
 //
 //     size_t step = Out.size() / rec_num;
@@ -1119,6 +1131,7 @@ std::pair<size_t, int> read_points(char const* iFile,
       wp[i].pnt[j] = a[i * Dim + j];
       if constexpr (std::is_same_v<Point,
                                    PointType<Coord, samplePoint.size()>>) {
+        ;
       } else {
         wp[i].id = i;
       }
@@ -1126,3 +1139,25 @@ std::pair<size_t, int> read_points(char const* iFile,
   });
   return std::make_pair(N, Dim);
 }
+
+struct wrapper {
+  struct QadTree {
+    template <class Point>
+    struct Desc {
+      using TreeType = cpdd::OrthTree<Point, cpdd::RotateDim<Point>, 2>;
+    };
+  };
+  struct OctTree {
+    template <class Point>
+    struct Desc {
+      using TreeType = cpdd::OrthTree<Point, cpdd::RotateDim<Point>, 3>;
+    };
+  };
+  struct KDtree {
+    template <class Point>
+    struct Desc {
+      using TreeType = cpdd::KdTree<Point, cpdd::MaxStretchDim<Point>>;
+      // using TreeType = cpdd::KdTree<Point, cpdd::RotateDim<Point>>;
+    };
+  };
+};

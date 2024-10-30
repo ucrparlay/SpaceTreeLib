@@ -408,28 +408,6 @@ void TestSpacialTree(int const& kDim, parlay::sequence<Point> const& wp,
   return;
 }
 
-struct wrapper {
-  struct QadTree {
-    template <class Point>
-    struct Desc {
-      using TreeType = cpdd::OrthTree<Point, cpdd::RotateDim<Point>, 2>;
-    };
-  };
-  struct OctTree {
-    template <class Point>
-    struct Desc {
-      using TreeType = cpdd::OrthTree<Point, cpdd::RotateDim<Point>, 3>;
-    };
-  };
-  struct KDtree {
-    template <class Point>
-    struct Desc {
-      using TreeType = cpdd::KdTree<Point, cpdd::MaxStretchDim<Point>>;
-      // using TreeType = cpdd::KdTree<Point, cpdd::RotateDim<Point>>;
-    };
-  };
-};
-
 int main(int argc, char* argv[]) {
   commandLine P(argc, argv,
                 "[-k {1,...,100}] [-d {2,3,5,7,9,10}] [-n <node num>] [-t "

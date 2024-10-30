@@ -32,7 +32,7 @@ BaseTree<Point, DerivedTree, kBDO>::FindBucket(Point const& p,
         static_cast<BucketType>(
             Num::Lt(p.pnt[pivots[k].second], pivots[k].first));
   }
-  assert(pivots[k].first == -1);
+  assert(pivots[k].first == 0);
   return pivots[k].second;
 }
 
