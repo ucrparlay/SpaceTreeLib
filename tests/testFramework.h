@@ -60,9 +60,6 @@ template <typename Point, typename Tree, bool SavePoint>
 size_t recurse_box(parlay::slice<Point*, Point*> In, auto& box_seq, int DIM,
                    std::pair<size_t, size_t> range, int& idx, int rec_num,
                    int type) {
-  // using Tree = Tree;
-  // using Box = typename Tree::Box;
-
   size_t n = In.size();
   if (idx >= rec_num || n < range.first || n == 0) return 0;
 
@@ -138,12 +135,13 @@ auto gen_rectangles(int rec_num, int const type,
     range.first = size_t(std::sqrt(n));
 
     // NOTE: special handle for large dimension datasets
+
     if (n == 100000000)
       range.second = n / 100 - 1;
     else if (n == 1000000000)
       range.second = n / 1000 - 1;
     else
-      range.second = n - 1;
+      range.second = 10000;
   }
   BoxSeq box_seq(rec_num);
   int cnt = 0;

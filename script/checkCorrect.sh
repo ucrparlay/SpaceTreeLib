@@ -26,14 +26,6 @@ for queryType in "${queryTypes[@]}"; do
 		for node in "${Nodes[@]}"; do
 			for dim in "${dims[@]}"; do
 				for tree in "${trees[@]}"; do
-					if [[ "${queryType}" -gt 0 ]]; then
-						if [[ "${node}" -gt 8000000 ]]; then
-							continue
-						fi
-						if [[ "${queryType}" -gt 1 ]] && [[ "${path}" == *"/uniform/" ]] && [[ "${node}" -gt 1000000 ]]; then
-							continue
-						fi
-					fi
 
 					if [[ ${node} -ge 50000000 ]]; then
 						K=10

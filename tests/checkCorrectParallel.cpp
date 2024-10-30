@@ -37,6 +37,7 @@ typedef CGAL::Fuzzy_iso_box<TreeTraits> Fuzzy_iso_box;
 typedef CGAL::Fuzzy_sphere<TreeTraits> Fuzzy_circle;
 
 size_t maxReduceSize = 0;
+int query_num = 10000;
 size_t const batchQuerySize = 1000000;
 double const batchInsertCheckRatio = 0.1;
 
@@ -270,7 +271,6 @@ int main(int argc, char* argv[]) {
       // NOTE: alloc the memory
       Coord* cgknn;
       Coord* kdknn;
-      int query_num = 1000000;
       if (query_type == 0) {  //*NN
         LOG << "---do NN query---" << ENDL;
         if (tag == 0) {
