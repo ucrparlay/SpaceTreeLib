@@ -1,6 +1,7 @@
 
 #pragma once
 
+#include <algorithm>
 #include <cassert>
 #include <cstddef>
 #include <numeric>
@@ -45,7 +46,7 @@ template <typename Leaf, IsBinaryNode Interior, bool granularity,
 Node* BaseTree<Point, DerivedTree, kBDO>::RebuildTreeRecursive(
     Node* T, PrepareFunc&& prepare_func, Args&&... args) {
   if (T->is_leaf) {
-    return NodeBox(T, GetBox<Leaf, Interior>(T));
+    return T;
   }
 
   Interior* TI = static_cast<Interior*>(T);
@@ -54,7 +55,7 @@ Node* BaseTree<Point, DerivedTree, kBDO>::RebuildTreeRecursive(
         T, std::forward<Args>(args)...);
   }
 
-  auto [left_args, right_args] = prepare_func(std::forward<Args>(args)...);
+  auto [left_args, right_args] = prepare_func(T, std::forward<Args>(args)...);
 
   Node *L, *R;
   parlay::par_do_if(
@@ -78,7 +79,8 @@ Node* BaseTree<Point, DerivedTree, kBDO>::RebuildTreeRecursive(
             right_args);
       });
 
-  return UpdateInterior<Interior>(T, L, R);
+  UpdateInterior<Interior>(T, L, R);
+  return T;
 }
 
 template <typename Point, typename DerivedTree, uint_fast8_t kBDO>
