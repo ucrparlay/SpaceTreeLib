@@ -71,9 +71,6 @@ class KdTree : private BaseTree<Point, KdTree<Point, SplitRule, kBDO>, kBDO> {
 
   constexpr void DeleteTree() override;
 
-  NodeBox RebuildTreeRecursive(Node* T, DimsType d,
-                               bool const granularity = true);
-
   void BatchInsert(Slice In);
 
   Node* BatchInsertRecursive(Node* T, Slice In, Slice Out, DimsType d);

@@ -22,50 +22,25 @@ void KdTree<Point, SplitRule, kBDO>::BatchDiff_(Slice A) {
   Points B = Points::uninitialized(A.size());
   Node* T = this->root_;
   Box box = this->tree_box_;
+
+  // NOTE: diff poitns from the tree
   DimsType d = T->is_leaf ? 0 : static_cast<Interior*>(T)->split.second;
   std::tie(T, this->tree_box_) =
       BatchDiffRecursive(T, box, A, parlay::make_slice(B), d);
 
-  std::tie(this->root_, box) = RebuildTreeRecursive(T, d, false);
-  // assert(box == this->tree_box_);
+  // NOTE: launch rebuild
+  d = T->is_leaf ? 0 : static_cast<Interior*>(T)->split.second;
+  auto prepare_rebuild_func = [&](Node* T, DimsType d, Box const& box) {
+    DimsType new_dim = (d + 1) % BT::kDim;
+    BoxCut box_cut(box, static_cast<Interior*>(T)->split, true);
+    auto left_args = std::make_pair(new_dim, box_cut.GetFirstBoxCut());
+    auto right_args = std::make_pair(new_dim, box_cut.GetSecondBoxCut());
+    return std::make_pair(std::move(left_args), std::move(right_args));
+  };
+  this->root_ = BT::template RebuildTreeRecursive<Leaf, Interior>(
+      T, prepare_rebuild_func, d, this->tree_box_);
 
   return;
-}
-
-// NOTE: traverse the tree in parallel and rebuild the imbalanced subtree
-template <typename Point, typename SplitRule, uint_fast8_t kBDO>
-typename KdTree<Point, SplitRule, kBDO>::NodeBox
-KdTree<Point, SplitRule, kBDO>::RebuildTreeRecursive(Node* T, DimsType d,
-                                                     bool const granularity) {
-  if (T->is_leaf) {
-    return NodeBox(T, BT::template GetBox<Leaf, Interior>(T));
-  }
-
-  Interior* TI = static_cast<Interior*>(T);
-  if (BT::ImbalanceNode(TI->left->size, TI->size)) {
-    // WARN: this disables the parallelism in default
-    // TODO add box support
-    return BT::template RebuildSingleTree<Leaf, Interior, false>(T, d);
-  }
-
-  Node *L, *R;
-  Box Lbox, Rbox;
-  d = (d + 1) % BT::kDim;
-  parlay::par_do_if(
-      // NOTE: if granularity is disabled, always traverse the tree in
-      // parallel
-      (granularity && T->size > BT::kSerialBuildCutoff) ||
-          (!granularity && TI->aug),
-      [&] {
-        std::tie(L, Lbox) = RebuildTreeRecursive(TI->left, d, granularity);
-      },
-      [&] {
-        std::tie(R, Rbox) = RebuildTreeRecursive(TI->right, d, granularity);
-      });
-
-  BT::template UpdateInterior<Interior>(T, L, R);
-
-  return NodeBox(T, BT::GetBox(Lbox, Rbox));
 }
 
 // NOTE: only sieve the Points, without rebuilding the tree
@@ -79,7 +54,7 @@ KdTree<Point, SplitRule, kBDO>::BatchDiffRecursive(
   if (n == 0) return NodeBox(T, box);
 
   if (T->is_leaf) {
-    return BT::template DiffPoints4Leaf<Leaf>(T, In);
+    return BT::template DiffPoints4Leaf<Leaf, NodeBox>(T, In);
   }
 
   if (In.size() <= BT::kSerialBuildCutoff) {
@@ -93,10 +68,10 @@ KdTree<Point, SplitRule, kBDO>::BatchDiffRecursive(
     DimsType nextDim = (d + 1) % BT::kDim;
 
     BoxCut box_cut(box, TI->split, true);
-    auto& [L, Lbox] = BatchDiffRecursive(
+    auto [L, Lbox] = BatchDiffRecursive(
         TI->left, box_cut.GetFirstBoxCut(), In.cut(0, split_iter - In.begin()),
         Out.cut(0, split_iter - In.begin()), nextDim);
-    auto& [R, Rbox] =
+    auto [R, Rbox] =
         BatchDiffRecursive(TI->right, box_cut.GetSecondBoxCut(),
                            In.cut(split_iter - In.begin(), n),
                            Out.cut(split_iter - In.begin(), n), nextDim);
@@ -118,16 +93,18 @@ KdTree<Point, SplitRule, kBDO>::BatchDiffRecursive(
   auto box_seq = parlay::sequence<Box>::uninitialized(IT.tags_num);
 
   // NOTE: never set tomb, this equivalent to only calcualte the bounding box,
-  // BUG: cannot direct pass false here?
-  // TODO: remove bounding boxes
-  IT.TagInbalanceNodeDeletion(box_seq, box, false, []() {});
+  auto [re_num, tot_re_size] =
+      IT.TagInbalanceNodeDeletion(box_seq, box, false, []() { return false; });
+  assert(re_num == 0 && tot_re_size == 0);
 
   parlay::parallel_for(
       0, IT.tags_num,
       // NOTE: i is the index of the tags
-      [&](size_t i) {
+      [&](BucketType i) {
         size_t start = 0;
-        for (int j = 0; j < i; j++) {
+        for (BucketType j = 0; j < i; j++) {
+          // NOTE: should have same effect as using sums_tree
+          // if using sums_tree then it should be sums_tree[rev_tag[j]]
           start += IT.sums[j];
         }
 
@@ -139,8 +116,7 @@ KdTree<Point, SplitRule, kBDO>::BatchDiffRecursive(
       },
       1);
 
-  BucketType beatles = 0;
-  return UpdateInnerTreePointerBox(1, IT.tags, tree_nodes, beatles);
+  return IT.template UpdateInnerTree<InnerTree::kUpdatePointerBox>(tree_nodes);
 }
 
 }  // namespace cpdd

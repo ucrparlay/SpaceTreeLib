@@ -148,8 +148,10 @@ class BaseTree {
             typename... Args>
   Node* RebuildSingleTree(Node* T, Args&&... args);
 
-  // virtual Node* BuildRecursiveWrapper(Slice In, Slice Out, const Box& bx,
-  //                                     DimsType dim) = 0;
+  template <typename Leaf, IsBinaryNode Interior, bool granularity = true,
+            typename PrepareFunc, typename... Args>
+  Node* RebuildTreeRecursive(Node* T, PrepareFunc&& prepare_func,
+                             Args&&... args);
 
   template <IsBinaryNode Interior>
   static Node* BuildInnerTree(BucketType idx, HyperPlaneSeq& pivots,

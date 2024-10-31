@@ -159,7 +159,7 @@ Node* OrthTree<Point, SplitRule, kMD, kBDO>::BatchDeleteRecursive(
   });  // PERF: allow the parlay decide the granularity to accelerate the
        // small tree rebuild
 
-  return IT.template UpdateInnerTree<InnerTree::kPostRebuild>(tree_nodes);
+  return IT.template UpdateInnerTree<InnerTree::kPostDelUpdate>(tree_nodes);
 }
 
 }  // namespace cpdd

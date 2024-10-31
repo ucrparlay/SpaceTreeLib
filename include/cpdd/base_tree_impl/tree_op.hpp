@@ -40,6 +40,48 @@ Node* BaseTree<Point, DerivedTree, kBDO>::RebuildSingleTree(Node* T,
 }
 
 template <typename Point, typename DerivedTree, uint_fast8_t kBDO>
+template <typename Leaf, IsBinaryNode Interior, bool granularity,
+          typename PrepareFunc, typename... Args>
+Node* BaseTree<Point, DerivedTree, kBDO>::RebuildTreeRecursive(
+    Node* T, PrepareFunc&& prepare_func, Args&&... args) {
+  if (T->is_leaf) {
+    return NodeBox(T, GetBox<Leaf, Interior>(T));
+  }
+
+  Interior* TI = static_cast<Interior*>(T);
+  if (ImbalanceNode(TI->left->size, TI->size)) {
+    return RebuildSingleTree<Leaf, Interior, granularity>(
+        T, std::forward<Args>(args)...);
+  }
+
+  auto [left_args, right_args] = prepare_func(std::forward<Args>(args)...);
+
+  Node *L, *R;
+  parlay::par_do_if(
+      ForceParallelRecursion<Interior, granularity>(TI),
+      [&] {
+        L = std::apply(
+            [&](auto&&... left_args) {
+              return RebuildTreeRecursive<Leaf, Interior, granularity>(
+                  TI->left, prepare_func,
+                  std::forward<decltype(left_args)>(left_args)...);
+            },
+            left_args);
+      },
+      [&] {
+        R = std::apply(
+            [&](auto&&... right_args) {
+              return RebuildTreeRecursive<Leaf, Interior, granularity>(
+                  TI->right, prepare_func,
+                  std::forward<decltype(right_args)>(right_args)...);
+            },
+            right_args);
+      });
+
+  return UpdateInterior<Interior>(T, L, R);
+}
+
+template <typename Point, typename DerivedTree, uint_fast8_t kBDO>
 template <SupportsForceParallel Interior, bool granularity>
 inline bool BaseTree<Point, DerivedTree, kBDO>::ForceParallelRecursion(
     Interior const* TI) {
@@ -348,8 +390,8 @@ RT BaseTree<Point, DerivedTree, kBDO>::DiffPoints4Leaf(Node* T, Slice In) {
 
   // NOTE: need to check whether all Points are in the Leaf
   auto diff_res = std::ranges::set_difference(
-      parlay::sort(TL->pts.begin(), TL->pts.begin() + TL->size),
-      parlay::sort(In), TL->pts.begin());
+      parlay::sort(TL->pts.cut(0, TL->size)), parlay::sort(In), TL->pts.begin(),
+      [](Point const& p1, Point const& p2) { return p1 < p2; });
   TL->size = std::ranges::distance(TL->pts.begin(), diff_res.out);
 
   if constexpr (std::same_as<RT, Node*>) {

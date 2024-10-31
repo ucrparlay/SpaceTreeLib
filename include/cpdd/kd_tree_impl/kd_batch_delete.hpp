@@ -231,7 +231,7 @@ KdTree<Point, SplitRule, kBDO>::BatchDeleteRecursive(
   // PARA: op == 0 -> toggle whether under a rebuild tree
   // op == 1 -> query current status
   auto const new_root = std::get<0>(
-      IT.template UpdateInnerTree<InnerTree::kPostRebuild>(tree_nodes));
+      IT.template UpdateInnerTree<InnerTree::kPostDelUpdate>(tree_nodes));
   return NodeBox(new_root, new_box);
 }
 

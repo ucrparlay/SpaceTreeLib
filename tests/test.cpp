@@ -37,7 +37,7 @@ void TestSpacialTree(int const& kDim, parlay::sequence<Point> const& wp,
   }
 
   //* batch delete
-  if (kTag >= 2) {
+  if (kTag >= 2 && kTag == 2) {
     if (kSummary) {
       parlay::sequence<double> const ratios = {0.0001, 0.001, 0.01, 0.1};
       for (size_t i = 0; i < ratios.size(); i++) {
@@ -47,6 +47,19 @@ void TestSpacialTree(int const& kDim, parlay::sequence<Point> const& wp,
     } else {
       batchDelete<Point, Tree, kBatchDelete>(tree, wp, wi, kDim, kRounds, 0,
                                              batchInsertRatio);
+    }
+  }
+
+  if (kTag >= 2 && kTag == 3) {
+    if (kSummary) {
+      parlay::sequence<double> const ratios = {0.0001, 0.001, 0.01, 0.1};
+      for (size_t i = 0; i < ratios.size(); i++) {
+        batchDelete<Point, Tree, kBatchDiff>(tree, wp, wi, kDim, kRounds, 0,
+                                             ratios[i]);
+      }
+    } else {
+      batchDelete<Point, Tree, kBatchDiff>(tree, wp, wi, kDim, kRounds, 0,
+                                           batchInsertRatio);
     }
   }
 
@@ -482,7 +495,7 @@ int main(int argc, char* argv[]) {
   if (tree_type == 0) {
     run_test(wrapper::KDtree{});
   } else if (tree_type == 1 && kDim == 2) {
-    run_test(wrapper::QuadTree{});
+    // run_test(wrapper::QuadTree{});
   }
   // else if (tree_type == 1 && kDim == 3) {
   //     run_test(wrapper::OctTree{});
