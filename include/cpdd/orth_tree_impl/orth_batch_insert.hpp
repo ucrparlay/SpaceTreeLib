@@ -66,26 +66,6 @@ void OrthTree<Point, SplitRule, kMD, kBDO>::SerialSplitSkeleton(
 
 template <typename Point, typename SplitRule, uint_fast8_t kMD,
           uint_fast8_t kBDO>
-Node* OrthTree<Point, SplitRule, kMD, kBDO>::UpdateInnerTreeByTag(
-    BucketType idx, NodeTagSeq const& tags, parlay::sequence<Node*>& tree_nodes,
-    BucketType& p) {
-  if (tags[idx].second < BT::kBucketNum) {
-    return tree_nodes[p++];
-  }
-
-  assert(tags[idx].second == BT::kBucketNum);
-  assert(tags[idx].first != NULL);
-  OrthNodeArr new_nodes;
-  for (BucketType i = 0; i < kNodeRegions; ++i) {
-    new_nodes[i] =
-        UpdateInnerTreeByTag(idx * kNodeRegions + i, tags, tree_nodes, p);
-  }
-  BT::template UpdateInterior<Interior>(tags[idx].first, new_nodes);
-  return tags[idx].first;
-}
-
-template <typename Point, typename SplitRule, uint_fast8_t kMD,
-          uint_fast8_t kBDO>
 Node* OrthTree<Point, SplitRule, kMD, kBDO>::BatchInsertRecursive(Node* T,
                                                                   Slice In,
                                                                   Slice Out) {

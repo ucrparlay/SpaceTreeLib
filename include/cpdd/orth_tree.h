@@ -94,13 +94,6 @@ class OrthTree
   template <typename Range>
   void BatchDiff(Range&& In);
 
-  void BatchDiff_(Slice In);
-
-  // TODO: add bounding Box for batch delete recursive as well
-  // WARN: fix the possible in partial deletion as well
-  NodeBox BatchDiffRecursive(Node* T, Box const& bx, Slice In, Slice Out,
-                             DimsType d);
-
   template <typename Range>
   void Flatten(Range&& Out);
 
@@ -141,9 +134,9 @@ class OrthTree
 
   Node* BatchInsertRecursive(Node* T, Slice In, Slice Out);
 
-  static Node* UpdateInnerTreeByTag(BucketType idx, NodeTagSeq const& tags,
-                                    parlay::sequence<Node*>& tree_nodes,
-                                    BucketType& p);
+  void BatchDiff_(Slice In);
+
+  Node* BatchDiffRecursive(Node* T, Slice In, Slice Out, Box const& box);
 
   SplitRule split_rule_;
   size_t alloc_dummy_num_ = 0;
