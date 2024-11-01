@@ -23,8 +23,8 @@
 bool report_stats = true;
 int algorithm_version = 0;
 // 0=root based, 1=bit based, >2=map based
-#define LOG std::cout
-#define ENDL std::endl << std::flush
+#define std::cout std::cout
+#define std::endl std::endl << std::flush
 
 #include <math.h>
 
@@ -172,7 +172,7 @@ void ANN(parlay::sequence<vtx>& v, int k, int rounds,
             // &vin[i]; });
             v2 = parlay::tabulate(sz, [&](size_t i) -> vtx* { return &v[i]; });
             T.batch_delete(v2, root, bd.first, bd.second);
-            // LOG << T.tree.get()->size() << ENDL;
+            // std::cout << T.tree.get()->size() << std::endl;
           },
           [&]() { T.tree.reset(); });
       std::cout << aveDelete << " " << std::flush;
@@ -243,7 +243,7 @@ void ANN(parlay::sequence<vtx>& v, int k, int rounds,
     // for( int i = 0; i < 10; i++ ) {
     //   boxs[i].first.print();
     //   boxs[i].second.print();
-    //   LOG << ENDL;
+    //   std::cout << std::endl;
     // }
     // return;
 
@@ -407,7 +407,7 @@ void ANN(parlay::sequence<vtx>& v, int k, int rounds,
       T = knn_tree(vin2, whole_box);
 
       root = T.tree.get();
-      // LOG << n << " " << root->size() << ENDL;
+      // std::cout << n << " " << root->size() << std::endl;
 
       size_t l = sz, r = 0;
       while (l < n) {
@@ -423,7 +423,7 @@ void ANN(parlay::sequence<vtx>& v, int k, int rounds,
         l = r;
       }
 
-      // LOG << root->depth() << ENDL;
+      // std::cout << root->depth() << std::endl;
 
       aveQuery = time_loop(
           rounds, 1.0, [&]() {},

@@ -318,14 +318,14 @@ void testCGALParallel(int Dim, int LEAVE_WRAP, parlay::sequence<point>& wp,
                 cgknn[s] = std::distance(_ans.begin() + s * maxSize, it);
               },
               [&]() {});
-          LOG << queryBox[s].second << " " << std::scientific << aveQuery
-              << ENDL;
+          std::cout << queryBox[s].second << " " << std::scientific << aveQuery
+              << std::endl;
         }
       }
     };
 
     if (summary == 0) {
-      LOG << ENDL;
+      std::cout << std::endl;
       int const type[3] = {0, 1, 2};
       for (int i = 0; i < 3; i++) {
         run_cgal_range_query(type[i]);
@@ -438,7 +438,7 @@ void testCGALParallel(int Dim, int LEAVE_WRAP, parlay::sequence<point>& wp,
       tree.insert(pts[i].begin(), pts[i].end());
       tree.template build<CGAL::Parallel_tag>();
       timer.stop();
-      LOG << pts[i].size() << " " << timer.total_time() << " " << ENDL;
+      std::cout << pts[i].size() << " " << timer.total_time() << " " << std::endl;
 
       if (fileNum < 12) {
         std::vector<Point_d> tmp(pts[0].begin(),
@@ -457,7 +457,7 @@ void testCGALParallel(int Dim, int LEAVE_WRAP, parlay::sequence<point>& wp,
         queryPointCgal(K, tmp);
       }
 
-      LOG << ENDL;
+      std::cout << std::endl;
     }
   };
 
@@ -472,7 +472,7 @@ void testCGALParallel(int Dim, int LEAVE_WRAP, parlay::sequence<point>& wp,
     auto clean = [&]() {
       prefix = insertFile.substr(0, insertFile.rfind("/"));
       // prefix = insertFileBack.substr(0, insertFileBack.rfind("/"));
-      // LOG << insertFile << " " << insertFileBack << " " << prefix << ENDL;
+      // std::cout << insertFile << " " << insertFileBack << " " << prefix << std::endl;
       np.clear();
       nq.clear();
     };
@@ -496,7 +496,7 @@ void testCGALParallel(int Dim, int LEAVE_WRAP, parlay::sequence<point>& wp,
     tree.template build<CGAL::Parallel_tag>();
     timer.reset();
     timer.start();
-    LOG << "finish build the tree" << ENDL;
+    std::cout << "finish build the tree" << std::endl;
     parlay::sequence<size_t> visNodeNum(KnnSize, 0);
     tbb::parallel_for(tbb::blocked_range<std::size_t>(0, KnnSize),
                       [&](tbb::blocked_range<std::size_t> const& r) {
@@ -518,7 +518,7 @@ void testCGALParallel(int Dim, int LEAVE_WRAP, parlay::sequence<point>& wp,
   }
 
   if (queryType & (1 << 11)) {  // NOTE: osm by year
-    LOG << ENDL;
+    std::cout << std::endl;
 
     // WARN: remember using double
     string osm_prefix = "/data/zmen002/kdtree/real_world/osm/year/";
@@ -531,7 +531,7 @@ void testCGALParallel(int Dim, int LEAVE_WRAP, parlay::sequence<point>& wp,
       read_points(path.c_str(), node_by_year[i], K);
     }
 
-    // LOG << "after read osm" << ENDL;
+    // std::cout << "after read osm" << std::endl;
 
     std::vector<std::vector<Point_d>> pts(files.size());
     for (int i = 0; i < files.size(); i++) {
@@ -542,7 +542,7 @@ void testCGALParallel(int Dim, int LEAVE_WRAP, parlay::sequence<point>& wp,
       });
     }
 
-    // LOG << " after generate points " << ENDL;
+    // std::cout << " after generate points " << std::endl;
     delete[] cgknn;
     cgknn = new Typename[batchQueryOsmSize];
     insertOsmByTimaCgal(pts);
@@ -558,7 +558,7 @@ void testCGALParallel(int Dim, int LEAVE_WRAP, parlay::sequence<point>& wp,
   }
 
   if (queryType & (1 << 12)) {  // NOTE: osm by month
-    LOG << ENDL;
+    std::cout << std::endl;
     // WARN: remember using double
     string osm_prefix = "/data/zmen002/kdtree/real_world/osm/month/";
     std::vector<std::string> const files = {"2014", "2015", "2016", "2017",

@@ -100,7 +100,7 @@ size_t recurse_box(parlay::slice<Point*, Point*> In, auto& box_seq, int DIM,
   auto [Out, m] = parlay::internal::split_two(In, flag);
 
   assert(Out.size() == n);
-  // LOG << dim << " " << Out[0] << Out[m] << ENDL;
+  // std::cout << dim << " " << Out[0] << Out[m] << std::endl;
   size_t l, r;
   l = recurse_box<Point, Tree, SavePoint>(Out.cut(0, m), box_seq, DIM, range,
                                           idx, rec_num, type);
@@ -149,7 +149,7 @@ auto gen_rectangles(int rec_num, int const type,
 
   srand(10);
 
-  // LOG << " " << range.first << " " << range.second << ENDL;
+  // std::cout << " " << range.first << " " << range.second << std::endl;
 
   size_t max_size = 0;
   while (cnt < rec_num) {
@@ -157,9 +157,9 @@ auto gen_rectangles(int rec_num, int const type,
     auto r = recurse_box<Point, Tree, SavePoint>(
         parlay::make_slice(wp), box_seq, DIM, range, cnt, rec_num, type);
     max_size = std::max(max_size, r);
-    // LOG << cnt << " " << max_size << ENDL;
+    // std::cout << cnt << " " << max_size << std::endl;
   }
-  // LOG << "finish generate " << ENDL;
+  // std::cout << "finish generate " << std::endl;
   return std::make_pair(box_seq, max_size);
 }
 
@@ -184,15 +184,16 @@ void buildTree([[maybe_unused]] int const& Dim,
   pkd.Build(wp.cut(0, n));
 
   if (kPrint == 1) {
-    LOG << aveBuild << " " << std::flush;
+    std::cout << aveBuild << " " << std::flush;
     auto deep = pkd.template GetAveTreeHeight<Leaf, Interior>();
-    LOG << deep << " " << std::flush;
+    std::cout << deep << " " << std::flush;
   } else if (kPrint == 2) {
     size_t max_deep = 0;
-    LOG << aveBuild << " ";
-    LOG << pkd.template GetMaxTreeDepth<Leaf, Interior>(pkd.GetRoot(), max_deep)
-        << " " << pkd.template GetAveTreeHeight<Leaf, Interior>() << " "
-        << std::flush;
+    std::cout << aveBuild << " ";
+    std::cout << pkd.template GetMaxTreeDepth<Leaf, Interior>(pkd.GetRoot(),
+                                                              max_deep)
+              << " " << pkd.template GetAveTreeHeight<Leaf, Interior>() << " "
+              << std::flush;
   }
 
   return;
@@ -237,12 +238,13 @@ void buildTree([[maybe_unused]] int const& Dim,
 //
 //     if (print == 1) {
 //         auto deep = pkd.getAveTreeHeight();
-//         LOG << aveIncreBuild << " " << deep << " " << std::flush;
+//         std::cout << aveIncreBuild << " " << deep << " " << std::flush;
 //     } else if (print == 2) {  // NOTE: print the maxtree height and avetree
 //     height
 //         size_t max_deep = 0;
-//         LOG << aveIncreBuild << " " << pkd.getMaxTreeDepth(pkd.get_root(),
-//         max_deep) << " " << pkd.getAveTreeHeight()
+//         std::cout << aveIncreBuild << " " <<
+//         pkd.getMaxTreeDepth(pkd.get_root(), max_deep) << " " <<
+//         pkd.getAveTreeHeight()
 //             << " " << std::flush;
 //     }
 //     return;
@@ -294,7 +296,7 @@ void buildTree([[maybe_unused]] int const& Dim,
 //
 //     if (print) {
 //         auto deep = pkd.getAveTreeHeight();
-//         LOG << aveIncreDelete << " " << deep << " " << std::flush;
+//         std::cout << aveIncreDelete << " " << deep << " " << std::flush;
 //     }
 //     return;
 // }
@@ -323,7 +325,7 @@ void BatchInsert(Tree& pkd, parlay::sequence<Point> const& WP,
                                  Tree::GetBox(parlay::make_slice(wi)));
           pkd.Build(parlay::make_slice(wp), Box);
         } else {
-          LOG << "Not supported Tree type" << ENDL;
+          std::cout << "Not supported Tree type" << std::endl;
         }
       },
       [&]() { pkd.BatchInsert(wi.cut(0, size_t(wi.size() * ratio))); },
@@ -338,12 +340,12 @@ void BatchInsert(Tree& pkd, parlay::sequence<Point> const& WP,
                            Tree::GetBox(wi.cut(0, size_t(wi.size() * ratio))));
     pkd.Build(parlay::make_slice(wp), Box);
   } else {
-    LOG << "Not supported Tree type" << ENDL;
+    std::cout << "Not supported Tree type" << std::endl;
   }
 
   pkd.BatchInsert(wi.cut(0, size_t(wi.size() * ratio)));
 
-  LOG << aveInsert << " " << std::flush;
+  std::cout << aveInsert << " " << std::flush;
 
   return;
 }
@@ -475,7 +477,7 @@ void BatchDiff(Tree& pkd, parlay::sequence<Point> const& WP,
 //             size_t step = static_cast<size_t>(wi.size() * ratio);
 //             while (l < n) {
 //                 r = std::min(l + step, n);
-//                 // LOG << l << ' ' << r << ENDL;
+//                 // std::cout << l << ' ' << r << std::endl;
 //                 if (insert) {
 //                     pkd.BatchInsert(parlay::make_slice(wi.begin() + l,
 //                     wi.begin() + r), DIM);
@@ -485,7 +487,7 @@ void BatchDiff(Tree& pkd, parlay::sequence<Point> const& WP,
 //                 }
 //                 l = r;
 //             }
-//             // LOG << l << ENDL;
+//             // std::cout << l << std::endl;
 //         },
 //         [&]() { pkd.delete_tree(); });
 //
@@ -507,7 +509,7 @@ void BatchDiff(Tree& pkd, parlay::sequence<Point> const& WP,
 //     //     l = r;
 //     // }
 //
-//     LOG << aveInsert << " " << std::flush;
+//     std::cout << aveInsert << " " << std::flush;
 //
 //     return;
 // }
@@ -529,13 +531,13 @@ void queryKNN([[maybe_unused]] uint_fast8_t const& Dim,
   auto* KDParallelRoot = pkd.GetRoot();
   // auto* old = pkd.GetRoot();
   // if constexpr (cpdd::IsMultiNode<Interior>) {
-  //     // LOG << "start expanding the Tree" << ENDL;
+  //     // std::cout << "start expanding the Tree" << std::endl;
   //     KDParallelRoot =
   //         pkd.template Expand2Binary<typename Tree::KdInteriorNode,
   //         Interior>(
   //             KDParallelRoot);
   //     pkd.SetRoot(KDParallelRoot);
-  //     // LOG << "finish expanding the Tree" << ENDL;
+  //     // std::cout << "finish expanding the Tree" << std::endl;
   //     // pkd.template Validate<Leaf, typename Tree::KdInteriorNode,
   //     //                       typename Tree::SplitRuleType>(Dim);
   // }
@@ -570,15 +572,16 @@ void queryKNN([[maybe_unused]] uint_fast8_t const& Dim,
       },
       [&]() {});
 
-  LOG << aveQuery << " " << std::flush;
+  std::cout << aveQuery << " " << std::flush;
   if (printHeight) {
     // WARN: change when using multi-node
     size_t max_deep = 0;
-    LOG << pkd.template GetMaxTreeDepth<Leaf, Interior>(pkd.GetRoot(), max_deep)
-        << " " << pkd.template GetAveTreeHeight<Leaf, Interior>() << " "
-        << std::flush;
+    std::cout << pkd.template GetMaxTreeDepth<Leaf, Interior>(pkd.GetRoot(),
+                                                              max_deep)
+              << " " << pkd.template GetAveTreeHeight<Leaf, Interior>() << " "
+              << std::flush;
     // size_t max_deep = 0;
-    // LOG << pkd.template GetMaxTreeDepth<Leaf,
+    // std::cout << pkd.template GetMaxTreeDepth<Leaf,
     //                                     typename Tree::KdInteriorNode>(
     //            pkd.GetRoot(), max_deep)
     //     << " "
@@ -587,10 +590,10 @@ void queryKNN([[maybe_unused]] uint_fast8_t const& Dim,
     //     << " " << std::flush;
   }
   if (printVisNode) {
-    LOG << parlay::reduce(vis_nodes.cut(0, n)) / n << " " << std::flush;
-    LOG << parlay::reduce(gen_box.cut(0, n)) / n << " " << std::flush;
-    LOG << parlay::reduce(check_box.cut(0, n)) / n << " " << std::flush;
-    LOG << parlay::reduce(skip_box.cut(0, n)) / n << " " << std::flush;
+    std::cout << parlay::reduce(vis_nodes.cut(0, n)) / n << " " << std::flush;
+    std::cout << parlay::reduce(gen_box.cut(0, n)) / n << " " << std::flush;
+    std::cout << parlay::reduce(check_box.cut(0, n)) / n << " " << std::flush;
+    std::cout << parlay::reduce(skip_box.cut(0, n)) / n << " " << std::flush;
   }
   // pkd.SetRoot(old);
 
@@ -618,12 +621,12 @@ void RangeCount(parlay::sequence<Point> const& wp, Tree& pkd, Typename* kdknn,
       [&]() {});
 
   // NOTE: verify the solutions
-  LOG << "check range count: " << rec_num << " " << rec_type << ENDL;
+  std::cout << "check range count: " << rec_num << " " << rec_type << std::endl;
   for (int i = 0; i < rec_num; i++) {
     assert(std::cmp_equal(kdknn[i], query_box_seq[i].second));
   }
 
-  LOG << aveCount << " " << std::flush;
+  std::cout << aveCount << " " << std::flush;
 
   return;
 }
@@ -653,7 +656,7 @@ void rangeCountRadius(parlay::sequence<Point> const& wp, Tree& pkd,
       },
       [&]() {});
 
-  LOG << aveCount << " " << std::flush;
+  std::cout << aveCount << " " << std::flush;
 
   return;
 }
@@ -684,24 +687,26 @@ void RangeQuery(parlay::sequence<Point> const& wp, Tree& pkd, Typename* kdknn,
       },
       [&]() {});
 
-  LOG << "check range query: " << rec_num << " " << rec_type << " " << max_size
-      << ENDL;
+  std::cout << "check range query: " << rec_num << " " << rec_type << " "
+            << max_size << std::endl;
   for (int i = 0; i < rec_num; i++) {
     assert(std::cmp_equal(kdknn[i], query_box_seq[i].second.size()));
-    // LOG << kdknn[i] << " " << query_box_seq[i].second.size() << " "
+    // std::cout << kdknn[i] << " " << query_box_seq[i].second.size() << " "
     //     << query_box_seq[i].first.first << query_box_seq[i].first.second
-    //     << ENDL;
+    //     << std::endl;
     parlay::sort_inplace(
         Out.cut(i * step, i * step + query_box_seq[i].second.size()));
     parlay::sort_inplace(query_box_seq[i].second);
     for (size_t j = 0; j < query_box_seq[i].second.size(); j++) {
       assert(Out[i * step + j] == query_box_seq[i].second.at(j));
-      // if (Out[i * step + j] != query_box_seq[i].second.at(j)) LOG << "wrong
-      // "; LOG << Out[j] << " " << query_box_seq[i].second.at(j) << ENDL;
+      // if (Out[i * step + j] != query_box_seq[i].second.at(j)) std::cout <<
+      // "wrong
+      // "; std::cout << Out[j] << " " << query_box_seq[i].second.at(j) <<
+      // std::endl;
     }
   }
 
-  LOG << aveQuery << " " << std::flush;
+  std::cout << aveQuery << " " << std::flush;
   return;
 }
 
@@ -739,14 +744,15 @@ void rangeCountFix(parlay::sequence<Point> const& WP, Tree& pkd,
       },
       [&]() {});
 
-  LOG << aveCount << " " << std::flush;
-  LOG << parlay::reduce(vis_nodes.cut(0, rec_num)) / rec_num << " "
-      << std::flush;
-  LOG << parlay::reduce(gen_box.cut(0, rec_num)) / rec_num << " " << std::flush;
-  LOG << parlay::reduce(full_box.cut(0, rec_num)) / rec_num << " "
-      << std::flush;
-  LOG << parlay::reduce(skip_box.cut(0, rec_num)) / rec_num << " "
-      << std::flush;
+  std::cout << aveCount << " " << std::flush;
+  std::cout << parlay::reduce(vis_nodes.cut(0, rec_num)) / rec_num << " "
+            << std::flush;
+  std::cout << parlay::reduce(gen_box.cut(0, rec_num)) / rec_num << " "
+            << std::flush;
+  std::cout << parlay::reduce(full_box.cut(0, rec_num)) / rec_num << " "
+            << std::flush;
+  std::cout << parlay::reduce(skip_box.cut(0, rec_num)) / rec_num << " "
+            << std::flush;
 
   return;
 }
@@ -774,9 +780,10 @@ void rangeCountFix(parlay::sequence<Point> const& WP, Tree& pkd,
 //             },
 //             [&]() { kdknn[i] = pkd.range_count(query_box_seq[i].first,
 //             visLeafNum[i], visInterNum[i]); }, [&]() {});
-//         if (query_box_seq[i].second != kdknn[i]) LOG << "wrong" << ENDL;
-//         LOG << query_box_seq[i].second << " " << std::scientific << aveQuery
-//         << ENDL;
+//         if (query_box_seq[i].second != kdknn[i]) std::cout << "wrong" <<
+//         std::endl; std::cout << query_box_seq[i].second << " " <<
+//         std::scientific << aveQuery
+//         << std::endl;
 //     }
 //
 //     return;
@@ -819,14 +826,15 @@ void rangeQueryFix(parlay::sequence<Point> const& WP, Tree& pkd,
       },
       [&]() {});
 
-  LOG << aveQuery << " " << std::flush;
-  LOG << parlay::reduce(vis_nodes.cut(0, rec_num)) / rec_num << " "
-      << std::flush;
-  LOG << parlay::reduce(gen_box.cut(0, rec_num)) / rec_num << " " << std::flush;
-  LOG << parlay::reduce(full_box.cut(0, rec_num)) / rec_num << " "
-      << std::flush;
-  LOG << parlay::reduce(skip_box.cut(0, rec_num)) / rec_num << " "
-      << std::flush;
+  std::cout << aveQuery << " " << std::flush;
+  std::cout << parlay::reduce(vis_nodes.cut(0, rec_num)) / rec_num << " "
+            << std::flush;
+  std::cout << parlay::reduce(gen_box.cut(0, rec_num)) / rec_num << " "
+            << std::flush;
+  std::cout << parlay::reduce(full_box.cut(0, rec_num)) / rec_num << " "
+            << std::flush;
+  std::cout << parlay::reduce(skip_box.cut(0, rec_num)) / rec_num << " "
+            << std::flush;
   return;
 }
 //
@@ -853,11 +861,12 @@ void rangeQueryFix(parlay::sequence<Point> const& WP, Tree& pkd,
 //             [&]() { kdknn[i] = pkd.range_query_serial(query_box_seq[i].first,
 //             Out.cut(i * step, (i + 1) * step)); },
 //             [&]() {});
-//         if (query_box_seq[i].second != kdknn[i]) LOG << "wrong" << ENDL;
-//         LOG << query_box_seq[i].second << " " << std::scientific << aveQuery
-//         << ENDL;
-//         // LOG << query_box_seq[i].second << " " << std::setprecision(7) <<
-//         aveQuery << ENDL;
+//         if (query_box_seq[i].second != kdknn[i]) std::cout << "wrong" <<
+//         std::endl; std::cout << query_box_seq[i].second << " " <<
+//         std::scientific << aveQuery
+//         << std::endl;
+//         // std::cout << query_box_seq[i].second << " " <<
+//         std::setprecision(7) << aveQuery << std::endl;
 //     }
 //
 //     return;
@@ -973,7 +982,7 @@ void rangeQueryFix(parlay::sequence<Point> const& WP, Tree& pkd,
 //     for (int i = 0; i < time_period_num; i++) {
 //         parlay::copy(node_by_time[i], wp[i]);
 //     }
-//     LOG << ENDL;
+//     std::cout << std::endl;
 //     for (int i = 0; i < time_period_num; i++) {
 //         parlay::internal::timer t;
 //         t.reset(), t.start();
@@ -981,7 +990,7 @@ void rangeQueryFix(parlay::sequence<Point> const& WP, Tree& pkd,
 //         pkd.BatchInsert(parlay::make_slice(wp[i]), Dim);
 //
 //         t.stop();
-//         LOG << wp[i].size() << " " << t.total_time() << " ";
+//         std::cout << wp[i].size() << " " << t.total_time() << " ";
 //
 //         if (time_period_num < 12) {
 //             Points tmp(wp[0].begin(), wp[0].begin() + batchQueryOsmSize);
@@ -995,11 +1004,12 @@ void rangeQueryFix(parlay::sequence<Point> const& WP, Tree& pkd,
 //             queryKNN(Dim, tmp, rounds, pkd, kdknn, K, true);
 //         }
 //
-//         LOG << ENDL;
+//         std::cout << std::endl;
 //     }
 //
 //     size_t max_deep = 0;
-//     LOG << ave << " " << pkd.getMaxTreeDepth(pkd.get_root(), max_deep) << " "
+//     std::cout << ave << " " << pkd.getMaxTreeDepth(pkd.get_root(), max_deep)
+//     << " "
 //     << pkd.getAveTreeHeight() << " "
 //         << std::flush;
 //
@@ -1027,7 +1037,7 @@ void rangeQueryFix(parlay::sequence<Point> const& WP, Tree& pkd,
 //     Typename* kdknn = new Typename[batchSize];
 //     const int k[3] = {1, 5, 100};
 //
-//     LOG << "begin insert: " << batchSize << ENDL;
+//     std::cout << "begin insert: " << batchSize << std::endl;
 //     size_t cnt = 0;
 //     while (l < n) {
 //         parlay::internal::timer t;
@@ -1041,7 +1051,7 @@ void rangeQueryFix(parlay::sequence<Point> const& WP, Tree& pkd,
 //         if ((cnt < 50 && cnt % 5 == 0) || (cnt < 100 && cnt % 10 == 0) ||
 //         (cnt % 100 == 0)) {
 //             size_t max_deep = 0;
-//             LOG << l << " " << r << " " << t.total_time() << " " <<
+//             std::cout << l << " " << r << " " << t.total_time() << " " <<
 //             pkd.getMaxTreeDepth(pkd.get_root(), max_deep) << " "
 //                 << pkd.getAveTreeHeight() << " " << std::flush;
 //
@@ -1050,7 +1060,7 @@ void rangeQueryFix(parlay::sequence<Point> const& WP, Tree& pkd,
 //                 queryKNN<Point, 0, 1>(Dim, query_points, 1, pkd, kdknn, k[i],
 //                 true);
 //             }
-//             LOG << ENDL;
+//             std::cout << std::endl;
 //         }
 //         cnt++;
 //         l = r;
@@ -1144,7 +1154,7 @@ std::pair<size_t, int> read_points(char const* iFile,
   parlay::sequence<char*> W = stringToWords(S);
   size_t N = std::stoul(W[0], nullptr, 10);
   int Dim = atoi(W[1]);
-  assert(N >= 0 && Dim >= 1);
+  assert(N > 0 && Dim >= 1);
 
   auto pts = W.cut(2, W.size());
   assert(pts.size() % Dim == 0);

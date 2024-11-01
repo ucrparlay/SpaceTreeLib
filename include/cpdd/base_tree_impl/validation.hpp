@@ -83,8 +83,8 @@ void BaseTree<Point, DerivedTree, kBDO>::CheckTreeSameSequential(Node* T,
   if constexpr (IsBinaryNode<Interior>) {
     Interior* TI = static_cast<Interior*>(T);
     if (TI->split.second != dim) {
-      LOG << int(TI->split.second) << " " << int(dim) << " " << TI->size
-          << ENDL;
+      std::cout << int(TI->split.second) << " " << int(dim) << " " << TI->size
+          << std::endl;
     }
     assert(TI->split.second == dim);
     dim = (dim + 1) % kDim;
@@ -171,7 +171,7 @@ size_t BaseTree<Point, DerivedTree, kBDO>::GetMaxTreeDepth(Node* T,
 template <typename Point, typename DerivedTree, uint_fast8_t kBDO>
 template <typename Leaf, typename Interior>
 double BaseTree<Point, DerivedTree, kBDO>::GetAveTreeHeight() {
-  // LOG << IsBinaryNode<Interior> << ENDL;
+  // std::cout << IsBinaryNode<Interior> << std::endl;
   parlay::sequence<size_t> heights(this->root_->size);
   size_t idx = 0;
   CountTreeHeights<Leaf, Interior>(this->root_, 0, idx, heights);
@@ -179,7 +179,7 @@ double BaseTree<Point, DerivedTree, kBDO>::GetAveTreeHeight() {
   // std::sort( kv.begin(), kv.end(),
   //            [&]( auto a, auto b ) { return a.first < b.first; } );
   // for ( auto i : kv )
-  //     LOG << i.first << " " << i.second << ENDL;
+  //     std::cout << i.first << " " << i.second << std::endl;
   return double(1.0 * parlay::reduce(heights.cut(0, idx)) / idx);
 }
 

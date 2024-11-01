@@ -63,7 +63,7 @@ void runCGAL(auto const& wp, auto const& wi, Typename* cgknn,
   Tree tree(_points.begin(), _points.end(), median);
   tree.build<CGAL::Parallel_tag>();
 
-  // LOG << tree.bounding_box() << ENDL;
+  // std::cout << tree.bounding_box() << std::endl;
   size_t sz = wp.size() * batchInsertCheckRatio;
 
   if (tag & (1 << 0)) {
@@ -77,7 +77,7 @@ void runCGAL(auto const& wp, auto const& wi, Typename* cgknn,
     assert(tree.size() == wp.size() + sz);
     puts("finish insert to cgal");
   }
-  LOG << tree.root()->num_items() << ENDL;
+  std::cout << tree.root()->num_items() << std::endl;
 
   if (tag & (1 << 2)) {
     size_t total_batch_size = static_cast<size_t>(N * kBatchDiffTotalRatio);
@@ -95,13 +95,13 @@ void runCGAL(auto const& wp, auto const& wi, Typename* cgknn,
   //     tree.remove(_points[i]);
   //   }
   //
-  //   LOG << tree.root()->num_items() << ENDL;
+  //   std::cout << tree.root()->num_items() << std::endl;
   //   wp.pop_tail(sz);
   //   puts("finish delete from cgal");
   // }
 
   //* cgal query
-  LOG << "begin tbb query" << ENDL << std::flush;
+  std::cout << "begin tbb query" << std::endl << std::flush;
   assert(tree.is_built());
 
   if (query_type == 0) {  //* NN
@@ -147,7 +147,7 @@ void runKDParallel(auto const& wp, auto const& wi, Typename* kdknn,
     BatchInsert<Point, Tree>(tree, wp, wi, kDim, 2, batchInsertCheckRatio);
     tree.template Validate<typename Tree::Leaf, typename Tree::Interior,
                            typename Tree::SplitRuleType>();
-    LOG << "finish insert" << ENDL;
+    std::cout << "finish insert" << std::endl;
   }
 
   if (tag & (1 << 1)) {
@@ -155,7 +155,7 @@ void runKDParallel(auto const& wp, auto const& wi, Typename* kdknn,
                              batchInsertCheckRatio);
     tree.template Validate<typename Tree::Leaf, typename Tree::Interior,
                            typename Tree::SplitRuleType>();
-    LOG << "finish delete" << ENDL;
+    std::cout << "finish delete" << std::endl;
   }
 
   if (tag & (1 << 2)) {
@@ -165,12 +165,12 @@ void runKDParallel(auto const& wp, auto const& wi, Typename* kdknn,
            wp.size() - static_cast<size_t>(wp.size() * kBatchDiffOverlapRatio));
     tree.template Validate<typename Tree::Leaf, typename Tree::Interior,
                            typename Tree::SplitRuleType>();
-    LOG << "finish diff" << ENDL;
+    std::cout << "finish diff" << std::endl;
   }
 
   // NOTE: query phase
   assert(tag == 1 || wp.size() == N);
-  LOG << "begin kd query" << ENDL;
+  std::cout << "begin kd query" << std::endl;
   if (query_type == 0) {
     Points new_wp(batchQuerySize);
     parlay::copy(wp.cut(0, batchQuerySize), new_wp.cut(0, batchQuerySize));
@@ -255,7 +255,7 @@ int main(int argc, char* argv[]) {
                            std::to_string(id) + ".in";
         auto [n, d] =
             read_points<PointTypeAlias>(insert_file_path.c_str(), wi, K);
-        assert(d == kDim);
+        assert(N == n && d == kDim);
       }
 
       // NOTE: begin the test
@@ -263,7 +263,7 @@ int main(int argc, char* argv[]) {
       Coord* cgknn;
       Coord* kdknn;
       if (query_type == 0) {  //*NN
-        LOG << "---do NN query---" << ENDL;
+        std::cout << "---do NN query---" << std::endl;
         if (tag == 0) {
           cgknn = new Coord[wp.size()];
           kdknn = new Coord[wp.size()];
@@ -283,10 +283,10 @@ int main(int argc, char* argv[]) {
           abort();
         }
       } else if (query_type == 1) {  //* range Count
-        LOG << "---do range Count---" << ENDL;
+        std::cout << "---do range Count---" << std::endl;
         kdknn = new Coord[query_num];
       } else if (query_type == 2) {
-        LOG << "---do range Query---" << ENDL;
+        std::cout << "---do range Query---" << std::endl;
         kdknn = new Coord[query_num];
       } else {
         puts("wrong query type");
@@ -306,7 +306,7 @@ int main(int argc, char* argv[]) {
 
       // NOTE: verify
       if (query_type == 0) {
-        LOG << "check NN" << ENDL;
+        std::cout << "check NN" << std::endl;
         size_t S = batchQuerySize;
         for (size_t i = 0; i < S; i++) {
           if (std::abs(cgknn[i] - kdknn[i]) > 1e-4) {
@@ -339,14 +339,14 @@ int main(int argc, char* argv[]) {
   };
 
   if (tree_type == 0) {
-    LOG << "run KDtree" << ENDL;
+    std::cout << "run KDtree" << std::endl;
     run_test(wrapper::KDtree{});
   }
   // else if (tree_type == 1 && kDim == 2) {
-  //   LOG << "run QuadTree" << ENDL;
+  //   std::cout << "run QuadTree" << std::endl;
   //   run_test(wrapper::QuadTree{});
   // } else if (tree_type == 1 && kDim == 3) {
-  //   LOG << "run OctTree" << ENDL;
+  //   std::cout << "run OctTree" << std::endl;
   //   run_test(wrapper::OctTree{});
   // }
 

@@ -13,9 +13,6 @@
 
 namespace cpdd {
 
-#define LOG std::cout
-#define ENDL std::endl << std::flush
-
 template <typename Point, typename DerivedTree, uint_fast8_t kBDO = 6>
 class BaseTree {
  public:

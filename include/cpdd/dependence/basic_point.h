@@ -20,33 +20,37 @@ struct PointType {
 
   PointType() {}
 
-  explicit PointType(T const val) { pnt.fill(val); }
+  explicit PointType(T const val) { this->pnt.fill(val); }
 
   explicit PointType(Coords const& _pnt) : pnt(_pnt) {}
 
   explicit PointType(parlay::slice<T*, T*> x) {
     assert(x.size() == d);
-    for (int i = 0; i < d; i++) pnt[i] = x[i];
+    for (int i = 0; i < d; i++) {
+      this->pnt[i] = x[i];
+    }
   }
 
   explicit PointType(T const* x) {
-    for (int i = 0; i < d; i++) pnt[i] = x[i];
+    for (int i = 0; i < d; i++) {
+      this->pnt[i] = x[i];
+    }
   }
 
   inline PointType const MinCoords(PointType const& b) const {
-    Coords pts;
+    PointType p;
     for (uint_fast8_t i = 0; i < d; i++) {
-      pts[i] = Num::min(pnt[i], b.pnt[i]);
+      p.pnt[i] = Num::min(this->pnt[i], b.pnt[i]);
     }
-    return std::move(PointType(pts));
+    return std::move(p);
   }
 
   inline PointType const MaxCoords(PointType const& b) const {
-    Coords pts;
+    PointType p;
     for (uint_fast8_t i = 0; i < d; i++) {
-      pts[i] = Num::max(pnt[i], b.pnt[i]);
+      p.pnt[i] = Num::max(this->pnt[i], b.pnt[i]);
     }
-    return std::move(PointType(pts));
+    return std::move(p);
   }
 
   constexpr auto GetDim() const { return std::tuple_size_v<Coords>; }
@@ -55,16 +59,16 @@ struct PointType {
 
   inline bool operator==(PointType const& x) const {
     for (int i = 0; i < d; i++) {
-      if (!Num::Eq(pnt[i], x.pnt[i])) return false;
+      if (!Num::Eq(this->pnt[i], x.pnt[i])) return false;
     }
     return true;
   }
 
   inline bool operator<(PointType const& x) const {
     for (int i = 0; i < d; i++) {
-      if (Num::Lt(pnt[i], x.pnt[i]))
+      if (Num::Lt(this->pnt[i], x.pnt[i]))
         return true;
-      else if (Num::Gt(pnt[i], x.pnt[i]))
+      else if (Num::Gt(this->pnt[i], x.pnt[i]))
         return false;
       else
         continue;
@@ -75,7 +79,7 @@ struct PointType {
   friend std::ostream& operator<<(std::ostream& o, PointType const& a) {
     o << "(";
     for (int i = 0; i < d; i++) {
-      o << a.pnt[i] << ", ";
+      o << a.pnt[i] << (i == d - 1 ? "" : ", ");
     }
     o << ") " << std::flush;
     return o;

@@ -20,7 +20,7 @@ template <typename Point, typename DerivedTree,
 template <typename Leaf, IsBinaryNode Interior, bool granularity>
 void BaseTree<Point, DerivedTree, kBDO>::DeleteTreeRecursive(Node* T) {
   if (T == nullptr) {
-    LOG << "empty ptr" << ENDL;
+    std::cout << "empty ptr" << std::endl;
     return;
   }
   if (T->is_leaf) {

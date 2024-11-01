@@ -640,7 +640,7 @@ struct k_nearest_neighbors {
       if (first) {
         first = false;
       } else {
-        // LOG << n << ENDL;
+        // std::cout << n << std::endl;
         auto P = parlay::tabulate(n, [&](size_t i) -> vtx* { return &In[i]; });
         boxs[idx++] = tree::get_box(P);
         return;
@@ -659,7 +659,7 @@ struct k_nearest_neighbors {
     auto [Out, m] = parlay::internal::split_two(In, flag);
 
     assert(Out.size() == n);
-    // LOG << dim << " " << Out[0] << Out[m] << ENDL;
+    // std::cout << dim << " " << Out[0] << Out[m] << std::endl;
 
     parlay::par_do_if(
         0,

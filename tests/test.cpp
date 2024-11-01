@@ -111,7 +111,7 @@ void TestSpacialTree(int const& kDim, parlay::sequence<Point> const& wp,
     kdknn = new Typename[recNum];
     // int const type[3] = {0, 1, 2};
 
-    // LOG << ENDL;
+    // std::cout << std::endl;
     for (int i = 0; i < 3; i++) {
       rangeCountFix<Point>(wp, tree, kdknn, kRounds, i, recNum, kDim);
       // rangeCountFixWithLog<Point>(wp, tree, kdknn,
@@ -129,7 +129,7 @@ void TestSpacialTree(int const& kDim, parlay::sequence<Point> const& wp,
       kdknn = new Typename[recNum];
       // int const type[3] = {0, 1, 2};
 
-      // LOG << ENDL;
+      // std::cout << std::endl;
       for (int i = 0; i < 3; i++) {
         //* run range count to obtain size
         Points Out;
@@ -286,7 +286,7 @@ void TestSpacialTree(int const& kDim, parlay::sequence<Point> const& wp,
   //
   //     read_points(uniform_path.c_str(), up, K);
   //
-  //     LOG << "alpha: " << tree.get_imbalance_ratio() << ENDL;
+  //     std::cout << "alpha: " << tree.get_imbalance_ratio() << std::endl;
   //     // HACK: need start with varden file
   //     // NOTE: 1: 10*0.1 different vardens.
   //     clean();
@@ -344,7 +344,7 @@ void TestSpacialTree(int const& kDim, parlay::sequence<Point> const& wp,
   //     parlay::sequence<Points> node_by_year(files.size());
   //     for (int i = 0; i < files.size(); i++) {
   //         std::string path = osm_prefix + "osm_" + files[i] + ".csv";
-  //         // LOG << path << ENDL;
+  //         // std::cout << path << std::endl;
   //         read_points(path.c_str(), node_by_year[i], K);
   //     }
   //     kdknn = new Typename[batchQueryOsmSize];
@@ -387,13 +387,13 @@ void TestSpacialTree(int const& kDim, parlay::sequence<Point> const& wp,
   //                                              5e-6, 1e-5, 2e-5, 5e-5,
   //                                              1e-4, 2e-4, 5e-4, 1e-3,
   //                                              2e-3, 5e-3, 1e-2};
-  //     // LOG << ENDL << "serial ";
+  //     // std::cout << std::endl << "serial ";
   //     // BatchInsert<Point, true>(tree, wp, wi, kDim, kRounds,
-  //     *ratios.rbegin()); LOG << ENDL; for (int i = 0; i < ratios.size();
+  //     *ratios.rbegin()); std::cout << std::endl; for (int i = 0; i < ratios.size();
   //     i++) {
-  //         LOG << wi.size() * ratios[i] << " ";
+  //         std::cout << wi.size() * ratios[i] << " ";
   //         batchUpdateByStep<Point, true>(tree, wp, wi, kDim, kRounds,
-  //         ratios[i], *ratios.rbegin()); LOG << ENDL;
+  //         ratios[i], *ratios.rbegin()); std::cout << std::endl;
   //     }
   // }
   //
@@ -404,14 +404,14 @@ void TestSpacialTree(int const& kDim, parlay::sequence<Point> const& wp,
   //                                              5e-6, 1e-5, 2e-5, 5e-5,
   //                                              1e-4, 2e-4, 5e-4, 1e-3,
   //                                              2e-3, 5e-3, 1e-2};
-  //     // LOG << ENDL << "serial ";
+  //     // std::cout << std::endl << "serial ";
   //     // batchDelete<Point, true>(tree, wp, wi, kDim, kRounds, false,
   //     *ratios.rbegin());
-  //     // LOG << ENDL;
+  //     // std::cout << std::endl;
   //     for (int i = 0; i < ratios.size(); i++) {
-  //         LOG << wi.size() * ratios[i] << " ";
+  //         std::cout << wi.size() * ratios[i] << " ";
   //         batchUpdateByStep<Point, false>(tree, wp, wp, kDim, kRounds,
-  //         ratios[i], *ratios.rbegin()); LOG << ENDL;
+  //         ratios[i], *ratios.rbegin()); std::cout << std::endl;
   //     }
   // }
 
