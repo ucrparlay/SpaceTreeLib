@@ -40,9 +40,11 @@ size_t maxReduceSize = 0;
 int query_num = 10000;
 size_t const batchQuerySize = 1000000;
 double const batchInsertCheckRatio = 0.1;
+double const kBatchDiffTotalRatio = 1.0;
+double const kBatchDiffOverlapRatio = 0.5;
 
 template <typename Point>
-void runCGAL(auto& wp, auto& wi, Typename* cgknn,
+void runCGAL(auto const& wp, auto const& wi, Typename* cgknn,
              [[maybe_unused]] int query_num,
              [[maybe_unused]] parlay::sequence<Point_d>& Out, int const tag,
              int const query_type, int const K) {
@@ -64,7 +66,7 @@ void runCGAL(auto& wp, auto& wi, Typename* cgknn,
   // LOG << tree.bounding_box() << ENDL;
   size_t sz = wp.size() * batchInsertCheckRatio;
 
-  if (tag >= 1) {
+  if (tag & (1 << 0)) {
     _points.resize(wi.size());
     parlay::parallel_for(0, wi.size(), [&](size_t j) {
       _points[j] =
@@ -73,22 +75,30 @@ void runCGAL(auto& wp, auto& wi, Typename* cgknn,
     tree.insert(_points.begin(), _points.begin() + sz);
     tree.build<CGAL::Parallel_tag>();
     assert(tree.size() == wp.size() + sz);
-    wp.append(wi.cut(0, sz));
     puts("finish insert to cgal");
   }
   LOG << tree.root()->num_items() << ENDL;
 
-  if (tag >= 2) {
-    assert(_points.size() == wi.size());
-    // for (auto p : _points) {
-    for (size_t i = 0; i < sz; i++) {
+  if (tag & (1 << 2)) {
+    size_t total_batch_size = static_cast<size_t>(N * kBatchDiffTotalRatio);
+    size_t overlap_size =
+        static_cast<size_t>(total_batch_size * kBatchDiffOverlapRatio);
+    for (size_t i = 0; i < overlap_size; i++) {
       tree.remove(_points[i]);
     }
-
-    LOG << tree.root()->num_items() << ENDL;
-    wp.pop_tail(sz);
-    puts("finish delete from cgal");
+    puts("finish diff from cgal");
   }
+  // if (tag >= 2) {
+  //   assert(_points.size() == wi.size());
+  //   // for (auto p : _points) {
+  //   for (size_t i = 0; i < sz; i++) {
+  //     tree.remove(_points[i]);
+  //   }
+  //
+  //   LOG << tree.root()->num_items() << ENDL;
+  //   wp.pop_tail(sz);
+  //   puts("finish delete from cgal");
+  // }
 
   //* cgal query
   LOG << "begin tbb query" << ENDL << std::flush;
@@ -110,54 +120,13 @@ void runCGAL(auto& wp, auto& wi, Typename* cgknn,
                           cgknn[s] = it->second;
                         }
                       });
-  } else if (query_type == 1) {  //* range count
-    // size_t n = wp.size();
-    // parlay::parallel_for(0, query_num, [&](size_t i) {
-    //   std::vector<Point_d> _ans(n);
-    //   Point_d a(kDim, std::begin(wp[i].pnt), std::end(wp[i].pnt)),
-    //       b(kDim, std::begin(wp[(i + n / 2) % n].pnt),
-    //         std::end(wp[(i + n / 2) % n].pnt));
-    //   Fuzzy_iso_box fib(a, b, 0.0);
-    //   // auto d = cpdd::ParallelKDtree<point>::p2p_distance( wp[i], wp[( i
-    //   // + n / 2 ) % n],
-    //   //                                                     wp[i].GetDim()
-    //   //                                                     );
-    //   // d = static_cast<coord>( std::sqrt( d ) );
-    //   // if ( i == 0 ) {
-    //   //   LOG << wp[i] << d << ENDL;
-    //   // }
-    //   // Fuzzy_circle fib( a, d );
-    //   size_t cnt = 0;
-    //   counter_iterator<size_t> cnt_iter(cnt);
-    //
-    //   [[maybe_unused]] auto it = tree.search(cnt_iter, fib);
-    //   // auto it = tree.search( _ans.begin(), fib );
-    //   cgknn[i] = cnt;
-    // cgknn[i] = std::distance( _ans.begin(), it );
-    // });
-  } else if (query_type == 2) {  //* range query
-    // size_t n = wp.size();
-    // assert(maxReduceSize != 0);
-    // Out.resize(query_num * maxReduceSize);
-    // parlay::parallel_for(0, query_num, [&](size_t i) {
-    //   Point_d a(kDim, std::begin(wp[i].pnt), std::end(wp[i].pnt)),
-    //       b(kDim, std::begin(wp[(i + n / 2) % n].pnt),
-    //         std::end(wp[(i + n / 2) % n].pnt));
-    //   Fuzzy_iso_box fib(a, b, 0.0);
-    //   auto it = tree.search(Out.begin() + i * maxReduceSize, fib);
-    //   cgknn[i] = std::distance(Out.begin() + i * maxReduceSize, it);
-    // });
   }
 
-  if (tag == 1) {
-    wp.pop_tail(wi.size() * batchInsertCheckRatio);
-    assert(wp.size() == N);
-  }
   tree.clear();
 }
 
 template <typename Point, typename TreeDesc>
-void runKDParallel(auto& wp, auto const& wi, Typename* kdknn, auto& p,
+void runKDParallel(auto const& wp, auto const& wi, Typename* kdknn,
                    int query_num, int const query_type, int const K,
                    int const tag, int const rounds) {
   using Tree = TreeDesc::TreeType;
@@ -165,29 +134,38 @@ void runKDParallel(auto& wp, auto const& wi, Typename* kdknn, auto& p,
   size_t const N = wp.size();
   size_t const kDim = std::tuple_size_v<typename Point::Coords>;
 
-  Tree pkd;
+  Tree tree;
   // [[maybe_unused]] size_t n = wp.size();
 
   puts("build tree");
-  buildTree<Point>(kDim, wp, rounds, pkd);
+  buildTree<Point>(kDim, wp, rounds, tree);
   // [[maybe_unused]] cpdd::Node* KDParallelRoot = pkd.GetRoot();
-  pkd.template Validate<typename Tree::Leaf, typename Tree::Interior,
-                        typename Tree::SplitRuleType>();
+  tree.template Validate<typename Tree::Leaf, typename Tree::Interior,
+                         typename Tree::SplitRuleType>();
 
-  if (tag >= 1) {
-    BatchInsert<Point, Tree>(pkd, wp, wi, kDim, 2, batchInsertCheckRatio);
-    if (tag == 1) wp.append(wi.cut(0, wp.size() * batchInsertCheckRatio));
-    pkd.template Validate<typename Tree::Leaf, typename Tree::Interior,
-                          typename Tree::SplitRuleType>();
+  if (tag & (1 << 0)) {
+    BatchInsert<Point, Tree>(tree, wp, wi, kDim, 2, batchInsertCheckRatio);
+    tree.template Validate<typename Tree::Leaf, typename Tree::Interior,
+                           typename Tree::SplitRuleType>();
     LOG << "finish insert" << ENDL;
   }
 
-  if (tag >= 2) {
-    batchDelete<Point, Tree, kBatchDelete>(pkd, wp, wi, kDim, 2, true,
-                                           batchInsertCheckRatio);
-    pkd.template Validate<typename Tree::Leaf, typename Tree::Interior,
-                          typename Tree::SplitRuleType>();
+  if (tag & (1 << 1)) {
+    BatchDelete<Point, Tree>(tree, wp, wi, kDim, 2, true,
+                             batchInsertCheckRatio);
+    tree.template Validate<typename Tree::Leaf, typename Tree::Interior,
+                           typename Tree::SplitRuleType>();
     LOG << "finish delete" << ENDL;
+  }
+
+  if (tag & (1 << 2)) {
+    BatchDiff<Point, Tree>(tree, wp, kDim, 2, kBatchDiffTotalRatio,
+                           kBatchDiffOverlapRatio);
+    assert(tree.GetRoot()->size ==
+           wp.size() - static_cast<size_t>(wp.size() * kBatchDiffOverlapRatio));
+    tree.template Validate<typename Tree::Leaf, typename Tree::Interior,
+                           typename Tree::SplitRuleType>();
+    LOG << "finish diff" << ENDL;
   }
 
   // NOTE: query phase
@@ -196,22 +174,35 @@ void runKDParallel(auto& wp, auto const& wi, Typename* kdknn, auto& p,
   if (query_type == 0) {
     Points new_wp(batchQuerySize);
     parlay::copy(wp.cut(0, batchQuerySize), new_wp.cut(0, batchQuerySize));
-    queryKNN<Point>(kDim, wp, rounds, pkd, kdknn, K, true);
+    queryKNN<Point>(kDim, wp, rounds, tree, kdknn, K, true);
   } else if (query_type == 1) {
     for (auto range_query_type : {0, 1, 2}) {
-      rangeCount<Point>(wp, pkd, kdknn, rounds, query_num, range_query_type,
-                        kDim);
+      if (tag & (1 << 2)) {
+        Points new_wp(tree.GetRoot()->size);
+        tree.Flatten(new_wp);
+        RangeCount<Point>(new_wp, tree, kdknn, rounds, query_num,
+                          range_query_type, kDim);
+      } else {
+        RangeCount<Point>(wp, tree, kdknn, rounds, query_num, range_query_type,
+                          kDim);
+      }
     }
   } else if (query_type == 2) {
     for (auto range_query_type : {0, 1, 2}) {
-      rangeQuery<Point>(wp, pkd, kdknn, rounds, query_num, range_query_type,
-                        kDim, p);
+      if (tag & (1 << 2)) {
+        Points new_wp(tree.GetRoot()->size);
+        tree.Flatten(new_wp);
+        RangeQuery<Point>(new_wp, tree, kdknn, rounds, query_num,
+                          range_query_type, kDim);
+      } else {
+        RangeQuery<Point>(wp, tree, kdknn, rounds, query_num, range_query_type,
+                          kDim);
+      }
     }
   }
 
-  if (tag == 1) wp.pop_tail(wi.size() * batchInsertCheckRatio);
   assert(wp.size() == N);
-  pkd.DeleteTree();
+  tree.DeleteTree();
   return;
 }
 
@@ -276,11 +267,14 @@ int main(int argc, char* argv[]) {
         if (tag == 0) {
           cgknn = new Coord[wp.size()];
           kdknn = new Coord[wp.size()];
-        } else if (tag == 1) {
+        } else if (tag & (1 << 0)) {
+          cgknn = new Coord[wp.size()];
+          kdknn = new Coord[wp.size()];
+        } else if (tag & (1 << 1)) {
           puts("insert points from file");
           cgknn = new Coord[wp.size() + wi.size()];
           kdknn = new Coord[wp.size() + wi.size()];
-        } else if (tag == 2) {
+        } else if (tag & (1 << 2)) {
           puts("insert then delete points from file");
           cgknn = new Coord[wp.size()];
           kdknn = new Coord[wp.size()];
@@ -300,11 +294,10 @@ int main(int argc, char* argv[]) {
       }
 
       // NOTE: run the test
-      Points kd_range_out;
       parlay::sequence<Point_d> cg_range_out;
 
-      runKDParallel<PointTypeAlias, Desc>(
-          wp, wi, kdknn, kd_range_out, query_num, query_type, K, tag, kRounds);
+      runKDParallel<PointTypeAlias, Desc>(wp, wi, kdknn, query_num, query_type,
+                                          K, tag, kRounds);
 
       if (query_type == 0) {
         runCGAL<PointTypeAlias>(wp, wi, cgknn, query_num, cg_range_out, tag,
@@ -348,13 +341,14 @@ int main(int argc, char* argv[]) {
   if (tree_type == 0) {
     LOG << "run KDtree" << ENDL;
     run_test(wrapper::KDtree{});
-  } else if (tree_type == 1 && kDim == 2) {
-    LOG << "run QuadTree" << ENDL;
-    run_test(wrapper::QuadTree{});
-  } else if (tree_type == 1 && kDim == 3) {
-    LOG << "run OctTree" << ENDL;
-    run_test(wrapper::OctTree{});
   }
+  // else if (tree_type == 1 && kDim == 2) {
+  //   LOG << "run QuadTree" << ENDL;
+  //   run_test(wrapper::QuadTree{});
+  // } else if (tree_type == 1 && kDim == 3) {
+  //   LOG << "run OctTree" << ENDL;
+  //   run_test(wrapper::OctTree{});
+  // }
 
   puts("\nok");
   return 0;

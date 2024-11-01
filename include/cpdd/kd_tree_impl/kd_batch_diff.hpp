@@ -92,7 +92,7 @@ KdTree<Point, SplitRule, kBDO>::BatchDiffRecursive(
   auto tree_nodes = NodeBoxSeq::uninitialized(IT.tags_num);
   auto box_seq = parlay::sequence<Box>::uninitialized(IT.tags_num);
 
-  // NOTE: never set tomb, this equivalent to only calcualte the bounding box,
+  // NOTE: never set tomb, this equivalent to only compute the bounding box,
   auto [re_num, tot_re_size] =
       IT.TagInbalanceNodeDeletion(box_seq, box, false, []() { return false; });
   assert(re_num == 0 && tot_re_size == 0);

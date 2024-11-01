@@ -19,6 +19,7 @@ template <typename Point, typename SplitRule, uint_fast8_t kBDO>
 template <typename Range>
 void KdTree<Point, SplitRule, kBDO>::Flatten(Range&& Out) {
   BT::template FlattenRec<Leaf, Interior>(this->root_, parlay::make_slice(Out));
+  return;
 }
 
 template <typename Point, typename SplitRule, uint_fast8_t kBDO>

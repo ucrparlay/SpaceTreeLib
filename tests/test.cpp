@@ -1,4 +1,3 @@
-#include <bits/ranges_util.h>
 
 #include <algorithm>
 #include <cstddef>
@@ -43,11 +42,11 @@ void TestSpacialTree(int const& kDim, parlay::sequence<Point> const& wp,
     if (kSummary) {
       parlay::sequence<double> const ratios = {0.0001, 0.001, 0.01, 0.1};
       for (size_t i = 0; i < ratios.size(); i++) {
-        batchDelete<Point, Tree, kBatchDelete>(tree, wp, wi, kDim, kRounds, 0,
+        BatchDelete<Point, Tree, kBatchDelete>(tree, wp, wi, kDim, kRounds, 0,
                                                ratios[i]);
       }
     } else {
-      batchDelete<Point, Tree, kBatchDelete>(tree, wp, wi, kDim, kRounds, 0,
+      BatchDelete<Point, Tree, kBatchDelete>(tree, wp, wi, kDim, kRounds, 0,
                                              batchInsertRatio);
     }
   }
@@ -56,11 +55,11 @@ void TestSpacialTree(int const& kDim, parlay::sequence<Point> const& wp,
     if (kSummary) {
       parlay::sequence<double> const ratios = {0.0001, 0.001, 0.01, 0.1};
       for (size_t i = 0; i < ratios.size(); i++) {
-        batchDelete<Point, Tree, kBatchDiff>(tree, wp, wi, kDim, kRounds, 0,
+        BatchDelete<Point, Tree, kBatchDiff>(tree, wp, wi, kDim, kRounds, 0,
                                              ratios[i]);
       }
     } else {
-      batchDelete<Point, Tree, kBatchDiff>(tree, wp, wi, kDim, kRounds, 0,
+      BatchDelete<Point, Tree, kBatchDiff>(tree, wp, wi, kDim, kRounds, 0,
                                            batchInsertRatio);
     }
   }
