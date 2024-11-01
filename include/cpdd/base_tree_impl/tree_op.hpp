@@ -94,8 +94,8 @@ inline bool BaseTree<Point, DerivedTree, kBDO>::ForceParallelRecursion(
 template <typename Point, typename DerivedTree, uint_fast8_t kBDO>
 template <IsBinaryNode Interior>
 Node* BaseTree<Point, DerivedTree, kBDO>::BuildInnerTree(
-    BucketType idx, HyperPlaneSeq& pivots,
-    parlay::sequence<Node*>& tree_nodes) {
+    BucketType idx, HyperPlaneSeq const& pivots,
+    parlay::sequence<Node*> const& tree_nodes) {
   if (idx > kPivotNum) {
     assert(idx - kPivotNum - 1 < kBucketNum);
     return tree_nodes[idx - kPivotNum - 1];
@@ -104,6 +104,32 @@ Node* BaseTree<Point, DerivedTree, kBDO>::BuildInnerTree(
   L = BuildInnerTree<Interior>(idx << 1, pivots, tree_nodes);
   R = BuildInnerTree<Interior>(idx << 1 | 1, pivots, tree_nodes);
   return AllocInteriorNode<Interior>(L, R, pivots[idx],
+                                     typename Interior::AT());
+}
+
+template <typename Point, typename DerivedTree, uint_fast8_t kBDO>
+template <IsMultiNode Interior>
+Node* BaseTree<Point, DerivedTree, kBDO>::BuildInnerTree(
+    BucketType idx, HyperPlaneSeq const& pivots,
+    parlay::sequence<Node*> const& tree_nodes) {
+  assert(idx < kPivotNum + kBucketNum + 1);
+
+  if (idx > kPivotNum) {
+    return tree_nodes[idx - kPivotNum - 1];
+  }
+
+  typename DerivedTree::OrthNodeArr multi_nodes;
+  typename DerivedTree::Splitter split;
+  for (DimsType i = 0; i < DerivedTree::kNodeRegions; ++i) {
+    multi_nodes[i] =
+        BuildInnerTree(idx * DerivedTree::kNodeRegions + i, pivots, tree_nodes);
+  }
+  for (DimsType i = 0; i < DerivedTree::kSplitterNum; ++i) {
+    split[i] = pivots[idx * (1 << i)];
+    assert(i == 0 || pivots[idx * (1 << i)] == pivots[idx * (1 << i) + 1]);
+  }
+
+  return AllocInteriorNode<Interior>(multi_nodes, split,
                                      typename Interior::AT());
 }
 

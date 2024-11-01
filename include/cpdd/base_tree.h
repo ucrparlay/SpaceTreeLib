@@ -151,8 +151,12 @@ class BaseTree {
                              Args&&... args);
 
   template <IsBinaryNode Interior>
-  static Node* BuildInnerTree(BucketType idx, HyperPlaneSeq& pivots,
-                              parlay::sequence<Node*>& tree_nodes);
+  static Node* BuildInnerTree(BucketType idx, HyperPlaneSeq const& pivots,
+                              parlay::sequence<Node*> const& tree_nodes);
+
+  template <IsMultiNode Interior>
+  static Node* BuildInnerTree(BucketType idx, HyperPlaneSeq const& pivots,
+                              parlay::sequence<Node*> const& tree_nodes);
 
   static PointsIter SerialPartition(Slice In, DimsType d);
 

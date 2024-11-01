@@ -145,31 +145,6 @@ Node* OrthTree<Point, SplitRule, kMD, kBDO>::SerialBuildRecursive(
 
 template <typename Point, typename SplitRule, uint_fast8_t kMD,
           uint_fast8_t kBDO>
-Node* OrthTree<Point, SplitRule, kMD, kBDO>::OrthBuildInnerTree(
-    BucketType idx, HyperPlaneSeq const& pivots,
-    parlay::sequence<Node*> const& tree_nodes) {
-  assert(idx < BT::kPivotNum + BT::kBucketNum + 1);
-
-  if (idx > BT::kPivotNum) {
-    return tree_nodes[idx - BT::kPivotNum - 1];
-  }
-
-  OrthNodeArr multi_nodes;
-  Splitter split;
-  for (DimsType i = 0; i < kNodeRegions; ++i) {
-    multi_nodes[i] =
-        OrthBuildInnerTree(idx * kNodeRegions + i, pivots, tree_nodes);
-  }
-  for (DimsType i = 0; i < kSplitterNum; ++i) {
-    split[i] = pivots[idx * (1 << i)];
-    assert(i == 0 || pivots[idx * (1 << i)] == pivots[idx * (1 << i) + 1]);
-  }
-
-  return AllocInteriorNode<Interior>(multi_nodes, split, AugType());
-}
-
-template <typename Point, typename SplitRule, uint_fast8_t kMD,
-          uint_fast8_t kBDO>
 Node* OrthTree<Point, SplitRule, kMD, kBDO>::BuildRecursive(Slice In, Slice Out,
                                                             Box const& box) {
   // TODO: may ensure the bucket is corresponding the the splitter
@@ -216,7 +191,7 @@ Node* OrthTree<Point, SplitRule, kMD, kBDO>::BuildRecursive(Slice In, Slice Out,
       },
       1);
 
-  return OrthBuildInnerTree(1, pivots, tree_nodes);
+  return BT::template BuildInnerTree<Interior>(1, pivots, tree_nodes);
 }
 
 template <typename Point, typename SplitRule, uint_fast8_t kMD,

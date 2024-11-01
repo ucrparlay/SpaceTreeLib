@@ -137,9 +137,6 @@ class OrthTree
   Node* SerialBuildRecursive(Slice In, Slice Out, Box const& bx,
                              bool checked_duplicate);
 
-  static Node* OrthBuildInnerTree(BucketType idx, HyperPlaneSeq const& pivots,
-                                  parlay::sequence<Node*> const& tree_nodes);
-
   void BatchInsert_(Slice In);
 
   Node* BatchInsertRecursive(Node* T, Slice In, Slice Out);
