@@ -150,6 +150,7 @@ struct MultiNode : Node {
         split(_split),
         aug(_aug) {}
 
+  // NOTE: Generate the hyperplane sequences for the node
   template <typename HyperPlaneSeq>
   inline void GenerateHyperPlaneSeq(HyperPlaneSeq& hyper_seq, auto idx,
                                     auto deep) {
@@ -162,6 +163,8 @@ struct MultiNode : Node {
     return;
   }
 
+  // NOTE: given an idx in the tree skeleton, modify its value its position in
+  // left or right of the splitter
   inline BucketType SeievePoint(Point const& p, BucketType idx) {
     for (BucketType i = 0; i < kMD; ++i) {
       idx = 2 * idx + 1 -
@@ -212,13 +215,13 @@ struct MultiNode : Node {
     return std::move(box_seq);
   }
 
+  // NOTE: Given a box and a bucket id, construct new box for that bucket
   template <typename Box>
   inline Box GetBoxById(BucketType id, Box const& box) {
     Box bx(box);
     assert(id >= 0 && id <= kRegions);
 
-    // PERF: cannot set i>=0 as it is unsigned int
-    // idx 9 -> 101 -> RLR
+    // PERF: cannot set i>=0 as it is unsigned int. idx 9 -> 101 -> RLR
     for (BucketType i = kMD; i > 0; --i) {
       if (id & (1 << (i - 1))) {  //
         bx.first.pnt[split[kMD - i].second] = split[kMD - i].first;
@@ -226,10 +229,10 @@ struct MultiNode : Node {
         bx.second.pnt[split[kMD - i].second] = split[kMD - i].first;
       }
     }
-
     return std::move(bx);
   }
 
+  // NOTE: Given a box and a bucket id, modify the box for that bucket
   template <typename Box>
   inline void ModifyBoxById(BucketType id, Box& box) {
     assert(id >= 0 && id <= kRegions);

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <tuple>
+
 #include "../orth_tree.h"
 
 namespace cpdd {
@@ -20,22 +22,6 @@ void OrthTree<Point, SplitRule, kMD, kBDO>::BatchDiff(Range&& In) {
   return;
 }
 
-template <size_t I>
-struct rebuild_t;
-
-template <>
-struct rebuild_t<0> {
-  template <typename Arg>
-  auto operator()(Arg&& arg) const {
-    return arg;
-  }
-};
-
-struct pf {
-  template <size_t I>
-  using rebuild = rebuild_t<I>;
-};
-
 // NOTE: assume points are partially covered in the tree
 template <typename Point, typename SplitRule, uint_fast8_t kMD,
           uint_fast8_t kBDO>
@@ -46,8 +32,11 @@ void OrthTree<Point, SplitRule, kMD, kBDO>::BatchDiff_(Slice A) {
                                    this->tree_box_);
 
   // NOTE: launch the rebuild
+  auto prepare_func = [&](Node* T, size_t i, Box const& box) {
+    return std::forward_as_tuple(static_cast<Interior*>(T)->GetBoxById(i, box));
+  };
   this->root_ = BT::template RebuildTreeRecursive<Leaf, Interior>(
-      this->root_, pf{}, this->tree_box_);
+      this->root_, prepare_func, this->tree_box_);
   return;
 }
 

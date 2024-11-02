@@ -5,6 +5,7 @@
 #include <cassert>
 #include <cstddef>
 #include <numeric>
+#include <tuple>
 #include <type_traits>
 #include <utility>
 
@@ -109,28 +110,39 @@ Node* BaseTree<Point, DerivedTree, kBDO>::RebuildTreeRecursive(
         T, std::forward<Args>(args)...);
   }
 
-  // auto new_args = prepare_func(T, std::forward<Args>(args)...);
-
+  typename Interior::NodeArr new_nodes;
   if (ForceParallelRecursion<Interior, granularity>(TI)) {
     parlay::parallel_for(0, TI->tree_nodes.size(), [&](BucketType i) {
       size_t start = 0;
       for (BucketType j = 0; j < i; ++j) {
         start += TI->tree_nodes[j]->size;
       }
-      call_helper(
-          std::index_sequence_for<Args...>{},
-          [&](auto&&... nargs) {
-            RebuildTreeRecursive<Leaf, Interior>(
-                TI->tree_nodes[i], std::forward<decltype(nargs)>(nargs)...);
+      auto const new_args = prepare_func(T, i, std::forward<Args>(args)...);
+      std::apply(
+          [&](auto&&... new_args) {
+            new_nodes[i] = RebuildTreeRecursive<Leaf, Interior, granularity>(
+                TI->tree_nodes[i], prepare_func,
+                std::forward<decltype(new_args)>(new_args)...);
           },
-          prepare_func, std::forward<Args>(args)...);
+          new_args);
     });
   } else {
     size_t start = 0;
     for (BucketType i = 0; i < TI->tree_nodes.size(); ++i) {
+      auto const new_args = prepare_func(T, i, std::forward<Args>(args)...);
+      std::apply(
+          [&](auto&&... new_args) {
+            new_nodes[i] = RebuildTreeRecursive<Leaf, Interior, granularity>(
+                TI->tree_nodes[i], prepare_func,
+                std::forward<decltype(new_args)>(new_args)...);
+          },
+          new_args);
       start += TI->tree_nodes[i]->size;
     }
   }
+
+  UpdateInterior<Interior>(T, new_nodes);
+  return T;
 }
 
 template <typename Point, typename DerivedTree, uint_fast8_t kBDO>
