@@ -90,27 +90,11 @@ void call_helper(std::integer_sequence<size_t, Is...>, F f, PF pf,
   f(typename pf::template rebuild<Is>()(args)...);
 }
 
-template <size_t I>
-struct rebuild_t;
-
-template <>
-struct rebuild_t<0> {
-  template <typename Arg>
-  auto operator()(Arg&& arg) const {
-    return arg;
-  }
-};
-
-struct pf {
-  template <size_t I>
-  using rebuild = rebuild_t<I>;
-};
-
 template <typename Point, typename DerivedTree, uint_fast8_t kBDO>
 template <typename Leaf, IsMultiNode Interior, bool granularity,
           typename PrepareFunc, typename... Args>
 Node* BaseTree<Point, DerivedTree, kBDO>::RebuildTreeRecursive(
-    Node* T, PrepareFunc prepare_func, Args&&... args) {
+    Node* T, PrepareFunc&& prepare_func, Args&&... args) {
   if (T->is_leaf) {
     return T;
   }
