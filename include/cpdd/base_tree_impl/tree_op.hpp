@@ -85,9 +85,9 @@ Node* BaseTree<Point, DerivedTree, kBDO>::RebuildTreeRecursive(
 }
 
 template <class F, class PF, size_t... Is, typename... Args>
-void call_helper(std::integer_sequence<size_t, Is...>, F f, PF pf,
+void call_helper(std::integer_sequence<size_t, Is...>, F f, PF,
                  Args&&... args) {
-  f(typename pf::template rebuild<Is>()(args)...);
+  f(typename PF::template rebuild<Is>()(args)...);
 }
 
 template <typename Point, typename DerivedTree, uint_fast8_t kBDO>
@@ -128,7 +128,6 @@ Node* BaseTree<Point, DerivedTree, kBDO>::RebuildTreeRecursive(
   } else {
     size_t start = 0;
     for (BucketType i = 0; i < TI->tree_nodes.size(); ++i) {
-      RebuildTreeRecursive<Leaf, Interior>(TI->tree_nodes[i], new_args[i]);
       start += TI->tree_nodes[i]->size;
     }
   }
