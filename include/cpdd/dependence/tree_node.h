@@ -203,6 +203,8 @@ struct MultiNode : Node {
     return;
   }
 
+  // NOTE: Given a box, produce new sub-boxes equivalent to modify the existing
+  // boxes
   template <typename BoxSeq, typename Box>
   BoxSeq ComputeSubregions(Box const& box) {
     auto box_seq = BoxSeq(kRegions, box);

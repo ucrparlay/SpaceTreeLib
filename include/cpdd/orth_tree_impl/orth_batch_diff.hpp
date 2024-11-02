@@ -20,13 +20,21 @@ void OrthTree<Point, SplitRule, kMD, kBDO>::BatchDiff(Range&& In) {
   return;
 }
 
-// NOTE: assume all Points are fully covered in the tree
+// NOTE: assume points are partially covered in the tree
 template <typename Point, typename SplitRule, uint_fast8_t kMD,
           uint_fast8_t kBDO>
 void OrthTree<Point, SplitRule, kMD, kBDO>::BatchDiff_(Slice A) {
+  // NOTE: diff points from the tree
   Points B = Points::uninitialized(A.size());
   this->root_ = BatchDiffRecursive(this->root_, A, parlay::make_slice(B),
-                                   this->tree_box_, 1);
+                                   this->tree_box_);
+
+  // NOTE: launch the rebuild
+  auto prepare_rebuild_func = [&](Node* T, Box const& box) {
+
+  };
+  this->root_ = BT::template RebuildTreeRecursive<Leaf, Interior>(
+      this->root_, prepare_rebuild_func, this->tree_box_);
   return;
 }
 
@@ -99,20 +107,11 @@ Node* OrthTree<Point, SplitRule, kMD, kBDO>::BatchDiffRecursive(
 
         tree_nodes[i] = BatchDiffRecursive(
             IT.tags[IT.rev_tag[i]].first, Out.cut(start, start + IT.sums[i]),
-            In.cut(start, start + IT.sums[i]), box_seq[i],
-            IT.tags[IT.rev_tag[i]].second == BT::kBucketNum + 1);
+            In.cut(start, start + IT.sums[i]), box_seq[i]);
       },
       1);
 
-  // NOTE: handling of rebuild
-  // WARN: the rebuild node is on top
-  // NOTE: retag the inba-nodes and save the bounding boxes
-  // TODO: here
-  [[maybe_unused]] Node* new_node =
-      IT.template UpdateInnerTree<InnerTree::kTagRebuildNode>(tree_nodes);
-  assert(IT.tags_num == re_num);
-
-  return IT.template UpdateInnerTree<InnerTree::kPostDelUpdate>(tree_nodes);
+  return IT.template UpdateInnerTree<InnerTree::kUpdatePointer>(tree_nodes);
 }
 
 }  // namespace cpdd

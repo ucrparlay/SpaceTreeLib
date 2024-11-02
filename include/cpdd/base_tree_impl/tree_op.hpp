@@ -5,6 +5,7 @@
 #include <cassert>
 #include <cstddef>
 #include <numeric>
+#include <type_traits>
 #include <utility>
 
 #include "../base_tree.h"
@@ -83,6 +84,72 @@ Node* BaseTree<Point, DerivedTree, kBDO>::RebuildTreeRecursive(
   return T;
 }
 
+template <class F, class PF, size_t... Is, typename... Args>
+void call_helper(std::integer_sequence<size_t, Is...>, F f, PF pf,
+                 Args&&... args) {
+  f(typename pf::template rebuild<Is>()(args)...);
+}
+
+template <size_t I>
+struct rebuild_t;
+
+template <>
+struct rebuild_t<0> {
+  template <typename Arg>
+  auto operator()(Arg&& arg) const {
+    return arg;
+  }
+};
+
+struct pf {
+  template <size_t I>
+  using rebuild = rebuild_t<I>;
+};
+
+template <typename Point, typename DerivedTree, uint_fast8_t kBDO>
+template <typename Leaf, IsMultiNode Interior, bool granularity,
+          typename PrepareFunc, typename... Args>
+Node* BaseTree<Point, DerivedTree, kBDO>::RebuildTreeRecursive(
+    Node* T, PrepareFunc prepare_func, Args&&... args) {
+  if (T->is_leaf) {
+    return T;
+  }
+
+  Interior* TI = static_cast<Interior*>(T);
+  if (SparcyNode(0,
+                 TI->size)) {  // NOTE: after diff points from the tree, all
+                               // points has been removed, so there the remove
+                               // points are 0, simply use it to check whether
+                               // the number of points are below kLeaveWrap
+    return RebuildSingleTree<Leaf, Interior, granularity>(
+        T, std::forward<Args>(args)...);
+  }
+
+  // auto new_args = prepare_func(T, std::forward<Args>(args)...);
+
+  if (ForceParallelRecursion<Interior, granularity>(TI)) {
+    parlay::parallel_for(0, TI->tree_nodes.size(), [&](BucketType i) {
+      size_t start = 0;
+      for (BucketType j = 0; j < i; ++j) {
+        start += TI->tree_nodes[j]->size;
+      }
+      call_helper(
+          std::index_sequence_for<Args...>{},
+          [&](auto&&... nargs) {
+            RebuildTreeRecursive<Leaf, Interior>(
+                TI->tree_nodes[i], std::forward<decltype(nargs)>(nargs)...);
+          },
+          prepare_func, std::forward<Args>(args)...);
+    });
+  } else {
+    size_t start = 0;
+    for (BucketType i = 0; i < TI->tree_nodes.size(); ++i) {
+      RebuildTreeRecursive<Leaf, Interior>(TI->tree_nodes[i], new_args[i]);
+      start += TI->tree_nodes[i]->size;
+    }
+  }
+}
+
 template <typename Point, typename DerivedTree, uint_fast8_t kBDO>
 template <SupportsForceParallel Interior, bool granularity>
 inline bool BaseTree<Point, DerivedTree, kBDO>::ForceParallelRecursion(
@@ -121,8 +188,8 @@ Node* BaseTree<Point, DerivedTree, kBDO>::BuildInnerTree(
   typename DerivedTree::OrthNodeArr multi_nodes;
   typename DerivedTree::Splitter split;
   for (DimsType i = 0; i < DerivedTree::kNodeRegions; ++i) {
-    multi_nodes[i] =
-        BuildInnerTree(idx * DerivedTree::kNodeRegions + i, pivots, tree_nodes);
+    multi_nodes[i] = BuildInnerTree<Interior>(
+        idx * DerivedTree::kNodeRegions + i, pivots, tree_nodes);
   }
   for (DimsType i = 0; i < DerivedTree::kSplitterNum; ++i) {
     split[i] = pivots[idx * (1 << i)];

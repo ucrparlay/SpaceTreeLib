@@ -150,6 +150,11 @@ class BaseTree {
   Node* RebuildTreeRecursive(Node* T, PrepareFunc&& prepare_func,
                              Args&&... args);
 
+  template <typename Leaf, IsMultiNode Interior, bool granularity = true,
+            typename PrepareFunc, typename... Args>
+  Node* RebuildTreeRecursive(Node* T, PrepareFunc&& prepare_func,
+                             Args&&... args);
+
   template <IsBinaryNode Interior>
   static Node* BuildInnerTree(BucketType idx, HyperPlaneSeq const& pivots,
                               parlay::sequence<Node*> const& tree_nodes);

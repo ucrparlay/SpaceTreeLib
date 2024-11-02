@@ -148,6 +148,7 @@ class OrthTree
 }  // namespace cpdd
 
 #include "orth_tree_impl/orth_batch_delete.hpp"
+#include "orth_tree_impl/orth_batch_diff.hpp"
 #include "orth_tree_impl/orth_batch_insert.hpp"
 #include "orth_tree_impl/orth_build_tree.hpp"
 #include "orth_tree_impl/orth_inter_node.hpp"

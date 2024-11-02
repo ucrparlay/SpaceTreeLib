@@ -84,7 +84,7 @@ void BaseTree<Point, DerivedTree, kBDO>::CheckTreeSameSequential(Node* T,
     Interior* TI = static_cast<Interior*>(T);
     if (TI->split.second != dim) {
       std::cout << int(TI->split.second) << " " << int(dim) << " " << TI->size
-          << std::endl;
+                << std::endl;
     }
     assert(TI->split.second == dim);
     dim = (dim + 1) % kDim;
@@ -95,7 +95,7 @@ void BaseTree<Point, DerivedTree, kBDO>::CheckTreeSameSequential(Node* T,
   } else {
     assert(IsMultiNode<Interior>);
     Interior* TI = static_cast<Interior*>(T);
-    assert((1 << TI->split.size()) == TI->tree_nodes.size());
+    assert(std::cmp_equal((1 << TI->split.size()), TI->tree_nodes.size()));
     for (size_t i = 0; i < TI->split.size(); i++) {
       assert(TI->split[i].second == dim);
       dim += 1;

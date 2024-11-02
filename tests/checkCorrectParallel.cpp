@@ -241,7 +241,8 @@ int main(int argc, char* argv[]) {
         name = std::string(input_file_path);
         name = name.substr(name.rfind("/") + 1);
         std::cout << name << " ";
-        auto [n, d] = read_points<PointTypeAlias>(input_file_path, wp, K);
+        [[maybe_unused]] auto [n, d] =
+            read_points<PointTypeAlias>(input_file_path, wp, K);
         N = n;
         assert(d == kDim);
       }
@@ -253,7 +254,7 @@ int main(int argc, char* argv[]) {
         int pos = std::string(input_file_path).rfind("/") + 1;
         insert_file_path = std::string(input_file_path).substr(0, pos) +
                            std::to_string(id) + ".in";
-        auto [n, d] =
+        [[maybe_unused]] auto [n, d] =
             read_points<PointTypeAlias>(insert_file_path.c_str(), wi, K);
         assert(N == n && d == kDim);
       }
