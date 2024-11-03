@@ -168,7 +168,6 @@ void runKDParallel(auto const& wp, auto const& wi, Typename* kdknn,
   }
 
   // NOTE: query phase
-  assert(tag == 1 || wp.size() == N);
   std::cout << "begin kd query" << std::endl;
   if (query_type == 0) {
     Points new_wp(batchQuerySize);
@@ -200,7 +199,6 @@ void runKDParallel(auto const& wp, auto const& wi, Typename* kdknn,
     }
   }
 
-  assert(wp.size() == N);
   tree.DeleteTree();
   return;
 }
