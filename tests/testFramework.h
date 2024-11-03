@@ -39,7 +39,11 @@ static constexpr double insertBatchInbaRatio = 0.001;
 static constexpr double knnBatchInbaRatio = 0.1;
 
 // NOTE: Insert Ratio when summary
-static constexpr double batchInsertRatio = 0.01;
+static constexpr double kBatchInsertRatio = 0.01;
+// NOTE: DIff Ratio when summary
+static constexpr double kBatchDiffTotalRatio = 0.01;
+static constexpr double kBatchDiffOverlapRatio = 0.2;
+
 // NOTE: rectange type used in summary
 static constexpr int summaryRangeQueryType = 2;
 // NOTE: range query num in summary

@@ -25,42 +25,42 @@ void TestSpacialTree(int const& kDim, parlay::sequence<Point> const& wp,
 
   Typename* kdknn = nullptr;
 
-  //* batch insert
-  if (kTag >= 1) {
+  // NOTE: batch insert
+  if (kTag & (1 << 0)) {
     if (kSummary) {
       parlay::sequence<double> const ratios = {0.0001, 0.001, 0.01, 0.1};
       for (size_t i = 0; i < ratios.size(); i++) {
         BatchInsert<Point, Tree>(tree, wp, wi, kDim, kRounds, ratios[i]);
       }
     } else {
-      BatchInsert<Point, Tree>(tree, wp, wi, kDim, kRounds, batchInsertRatio);
+      BatchInsert<Point, Tree>(tree, wp, wi, kDim, kRounds, kBatchInsertRatio);
     }
   }
 
-  //* batch delete
-  if (kTag >= 2 && kTag == 2) {
+  // NOTE: batch delete
+  if (kTag & (1 << 1)) {
     if (kSummary) {
       parlay::sequence<double> const ratios = {0.0001, 0.001, 0.01, 0.1};
       for (size_t i = 0; i < ratios.size(); i++) {
-        BatchDelete<Point, Tree, kBatchDelete>(tree, wp, wi, kDim, kRounds, 0,
-                                               ratios[i]);
+        BatchDelete<Point, Tree>(tree, wp, wi, kDim, kRounds, 0, ratios[i]);
       }
     } else {
-      BatchDelete<Point, Tree, kBatchDelete>(tree, wp, wi, kDim, kRounds, 0,
-                                             batchInsertRatio);
+      BatchDelete<Point, Tree>(tree, wp, wi, kDim, kRounds, 0,
+                               kBatchInsertRatio);
     }
   }
 
-  if (kTag >= 2 && kTag == 3) {
+  // NOTE: batch diff
+  if (kTag & (1 << 2)) {
     if (kSummary) {
-      parlay::sequence<double> const ratios = {0.0001, 0.001, 0.01, 0.1};
-      for (size_t i = 0; i < ratios.size(); i++) {
-        BatchDelete<Point, Tree, kBatchDiff>(tree, wp, wi, kDim, kRounds, 0,
-                                             ratios[i]);
+      parlay::sequence<double> const overlap_ratios = {0.1, 0.2, 0.5, 1};
+      for (size_t i = 0; i < overlap_ratios.size(); i++) {
+        BatchDiff<Point, Tree>(tree, wp, kDim, kRounds, kBatchDiffTotalRatio,
+                               overlap_ratios[i]);
       }
     } else {
-      BatchDelete<Point, Tree, kBatchDiff>(tree, wp, wi, kDim, kRounds, 0,
-                                           batchInsertRatio);
+      BatchDiff<Point, Tree>(tree, wp, kDim, kRounds, kBatchDiffTotalRatio,
+                             kBatchDiffOverlapRatio);
     }
   }
 
@@ -389,8 +389,8 @@ void TestSpacialTree(int const& kDim, parlay::sequence<Point> const& wp,
   //                                              2e-3, 5e-3, 1e-2};
   //     // std::cout << std::endl << "serial ";
   //     // BatchInsert<Point, true>(tree, wp, wi, kDim, kRounds,
-  //     *ratios.rbegin()); std::cout << std::endl; for (int i = 0; i < ratios.size();
-  //     i++) {
+  //     *ratios.rbegin()); std::cout << std::endl; for (int i = 0; i <
+  //     ratios.size(); i++) {
   //         std::cout << wi.size() * ratios[i] << " ";
   //         batchUpdateByStep<Point, true>(tree, wp, wi, kDim, kRounds,
   //         ratios[i], *ratios.rbegin()); std::cout << std::endl;

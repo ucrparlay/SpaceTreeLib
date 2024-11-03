@@ -121,7 +121,7 @@ void testCGALParallel(int Dim, int LEAVE_WRAP, parlay::sequence<point>& wp,
         cgal_insert(ratios[i]);
       }
     } else {
-      cgal_insert(batchInsertRatio);
+      cgal_insert(kBatchInsertRatio);
     }
 
     if (tag == 1) wp.append(wi);
@@ -319,7 +319,7 @@ void testCGALParallel(int Dim, int LEAVE_WRAP, parlay::sequence<point>& wp,
               },
               [&]() {});
           std::cout << queryBox[s].second << " " << std::scientific << aveQuery
-              << std::endl;
+                    << std::endl;
         }
       }
     };
@@ -438,7 +438,8 @@ void testCGALParallel(int Dim, int LEAVE_WRAP, parlay::sequence<point>& wp,
       tree.insert(pts[i].begin(), pts[i].end());
       tree.template build<CGAL::Parallel_tag>();
       timer.stop();
-      std::cout << pts[i].size() << " " << timer.total_time() << " " << std::endl;
+      std::cout << pts[i].size() << " " << timer.total_time() << " "
+                << std::endl;
 
       if (fileNum < 12) {
         std::vector<Point_d> tmp(pts[0].begin(),
@@ -472,7 +473,8 @@ void testCGALParallel(int Dim, int LEAVE_WRAP, parlay::sequence<point>& wp,
     auto clean = [&]() {
       prefix = insertFile.substr(0, insertFile.rfind("/"));
       // prefix = insertFileBack.substr(0, insertFileBack.rfind("/"));
-      // std::cout << insertFile << " " << insertFileBack << " " << prefix << std::endl;
+      // std::cout << insertFile << " " << insertFileBack << " " << prefix <<
+      // std::endl;
       np.clear();
       nq.clear();
     };
