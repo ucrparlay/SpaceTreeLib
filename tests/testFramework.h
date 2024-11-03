@@ -239,8 +239,9 @@ void BatchInsert(Tree& pkd, parlay::sequence<Point> const& WP,
         [&]() { pkd.BatchInsert(wi.cut(0, size_t(wi.size() * ratio))); },
         [&]() { pkd.DeleteTree(); });
     std::cout << aveInsert << " " << std::flush;
-    build_tree_by_type();
+    BuildTree<Point, Tree, false>(WP, rounds, pkd);
   } else {  // NOTE: insert the points from previous tree
+    build_tree_by_type();
     parlay::copy(WI, wi);
     pkd.BatchInsert(wi.cut(0, size_t(wi.size() * ratio)));
   }

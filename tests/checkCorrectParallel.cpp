@@ -45,8 +45,7 @@ double const kCCPBatchDiffOverlapRatio = 0.5;
 
 template <typename Point>
 void runCGAL(auto const& wp, auto const& wi, Typename* cgknn,
-             [[maybe_unused]] int query_num,
-             [[maybe_unused]] parlay::sequence<Point_d>& Out, int const tag,
+             [[maybe_unused]] int query_num, int const tag,
              int const query_type, int const K) {
   //* cgal
   size_t const N = wp.size();
@@ -116,8 +115,8 @@ void runCGAL(auto const& wp, auto const& wi, Typename* cgknn,
 
 template <typename Point, typename TreeDesc>
 void runKDParallel(auto const& wp, auto const& wi, Typename* kdknn,
-                   int query_num, int const query_type, int const K,
-                   int const tag, int const rounds) {
+                   Typename* cgknn, int query_num, int const query_type,
+                   int const K, int const tag, int const rounds) {
   using Tree = TreeDesc::TreeType;
   using Points = typename Tree::Points;
   size_t const kDim = std::tuple_size_v<typename Point::Coords>;
@@ -125,7 +124,7 @@ void runKDParallel(auto const& wp, auto const& wi, Typename* kdknn,
   Tree tree;
   constexpr bool kInitMultiRun = false;
 
-  puts("build tree");
+  puts("---------------build tree---------------");
   BuildTree<Point, Tree, kInitMultiRun>(wp, rounds, tree);
   tree.template Validate<typename Tree::Leaf, typename Tree::Interior,
                          typename Tree::SplitRuleType>();
@@ -135,7 +134,7 @@ void runKDParallel(auto const& wp, auto const& wi, Typename* kdknn,
                                             batchInsertCheckRatio);
     tree.template Validate<typename Tree::Leaf, typename Tree::Interior,
                            typename Tree::SplitRuleType>();
-    std::cout << "finish insert" << std::endl;
+    std::cout << "---------------finish insert----------------" << std::endl;
   }
 
   if (tag & (1 << 1)) {
@@ -143,7 +142,7 @@ void runKDParallel(auto const& wp, auto const& wi, Typename* kdknn,
                                             batchInsertCheckRatio);
     tree.template Validate<typename Tree::Leaf, typename Tree::Interior,
                            typename Tree::SplitRuleType>();
-    std::cout << "finish delete" << std::endl;
+    std::cout << "---------------finish delete----------------" << std::endl;
   }
 
   if (tag & (1 << 2)) {
@@ -154,16 +153,29 @@ void runKDParallel(auto const& wp, auto const& wi, Typename* kdknn,
                static_cast<size_t>(wp.size() * kCCPBatchDiffOverlapRatio));
     tree.template Validate<typename Tree::Leaf, typename Tree::Interior,
                            typename Tree::SplitRuleType>();
-    std::cout << "finish diff" << std::endl;
+    std::cout << "---------------finish diff------------------" << std::endl;
   }
 
   // NOTE: query phase
   std::cout << "begin kd query" << std::endl;
-  if (query_type == 0) {
+  if (query_type & (1 << 0)) {  // NOTE: NN query
+    std::cout << "--------------do NN query------------------" << std::endl;
     Points new_wp(batchQuerySize);
     parlay::copy(wp.cut(0, batchQuerySize), new_wp.cut(0, batchQuerySize));
     queryKNN<Point>(kDim, wp, rounds, tree, kdknn, K, true);
-  } else if (query_type == 1) {
+    runCGAL<Point>(wp, wi, cgknn, query_num, tag, query_type, K);
+    std::cout << "check NN" << std::endl;
+    size_t S = batchQuerySize;
+    for (size_t i = 0; i < S; i++) {
+      if (std::abs(cgknn[i] - kdknn[i]) > 1e-4) {
+        puts("");
+        puts("wrong");
+        std::cout << i << " " << cgknn[i] << " " << kdknn[i] << std::endl;
+        abort();
+      }
+    }
+  } else if (query_type & (1 << 1)) {  // NOTE: range count
+    std::cout << "--------------range count------------------" << std::endl;
     for (auto range_query_type : {0, 1, 2}) {
       if (tag & (1 << 2)) {
         Points new_wp(tree.GetRoot()->size);
@@ -175,7 +187,8 @@ void runKDParallel(auto const& wp, auto const& wi, Typename* kdknn,
                           kDim);
       }
     }
-  } else if (query_type == 2) {
+  } else if (query_type & (1 << 2)) {  // NOTE: range query
+    std::cout << "--------------range query------------------" << std::endl;
     for (auto range_query_type : {0, 1, 2}) {
       if (tag & (1 << 2)) {
         Points new_wp(tree.GetRoot()->size);
@@ -250,8 +263,7 @@ int main(int argc, char* argv[]) {
       // NOTE: alloc the memory
       Coord* cgknn;
       Coord* kdknn;
-      if (query_type == 0) {  //*NN
-        std::cout << "---do NN query---" << std::endl;
+      if (query_type & (1 << 0)) {  //*NN
         if (tag == 0) {
           cgknn = new Coord[wp.size()];
           kdknn = new Coord[wp.size()];
@@ -268,12 +280,10 @@ int main(int argc, char* argv[]) {
           puts("wrong tag");
           abort();
         }
-      } else if (query_type == 1) {  //* range Count
-        std::cout << "---do range Count---" << std::endl;
+      } else if (query_type & (1 << 1)) {  //* range Count
         kdknn = new Coord[query_num];
         cgknn = new Coord[0];
-      } else if (query_type == 2) {
-        std::cout << "---do range Query---" << std::endl;
+      } else if (query_type & (1 << 2)) {
         kdknn = new Coord[query_num];
         cgknn = new Coord[0];
       } else {
@@ -282,29 +292,8 @@ int main(int argc, char* argv[]) {
       }
 
       // NOTE: run the test
-      parlay::sequence<Point_d> cg_range_out;
-
-      runKDParallel<PointTypeAlias, Desc>(wp, wi, kdknn, query_num, query_type,
-                                          K, tag, kRounds);
-
-      if (query_type == 0) {
-        runCGAL<PointTypeAlias>(wp, wi, cgknn, query_num, cg_range_out, tag,
-                                query_type, K);
-      }
-
-      // NOTE: verify
-      if (query_type == 0) {
-        std::cout << "check NN" << std::endl;
-        size_t S = batchQuerySize;
-        for (size_t i = 0; i < S; i++) {
-          if (std::abs(cgknn[i] - kdknn[i]) > 1e-4) {
-            puts("");
-            puts("wrong");
-            std::cout << i << " " << cgknn[i] << " " << kdknn[i] << std::endl;
-            abort();
-          }
-        }
-      }
+      runKDParallel<PointTypeAlias, Desc>(wp, wi, kdknn, cgknn, query_num,
+                                          query_type, K, tag, kRounds);
     };
 
     if (tag == -1) {
