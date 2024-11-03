@@ -57,7 +57,8 @@ Node* BaseTree<Point, DerivedTree, kBDO>::RebuildTreeRecursive(
         T, std::forward<Args>(args)...);
   }
 
-  auto [left_args, right_args] = prepare_func(T, std::forward<Args>(args)...);
+  auto const [left_args, right_args] =
+      prepare_func(T, std::forward<Args>(args)...);
 
   Node *L, *R;
   parlay::par_do_if(
@@ -113,10 +114,6 @@ Node* BaseTree<Point, DerivedTree, kBDO>::RebuildTreeRecursive(
   typename Interior::NodeArr new_nodes;
   if (ForceParallelRecursion<Interior, granularity>(TI)) {
     parlay::parallel_for(0, TI->tree_nodes.size(), [&](BucketType i) {
-      size_t start = 0;
-      for (BucketType j = 0; j < i; ++j) {
-        start += TI->tree_nodes[j]->size;
-      }
       auto const new_args = prepare_func(T, i, std::forward<Args>(args)...);
       std::apply(
           [&](auto&&... new_args) {
@@ -127,7 +124,6 @@ Node* BaseTree<Point, DerivedTree, kBDO>::RebuildTreeRecursive(
           new_args);
     });
   } else {
-    size_t start = 0;
     for (BucketType i = 0; i < TI->tree_nodes.size(); ++i) {
       auto const new_args = prepare_func(T, i, std::forward<Args>(args)...);
       std::apply(
@@ -137,7 +133,6 @@ Node* BaseTree<Point, DerivedTree, kBDO>::RebuildTreeRecursive(
                 std::forward<decltype(new_args)>(new_args)...);
           },
           new_args);
-      start += TI->tree_nodes[i]->size;
     }
   }
 

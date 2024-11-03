@@ -33,9 +33,11 @@ void OrthTree<Point, SplitRule, kMD, kBDO>::BatchDiff_(Slice A) {
 
   // NOTE: launch the rebuild
   auto prepare_func = [&](Node* T, size_t i, Box const& box) {
-    return std::forward_as_tuple(static_cast<Interior*>(T)->GetBoxById(i, box));
+    auto new_box = static_cast<Interior*>(T)->GetBoxById(i, box);
+    assert(BT::WithinBox(new_box, box));
+    return std::make_tuple(std::move(new_box));
   };
-  this->root_ = BT::template RebuildTreeRecursive<Leaf, Interior>(
+  this->root_ = BT::template RebuildTreeRecursive<Leaf, Interior, true>(
       this->root_, prepare_func, this->tree_box_);
   return;
 }
@@ -102,10 +104,6 @@ Node* OrthTree<Point, SplitRule, kMD, kBDO>::BatchDiffRecursive(
         }
 
         assert(IT.sums_tree[IT.rev_tag[i]] == IT.sums[i]);
-        assert(IT.tags[IT.rev_tag[i]].first->size >= IT.sums[i]);
-        assert(BT::WithinBox(
-            BT::GetBox(Out.cut(start, start + IT.sums[i])),
-            BT::template GetBox<Leaf, Interior>(IT.tags[IT.rev_tag[i]].first)));
 
         tree_nodes[i] = BatchDiffRecursive(
             IT.tags[IT.rev_tag[i]].first, Out.cut(start, start + IT.sums[i]),

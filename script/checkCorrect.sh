@@ -9,11 +9,11 @@ resFile="Correct.out"
 dest="logger.in"
 out="log.in"
 : >${dest}
-tag=2
+tag=$((2#100))
 count=1 # count the number of ok in the output
 dims=(2 3)
 queryTypes=(0 1 2)
-trees=(0 1)
+trees=(0)
 # queryTypes=(0 1 2)
 
 Paths=("/data/zmen002/kdtree/ss_varden/" "/data/zmen002/kdtree/uniform/")

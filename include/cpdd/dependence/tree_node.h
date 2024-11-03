@@ -219,7 +219,8 @@ struct MultiNode : Node {
   template <typename Box>
   inline Box GetBoxById(BucketType id, Box const& box) {
     Box bx(box);
-    assert(id >= 0 && id <= kRegions);
+    assert(id >= 0 && id < kRegions);
+    // std::cout << "id: " << id << " " << box.first << box.second << std::endl;
 
     // PERF: cannot set i>=0 as it is unsigned int. idx 9 -> 101 -> RLR
     for (BucketType i = kMD; i > 0; --i) {
@@ -229,6 +230,8 @@ struct MultiNode : Node {
         bx.second.pnt[split[kMD - i].second] = split[kMD - i].first;
       }
     }
+    // std::cout << "id: " << id << " " << bx.first << bx.second << std::endl;
+
     return std::move(bx);
   }
 
