@@ -305,7 +305,8 @@ void buildTree([[maybe_unused]] int const& Dim,
 //     return;
 // }
 //
-template <typename Point, typename Tree, bool serial = false>
+template <typename Point, typename Tree, bool kRestoreBuild = false,
+          bool kSerial = false>
 void BatchInsert(Tree& pkd, parlay::sequence<Point> const& WP,
                  parlay::sequence<Point> const& WI,
                  [[maybe_unused]] uint_fast8_t const& DIM, int const& rounds,
@@ -347,18 +348,21 @@ void BatchInsert(Tree& pkd, parlay::sequence<Point> const& WP,
     std::cout << "Not supported Tree type" << std::endl;
   }
 
-  pkd.BatchInsert(wi.cut(0, size_t(wi.size() * ratio)));
+  if constexpr (!kRestoreBuild) {
+    pkd.BatchInsert(wi.cut(0, size_t(wi.size() * ratio)));
+  }
 
   std::cout << aveInsert << " " << std::flush;
 
   return;
 }
 
-template <typename Point, typename Tree>
+template <typename Point, typename Tree, bool kRestoreBuild = false,
+          bool kSerial = false>
 void BatchDelete(Tree& pkd, parlay::sequence<Point> const& WP,
                  parlay::sequence<Point> const& WI,
                  [[maybe_unused]] uint_fast8_t const& DIM, int const& rounds,
-                 bool afterInsert = 1, double ratio = 1.0) {
+                 bool kAfterInsert = 1, double ratio = 1.0) {
   using Points = typename Tree::Points;
   using Box = typename Tree::Box;
   Points wp = Points::uninitialized(WP.size());
@@ -371,7 +375,7 @@ void BatchDelete(Tree& pkd, parlay::sequence<Point> const& WP,
   double aveDelete = time_loop(
       rounds, 1.0,
       [&]() {
-        if (afterInsert) {  //* first insert wi then delete wi
+        if (kAfterInsert) {  // NOTE: first insert wi then delete wi
           parlay::copy(WP, wp), parlay::copy(WI, wi);
           if constexpr (cpdd::IsKdTree<Tree>) {
             pkd.Build(parlay::make_slice(wp));
@@ -382,17 +386,15 @@ void BatchDelete(Tree& pkd, parlay::sequence<Point> const& WP,
           }
           pkd.BatchInsert(wi.cut(0, batchSize));
           parlay::copy(WP, wp), parlay::copy(WI, wi);
-        } else {  //* only build wp and then delete from wp
+        } else {  // NOTE: only build wp and then delete from wp
           parlay::copy(WP, wp), parlay::copy(WP, wi);
           pkd.Build(parlay::make_slice(wp));
-          // parlay::copy(WP, wp), parlay::copy(WP, wi);
         }
       },
       [&]() { pkd.BatchDelete(wi.cut(0, batchSize)); },
       [&]() { pkd.DeleteTree(); });
 
-  if (afterInsert) {
-    //* first insert wi then delete wi
+  if (kAfterInsert) {  // NOTE: first insert wi then delete wi
     parlay::copy(WP, wp), parlay::copy(WI, wi);
     if constexpr (cpdd::IsKdTree<Tree>) {
       pkd.Build(parlay::make_slice(wp));
@@ -402,11 +404,15 @@ void BatchDelete(Tree& pkd, parlay::sequence<Point> const& WP,
       pkd.Build(parlay::make_slice(wp), Box);
     }
     pkd.BatchInsert(wi.cut(0, batchSize));
-    parlay::copy(WP, wp), parlay::copy(WI, wi);
-    pkd.BatchDelete(wi.cut(0, batchSize));
+    parlay::copy(WI, wi);
   } else {
     parlay::copy(WP, wp);
+    parlay::copy(WP, wi);
     pkd.Build(parlay::make_slice(wp));
+  }
+
+  if constexpr (!kRestoreBuild) {
+    pkd.BatchDelete(wi.cut(0, batchSize));
   }
 
   std::cout << aveDelete << " " << std::flush;
@@ -414,7 +420,7 @@ void BatchDelete(Tree& pkd, parlay::sequence<Point> const& WP,
   return;
 }
 
-template <typename Point, typename Tree>
+template <typename Point, typename Tree, bool kRestoreBuild = false>
 void BatchDiff(Tree& pkd, parlay::sequence<Point> const& WP,
                [[maybe_unused]] uint_fast8_t const& DIM, int const& rounds,
                double const total_ratio = 1.0,
@@ -450,12 +456,16 @@ void BatchDiff(Tree& pkd, parlay::sequence<Point> const& WP,
 
   parlay::copy(WP, wp), parlay::copy(WI, wi);
   pkd.Build(parlay::make_slice(wp));
-  pkd.BatchDiff(wi.cut(0, total_batch_size));
+
+  if constexpr (!kRestoreBuild) {
+    pkd.BatchDiff(wi.cut(0, total_batch_size));
+  }
 
   std::cout << aveDelete << " " << std::flush;
 
   return;
 }
+
 // template<typename Point, bool insert>
 // void batchUpdateByStep(BaseTree<Point>& pkd, const parlay::sequence<Point>&
 // WP, const parlay::sequence<Point>& WI,
