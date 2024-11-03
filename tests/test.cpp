@@ -20,8 +20,9 @@ void TestSpacialTree(int const& kDim, parlay::sequence<Point> const& wp,
   using Points = typename Tree::Points;
 
   Tree tree;
+  constexpr bool kTestTime = true;
 
-  buildTree<Point, Tree, 2>(kDim, wp, kRounds, tree);
+  BuildTree<Point, Tree, kTestTime, 2>(wp, kRounds, tree);
 
   Typename* kdknn = nullptr;
 
@@ -30,11 +31,11 @@ void TestSpacialTree(int const& kDim, parlay::sequence<Point> const& wp,
     if (kSummary) {
       parlay::sequence<double> const ratios = {0.0001, 0.001, 0.01, 0.1};
       for (size_t i = 0; i < ratios.size(); i++) {
-        BatchInsert<Point, Tree, true>(tree, wp, wi, kDim, kRounds, ratios[i]);
+        BatchInsert<Point, Tree, kTestTime>(tree, wp, wi, kRounds, ratios[i]);
       }
     } else {
-      BatchInsert<Point, Tree, true>(tree, wp, wi, kDim, kRounds,
-                                     kBatchInsertRatio);
+      BatchInsert<Point, Tree, kTestTime>(tree, wp, wi, kRounds,
+                                          kBatchInsertRatio);
     }
   }
 
@@ -43,12 +44,11 @@ void TestSpacialTree(int const& kDim, parlay::sequence<Point> const& wp,
     if (kSummary) {
       parlay::sequence<double> const ratios = {0.0001, 0.001, 0.01, 0.1};
       for (size_t i = 0; i < ratios.size(); i++) {
-        BatchDelete<Point, Tree, true>(tree, wp, wi, kDim, kRounds, 0,
-                                       ratios[i]);
+        BatchDelete<Point, Tree, kTestTime>(tree, wp, wi, kRounds, ratios[i]);
       }
     } else {
-      BatchDelete<Point, Tree, true>(tree, wp, wi, kDim, kRounds, 0,
-                                     kBatchInsertRatio);
+      BatchDelete<Point, Tree, kTestTime>(tree, wp, wi, kRounds,
+                                          kBatchInsertRatio);
     }
   }
 
@@ -57,13 +57,12 @@ void TestSpacialTree(int const& kDim, parlay::sequence<Point> const& wp,
     if (kSummary) {
       parlay::sequence<double> const overlap_ratios = {0.1, 0.2, 0.5, 1};
       for (size_t i = 0; i < overlap_ratios.size(); i++) {
-        BatchDiff<Point, Tree, true>(tree, wp, kDim, kRounds,
-                                     kBatchDiffTotalRatio, overlap_ratios[i]);
+        BatchDiff<Point, Tree, kTestTime>(
+            tree, wp, kRounds, kBatchDiffTotalRatio, overlap_ratios[i]);
       }
     } else {
-      BatchDiff<Point, Tree, true>(tree, wp, kDim, kRounds,
-                                   kBatchDiffTotalRatio,
-                                   kBatchDiffOverlapRatio);
+      BatchDiff<Point, Tree, kTestTime>(tree, wp, kRounds, kBatchDiffTotalRatio,
+                                        kBatchDiffOverlapRatio);
     }
   }
 

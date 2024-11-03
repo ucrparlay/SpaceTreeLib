@@ -40,8 +40,8 @@ size_t maxReduceSize = 0;
 int query_num = 10000;
 size_t const batchQuerySize = 1000000;
 double const batchInsertCheckRatio = 0.1;
-double const kBatchDiffTotalRatio = 1.0;
-double const kBatchDiffOverlapRatio = 0.5;
+double const kCCPBatchDiffTotalRatio = 1.0;
+double const kCCPBatchDiffOverlapRatio = 0.5;
 
 template <typename Point>
 void runCGAL(auto const& wp, auto const& wi, Typename* cgknn,
@@ -80,25 +80,14 @@ void runCGAL(auto const& wp, auto const& wi, Typename* cgknn,
   std::cout << tree.root()->num_items() << std::endl;
 
   if (tag & (1 << 2)) {
-    size_t total_batch_size = static_cast<size_t>(N * kBatchDiffTotalRatio);
+    size_t total_batch_size = static_cast<size_t>(N * kCCPBatchDiffTotalRatio);
     size_t overlap_size =
-        static_cast<size_t>(total_batch_size * kBatchDiffOverlapRatio);
+        static_cast<size_t>(total_batch_size * kCCPBatchDiffOverlapRatio);
     for (size_t i = 0; i < overlap_size; i++) {
       tree.remove(_points[i]);
     }
     puts("finish diff from cgal");
   }
-  // if (tag >= 2) {
-  //   assert(_points.size() == wi.size());
-  //   // for (auto p : _points) {
-  //   for (size_t i = 0; i < sz; i++) {
-  //     tree.remove(_points[i]);
-  //   }
-  //
-  //   std::cout << tree.root()->num_items() << std::endl;
-  //   wp.pop_tail(sz);
-  //   puts("finish delete from cgal");
-  // }
 
   //* cgal query
   std::cout << "begin tbb query" << std::endl << std::flush;
@@ -134,34 +123,35 @@ void runKDParallel(auto const& wp, auto const& wi, Typename* kdknn,
   size_t const kDim = std::tuple_size_v<typename Point::Coords>;
 
   Tree tree;
-  // [[maybe_unused]] size_t n = wp.size();
+  constexpr bool kInitMultiRun = false;
 
   puts("build tree");
-  buildTree<Point>(kDim, wp, rounds, tree);
-  // [[maybe_unused]] cpdd::Node* KDParallelRoot = pkd.GetRoot();
+  BuildTree<Point, Tree, kInitMultiRun>(wp, rounds, tree);
   tree.template Validate<typename Tree::Leaf, typename Tree::Interior,
                          typename Tree::SplitRuleType>();
 
   if (tag & (1 << 0)) {
-    BatchInsert<Point, Tree>(tree, wp, wi, kDim, 2, batchInsertCheckRatio);
+    BatchInsert<Point, Tree, kInitMultiRun>(tree, wp, wi, 2,
+                                            batchInsertCheckRatio);
     tree.template Validate<typename Tree::Leaf, typename Tree::Interior,
                            typename Tree::SplitRuleType>();
     std::cout << "finish insert" << std::endl;
   }
 
   if (tag & (1 << 1)) {
-    BatchDelete<Point, Tree>(tree, wp, wi, kDim, 2, true,
-                             batchInsertCheckRatio);
+    BatchDelete<Point, Tree, kInitMultiRun>(tree, wp, wi, 2,
+                                            batchInsertCheckRatio);
     tree.template Validate<typename Tree::Leaf, typename Tree::Interior,
                            typename Tree::SplitRuleType>();
     std::cout << "finish delete" << std::endl;
   }
 
   if (tag & (1 << 2)) {
-    BatchDiff<Point, Tree>(tree, wp, kDim, 2, kBatchDiffTotalRatio,
-                           kBatchDiffOverlapRatio);
+    BatchDiff<Point, Tree, kInitMultiRun>(tree, wp, 2, kCCPBatchDiffTotalRatio,
+                                          kCCPBatchDiffOverlapRatio);
     assert(tree.GetRoot()->size ==
-           wp.size() - static_cast<size_t>(wp.size() * kBatchDiffOverlapRatio));
+           wp.size() -
+               static_cast<size_t>(wp.size() * kCCPBatchDiffOverlapRatio));
     tree.template Validate<typename Tree::Leaf, typename Tree::Interior,
                            typename Tree::SplitRuleType>();
     std::cout << "finish diff" << std::endl;

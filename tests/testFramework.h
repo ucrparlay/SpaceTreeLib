@@ -167,9 +167,9 @@ auto gen_rectangles(int rec_num, int const type,
   return std::make_pair(box_seq, max_size);
 }
 
-template <typename Point, typename Tree, int kPrint = 1>
-void buildTree([[maybe_unused]] int const& Dim,
-               parlay::sequence<Point> const& WP, int const& rounds,
+template <typename Point, typename Tree, bool kInitMultiRun = true,
+          int kPrint = 1>
+void BuildTree(parlay::sequence<Point> const& WP, int const& rounds,
                Tree& pkd) {
   using Points = typename Tree::Points;
   using Leaf = typename Tree::Leaf;
@@ -178,249 +178,107 @@ void buildTree([[maybe_unused]] int const& Dim,
   double loopLate = rounds > 1 ? 1.0 : -0.1;
   size_t n = WP.size();
   Points wp = Points::uninitialized(n);
-  pkd.DeleteTree();
-  double aveBuild = time_loop(
-      rounds, loopLate, [&]() { parlay::copy(WP.cut(0, n), wp.cut(0, n)); },
-      [&]() { pkd.Build(wp.cut(0, n)); }, [&]() { pkd.DeleteTree(); });
 
-  //* return a built Tree
+  if constexpr (kInitMultiRun) {
+    pkd.DeleteTree();
+
+    double aveBuild = time_loop(
+        rounds, loopLate, [&]() { parlay::copy(WP.cut(0, n), wp.cut(0, n)); },
+        [&]() { pkd.Build(wp.cut(0, n)); }, [&]() { pkd.DeleteTree(); });
+
+    if (kPrint == 1) {
+      std::cout << aveBuild << " " << std::flush;
+      auto deep = pkd.template GetAveTreeHeight<Leaf, Interior>();
+      std::cout << deep << " " << std::flush;
+    } else if (kPrint == 2) {
+      size_t max_deep = 0;
+      std::cout << aveBuild << " ";
+      std::cout << pkd.template GetMaxTreeDepth<Leaf, Interior>(pkd.GetRoot(),
+                                                                max_deep)
+                << " " << pkd.template GetAveTreeHeight<Leaf, Interior>() << " "
+                << std::flush;
+    }
+  }
+
+  // NOTE: always return a built tree
   parlay::copy(WP.cut(0, n), wp.cut(0, n));
   pkd.Build(wp.cut(0, n));
 
-  if (kPrint == 1) {
-    std::cout << aveBuild << " " << std::flush;
-    auto deep = pkd.template GetAveTreeHeight<Leaf, Interior>();
-    std::cout << deep << " " << std::flush;
-  } else if (kPrint == 2) {
-    size_t max_deep = 0;
-    std::cout << aveBuild << " ";
-    std::cout << pkd.template GetMaxTreeDepth<Leaf, Interior>(pkd.GetRoot(),
-                                                              max_deep)
-              << " " << pkd.template GetAveTreeHeight<Leaf, Interior>() << " "
-              << std::flush;
-  }
-
   return;
 }
-//
-// template<typename Point, int print = 1>
-// void incrementalBuild(const int Dim, const parlay::sequence<Point>& WP, const
-// int rounds, BaseTree<Point>& pkd,
-//                       double stepRatio) {
-//     using Tree = BaseTree<Point>;
-//     using Points = typename Tree::Points;
-//     using node = typename Tree::node;
-//     size_t n = WP.size();
-//     size_t step = n * stepRatio;
-//     Points wp = Points::uninitialized(n);
-//
-//     pkd.delete_tree();
-//     double delay = 1.0;
-//     if (pkd.get_imbalance_ratio() == 1) {
-//         delay = -0.1;
-//     }
-//
-//     double aveIncreBuild = time_loop(
-//         rounds, delay, [&]() { parlay::copy(WP, wp); },
-//         [&]() {
-//             size_t l = 0, r = 0;
-//             while (l < n) {
-//                 r = std::min(l + step, n);
-//                 pkd.BatchInsert(wp.cut(l, r), Dim);
-//                 l = r;
-//             }
-//         },
-//         [&]() { pkd.delete_tree(); });
-//
-//     parlay::copy(WP, wp);
-//     size_t l = 0, r = 0;
-//     while (l < n) {
-//         r = std::min(l + step, n);
-//         pkd.BatchInsert(wp.cut(l, r), Dim);
-//         l = r;
-//     }
-//
-//     if (print == 1) {
-//         auto deep = pkd.getAveTreeHeight();
-//         std::cout << aveIncreBuild << " " << deep << " " << std::flush;
-//     } else if (print == 2) {  // NOTE: print the maxtree height and avetree
-//     height
-//         size_t max_deep = 0;
-//         std::cout << aveIncreBuild << " " <<
-//         pkd.getMaxTreeDepth(pkd.get_root(), max_deep) << " " <<
-//         pkd.getAveTreeHeight()
-//             << " " << std::flush;
-//     }
-//     return;
-// }
-//
-// template<typename Point, bool print = 1>
-// void incrementalDelete(const int Dim, const parlay::sequence<Point>& WP,
-// const parlay::sequence<Point>& WI, int rounds,
-//                        BaseTree<Point>& pkd, double stepRatio) {
-//     using Tree = BaseTree<Point>;
-//     using Points = typename Tree::Points;
-//     using node = typename Tree::node;
-//     size_t n = WP.size();
-//     size_t step = n * stepRatio;
-//     Points wp = Points::uninitialized(2 * n);
-//     Points wi = Points::uninitialized(n);
-//
-//     pkd.delete_tree();
-//
-//     double aveIncreDelete = time_loop(
-//         rounds, 1.0,
-//         [&]() {
-//             parlay::copy(WP.cut(0, n), wp.cut(0, n));
-//             parlay::copy(WI.cut(0, n), wp.cut(n, 2 * n));
-//             parlay::copy(WI.cut(0, n), wi.cut(0, n));
-//
-//             pkd.build(wp.cut(0, 2 * n), Dim);
-//         },
-//         [&]() {
-//             size_t l = 0, r = 0;
-//             while (l < n) {
-//                 r = std::min(l + step, n);
-//                 pkd.batchDelete(wi.cut(l, r), Dim);
-//                 l = r;
-//             }
-//         },
-//         [&]() { pkd.delete_tree(); });
-//
-//     parlay::copy(WP.cut(0, n), wp.cut(0, n));
-//     parlay::copy(WI.cut(0, n), wp.cut(n, 2 * n));
-//     parlay::copy(WI.cut(0, n), wi.cut(0, n));
-//     pkd.build(wp.cut(0, 2 * n), Dim);
-//     size_t l = 0, r = 0;
-//     while (l < n) {
-//         r = std::min(l + step, n);
-//         pkd.batchDelete(wi.cut(l, r), Dim);
-//         l = r;
-//     }
-//
-//     if (print) {
-//         auto deep = pkd.getAveTreeHeight();
-//         std::cout << aveIncreDelete << " " << deep << " " << std::flush;
-//     }
-//     return;
-// }
-//
-template <typename Point, typename Tree, bool kRestoreBuild = false,
+
+template <typename Point, typename Tree, bool kInitMultiRun = true,
           bool kSerial = false>
 void BatchInsert(Tree& pkd, parlay::sequence<Point> const& WP,
-                 parlay::sequence<Point> const& WI,
-                 [[maybe_unused]] uint_fast8_t const& DIM, int const& rounds,
+                 parlay::sequence<Point> const& WI, int const& rounds,
                  double ratio = 1.0) {
   using Points = typename Tree::Points;
   using Box = typename Tree::Box;
   Points wp = Points::uninitialized(WP.size());
   Points wi = Points::uninitialized(WI.size());
 
-  pkd.DeleteTree();
+  // NOTE: build the tree by type
+  auto build_tree_by_type = [&]() {
+    if constexpr (cpdd::IsKdTree<Tree>) {
+      parlay::copy(WP, wp), parlay::copy(WI, wi);
+      pkd.Build(parlay::make_slice(wp));
+    } else if constexpr (cpdd::IsOrthTree<Tree>) {
+      parlay::copy(WP, wp), parlay::copy(WI, wi);
+      Box Box = Tree::GetBox(Tree::GetBox(parlay::make_slice(wp)),
+                             Tree::GetBox(parlay::make_slice(wi)));
+      pkd.Build(parlay::make_slice(wp), Box);
+    } else {
+      std::cout << "Not supported Tree type" << std::endl;
+    }
+  };
 
-  double aveInsert = time_loop(
-      rounds, 1.0,
-      [&]() {
-        if constexpr (cpdd::IsKdTree<Tree>) {
-          parlay::copy(WP, wp), parlay::copy(WI, wi);
-          pkd.Build(parlay::make_slice(wp));
-        } else if constexpr (cpdd::IsOrthTree<Tree>) {
-          parlay::copy(WP, wp), parlay::copy(WI, wi);
-          Box Box = Tree::GetBox(Tree::GetBox(parlay::make_slice(wp)),
-                                 Tree::GetBox(parlay::make_slice(wi)));
-          pkd.Build(parlay::make_slice(wp), Box);
-        } else {
-          std::cout << "Not supported Tree type" << std::endl;
-        }
-      },
-      [&]() { pkd.BatchInsert(wi.cut(0, size_t(wi.size() * ratio))); },
-      [&]() { pkd.DeleteTree(); });
-
-  if constexpr (cpdd::IsKdTree<Tree>) {
-    parlay::copy(WP, wp), parlay::copy(WI, wi);
-    pkd.Build(parlay::make_slice(wp));
-  } else if constexpr (cpdd::IsOrthTree<Tree>) {
-    parlay::copy(WP, wp), parlay::copy(WI, wi);
-    Box Box = Tree::GetBox(Tree::GetBox(parlay::make_slice(wp)),
-                           Tree::GetBox(wi.cut(0, size_t(wi.size() * ratio))));
-    pkd.Build(parlay::make_slice(wp), Box);
-  } else {
-    std::cout << "Not supported Tree type" << std::endl;
-  }
-
-  if constexpr (!kRestoreBuild) {
+  if constexpr (kInitMultiRun) {  // NOTE: clean and measure time
+    pkd.DeleteTree();
+    double aveInsert = time_loop(
+        rounds, 1.0, [&]() { build_tree_by_type(); },
+        [&]() { pkd.BatchInsert(wi.cut(0, size_t(wi.size() * ratio))); },
+        [&]() { pkd.DeleteTree(); });
+    std::cout << aveInsert << " " << std::flush;
+    build_tree_by_type();
+  } else {  // NOTE: insert the points from previous tree
+    parlay::copy(WI, wi);
     pkd.BatchInsert(wi.cut(0, size_t(wi.size() * ratio)));
   }
 
-  std::cout << aveInsert << " " << std::flush;
-
   return;
 }
 
-template <typename Point, typename Tree, bool kRestoreBuild = false,
+template <typename Point, typename Tree, bool kInitMultiRun = true,
           bool kSerial = false>
 void BatchDelete(Tree& pkd, parlay::sequence<Point> const& WP,
-                 parlay::sequence<Point> const& WI,
-                 [[maybe_unused]] uint_fast8_t const& DIM, int const& rounds,
-                 bool kAfterInsert = 1, double ratio = 1.0) {
+                 parlay::sequence<Point> const& WI, int const& rounds,
+                 double ratio = 1.0) {
   using Points = typename Tree::Points;
-  using Box = typename Tree::Box;
   Points wp = Points::uninitialized(WP.size());
-  Points wi = Points::uninitialized(
-      WP.size());  //! warnning need to adjust space if necessary
-
-  pkd.DeleteTree();
+  Points wi = Points::uninitialized(WP.size());
   size_t batchSize = static_cast<size_t>(WP.size() * ratio);
 
-  double aveDelete = time_loop(
-      rounds, 1.0,
-      [&]() {
-        if (kAfterInsert) {  // NOTE: first insert wi then delete wi
-          parlay::copy(WP, wp), parlay::copy(WI, wi);
-          if constexpr (cpdd::IsKdTree<Tree>) {
-            pkd.Build(parlay::make_slice(wp));
-          } else if constexpr (cpdd::IsOrthTree<Tree>) {
-            Box Box = Tree::GetBox(Tree::GetBox(parlay::make_slice(wp)),
-                                   Tree::GetBox(wi.cut(0, batchSize)));
-            pkd.Build(parlay::make_slice(wp), Box);
-          }
-          pkd.BatchInsert(wi.cut(0, batchSize));
-          parlay::copy(WP, wp), parlay::copy(WI, wi);
-        } else {  // NOTE: only build wp and then delete from wp
-          parlay::copy(WP, wp), parlay::copy(WP, wi);
-          pkd.Build(parlay::make_slice(wp));
-        }
-      },
-      [&]() { pkd.BatchDelete(wi.cut(0, batchSize)); },
-      [&]() { pkd.DeleteTree(); });
-
-  if (kAfterInsert) {  // NOTE: first insert wi then delete wi
-    parlay::copy(WP, wp), parlay::copy(WI, wi);
-    if constexpr (cpdd::IsKdTree<Tree>) {
-      pkd.Build(parlay::make_slice(wp));
-    } else if constexpr (cpdd::IsOrthTree<Tree>) {
-      Box Box = Tree::GetBox(Tree::GetBox(parlay::make_slice(wp)),
-                             Tree::GetBox(wi.cut(0, batchSize)));
-      pkd.Build(parlay::make_slice(wp), Box);
-    }
-    pkd.BatchInsert(wi.cut(0, batchSize));
-    parlay::copy(WI, wi);
+  if constexpr (kInitMultiRun) {
+    pkd.DeleteTree();
+    double aveDelete = time_loop(
+        rounds, 1.0,
+        [&]() {
+          BuildTree<Point, Tree, false>(WP, rounds, pkd);
+          parlay::copy(WI, wi);
+        },
+        [&]() { pkd.BatchDelete(wi.cut(0, batchSize)); },
+        [&]() { pkd.DeleteTree(); });
+    std::cout << aveDelete << " " << std::flush;
+    BuildTree<Point, Tree, false>(WP, rounds, pkd);
   } else {
-    parlay::copy(WP, wp);
-    parlay::copy(WP, wi);
-    pkd.Build(parlay::make_slice(wp));
-  }
-
-  if constexpr (!kRestoreBuild) {
+    parlay::copy(WI, wi);
     pkd.BatchDelete(wi.cut(0, batchSize));
   }
 
-  std::cout << aveDelete << " " << std::flush;
-
   return;
 }
 
-template <typename Point, typename Tree, bool kRestoreBuild = false>
+template <typename Point, typename Tree, bool kInitMultiRun = true>
 void BatchDiff(Tree& pkd, parlay::sequence<Point> const& WP,
                [[maybe_unused]] uint_fast8_t const& DIM, int const& rounds,
                double const total_ratio = 1.0,
@@ -443,25 +301,21 @@ void BatchDiff(Tree& pkd, parlay::sequence<Point> const& WP,
   Points wp = Points::uninitialized(WP.size());
   Points wi = Points::uninitialized(WI.size());
 
-  pkd.DeleteTree();
-
-  double aveDelete = time_loop(
-      rounds, 1.0,
-      [&]() {
-        parlay::copy(WP, wp), parlay::copy(WI, wi);
-        pkd.Build(parlay::make_slice(wp));
-      },
-      [&]() { pkd.BatchDiff(wi.cut(0, total_batch_size)); },
-      [&]() { pkd.DeleteTree(); });
-
-  parlay::copy(WP, wp), parlay::copy(WI, wi);
-  pkd.Build(parlay::make_slice(wp));
-
-  if constexpr (!kRestoreBuild) {
+  if constexpr (kInitMultiRun) {
+    pkd.DeleteTree();
+    double aveDelete = time_loop(
+        rounds, 1.0,
+        [&]() {
+          BuildTree<Point, Tree, false>(WP, rounds, pkd);
+          parlay::copy(WI, wi);
+        },
+        [&]() { pkd.BatchDiff(wi.cut(0, total_batch_size)); },
+        [&]() { pkd.DeleteTree(); });
+    std::cout << aveDelete << " " << std::flush;
+    BuildTree<Point, Tree, false>(WP, rounds, pkd);
+  } else {
     pkd.BatchDiff(wi.cut(0, total_batch_size));
   }
-
-  std::cout << aveDelete << " " << std::flush;
 
   return;
 }
