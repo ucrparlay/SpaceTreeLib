@@ -168,7 +168,7 @@ KdTree<Point, SplitRule, kBDO>::BatchDeleteRecursive(
   auto tree_nodes = NodeBoxSeq::uninitialized(IT.tags_num);
   auto box_seq = parlay::sequence<Box>::uninitialized(IT.tags_num);
 
-  auto [re_num, tot_re_size] = IT.TagInbalanceNodeDeletion(
+  [[maybe_unused]] auto [re_num, tot_re_size] = IT.TagInbalanceNodeDeletion(
       box_seq, bx, has_tomb, [&](BucketType idx) -> bool {
         Interior* TI = static_cast<Interior*>(IT.tags[idx].first);
         return BT::ImbalanceNode(TI->left->size - IT.sums_tree[idx << 1],

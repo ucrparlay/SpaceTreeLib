@@ -105,7 +105,7 @@ Node* OrthTree<Point, SplitRule, kMD, kBDO>::BatchDeleteRecursive(
                                       IT.tags_num);
 
   BoxSeq box_seq(IT.tags_num);  // PARA: the box for bucket nodes
-  auto [re_num, tot_re_size] = IT.TagInbalanceNodeDeletion(
+  [[maybe_unused]] auto [re_num, tot_re_size] = IT.TagInbalanceNodeDeletion(
       box_seq, box, has_tomb, [&](BucketType idx) -> bool {
         return BT::SparcyNode(IT.sums_tree[idx], IT.tags[idx].first->size);
       });

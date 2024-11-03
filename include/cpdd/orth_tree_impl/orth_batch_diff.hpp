@@ -89,10 +89,10 @@ Node* OrthTree<Point, SplitRule, kMD, kBDO>::BatchDiffRecursive(
                                       IT.tags_num);
 
   BoxSeq box_seq(IT.tags_num);  // PARA: the box for bucket nodes
-  auto [re_num, tot_re_size] = IT.TagInbalanceNodeDeletion(
+  [[maybe_unused]] auto [re_num, tot_re_size] = IT.TagInbalanceNodeDeletion(
       box_seq, box, false, [&]() -> bool { return false; });
 
-  assert(re_num <= IT.tags_num);
+  assert(re_num == 0 && tot_re_size == 0);
 
   auto tree_nodes = parlay::sequence<Node*>::uninitialized(IT.tags_num);
   parlay::parallel_for(

@@ -131,7 +131,6 @@ void runKDParallel(auto const& wp, auto const& wi, Typename* kdknn,
                    int const tag, int const rounds) {
   using Tree = TreeDesc::TreeType;
   using Points = typename Tree::Points;
-  size_t const N = wp.size();
   size_t const kDim = std::tuple_size_v<typename Point::Coords>;
 
   Tree tree;
@@ -240,7 +239,7 @@ int main(int argc, char* argv[]) {
       if (input_file_path != NULL) {  // NOTE: read main Points
         name = std::string(input_file_path);
         name = name.substr(name.rfind("/") + 1);
-        std::cout << name << " ";
+        std::cout << name << "\n";
         [[maybe_unused]] auto [n, d] =
             read_points<PointTypeAlias>(input_file_path, wp, K);
         N = n;
@@ -272,11 +271,9 @@ int main(int argc, char* argv[]) {
           cgknn = new Coord[wp.size()];
           kdknn = new Coord[wp.size()];
         } else if (tag & (1 << 1)) {
-          puts("insert points from file");
           cgknn = new Coord[wp.size() + wi.size()];
           kdknn = new Coord[wp.size() + wi.size()];
         } else if (tag & (1 << 2)) {
-          puts("insert then delete points from file");
           cgknn = new Coord[wp.size()];
           kdknn = new Coord[wp.size()];
         } else {
@@ -286,9 +283,11 @@ int main(int argc, char* argv[]) {
       } else if (query_type == 1) {  //* range Count
         std::cout << "---do range Count---" << std::endl;
         kdknn = new Coord[query_num];
+        cgknn = new Coord[0];
       } else if (query_type == 2) {
         std::cout << "---do range Query---" << std::endl;
         kdknn = new Coord[query_num];
+        cgknn = new Coord[0];
       } else {
         puts("wrong query type");
         abort();
