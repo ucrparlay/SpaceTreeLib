@@ -286,7 +286,6 @@ void BatchDiff(Tree& pkd, parlay::sequence<Point> const& WP, int const& rounds,
   using Points = typename Tree::Points;
   size_t total_batch_size = static_cast<size_t>(WP.size() * total_ratio);
   size_t overlap_size = static_cast<size_t>(total_batch_size * overlap_ratio);
-  std::cout << overlap_size << " " << std::flush;
 
   Points WI = parlay::tabulate(total_batch_size, [&](size_t i) -> Point {
     if (i < overlap_size) {

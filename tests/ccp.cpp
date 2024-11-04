@@ -65,7 +65,7 @@ void runCGAL(auto const& wp, auto const& wi, Typename* cgknn,
   // std::cout << tree.bounding_box() << std::endl;
   size_t sz = wp.size() * batchInsertCheckRatio;
 
-  if (tag & (1 << 0)) {
+  if (tag == 1) {  // NOTE: only insert
     _points.resize(wi.size());
     parlay::parallel_for(0, wi.size(), [&](size_t j) {
       _points[j] =
