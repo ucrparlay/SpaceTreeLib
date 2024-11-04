@@ -124,7 +124,7 @@ void generatePointsSerial(std::ofstream& f) {
   free(node);
 }
 
-int main(int argc, char* argv[]) {
+int main([[maybe_unused]] int argc, char* argv[]) {
   assert(argc >= 4);
   path = std::string(argv[1]);
   N = std::stoll(argv[2]);

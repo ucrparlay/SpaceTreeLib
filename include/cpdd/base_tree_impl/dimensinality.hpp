@@ -8,11 +8,12 @@ template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 inline size_t
 BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::GetImbalanceRatio() {
-  if (auto const env_p = std::getenv("kInbalanceRatio")) {
-    return static_cast<size_t>(std::stoi(env_p));
-  } else {
-    return static_cast<size_t>(kInbalanceRatio);
-  }
+  return static_cast<size_t>(kInbalanceRatio);
+  // if (auto const env_p = std::getenv("kInbalanceRatio")) {
+  //   return static_cast<size_t>(std::stoi(env_p));
+  // } else {
+  //   return static_cast<size_t>(kInbalanceRatio);
+  // }
 }
 
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,

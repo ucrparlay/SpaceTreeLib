@@ -122,15 +122,15 @@ void runKDParallel(auto const& wp, auto const& wi, Typename* kdknn,
   size_t const kDim = std::tuple_size_v<typename Point::Coords>;
 
   Tree tree;
-  constexpr bool kInitMultiRun = false;
+  constexpr bool kTestTime = false;
 
-  BuildTree<Point, Tree, kInitMultiRun>(wp, rounds, tree);
+  BuildTree<Point, Tree, kTestTime>(wp, rounds, tree);
   tree.template Validate<typename Tree::Leaf, typename Tree::Interior,
                          typename Tree::SplitRuleType>();
   puts("---------------finish build tree---------------");
 
   if (tag & (1 << 0)) {
-    BatchInsert<Point, Tree, kInitMultiRun>(tree, wp, wi, 2,
+    BatchInsert<Point, Tree, kTestTime>(tree, wp, wi, 2,
                                             batchInsertCheckRatio);
     tree.template Validate<typename Tree::Leaf, typename Tree::Interior,
                            typename Tree::SplitRuleType>();
@@ -138,7 +138,7 @@ void runKDParallel(auto const& wp, auto const& wi, Typename* kdknn,
   }
 
   if (tag & (1 << 1)) {
-    BatchDelete<Point, Tree, kInitMultiRun>(tree, wp, wi, 2,
+    BatchDelete<Point, Tree, kTestTime>(tree, wp, wi, 2,
                                             batchInsertCheckRatio);
     tree.template Validate<typename Tree::Leaf, typename Tree::Interior,
                            typename Tree::SplitRuleType>();
@@ -146,7 +146,7 @@ void runKDParallel(auto const& wp, auto const& wi, Typename* kdknn,
   }
 
   if (tag & (1 << 2)) {
-    BatchDiff<Point, Tree, kInitMultiRun>(tree, wp, 2, kCCPBatchDiffTotalRatio,
+    BatchDiff<Point, Tree, kTestTime>(tree, wp, 2, kCCPBatchDiffTotalRatio,
                                           kCCPBatchDiffOverlapRatio);
     assert(tree.GetRoot()->size ==
            wp.size() - static_cast<size_t>(wp.size() * kCCPBatchDiffTotalRatio *

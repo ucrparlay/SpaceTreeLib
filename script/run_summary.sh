@@ -1,78 +1,52 @@
 #!/bin/bash
-# {
-# 	sleep 10s
-# 	# kill $$
-# 	pkill -P $$
-# } &
 set -o xtrace
-Solvers=("cgal")
-# Solvers=("zdtree" "test")
-# Node=(100000000 1000000000)
+
+# Solvers=("zdtree" "test" "cgal")
+Solvers=("test")
 Node=(1000000000)
-Dim=(2 3 5 9)
-# Dim=(2 9)
+# Tree=(1)
+Tree=(0 1)
+Dim=(2 3)
 declare -A datas
 datas["/data/legacy/data3/zmen002/kdtree/ss_varden/"]="../benchmark/ss_varden/"
 datas["/data/legacy/data3/zmen002/kdtree/uniform/"]="../benchmark/uniform/"
 
-# tag=2
-tag=0
+tag=$((2#111)) # 1110000
 k=10
-insNum=1
-queryType=$((2#1)) # 1110000
-# queryType=$((2#1001)) # 1110000
-echo $queryType
+insNum=2
+summary=1
+read_file=1
+queryType=$((2#111)) # 1110000
 type="summary"
-rounds=3
-
+round=3
 resFile=""
 
 for solver in "${Solvers[@]}"; do
 	exe="../build/${solver}"
 
 	#* decide output file
-	if [[ ${solver} == "test" ]]; then
-		resFile="res_${type}.out"
-	elif [[ ${solver} == "cgal" ]]; then
-		if [[ ${tag} == 0 ]]; then
-			resFile="cgal_${type}_knn.out"
-		else
-			resFile="cgal_${type}.out"
-		fi
-	elif [[ ${solver} == "zdtree" ]]; then
-		resFile="zdtree_${type}.out"
-		exe="/home/zmen002/pbbsbench_x/build/zdtree"
-	fi
 
-	for dim in "${Dim[@]}"; do
-		if [ "${dim}" -gt 3 ] && [ "${solver}" == "zdtree" ]; then
-			continue
-		fi
+	for tree in "${Tree[@]}"; do
+		resFile="res_${tree}_${type}.out"
 
-		for dataPath in "${!datas[@]}"; do
-			for node in "${Node[@]}"; do
-				files_path="${dataPath}${node}_${dim}"
-				log_path="${datas[${dataPath}]}${node}_${dim}"
-				mkdir -p "${log_path}"
-				dest="${log_path}/${resFile}"
-				: >"${dest}"
-				echo ">>>${dest}"
+		for dim in "${Dim[@]}"; do
+			for dataPath in "${!datas[@]}"; do
+				for node in "${Node[@]}"; do
+					files_path="${dataPath}${node}_${dim}"
+					log_path="${datas[${dataPath}]}${node}_${dim}"
+					mkdir -p "${log_path}"
+					dest="${log_path}/${resFile}"
+					: >"${dest}"
+					echo ">>>${dest}"
 
-				for ((i = 1; i <= insNum; i++)); do
-
-					export PARLAY_NUM_THREADS=192
-					# export TEST_CGAL_THREADS=192
-					numactl -i all ${exe} -p "${files_path}/${i}.in" -k ${k} -t ${tag} -d ${dim} -q ${queryType} -r ${rounds} -i 1 -s 1 >>"${dest}"
-
-					retval=$?
-					if [ ${retval} -eq 124 ]; then
-						echo -e "timeout" >>"${dest}"
-						echo "timeout ${node}_${dim}"
-					else
-						echo "finish ${node}_${dim}"
-					fi
+					for ((i = 1; i <= insNum; i++)); do
+						numactl -i all ${exe} -p "${files_path}/${i}.in" -r ${round} -k ${k} -i ${read_file} -s ${summary} -t ${tag} -d ${dim} -q ${queryType} -T ${tree} >>"${dest}"
+					done
 				done
 			done
 		done
 	done
 done
+
+current_date_time="$(date "+%d %H:%M:%S")"
+echo $current_date_time

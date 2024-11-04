@@ -44,10 +44,10 @@ void TestSpacialTree(int const& kDim, parlay::sequence<Point> const& wp,
     if (kSummary) {
       parlay::sequence<double> const ratios = {0.0001, 0.001, 0.01, 0.1};
       for (size_t i = 0; i < ratios.size(); i++) {
-        BatchDelete<Point, Tree, kTestTime>(tree, wp, wi, kRounds, ratios[i]);
+        BatchDelete<Point, Tree, kTestTime>(tree, wp, wp, kRounds, ratios[i]);
       }
     } else {
-      BatchDelete<Point, Tree, kTestTime>(tree, wp, wi, kRounds,
+      BatchDelete<Point, Tree, kTestTime>(tree, wp, wp, kRounds,
                                           kBatchInsertRatio);
     }
   }
@@ -87,58 +87,26 @@ void TestSpacialTree(int const& kDim, parlay::sequence<Point> const& wp,
     }
   }
 
-  if (kQueryType & (1 << 1)) {  // NOTE: batch NN query
-
-    auto run_batch_knn = [&](Points const& pts, size_t batchSize) {
-      Points newPts(batchSize);
-      parlay::copy(pts.cut(0, batchSize), newPts.cut(0, batchSize));
-      kdknn = new Typename[batchSize];
-      queryKNN<Point, Tree, true, true>(kDim, newPts, kRounds, tree, kdknn, K,
-                                        true);
-      delete[] kdknn;
-    };
-
-    run_batch_knn(wp, static_cast<size_t>(wp.size() * batchQueryRatio));
-    std::vector<double> const batchRatios = {0.001, 0.01, 0.1, 0.2, 0.5};
-    for (auto ratio : batchRatios) {
-      run_batch_knn(wp, static_cast<size_t>(wp.size() * ratio));
-    }
-    // for (auto ratio : batchRatios) {
-    //   run_batch_knn(wi, static_cast<size_t>(wi.size() * ratio));
-    // }
-  }
-
-  if (kQueryType & (1 << 2)) {  // NOTE: range count
+  if (kQueryType & (1 << 1)) {  // NOTE: range count
     int recNum = rangeQueryNum;
     kdknn = new Typename[recNum];
-    // int const type[3] = {0, 1, 2};
 
     // std::cout << std::endl;
     for (int i = 0; i < 3; i++) {
       rangeCountFix<Point>(wp, tree, kdknn, kRounds, i, recNum, kDim);
-      // rangeCountFixWithLog<Point>(wp, tree, kdknn,
-      //                             singleQueryLogRepeatNum, type[i],
-      //                             recNum, kDim);
     }
-    // rangeCountFix<Point>(wp, tree, kdknn, kRounds, 2, recNum, kDim);
 
     delete[] kdknn;
   }
 
-  if (kQueryType & (1 << 3)) {  // NOTE: range query
+  if (kQueryType & (1 << 2)) {  // NOTE: range query
     if (kSummary == 0) {
       int recNum = rangeQueryNum;
       kdknn = new Typename[recNum];
-      // int const type[3] = {0, 1, 2};
 
-      // std::cout << std::endl;
       for (int i = 0; i < 3; i++) {
-        //* run range count to obtain size
         Points Out;
         rangeQueryFix<Point>(wp, tree, kdknn, kRounds, Out, i, recNum, kDim);
-        // rangeQuerySerialWithLog<Point>(wp, tree, kdknn,
-        //                                singleQueryLogRepeatNum, Out,
-        //                                type[i], recNum, kDim);
       }
       delete[] kdknn;
     } else if (kSummary == 1) {  // NOTE: for kSummary
@@ -434,7 +402,7 @@ int main(int argc, char* argv[]) {
   int K = P.getOptionIntValue("-k", 100);
   int kDim = P.getOptionIntValue("-d", 3);
   size_t N = P.getOptionLongValue("-n", -1);
-  int tag = P.getOptionIntValue("-t", 1);
+  int kTag = P.getOptionIntValue("-t", 1);
   int kRounds = P.getOptionIntValue("-r", 3);
   int kQueryType = P.getOptionIntValue("-q", 0);
   int read_insert_file = P.getOptionIntValue("-i", 1);
@@ -467,16 +435,16 @@ int main(int argc, char* argv[]) {
         int pos = std::string(input_file_path).rfind("/") + 1;
         insert_file_path = std::string(input_file_path).substr(0, pos) +
                            std::to_string(id) + ".in";
-        auto [n, d] =
+        [[maybe_unused]] auto [n, d] =
             read_points<PointTypeAlias>(insert_file_path.c_str(), wi, K);
         assert(d == kDim);
       }
 
-      TestSpacialTree<Desc>(kDim, wp, wi, N, K, kRounds, insert_file_path, tag,
+      TestSpacialTree<Desc>(kDim, wp, wi, N, K, kRounds, insert_file_path, kTag,
                             kQueryType, kSummary);
     };
 
-    if (tag == -1) {
+    if (kTag == -1) {
       // NOTE: serial run
       ;
     } else if (kDim == 2) {
