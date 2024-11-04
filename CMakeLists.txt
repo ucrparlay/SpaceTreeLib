@@ -117,7 +117,7 @@ if(CGAL)
 	# target_link_libraries(cgal PUBLIC SpatialTrees CGAL::CGAL CGAL::TBB_support)
 	# target_include_directories(cgal PUBLIC ${PROJECT_SOURCE_DIR}/include )
 
-	add_executable(ccp ${PROJECT_SOURCE_DIR}/tests/checkCorrectParallel.cpp)
+	add_executable(ccp ${PROJECT_SOURCE_DIR}/tests/ccp.cpp)
 	target_link_libraries(ccp PUBLIC SpatialTrees CGAL::CGAL CGAL::TBB_support)
 endif()
 

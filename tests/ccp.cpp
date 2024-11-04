@@ -16,7 +16,7 @@
 #include "cpdd/dependence/splitter.h"
 #include "cpdd/kd_tree.h"
 #include "cpdd/orth_tree.h"
-#include "testFramework.h"
+#include "test_framework.h"
 // using point = PointID<coord, 5>;
 // using point = PointType<Coord, 2>;
 // using points = parlay::sequence<point>;

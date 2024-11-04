@@ -6,7 +6,7 @@
 #include "cpdd/dependence/splitter.h"
 #include "cpdd/kd_tree.h"
 #include "parlay/primitives.h"
-#include "testFramework.h"
+#include "test_framework.h"
 
 template <class TreeDesc, typename Point>
 void TestSpacialTree(int const& kDim, parlay::sequence<Point> const& wp,

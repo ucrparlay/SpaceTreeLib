@@ -18,7 +18,7 @@
 #include "parlay/internal/get_time.h"
 #include "parlay/parallel.h"
 #include "parlay/slice.h"
-#include "testFramework.h"
+#include "test_framework.h"
 #define TBB_PREVIEW_GLOBAL_CONTROL 1
 #include <tbb/global_control.h>
 

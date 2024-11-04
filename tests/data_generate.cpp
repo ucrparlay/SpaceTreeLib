@@ -2,7 +2,7 @@
 #include <iostream>
 #include <string>
 
-#include "testFramework.h"
+#include "test_framework.h"
 
 constexpr int MAX_DIM = 10;
 

@@ -119,7 +119,7 @@ In default, the PSPTs stores all coordinates of points in 64-bit integer (`long`
 
 ## Test Framework Format
 
-Implemented in `tests/testFramework.h`.
+Implemented in `tests/test_framework.h`.
 
 The test starts with $n$ input points $P$, and $\alpha\cdot n$ points $Q$ for insertion and deletion, where $\alpha\in[0,1]$. We also have one integer $t\in\{0,1,2\}$ marks the mode for batch operation before query and another integer $q$ stands for the type of query.
 
