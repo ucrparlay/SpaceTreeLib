@@ -92,7 +92,7 @@ void runCGAL(auto const& wp, auto const& wi, Typename* cgknn,
   std::cout << "begin tbb query" << std::endl << std::flush;
   assert(tree.is_built());
 
-  if (query_type == 0) {  //* NN
+  if (query_type & (1 << 0)) {  //* NN
     // size_t S = wp.size();
     size_t S = batchQuerySize;
     tbb::parallel_for(tbb::blocked_range<std::size_t>(0, S),
@@ -124,10 +124,10 @@ void runKDParallel(auto const& wp, auto const& wi, Typename* kdknn,
   Tree tree;
   constexpr bool kInitMultiRun = false;
 
-  puts("---------------build tree---------------");
   BuildTree<Point, Tree, kInitMultiRun>(wp, rounds, tree);
   tree.template Validate<typename Tree::Leaf, typename Tree::Interior,
                          typename Tree::SplitRuleType>();
+  puts("---------------finish build tree---------------");
 
   if (tag & (1 << 0)) {
     BatchInsert<Point, Tree, kInitMultiRun>(tree, wp, wi, 2,
@@ -146,20 +146,20 @@ void runKDParallel(auto const& wp, auto const& wi, Typename* kdknn,
   }
 
   if (tag & (1 << 2)) {
+    std::cout << tree.GetRoot()->size << std::endl;
     BatchDiff<Point, Tree, kInitMultiRun>(tree, wp, 2, kCCPBatchDiffTotalRatio,
                                           kCCPBatchDiffOverlapRatio);
+    std::cout << tree.GetRoot()->size << std::endl;
     assert(tree.GetRoot()->size ==
-           wp.size() -
-               static_cast<size_t>(wp.size() * kCCPBatchDiffOverlapRatio));
+           wp.size() - static_cast<size_t>(wp.size() * kCCPBatchDiffTotalRatio *
+                                           kCCPBatchDiffOverlapRatio));
     tree.template Validate<typename Tree::Leaf, typename Tree::Interior,
                            typename Tree::SplitRuleType>();
     std::cout << "---------------finish diff------------------" << std::endl;
   }
 
   // NOTE: query phase
-  std::cout << "begin kd query" << std::endl;
   if (query_type & (1 << 0)) {  // NOTE: NN query
-    std::cout << "--------------do NN query------------------" << std::endl;
     Points new_wp(batchQuerySize);
     parlay::copy(wp.cut(0, batchQuerySize), new_wp.cut(0, batchQuerySize));
     queryKNN<Point>(kDim, wp, rounds, tree, kdknn, K, true);
@@ -174,8 +174,10 @@ void runKDParallel(auto const& wp, auto const& wi, Typename* kdknn,
         abort();
       }
     }
-  } else if (query_type & (1 << 1)) {  // NOTE: range count
-    std::cout << "--------------range count------------------" << std::endl;
+    std::cout << "--------------finish NN query------------------" << std::endl;
+  }
+
+  if (query_type & (1 << 1)) {  // NOTE: range count
     for (auto range_query_type : {0, 1, 2}) {
       if (tag & (1 << 2)) {
         Points new_wp(tree.GetRoot()->size);
@@ -187,8 +189,11 @@ void runKDParallel(auto const& wp, auto const& wi, Typename* kdknn,
                           kDim);
       }
     }
-  } else if (query_type & (1 << 2)) {  // NOTE: range query
-    std::cout << "--------------range query------------------" << std::endl;
+    std::cout << "--------------finish range count------------------"
+              << std::endl;
+  }
+
+  if (query_type & (1 << 2)) {  // NOTE: range query
     for (auto range_query_type : {0, 1, 2}) {
       if (tag & (1 << 2)) {
         Points new_wp(tree.GetRoot()->size);
@@ -200,6 +205,8 @@ void runKDParallel(auto const& wp, auto const& wi, Typename* kdknn,
                           kDim);
       }
     }
+    std::cout << "--------------finish range query------------------"
+              << std::endl;
   }
 
   tree.DeleteTree();

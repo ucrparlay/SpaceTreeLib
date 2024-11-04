@@ -111,7 +111,7 @@ void BaseTree<Point, DerivedTree, kBDO>::CheckTreeSameSequential(Node* T,
 template <typename Point, typename DerivedTree, uint_fast8_t kBDO>
 template <typename Leaf, typename Interior, typename SplitRule>
 void BaseTree<Point, DerivedTree, kBDO>::Validate() {
-  std::cout << "\n>>> begin validate tree" << std::endl << std::flush;
+  std::cout << ">>> begin validate tree" << std::endl << std::flush;
   if (LegalBox(CheckBox<Leaf, Interior>(this->root_, this->tree_box_))) {
     std::cout << "Correct bounding Box" << std::endl << std::flush;
   } else {

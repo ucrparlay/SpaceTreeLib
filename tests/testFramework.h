@@ -280,13 +280,13 @@ void BatchDelete(Tree& pkd, parlay::sequence<Point> const& WP,
 }
 
 template <typename Point, typename Tree, bool kInitMultiRun = true>
-void BatchDiff(Tree& pkd, parlay::sequence<Point> const& WP,
-               [[maybe_unused]] uint_fast8_t const& DIM, int const& rounds,
+void BatchDiff(Tree& pkd, parlay::sequence<Point> const& WP, int const& rounds,
                double const total_ratio = 1.0,
                double const overlap_ratio = 0.5) {
   using Points = typename Tree::Points;
   size_t total_batch_size = static_cast<size_t>(WP.size() * total_ratio);
   size_t overlap_size = static_cast<size_t>(total_batch_size * overlap_ratio);
+  std::cout << overlap_size << " " << std::flush;
 
   Points WI = parlay::tabulate(total_batch_size, [&](size_t i) -> Point {
     if (i < overlap_size) {
@@ -315,6 +315,7 @@ void BatchDiff(Tree& pkd, parlay::sequence<Point> const& WP,
     std::cout << aveDelete << " " << std::flush;
     BuildTree<Point, Tree, false>(WP, rounds, pkd);
   } else {
+    parlay::copy(WI, wi);
     pkd.BatchDiff(wi.cut(0, total_batch_size));
   }
 
