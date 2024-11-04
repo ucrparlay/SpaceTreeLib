@@ -6,9 +6,10 @@ namespace cpdd {
 
 // NOTE: default batch delete
 template <typename Point, typename SplitRule, uint_fast8_t kMD,
-          uint_fast8_t kBDO>
+          uint_fast8_t kSkHeight, uint_fast8_t kImbaRatio>
 template <typename Range>
-void OrthTree<Point, SplitRule, kMD, kBDO>::BatchDelete(Range&& In) {
+void OrthTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::BatchDelete(
+    Range&& In) {
   static_assert(parlay::is_random_access_range_v<Range>);
   static_assert(
       parlay::is_less_than_comparable_v<parlay::range_reference_type_t<Range>>);
@@ -22,8 +23,9 @@ void OrthTree<Point, SplitRule, kMD, kBDO>::BatchDelete(Range&& In) {
 
 // NOTE: assume all Points are fully covered in the tree
 template <typename Point, typename SplitRule, uint_fast8_t kMD,
-          uint_fast8_t kBDO>
-void OrthTree<Point, SplitRule, kMD, kBDO>::BatchDelete_(Slice A) {
+          uint_fast8_t kSkHeight, uint_fast8_t kImbaRatio>
+void OrthTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::BatchDelete_(
+    Slice A) {
   Points B = Points::uninitialized(A.size());
   this->root_ = BatchDeleteRecursive(this->root_, A, parlay::make_slice(B),
                                      this->tree_box_, 1);
@@ -33,9 +35,11 @@ void OrthTree<Point, SplitRule, kMD, kBDO>::BatchDelete_(Slice A) {
 // NOTE: delete with rebuild, with the assumption that all Points are in the
 // tree
 template <typename Point, typename SplitRule, uint_fast8_t kMD,
-          uint_fast8_t kBDO>
-Node* OrthTree<Point, SplitRule, kMD, kBDO>::BatchDeleteRecursive(
-    Node* T, Slice In, Slice Out, Box const& box, bool has_tomb) {
+          uint_fast8_t kSkHeight, uint_fast8_t kImbaRatio>
+Node* OrthTree<Point, SplitRule, kMD, kSkHeight,
+               kImbaRatio>::BatchDeleteRecursive(Node* T, Slice In, Slice Out,
+                                                 Box const& box,
+                                                 bool has_tomb) {
   size_t n = In.size();
 
   if (n == 0) {

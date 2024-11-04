@@ -287,10 +287,10 @@ int main(int argc, char* argv[]) {
         }
       } else if (query_type & (1 << 1)) {  //* range Count
         kdknn = new Coord[query_num];
-        cgknn = new Coord[0];
+        cgknn = new Coord[1];
       } else if (query_type & (1 << 2)) {
         kdknn = new Coord[query_num];
-        cgknn = new Coord[0];
+        cgknn = new Coord[1];
       } else {
         puts("wrong query type");
         abort();
@@ -299,6 +299,8 @@ int main(int argc, char* argv[]) {
       // NOTE: run the test
       runKDParallel<PointTypeAlias, Desc>(wp, wi, kdknn, cgknn, query_num,
                                           query_type, K, tag, kRounds);
+      delete[] cgknn;
+      delete[] kdknn;
     };
 
     if (tag == -1) {

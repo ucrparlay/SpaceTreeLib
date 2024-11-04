@@ -8,9 +8,10 @@ namespace cpdd {
 
 // NOTE: default batch delete
 template <typename Point, typename SplitRule, uint_fast8_t kMD,
-          uint_fast8_t kBDO>
+          uint_fast8_t kSkHeight, uint_fast8_t kImbaRatio>
 template <typename Range>
-void OrthTree<Point, SplitRule, kMD, kBDO>::BatchDiff(Range&& In) {
+void OrthTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::BatchDiff(
+    Range&& In) {
   static_assert(parlay::is_random_access_range_v<Range>);
   static_assert(
       parlay::is_less_than_comparable_v<parlay::range_reference_type_t<Range>>);
@@ -24,8 +25,9 @@ void OrthTree<Point, SplitRule, kMD, kBDO>::BatchDiff(Range&& In) {
 
 // NOTE: assume points are partially covered in the tree
 template <typename Point, typename SplitRule, uint_fast8_t kMD,
-          uint_fast8_t kBDO>
-void OrthTree<Point, SplitRule, kMD, kBDO>::BatchDiff_(Slice A) {
+          uint_fast8_t kSkHeight, uint_fast8_t kImbaRatio>
+void OrthTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::BatchDiff_(
+    Slice A) {
   // NOTE: diff points from the tree
   Points B = Points::uninitialized(A.size());
   this->root_ = BatchDiffRecursive(this->root_, A, parlay::make_slice(B),
@@ -45,9 +47,10 @@ void OrthTree<Point, SplitRule, kMD, kBDO>::BatchDiff_(Slice A) {
 // NOTE: delete with rebuild, with the assumption that all Points are in the
 // tree
 template <typename Point, typename SplitRule, uint_fast8_t kMD,
-          uint_fast8_t kBDO>
-Node* OrthTree<Point, SplitRule, kMD, kBDO>::BatchDiffRecursive(
-    Node* T, Slice In, Slice Out, Box const& box) {
+          uint_fast8_t kSkHeight, uint_fast8_t kImbaRatio>
+Node* OrthTree<Point, SplitRule, kMD, kSkHeight,
+               kImbaRatio>::BatchDiffRecursive(Node* T, Slice In, Slice Out,
+                                               Box const& box) {
   size_t n = In.size();
 
   if (n == 0) {

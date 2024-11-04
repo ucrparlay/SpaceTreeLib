@@ -3,9 +3,10 @@
 #include "../base_tree.h"
 
 namespace cpdd {
-template <typename Point, typename DerivedTree, uint_fast8_t kBDO>
-struct BaseTree<Point, DerivedTree, kBDO>::BoxCut {
-  using BT = BaseTree<Point, DerivedTree, kBDO>;
+template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
+struct BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::BoxCut {
+  using BT = BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>;
 
   BoxCut(Box const& box, HyperPlane const& hp, bool go_left)
       : box(box), hp(hp), go_left(go_left) {}

@@ -8,9 +8,10 @@
 #include "cpdd/dependence/tree_node.h"
 
 namespace cpdd {
-template <typename Point, typename SplitRule, uint_fast8_t kBDO>
+template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
 template <typename Range>
-void KdTree<Point, SplitRule, kBDO>::Build(Range&& In) {
+void KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::Build(Range&& In) {
   static_assert(parlay::is_random_access_range_v<Range>);
   static_assert(
       parlay::is_less_than_comparable_v<parlay::range_reference_type_t<Range>>);
@@ -21,10 +22,11 @@ void KdTree<Point, SplitRule, kBDO>::Build(Range&& In) {
   Build_(A);
 }
 
-template <typename Point, typename SplitRule, uint_fast8_t kBDO>
-void KdTree<Point, SplitRule, kBDO>::DivideRotate(Slice In, SplitterSeq& pivots,
-                                                  DimsType dim, BucketType idx,
-                                                  BoxSeq& boxs, Box const& bx) {
+template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
+void KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::DivideRotate(
+    Slice In, SplitterSeq& pivots, DimsType dim, BucketType idx, BoxSeq& boxs,
+    Box const& bx) {
   if (idx > BT::kPivotNum) {
     // WARN: sometimes cut dimension can be -1
     //  never use pivots[idx].first to check whether it is in bucket;
@@ -55,11 +57,11 @@ void KdTree<Point, SplitRule, kBDO>::DivideRotate(Slice In, SplitterSeq& pivots,
 }
 
 // NOTE: starting at dimesion dim and pick pivots in a rotation manner
-template <typename Point, typename SplitRule, uint_fast8_t kBDO>
-void KdTree<Point, SplitRule, kBDO>::PickPivots(Slice In, size_t const& n,
-                                                SplitterSeq& pivots,
-                                                DimsType const dim,
-                                                BoxSeq& boxs, Box const& bx) {
+template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
+void KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::PickPivots(
+    Slice In, size_t const& n, SplitterSeq& pivots, DimsType const dim,
+    BoxSeq& boxs, Box const& bx) {
   size_t size = std::min(n, static_cast<size_t>(32 * BT::kBucketNum));
   assert(size <= n);
 
@@ -71,10 +73,10 @@ void KdTree<Point, SplitRule, kBDO>::PickPivots(Slice In, size_t const& n,
   return;
 }
 
-template <typename Point, typename SplitRule, uint_fast8_t kBDO>
-Node* KdTree<Point, SplitRule, kBDO>::SerialBuildRecursive(Slice In, Slice Out,
-                                                           DimsType dim,
-                                                           Box const& bx) {
+template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
+Node* KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::SerialBuildRecursive(
+    Slice In, Slice Out, DimsType dim, Box const& bx) {
   size_t n = In.size();
 
   if (n == 0) return AllocEmptyLeafNode<Slice, Leaf>();
@@ -126,10 +128,10 @@ Node* KdTree<Point, SplitRule, kBDO>::SerialBuildRecursive(Slice In, Slice Out,
   return AllocInteriorNode<Interior>(L, R, split, AugType());
 }
 
-template <typename Point, typename SplitRule, uint_fast8_t kBDO>
-Node* KdTree<Point, SplitRule, kBDO>::BuildRecursive(Slice In, Slice Out,
-                                                     DimsType dim,
-                                                     Box const& bx) {
+template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
+Node* KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BuildRecursive(
+    Slice In, Slice Out, DimsType dim, Box const& bx) {
   assert(In.size() == 0 || BT::WithinBox(BT::GetBox(In), bx));
 
   // if (In.size()) {
@@ -184,8 +186,9 @@ Node* KdTree<Point, SplitRule, kBDO>::BuildRecursive(Slice In, Slice Out,
   return BT::template BuildInnerTree<Interior>(1, pivots, tree_nodes);
 }
 
-template <typename Point, typename SplitRule, uint_fast8_t kBDO>
-void KdTree<Point, SplitRule, kBDO>::Build_(Slice A) {
+template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
+void KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::Build_(Slice A) {
   Points B = Points::uninitialized(A.size());
   this->tree_box_ = BT::GetBox(A);
   this->root_ = BuildRecursive(A, B.cut(0, A.size()), 0, this->tree_box_);

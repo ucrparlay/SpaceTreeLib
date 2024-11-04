@@ -10,6 +10,7 @@
 
 #include "basic_point.h"
 #include "comparator.h"
+#include "cpdd/base_tree.h"
 #include "parlay/utilities.h"
 
 namespace cpdd {

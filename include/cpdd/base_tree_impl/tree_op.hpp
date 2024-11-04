@@ -14,10 +14,11 @@
 #include "parlay/slice.h"
 
 namespace cpdd {
-template <typename Point, typename DerivedTree, uint_fast8_t kBDO>
+template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
 template <typename Leaf, typename Interior, typename... Args>
-Node* BaseTree<Point, DerivedTree, kBDO>::RebuildWithInsert(Node* T, Slice In,
-                                                            Args&&... args) {
+Node* BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::RebuildWithInsert(
+    Node* T, Slice In, Args&&... args) {
   Points wx, wo;
   PrepareRebuild<Leaf, Interior>(T, In, wx, wo);
   static_assert(
@@ -28,10 +29,11 @@ Node* BaseTree<Point, DerivedTree, kBDO>::RebuildWithInsert(Node* T, Slice In,
       std::forward<Args>(args)..., GetBox(parlay::make_slice(wx)));
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t kBDO>
+template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
 template <typename Leaf, typename Interior, bool granularity, typename... Args>
-Node* BaseTree<Point, DerivedTree, kBDO>::RebuildSingleTree(Node* T,
-                                                            Args&&... args) {
+Node* BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::RebuildSingleTree(
+    Node* T, Args&&... args) {
   Points wx, wo;
   PrepareRebuild<Leaf, Interior, granularity>(T, wx, wo);
   static_assert(std::is_invocable_v<decltype(&DerivedTree::BuildRecursive),
@@ -41,10 +43,11 @@ Node* BaseTree<Point, DerivedTree, kBDO>::RebuildSingleTree(Node* T,
       std::forward<Args>(args)...);
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t kBDO>
+template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
 template <typename Leaf, IsBinaryNode Interior, bool granularity,
           typename PrepareFunc, typename... Args>
-Node* BaseTree<Point, DerivedTree, kBDO>::RebuildTreeRecursive(
+Node* BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::RebuildTreeRecursive(
     Node* T, PrepareFunc&& prepare_func, Args&&... args) {
   if (T->is_leaf) {
     return T;
@@ -91,10 +94,11 @@ void call_helper(std::integer_sequence<size_t, Is...>, F f, PF,
   f(typename PF::template rebuild<Is>()(args)...);
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t kBDO>
+template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
 template <typename Leaf, IsMultiNode Interior, bool granularity,
           typename PrepareFunc, typename... Args>
-Node* BaseTree<Point, DerivedTree, kBDO>::RebuildTreeRecursive(
+Node* BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::RebuildTreeRecursive(
     Node* T, PrepareFunc&& prepare_func, Args&&... args) {
   if (T->is_leaf) {
     return T;
@@ -139,17 +143,19 @@ Node* BaseTree<Point, DerivedTree, kBDO>::RebuildTreeRecursive(
   return T;
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t kBDO>
+template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
 template <SupportsForceParallel Interior, bool granularity>
-inline bool BaseTree<Point, DerivedTree, kBDO>::ForceParallelRecursion(
-    Interior const* TI) {
+inline bool BaseTree<Point, DerivedTree, kSkHeight,
+                     kImbaRatio>::ForceParallelRecursion(Interior const* TI) {
   return (granularity && TI->size > kSerialBuildCutoff) ||
          (!granularity && TI->ForceParallel());
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t kBDO>
+template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
 template <IsBinaryNode Interior>
-Node* BaseTree<Point, DerivedTree, kBDO>::BuildInnerTree(
+Node* BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::BuildInnerTree(
     BucketType idx, HyperPlaneSeq const& pivots,
     parlay::sequence<Node*> const& tree_nodes) {
   if (idx > kPivotNum) {
@@ -163,9 +169,10 @@ Node* BaseTree<Point, DerivedTree, kBDO>::BuildInnerTree(
                                      typename Interior::AT());
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t kBDO>
+template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
 template <IsMultiNode Interior>
-Node* BaseTree<Point, DerivedTree, kBDO>::BuildInnerTree(
+Node* BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::BuildInnerTree(
     BucketType idx, HyperPlaneSeq const& pivots,
     parlay::sequence<Node*> const& tree_nodes) {
   assert(idx < kPivotNum + kBucketNum + 1);
@@ -189,10 +196,11 @@ Node* BaseTree<Point, DerivedTree, kBDO>::BuildInnerTree(
                                      typename Interior::AT());
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t kBDO>
+template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
 template <typename Leaf, typename Range>
-void BaseTree<Point, DerivedTree, kBDO>::ExtractPointsInLeaf(Node* T,
-                                                             Range Out) {
+void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::ExtractPointsInLeaf(
+    Node* T, Range Out) {
   Leaf* TL = static_cast<Leaf*>(T);
   if (TL->is_dummy) {
     std::ranges::fill_n(Out.begin(), TL->size, TL->pts[0]);
@@ -202,10 +210,12 @@ void BaseTree<Point, DerivedTree, kBDO>::ExtractPointsInLeaf(Node* T,
   return;
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t kBDO>
+template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
 template <typename Leaf, IsBinaryNode Interior, typename Range,
           bool granularity>
-void BaseTree<Point, DerivedTree, kBDO>::FlattenRec(Node* T, Range Out) {
+void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::FlattenRec(
+    Node* T, Range Out) {
   assert(T->size == Out.size());
 
   if (T->size == 0) return;
@@ -231,9 +241,11 @@ void BaseTree<Point, DerivedTree, kBDO>::FlattenRec(Node* T, Range Out) {
   return;
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t kBDO>
+template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
 template <typename Leaf, IsMultiNode Interior, typename Range, bool granularity>
-void BaseTree<Point, DerivedTree, kBDO>::FlattenRec(Node* T, Range Out) {
+void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::FlattenRec(
+    Node* T, Range Out) {
   if (T->size != Out.size()) {
     std::cout << "T->size: " << T->size << " Out.size(): " << Out.size()
               << std::endl;
@@ -276,10 +288,11 @@ void BaseTree<Point, DerivedTree, kBDO>::FlattenRec(Node* T, Range Out) {
   return;
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t kBDO>
+template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
 template <typename Leaf, IsMultiNode Interior, typename Range, bool granularity>
-void BaseTree<Point, DerivedTree, kBDO>::PartialFlatten(Node* T, Range Out,
-                                                        BucketType idx) {
+void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::PartialFlatten(
+    Node* T, Range Out, BucketType idx) {
   if (idx == 1) {
     assert(T->size == Out.size());
     FlattenRec<Leaf, Interior>(T, Out.cut(0, T->size));
@@ -307,9 +320,10 @@ void BaseTree<Point, DerivedTree, kBDO>::PartialFlatten(Node* T, Range Out,
   return;
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t kBDO>
+template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
 template <IsBinaryNode BN, IsMultiNode MN>
-Node* BaseTree<Point, DerivedTree, kBDO>::ExpandMultiNode(
+Node* BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::ExpandMultiNode(
     typename MN::ST const& split, BucketType idx, BucketType deep,
     parlay::sequence<Node*> const& tree_nodes) {
   if (idx >= MN::kRegions) {
@@ -323,10 +337,12 @@ Node* BaseTree<Point, DerivedTree, kBDO>::ExpandMultiNode(
   return o;
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t kBDO>
+template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
 template <IsBinaryNode BN, IsMultiNode MN>
   requires std::same_as<typename BN::ST, typename MN::ST::value_type>
-Node* BaseTree<Point, DerivedTree, kBDO>::Expand2Binary(Node* T) {
+Node* BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::Expand2Binary(
+    Node* T) {
   if (T->is_leaf) {
     return T;
   }
@@ -346,10 +362,11 @@ Node* BaseTree<Point, DerivedTree, kBDO>::Expand2Binary(Node* T) {
 }
 
 // NOTE: update the info of T by new children L and R
-template <typename Point, typename DerivedTree, uint_fast8_t kBDO>
+template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
 template <IsBinaryNode Interior>
-inline void BaseTree<Point, DerivedTree, kBDO>::UpdateInterior(Node* T, Node* L,
-                                                               Node* R) {
+inline void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::UpdateInterior(
+    Node* T, Node* L, Node* R) {
   assert(!T->is_leaf);
   Interior* TI = static_cast<Interior*>(T);
   TI->ResetParallelFlag();
@@ -359,9 +376,10 @@ inline void BaseTree<Point, DerivedTree, kBDO>::UpdateInterior(Node* T, Node* L,
   return;
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t kBDO>
+template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
 template <IsBinaryNode Interior>
-inline void BaseTree<Point, DerivedTree, kBDO>::UpdateInterior(
+inline void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::UpdateInterior(
     Node* T, NodeBox const& L, NodeBox const& R) {
   assert(!T->is_leaf);
   Interior* TI = static_cast<Interior*>(T);
@@ -372,9 +390,10 @@ inline void BaseTree<Point, DerivedTree, kBDO>::UpdateInterior(
   return;
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t kBDO>
+template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
 template <IsMultiNode Interior>
-inline void BaseTree<Point, DerivedTree, kBDO>::UpdateInterior(
+inline void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::UpdateInterior(
     Node* T, typename Interior::NodeArr const& new_nodes) {
   assert(!T->is_leaf);
   Interior* TI = static_cast<Interior*>(T);
@@ -386,9 +405,11 @@ inline void BaseTree<Point, DerivedTree, kBDO>::UpdateInterior(
   return;
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t kBDO>
+template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
 template <typename Leaf>
-Node* BaseTree<Point, DerivedTree, kBDO>::InsertPoints2Leaf(Node* T, Slice In) {
+Node* BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::InsertPoints2Leaf(
+    Node* T, Slice In) {
   Leaf* TL = static_cast<Leaf*>(T);
   if (TL->is_dummy) {
     T->size += In.size();
@@ -405,9 +426,11 @@ Node* BaseTree<Point, DerivedTree, kBDO>::InsertPoints2Leaf(Node* T, Slice In) {
   return T;
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t kBDO>
+template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
 template <typename Leaf, typename RT>
-RT BaseTree<Point, DerivedTree, kBDO>::DeletePoints4Leaf(Node* T, Slice In) {
+RT BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::DeletePoints4Leaf(
+    Node* T, Slice In) {
   assert(T->size >= In.size());
   Leaf* TL = static_cast<Leaf*>(T);
 
@@ -449,9 +472,11 @@ RT BaseTree<Point, DerivedTree, kBDO>::DeletePoints4Leaf(Node* T, Slice In) {
   }
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t kBDO>
+template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
 template <typename Leaf, typename RT>
-RT BaseTree<Point, DerivedTree, kBDO>::DiffPoints4Leaf(Node* T, Slice In) {
+RT BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::DiffPoints4Leaf(
+    Node* T, Slice In) {
   Leaf* TL = static_cast<Leaf*>(T);
 
   if (TL->is_dummy) {

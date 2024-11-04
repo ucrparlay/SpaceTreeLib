@@ -5,10 +5,11 @@
 #include "../base_tree.h"
 
 namespace cpdd {
-template <typename Point, typename DerivedTree, uint_fast8_t kBDO>
+template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
 template <typename Leaf, typename Interior>
-struct BaseTree<Point, DerivedTree, kBDO>::InnerTree {
-  using BT = BaseTree<Point, DerivedTree, kBDO>;
+struct BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::InnerTree {
+  using BT = BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>;
   InnerTree(BT& _BTRef)
       : BTRef(_BTRef),
         tags_num(0),

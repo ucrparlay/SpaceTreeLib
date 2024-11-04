@@ -9,10 +9,11 @@
 namespace cpdd {
 
 // NOTE: distance between two Points
-template <typename Point, typename DerivedTree, uint_fast8_t kBDO>
-inline typename BaseTree<Point, DerivedTree, kBDO>::Coord
-BaseTree<Point, DerivedTree, kBDO>::P2PDistance(Point const& p,
-                                                Point const& q) {
+template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
+inline typename BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::Coord
+BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::P2PDistance(
+    Point const& p, Point const& q) {
   Coord r = 0;
   for (DimsType i = 0; i < kDim; ++i) {
     r += (p.pnt[i] - q.pnt[i]) * (p.pnt[i] - q.pnt[i]);
@@ -22,10 +23,13 @@ BaseTree<Point, DerivedTree, kBDO>::P2PDistance(Point const& p,
 
 // NOTE: Distance between a Point and a Box
 // return 0 when p is inside the box a
-template <typename Point, typename DerivedTree, uint_fast8_t kBDO>
-inline typename BaseTree<Point, DerivedTree, kBDO>::Coord
-BaseTree<Point, DerivedTree, kBDO>::P2BMinDistance(
-    Point const& p, typename BaseTree<Point, DerivedTree, kBDO>::Box const& a) {
+template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
+inline typename BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::Coord
+BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::P2BMinDistance(
+    Point const& p,
+    typename BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::Box const&
+        a) {
   Coord r = 0;
   for (DimsType i = 0; i < kDim; ++i) {
     if (Num::Lt(p.pnt[i], a.first.pnt[i])) {
@@ -38,10 +42,13 @@ BaseTree<Point, DerivedTree, kBDO>::P2BMinDistance(
 }
 
 // NOTE: Max distance between a Point and a Box
-template <typename Point, typename DerivedTree, uint_fast8_t kBDO>
-inline typename BaseTree<Point, DerivedTree, kBDO>::Coord
-BaseTree<Point, DerivedTree, kBDO>::P2BMaxDistance(
-    Point const& p, typename BaseTree<Point, DerivedTree, kBDO>::Box const& a) {
+template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
+inline typename BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::Coord
+BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::P2BMaxDistance(
+    Point const& p,
+    typename BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::Box const&
+        a) {
   Coord r = 0;
   for (DimsType i = 0; i < kDim; ++i) {
     if (Num::Lt(p.pnt[i], (a.second.pnt[i] + a.first.pnt[i]) / 2)) {
@@ -55,11 +62,11 @@ BaseTree<Point, DerivedTree, kBDO>::P2BMaxDistance(
 
 // NOTE: early return the partial distance between p and q if it is larger than
 // r else return the distance between p and q
-template <typename Point, typename DerivedTree, uint_fast8_t kBDO>
-inline typename BaseTree<Point, DerivedTree, kBDO>::Coord
-BaseTree<Point, DerivedTree, kBDO>::InterruptibleDistance(Point const& p,
-                                                          Point const& q,
-                                                          Coord up) {
+template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
+inline typename BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::Coord
+BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::InterruptibleDistance(
+    Point const& p, Point const& q, Coord up) {
   Coord r = 0;
   DimsType i = 0;
   if (kDim >= 6) {
@@ -89,9 +96,10 @@ BaseTree<Point, DerivedTree, kBDO>::InterruptibleDistance(Point const& p,
 }
 
 // NOTE: KNN search for Point q
-template <typename Point, typename DerivedTree, uint_fast8_t kBDO>
+template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
 template <typename Leaf, typename Range>
-void BaseTree<Point, DerivedTree, kBDO>::KNNLeaf(
+void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::KNNLeaf(
     Node* T, Point const& q, kBoundedQueue<Point, Range>& bq) {
   assert(T->is_leaf);
 
@@ -115,9 +123,10 @@ void BaseTree<Point, DerivedTree, kBDO>::KNNLeaf(
   return;
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t kBDO>
+template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
 template <typename Leaf, IsBinaryNode Interior, typename Range>
-void BaseTree<Point, DerivedTree, kBDO>::KNNBinary(
+void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::KNNBinary(
     Node* T, Point const& q, kBoundedQueue<Point, Range>& bq,
     Box const& node_box, KNNLogger& logger) {
   logger.vis_node_num++;
@@ -147,9 +156,10 @@ void BaseTree<Point, DerivedTree, kBDO>::KNNBinary(
 }
 
 // NOTE: compute knn for multinode as if a binary node
-template <typename Point, typename DerivedTree, uint_fast8_t kBDO>
+template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
 template <typename Leaf, IsMultiNode Interior, typename Range>
-void BaseTree<Point, DerivedTree, kBDO>::KNNMultiExpand(
+void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::KNNMultiExpand(
     Node* T, Point const& q, DimsType dim, BucketType idx,
     kBoundedQueue<Point, Range>& bq, Box const& node_box, KNNLogger& logger) {
   logger.vis_node_num++;
@@ -197,9 +207,10 @@ void BaseTree<Point, DerivedTree, kBDO>::KNNMultiExpand(
 }
 
 // NOTE: compute KNN for multi-node by computing bounding boxes
-template <typename Point, typename DerivedTree, uint_fast8_t kBDO>
+template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
 template <typename Leaf, IsMultiNode Interior, typename Range>
-void BaseTree<Point, DerivedTree, kBDO>::KNNMulti(
+void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::KNNMulti(
     Node* T, Point const& q, kBoundedQueue<Point, Range>& bq,
     Box const& node_box, KNNLogger& logger) {
   logger.vis_node_num++;

@@ -8,10 +8,14 @@
 
 namespace cpdd {
 
-template <typename Point, typename SplitRule, uint_fast8_t kBDO = 6>
-class KdTree : private BaseTree<Point, KdTree<Point, SplitRule, kBDO>, kBDO> {
+template <typename Point, typename SplitRule, uint_fast8_t kSkHeight = 6,
+          uint_fast8_t kImbaRatio = 30>
+class KdTree
+    : private BaseTree<Point, KdTree<Point, SplitRule, kSkHeight, kImbaRatio>,
+                       kSkHeight, kImbaRatio> {
  public:
-  using BT = BaseTree<Point, KdTree<Point, SplitRule, kBDO>, kBDO>;
+  using BT = BaseTree<Point, KdTree<Point, SplitRule, kSkHeight, kImbaRatio>,
+                      kSkHeight, kImbaRatio>;
 
   using BucketType = typename BT::BucketType;
   using BallsType = typename BT::BallsType;

@@ -5,9 +5,10 @@
 namespace cpdd {
 
 // NOTE: default batch delete
-template <typename Point, typename SplitRule, uint_fast8_t kBDO>
+template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
 template <typename Range>
-void KdTree<Point, SplitRule, kBDO>::BatchDelete(Range&& In) {
+void KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDelete(Range&& In) {
   static_assert(parlay::is_random_access_range_v<Range>);
   static_assert(
       parlay::is_less_than_comparable_v<parlay::range_reference_type_t<Range>>);
@@ -20,8 +21,9 @@ void KdTree<Point, SplitRule, kBDO>::BatchDelete(Range&& In) {
 }
 
 // NOTE: assume all Points are fully covered in the tree
-template <typename Point, typename SplitRule, uint_fast8_t kBDO>
-void KdTree<Point, SplitRule, kBDO>::BatchDelete_(Slice A) {
+template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
+void KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDelete_(Slice A) {
   Points B = Points::uninitialized(A.size());
   Node* T = this->root_;
   Box bx = this->tree_box_;
@@ -37,12 +39,12 @@ void KdTree<Point, SplitRule, kBDO>::BatchDelete_(Slice A) {
 // NOTE: the bucket Node whose ancestor has not been ... has
 // BT::kBucketNum+1
 // NOTE: otherwise, it's BT::kBucketNum
-template <typename Point, typename SplitRule, uint_fast8_t kBDO>
-typename KdTree<Point, SplitRule, kBDO>::NodeBox
-KdTree<Point, SplitRule, kBDO>::DeleteInnerTree(BucketType idx,
-                                                NodeTagSeq const& tags,
-                                                NodeBoxSeq& tree_nodes,
-                                                BucketType& p, DimsType d) {
+template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
+typename KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::NodeBox
+KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::DeleteInnerTree(
+    BucketType idx, NodeTagSeq const& tags, NodeBoxSeq& tree_nodes,
+    BucketType& p, DimsType d) {
   if (tags[idx].second == BT::kBucketNum + 1 ||
       tags[idx].second == BT::kBucketNum + 2) {
     return tree_nodes[p++];
@@ -76,11 +78,13 @@ KdTree<Point, SplitRule, kBDO>::DeleteInnerTree(BucketType idx,
 // NOTE: delete with rebuild, with the assumption that all Points are in the
 // tree
 // WARN: the param d can be only used when rotate cutting is applied
-template <typename Point, typename SplitRule, uint_fast8_t kBDO>
-typename KdTree<Point, SplitRule, kBDO>::NodeBox
-KdTree<Point, SplitRule, kBDO>::BatchDeleteRecursive(
-    Node* T, typename KdTree<Point, SplitRule, kBDO>::Box const& bx, Slice In,
-    Slice Out, DimsType d, bool has_tomb) {
+template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
+typename KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::NodeBox
+KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDeleteRecursive(
+    Node* T,
+    typename KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::Box const& bx,
+    Slice In, Slice Out, DimsType d, bool has_tomb) {
   size_t n = In.size();
 
   if (n == 0) {

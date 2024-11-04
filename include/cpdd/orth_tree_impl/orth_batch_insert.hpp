@@ -7,9 +7,10 @@
 namespace cpdd {
 
 template <typename Point, typename SplitRule, uint_fast8_t kMD,
-          uint_fast8_t kBDO>
+          uint_fast8_t kSkHeight, uint_fast8_t kImbaRatio>
 template <typename Range>
-void OrthTree<Point, SplitRule, kMD, kBDO>::BatchInsert(Range&& In) {
+void OrthTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::BatchInsert(
+    Range&& In) {
   static_assert(parlay::is_random_access_range_v<Range>);
   static_assert(
       parlay::is_less_than_comparable_v<parlay::range_reference_type_t<Range>>);
@@ -25,8 +26,9 @@ void OrthTree<Point, SplitRule, kMD, kBDO>::BatchInsert(Range&& In) {
 }
 
 template <typename Point, typename SplitRule, uint_fast8_t kMD,
-          uint_fast8_t kBDO>
-void OrthTree<Point, SplitRule, kMD, kBDO>::BatchInsert_(Slice A) {
+          uint_fast8_t kSkHeight, uint_fast8_t kImbaRatio>
+void OrthTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::BatchInsert_(
+    Slice A) {
   if (this->root_ == nullptr) {  // TODO: may check using explicity tag
     return Build_(A);
   }
@@ -41,10 +43,10 @@ void OrthTree<Point, SplitRule, kMD, kBDO>::BatchInsert_(Slice A) {
 }
 
 template <typename Point, typename SplitRule, uint_fast8_t kMD,
-          uint_fast8_t kBDO>
-void OrthTree<Point, SplitRule, kMD, kBDO>::SerialSplitSkeleton(
-    Node* T, Slice In, DimsType dim, DimsType idx,
-    parlay::sequence<BallsType>& sums) {
+          uint_fast8_t kSkHeight, uint_fast8_t kImbaRatio>
+void OrthTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::
+    SerialSplitSkeleton(Node* T, Slice In, DimsType dim, DimsType idx,
+                        parlay::sequence<BallsType>& sums) {
   if (dim == BT::kDim) {
     sums[idx - kNodeRegions] = In.size();
     return;
@@ -65,10 +67,9 @@ void OrthTree<Point, SplitRule, kMD, kBDO>::SerialSplitSkeleton(
 }
 
 template <typename Point, typename SplitRule, uint_fast8_t kMD,
-          uint_fast8_t kBDO>
-Node* OrthTree<Point, SplitRule, kMD, kBDO>::BatchInsertRecursive(Node* T,
-                                                                  Slice In,
-                                                                  Slice Out) {
+          uint_fast8_t kSkHeight, uint_fast8_t kImbaRatio>
+Node* OrthTree<Point, SplitRule, kMD, kSkHeight,
+               kImbaRatio>::BatchInsertRecursive(Node* T, Slice In, Slice Out) {
   size_t n = In.size();
 
   if (n == 0) return T;

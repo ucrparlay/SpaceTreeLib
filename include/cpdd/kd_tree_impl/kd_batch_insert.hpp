@@ -4,8 +4,9 @@
 #include "parlay/slice.h"
 
 namespace cpdd {
-template <typename Point, typename SplitRule, uint_fast8_t kBDO>
-void KdTree<Point, SplitRule, kBDO>::BatchInsert(Slice A) {
+template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
+void KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchInsert(Slice A) {
   if (this->root_ == nullptr) {  // TODO: may check using explicity tag
     return Build_(A);
   }
@@ -20,10 +21,10 @@ void KdTree<Point, SplitRule, kBDO>::BatchInsert(Slice A) {
 }
 
 // NOTE: return the updated Node
-template <typename Point, typename SplitRule, uint_fast8_t kBDO>
-Node* KdTree<Point, SplitRule, kBDO>::BatchInsertRecursive(Node* T, Slice In,
-                                                           Slice Out,
-                                                           DimsType d) {
+template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
+Node* KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchInsertRecursive(
+    Node* T, Slice In, Slice Out, DimsType d) {
   size_t n = In.size();
 
   if (n == 0) return T;

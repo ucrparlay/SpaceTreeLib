@@ -13,12 +13,14 @@
 
 namespace cpdd {
 
-template <typename Point, typename DerivedTree, uint_fast8_t kBDO = 6>
+template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight = 6,
+          uint_fast8_t kImbaRatio = 30>
 class BaseTree {
  public:
-  // NOTE: when kBDO >= 8, the # bucket is 255, total skeleton nodes >= 255*2
+  // NOTE: when kSkHeight >= 8, the # bucket is 255, total skeleton nodes >=
+  // 255*2
   using BucketType =
-      std::conditional_t<(kBDO > 7), uint_fast16_t, uint_fast8_t>;
+      std::conditional_t<(kSkHeight > 7), uint_fast16_t, uint_fast8_t>;
   using BallsType = uint_fast32_t;
   using DimsType = uint_fast8_t;
   using BucketSeq = parlay::sequence<BucketType>;
@@ -45,7 +47,7 @@ class BaseTree {
   // NOTE: uint32t handle up to 4e9 at least
   // WARN: bucket num should smaller than 1<<8 to handle type overflow
   static constexpr DimsType const kDim = std::tuple_size_v<Coords>;
-  static constexpr BucketType const kBuildDepthOnce = kBDO;
+  static constexpr BucketType const kBuildDepthOnce = kSkHeight;
   static constexpr BucketType const kPivotNum = (1 << kBuildDepthOnce) - 1;
   static constexpr BucketType const kBucketNum = 1 << kBuildDepthOnce;
 
@@ -59,12 +61,7 @@ class BaseTree {
   static constexpr uint_fast16_t const kBlockSize = 1 << kLog2Base;
 
   // NOTE: reconstruct weight threshold
-  static constexpr uint_fast8_t const kInbalanceRatio = 30;
-
-  // NOTE: get the imbalance ratio
-  static inline size_t GetImbalanceRatio();
-  static inline bool ImbalanceNode(size_t const l, size_t const n);
-  static inline bool SparcyNode(size_t const l, size_t const n);
+  static constexpr uint_fast8_t const kInbalanceRatio = kImbaRatio;
 
   // NOTE: array based inner tree for batch insertion and deletion
   template <typename Leaf, typename Interior>
@@ -72,6 +69,11 @@ class BaseTree {
 
   // NOTE: compute the bounding box on the fly
   struct BoxCut;
+
+  // NOTE: get the imbalance ratio
+  static inline size_t GetImbalanceRatio();
+  static inline bool ImbalanceNode(size_t const l, size_t const n);
+  static inline bool SparcyNode(size_t const l, size_t const n);
 
   // NOTE: Box operations
   static inline bool LegalBox(Box const& bx);
@@ -81,9 +83,9 @@ class BaseTree {
   static inline Box GetEmptyBox();
   static Box GetBox(Box const& x, Box const& y);
   static Box GetBox(Slice V);
+  static Box GetBox(BoxSeq const& box_seq);
   template <typename Leaf, typename Interior>
   static Box GetBox(Node* T);
-  static Box GetBox(BoxSeq const& box_seq);
 
   static inline bool WithinCircle(Box const& bx, Circle const& cl);
   static inline bool WithinCircle(Point const& p, Circle const& cl);

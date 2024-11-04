@@ -1,3 +1,5 @@
+#pragma once
+
 #include <tuple>
 #include <type_traits>
 #include <utility>
@@ -7,9 +9,9 @@
 
 namespace cpdd {
 template <typename Point, typename SplitRule, uint_fast8_t kMD,
-          uint_fast8_t kBDO>
+          uint_fast8_t kSkHeight, uint_fast8_t kImbaRatio>
 template <typename Range>
-auto OrthTree<Point, SplitRule, kMD, kBDO>::KNN(
+auto OrthTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::KNN(
     Node* T, Point const& q, kBoundedQueue<Point, Range>& bq) {
   KNNLogger logger;
   // BT::template KNNMulti<Leaf, Interior>(T, q, DIM, bq, this->tree_box_,
@@ -24,15 +26,17 @@ auto OrthTree<Point, SplitRule, kMD, kBDO>::KNN(
 }
 
 template <typename Point, typename SplitRule, uint_fast8_t kMD,
-          uint_fast8_t kBDO>
+          uint_fast8_t kSkHeight, uint_fast8_t kImbaRatio>
 template <typename Range>
-void OrthTree<Point, SplitRule, kMD, kBDO>::Flatten(Range&& Out) {
+void OrthTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::Flatten(
+    Range&& Out) {
   BT::template FlattenRec<Leaf, Interior>(this->root_, parlay::make_slice(Out));
 }
 
 template <typename Point, typename SplitRule, uint_fast8_t kMD,
-          uint_fast8_t kBDO>
-auto OrthTree<Point, SplitRule, kMD, kBDO>::RangeCount(Box const& bx) {
+          uint_fast8_t kSkHeight, uint_fast8_t kImbaRatio>
+auto OrthTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::RangeCount(
+    Box const& bx) {
   RangeQueryLogger logger;
   size_t s = BT::template RangeCountRectangle<Leaf, Interior>(
       this->root_, bx, this->tree_box_, 0, 1, logger);
@@ -40,17 +44,18 @@ auto OrthTree<Point, SplitRule, kMD, kBDO>::RangeCount(Box const& bx) {
 }
 
 template <typename Point, typename SplitRule, uint_fast8_t kMD,
-          uint_fast8_t kBDO>
-auto OrthTree<Point, SplitRule, kMD, kBDO>::RangeCount(Circle const& cl) {
+          uint_fast8_t kSkHeight, uint_fast8_t kImbaRatio>
+auto OrthTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::RangeCount(
+    Circle const& cl) {
   return BT::template RangeCountRadius<Leaf, Interior>(this->root_, cl,
                                                        this->tree_box_);
 }
 
 template <typename Point, typename SplitRule, uint_fast8_t kMD,
-          uint_fast8_t kBDO>
+          uint_fast8_t kSkHeight, uint_fast8_t kImbaRatio>
 template <typename Range>
-auto OrthTree<Point, SplitRule, kMD, kBDO>::RangeQuery(Box const& query_box,
-                                                       Range&& Out) {
+auto OrthTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::RangeQuery(
+    Box const& query_box, Range&& Out) {
   RangeQueryLogger logger;
   size_t s = 0;
   BT::template RangeQuerySerialRecursive<Leaf, Interior>(
@@ -60,8 +65,9 @@ auto OrthTree<Point, SplitRule, kMD, kBDO>::RangeQuery(Box const& query_box,
 }
 
 template <typename Point, typename SplitRule, uint_fast8_t kMD,
-          uint_fast8_t kBDO>
-constexpr void OrthTree<Point, SplitRule, kMD, kBDO>::DeleteTree() {
+          uint_fast8_t kSkHeight, uint_fast8_t kImbaRatio>
+constexpr void
+OrthTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::DeleteTree() {
   BT::template DeleteTreeWrapper<Leaf, Interior>();
 }
 

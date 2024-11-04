@@ -3,8 +3,10 @@
 
 namespace cpdd {
 
-template <typename Point, typename DerivedTree, uint_fast8_t kBDO>
-inline bool BaseTree<Point, DerivedTree, kBDO>::LegalBox(Box const& bx) {
+template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
+inline bool BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::LegalBox(
+    Box const& bx) {
   if (bx == GetEmptyBox()) return true;
   for (DimsType i = 0; i < kDim; ++i) {
     if (Num::Gt(bx.first.pnt[i], bx.second.pnt[i])) {
@@ -14,9 +16,10 @@ inline bool BaseTree<Point, DerivedTree, kBDO>::LegalBox(Box const& bx) {
   return true;
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t kBDO>
-inline bool BaseTree<Point, DerivedTree, kBDO>::WithinBox(Box const& a,
-                                                          Box const& b) {
+template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
+inline bool BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::WithinBox(
+    Box const& a, Box const& b) {
   assert(LegalBox(a));
   assert(LegalBox(b));
   for (DimsType i = 0; i < kDim; ++i) {
@@ -28,9 +31,10 @@ inline bool BaseTree<Point, DerivedTree, kBDO>::WithinBox(Box const& a,
   return true;
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t kBDO>
-inline bool BaseTree<Point, DerivedTree, kBDO>::WithinBox(Point const& p,
-                                                          Box const& bx) {
+template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
+inline bool BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::WithinBox(
+    Point const& p, Box const& bx) {
   assert(LegalBox(bx));
   for (DimsType i = 0; i < kDim; ++i) {
     if (Num::Lt(p.pnt[i], bx.first.pnt[i]) ||
@@ -41,9 +45,10 @@ inline bool BaseTree<Point, DerivedTree, kBDO>::WithinBox(Point const& p,
   return true;
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t kBDO>
-inline bool BaseTree<Point, DerivedTree, kBDO>::BoxIntersectBox(Box const& a,
-                                                                Box const& b) {
+template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
+inline bool BaseTree<Point, DerivedTree, kSkHeight,
+                     kImbaRatio>::BoxIntersectBox(Box const& a, Box const& b) {
   assert(LegalBox(a) && LegalBox(b));
   for (DimsType i = 0; i < kDim; ++i) {
     if (Num::Lt(a.second.pnt[i], b.first.pnt[i]) ||
@@ -54,22 +59,26 @@ inline bool BaseTree<Point, DerivedTree, kBDO>::BoxIntersectBox(Box const& a,
   return true;
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t kBDO>
-inline typename BaseTree<Point, DerivedTree, kBDO>::Box
-BaseTree<Point, DerivedTree, kBDO>::GetEmptyBox() {
+template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
+inline typename BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::Box
+BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::GetEmptyBox() {
   return Box(Point(std::numeric_limits<Coord>::max()),
              Point(std::numeric_limits<Coord>::lowest()));
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t kBDO>
-typename BaseTree<Point, DerivedTree, kBDO>::Box
-BaseTree<Point, DerivedTree, kBDO>::GetBox(Box const& x, Box const& y) {
+template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
+typename BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::Box
+BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::GetBox(Box const& x,
+                                                            Box const& y) {
   return Box(x.first.MinCoords(y.first), x.second.MaxCoords(y.second));
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t kBDO>
-typename BaseTree<Point, DerivedTree, kBDO>::Box
-BaseTree<Point, DerivedTree, kBDO>::GetBox(Slice V) {
+template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
+typename BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::Box
+BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::GetBox(Slice V) {
   if (V.size() == 0) {
     return GetEmptyBox();
   } else {
@@ -82,19 +91,22 @@ BaseTree<Point, DerivedTree, kBDO>::GetBox(Slice V) {
   }
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t kBDO>
+template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
 template <typename Leaf, typename Interior>
-typename BaseTree<Point, DerivedTree, kBDO>::Box
-BaseTree<Point, DerivedTree, kBDO>::GetBox(Node* T) {
+typename BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::Box
+BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::GetBox(Node* T) {
   // TODO: we can just traverse the tree to get the box
   Points wx = Points::uninitialized(T->size);
   FlattenRec<Leaf, Interior>(T, parlay::make_slice(wx));
   return GetBox(parlay::make_slice(wx));
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t kBDO>
-typename BaseTree<Point, DerivedTree, kBDO>::Box
-BaseTree<Point, DerivedTree, kBDO>::GetBox(BoxSeq const& box_seq) {
+template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
+typename BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::Box
+BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::GetBox(
+    BoxSeq const& box_seq) {
   Box box = GetEmptyBox();
   for (auto const& b : box_seq) {
     box = GetBox(box, b);
@@ -102,9 +114,10 @@ BaseTree<Point, DerivedTree, kBDO>::GetBox(BoxSeq const& box_seq) {
   return std::move(box);
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t kBDO>
-inline bool BaseTree<Point, DerivedTree, kBDO>::WithinCircle(Box const& bx,
-                                                             Circle const& cl) {
+template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
+inline bool BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::WithinCircle(
+    Box const& bx, Circle const& cl) {
   //* the logical is same as p2b_max_distance <= radius
   Coord r = 0;
   for (DimsType i = 0; i < kDim; ++i) {
@@ -121,9 +134,10 @@ inline bool BaseTree<Point, DerivedTree, kBDO>::WithinCircle(Box const& bx,
   return true;
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t kBDO>
-inline bool BaseTree<Point, DerivedTree, kBDO>::WithinCircle(Point const& p,
-                                                             Circle const& cl) {
+template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
+inline bool BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::WithinCircle(
+    Point const& p, Circle const& cl) {
   Coord r = 0;
   for (DimsType i = 0; i < kDim; ++i) {
     r += (p.pnt[i] - cl.first.pnt[i]) * (p.pnt[i] - cl.first.pnt[i]);
@@ -133,9 +147,11 @@ inline bool BaseTree<Point, DerivedTree, kBDO>::WithinCircle(Point const& p,
   return true;
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t kBDO>
-inline bool BaseTree<Point, DerivedTree, kBDO>::CircleIntersectBox(
-    Circle const& cl, Box const& bx) {
+template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
+inline bool BaseTree<Point, DerivedTree, kSkHeight,
+                     kImbaRatio>::CircleIntersectBox(Circle const& cl,
+                                                     Box const& bx) {
   //* the logical is same as p2b_min_distance > radius
   Coord r = 0;
   for (DimsType i = 0; i < kDim; ++i) {

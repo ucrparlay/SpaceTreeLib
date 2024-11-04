@@ -2,9 +2,10 @@
 #include "../kd_tree.h"
 
 namespace cpdd {
-template <typename Point, typename SplitRule, uint_fast8_t kBDO>
+template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
 template <typename Range>
-void KdTree<Point, SplitRule, kBDO>::BatchDiff(Range&& In) {
+void KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDiff(Range&& In) {
   static_assert(parlay::is_random_access_range_v<Range>);
   static_assert(
       parlay::is_less_than_comparable_v<parlay::range_reference_type_t<Range>>);
@@ -17,8 +18,9 @@ void KdTree<Point, SplitRule, kBDO>::BatchDiff(Range&& In) {
 }
 
 // NOTE: batch delete suitable for Points that are pratially covered in the tree
-template <typename Point, typename SplitRule, uint_fast8_t kBDO>
-void KdTree<Point, SplitRule, kBDO>::BatchDiff_(Slice A) {
+template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
+void KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDiff_(Slice A) {
   Points B = Points::uninitialized(A.size());
   Node* T = this->root_;
   Box box = this->tree_box_;
@@ -44,11 +46,13 @@ void KdTree<Point, SplitRule, kBDO>::BatchDiff_(Slice A) {
 }
 
 // NOTE: only sieve the Points, without rebuilding the tree
-template <typename Point, typename SplitRule, uint_fast8_t kBDO>
-typename KdTree<Point, SplitRule, kBDO>::NodeBox
-KdTree<Point, SplitRule, kBDO>::BatchDiffRecursive(
-    Node* T, typename KdTree<Point, SplitRule, kBDO>::Box const& box, Slice In,
-    Slice Out, DimsType d) {
+template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
+typename KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::NodeBox
+KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDiffRecursive(
+    Node* T,
+    typename KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::Box const& box,
+    Slice In, Slice Out, DimsType d) {
   size_t n = In.size();
 
   if (n == 0) return NodeBox(T, box);

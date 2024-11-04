@@ -8,10 +8,12 @@
 
 namespace cpdd {
 
-template <typename Point, typename DerivedTree, uint_fast8_t kBDO>
+template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
 template <typename Leaf, typename Interior>
-typename BaseTree<Point, DerivedTree, kBDO>::Box
-BaseTree<Point, DerivedTree, kBDO>::CheckBox(Node* T, Box const& box) {
+typename BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::Box
+BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::CheckBox(Node* T,
+                                                              Box const& box) {
   if (T->is_leaf) {
     return GetBox<Leaf, Interior>(T);
   }
@@ -43,9 +45,10 @@ BaseTree<Point, DerivedTree, kBDO>::CheckBox(Node* T, Box const& box) {
   }
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t kBDO>
+template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
 template <typename Leaf, typename Interior>
-size_t BaseTree<Point, DerivedTree, kBDO>::CheckSize(Node* T) {
+size_t BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::CheckSize(Node* T) {
   if (T->is_leaf) {
     assert(static_cast<Leaf*>(T)->is_dummy ||
            static_cast<Leaf*>(T)->size <= kLeaveWrap);
@@ -72,10 +75,11 @@ size_t BaseTree<Point, DerivedTree, kBDO>::CheckSize(Node* T) {
   }
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t kBDO>
+template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
 template <typename Leaf, typename Interior>
-void BaseTree<Point, DerivedTree, kBDO>::CheckTreeSameSequential(Node* T,
-                                                                 int dim) {
+void BaseTree<Point, DerivedTree, kSkHeight,
+              kImbaRatio>::CheckTreeSameSequential(Node* T, int dim) {
   if (T->is_leaf) {
     // assert( PickRebuildDim( T, kDim ) == dim );
     return;
@@ -108,9 +112,10 @@ void BaseTree<Point, DerivedTree, kBDO>::CheckTreeSameSequential(Node* T,
   return;
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t kBDO>
+template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
 template <typename Leaf, typename Interior, typename SplitRule>
-void BaseTree<Point, DerivedTree, kBDO>::Validate() {
+void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::Validate() {
   std::cout << ">>> begin validate tree" << std::endl << std::flush;
   if (LegalBox(CheckBox<Leaf, Interior>(this->root_, this->tree_box_))) {
     std::cout << "Correct bounding Box" << std::endl << std::flush;
@@ -138,17 +143,19 @@ void BaseTree<Point, DerivedTree, kBDO>::Validate() {
   return;
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t kBDO>
+template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
 template <typename Leaf, typename Interior>
-size_t BaseTree<Point, DerivedTree, kBDO>::GetTreeHeight() {
+size_t BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::GetTreeHeight() {
   size_t deep = 0;
   return GetMaxTreeDepth<Leaf, Interior>(this->root_, deep);
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t kBDO>
+template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
 template <typename Leaf, typename Interior>
-size_t BaseTree<Point, DerivedTree, kBDO>::GetMaxTreeDepth(Node* T,
-                                                           size_t deep) {
+size_t BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::GetMaxTreeDepth(
+    Node* T, size_t deep) {
   if (T->is_leaf) {
     return deep;
   }
@@ -168,9 +175,10 @@ size_t BaseTree<Point, DerivedTree, kBDO>::GetMaxTreeDepth(Node* T,
   }
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t kBDO>
+template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
 template <typename Leaf, typename Interior>
-double BaseTree<Point, DerivedTree, kBDO>::GetAveTreeHeight() {
+double BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::GetAveTreeHeight() {
   // std::cout << IsBinaryNode<Interior> << std::endl;
   parlay::sequence<size_t> heights(this->root_->size);
   size_t idx = 0;
@@ -183,9 +191,11 @@ double BaseTree<Point, DerivedTree, kBDO>::GetAveTreeHeight() {
   return double(1.0 * parlay::reduce(heights.cut(0, idx)) / idx);
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t kBDO>
+template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
 template <typename Leaf, typename Interior>
-size_t BaseTree<Point, DerivedTree, kBDO>::CountTreeNodesNum(Node* T) {
+size_t BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::CountTreeNodesNum(
+    Node* T) {
   if (T->is_leaf) {
     return 1;
   }
@@ -205,9 +215,10 @@ size_t BaseTree<Point, DerivedTree, kBDO>::CountTreeNodesNum(Node* T) {
   }
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t kBDO>
+template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
 template <typename Leaf, typename Interior>
-void BaseTree<Point, DerivedTree, kBDO>::CountTreeHeights(
+void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::CountTreeHeights(
     Node* T, size_t deep, size_t& idx, parlay::sequence<size_t>& heights) {
   if (T->is_leaf) {
     heights[idx++] = deep;

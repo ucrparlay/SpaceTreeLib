@@ -4,8 +4,10 @@
 
 namespace cpdd {
 
-template <typename Point, typename DerivedTree, uint_fast8_t kBDO>
-inline size_t BaseTree<Point, DerivedTree, kBDO>::GetImbalanceRatio() {
+template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
+inline size_t
+BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::GetImbalanceRatio() {
   if (auto const env_p = std::getenv("kInbalanceRatio")) {
     return static_cast<size_t>(std::stoi(env_p));
   } else {
@@ -13,17 +15,19 @@ inline size_t BaseTree<Point, DerivedTree, kBDO>::GetImbalanceRatio() {
   }
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t kBDO>
-inline bool BaseTree<Point, DerivedTree, kBDO>::ImbalanceNode(size_t const l,
-                                                              size_t const n) {
+template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
+inline bool BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::ImbalanceNode(
+    size_t const l, size_t const n) {
   if (n == 0) return true;
   return Num::Gt(static_cast<size_t>(std::abs(100.0 * l / n - 50.0)),
                  GetImbalanceRatio());
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t kBDO>
-inline bool BaseTree<Point, DerivedTree, kBDO>::SparcyNode(size_t const rm,
-                                                           size_t const n) {
+template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
+inline bool BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::SparcyNode(
+    size_t const rm, size_t const n) {
   return n - rm < kLeaveWrap;
 }
 }  // namespace cpdd

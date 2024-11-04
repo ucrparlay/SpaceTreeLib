@@ -5,8 +5,8 @@
 
 namespace cpdd {
 template <typename Point, typename SplitRule, uint_fast8_t kMD,
-          uint_fast8_t kBDO>
-struct OrthTree<Point, SplitRule, kMD, kBDO>::OrthInteriorNode
+          uint_fast8_t kSkHeight, uint_fast8_t kImbaRatio>
+struct OrthTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::OrthInteriorNode
     : MultiNode<Point, kMD, Splitter, AugType> {
   using BaseNode = MultiNode<Point, kMD, Splitter, AugType>;
   using OrthNodeArr = typename BaseNode::NodeArr;
@@ -36,8 +36,9 @@ struct OrthTree<Point, SplitRule, kMD, kBDO>::OrthInteriorNode
 
 // // NOTE: To expand as a kdtree node
 // template<typename Point, typename SplitRule, uint_fast8_t kMD,
-//          uint_fast8_t kBDO>
-// struct OrthTree<Point, SplitRule, kMD, kBDO>::KdInteriorNode :
+//          uint_fast8_t kSkHeight, uint_fast8_t kImbaRatio>
+// struct OrthTree<Point, SplitRule, kMD, kSkHeight,kImbaRatio>::KdInteriorNode
+// :
 //     BinaryNode<Point, HyperPlane, AugType> {
 //     using PT = Point;
 //     using ST = HyperPlane;
