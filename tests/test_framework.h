@@ -241,6 +241,7 @@ void BatchInsert(Tree& pkd, parlay::sequence<Point> const& WP,
     std::cout << aveInsert << " " << std::flush;
     BuildTree<Point, Tree, false>(WP, rounds, pkd);
   } else {  // NOTE: insert the points from previous tree
+    pkd.DeleteTree();
     build_tree_by_type();
     parlay::copy(WI, wi);
     pkd.BatchInsert(wi.cut(0, size_t(wi.size() * ratio)));
@@ -495,7 +496,7 @@ void RangeCount(parlay::sequence<Point> const& wp, Tree& pkd, Typename* kdknn,
     assert(std::cmp_equal(kdknn[i], query_box_seq[i].second));
   }
 
-  std::cout << aveCount << " " << std::flush;
+  std::cout << aveCount << "\n" << std::flush;
 
   return;
 }
@@ -575,7 +576,7 @@ void RangeQuery(parlay::sequence<Point> const& wp, Tree& pkd, Typename* kdknn,
     }
   }
 
-  std::cout << aveQuery << " " << std::flush;
+  std::cout << aveQuery << "\n" << std::flush;
   return;
 }
 

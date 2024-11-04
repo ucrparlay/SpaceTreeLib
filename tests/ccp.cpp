@@ -146,10 +146,8 @@ void runKDParallel(auto const& wp, auto const& wi, Typename* kdknn,
   }
 
   if (tag & (1 << 2)) {
-    std::cout << tree.GetRoot()->size << std::endl;
     BatchDiff<Point, Tree, kInitMultiRun>(tree, wp, 2, kCCPBatchDiffTotalRatio,
                                           kCCPBatchDiffOverlapRatio);
-    std::cout << tree.GetRoot()->size << std::endl;
     assert(tree.GetRoot()->size ==
            wp.size() - static_cast<size_t>(wp.size() * kCCPBatchDiffTotalRatio *
                                            kCCPBatchDiffOverlapRatio));
