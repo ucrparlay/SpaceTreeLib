@@ -211,10 +211,10 @@ struct BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::InnerTree {
       MarkTomb(idx << 1 | 1, re_num, tot_re_size, box_seq,
                box_cut.GetSecondBoxCut(), has_tomb, violate_func);
     } else if constexpr (IsMultiNode<Interior>) {
-      BoxSeq new_box(TI->template ComputeSubregions<BoxSeq>(box));
+      // BoxSeq new_box(TI->template ComputeSubregions<BoxSeq>(box));
       for (BucketType i = 0; i < Interior::kRegions; ++i) {
         MarkTomb(idx * Interior::kRegions + i, re_num, tot_re_size, box_seq,
-                 new_box[i], has_tomb, violate_func);
+                 TI->GetBoxByRegionsId(i, box), has_tomb, violate_func);
       }
     }
     return;

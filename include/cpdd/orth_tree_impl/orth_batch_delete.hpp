@@ -75,13 +75,14 @@ Node* OrthTree<Point, SplitRule, kMD, kSkHeight,
 
     auto TI = static_cast<Interior*>(T);
     OrthNodeArr new_nodes;
-    BoxSeq new_box(TI->template ComputeSubregions<BoxSeq>(box));
+    // BoxSeq new_box(TI->template ComputeSubregions<BoxSeq>(box));
 
     size_t start = 0;
     for (DimsType i = 0; i < kNodeRegions; ++i) {
       new_nodes[i] = BatchDeleteRecursive(
           TI->tree_nodes[i], In.cut(start, start + sums[i]),
-          Out.cut(start, start + sums[i]), new_box[i], has_tomb);
+          Out.cut(start, start + sums[i]), TI->GetBoxByRegionId(i, box),
+          has_tomb);
       start += sums[i];
     }
 
