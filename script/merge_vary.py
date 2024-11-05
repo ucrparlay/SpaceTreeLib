@@ -7,12 +7,13 @@ print(os.getcwd())
 path = "../benchmark"
 benchmarks = ["ss_varden", "uniform"]
 storePrefix = "data/"
-Nodes = [100000000, 1000000000]
+Nodes = [1000000000]
 Dims = [2, 3]
 
 # type = "batch_update"
 # type = "batch_knn_query"
-type = "querys"
+# type = "querys"
+type = "summary"
 # type = "quality"
 # type = "count"
 
@@ -21,20 +22,17 @@ files = []
 solverName = []
 
 if type == "batch_update":
-    # solverName = ["test", "zdtree", "cgal", "LogTree", "BhlTree"]
     solverName = ["test", "zdtree", "cgal"]
     files = ["build", "insert", "delete"]
     Dims = [3]
-elif type == "batch_knn_query":
-    solverName = ["kdtree", "Expand", "Compress"]
-    files = ["build", "knn"]
-    Dims = [2, 3]
 elif type == "querys":
     solverName = ["kdtree", "orth"]
-    files = ["build", "knn", "count", "rquery"]
+    files = ["build", "knn_3", "count_3", "rquery_3"]
     Dims = [2, 3]
-    # solverName = ["test", "zdtree", "cgal", "LogTree", "BhlTree"]
-    # files = ["build", "knn", "count", "rquery"]
+elif type == "summary":
+    solverName = ["kdtree", "orth"]
+    files = ["build", "insert", "delete", "diff", "knn_1", "count_1", "rquery_1"]
+    Dims = [2, 3]
 elif type == "quality":
     solverName = ["test"]
     files = ["build", "increBuild", "decreBuild", "increKNN"]
@@ -59,121 +57,63 @@ common = [
 ]
 build_header = ["build", "max-depth", "ave-depth"]
 insert_header = [
-    "0.1M",
-    "0.2M",
-    "0.5M",
-    "1M",
-    "2M",
-    "5M",
-    "10M",
-    "20M",
-    "50M",
-    "100M",
-    "200M",
-    "500M",
-    "1000M",
+    "0.01%",
+    "0.1%",
+    "1%",
+    "10%",
 ]
 delete_header = [
-    "0.1M",
-    "0.2M",
-    "0.5M",
-    "1M",
-    "2M",
-    "5M",
-    "10M",
-    "20M",
-    "50M",
-    "100M",
-    "200M",
-    "500M",
-    "1000M",
+    "0.01%",
+    "0.1%",
+    "1%",
+    "10%",
 ]
-knn_header = [
-    "k=1",
-    "vis",
-    "gen",
-    "check",
-    "skip",
+diff_header = [
+    "10%/1%",
+    "20%/1%",
+    "50%/1%",
+    "100%/1%",
+]
+knn_1_header = [
     "k=10",
     "vis",
     "gen",
     "check",
     "skip",
-    "k=100",
-    "vis",
-    "gen",
-    "check",
-    "skip",
 ]
-count_header = [
-    "S",
-    "vis",
-    "gen",
-    "check",
-    "skip",
-    "M",
-    "vis",
-    "gen",
-    "check",
-    "skip",
+count_1_header = [
     "L",
     "vis",
     "gen",
-    "check",
+    "full",
     "skip",
 ]
-rquery_header = [
-    "S",
-    "vis",
-    "gen",
-    "check",
-    "skip",
-    "M",
-    "vis",
-    "gen",
-    "check",
-    "skip",
-    "L",
-    "vis",
-    "gen",
-    "check",
-    "skip",
+rquery_1_header = count_1_header
+knn_3_header = [
+    f"{k}_{metric}"
+    for k in ["k=1", "k=10", "k=100"]
+    for metric in ["vis", "gen", "check", "skip"]
 ]
-increBuild_header = [
-    "step=0.1",
-    "ave-depth",
-    "step=0.2",
-    "ave-depth",
-    "step=0.25",
-    "ave-depth",
-    "step=0.5",
-    "ave-depth",
+count_3_header = [
+    f"{size}_{metric}"
+    for size in ["S", "M", "L"]
+    for metric in ["vis", "gen", "full", "skip"]
 ]
-increKNN_header = [
-    "direct build",
-    "ave-depth",
-    "visNodeNum",
-    "incre build",
-    "ave-depth",
-    "visNodeNum",
-    "direct build",
-    "ave-depth",
-    "visNodeNum",
-    "decre build",
-    "ave-depth",
-    "visNodeNum",
-]
+rquery_3_header = count_3_header
+
 file_header = {
     "build": build_header,
     "insert": insert_header,
     "delete": delete_header,
-    "knn": knn_header,
-    "count": count_header,
-    "rquery": rquery_header,
-    "increBuild": increBuild_header,
-    "decreBuild": increBuild_header,
-    "increKNN": increKNN_header,
+    "diff": diff_header,
+    "knn_1": knn_1_header,
+    "count_1": count_1_header,
+    "rquery_1": rquery_1_header,
+    "knn_3": knn_3_header,
+    "count_3": count_3_header,
+    "rquery_3": rquery_3_header,
 }
+
 nodes_map = {
     100000000: "100M",
     1000000000: "1000M",
@@ -200,7 +140,7 @@ def combine(P, file, csvWriter, solver, benchName, node, dim):
     # num = 2 if solverName.index(solver)<=2 else 1
     num = len(lines)
     for i in range(0, len(sep_lines), num):
-        line = [0] * width
+        line = [0.0] * width
         for j in range(i, num):
             for k in range(l, r):
                 line[k - l] = line[k - l] + float(sep_lines[j][k]) / num

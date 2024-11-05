@@ -30,8 +30,7 @@ void OrthTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::BatchDiff_(
     Slice A) {
   // NOTE: diff points from the tree
   Points B = Points::uninitialized(A.size());
-  this->root_ = BatchDiffRecursive(this->root_, A, parlay::make_slice(B),
-                                   this->tree_box_);
+  this->root_ = BatchDiffRecursive(this->root_, A, parlay::make_slice(B));
 
   // NOTE: launch the rebuild
   auto prepare_func = [&](Node* T, size_t i, Box const& box) {
@@ -44,13 +43,11 @@ void OrthTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::BatchDiff_(
   return;
 }
 
-// NOTE: delete with rebuild, with the assumption that all Points are in the
-// tree
+// NOTE: the orth does not need box since the box will never change
 template <typename Point, typename SplitRule, uint_fast8_t kMD,
           uint_fast8_t kSkHeight, uint_fast8_t kImbaRatio>
 Node* OrthTree<Point, SplitRule, kMD, kSkHeight,
-               kImbaRatio>::BatchDiffRecursive(Node* T, Slice In, Slice Out,
-                                               Box const& box) {
+               kImbaRatio>::BatchDiffRecursive(Node* T, Slice In, Slice Out) {
   size_t n = In.size();
 
   if (n == 0) {
@@ -68,13 +65,13 @@ Node* OrthTree<Point, SplitRule, kMD, kSkHeight,
 
     auto TI = static_cast<Interior*>(T);
     OrthNodeArr new_nodes;
-    BoxSeq new_box(TI->template ComputeSubregions<BoxSeq>(box));
+    // BoxSeq new_box(TI->template ComputeSubregions<BoxSeq>(box));
 
     size_t start = 0;
     for (DimsType i = 0; i < kNodeRegions; ++i) {
       new_nodes[i] =
           BatchDiffRecursive(TI->tree_nodes[i], In.cut(start, start + sums[i]),
-                             Out.cut(start, start + sums[i]), new_box[i]);
+                             Out.cut(start, start + sums[i]));
       start += sums[i];
     }
 
@@ -91,11 +88,11 @@ Node* OrthTree<Point, SplitRule, kMD, kSkHeight,
   BT::template SeievePoints<Interior>(In, Out, n, IT.tags, IT.sums,
                                       IT.tags_num);
 
-  BoxSeq box_seq(IT.tags_num);  // PARA: the box for bucket nodes
-  [[maybe_unused]] auto [re_num, tot_re_size] = IT.TagInbalanceNodeDeletion(
-      box_seq, box, false, [&]() -> bool { return false; });
+  // BoxSeq box_seq(IT.tags_num);  // PARA: the box for bucket nodes
+  // [[maybe_unused]] auto [re_num, tot_re_size] = IT.TagInbalanceNodeDeletion(
+  //     box_seq, box, false, [&]() -> bool { return false; });
 
-  assert(re_num == 0 && tot_re_size == 0);
+  // assert(re_num == 0 && tot_re_size == 0);
 
   auto tree_nodes = parlay::sequence<Node*>::uninitialized(IT.tags_num);
   parlay::parallel_for(
@@ -108,9 +105,9 @@ Node* OrthTree<Point, SplitRule, kMD, kSkHeight,
 
         assert(IT.sums_tree[IT.rev_tag[i]] == IT.sums[i]);
 
-        tree_nodes[i] = BatchDiffRecursive(
-            IT.tags[IT.rev_tag[i]].first, Out.cut(start, start + IT.sums[i]),
-            In.cut(start, start + IT.sums[i]), box_seq[i]);
+        tree_nodes[i] = BatchDiffRecursive(IT.tags[IT.rev_tag[i]].first,
+                                           Out.cut(start, start + IT.sums[i]),
+                                           In.cut(start, start + IT.sums[i]));
       },
       1);
 

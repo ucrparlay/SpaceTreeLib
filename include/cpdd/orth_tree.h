@@ -140,7 +140,7 @@ class OrthTree
 
   void BatchDiff_(Slice In);
 
-  Node* BatchDiffRecursive(Node* T, Slice In, Slice Out, Box const& box);
+  Node* BatchDiffRecursive(Node* T, Slice In, Slice Out);
 
   SplitRule split_rule_;
   size_t alloc_dummy_num_ = 0;
