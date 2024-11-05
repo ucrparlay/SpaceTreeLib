@@ -76,6 +76,7 @@ class BaseTree {
   static inline bool SparcyNode(size_t const l, size_t const n);
 
   // NOTE: Box operations
+  static inline Coord GetBoxMid(DimsType const d, Box const& bx);
   static inline bool LegalBox(Box const& bx);
   static inline bool WithinBox(Box const& a, Box const& b);
   static inline bool WithinBox(Point const& p, Box const& bx);

@@ -33,17 +33,19 @@ void OrthTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::DivideRotate(
     HyperPlaneSeq& pivots, DimsType dim, BucketType idx, BoxSeq& box_seq,
     Box const& box) {
   if (idx > BT::kPivotNum) {
-    // WARN: sometimes cut dimension can be -1
-    //  never use pivots[idx].first == -1 to check whether it is in bucket;
-    //  instead, use idx > PIVOT_NUM
+    // WARN: sometimes cut dimension can be -1, never use pivots[idx].first ==
+    // -1 to check whether it is in bucket; instead, use idx > PIVOT_NUM
     box_seq[idx - BT::kBucketNum] = box;
     pivots[idx] = HyperPlane(0, idx - BT::kBucketNum);
     return;
   }
 
-  pivots[idx] = HyperPlane(
-      static_cast<Coord>((box.first.pnt[dim] + box.second.pnt[dim]) / 2), dim);
+  // pivots[idx] = HyperPlane(
+  //     static_cast<Coord>((box.first.pnt[dim] + box.second.pnt[dim]) / 2),
+  //     dim);
+  pivots[idx] = HyperPlane(BT::GetBoxMid(dim, box), dim);
 
+  // TODO: maybe using box cut
   Box lbox(box), rbox(box);
   lbox.second.pnt[dim] = pivots[idx].first;
   rbox.first.pnt[dim] = pivots[idx].first;
@@ -104,13 +106,12 @@ Node* OrthTree<Point, SplitRule, kMD, kSkHeight,
 
   assert(kSplitterNum == BT::kDim);
 
-  DimsType dim = 0;
   Splitter split;
   for (DimsType i = 0; i < kSplitterNum; ++i) {
-    split[i] = HyperPlane(
-        static_cast<Coord>((box.first.pnt[i] + box.second.pnt[i]) / 2), i);
+    split[i] = HyperPlane(BT::GetBoxMid(i, box), i);
   }
 
+  DimsType dim = 0;
   parlay::sequence<BallsType> sums(kNodeRegions, 0);
   BoxSeq box_seq(kNodeRegions);
   SerialSplit(In, dim, 1, box, split, sums, box_seq);
@@ -119,7 +120,7 @@ Node* OrthTree<Point, SplitRule, kMD, kSkHeight,
   if (std::ranges::count(sums, 0) == kNodeRegions - 1) {
     // NOTE: avoid the repeat check as the last
     if (!checked_duplicate) {
-      if (std::ranges::find_if_not(In, [&](Point const& p) {
+      if (std::ranges::find_if_not(In, [&](Point const& p) {  // early return
             return p.SameDimension(In[0]);
           }) == In.end()) {
         // WARN: Need to pass full range
@@ -130,6 +131,10 @@ Node* OrthTree<Point, SplitRule, kMD, kSkHeight,
   } else {
     checked_duplicate = false;
   }
+
+  assert(!(checked_duplicate && std::ranges::all_of(In, [&](Point const& p) {
+             return p == In[0];
+           })));
 
   OrthNodeArr tree_nodes;
   size_t start = 0;

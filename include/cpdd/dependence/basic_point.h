@@ -58,7 +58,7 @@ struct PointType {
   inline bool SameDimension(PointType const& b) const { return *this == b; }
 
   inline bool operator==(PointType const& x) const {
-    for (int i = 0; i < d; i++) {
+    for (uint_fast8_t i = 0; i < d; i++) {
       if (!Num::Eq(this->pnt[i], x.pnt[i])) return false;
     }
     return true;
