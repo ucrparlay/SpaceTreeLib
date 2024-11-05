@@ -13,7 +13,9 @@ inline void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::SamplePoints(
   auto size = arr.size();
   auto n = In.size();
   auto indexs = parlay::sequence<uint64_t>::uninitialized(size);
-  std::ranges::for_each(indexs, [&](auto& x) { x = parlay::hash64(x) % n; });
+  for (size_t i = 0; i < size; i++) {
+    indexs[i] = parlay::hash64(i) % n;
+  }
   std::ranges::sort(indexs);
   for (size_t i = 0; i < size; i++) {
     arr[i] = In[indexs[i]];
