@@ -4,7 +4,7 @@ set -o xtrace
 # Solvers=("zdtree" "test" "cgal")
 Solvers=("test")
 Node=(1000000000)
-Tree=(0)
+Tree=(1)
 # Tree=(0 1)
 Dim=(2 3)
 declare -A datas
