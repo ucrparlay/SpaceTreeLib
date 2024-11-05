@@ -225,9 +225,13 @@ void BatchInsert(Tree& pkd, parlay::sequence<Point> const& WP,
       pkd.Build(parlay::make_slice(wp));
     } else if constexpr (cpdd::IsOrthTree<Tree>) {
       parlay::copy(WP, wp), parlay::copy(WI, wi);
-      Box Box = Tree::GetBox(Tree::GetBox(parlay::make_slice(wp)),
-                             Tree::GetBox(parlay::make_slice(wi)));
-      pkd.Build(parlay::make_slice(wp), Box);
+      auto box1 = Tree::GetBox(parlay::make_slice(wp));
+      auto box2 =
+          Tree::GetBox(wi.cut(0, static_cast<size_t>(wi.size() * ratio)));
+      Box box = Tree::GetBox(box1, box2);
+      // std::cout << box1.first << ' ' << box1.second << std::endl;
+      // std::cout << box2.first << ' ' << box2.second << std::endl;
+      pkd.Build(parlay::make_slice(wp), box);
     } else {
       std::cout << "Not supported Tree type" << std::endl;
     }
@@ -237,7 +241,9 @@ void BatchInsert(Tree& pkd, parlay::sequence<Point> const& WP,
     pkd.DeleteTree();
     double aveInsert = time_loop(
         rounds, 1.0, [&]() { build_tree_by_type(); },
-        [&]() { pkd.BatchInsert(wi.cut(0, size_t(wi.size() * ratio))); },
+        [&]() {
+          pkd.BatchInsert(wi.cut(0, static_cast<size_t>(wi.size() * ratio)));
+        },
         [&]() { pkd.DeleteTree(); });
     std::cout << aveInsert << " " << std::flush;
     BuildTree<Point, Tree, false>(WP, rounds, pkd);
@@ -245,7 +251,7 @@ void BatchInsert(Tree& pkd, parlay::sequence<Point> const& WP,
     pkd.DeleteTree();
     build_tree_by_type();
     parlay::copy(WI, wi);
-    pkd.BatchInsert(wi.cut(0, size_t(wi.size() * ratio)));
+    pkd.BatchInsert(wi.cut(0, static_cast<size_t>(wi.size() * ratio)));
   }
 
   return;
