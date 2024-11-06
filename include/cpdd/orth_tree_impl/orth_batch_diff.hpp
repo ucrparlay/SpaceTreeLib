@@ -103,11 +103,15 @@ Node* OrthTree<Point, SplitRule, kMD, kSkHeight,
           start += IT.sums[j];
         }
 
-        assert(IT.sums_tree[IT.rev_tag[i]] == IT.sums[i]);
-
         tree_nodes[i] = BatchDiffRecursive(IT.tags[IT.rev_tag[i]].first,
                                            Out.cut(start, start + IT.sums[i]),
                                            In.cut(start, start + IT.sums[i]));
+
+        // NOTE: after pick the tag, the tag id is same as the bucket id.
+        // In order to match the base case in UpdateInnerTree, we need to
+        // manually change it to kBucketNum+2, i.e., non-of its ancestor has
+        // been rebuilt
+        IT.tags[IT.rev_tag[i]].second = BT::kBucketNum + 2;
       },
       1);
 
