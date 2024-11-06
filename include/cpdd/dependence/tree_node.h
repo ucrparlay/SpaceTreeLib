@@ -218,20 +218,15 @@ struct MultiNode : Node {
 
   // NOTE: Given a box and a bucket id, construct new box for that bucket
   template <typename Box>
-  inline Box GetBoxById(BucketType id, Box const& box) {
+  inline Box GetBoxByRegionId(BucketType id, Box const& box) {
     Box bx(box);
     assert(id >= 0 && id < kRegions);
-    // std::cout << "id: " << id << " " << box.first << box.second << std::endl;
 
     // PERF: cannot set i>=0 as it is unsigned int. idx 9 -> 101 -> RLR
     for (BucketType i = kMD; i > 0; --i) {
-      if (id & (1 << (i - 1))) {  //
-        bx.first.pnt[split[kMD - i].second] = split[kMD - i].first;
-      } else {
-        bx.second.pnt[split[kMD - i].second] = split[kMD - i].first;
-      }
+      auto& target = (id & (1 << (i - 1))) ? bx.first : bx.second;
+      target.pnt[split[kMD - i].second] = split[kMD - i].first;
     }
-    // std::cout << "id: " << id << " " << bx.first << bx.second << std::endl;
 
     return std::move(bx);
   }
@@ -241,11 +236,8 @@ struct MultiNode : Node {
   inline void ModifyBoxById(BucketType id, Box& box) {
     assert(id >= 0 && id <= kRegions);
     for (BucketType i = kMD; i > 0; --i) {
-      if (id & (1 << (i - 1))) {  //
-        box.first.pnt[split[kMD - i].second] = split[kMD - i].first;
-      } else {
-        box.second.pnt[split[kMD - i].second] = split[kMD - i].first;
-      }
+      auto& target = (id & (1 << (i - 1))) ? box.first : box.second;
+      target.pnt[split[kMD - i].second] = split[kMD - i].first;
     }
     return;
   }

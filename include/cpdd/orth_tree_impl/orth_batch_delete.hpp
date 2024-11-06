@@ -75,13 +75,14 @@ Node* OrthTree<Point, SplitRule, kMD, kSkHeight,
 
     auto TI = static_cast<Interior*>(T);
     OrthNodeArr new_nodes;
-    BoxSeq new_box(TI->template ComputeSubregions<BoxSeq>(box));
+    // BoxSeq new_box(TI->template ComputeSubregions<BoxSeq>(box));
 
     size_t start = 0;
     for (DimsType i = 0; i < kNodeRegions; ++i) {
       new_nodes[i] = BatchDeleteRecursive(
           TI->tree_nodes[i], In.cut(start, start + sums[i]),
-          Out.cut(start, start + sums[i]), new_box[i], has_tomb);
+          Out.cut(start, start + sums[i]), TI->GetBoxByRegionId(i, box),
+          has_tomb);
       start += sums[i];
     }
 
@@ -155,10 +156,10 @@ Node* OrthTree<Point, SplitRule, kMD, kSkHeight,
     } else {  // NOTE: rebuild
       assert(BT::WithinBox(
           BT::template GetBox<Leaf, Interior>(IT.tags[IT.rev_tag[i]].first),
-          IT.GetBoxByIdx(IT.rev_tag[i], box)));
+          IT.GetBoxByRegionIdx(IT.rev_tag[i], box)));
       IT.tags[IT.rev_tag[i]].first =
           BT::template RebuildSingleTree<Leaf, Interior, false>(
-              IT.tags[IT.rev_tag[i]].first, IT.GetBoxByIdx(IT.rev_tag[i], box));
+              IT.tags[IT.rev_tag[i]].first, IT.GetBoxByRegionIdx(IT.rev_tag[i], box));
     }
   });  // PERF: allow the parlay decide the granularity to accelerate the
        // small tree rebuild

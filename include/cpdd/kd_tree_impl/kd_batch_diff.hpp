@@ -46,6 +46,7 @@ void KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDiff_(Slice A) {
 }
 
 // NOTE: only sieve the Points, without rebuilding the tree
+// NOTE: the kdtree needs box since the box will be changed in batch diff
 template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 typename KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::NodeBox
