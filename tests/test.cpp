@@ -87,7 +87,7 @@ void TestSpacialTree(int const& kDim, parlay::sequence<Point> const& wp,
   }
 
   if (kQueryType & (1 << 1)) {  // NOTE: range count
-    int recNum = rangeQueryNum;
+    int recNum = kRangeQueryNum;
     kdknn = new Typename[recNum];
 
     // std::cout << std::endl;
@@ -100,7 +100,7 @@ void TestSpacialTree(int const& kDim, parlay::sequence<Point> const& wp,
 
   if (kQueryType & (1 << 2)) {  // NOTE: range query
     if (kSummary == 0) {
-      int recNum = rangeQueryNum;
+      int recNum = kRangeQueryNum;
       kdknn = new Typename[recNum];
 
       for (int i = 0; i < 3; i++) {
@@ -109,10 +109,10 @@ void TestSpacialTree(int const& kDim, parlay::sequence<Point> const& wp,
       }
       delete[] kdknn;
     } else if (kSummary == 1) {  // NOTE: for kSummary
-      kdknn = new Typename[summaryRangeQueryNum];
+      kdknn = new Typename[kSummaryRangeQueryNum];
       Points Out;
       rangeQueryFix<Point>(wp, tree, kdknn, kRounds, Out, 2,
-                           summaryRangeQueryNum, kDim);
+                           kSummaryRangeQueryNum, kDim);
       delete[] kdknn;
     }
   }

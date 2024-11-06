@@ -36,7 +36,6 @@ size_t BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::RangeCountRectangle(
   }
 
   Interior* TI = static_cast<Interior*>(T);
-  logger.generate_box_num++;
 
   size_t l, r;
   auto recurse = [&](Node* Ts, Box const& box, size_t& counter) -> void {
@@ -52,6 +51,7 @@ size_t BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::RangeCountRectangle(
   };
 
   BoxCut box_cut(node_box, TI->split, true);
+  logger.generate_box_num++;
   recurse(TI->left, box_cut.GetFirstBoxCut(), l);
   recurse(TI->right, box_cut.GetSecondBoxCut(), r);
 
@@ -70,7 +70,6 @@ size_t BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::RangeCountRectangle(
   }
 
   Interior* TI = static_cast<Interior*>(T);
-  logger.generate_box_num++;
 
   auto recurse = [&query_box, &logger](Node* Ts, Box const& box,
                                        size_t& counter, DimsType next_dim,
@@ -92,6 +91,7 @@ size_t BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::RangeCountRectangle(
   idx <<= 1;
   bool reach_leaf = idx >= Interior::kRegions;
   BoxCut box_cut(node_box, TI->split[dim], true);
+  logger.generate_box_num++;
 
   // NOTE: visit left half
   assert(TI->split[dim].second == dim);
@@ -185,7 +185,6 @@ void BaseTree<Point, DerivedTree, kSkHeight,
   }
 
   Interior* TI = static_cast<Interior*>(T);
-  logger.generate_box_num++;
 
   auto recurse = [&](Node* Ts, Box const& box) -> void {
     if (!BoxIntersectBox(box, query_box)) {
@@ -204,6 +203,7 @@ void BaseTree<Point, DerivedTree, kSkHeight,
   };
 
   BoxCut box_cut(node_box, TI->split, true);
+  logger.generate_box_num++;
   recurse(TI->left, box_cut.GetFirstBoxCut());
   recurse(TI->right, box_cut.GetSecondBoxCut());
 

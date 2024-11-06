@@ -1,36 +1,33 @@
 #!/bin/bash
 set -o xtrace
 
+# Solvers=("zdtree" "test" "cgal")
 Solvers=("test")
-Node=(100000000 1000000000)
+Node=(1000000000)
+# Tree=(1)
 Tree=(0 1)
-# Tree=(0)
 Dim=(2 3)
 declare -A datas
-datas["/data3/zmen002/kdtree/ss_varden/"]="../benchmark/ss_varden/"
-datas["/data3/zmen002/kdtree/uniform/"]="../benchmark/uniform/"
+datas["/data/legacy/data3/zmen002/kdtree/ss_varden/"]="../benchmark/ss_varden/"
+datas["/data/legacy/data3/zmen002/kdtree/uniform/"]="../benchmark/uniform/"
 
-# datas["/localdata/zmen002/kdtree/ss_varden/"]="../benchmark/ss_varden/"
-# datas["/localdata/zmen002/kdtree/uniform/"]="../benchmark/uniform/"
-tag=0
-k=100
+tag=$((2#000)) # 1110000
+k=10
 insNum=2
-queryType=$((2#1101)) # 1110000
-type="querys"
+summary=0
+read_file=0
+queryType=$((2#111)) # 1110000
+type="query"
+round=3
 resFile=""
 
 for solver in "${Solvers[@]}"; do
 	exe="../build/${solver}"
 
+	#* decide output file
+
 	for tree in "${Tree[@]}"; do
-		if [[ ${solver} == "test" ]]; then
-			if [[ ${tree} == 0 ]]; then
-				tree_name="kd"
-			elif [[ ${tree} == 1 ]]; then
-				tree_name="orth"
-			fi
-			resFile="res_${tree_name}_${type}.out"
-		fi
+		resFile="res_${tree}_${type}.out"
 
 		for dim in "${Dim[@]}"; do
 			for dataPath in "${!datas[@]}"; do
@@ -43,11 +40,13 @@ for solver in "${Solvers[@]}"; do
 					echo ">>>${dest}"
 
 					for ((i = 1; i <= insNum; i++)); do
-						numactl -i all "${exe}" -p "${files_path}/${i}.in" -T "${tree}" -k ${k} -t ${tag} -d "${dim}" -q ${queryType} -i 0 -s 0 -r 3 >>"${dest}"
+						numactl -i all ${exe} -p "${files_path}/${i}.in" -r ${round} -k ${k} -i ${read_file} -s ${summary} -t ${tag} -d ${dim} -q ${queryType} -T ${tree} >>"${dest}"
 					done
-
 				done
 			done
 		done
 	done
 done
+
+current_date_time="$(date "+%d %H:%M:%S")"
+echo $current_date_time

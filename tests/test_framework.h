@@ -28,7 +28,7 @@ using namespace cpdd;
 static constexpr double batchQueryRatio = 0.01;
 static constexpr size_t batchQueryOsmSize = 10000000;
 // NOTE: rectangle numbers
-static constexpr int rangeQueryNum = 50000;
+static constexpr int kRangeQueryNum = 50000;
 static constexpr int singleQueryLogRepeatNum = 100;
 
 // NOTE: rectangle numbers for inba ratio
@@ -47,7 +47,7 @@ static constexpr double kBatchDiffOverlapRatio = 0.2;
 // NOTE: rectange type used in summary
 static constexpr int summaryRangeQueryType = 2;
 // NOTE: range query num in summary
-static constexpr int summaryRangeQueryNum = 10000;
+static constexpr int kSummaryRangeQueryNum = 50000;
 
 // NOTE: helper for delete type
 enum DeleteType { kBatchDelete, kBatchDiff };

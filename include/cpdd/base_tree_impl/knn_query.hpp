@@ -189,6 +189,7 @@ void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::KNNMultiExpand(
   }
 
   BoxCut box_cut(node_box, TI->split[dim], go_left);
+  logger.generate_box_num += 1;
   assert((dim + 1) % kDim != 0 || (first_idx == 1 && second_idx == 1));
 
   KNNMultiExpand<Leaf, Interior>(first_node, q, (dim + 1) % kDim, first_idx, bq,
