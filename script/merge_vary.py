@@ -5,15 +5,15 @@ import csv
 print(os.getcwd())
 
 path = "../benchmark"
-benchmarks = ["ss_varden", "uniform"]
+benchmarks = ["uniform", "ss_varden"]
 storePrefix = "data/"
 Nodes = [1000000000]
 Dims = [2, 3]
 
 # type = "batch_update"
 # type = "batch_knn_query"
-# type = "querys"
-type = "summary"
+type = "querys"
+# type = "summary"
 # type = "quality"
 # type = "count"
 
@@ -90,14 +90,10 @@ count_1_header = [
 ]
 rquery_1_header = count_1_header
 knn_3_header = [
-    f"{k}_{metric}"
-    for k in ["k=1", "k=10", "k=100"]
-    for metric in ["vis", "gen", "check", "skip"]
+    metric for _ in range(3) for metric in ["time", "vis", "gen", "check", "skip"]
 ]
 count_3_header = [
-    f"{size}_{metric}"
-    for size in ["S", "M", "L"]
-    for metric in ["vis", "gen", "full", "skip"]
+    metric for _ in range(3) for metric in ["time", "vis", "gen", "full", "skip"]
 ]
 rquery_3_header = count_3_header
 
@@ -181,8 +177,8 @@ if len(sys.argv) > 1 and int(sys.argv[1]) == 1:
     for file in files:
         csvWriter = csvSetup(file)
 
-        for dim in Dims:
-            for bench in benchmarks:
+        for bench in benchmarks:
+            for dim in Dims:
                 for node in Nodes:
                     for solver in solverName:
                         P = (

@@ -1,9 +1,0 @@
-solver,benchType,nodes,dims,L,vis,gen,full,skip
-kdtree,ss_varden,1000M,2,0.0012,72.5,57.0,0.0,42.5
-orth,ss_varden,1000M,2,0.0015,78.0,58.5,0.0,40.5
-kdtree,uniform,1000M,2,0.00518,178.5,132.5,0.0,87.5
-orth,uniform,1000M,2,0.00308,191.5,134.5,0.0,78.5
-kdtree,ss_varden,1000M,3,0.00319,134.0,102.5,0.0,71.5
-orth,ss_varden,1000M,3,0.00376,207.0,157.5,0.0,109.5
-kdtree,uniform,1000M,3,0.00294,109.0,83.5,0.0,58.5
-orth,uniform,1000M,3,0.00423,174.5,126.5,0.0,80.0
