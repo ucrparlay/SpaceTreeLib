@@ -34,7 +34,7 @@ void OrthTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::BatchDiff_(
 
   // NOTE: launch the rebuild
   auto prepare_func = [&](Node* T, size_t i, Box const& box) {
-    auto new_box = static_cast<Interior*>(T)->GetBoxById(i, box);
+    auto new_box = static_cast<Interior*>(T)->GetBoxByRegionId(i, box);
     assert(BT::WithinBox(new_box, box));
     return std::make_tuple(std::move(new_box));
   };
