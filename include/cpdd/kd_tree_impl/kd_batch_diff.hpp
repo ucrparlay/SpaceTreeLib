@@ -81,6 +81,7 @@ KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDiffRecursive(
                            In.cut(split_iter - In.begin(), n),
                            Out.cut(split_iter - In.begin(), n), nextDim);
 
+    TI->SetParallelFlag(TI->size > BT::kSerialBuildCutoff);
     BT::template UpdateInterior<Interior>(T, L, R);
     assert(T->size == L->size + R->size && TI->split.second >= 0 &&
            TI->is_leaf == false);
@@ -98,6 +99,7 @@ KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDiffRecursive(
   auto box_seq = parlay::sequence<Box>::uninitialized(IT.tags_num);
 
   // NOTE: never set tomb, this equivalent to only compute the bounding box,
+  // and set force par flag using sums_tree
   [[maybe_unused]] auto [re_num, tot_re_size] =
       IT.TagInbalanceNodeDeletion(box_seq, box, false, []() { return false; });
   assert(re_num == 0 && tot_re_size == 0);

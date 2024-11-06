@@ -88,12 +88,6 @@ Node* BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::RebuildTreeRecursive(
   return T;
 }
 
-template <class F, class PF, size_t... Is, typename... Args>
-void call_helper(std::integer_sequence<size_t, Is...>, F f, PF,
-                 Args&&... args) {
-  f(typename PF::template rebuild<Is>()(args)...);
-}
-
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 template <typename Leaf, IsMultiNode Interior, bool granularity,
@@ -288,6 +282,7 @@ void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::FlattenRec(
   return;
 }
 
+// NOTE: for multi node @T, it only flatten the subtree with id @idx to @Out
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 template <typename Leaf, IsMultiNode Interior, typename Range, bool granularity>
@@ -305,8 +300,7 @@ void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::PartialFlatten(
   }
 
   Interior* TI = static_cast<Interior*>(T);
-  size_t l_size = TI->ReduceSums(idx << 1),
-         r_size = TI->ReduceSums(idx << 1 | 1);
+  size_t l_size = TI->MergeSize(idx << 1), r_size = TI->MergeSize(idx << 1 | 1);
   assert(l_size + r_size == Out.size());
   parlay::par_do_if(
       ForceParallelRecursion<Interior, granularity>(static_cast<Interior*>(T)),

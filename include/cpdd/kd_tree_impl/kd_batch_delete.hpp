@@ -138,11 +138,8 @@ KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDeleteRecursive(
                                           Out.cut(split_iter - In.begin(), n),
                                           nextDim, has_tomb);
 
-    bool par_flag = TI->size > BT::kSerialBuildCutoff;
+    TI->SetParallelFlag(TI->size > BT::kSerialBuildCutoff);
     BT::template UpdateInterior<Interior>(T, L, R);
-    if (!has_tomb) {  // WARN: Above update will reset parallel flag
-      TI->SetParallelFlag(par_flag);
-    }
 
     assert(T->size == L->size + R->size && TI->split.second >= 0 &&
            TI->is_leaf == false);
@@ -151,10 +148,8 @@ KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDeleteRecursive(
     if (putTomb) {
       assert(BT::ImbalanceNode(TI->left->size, TI->size) ||
              TI->size < BT::kThinLeaveWrap);
-
       auto const new_box = BT::GetBox(Lbox, Rbox);
       assert(BT::WithinBox(BT::template GetBox<Leaf, Interior>(T), new_box));
-
       return NodeBox(
           BT::template RebuildSingleTree<Leaf, Interior, false>(T, d, new_box),
           new_box);

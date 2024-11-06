@@ -86,11 +86,8 @@ Node* OrthTree<Point, SplitRule, kMD, kSkHeight,
       start += sums[i];
     }
 
-    bool par_flag = TI->size > BT::kSerialBuildCutoff;
+    TI->SetParallelFlag(TI->size > BT::kSerialBuildCutoff);
     BT::template UpdateInterior<Interior>(T, new_nodes);
-    if (!has_tomb) {  // WARN: Above update will reset parallel flag
-      TI->SetParallelFlag(par_flag);
-    }
     assert(T->is_leaf == false);
 
     if (putTomb) {
@@ -159,7 +156,8 @@ Node* OrthTree<Point, SplitRule, kMD, kSkHeight,
           IT.GetBoxByRegionIdx(IT.rev_tag[i], box)));
       IT.tags[IT.rev_tag[i]].first =
           BT::template RebuildSingleTree<Leaf, Interior, false>(
-              IT.tags[IT.rev_tag[i]].first, IT.GetBoxByRegionIdx(IT.rev_tag[i], box));
+              IT.tags[IT.rev_tag[i]].first,
+              IT.GetBoxByRegionIdx(IT.rev_tag[i], box));
     }
   });  // PERF: allow the parlay decide the granularity to accelerate the
        // small tree rebuild

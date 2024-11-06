@@ -93,22 +93,46 @@ struct BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::InnerTree {
     return;
   }
 
+  // NOTE: reduce sums is travsersal of the skeleton with counting the points
+  // seieved onto every node, it is good to determine whether we need forcing
+  // parallel in the following operations, e.g., flatten/rebuild the tree.
+  template <bool kApplyForceParallel>
   void ReduceSums(BucketType idx) const {
     if (idx > kPivotNum || tags[idx].first->is_leaf) {
       assert(tags[idx].second < kBucketNum);
       sums_tree[idx] = sums[tags[idx].second];
+
+      // NOTE: enable the parallel flag for the tree
+      if constexpr (kApplyForceParallel) {
+        if (!tags[idx].first->is_leaf && sums_tree[idx] != 0) {
+          auto TI = static_cast<Interior*>(tags[idx].first);
+          assert(!TI->GetParallelFlagIniStatus());
+          TI->SetParallelFlag(tags[idx].first->size > kSerialBuildCutoff);
+          assert(TI->GetParallelFlagIniStatus());
+        }
+      }
       return;
     }
 
     if constexpr (IsBinaryNode<Interior>) {
-      ReduceSums(idx << 1);
-      ReduceSums(idx << 1 | 1);
+      ReduceSums<kApplyForceParallel>(idx << 1);
+      ReduceSums<kApplyForceParallel>(idx << 1 | 1);
       sums_tree[idx] = sums_tree[idx << 1] + sums_tree[idx << 1 | 1];
     } else if constexpr (IsMultiNode<Interior>) {
       sums_tree[idx] = 0;
       for (BucketType i = 0; i < Interior::kRegions; ++i) {
-        ReduceSums(idx * Interior::kRegions + i);
+        ReduceSums<kApplyForceParallel>(idx * Interior::kRegions + i);
         sums_tree[idx] += sums_tree[idx * Interior::kRegions + i];
+      }
+    }
+
+    // NOTE: enable the parallel flag for the tree
+    if constexpr (kApplyForceParallel) {
+      if (!tags[idx].first->is_leaf && sums_tree[idx] != 0) {
+        auto TI = static_cast<Interior*>(tags[idx].first);
+        assert(!TI->GetParallelFlagIniStatus());
+        TI->SetParallelFlag(tags[idx].first->size > kSerialBuildCutoff);
+        assert(TI->GetParallelFlagIniStatus());
       }
     }
     return;
@@ -155,7 +179,7 @@ struct BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::InnerTree {
 
   template <typename... Args>
   void TagInbalanceNode(Args&&... args) {
-    ReduceSums(1);
+    ReduceSums<false>(1);
     ResetTagsNum();
     PickTag(1, std::forward<Args>(args)...);
     assert(AssertSize(tags[1].first));
@@ -176,12 +200,6 @@ struct BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::InnerTree {
                         // future, therefore, ensure the granularity
                         // control by assign to aug_flag
         tags[idx].second = kBucketNum + 2;
-        if (!tags[idx].first->is_leaf) {
-          auto TI = static_cast<Interior*>(tags[idx].first);
-          assert(!TI->GetParallelFlagIniStatus());
-          TI->SetParallelFlag(TI->size > kSerialBuildCutoff);
-          assert(TI->GetParallelFlagIniStatus());
-        }
       } else {
         tags[idx].second = kBucketNum + 1;
       }
@@ -195,11 +213,8 @@ struct BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::InnerTree {
     assert(tags[idx].second == kBucketNum && (!tags[idx].first->is_leaf));
     Interior* TI = static_cast<Interior*>(tags[idx].first);
     if (has_tomb && InvokeWithOptionalArg<bool>(violate_func, idx)) {
-      assert(has_tomb != 0);
-      assert(!TI->GetParallelFlagIniStatus());
       tags[idx].second = kBucketNum + 3;
       has_tomb = false;
-      TI->SetParallelFlag(TI->size > kSerialBuildCutoff);
       re_num++;
       tot_re_size += TI->size;
     }
@@ -227,7 +242,7 @@ struct BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::InnerTree {
 
   template <typename... Args>
   auto TagInbalanceNodeDeletion(Args&&... args) {
-    ReduceSums(1);
+    ReduceSums<true>(1);
     ResetTagsNum();
     BucketType re_num = 0;
     size_t tot_re_size = 0;
@@ -262,7 +277,7 @@ struct BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::InnerTree {
                                                // nodes or box
       return UpdateInnerTreeRecursive<kUT>(1, tree_nodes, p, [&]() {});
     } else if constexpr (kUT == kTagRebuildNode) {  // NOTE: tag the node that
-                                                    // needs to be reconstruct
+                                                    // needs to be rebuild
       auto func_2_rebuild_node = [&](auto const&... params) -> void {
         if constexpr (IsBinaryNode<Interior>) {  // NOTE: needs to save the box
           auto const& new_box = std::get<0>(std::forward_as_tuple(params...));

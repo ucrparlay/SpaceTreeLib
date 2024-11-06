@@ -80,7 +80,7 @@ size_t BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::RangeCountRectangle(
     } else if (WithinBox(box, query_box)) {
       logger.full_box_num++;
       // NOTE: when reach leaf, Ts is the children
-      counter = static_cast<Interior*>(Ts)->ReduceSums(next_idx);
+      counter = static_cast<Interior*>(Ts)->MergeSize(next_idx);
     } else {
       counter = RangeCountRectangle<Leaf, Interior>(Ts, query_box, box,
                                                     next_dim, next_idx, logger);
@@ -237,7 +237,7 @@ void BaseTree<Point, DerivedTree, kSkHeight,
       return;
     } else if (WithinBox(box, query_box)) {
       logger.full_box_num++;
-      size_t candidate_size = static_cast<Interior*>(Ts)->ReduceSums(next_idx);
+      size_t candidate_size = static_cast<Interior*>(Ts)->MergeSize(next_idx);
       PartialFlatten<Leaf, Interior>(Ts, Out.cut(s, s + candidate_size),
                                      next_idx);
       s += candidate_size;

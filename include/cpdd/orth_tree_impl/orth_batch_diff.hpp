@@ -38,7 +38,7 @@ void OrthTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::BatchDiff_(
     assert(BT::WithinBox(new_box, box));
     return std::make_tuple(std::move(new_box));
   };
-  this->root_ = BT::template RebuildTreeRecursive<Leaf, Interior, true>(
+  this->root_ = BT::template RebuildTreeRecursive<Leaf, Interior>(
       this->root_, prepare_func, this->tree_box_);
   return;
 }
@@ -75,7 +75,7 @@ Node* OrthTree<Point, SplitRule, kMD, kSkHeight,
       start += sums[i];
     }
 
-    // bool par_flag = TI->size > BT::kSerialBuildCutoff;
+    TI->SetParallelFlag(TI->size > BT::kSerialBuildCutoff);
     BT::template UpdateInterior<Interior>(T, new_nodes);
     assert(T->is_leaf == false);
 
@@ -87,12 +87,7 @@ Node* OrthTree<Point, SplitRule, kMD, kSkHeight,
   assert(IT.tags_num > 0 && IT.tags_num <= BT::kBucketNum);
   BT::template SeievePoints<Interior>(In, Out, n, IT.tags, IT.sums,
                                       IT.tags_num);
-
-  // BoxSeq box_seq(IT.tags_num);  // PARA: the box for bucket nodes
-  // [[maybe_unused]] auto [re_num, tot_re_size] = IT.TagInbalanceNodeDeletion(
-  //     box_seq, box, false, [&]() -> bool { return false; });
-
-  // assert(re_num == 0 && tot_re_size == 0);
+  IT.template ReduceSums<true>(1);  // NOTE: to set the parallel flag
 
   auto tree_nodes = parlay::sequence<Node*>::uninitialized(IT.tags_num);
   parlay::parallel_for(

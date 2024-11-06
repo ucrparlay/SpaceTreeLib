@@ -175,13 +175,13 @@ struct MultiNode : Node {
     return idx;
   }
 
-  inline size_t ReduceSums(BucketType const idx) {
+  inline size_t MergeSize(BucketType const idx) {
     if (idx == 1) {
       return this->size;
     } else if (idx >= kRegions) {
       return tree_nodes[idx - kRegions]->size;
     } else {
-      return ReduceSums(2 * idx) + ReduceSums(2 * idx + 1);
+      return MergeSize(2 * idx) + MergeSize(2 * idx + 1);
     }
   }
 
