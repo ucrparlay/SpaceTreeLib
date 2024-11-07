@@ -13,7 +13,7 @@ tag=$((2#111))
 count=1 # count the number of ok in the output
 dims=(2 3)
 queryTypes=$((2#111))
-trees=(1)
+trees=(0 1)
 
 Paths=("/data/zmen002/kdtree/ss_varden/" "/data/zmen002/kdtree/uniform/")
 
