@@ -33,48 +33,6 @@ void KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDelete_(Slice A) {
   return;
 }
 
-// NOTE: the Node which needs to be rebuilt has tag BT::kBucketNum+3
-// NOTE: the bucket Node whose ancestor has been rebuilt has tag
-// BT::kBucketNum+2
-// NOTE: the bucket Node whose ancestor has not been ... has
-// BT::kBucketNum+1
-// NOTE: otherwise, it's BT::kBucketNum
-template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
-typename KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::NodeBox
-KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::DeleteInnerTree(
-    BucketType idx, NodeTagSeq const& tags, NodeBoxSeq& tree_nodes,
-    BucketType& p, DimsType d) {
-  if (tags[idx].second == BT::kBucketNum + 1 ||
-      tags[idx].second == BT::kBucketNum + 2) {
-    return tree_nodes[p++];
-  }
-
-  auto& [L, Lbox] =
-      DeleteInnerTree(idx << 1, tags, tree_nodes, p, (d + 1) % BT::kDim);
-  auto& [R, Rbox] =
-      DeleteInnerTree(idx << 1 | 1, tags, tree_nodes, p, (d + 1) % BT::kDim);
-
-  BT::template UpdateInterior<Interior>(tags[idx].first, L, R);
-
-  // WARN: this blocks the parallelsim as it will rebuild the tree one-by-one
-  if (tags[idx].second == BT::kBucketNum + 3) {  // NOTE: launch rebuild
-    Interior const* TI = static_cast<Interior*>(tags[idx].first);
-    assert(BT::ImbalanceNode(TI->left->size, TI->size) ||
-           TI->size < BT::kThinLeaveWrap);
-
-    if (tags[idx].first->size == 0) {  // NOTE: special judge for empty tree
-      BT::template DeleteTreeRecursive<Leaf, Interior, false>(tags[idx].first);
-      return NodeBox(AllocEmptyLeafNode<Slice, Leaf>(), BT::GetEmptyBox());
-    }
-
-    return BT::template RebuildSingleTree<Leaf, Interior, false>(
-        tags[idx].first, d, BT::GetBox(Lbox, Rbox));
-  }
-
-  return NodeBox(tags[idx].first, BT::GetBox(Lbox, Rbox));
-}
-
 // NOTE: delete with rebuild, with the assumption that all Points are in the
 // tree
 // WARN: the param d can be only used when rotate cutting is applied

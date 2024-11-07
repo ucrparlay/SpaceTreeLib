@@ -102,10 +102,6 @@ class KdTree
   NodeBox BatchDiffRecursive(Node* T, Box const& bx, Slice In, Slice Out,
                              DimsType d);
 
-  NodeBox DeleteInnerTree(BucketType idx, NodeTagSeq const& tags,
-                          NodeBoxSeq& tree_nodes, BucketType& p,
-                          DimsType const d);
-
   template <typename Range>
   void Flatten(Range&& Out);
 

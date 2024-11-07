@@ -84,6 +84,7 @@ Node* BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::RebuildTreeRecursive(
             right_args);
       });
 
+  TI->ResetParallelFlag();
   UpdateInterior<Interior>(T, L, R);
   return T;
 }
@@ -133,6 +134,7 @@ Node* BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::RebuildTreeRecursive(
     }
   }
 
+  TI->ResetParallelFlag();
   UpdateInterior<Interior>(T, new_nodes);
   return T;
 }
