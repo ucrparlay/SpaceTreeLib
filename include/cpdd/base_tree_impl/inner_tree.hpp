@@ -102,15 +102,8 @@ struct BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::InnerTree {
       assert(tags[idx].second < kBucketNum);
       sums_tree[idx] = sums[tags[idx].second];
 
-      // NOTE: enable the parallel flag for the tree
-      if constexpr (kApplyForceParallel) {
-        if (!tags[idx].first->is_leaf && sums_tree[idx] != 0) {
-          auto TI = static_cast<Interior*>(tags[idx].first);
-          assert(!TI->GetParallelFlagIniStatus());
-          TI->SetParallelFlag(tags[idx].first->size > kSerialBuildCutoff);
-          assert(TI->GetParallelFlagIniStatus());
-        }
-      }
+      // PERF: no need to update the parallel flag here, as it is either a leaf
+      // node or it will be handled by recursive calls
       return;
     }
 
@@ -355,12 +348,12 @@ struct BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::InnerTree {
                                                    // for deleted trees
       if (!func(1)) {  // query whether under the rebuild_tree
         UpdateInterior<Interior>(this->tags[idx].first, left, right);
-        static_cast<Interior*>(this->tags[idx].first)->ResetParallelFlag();
+        // static_cast<Interior*>(this->tags[idx].first)->ResetParallelFlag();
         return NodeBox(this->tags[idx].first,
                        Box());  // box has been computed before
       } else if (this->tags[idx].second == kBucketNum + 3) {  // back
         func(0);  // disable the under_rebuild_tree flag
-        static_cast<Interior*>(this->tags[idx].first)->ResetParallelFlag();
+        // static_cast<Interior*>(this->tags[idx].first)->ResetParallelFlag();
         assert(func(1) == false);
         return NodeBox(this->tags[idx].first, Box());
       } else {  // the tree has been deleted
@@ -408,12 +401,16 @@ struct BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::InnerTree {
                                                    // pointers for deleted trees
       if (!func(1)) {                              // not under rebuild tree
         UpdateInterior<Interior>(this->tags[idx].first, new_nodes);
-        static_cast<Interior*>(this->tags[idx].first)->ResetParallelFlag();
+        if (!this->tags[idx].first->is_leaf) {
+          static_cast<Interior*>(this->tags[idx].first)->ResetParallelFlag();
+        }
         return this->tags[idx].first;  // box has been computed before
       } else if (this->tags[idx].second == kBucketNum + 3) {  // back
         func(0);  // disable the under_rebuild_tree flag
         assert(func(1) == false);
-        static_cast<Interior*>(this->tags[idx].first)->ResetParallelFlag();
+        if (!this->tags[idx].first->is_leaf) {
+          static_cast<Interior*>(this->tags[idx].first)->ResetParallelFlag();
+        }
         return this->tags[idx].first;
       } else {  // the tree has been deleted
         return nullptr;
