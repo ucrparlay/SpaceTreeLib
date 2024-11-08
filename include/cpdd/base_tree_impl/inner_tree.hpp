@@ -348,12 +348,16 @@ struct BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::InnerTree {
                                                    // for deleted trees
       if (!func(1)) {  // query whether under the rebuild_tree
         UpdateInterior<Interior>(this->tags[idx].first, left, right);
-        // static_cast<Interior*>(this->tags[idx].first)->ResetParallelFlag();
+        if (!this->tags[idx].first->is_leaf) {
+          static_cast<Interior*>(this->tags[idx].first)->ResetParallelFlag();
+        }
         return NodeBox(this->tags[idx].first,
                        Box());  // box has been computed before
       } else if (this->tags[idx].second == kBucketNum + 3) {  // back
         func(0);  // disable the under_rebuild_tree flag
-        // static_cast<Interior*>(this->tags[idx].first)->ResetParallelFlag();
+        if (!this->tags[idx].first->is_leaf) {
+          static_cast<Interior*>(this->tags[idx].first)->ResetParallelFlag();
+        }
         assert(func(1) == false);
         return NodeBox(this->tags[idx].first, Box());
       } else {  // the tree has been deleted
