@@ -65,6 +65,7 @@ Node* OrthTree<Point, SplitRule, kMD, kSkHeight,
   }
 
   if (In.size() <= BT::kSerialBuildCutoff) {
+    // if (In.size()) {
     parlay::sequence<BallsType> sums(kNodeRegions, 0);
     SerialSplitSkeleton(T, In, 0, 1, sums);
     assert(std::cmp_equal(std::accumulate(sums.begin(), sums.end(), 0), n));

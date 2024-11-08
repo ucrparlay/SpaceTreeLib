@@ -201,8 +201,11 @@ void BuildTree(parlay::sequence<Point> const& WP, int const& rounds,
   } else {
     // NOTE: always return a built tree
     pkd.DeleteTree();
+    std::cout << ">>>delete..." << std::endl;
     parlay::copy(WP.cut(0, n), wp.cut(0, n));
+    std::cout << ">>>copy..." << std::endl;
     pkd.Build(wp.cut(0, n));
+    std::cout << ">>>build..." << std::endl;
   }
 
   return;
@@ -274,11 +277,19 @@ void BatchDelete(Tree& pkd, parlay::sequence<Point> const& WP,
         [&]() {
           BuildTree<Point, Tree, false>(WP, rounds, pkd);
           parlay::copy(WI, wi);
+          std::cout << "build" << std::endl;
         },
-        [&]() { pkd.BatchDelete(wi.cut(0, batchSize)); },
-        [&]() { pkd.DeleteTree(); });
+        [&]() {
+          pkd.BatchDelete(wi.cut(0, batchSize));
+          std::cout << "finish batch delete" << std::endl;
+        },
+        [&]() {
+          pkd.DeleteTree();
+          std::cout << "finish delete" << std::endl;
+        });
     std::cout << aveDelete << " " << std::flush;
     BuildTree<Point, Tree, false>(WP, rounds, pkd);
+    std::cout << "finish one round" << std::endl;
   } else {
     parlay::copy(WI, wi);
     pkd.BatchDelete(wi.cut(0, batchSize));
