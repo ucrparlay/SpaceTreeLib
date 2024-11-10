@@ -123,6 +123,7 @@ struct BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::InnerTree {
     if constexpr (kApplyForceParallel) {
       if (!tags[idx].first->is_leaf && sums_tree[idx] != 0) {
         auto TI = static_cast<Interior*>(tags[idx].first);
+        assert(!TI->GetParallelFlagIniStatus());
         TI->SetParallelFlag(tags[idx].first->size > kSerialBuildCutoff);
         assert(TI->GetParallelFlagIniStatus());
       }
