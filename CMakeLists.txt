@@ -89,6 +89,11 @@ add_executable(data_generator ${PROJECT_SOURCE_DIR}/tests/data_generate.cpp)
 target_link_libraries(data_generator PUBLIC SpatialTrees)
 target_include_directories(data_generator PUBLIC ${PROJECT_SOURCE_DIR}/include)
 
+find_package(Boost REQUIRED)
+add_executable(rtree ${PROJECT_SOURCE_DIR}/tests/rtree.cpp)
+target_link_libraries(rtree PUBLIC SpatialTrees ${Boost_LIBRARIES})
+target_include_directories(rtree PUBLIC ${PROJECT_SOURCE_DIR}/include ${Boost_INCLUDE_DIRS})
+
 # CGAL
 if(CGAL)
 	find_package(CGAL REQUIRED)
