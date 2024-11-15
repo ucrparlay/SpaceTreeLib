@@ -468,6 +468,8 @@ int main(int argc, char* argv[]) {
     run_test(wrapper::QuadTree{});
   } else if (tree_type == 1 && kDim == 3) {
     run_test(wrapper::OctTree{});
+  } else if (tree_type == 2) {
+    run_test(wrapper::RTree{});
   }
 
   return 0;

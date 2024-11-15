@@ -14,6 +14,7 @@
 #include "cpdd/dependence/splitter.h"
 #include "cpdd/kd_tree.h"
 #include "cpdd/orth_tree.h"
+#include "cpdd/r_tree.h"
 #include "parlay/internal/group_by.h"
 #include "parlay/parallel.h"
 #include "parlay/primitives.h"
@@ -1053,6 +1054,13 @@ struct wrapper {
     template <class Point>
     struct Desc {
       using TreeType = cpdd::KdTree<Point, cpdd::MaxStretchDim<Point>>;
+      // using TreeType = cpdd::KdTree<Point, cpdd::RotateDim<Point>>;
+    };
+  };
+  struct RTree {
+    template <class Point>
+    struct Desc {
+      using TreeType = cpdd::RTree<Point, cpdd::MaxStretchDim<Point>>;
       // using TreeType = cpdd::KdTree<Point, cpdd::RotateDim<Point>>;
     };
   };
