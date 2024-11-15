@@ -25,8 +25,8 @@ void KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::Build(Range&& In) {
 template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 void KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::DivideRotate(
-    Slice In, SplitterSeq& pivots, DimsType dim, BucketType idx, BoxSeq& box_seq,
-    Box const& bx) {
+    Slice In, SplitterSeq& pivots, DimsType dim, BucketType idx,
+    BoxSeq& box_seq, Box const& bx) {
   if (idx > BT::kPivotNum) {
     // WARN: sometimes cut dimension can be -1
     //  never use pivots[idx].first to check whether it is in bucket;
@@ -46,13 +46,13 @@ void KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::DivideRotate(
 
   pivots[idx] = Splitter(In[n / 2].pnt[d], d);
 
-  Box lbox(bx), rbox(bx);
-  lbox.second.pnt[d] = pivots[idx].first;  // PERF: loose
-  rbox.first.pnt[d] = pivots[idx].first;
+  BoxCut box_cut(bx, pivots[idx], true);
 
   d = (d + 1) % BT::kDim;
-  DivideRotate(In.cut(0, n / 2), pivots, d, 2 * idx, box_seq, lbox);
-  DivideRotate(In.cut(n / 2, n), pivots, d, 2 * idx + 1, box_seq, rbox);
+  DivideRotate(In.cut(0, n / 2), pivots, d, 2 * idx, box_seq,
+               box_cut.GetFirstBoxCut());
+  DivideRotate(In.cut(n / 2, n), pivots, d, 2 * idx + 1, box_seq,
+               box_cut.GetSecondBoxCut());
   return;
 }
 
@@ -84,18 +84,18 @@ Node* KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::SerialBuildRecursive(
   if (n <= BT::kLeaveWrap) return AllocNormalLeafNode<Slice, Leaf>(In);
 
   DimsType d = split_rule_.FindCuttingDimension(bx, dim);
-  PointsIter splitIter = BT::SerialPartition(In, d);
+  PointsIter split_iter = BT::SerialPartition(In, d);
 
   Splitter split;
 
-  if (splitIter <= In.begin() + n / 2) {  // NOTE: split is on left half
+  if (split_iter <= In.begin() + n / 2) {  // NOTE: split is on left half
     split = Splitter(In[n / 2].pnt[d], d);
-  } else if (splitIter != In.end()) {  // NOTE: split is on right half
-    auto minEleIter = std::ranges::min_element(
-        splitIter, In.end(), [&](Point const& p1, Point const& p2) {
+  } else if (split_iter != In.end()) {  // NOTE: split is on right half
+    auto min_elem_iter = std::ranges::min_element(
+        split_iter, In.end(), [&](Point const& p1, Point const& p2) {
           return Num::Lt(p1.pnt[d], p2.pnt[d]);
         });
-    split = Splitter(minEleIter->pnt[d], d);
+    split = Splitter(min_elem_iter->pnt[d], d);
   } else if (In.end() == std::ranges::find_if_not(In, [&](Point const& p) {
                return p.SameDimension(In[0]);
              })) {  // NOTE: check whether all elements are identical
@@ -107,24 +107,24 @@ Node* KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::SerialBuildRecursive(
     return SerialBuildRecursive(In, Out, new_dim, new_box);
   }
 
-  assert(std::ranges::all_of(In.begin(), splitIter, [&](Point& p) {
+  assert(std::ranges::all_of(In.begin(), split_iter, [&](Point& p) {
     return Num::Lt(p.pnt[split.second], split.first);
   }));
-  assert(std::ranges::all_of(splitIter, In.end(), [&](Point& p) {
+  assert(std::ranges::all_of(split_iter, In.end(), [&](Point& p) {
     return Num::Geq(p.pnt[split.second], split.first);
   }));
 
-  Box lbox(bx), rbox(bx);
-  lbox.second.pnt[d] = split.first;  //* loose
-  rbox.first.pnt[d] = split.first;
+  BoxCut box_cut(bx, split, true);
 
   d = (d + 1) % BT::kDim;
   Node *L, *R;
 
-  L = SerialBuildRecursive(In.cut(0, splitIter - In.begin()),
-                           Out.cut(0, splitIter - In.begin()), d, lbox);
-  R = SerialBuildRecursive(In.cut(splitIter - In.begin(), n),
-                           Out.cut(splitIter - In.begin(), n), d, rbox);
+  L = SerialBuildRecursive(In.cut(0, split_iter - In.begin()),
+                           Out.cut(0, split_iter - In.begin()), d,
+                           box_cut.GetFirstBoxCut());
+  R = SerialBuildRecursive(In.cut(split_iter - In.begin(), n),
+                           Out.cut(split_iter - In.begin(), n), d,
+                           box_cut.GetSecondBoxCut());
   return AllocInteriorNode<Interior>(L, R, split, AugType());
 }
 
@@ -177,9 +177,10 @@ Node* KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BuildRecursive(
           start += sums[j];
         }
 
-        tree_nodes[nodes_map[i]] = BuildRecursive(
-            Out.cut(start, start + sums[nodes_map[i]]),
-            In.cut(start, start + sums[nodes_map[i]]), dim, box_seq[nodes_map[i]]);
+        tree_nodes[nodes_map[i]] =
+            BuildRecursive(Out.cut(start, start + sums[nodes_map[i]]),
+                           In.cut(start, start + sums[nodes_map[i]]), dim,
+                           box_seq[nodes_map[i]]);
       },
       1);
 
