@@ -24,14 +24,25 @@ void RTree<Point, SplitRule, kSkHeight, kImbaRatio>::Build(Range&& In) {
 
 template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
+void RTree<Point, SplitRule, kSkHeight, kImbaRatio>::Build_(Slice A) {
+  Points B = Points::uninitialized(A.size());
+  // this->tree_box_ = BT::GetBox(A);
+  std::tie(this->root_, this->tree_box_) =
+      BuildRecursive(A, B.cut(0, A.size()), 0, this->tree_box_);
+  assert(this->root_ != nullptr);
+  return;
+}
+
+template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
 void RTree<Point, SplitRule, kSkHeight, kImbaRatio>::DivideRotate(
-    Slice In, SplitterSeq& pivots, DimsType dim, BucketType idx, BoxSeq& boxs,
-    Box const& bx) {
+    Slice In, SplitterSeq& pivots, DimsType dim, BucketType idx,
+    BoxSeq& box_seq, Box const& bx) {
   if (idx > BT::kPivotNum) {
     // WARN: sometimes cut dimension can be -1
     //  never use pivots[idx].first to check whether it is in bucket;
     //  instead, use idx > PIVOT_NUM
-    boxs[idx - BT::kBucketNum] = bx;
+    box_seq[idx - BT::kBucketNum] = bx;
     pivots[idx] = Splitter(0, idx - BT::kBucketNum);
     return;
   }
@@ -44,15 +55,18 @@ void RTree<Point, SplitRule, kSkHeight, kImbaRatio>::DivideRotate(
                              return Num::Lt(p1.pnt[d], p2.pnt[d]);
                            });
 
-  pivots[idx] = Splitter(In[n / 2].pnt[d], d);
+  pivots[idx] = HyperPlane(In[n / 2].pnt[d], d);
 
-  Box lbox(bx), rbox(bx);
-  lbox.second.pnt[d] = pivots[idx].first;  // PERF: loose
-  rbox.first.pnt[d] = pivots[idx].first;
+  // Box lbox(bx), rbox(bx);
+  // lbox.second.pnt[d] = pivots[idx].first;  // PERF: loose
+  // rbox.first.pnt[d] = pivots[idx].first;
+  auto box_cut = BT::BoxCut(bx, pivots[idx]);
 
   d = (d + 1) % BT::kDim;
-  DivideRotate(In.cut(0, n / 2), pivots, d, 2 * idx, boxs, lbox);
-  DivideRotate(In.cut(n / 2, n), pivots, d, 2 * idx + 1, boxs, rbox);
+  DivideRotate(In.cut(0, n / 2), pivots, d, 2 * idx, box_seq,
+               box_cut.GetFirstBoxCut());
+  DivideRotate(In.cut(n / 2, n), pivots, d, 2 * idx + 1, box_seq,
+               box_cut.GetSecondBoxCut());
   return;
 }
 
@@ -61,7 +75,7 @@ template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 void RTree<Point, SplitRule, kSkHeight, kImbaRatio>::PickPivots(
     Slice In, size_t const& n, SplitterSeq& pivots, DimsType const dim,
-    BoxSeq& boxs, Box const& bx) {
+    BoxSeq& box_seq, Box const& bx) {
   size_t size = std::min(n, static_cast<size_t>(32 * BT::kBucketNum));
   assert(size <= n);
 
@@ -69,69 +83,85 @@ void RTree<Point, SplitRule, kSkHeight, kImbaRatio>::PickPivots(
   BT::SamplePoints(In, arr);
 
   // NOTE: pick pivots
-  DivideRotate(arr.cut(0, size), pivots, dim, 1, boxs, bx);
+  DivideRotate(arr.cut(0, size), pivots, dim, 1, box_seq, bx);
   return;
 }
 
 template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
-Node* RTree<Point, SplitRule, kSkHeight, kImbaRatio>::SerialBuildRecursive(
+typename RTree<Point, SplitRule, kSkHeight, kImbaRatio>::NodeBox
+RTree<Point, SplitRule, kSkHeight, kImbaRatio>::SerialBuildRecursive(
     Slice In, Slice Out, DimsType dim, Box const& bx) {
   size_t n = In.size();
 
-  if (n == 0) return AllocEmptyLeafNode<Slice, Leaf>();
+  if (n == 0) {
+    return NodeBox(AllocEmptyLeafNode<Slice, Leaf>(), BT::GetEmptyBox());
+  }
 
-  if (n <= BT::kLeaveWrap) return AllocNormalLeafNode<Slice, Leaf>(In);
+  if (n <= BT::kLeaveWrap) {
+    return NodeBox(AllocNormalLeafNode<Slice, Leaf>(In), BT::GetBox(In));
+  }
 
   DimsType d = split_rule_.FindCuttingDimension(bx, dim);
-  PointsIter splitIter = BT::SerialPartition(In, d);
+  PointsIter split_iter = BT::SerialPartition(In, d);
 
-  Splitter split;
+  HyperPlane split;
 
-  if (splitIter <= In.begin() + n / 2) {  // NOTE: split is on left half
-    split = Splitter(In[n / 2].pnt[d], d);
-  } else if (splitIter != In.end()) {  // NOTE: split is on right half
-    auto minEleIter = std::ranges::min_element(
-        splitIter, In.end(), [&](Point const& p1, Point const& p2) {
+  if (split_iter <= In.begin() + n / 2) {  // split is on left half
+    split = HyperPlane(In[n / 2].pnt[d], d);
+  } else if (split_iter != In.end()) {  // split is on right half
+    auto min_elem_iter = std::ranges::min_element(
+        split_iter, In.end(), [&](Point const& p1, Point const& p2) {
           return Num::Lt(p1.pnt[d], p2.pnt[d]);
         });
-    split = Splitter(minEleIter->pnt[d], d);
+    split = HyperPlane(min_elem_iter->pnt[d], d);
   } else if (In.end() == std::ranges::find_if_not(In, [&](Point const& p) {
                return p.SameDimension(In[0]);
-             })) {  // NOTE: check whether all elements are identical
-    return AllocDummyLeafNode<Slice, Leaf>(In);
-  } else {  // NOTE: current dim d is same but other dims are not
+             })) {  //  check whether all elements are identical
+    return NodeBox(AllocDummyLeafNode<Slice, Leaf>(In), Box(In[0], In[0]));
+  } else {  //  current dim d is same but other dims are not
     // WARN: this will break the rotate dimension mannar
     auto [new_box, new_dim] = split_rule_.SwitchDimension(In, d, bx);
     assert(IsMaxStretchSplit<SplitRule> || new_dim != d);
     return SerialBuildRecursive(In, Out, new_dim, new_box);
   }
 
-  assert(std::ranges::all_of(In.begin(), splitIter, [&](Point& p) {
+  assert(std::ranges::all_of(In.begin(), split_iter, [&](Point& p) {
     return Num::Lt(p.pnt[split.second], split.first);
   }));
-  assert(std::ranges::all_of(splitIter, In.end(), [&](Point& p) {
+  assert(std::ranges::all_of(split_iter, In.end(), [&](Point& p) {
     return Num::Geq(p.pnt[split.second], split.first);
   }));
 
-  Box lbox(bx), rbox(bx);
-  lbox.second.pnt[d] = split.first;  //* loose
-  rbox.first.pnt[d] = split.first;
+  // Box lbox(bx), rbox(bx);
+  // lbox.second.pnt[d] = split.first;  //* loose
+  // rbox.first.pnt[d] = split.first;
+  BoxCut box_cut = BT::BoxCut(bx, split);
 
   d = (d + 1) % BT::kDim;
   Node *L, *R;
+  Box left_box, right_box, new_box;
 
-  L = SerialBuildRecursive(In.cut(0, splitIter - In.begin()),
-                           Out.cut(0, splitIter - In.begin()), d, lbox);
-  R = SerialBuildRecursive(In.cut(splitIter - In.begin(), n),
-                           Out.cut(splitIter - In.begin(), n), d, rbox);
-  return AllocInteriorNode<Interior>(L, R, split, AugType());
+  std::tie(L, left_box) = SerialBuildRecursive(
+      In.cut(0, split_iter - In.begin()), Out.cut(0, split_iter - In.begin()),
+      d, box_cut.GetFirstBoxCut());
+  std::tie(R, right_box) = SerialBuildRecursive(
+      In.cut(split_iter - In.begin(), n), Out.cut(split_iter - In.begin(), n),
+      d, box_cut.GetSecondBoxCut());
+
+  new_box = BT::GetBox(left_box, right_box);
+
+  return NodeBox(AllocInteriorNode<Interior>(L, R, new_box, AugType()),
+                 new_box);
 }
 
 template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
-Node* RTree<Point, SplitRule, kSkHeight, kImbaRatio>::BuildRecursive(
-    Slice In, Slice Out, DimsType dim, Box const& bx) {
+typename RTree<Point, SplitRule, kSkHeight, kImbaRatio>::NodeBox
+RTree<Point, SplitRule, kSkHeight, kImbaRatio>::BuildRecursive(Slice In,
+                                                               Slice Out,
+                                                               DimsType dim,
+                                                               Box const& bx) {
   assert(In.size() == 0 || BT::WithinBox(BT::GetBox(In), bx));
 
   // if (In.size()) {
@@ -140,15 +170,15 @@ Node* RTree<Point, SplitRule, kSkHeight, kImbaRatio>::BuildRecursive(
   }
 
   auto pivots = SplitterSeq::uninitialized(BT::kPivotNum + BT::kBucketNum + 1);
-  auto boxs = BoxSeq::uninitialized(BT::kBucketNum);
+  auto box_seq = BoxSeq::uninitialized(BT::kBucketNum);
   parlay::sequence<BallsType> sums;
 
-  PickPivots(In, In.size(), pivots, dim, boxs, bx);
+  PickPivots(In, In.size(), pivots, dim, box_seq, bx);
   BT::Partition(In, Out, In.size(), pivots, sums);
 
   // NOTE: if random sampling failed to split points, re-partitions using
   // serail approach
-  auto tree_nodes = parlay::sequence<Node*>::uninitialized(BT::kBucketNum);
+  auto tree_nodes = parlay::sequence<NodeBox>::uninitialized(BT::kBucketNum);
   auto nodes_map = BucketSeq::uninitialized(BT::kBucketNum);
   BucketType zeros = std::ranges::count(sums, 0), cnt = 0;
 
@@ -161,7 +191,8 @@ Node* RTree<Point, SplitRule, kSkHeight, kImbaRatio>::BuildRecursive(
   // NOTE: alloc empty leaf beforehand to avoid spawn threads
   for (BucketType i = 0; i < BT::kBucketNum; ++i) {
     if (!sums[i]) {
-      tree_nodes[i] = AllocEmptyLeafNode<Slice, Leaf>();
+      tree_nodes[i] =
+          NodeBox(AllocEmptyLeafNode<Slice, Leaf>(), BT::GetEmptyBox());
     } else {
       nodes_map[cnt++] = i;
     }
@@ -177,23 +208,14 @@ Node* RTree<Point, SplitRule, kSkHeight, kImbaRatio>::BuildRecursive(
           start += sums[j];
         }
 
-        tree_nodes[nodes_map[i]] = BuildRecursive(
-            Out.cut(start, start + sums[nodes_map[i]]),
-            In.cut(start, start + sums[nodes_map[i]]), dim, boxs[nodes_map[i]]);
+        tree_nodes[nodes_map[i]] =
+            BuildRecursive(Out.cut(start, start + sums[nodes_map[i]]),
+                           In.cut(start, start + sums[nodes_map[i]]), dim,
+                           box_seq[nodes_map[i]]);
       },
       1);
 
   return BT::template BuildInnerTree<Interior>(1, pivots, tree_nodes);
-}
-
-template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
-void RTree<Point, SplitRule, kSkHeight, kImbaRatio>::Build_(Slice A) {
-  Points B = Points::uninitialized(A.size());
-  this->tree_box_ = BT::GetBox(A);
-  this->root_ = BuildRecursive(A, B.cut(0, A.size()), 0, this->tree_box_);
-  assert(this->root_ != nullptr);
-  return;
 }
 
 }  // namespace cpdd

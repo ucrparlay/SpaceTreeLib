@@ -259,9 +259,7 @@ struct BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::InnerTree {
 
   // NOTE: update the skeleton based on the @UpdateType
   template <UpdateType kUT, typename Base, typename... Args>
-    requires IsPointer<Base> ||
-             (IsPair<Base> && IsPointer<typename Base::first_type> &&
-              IsBox<typename Base::second_type, Point>)
+    requires IsPointerToNode<Base> || IsNodeBox<Base, Point>
   Base UpdateInnerTree(parlay::sequence<Base> const& tree_nodes,
                        Args&&... args) {
     BucketType p = 0;
@@ -327,7 +325,7 @@ struct BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::InnerTree {
 
     if constexpr (kUT == kUpdatePointer) {  // only update the pointers
       UpdateInterior<Interior>(this->tags[idx].first, left, right);
-      if constexpr (IsPointer<Base>) {
+      if constexpr (IsPointerToNode<Base>) {
         return this->tags[idx].first;
       } else {  // WARN: if only update pointer, then avoid update box
         return NodeBox(this->tags[idx].first, Box());

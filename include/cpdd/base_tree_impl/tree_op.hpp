@@ -9,6 +9,7 @@
 #include <utility>
 
 #include "../base_tree.h"
+#include "cpdd/dependence/concepts.h"
 #include "cpdd/dependence/tree_node.h"
 #include "parlay/primitives.h"
 #include "parlay/slice.h"
@@ -150,19 +151,30 @@ inline bool BaseTree<Point, DerivedTree, kSkHeight,
 
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
-template <IsBinaryNode Interior>
-Node* BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::BuildInnerTree(
+template <IsBinaryNode Interior, typename Base>
+Base BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::BuildInnerTree(
     BucketType idx, HyperPlaneSeq const& pivots,
-    parlay::sequence<Node*> const& tree_nodes) {
+    parlay::sequence<Base> const& tree_nodes) {
   if (idx > kPivotNum) {
     assert(idx - kPivotNum - 1 < kBucketNum);
     return tree_nodes[idx - kPivotNum - 1];
   }
-  Node *L, *R;
+
+  Base L, R;
   L = BuildInnerTree<Interior>(idx << 1, pivots, tree_nodes);
   R = BuildInnerTree<Interior>(idx << 1 | 1, pivots, tree_nodes);
-  return AllocInteriorNode<Interior>(L, R, pivots[idx],
-                                     typename Interior::AT());
+
+  if constexpr (IsPointerToNode<Base>) {
+    return AllocInteriorNode<Interior>(L, R, pivots[idx],
+                                       typename Interior::AT());
+  } else if constexpr (IsNodeBox<Base, Point>) {
+    auto new_box = GetBox(L.second, R.second);
+    return Base(AllocInteriorNode<Interior>(L.first, R.first, new_box,
+                                            typename Interior::AT()),
+                new_box);
+  } else {
+    static_assert(IsPointerToNode<Base> || IsNodeBox<Base, Point>);
+  }
 }
 
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,

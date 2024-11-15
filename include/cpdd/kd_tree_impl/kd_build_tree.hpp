@@ -25,13 +25,13 @@ void KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::Build(Range&& In) {
 template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 void KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::DivideRotate(
-    Slice In, SplitterSeq& pivots, DimsType dim, BucketType idx, BoxSeq& boxs,
+    Slice In, SplitterSeq& pivots, DimsType dim, BucketType idx, BoxSeq& box_seq,
     Box const& bx) {
   if (idx > BT::kPivotNum) {
     // WARN: sometimes cut dimension can be -1
     //  never use pivots[idx].first to check whether it is in bucket;
     //  instead, use idx > PIVOT_NUM
-    boxs[idx - BT::kBucketNum] = bx;
+    box_seq[idx - BT::kBucketNum] = bx;
     pivots[idx] = Splitter(0, idx - BT::kBucketNum);
     return;
   }
@@ -51,8 +51,8 @@ void KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::DivideRotate(
   rbox.first.pnt[d] = pivots[idx].first;
 
   d = (d + 1) % BT::kDim;
-  DivideRotate(In.cut(0, n / 2), pivots, d, 2 * idx, boxs, lbox);
-  DivideRotate(In.cut(n / 2, n), pivots, d, 2 * idx + 1, boxs, rbox);
+  DivideRotate(In.cut(0, n / 2), pivots, d, 2 * idx, box_seq, lbox);
+  DivideRotate(In.cut(n / 2, n), pivots, d, 2 * idx + 1, box_seq, rbox);
   return;
 }
 
@@ -61,7 +61,7 @@ template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 void KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::PickPivots(
     Slice In, size_t const& n, SplitterSeq& pivots, DimsType const dim,
-    BoxSeq& boxs, Box const& bx) {
+    BoxSeq& box_seq, Box const& bx) {
   size_t size = std::min(n, static_cast<size_t>(32 * BT::kBucketNum));
   assert(size <= n);
 
@@ -69,7 +69,7 @@ void KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::PickPivots(
   BT::SamplePoints(In, arr);
 
   // NOTE: pick pivots
-  DivideRotate(arr.cut(0, size), pivots, dim, 1, boxs, bx);
+  DivideRotate(arr.cut(0, size), pivots, dim, 1, box_seq, bx);
   return;
 }
 
@@ -140,10 +140,10 @@ Node* KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BuildRecursive(
   }
 
   auto pivots = SplitterSeq::uninitialized(BT::kPivotNum + BT::kBucketNum + 1);
-  auto boxs = BoxSeq::uninitialized(BT::kBucketNum);
+  auto box_seq = BoxSeq::uninitialized(BT::kBucketNum);
   parlay::sequence<BallsType> sums;
 
-  PickPivots(In, In.size(), pivots, dim, boxs, bx);
+  PickPivots(In, In.size(), pivots, dim, box_seq, bx);
   BT::Partition(In, Out, In.size(), pivots, sums);
 
   // NOTE: if random sampling failed to split points, re-partitions using
@@ -179,7 +179,7 @@ Node* KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BuildRecursive(
 
         tree_nodes[nodes_map[i]] = BuildRecursive(
             Out.cut(start, start + sums[nodes_map[i]]),
-            In.cut(start, start + sums[nodes_map[i]]), dim, boxs[nodes_map[i]]);
+            In.cut(start, start + sums[nodes_map[i]]), dim, box_seq[nodes_map[i]]);
       },
       1);
 

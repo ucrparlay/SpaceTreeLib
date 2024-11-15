@@ -17,6 +17,13 @@ namespace cpdd {
 // concept IsPair = is_pair<T>::value;
 
 template <typename T>
+concept IsPointer = std::is_pointer_v<T>;
+
+template <typename T>
+concept IsPointerToNode =
+    std::is_pointer_v<T> && std::is_base_of_v<Node, std::remove_pointer_t<T>>;
+
+template <typename T>
 concept IsPair = requires {
   requires std::same_as<
       T, std::pair<typename T::first_type, typename T::second_type>>;
@@ -28,8 +35,11 @@ concept IsBox = requires {
                std::same_as<typename T::second_type, Point>;
 };
 
-template <typename T>
-concept IsPointer = std::is_pointer_v<T>;
+template <typename T, typename Point>
+concept IsNodeBox = requires {
+  requires IsPair<T> && IsPointerToNode<typename T::first_type> &&
+               IsBox<typename T::second_type, Point>;
+};
 
 // NOTE:  Concept to check if a type is present in a parameter pack
 template <typename T, typename... Args>
@@ -96,6 +106,11 @@ concept IsOrthTree = requires(T t) {
 template <typename T>
 concept IsKdTree = requires(T t) {
   { t.KdTreeTag() } -> std::same_as<void>;
+};
+
+template <typename T>
+concept IsRTree = requires(T t) {
+  { t.RTreeTag() } -> std::same_as<void>;
 };
 
 template <typename T>

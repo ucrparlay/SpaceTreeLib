@@ -38,11 +38,12 @@ class RTree
   using NodeTagSeq = typename BT::NodeTagSeq;
   using NodeBox = typename BT::NodeBox;
   using NodeBoxSeq = typename BT::NodeBoxSeq;
-  using Splitter = HyperPlane;
-  using SplitterSeq = HyperPlaneSeq;
+
+  // NOTE: using box as splitter in the R-tree
+  using Splitter = Box;
+  using SplitterSeq = BoxSeq;
 
   using AugType = std::optional<bool>;
-  // using AugType = bool;
   struct RInteriorNode;
 
   using SplitRuleType = SplitRule;
@@ -67,7 +68,7 @@ class RTree
   template <typename Leaf, typename Interior, typename... Args>
   friend Node* BT::RebuildWithInsert(Node* T, Slice In, Args&&... args);
 
-  void KdTreeTag();
+  void RTreeTag();
 
   // NOTE: functions
   template <typename Range>
@@ -117,14 +118,15 @@ class RTree
 
  private:
   void DivideRotate(Slice In, SplitterSeq& pivots, DimsType dim, BucketType idx,
-                    BoxSeq& boxs, Box const& bx);
+                    BoxSeq& box_seq, Box const& bx);
 
   void PickPivots(Slice In, size_t const& n, SplitterSeq& pivots,
-                  DimsType const dim, BoxSeq& boxs, Box const& bx);
+                  DimsType const dim, BoxSeq& box_seq, Box const& bx);
 
-  Node* BuildRecursive(Slice In, Slice Out, DimsType dim, Box const& bx);
+  NodeBox BuildRecursive(Slice In, Slice Out, DimsType dim, Box const& bx);
 
-  Node* SerialBuildRecursive(Slice In, Slice Out, DimsType dim, Box const& bx);
+  NodeBox SerialBuildRecursive(Slice In, Slice Out, DimsType dim,
+                               Box const& bx);
 
   void Build_(Slice In);
 

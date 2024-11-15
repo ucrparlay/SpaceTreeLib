@@ -127,7 +127,7 @@ class OrthTree
                     BoxSeq& box_seq, Box const& box);
 
   void PickPivots(Slice In, size_t const& n, HyperPlaneSeq& pivots,
-                  DimsType const dim, BoxSeq& boxs, Box const& bx);
+                  DimsType const dim, BoxSeq& box_seq, Box const& bx);
 
   Node* BuildRecursive(Slice In, Slice Out, Box const& bx);
 
