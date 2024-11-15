@@ -117,10 +117,10 @@ class RTree
   auto RangeQuery(Box const& query_box, Range&& Out);
 
  private:
-  void DivideRotate(Slice In, SplitterSeq& pivots, DimsType dim, BucketType idx,
-                    BoxSeq& box_seq, Box const& bx);
+  void DivideRotate(Slice In, HyperPlaneSeq& pivots, DimsType dim,
+                    BucketType idx, BoxSeq& box_seq, Box const& bx);
 
-  void PickPivots(Slice In, size_t const& n, SplitterSeq& pivots,
+  void PickPivots(Slice In, size_t const& n, HyperPlaneSeq& pivots,
                   DimsType const dim, BoxSeq& box_seq, Box const& bx);
 
   NodeBox BuildRecursive(Slice In, Slice Out, DimsType dim, Box const& bx);

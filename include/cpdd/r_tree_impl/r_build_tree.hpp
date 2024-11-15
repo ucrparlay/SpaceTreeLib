@@ -36,14 +36,14 @@ void RTree<Point, SplitRule, kSkHeight, kImbaRatio>::Build_(Slice A) {
 template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 void RTree<Point, SplitRule, kSkHeight, kImbaRatio>::DivideRotate(
-    Slice In, SplitterSeq& pivots, DimsType dim, BucketType idx,
+    Slice In, HyperPlaneSeq& pivots, DimsType dim, BucketType idx,
     BoxSeq& box_seq, Box const& bx) {
   if (idx > BT::kPivotNum) {
     // WARN: sometimes cut dimension can be -1
     //  never use pivots[idx].first to check whether it is in bucket;
     //  instead, use idx > PIVOT_NUM
     box_seq[idx - BT::kBucketNum] = bx;
-    pivots[idx] = Splitter(0, idx - BT::kBucketNum);
+    pivots[idx] = HyperPlane(0, idx - BT::kBucketNum);
     return;
   }
   size_t n = In.size();
@@ -60,7 +60,7 @@ void RTree<Point, SplitRule, kSkHeight, kImbaRatio>::DivideRotate(
   // Box lbox(bx), rbox(bx);
   // lbox.second.pnt[d] = pivots[idx].first;  // PERF: loose
   // rbox.first.pnt[d] = pivots[idx].first;
-  auto box_cut = BT::BoxCut(bx, pivots[idx]);
+  BoxCut box_cut(bx, pivots[idx], true);
 
   d = (d + 1) % BT::kDim;
   DivideRotate(In.cut(0, n / 2), pivots, d, 2 * idx, box_seq,
@@ -74,7 +74,7 @@ void RTree<Point, SplitRule, kSkHeight, kImbaRatio>::DivideRotate(
 template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 void RTree<Point, SplitRule, kSkHeight, kImbaRatio>::PickPivots(
-    Slice In, size_t const& n, SplitterSeq& pivots, DimsType const dim,
+    Slice In, size_t const& n, HyperPlaneSeq& pivots, DimsType const dim,
     BoxSeq& box_seq, Box const& bx) {
   size_t size = std::min(n, static_cast<size_t>(32 * BT::kBucketNum));
   assert(size <= n);
@@ -136,7 +136,7 @@ RTree<Point, SplitRule, kSkHeight, kImbaRatio>::SerialBuildRecursive(
   // Box lbox(bx), rbox(bx);
   // lbox.second.pnt[d] = split.first;  //* loose
   // rbox.first.pnt[d] = split.first;
-  BoxCut box_cut = BT::BoxCut(bx, split);
+  BoxCut box_cut(bx, split, true);
 
   d = (d + 1) % BT::kDim;
   Node *L, *R;
@@ -169,7 +169,8 @@ RTree<Point, SplitRule, kSkHeight, kImbaRatio>::BuildRecursive(Slice In,
     return SerialBuildRecursive(In, Out, dim, bx);
   }
 
-  auto pivots = SplitterSeq::uninitialized(BT::kPivotNum + BT::kBucketNum + 1);
+  auto pivots =
+      HyperPlaneSeq::uninitialized(BT::kPivotNum + BT::kBucketNum + 1);
   auto box_seq = BoxSeq::uninitialized(BT::kBucketNum);
   parlay::sequence<BallsType> sums;
 
