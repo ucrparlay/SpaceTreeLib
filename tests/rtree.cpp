@@ -1,3 +1,5 @@
+// NOTE: R tree references
+// https://www.boost.org/doc/libs/1_86_0/libs/geometry/doc/html/geometry/spatial_indexes/introduction.html
 #include <boost/geometry.hpp>
 #include <boost/geometry/index/rtree.hpp>
 #include <iostream>
@@ -42,7 +44,7 @@ void TestRtreeParallel(int Dim, parlay::sequence<Point>& wp,
 
   parlay::internal::timer timer;
   timer.start();
-  bgi::rtree<RPoint, bgi::quadratic<32>> tree(_points.begin(), _points.end());
+  bgi::rtree<RPoint, bgi::rstar<32>> tree(_points.begin(), _points.end());
   timer.stop();
   std::cout << timer.total_time() << " " << -1 << " " << std::flush;
 
