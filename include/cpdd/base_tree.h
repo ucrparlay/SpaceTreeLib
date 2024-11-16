@@ -199,9 +199,16 @@ class BaseTree {
 
   // NOTE: search knn in the binary node
   template <typename Leaf, IsBinaryNode Interior, typename Range>
+    requires(std::same_as<typename Interior::ST,
+                          HyperPlane>)  // hyperplane as splitter
   static void KNNBinary(Node* T, Point const& q,
                         kBoundedQueue<Point, Range>& bq, Box const& bx,
                         KNNLogger& logger);
+
+  template <typename Leaf, IsBinaryNode Interior, typename Range>
+    requires(std::same_as<typename Interior::ST, Box>)  // use box as spliiter
+  static void KNNBinary(Node* T, Point const& q,
+                        kBoundedQueue<Point, Range>& bq, KNNLogger& logger);
 
   // NOTE: search knn in the expanded multi node
   template <typename Leaf, IsMultiNode Interior, typename Range>

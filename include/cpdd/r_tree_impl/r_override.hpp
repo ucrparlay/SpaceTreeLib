@@ -14,7 +14,7 @@ template <typename Range>
 auto RTree<Point, SplitRule, kSkHeight, kImbaRatio>::KNN(
     Node* T, Point const& q, kBoundedQueue<Point, Range>& bq) {
   KNNLogger logger;
-  BT::template KNNBinary<Leaf, Interior>(T, q, bq, this->tree_box_, logger);
+  BT::template KNNBinary<Leaf, Interior>(T, q, bq, logger);
   return logger;
 }
 

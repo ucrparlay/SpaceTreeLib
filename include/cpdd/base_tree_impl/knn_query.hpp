@@ -126,6 +126,9 @@ void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::KNNLeaf(
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 template <typename Leaf, IsBinaryNode Interior, typename Range>
+  requires(std::same_as<typename Interior::ST,
+                        typename BaseTree<Point, DerivedTree, kSkHeight,
+                                          kImbaRatio>::HyperPlane>)
 void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::KNNBinary(
     Node* T, Point const& q, kBoundedQueue<Point, Range>& bq,
     Box const& node_box, KNNLogger& logger) {
@@ -152,6 +155,45 @@ void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::KNNBinary(
   }
   KNNBinary<Leaf, Interior>(go_left ? TI->right : TI->left, q, bq,
                             box_cut.GetBox(), logger);
+  return;
+}
+
+template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
+template <typename Leaf, IsBinaryNode Interior, typename Range>
+  requires(std::same_as<
+           typename Interior::ST,
+           typename BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::Box>)
+void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::KNNBinary(
+    Node* T, Point const& q, kBoundedQueue<Point, Range>& bq,
+    KNNLogger& logger) {
+  logger.vis_node_num++;
+
+  if (T->is_leaf) {
+    KNNLeaf<Leaf>(T, q, bq);
+    return;
+  }
+
+  Interior* TI = static_cast<Interior*>(T);
+  Coord dist_left =
+      TI->left->is_leaf
+          ? static_cast<Coord>(0)
+          : P2BMinDistance(q, static_cast<Interior*>(TI->left)->split);
+  Coord dist_right =
+      TI->right->is_leaf
+          ? static_cast<Coord>(0)
+          : P2BMinDistance(q, static_cast<Interior*>(TI->right)->split);
+  bool go_left = Num::Leq(dist_left, dist_right);
+  logger.generate_box_num += 1;
+
+  KNNBinary<Leaf, Interior>(go_left ? TI->left : TI->right, q, bq, logger);
+
+  logger.check_box_num++;
+  if (Num::Gt(go_left ? dist_right : dist_left, bq.top_value()) && bq.full()) {
+    logger.skip_box_num++;
+    return;
+  }
+  KNNBinary<Leaf, Interior>(go_left ? TI->right : TI->left, q, bq, logger);
   return;
 }
 
