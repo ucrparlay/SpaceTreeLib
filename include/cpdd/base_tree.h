@@ -219,8 +219,15 @@ class BaseTree {
   static size_t RangeCountRectangleLeaf(Node* T, Box const& query_box);
 
   template <typename Leaf, IsBinaryNode Interior>
+    requires(std::same_as<typename Interior::ST,
+                          HyperPlane>)  // hyperplane as splitter
   static size_t RangeCountRectangle(Node* T, Box const& query_box,
                                     Box const& node_box,
+                                    RangeQueryLogger& logger);
+
+  template <typename Leaf, IsBinaryNode Interior>
+    requires(std::same_as<typename Interior::ST, Box>)  // use box as spliiter
+  static size_t RangeCountRectangle(Node* T, Box const& query_box,
                                     RangeQueryLogger& logger);
 
   template <typename Leaf, IsMultiNode Interior>
@@ -238,9 +245,17 @@ class BaseTree {
                              Box const& query_box);
 
   template <typename Leaf, IsBinaryNode Interior, typename Range>
+    requires(std::same_as<typename Interior::ST,
+                          HyperPlane>)  // hyperplane as splitter
   static void RangeQuerySerialRecursive(Node* T, Range Out, size_t& s,
                                         Box const& query_box,
                                         Box const& node_box,
+                                        RangeQueryLogger& logger);
+
+  template <typename Leaf, IsBinaryNode Interior, typename Range>
+    requires(std::same_as<typename Interior::ST, Box>)  // box as splitter
+  static void RangeQuerySerialRecursive(Node* T, Range Out, size_t& s,
+                                        Box const& query_box,
                                         RangeQueryLogger& logger);
 
   template <typename Leaf, IsMultiNode Interior>

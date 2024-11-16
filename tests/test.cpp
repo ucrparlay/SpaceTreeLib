@@ -19,14 +19,14 @@ void TestSpacialTree([[maybe_unused]] int const& kDim,
                      [[maybe_unused]] int const& kQueryType,
                      [[maybe_unused]] int const kSummary) {
   using Tree = TreeDesc::TreeType;
-  // using Points = typename Tree::Points;
+  using Points = typename Tree::Points;
 
   Tree tree;
   constexpr bool kTestTime = true;
 
   BuildTree<Point, Tree, kTestTime, 2>(wp, kRounds, tree);
 
-  // Typename* kdknn = nullptr;
+  Typename* kdknn = nullptr;
 
   // // NOTE: batch insert
   // if (kTag & (1 << 0)) {
@@ -91,36 +91,36 @@ void TestSpacialTree([[maybe_unused]] int const& kDim,
   //   }
   // }
   //
-  // if (kQueryType & (1 << 1)) {  // NOTE: range count
-  //   int recNum = kRangeQueryNum;
-  //   kdknn = new Typename[recNum];
-  //
-  //   // std::cout << std::endl;
-  //   for (int i = 0; i < 3; i++) {
-  //     rangeCountFix<Point>(wp, tree, kdknn, kRounds, i, recNum, kDim);
-  //   }
-  //
-  //   delete[] kdknn;
-  // }
-  //
-  // if (kQueryType & (1 << 2)) {  // NOTE: range query
-  //   if (kSummary == 0) {
-  //     int recNum = kRangeQueryNum;
-  //     kdknn = new Typename[recNum];
-  //
-  //     for (int i = 0; i < 3; i++) {
-  //       Points Out;
-  //       rangeQueryFix<Point>(wp, tree, kdknn, kRounds, Out, i, recNum, kDim);
-  //     }
-  //     delete[] kdknn;
-  //   } else if (kSummary == 1) {  // NOTE: for kSummary
-  //     kdknn = new Typename[kSummaryRangeQueryNum];
-  //     Points Out;
-  //     rangeQueryFix<Point>(wp, tree, kdknn, kRounds, Out, 2,
-  //                          kSummaryRangeQueryNum, kDim);
-  //     delete[] kdknn;
-  //   }
-  // }
+  if (kQueryType & (1 << 1)) {  // NOTE: range count
+    int recNum = kRangeQueryNum;
+    kdknn = new Typename[recNum];
+
+    // std::cout << std::endl;
+    for (int i = 0; i < 3; i++) {
+      rangeCountFix<Point>(wp, tree, kdknn, kRounds, i, recNum, kDim);
+    }
+
+    delete[] kdknn;
+  }
+
+  if (kQueryType & (1 << 2)) {  // NOTE: range query
+    if (kSummary == 0) {
+      int recNum = kRangeQueryNum;
+      kdknn = new Typename[recNum];
+
+      for (int i = 0; i < 3; i++) {
+        Points Out;
+        rangeQueryFix<Point>(wp, tree, kdknn, kRounds, Out, i, recNum, kDim);
+      }
+      delete[] kdknn;
+    } else if (kSummary == 1) {  // NOTE: for kSummary
+      kdknn = new Typename[kSummaryRangeQueryNum];
+      Points Out;
+      rangeQueryFix<Point>(wp, tree, kdknn, kRounds, Out, 2,
+                           kSummaryRangeQueryNum, kDim);
+      delete[] kdknn;
+    }
+  }
 
   std::cout << std::endl << std::flush;
 
