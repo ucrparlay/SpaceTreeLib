@@ -15,10 +15,13 @@ typename BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::Box
 BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::CheckBox(Node* T,
                                                               Box const& box) {
   if (T->is_leaf) {
+    assert(WithinBox(GetBox(static_cast<Leaf*>(T)->pts.cut(0, T->size)), box));
     return GetBox<Leaf, Interior>(T);
   }
   Interior* TI = static_cast<Interior*>(T);
-  if constexpr (IsBinaryNode<Interior>) {
+  if constexpr (IsBinaryNode<Interior> &&
+                std::same_as<typename Interior::ST,
+                             HyperPlane>) {  // use hyperplane as splitter
     Box lbox(box), rbox(box);
     lbox.second.pnt[TI->split.second] = TI->split.first;  //* loose
     rbox.first.pnt[TI->split.second] = TI->split.first;
@@ -30,7 +33,23 @@ BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::CheckBox(Node* T,
     assert(WithinBox(right_return_box, rbox));
     assert(WithinBox(new_box, box));
     return new_box;
-  } else {
+  } else if constexpr (IsBinaryNode<Interior> &&
+                       std::same_as<typename Interior::ST,
+                                    Box>) {  // use box as splitter
+    auto get_split = [&](auto const* node) -> Box const& {
+      return node->is_leaf ? static_cast<Leaf const*>(node)->split
+                           : static_cast<Interior const*>(node)->split;
+    };
+    Box const left_return_box =
+        CheckBox<Leaf, Interior>(TI->left, get_split(TI->left));
+    Box const right_return_box =
+        CheckBox<Leaf, Interior>(TI->right, get_split(TI->right));
+    Box const new_box = GetBox(left_return_box, right_return_box);
+    assert(WithinBox(left_return_box, get_split(TI->left)));
+    assert(WithinBox(right_return_box, get_split(TI->right)));
+    assert(WithinBox(new_box, box));
+    return new_box;
+  } else if (IsMultiNode<Interior>) {
     BoxSeq new_box(TI->template ComputeSubregions<BoxSeq>(box));
     BoxSeq return_box_seq(new_box.size());
     assert(new_box.size() == TI->tree_nodes.size());

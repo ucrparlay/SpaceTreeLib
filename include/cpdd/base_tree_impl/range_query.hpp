@@ -6,6 +6,7 @@
 #include "../base_tree.h"
 
 namespace cpdd {
+// NOTE: orthogonal range count in leaf
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 template <typename Leaf>
@@ -24,6 +25,7 @@ size_t BaseTree<Point, DerivedTree, kSkHeight,
   }
 }
 
+// NOTE: recursive orthogonal range count for bianry node
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 template <typename Leaf, IsBinaryNode Interior>
@@ -56,18 +58,22 @@ size_t BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::RangeCountRectangle(
     logger.generate_box_num++;
     recurse(TI->left, box_cut.GetFirstBoxCut(), left_cnt);
     recurse(TI->right, box_cut.GetSecondBoxCut(), right_cnt);
-  } else if (std::same_as<typename Interior::ST, Box>) {  // use bounding box
+  } else if constexpr (std::same_as<typename Interior::ST,
+                                    Box>) {  // use bounding box
     auto get_split = [&](auto const* node) -> Box const& {
       return node->is_leaf ? static_cast<Leaf const*>(node)->split
                            : static_cast<Interior const*>(node)->split;
     };
     recurse(TI->left, get_split(TI->left), left_cnt);
     recurse(TI->right, get_split(TI->right), right_cnt);
+  } else {
+    assert(0);
   }
 
   return left_cnt + right_cnt;
 }
 
+// NOTE: orthogonal range count for multi node
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 template <typename Leaf, IsMultiNode Interior>
@@ -157,6 +163,7 @@ size_t BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::RangeCountRadius(
   return l + r;
 };
 
+// NOTE: orthogonal range query in leaf
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 template <typename Leaf, typename Range>
@@ -179,6 +186,7 @@ void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::RangeQueryLeaf(
   return;
 }
 
+// NOTE: orthogonal range query recusively
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 template <typename Leaf, IsBinaryNode Interior, typename Range>
@@ -218,13 +226,16 @@ void BaseTree<Point, DerivedTree, kSkHeight,
     logger.generate_box_num++;
     recurse(TI->left, box_cut.GetFirstBoxCut());
     recurse(TI->right, box_cut.GetSecondBoxCut());
-  } else if (std::same_as<typename Interior::ST, Box>) {  // use bounding box
+  } else if constexpr (std::same_as<typename Interior::ST,
+                                    Box>) {  // use bounding box
     auto get_split = [&](auto const* node) -> Box const& {
       return node->is_leaf ? static_cast<Leaf const*>(node)->split
                            : static_cast<Interior const*>(node)->split;
     };
     recurse(TI->left, get_split(TI->left));
     recurse(TI->right, get_split(TI->right));
+  } else {
+    assert(0);
   }
 
   return;

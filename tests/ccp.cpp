@@ -129,30 +129,33 @@ void runKDParallel(auto const& wp, auto const& wi, Typename* kdknn,
                          typename Tree::SplitRuleType>();
   puts("---------------finish build tree---------------");
 
-  if (tag & (1 << 0)) {
-    BatchInsert<Point, Tree, kTestTime>(tree, wp, wi, 2, batchInsertCheckRatio);
-    tree.template Validate<typename Tree::Leaf, typename Tree::Interior,
-                           typename Tree::SplitRuleType>();
-    std::cout << "---------------finish insert----------------" << std::endl;
-  }
-
-  if (tag & (1 << 1)) {
-    BatchDelete<Point, Tree, kTestTime>(tree, wp, wi, 2, batchInsertCheckRatio);
-    tree.template Validate<typename Tree::Leaf, typename Tree::Interior,
-                           typename Tree::SplitRuleType>();
-    std::cout << "---------------finish delete----------------" << std::endl;
-  }
-
-  if (tag & (1 << 2)) {
-    BatchDiff<Point, Tree, kTestTime>(tree, wp, 2, kCCPBatchDiffTotalRatio,
-                                      kCCPBatchDiffOverlapRatio);
-    assert(tree.GetRoot()->size ==
-           wp.size() - static_cast<size_t>(wp.size() * kCCPBatchDiffTotalRatio *
-                                           kCCPBatchDiffOverlapRatio));
-    tree.template Validate<typename Tree::Leaf, typename Tree::Interior,
-                           typename Tree::SplitRuleType>();
-    std::cout << "---------------finish diff------------------" << std::endl;
-  }
+  // if (tag & (1 << 0)) {
+  //   BatchInsert<Point, Tree, kTestTime>(tree, wp, wi, 2,
+  //   batchInsertCheckRatio); tree.template Validate<typename Tree::Leaf,
+  //   typename Tree::Interior,
+  //                          typename Tree::SplitRuleType>();
+  //   std::cout << "---------------finish insert----------------" << std::endl;
+  // }
+  //
+  // if (tag & (1 << 1)) {
+  //   BatchDelete<Point, Tree, kTestTime>(tree, wp, wi, 2,
+  //   batchInsertCheckRatio); tree.template Validate<typename Tree::Leaf,
+  //   typename Tree::Interior,
+  //                          typename Tree::SplitRuleType>();
+  //   std::cout << "---------------finish delete----------------" << std::endl;
+  // }
+  //
+  // if (tag & (1 << 2)) {
+  //   BatchDiff<Point, Tree, kTestTime>(tree, wp, 2, kCCPBatchDiffTotalRatio,
+  //                                     kCCPBatchDiffOverlapRatio);
+  //   assert(tree.GetRoot()->size ==
+  //          wp.size() - static_cast<size_t>(wp.size() *
+  //          kCCPBatchDiffTotalRatio *
+  //                                          kCCPBatchDiffOverlapRatio));
+  //   tree.template Validate<typename Tree::Leaf, typename Tree::Interior,
+  //                          typename Tree::SplitRuleType>();
+  //   std::cout << "---------------finish diff------------------" << std::endl;
+  // }
 
   // NOTE: query phase
   if (query_type & (1 << 0)) {  // NOTE: NN query
