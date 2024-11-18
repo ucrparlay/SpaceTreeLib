@@ -184,7 +184,7 @@ Node* KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BuildRecursive(
       },
       1);
 
-  return BT::template BuildInnerTree<Interior>(1, pivots, tree_nodes);
+  return BT::template BuildInnerTree<Leaf, Interior>(1, pivots, tree_nodes);
 }
 
 template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,

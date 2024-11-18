@@ -124,10 +124,9 @@ class RTree
   void PickPivots(Slice In, size_t const& n, HyperPlaneSeq& pivots,
                   DimsType const dim, BoxSeq& box_seq, Box const& bx);
 
-  NodeBox BuildRecursive(Slice In, Slice Out, DimsType dim, Box const& bx);
+  Node* BuildRecursive(Slice In, Slice Out, DimsType dim, Box const& bx);
 
-  NodeBox SerialBuildRecursive(Slice In, Slice Out, DimsType dim,
-                               Box const& bx);
+  Node* SerialBuildRecursive(Slice In, Slice Out, DimsType dim, Box const& bx);
 
   void Build_(Slice In);
 

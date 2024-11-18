@@ -26,9 +26,8 @@ template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 void RTree<Point, SplitRule, kSkHeight, kImbaRatio>::Build_(Slice A) {
   Points B = Points::uninitialized(A.size());
-  // this->tree_box_ = BT::GetBox(A);
-  std::tie(this->root_, this->tree_box_) =
-      BuildRecursive(A, B.cut(0, A.size()), 0, this->tree_box_);
+  this->root_ = BuildRecursive(A, B.cut(0, A.size()), 0, this->tree_box_);
+  this->tree_box_ = BT::template GetSplit<Leaf, Interior>(this->root_);
   assert(this->root_ != nullptr);
   return;
 }
@@ -89,19 +88,16 @@ void RTree<Point, SplitRule, kSkHeight, kImbaRatio>::PickPivots(
 
 template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
-typename RTree<Point, SplitRule, kSkHeight, kImbaRatio>::NodeBox
-RTree<Point, SplitRule, kSkHeight, kImbaRatio>::SerialBuildRecursive(
+Node* RTree<Point, SplitRule, kSkHeight, kImbaRatio>::SerialBuildRecursive(
     Slice In, Slice Out, DimsType dim, Box const& bx) {
   size_t n = In.size();
 
   if (n == 0) {
-    auto empty_box = BT::GetEmptyBox();
-    return NodeBox(AllocEmptyLeafNode<Slice, Leaf>(empty_box), empty_box);
+    return AllocEmptyLeafNode<Slice, Leaf>(BT::GetEmptyBox());
   }
 
   if (n <= BT::kLeaveWrap) {
-    auto box = BT::GetBox(In);
-    return NodeBox(AllocNormalLeafNode<Slice, Leaf>(In, box), box);
+    return AllocNormalLeafNode<Slice, Leaf>(In, BT::GetBox(In));
   }
 
   DimsType d = split_rule_.FindCuttingDimension(bx, dim);
@@ -120,7 +116,7 @@ RTree<Point, SplitRule, kSkHeight, kImbaRatio>::SerialBuildRecursive(
   } else if (In.end() == std::ranges::find_if_not(In, [&](Point const& p) {
                return p.SameDimension(In[0]);
              })) {  //  check whether all elements are identical
-    return NodeBox(AllocDummyLeafNode<Slice, Leaf>(In), Box(In[0], In[0]));
+    return AllocDummyLeafNode<Slice, Leaf>(In);
   } else {  //  current dim d is same but other dims are not
     // WARN: this will break the rotate dimension mannar
     auto [new_box, new_dim] = split_rule_.SwitchDimension(In, d, bx);
@@ -135,35 +131,29 @@ RTree<Point, SplitRule, kSkHeight, kImbaRatio>::SerialBuildRecursive(
     return Num::Geq(p.pnt[split.second], split.first);
   }));
 
-  // Box lbox(bx), rbox(bx);
-  // lbox.second.pnt[d] = split.first;  //* loose
-  // rbox.first.pnt[d] = split.first;
   BoxCut box_cut(bx, split, true);
 
   d = (d + 1) % BT::kDim;
   Node *L, *R;
-  Box left_box, right_box, new_box;
 
-  std::tie(L, left_box) = SerialBuildRecursive(
-      In.cut(0, split_iter - In.begin()), Out.cut(0, split_iter - In.begin()),
-      d, box_cut.GetFirstBoxCut());
-  std::tie(R, right_box) = SerialBuildRecursive(
-      In.cut(split_iter - In.begin(), n), Out.cut(split_iter - In.begin(), n),
-      d, box_cut.GetSecondBoxCut());
+  L = SerialBuildRecursive(In.cut(0, split_iter - In.begin()),
+                           Out.cut(0, split_iter - In.begin()), d,
+                           box_cut.GetFirstBoxCut());
+  R = SerialBuildRecursive(In.cut(split_iter - In.begin(), n),
+                           Out.cut(split_iter - In.begin(), n), d,
+                           box_cut.GetSecondBoxCut());
 
-  new_box = BT::GetBox(left_box, right_box);
-
-  return NodeBox(AllocInteriorNode<Interior>(L, R, new_box, AugType()),
-                 new_box);
+  return AllocInteriorNode<Interior>(
+      L, R,
+      BT::GetBox(BT::template GetSplit<Leaf, Interior>(L),
+                 BT::template GetSplit<Leaf, Interior>(R)),
+      AugType());
 }
 
 template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
-typename RTree<Point, SplitRule, kSkHeight, kImbaRatio>::NodeBox
-RTree<Point, SplitRule, kSkHeight, kImbaRatio>::BuildRecursive(Slice In,
-                                                               Slice Out,
-                                                               DimsType dim,
-                                                               Box const& bx) {
+Node* RTree<Point, SplitRule, kSkHeight, kImbaRatio>::BuildRecursive(
+    Slice In, Slice Out, DimsType dim, Box const& bx) {
   assert(In.size() == 0 || BT::WithinBox(BT::GetBox(In), bx));
 
   // if (In.size()) {
@@ -181,7 +171,7 @@ RTree<Point, SplitRule, kSkHeight, kImbaRatio>::BuildRecursive(Slice In,
 
   // NOTE: if random sampling failed to split points, re-partitions using
   // serail approach
-  auto tree_nodes = parlay::sequence<NodeBox>::uninitialized(BT::kBucketNum);
+  auto tree_nodes = parlay::sequence<Node*>::uninitialized(BT::kBucketNum);
   auto nodes_map = BucketSeq::uninitialized(BT::kBucketNum);
   BucketType zeros = std::ranges::count(sums, 0), cnt = 0;
 
@@ -194,9 +184,7 @@ RTree<Point, SplitRule, kSkHeight, kImbaRatio>::BuildRecursive(Slice In,
   // NOTE: alloc empty leaf beforehand to avoid spawn threads
   for (BucketType i = 0; i < BT::kBucketNum; ++i) {
     if (!sums[i]) {
-      auto empty_box = BT::GetEmptyBox();
-      tree_nodes[i] =
-          NodeBox(AllocEmptyLeafNode<Slice, Leaf>(empty_box), empty_box);
+      tree_nodes[i] = AllocEmptyLeafNode<Slice, Leaf>(BT::GetEmptyBox());
     } else {
       nodes_map[cnt++] = i;
     }
@@ -219,7 +207,7 @@ RTree<Point, SplitRule, kSkHeight, kImbaRatio>::BuildRecursive(Slice In,
       },
       1);
 
-  return BT::template BuildInnerTree<Interior>(1, pivots, tree_nodes);
+  return BT::template BuildInnerTree<Leaf, Interior>(1, pivots, tree_nodes);
 }
 
 }  // namespace cpdd

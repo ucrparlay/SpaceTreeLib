@@ -29,15 +29,15 @@ struct Node {
 
 template <typename Point, typename Range, uint_fast8_t kDefaultWrap,
           typename PointAssignTag = parlay::move_assign_tag,
-          bool kIncludeBox = false>
+          bool kContainBox = false>
 struct LeafNode : Node {
   using Points = parlay::sequence<Point>;
   using Box = std::pair<Point, Point>;  // TODO: use the version from Base tree
 
-  static consteval auto IncludedBox() { return kIncludeBox; }
+  static consteval auto ContainBox() { return kContainBox; }
 
   constexpr auto InitBox() const {
-    if constexpr (kIncludeBox) {
+    if constexpr (kContainBox) {
       return Box{};
     } else {
       return std::monostate{};
@@ -48,9 +48,9 @@ struct LeafNode : Node {
   LeafNode()
       : Node{true, static_cast<size_t>(0)}, is_dummy(false), split(InitBox()) {}
 
-  // NOTE: alloc a normal leaf with default size and WITHOUT bounding box
+  // NOTE: alloc a leaf with default size
   LeafNode(Range In, AllocNormalLeafTag)
-    requires(!kIncludeBox)
+    requires(!kContainBox)
       : Node{true, static_cast<size_t>(In.size())},
         is_dummy(false),
         pts(Points::uninitialized(kDefaultWrap)) {
@@ -60,9 +60,9 @@ struct LeafNode : Node {
     });
   }
 
-  // NOTE: alloc a normal leaf with default size and bounding box
+  // NOTE: alloc a leaf with default size and bounding box
   LeafNode(Range In, Box const& box, AllocNormalLeafTag)
-    requires(kIncludeBox)
+    requires(kContainBox)
       : Node{true, static_cast<size_t>(In.size())},
         is_dummy(false),
         pts(Points::uninitialized(kDefaultWrap)),
@@ -73,7 +73,7 @@ struct LeafNode : Node {
     });
   }
 
-  // NOTE: alloc a normal leaf with specific size WITHOUT bounding box
+  // NOTE: alloc a leaf with specific size
   LeafNode(Range In, size_t const alloc_size, AllocNormalLeafTag)
       : Node{true, static_cast<size_t>(In.size())},
         is_dummy(false),
@@ -90,7 +90,7 @@ struct LeafNode : Node {
         is_dummy(true),
         pts(Points::uninitialized(1)) {
     parlay::assign_dispatch(pts[0], In[0], PointAssignTag());
-    if constexpr (kIncludeBox) {  // handling the boundingbox
+    if constexpr (kContainBox) {  // handling the boundingbox
       split = Box{pts[0], pts[0]};
     } else {
       (void)split;
@@ -99,7 +99,7 @@ struct LeafNode : Node {
 
   bool is_dummy;
   Points pts;
-  std::conditional_t<kIncludeBox, Box, std::monostate> split;  // aka. MBR
+  std::conditional_t<kContainBox, Box, std::monostate> split;  // aka. MBR
 };
 
 // NOTE:: Alloc a leaf with input IN and given size
@@ -113,7 +113,7 @@ static Leaf* AllocFixSizeLeafNode(Range In, size_t const alloc_size) {
 
 // NOTE: Alloc a leaf
 template <typename Range, typename Leaf>
-  requires(!Leaf::IncludedBox())
+  requires(!Leaf::ContainBox())
 static Leaf* AllocNormalLeafNode(Range In) {
   Leaf* o = parlay::type_allocator<Leaf>::alloc();
   new (o) Leaf(In, AllocNormalLeafTag());
@@ -123,7 +123,7 @@ static Leaf* AllocNormalLeafNode(Range In) {
 
 // NOTE: Alloc a leaf with bounding box
 template <typename Range, typename Leaf, typename Box>
-  requires(Leaf::IncludedBox())
+  requires(Leaf::ContainBox())
 static Leaf* AllocNormalLeafNode(Range In, Box const& box) {
   Leaf* o = parlay::type_allocator<Leaf>::alloc();
   new (o) Leaf(In, box, AllocNormalLeafTag());
@@ -133,7 +133,7 @@ static Leaf* AllocNormalLeafNode(Range In, Box const& box) {
 
 // NOTE: Alloc a empty Leaf
 template <typename Range, typename Leaf>
-  requires(!Leaf::IncludedBox())
+  requires(!Leaf::ContainBox())
 static Leaf* AllocEmptyLeafNode() {
   Leaf* o = parlay::type_allocator<Leaf>::alloc();
   new (o) Leaf();
@@ -142,7 +142,7 @@ static Leaf* AllocEmptyLeafNode() {
 
 // NOTE: Alloc a empty Leaf with bounding box
 template <typename Range, typename Leaf, typename Box>
-  requires(Leaf::IncludedBox())
+  requires(Leaf::ContainBox())
 static Leaf* AllocEmptyLeafNode(Box const& box) {
   Leaf* o = parlay::type_allocator<Leaf>::alloc();
   new (o) Leaf();

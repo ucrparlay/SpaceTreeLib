@@ -60,12 +60,8 @@ size_t BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::RangeCountRectangle(
     recurse(TI->right, box_cut.GetSecondBoxCut(), right_cnt);
   } else if constexpr (std::same_as<typename Interior::ST,
                                     Box>) {  // use bounding box
-    auto get_split = [&](auto const* node) -> Box const& {
-      return node->is_leaf ? static_cast<Leaf const*>(node)->split
-                           : static_cast<Interior const*>(node)->split;
-    };
-    recurse(TI->left, get_split(TI->left), left_cnt);
-    recurse(TI->right, get_split(TI->right), right_cnt);
+    recurse(TI->left, GetSplit<Leaf, Interior>(TI->left), left_cnt);
+    recurse(TI->right, GetSplit<Leaf, Interior>(TI->right), right_cnt);
   } else {
     assert(0);
   }
@@ -228,12 +224,8 @@ void BaseTree<Point, DerivedTree, kSkHeight,
     recurse(TI->right, box_cut.GetSecondBoxCut());
   } else if constexpr (std::same_as<typename Interior::ST,
                                     Box>) {  // use bounding box
-    auto get_split = [&](auto const* node) -> Box const& {
-      return node->is_leaf ? static_cast<Leaf const*>(node)->split
-                           : static_cast<Interior const*>(node)->split;
-    };
-    recurse(TI->left, get_split(TI->left));
-    recurse(TI->right, get_split(TI->right));
+    recurse(TI->left, GetSplit<Leaf, Interior>(TI->left));
+    recurse(TI->right, GetSplit<Leaf, Interior>(TI->right));
   } else {
     assert(0);
   }

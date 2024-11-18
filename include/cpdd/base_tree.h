@@ -158,7 +158,7 @@ class BaseTree {
   Node* RebuildTreeRecursive(Node* T, PrepareFunc&& prepare_func,
                              Args&&... args);
 
-  template <IsBinaryNode Interior, typename Base>
+  template <typename Leaf, IsBinaryNode Interior, typename Base>
   static Base BuildInnerTree(BucketType idx, HyperPlaneSeq const& pivots,
                              parlay::sequence<Base> const& tree_nodes);
 
@@ -192,6 +192,11 @@ class BaseTree {
 
   static inline Coord InterruptibleDistance(Point const& p, Point const& q,
                                             Coord up);
+
+  // NOTE: get the split for a node
+  template <typename Leaf, typename Interior>
+    requires(std::same_as<Box, typename Interior::ST>)
+  static inline const typename Interior::ST& GetSplit(Node const* node);
 
   // NOTE: searech knn in the leaf
   template <typename Leaf, typename Range>

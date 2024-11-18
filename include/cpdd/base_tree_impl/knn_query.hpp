@@ -175,12 +175,8 @@ void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::KNNBinary(
   }
 
   Interior* TI = static_cast<Interior*>(T);
-  auto get_split = [](auto const* node) -> Box const& {
-    return node->is_leaf ? static_cast<Leaf const*>(node)->split
-                         : static_cast<Interior const*>(node)->split;
-  };
-  Coord dist_left = P2BMinDistance(q, get_split(TI->left));
-  Coord dist_right = P2BMinDistance(q, get_split(TI->right));
+  Coord dist_left = P2BMinDistance(q, GetSplit<Leaf, Interior>(TI->left));
+  Coord dist_right = P2BMinDistance(q, GetSplit<Leaf, Interior>(TI->right));
   bool go_left = Num::Leq(dist_left, dist_right);
 
   KNNBinary<Leaf, Interior>(go_left ? TI->left : TI->right, q, bq, logger);

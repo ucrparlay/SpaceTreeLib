@@ -17,6 +17,18 @@
 namespace cpdd {
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
+template <typename Leaf, typename Interior>
+  requires(std::same_as<
+           typename BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::Box,
+           typename Interior::ST>)
+const typename Interior::ST& BaseTree<Point, DerivedTree, kSkHeight,
+                                      kImbaRatio>::GetSplit(Node const* node) {
+  return node->is_leaf ? static_cast<Leaf const*>(node)->split
+                       : static_cast<Interior const*>(node)->split;
+}
+
+template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
 template <typename Leaf, typename Interior, typename... Args>
 Node* BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::RebuildWithInsert(
     Node* T, Slice In, Args&&... args) {
@@ -151,7 +163,7 @@ inline bool BaseTree<Point, DerivedTree, kSkHeight,
 
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
-template <IsBinaryNode Interior, typename Base>
+template <typename Leaf, IsBinaryNode Interior, typename Base>
 Base BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::BuildInnerTree(
     BucketType idx, HyperPlaneSeq const& pivots,
     parlay::sequence<Base> const& tree_nodes) {
@@ -160,20 +172,19 @@ Base BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::BuildInnerTree(
     return tree_nodes[idx - kPivotNum - 1];
   }
 
-  Base L, R;
-  L = BuildInnerTree<Interior>(idx << 1, pivots, tree_nodes);
-  R = BuildInnerTree<Interior>(idx << 1 | 1, pivots, tree_nodes);
+  Base const L = BuildInnerTree<Leaf, Interior>(idx << 1, pivots, tree_nodes);
+  Base const R =
+      BuildInnerTree<Leaf, Interior>(idx << 1 | 1, pivots, tree_nodes);
 
-  if constexpr (IsPointerToNode<Base>) {
+  if constexpr (std::same_as<HyperPlane, typename Interior::ST>) {
     return AllocInteriorNode<Interior>(L, R, pivots[idx],
                                        typename Interior::AT());
-  } else if constexpr (IsNodeBox<Base, Point>) {
-    auto new_box = GetBox(L.second, R.second);
-    return Base(AllocInteriorNode<Interior>(L.first, R.first, new_box,
-                                            typename Interior::AT()),
-                new_box);
+  } else if constexpr (std::same_as<Box, typename Interior::ST>) {
+    return AllocInteriorNode<Interior>(
+        L, R, GetBox(GetSplit<Leaf, Interior>(L), GetSplit<Leaf, Interior>(R)),
+        typename Interior::AT());
   } else {
-    static_assert(IsPointerToNode<Base> || IsNodeBox<Base, Point>);
+    static_assert(0);
   }
 }
 
