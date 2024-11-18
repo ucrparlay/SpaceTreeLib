@@ -130,16 +130,14 @@ void runKDParallel(auto const& wp, auto const& wi, Typename* kdknn,
   puts("---------------finish build tree---------------");
 
   if (tag & (1 << 0)) {
-    BatchInsert<Point, Tree, kTestTime>(tree, wp, wi, 2,
-                                            batchInsertCheckRatio);
+    BatchInsert<Point, Tree, kTestTime>(tree, wp, wi, 2, batchInsertCheckRatio);
     tree.template Validate<typename Tree::Leaf, typename Tree::Interior,
                            typename Tree::SplitRuleType>();
     std::cout << "---------------finish insert----------------" << std::endl;
   }
 
   if (tag & (1 << 1)) {
-    BatchDelete<Point, Tree, kTestTime>(tree, wp, wi, 2,
-                                            batchInsertCheckRatio);
+    BatchDelete<Point, Tree, kTestTime>(tree, wp, wi, 2, batchInsertCheckRatio);
     tree.template Validate<typename Tree::Leaf, typename Tree::Interior,
                            typename Tree::SplitRuleType>();
     std::cout << "---------------finish delete----------------" << std::endl;
@@ -147,7 +145,7 @@ void runKDParallel(auto const& wp, auto const& wi, Typename* kdknn,
 
   if (tag & (1 << 2)) {
     BatchDiff<Point, Tree, kTestTime>(tree, wp, 2, kCCPBatchDiffTotalRatio,
-                                          kCCPBatchDiffOverlapRatio);
+                                      kCCPBatchDiffOverlapRatio);
     assert(tree.GetRoot()->size ==
            wp.size() - static_cast<size_t>(wp.size() * kCCPBatchDiffTotalRatio *
                                            kCCPBatchDiffOverlapRatio));
@@ -331,6 +329,8 @@ int main(int argc, char* argv[]) {
   } else if (tree_type == 1 && kDim == 3) {
     std::cout << "run OctTree" << std::endl;
     run_test(wrapper::OctTree{});
+  } else if (tree_type == 2) {
+    run_test(wrapper::RTree{});
   }
 
   puts("\nok");

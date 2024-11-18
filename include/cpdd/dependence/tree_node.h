@@ -28,9 +28,11 @@ struct Node {
 };
 
 template <typename Point, typename Range, uint_fast8_t kDefaultWrap,
-          typename PointAssignTag = parlay::move_assign_tag>
+          typename PointAssignTag = parlay::move_assign_tag,
+          bool kIncludeBox = false>
 struct LeafNode : Node {
   using Points = parlay::sequence<Point>;
+  using Box = std::pair<Point, Point>;  // TODO: use the version from Base tree
 
   // NOTE: default allocator
   LeafNode() : Node{true, static_cast<size_t>(0)}, is_dummy(false) {}
@@ -44,9 +46,6 @@ struct LeafNode : Node {
     std::ranges::for_each(In, [&, i = 0](auto&& x) mutable {
       parlay::assign_dispatch(pts[i++], x, PointAssignTag());
     });
-    // for (int i = 0; i < In.size(); i++) {
-    //     parlay::assign_dispatch(pts[i], In[i], PointAssignTag());
-    // }
   }
 
   // NOTE: alloc a normal leaf with specific size
@@ -58,9 +57,6 @@ struct LeafNode : Node {
     std::ranges::for_each(In, [&, i = 0](auto&& x) mutable {
       parlay::assign_dispatch(pts[i++], x, PointAssignTag());
     });
-    // for (int i = 0; i < In.size(); i++) {
-    //     parlay::assign_dispatch(pts[i], In[i], PointAssignTag());
-    // }
   }
 
   // NOTE: alloc a dummy leaf
@@ -73,6 +69,7 @@ struct LeafNode : Node {
 
   bool is_dummy;
   Points pts;
+  std::conditional_t<kIncludeBox, Box, std::monostate> split;  // aka. box
 };
 
 // NOTE:: Alloc a leaf with input IN and given size

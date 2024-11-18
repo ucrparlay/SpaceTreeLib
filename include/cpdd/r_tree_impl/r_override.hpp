@@ -28,10 +28,11 @@ void RTree<Point, SplitRule, kSkHeight, kImbaRatio>::Flatten(Range&& Out) {
 
 template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
-auto RTree<Point, SplitRule, kSkHeight, kImbaRatio>::RangeCount(Box const& bx) {
+auto RTree<Point, SplitRule, kSkHeight, kImbaRatio>::RangeCount(
+    Box const& query_box) {
   RangeQueryLogger logger;
-  size_t size =
-      BT::template RangeCountRectangle<Leaf, Interior>(this->root_, bx, logger);
+  size_t size = BT::template RangeCountRectangle<Leaf, Interior>(
+      this->root_, query_box, this->tree_box_, logger);
   return std::make_pair(size, logger);
 }
 
@@ -51,7 +52,8 @@ auto RTree<Point, SplitRule, kSkHeight, kImbaRatio>::RangeQuery(
   RangeQueryLogger logger;
   size_t s = 0;
   BT::template RangeQuerySerialRecursive<Leaf, Interior>(
-      this->root_, parlay::make_slice(Out), s, query_box, logger);
+      this->root_, parlay::make_slice(Out), s, query_box, this->tree_box_,
+      logger);
   return std::make_pair(s, logger);
 }
 

@@ -27,9 +27,6 @@ size_t BaseTree<Point, DerivedTree, kSkHeight,
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 template <typename Leaf, IsBinaryNode Interior>
-  requires(std::same_as<typename Interior::ST,
-                        typename BaseTree<Point, DerivedTree, kSkHeight,
-                                          kImbaRatio>::HyperPlane>)
 size_t BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::RangeCountRectangle(
     Node* T, Box const& query_box, Box const& node_box,
     RangeQueryLogger& logger) {
@@ -40,7 +37,7 @@ size_t BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::RangeCountRectangle(
 
   Interior* TI = static_cast<Interior*>(T);
 
-  size_t l, r;
+  size_t left_cnt, right_cnt;
   auto recurse = [&](Node* Ts, Box const& box, size_t& counter) -> void {
     if (!BoxIntersectBox(box, query_box)) {
       logger.skip_box_num++;
@@ -53,43 +50,22 @@ size_t BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::RangeCountRectangle(
     }
   };
 
-  BoxCut box_cut(node_box, TI->split, true);
-  logger.generate_box_num++;
-  recurse(TI->left, box_cut.GetFirstBoxCut(), l);
-  recurse(TI->right, box_cut.GetSecondBoxCut(), r);
-
-  return l + r;
-}
-
-template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
-template <typename Leaf, IsBinaryNode Interior>
-  requires(std::same_as<
-           typename Interior::ST,
-           typename BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::Box>)
-size_t BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::RangeCountRectangle(
-    Node* T, Box const& query_box, RangeQueryLogger& logger) {
-  logger.vis_node_num++;
-  if (T->is_leaf) {
-    return RangeCountRectangleLeaf<Leaf>(T, query_box);
+  if constexpr (std::same_as<typename Interior::ST,
+                             HyperPlane>) {  // use hyperplane
+    BoxCut box_cut(node_box, TI->split, true);
+    logger.generate_box_num++;
+    recurse(TI->left, box_cut.GetFirstBoxCut(), left_cnt);
+    recurse(TI->right, box_cut.GetSecondBoxCut(), right_cnt);
+  } else if (std::same_as<typename Interior::ST, Box>) {  // use bounding box
+    auto get_split = [&](auto const* node) -> Box const& {
+      return node->is_leaf ? static_cast<Leaf const*>(node)->split
+                           : static_cast<Interior const*>(node)->split;
+    };
+    recurse(TI->left, get_split(TI->left), left_cnt);
+    recurse(TI->right, get_split(TI->right), right_cnt);
   }
 
-  Interior* TI = static_cast<Interior*>(T);
-  auto const& node_box = TI->split;
-
-  if (!BoxIntersectBox(node_box, query_box)) {
-    logger.skip_box_num++;
-    return 0;
-  } else if (WithinBox(node_box, query_box)) {
-    logger.full_box_num++;
-    return TI->size;
-  }
-
-  size_t l, r;
-  l = RangeCountRectangle<Leaf, Interior>(TI->left, query_box, logger);
-  r = RangeCountRectangle<Leaf, Interior>(TI->right, query_box, logger);
-
-  return l + r;
+  return left_cnt + right_cnt;
 }
 
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
@@ -206,9 +182,6 @@ void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::RangeQueryLeaf(
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 template <typename Leaf, IsBinaryNode Interior, typename Range>
-  requires(std::same_as<typename Interior::ST,
-                        typename BaseTree<Point, DerivedTree, kSkHeight,
-                                          kImbaRatio>::HyperPlane>)
 void BaseTree<Point, DerivedTree, kSkHeight,
               kImbaRatio>::RangeQuerySerialRecursive(Node* T, Range Out,
                                                      size_t& s,
@@ -239,48 +212,20 @@ void BaseTree<Point, DerivedTree, kSkHeight,
     }
   };
 
-  BoxCut box_cut(node_box, TI->split, true);
-  logger.generate_box_num++;
-  recurse(TI->left, box_cut.GetFirstBoxCut());
-  recurse(TI->right, box_cut.GetSecondBoxCut());
-
-  return;
-}
-
-template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
-template <typename Leaf, IsBinaryNode Interior, typename Range>
-  requires(std::same_as<
-           typename Interior::ST,
-           typename BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::Box>)
-void BaseTree<Point, DerivedTree, kSkHeight,
-              kImbaRatio>::RangeQuerySerialRecursive(Node* T, Range Out,
-                                                     size_t& s,
-                                                     Box const& query_box,
-                                                     RangeQueryLogger& logger) {
-  logger.vis_node_num++;
-  if (T->is_leaf) {
-    RangeQueryLeaf<Leaf>(T, Out, s, query_box);
-    return;
+  if constexpr (std::same_as<typename Interior::ST,
+                             HyperPlane>) {  // use hyperplane
+    BoxCut box_cut(node_box, TI->split, true);
+    logger.generate_box_num++;
+    recurse(TI->left, box_cut.GetFirstBoxCut());
+    recurse(TI->right, box_cut.GetSecondBoxCut());
+  } else if (std::same_as<typename Interior::ST, Box>) {  // use bounding box
+    auto get_split = [&](auto const* node) -> Box const& {
+      return node->is_leaf ? static_cast<Leaf const*>(node)->split
+                           : static_cast<Interior const*>(node)->split;
+    };
+    recurse(TI->left, get_split(TI->left));
+    recurse(TI->right, get_split(TI->right));
   }
-
-  Interior* TI = static_cast<Interior*>(T);
-  auto const& node_box = TI->split;
-
-  if (!BoxIntersectBox(node_box, query_box)) {
-    logger.skip_box_num++;
-    return;
-  } else if (WithinBox(node_box, query_box)) {
-    logger.full_box_num++;
-    FlattenRec<Leaf, Interior>(T, Out.cut(s, s + T->size));
-    s += T->size;
-    return;
-  }
-
-  RangeQuerySerialRecursive<Leaf, Interior>(TI->left, Out, s, query_box,
-                                            logger);
-  RangeQuerySerialRecursive<Leaf, Interior>(TI->right, Out, s, query_box,
-                                            logger);
 
   return;
 }

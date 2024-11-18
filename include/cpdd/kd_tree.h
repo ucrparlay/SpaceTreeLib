@@ -46,7 +46,8 @@ class KdTree
   struct KdInteriorNode;
 
   using SplitRuleType = SplitRule;
-  using Leaf = LeafNode<Point, Slice, BT::kLeaveWrap, parlay::move_assign_tag>;
+  using Leaf =
+      LeafNode<Point, Slice, BT::kLeaveWrap, parlay::move_assign_tag, false>;
   using Interior = KdInteriorNode;
   using InnerTree = typename BT::template InnerTree<Leaf, Interior>;
   using BoxCut = typename BT::BoxCut;
