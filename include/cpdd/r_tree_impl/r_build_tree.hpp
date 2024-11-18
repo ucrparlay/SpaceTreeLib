@@ -95,11 +95,13 @@ RTree<Point, SplitRule, kSkHeight, kImbaRatio>::SerialBuildRecursive(
   size_t n = In.size();
 
   if (n == 0) {
-    return NodeBox(AllocEmptyLeafNode<Slice, Leaf>(), BT::GetEmptyBox());
+    auto empty_box = BT::GetEmptyBox();
+    return NodeBox(AllocEmptyLeafNode<Slice, Leaf>(empty_box), empty_box);
   }
 
   if (n <= BT::kLeaveWrap) {
-    return NodeBox(AllocNormalLeafNode<Slice, Leaf>(In), BT::GetBox(In));
+    auto box = BT::GetBox(In);
+    return NodeBox(AllocNormalLeafNode<Slice, Leaf>(In, box), box);
   }
 
   DimsType d = split_rule_.FindCuttingDimension(bx, dim);
@@ -192,8 +194,9 @@ RTree<Point, SplitRule, kSkHeight, kImbaRatio>::BuildRecursive(Slice In,
   // NOTE: alloc empty leaf beforehand to avoid spawn threads
   for (BucketType i = 0; i < BT::kBucketNum; ++i) {
     if (!sums[i]) {
+      auto empty_box = BT::GetEmptyBox();
       tree_nodes[i] =
-          NodeBox(AllocEmptyLeafNode<Slice, Leaf>(), BT::GetEmptyBox());
+          NodeBox(AllocEmptyLeafNode<Slice, Leaf>(empty_box), empty_box);
     } else {
       nodes_map[cnt++] = i;
     }

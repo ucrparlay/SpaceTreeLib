@@ -34,11 +34,23 @@ struct LeafNode : Node {
   using Points = parlay::sequence<Point>;
   using Box = std::pair<Point, Point>;  // TODO: use the version from Base tree
 
-  // NOTE: default allocator
-  LeafNode() : Node{true, static_cast<size_t>(0)}, is_dummy(false) {}
+  static consteval auto IncludedBox() { return kIncludeBox; }
 
-  // NOTE: alloc a normal leaf with size of DefaultWrap
+  constexpr auto InitBox() const {
+    if constexpr (kIncludeBox) {
+      return Box{};
+    } else {
+      return std::monostate{};
+    }
+  }
+
+  // NOTE: default allocator
+  LeafNode()
+      : Node{true, static_cast<size_t>(0)}, is_dummy(false), split(InitBox()) {}
+
+  // NOTE: alloc a normal leaf with default size and WITHOUT bounding box
   LeafNode(Range In, AllocNormalLeafTag)
+    requires(!kIncludeBox)
       : Node{true, static_cast<size_t>(In.size())},
         is_dummy(false),
         pts(Points::uninitialized(kDefaultWrap)) {
@@ -48,7 +60,20 @@ struct LeafNode : Node {
     });
   }
 
-  // NOTE: alloc a normal leaf with specific size
+  // NOTE: alloc a normal leaf with default size and bounding box
+  LeafNode(Range In, Box const& box, AllocNormalLeafTag)
+    requires(kIncludeBox)
+      : Node{true, static_cast<size_t>(In.size())},
+        is_dummy(false),
+        pts(Points::uninitialized(kDefaultWrap)),
+        split(box) {
+    assert(In.size() <= kDefaultWrap);
+    std::ranges::for_each(In, [&, i = 0](auto&& x) mutable {
+      parlay::assign_dispatch(pts[i++], x, PointAssignTag());
+    });
+  }
+
+  // NOTE: alloc a normal leaf with specific size WITHOUT bounding box
   LeafNode(Range In, size_t const alloc_size, AllocNormalLeafTag)
       : Node{true, static_cast<size_t>(In.size())},
         is_dummy(false),
@@ -65,11 +90,16 @@ struct LeafNode : Node {
         is_dummy(true),
         pts(Points::uninitialized(1)) {
     parlay::assign_dispatch(pts[0], In[0], PointAssignTag());
+    if constexpr (kIncludeBox) {  // handling the boundingbox
+      split = Box{pts[0], pts[0]};
+    } else {
+      (void)split;
+    }
   }
 
   bool is_dummy;
   Points pts;
-  std::conditional_t<kIncludeBox, Box, std::monostate> split;  // aka. box
+  std::conditional_t<kIncludeBox, Box, std::monostate> split;  // aka. MBR
 };
 
 // NOTE:: Alloc a leaf with input IN and given size
@@ -81,8 +111,9 @@ static Leaf* AllocFixSizeLeafNode(Range In, size_t const alloc_size) {
   return o;
 }
 
-// NOTE: Alloc a leaf with input IN and default leaf wrap
+// NOTE: Alloc a leaf
 template <typename Range, typename Leaf>
+  requires(!Leaf::IncludedBox())
 static Leaf* AllocNormalLeafNode(Range In) {
   Leaf* o = parlay::type_allocator<Leaf>::alloc();
   new (o) Leaf(In, AllocNormalLeafTag());
@@ -90,15 +121,36 @@ static Leaf* AllocNormalLeafNode(Range In) {
   return o;
 }
 
+// NOTE: Alloc a leaf with bounding box
+template <typename Range, typename Leaf, typename Box>
+  requires(Leaf::IncludedBox())
+static Leaf* AllocNormalLeafNode(Range In, Box const& box) {
+  Leaf* o = parlay::type_allocator<Leaf>::alloc();
+  new (o) Leaf(In, box, AllocNormalLeafTag());
+  assert(o->is_dummy == false);
+  return o;
+}
+
 // NOTE: Alloc a empty Leaf
 template <typename Range, typename Leaf>
+  requires(!Leaf::IncludedBox())
 static Leaf* AllocEmptyLeafNode() {
   Leaf* o = parlay::type_allocator<Leaf>::alloc();
   new (o) Leaf();
   return o;
 }
 
-// NOTE: Alloc a dummy Leaf
+// NOTE: Alloc a empty Leaf with bounding box
+template <typename Range, typename Leaf, typename Box>
+  requires(Leaf::IncludedBox())
+static Leaf* AllocEmptyLeafNode(Box const& box) {
+  Leaf* o = parlay::type_allocator<Leaf>::alloc();
+  new (o) Leaf();
+  static_cast<Leaf*>(o)->split = box;
+  return o;
+}
+
+// NOTE: Alloc a dummy Leaf (with bounding box)
 template <typename Range, typename Leaf>
 static Leaf* AllocDummyLeafNode(Range In) {
   Leaf* o = parlay::type_allocator<Leaf>::alloc();
