@@ -79,6 +79,7 @@ class BaseTree {
   static inline Coord GetBoxMid(DimsType const d, Box const& bx);
   static inline bool LegalBox(Box const& bx);
   static inline bool WithinBox(Box const& a, Box const& b);
+  static inline bool SameBox(Box const& a, Box const& b);
   static inline bool WithinBox(Point const& p, Box const& bx);
   static inline bool BoxIntersectBox(Box const& a, Box const& b);
   static inline Box GetEmptyBox();

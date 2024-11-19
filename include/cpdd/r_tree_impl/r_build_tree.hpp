@@ -26,9 +26,11 @@ template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 void RTree<Point, SplitRule, kSkHeight, kImbaRatio>::Build_(Slice A) {
   Points B = Points::uninitialized(A.size());
+  this->tree_box_ = BT::GetBox(A.cut(0, A.size()));
   this->root_ = BuildRecursive(A, B.cut(0, A.size()), 0, this->tree_box_);
-  this->tree_box_ = BT::template GetSplit<Leaf, Interior>(this->root_);
   assert(this->root_ != nullptr);
+  assert(BT::SameBox(this->tree_box_,
+                     BT::template GetSplit<Leaf, Interior>(this->root_)));
   return;
 }
 

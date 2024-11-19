@@ -53,6 +53,21 @@ inline bool BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::WithinBox(
 
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
+inline bool BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::SameBox(
+    Box const& a, Box const& b) {
+  assert(LegalBox(a));
+  assert(LegalBox(b));
+  for (DimsType i = 0; i < kDim; ++i) {
+    if (!Num::Eq(a.first.pnt[i], b.first.pnt[i]) ||
+        !Num::Eq(a.second.pnt[i], b.second.pnt[i])) {
+      return false;
+    }
+  }
+  return true;
+}
+
+template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
 inline bool BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::WithinBox(
     Point const& p, Box const& bx) {
   assert(LegalBox(bx));

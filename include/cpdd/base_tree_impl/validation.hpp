@@ -36,18 +36,14 @@ BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::CheckBox(Node* T,
   } else if constexpr (IsBinaryNode<Interior> &&
                        std::same_as<typename Interior::ST,
                                     Box>) {  // use box as splitter
-    auto get_split = [&](auto const* node) -> Box const& {
-      return node->is_leaf ? static_cast<Leaf const*>(node)->split
-                           : static_cast<Interior const*>(node)->split;
-    };
     Box const left_return_box =
-        CheckBox<Leaf, Interior>(TI->left, get_split(TI->left));
-    Box const right_return_box =
-        CheckBox<Leaf, Interior>(TI->right, get_split(TI->right));
+        CheckBox<Leaf, Interior>(TI->left, GetSplit<Leaf, Interior>(TI->left));
+    Box const right_return_box = CheckBox<Leaf, Interior>(
+        TI->right, GetSplit<Leaf, Interior>(TI->right));
     Box const new_box = GetBox(left_return_box, right_return_box);
-    assert(WithinBox(left_return_box, get_split(TI->left)));
-    assert(WithinBox(right_return_box, get_split(TI->right)));
-    assert(WithinBox(new_box, box));
+    assert(SameBox(left_return_box, GetSplit<Leaf, Interior>(TI->left)));
+    assert(SameBox(right_return_box, GetSplit<Leaf, Interior>(TI->right)));
+    assert(SameBox(new_box, box));
     return new_box;
   } else if (IsMultiNode<Interior>) {
     BoxSeq new_box(TI->template ComputeSubregions<BoxSeq>(box));
