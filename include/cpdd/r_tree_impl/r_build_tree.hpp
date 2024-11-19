@@ -56,9 +56,6 @@ void RTree<Point, SplitRule, kSkHeight, kImbaRatio>::DivideRotate(
 
   pivots[idx] = HyperPlane(In[n / 2].pnt[d], d);
 
-  // Box lbox(bx), rbox(bx);
-  // lbox.second.pnt[d] = pivots[idx].first;  // PERF: loose
-  // rbox.first.pnt[d] = pivots[idx].first;
   BoxCut box_cut(bx, pivots[idx], true);
 
   d = (d + 1) % BT::kDim;
@@ -195,10 +192,8 @@ Node* RTree<Point, SplitRule, kSkHeight, kImbaRatio>::BuildRecursive(
   parlay::parallel_for(
       0, BT::kBucketNum - zeros,
       [&](BucketType i) {
-        size_t start = 0;
-        for (BucketType j = 0; j < nodes_map[i]; ++j) {
-          start += sums[j];
-        }
+        size_t start =
+            std::accumulate(sums.begin(), sums.begin() + nodes_map[i], 0);
 
         tree_nodes[nodes_map[i]] =
             BuildRecursive(Out.cut(start, start + sums[nodes_map[i]]),
