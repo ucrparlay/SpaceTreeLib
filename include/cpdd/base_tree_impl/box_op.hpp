@@ -1,5 +1,6 @@
 #pragma once
 #include "../base_tree.h"
+#include "cpdd/dependence/concepts.h"
 
 namespace cpdd {
 
@@ -126,15 +127,35 @@ BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::GetBox(Slice V) {
   }
 }
 
+// NOTE: this function omit the possibility that T contains the bounding box --
+// it will always try to reduce a bounding box in the tree T
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 template <typename Leaf, typename Interior>
 typename BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::Box
 BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::GetBox(Node* T) {
-  // TODO: we can just traverse the tree to get the box
-  Points wx = Points::uninitialized(T->size);
-  FlattenRec<Leaf, Interior>(T, parlay::make_slice(wx));
-  return GetBox(parlay::make_slice(wx));
+  if (T->is_leaf) {
+    Leaf* TL = static_cast<Leaf*>(T);
+    if (TL->is_dummy) {
+      assert(TL->size == 1);
+      return Box(TL->pts[0], TL->pts[0]);
+    }
+    return GetBox(TL->pts.cut(0, TL->size));
+  }
+  Interior* TI = static_cast<Interior*>(T);
+  if constexpr (IsBinaryNode<Interior>) {
+    Box const& left_box = GetBox<Leaf, Interior>(TI->left);
+    Box const& right_box = GetBox<Leaf, Interior>(TI->right);
+    return GetBox(left_box, right_box);
+  } else if constexpr (IsMultiNode<Interior>) {
+    BoxSeq return_box_seq(TI->kRegions);
+    for (size_t i = 0; i < TI->kRegions; i++) {
+      return_box_seq[i] = GetBox<Leaf, Interior>(TI->tree_nodes[i]);
+    }
+    return GetBox(return_box_seq);
+  } else {
+    assert(false);
+  }
 }
 
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,

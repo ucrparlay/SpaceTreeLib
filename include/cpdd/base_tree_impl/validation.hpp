@@ -15,7 +15,10 @@ typename BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::Box
 BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::CheckBox(Node* T,
                                                               Box const& box) {
   if (T->is_leaf) {
-    assert(WithinBox(GetBox(static_cast<Leaf*>(T)->pts.cut(0, T->size)), box));
+    auto* TL = static_cast<Leaf const*>(T);
+    auto node_box = GetBox<Leaf, Interior>(T);
+    assert((TL->ContainBox() && WithinBox(node_box, box)) ||
+           (!TL->ContainBox() && SameBox(node_box, box)));
     return GetBox<Leaf, Interior>(T);
   }
   Interior* TI = static_cast<Interior*>(T);

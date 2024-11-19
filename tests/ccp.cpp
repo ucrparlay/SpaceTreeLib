@@ -61,7 +61,6 @@ void runCGAL(auto const& wp, auto const& wi, Typename* cgknn,
   Median_of_rectangle median;
   Tree tree(_points.begin(), _points.end(), median);
   tree.build<CGAL::Parallel_tag>();
-
   // std::cout << tree.bounding_box() << std::endl;
   size_t sz = wp.size() * batchInsertCheckRatio;
 
@@ -333,6 +332,7 @@ int main(int argc, char* argv[]) {
     std::cout << "run OctTree" << std::endl;
     run_test(wrapper::OctTree{});
   } else if (tree_type == 2) {
+    std::cout << "run RTree" << std::endl;
     run_test(wrapper::RTree{});
   }
 
