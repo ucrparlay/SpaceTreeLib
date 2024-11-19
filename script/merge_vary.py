@@ -12,7 +12,7 @@ Dims = [2, 3]
 
 # type = "batch_update"
 # type = "batch_knn_query"
-type = "querys"
+type = "query"
 # type = "summary"
 # type = "quality"
 # type = "count"
@@ -25,8 +25,8 @@ if type == "batch_update":
     solverName = ["test", "zdtree", "cgal"]
     files = ["build", "insert", "delete"]
     Dims = [3]
-elif type == "querys":
-    solverName = ["kdtree", "orth"]
+elif type == "query":
+    solverName = ["kdtree", "orth", "r"]
     files = ["build", "knn_3", "count_3", "rquery_3"]
     Dims = [2, 3]
 elif type == "summary":
@@ -47,6 +47,7 @@ elif type == "count":
 resMap = {
     "kdtree": "res_0_" + type + ".out",
     "orth": "res_1_" + type + ".out",
+    "r": "res_2_" + type + ".out",
 }
 
 common = [
@@ -133,6 +134,16 @@ def combine(P, file, csvWriter, solver, benchName, node, dim):
     width = len(file_header[file])
     l = prefix[files.index(file)]
     r = l + width
+    for i in range(0, len(sep_lines)):
+        if r > len(sep_lines[i]):
+            print(
+                f"l ({l}), r ({r}), solver ({solver}), bench ({benchName}), node ({node}), dim ({dim})"
+            )
+            print(f"len(sep_lines[{i}]): {len(sep_lines[i])}")
+            raise ValueError(
+                f"r ({r}) is greater than the length of sep_lines[{i}] ({len(sep_lines[i])})"
+            )
+
     # num = 2 if solverName.index(solver)<=2 else 1
     num = len(lines)
     for i in range(0, len(sep_lines), num):
@@ -153,7 +164,6 @@ def csvSetup(file):
     print(file)
     csvFilePointer = open(storePrefix + file + ".csv", "w", newline="")
     csvFilePointer.truncate()
-    print(csvFilePointer)
     csvWriter = csv.writer(csvFilePointer)
     csvWriter.writerow(common + file_header[file])
     return csvWriter

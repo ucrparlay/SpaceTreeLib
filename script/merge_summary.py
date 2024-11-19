@@ -15,6 +15,7 @@ solverName = ["kd", "orth"]
 resMap = {
     "kd": "res_0_summary.out",
     "orth": "res_1_summary.out",
+    "r": "res_2_summary.out",
 }
 
 common = [
