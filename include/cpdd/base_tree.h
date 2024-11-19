@@ -196,8 +196,8 @@ class BaseTree {
 
   // NOTE: get the split for a node
   template <typename Leaf, typename Interior>
-    requires(std::same_as<Box, typename Interior::ST>)
-  static inline const typename Interior::ST& GetSplit(Node const* node);
+  static inline typename Interior::ST const& GetSplit(Node const* node)
+    requires std::same_as<typename BaseTree::Box, typename Interior::ST>;
 
   // NOTE: searech knn in the leaf
   template <typename Leaf, typename Range>
@@ -205,16 +205,15 @@ class BaseTree {
 
   // NOTE: search knn in the binary node
   template <typename Leaf, IsBinaryNode Interior, typename Range>
-    requires(std::same_as<typename Interior::ST,
-                          HyperPlane>)  // hyperplane as splitter
   static void KNNBinary(Node* T, Point const& q,
-                        kBoundedQueue<Point, Range>& bq, Box const& bx,
-                        KNNLogger& logger);
+                        kBoundedQueue<Point, Range>& bq, Box const& node_box,
+                        KNNLogger& logger)
+    requires std::same_as<typename Interior::ST, HyperPlane>;
 
   template <typename Leaf, IsBinaryNode Interior, typename Range>
-    requires(std::same_as<typename Interior::ST, Box>)  // use box as spliiter
   static void KNNBinary(Node* T, Point const& q,
-                        kBoundedQueue<Point, Range>& bq, KNNLogger& logger);
+                        kBoundedQueue<Point, Range>& bq, KNNLogger& logger)
+    requires std::same_as<typename Interior::ST, Box>;
 
   // NOTE: search knn in the expanded multi node
   template <typename Leaf, IsMultiNode Interior, typename Range>

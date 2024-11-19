@@ -126,12 +126,13 @@ void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::KNNLeaf(
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 template <typename Leaf, IsBinaryNode Interior, typename Range>
-  requires(std::same_as<typename Interior::ST,
-                        typename BaseTree<Point, DerivedTree, kSkHeight,
-                                          kImbaRatio>::HyperPlane>)
 void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::KNNBinary(
     Node* T, Point const& q, kBoundedQueue<Point, Range>& bq,
-    Box const& node_box, KNNLogger& logger) {
+    Box const& node_box, KNNLogger& logger)
+  requires std::same_as<
+      typename Interior::ST,
+      typename BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::HyperPlane>
+{
   logger.vis_node_num++;
 
   if (T->is_leaf) {
@@ -161,12 +162,12 @@ void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::KNNBinary(
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 template <typename Leaf, IsBinaryNode Interior, typename Range>
-  requires(std::same_as<
-           typename Interior::ST,
-           typename BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::Box>)
 void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::KNNBinary(
-    Node* T, Point const& q, kBoundedQueue<Point, Range>& bq,
-    KNNLogger& logger) {
+    Node* T, Point const& q, kBoundedQueue<Point, Range>& bq, KNNLogger& logger)
+  requires std::same_as<
+      typename Interior::ST,
+      typename BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::Box>
+{
   logger.vis_node_num++;
 
   if (T->is_leaf) {

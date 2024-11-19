@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <concepts>
 #include <cstddef>
 #include <numeric>
 #include <tuple>
@@ -18,11 +19,12 @@ namespace cpdd {
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 template <typename Leaf, typename Interior>
-  requires(std::same_as<
-           typename BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::Box,
-           typename Interior::ST>)
-const typename Interior::ST& BaseTree<Point, DerivedTree, kSkHeight,
-                                      kImbaRatio>::GetSplit(Node const* node) {
+typename Interior::ST const&
+BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::GetSplit(Node const* node)
+  requires std::same_as<
+      typename BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::Box,
+      typename Interior::ST>
+{
   return node->is_leaf ? static_cast<Leaf const*>(node)->split
                        : static_cast<Interior const*>(node)->split;
 }
