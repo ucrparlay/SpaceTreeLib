@@ -137,7 +137,6 @@ BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::GetBox(Node* T) {
   if (T->is_leaf) {
     Leaf* TL = static_cast<Leaf*>(T);
     if (TL->is_dummy) {
-      assert(TL->size == 1);
       return Box(TL->pts[0], TL->pts[0]);
     }
     return GetBox(TL->pts.cut(0, TL->size));
