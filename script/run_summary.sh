@@ -1,11 +1,11 @@
 #!/bin/bash
 set -o xtrace
 
-# Solvers=("zdtree" "test" "cgal")
 Solvers=("test")
+# Solvers=("rtree")
 Node=(1000000000)
 # Tree=(1)
-Tree=(0 1)
+Tree=(0)
 Dim=(2 3)
 declare -A datas
 datas["/data/legacy/data3/zmen002/kdtree/ss_varden/"]="../benchmark/ss_varden/"
@@ -27,7 +27,11 @@ for solver in "${Solvers[@]}"; do
 	#* decide output file
 
 	for tree in "${Tree[@]}"; do
-		resFile="res_${tree}_${type}.out"
+		if [[ ${solver} == "rtree" ]]; then
+			resFile="rtree.out"
+		elif [[ ${solver} == "test" ]]; then
+			resFile="res_${tree}_${type}.out"
+		fi
 
 		for dim in "${Dim[@]}"; do
 			for dataPath in "${!datas[@]}"; do
