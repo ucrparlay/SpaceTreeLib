@@ -20,7 +20,7 @@ typedef bg::model::point<Coord, 2, bg::cs::cartesian> RPoint;
 // Define a box (for range queries)
 typedef bg::model::box<RPoint> RBox;
 
-template <class TreeDesc, typename Point>
+template <class TreeDesc, typename Point, size_t kRTreeMaxEle>
 void TestRtreeParallel(int Dim, parlay::sequence<Point>& wp,
                        parlay::sequence<Point>& wi, [[maybe_unused]] int N,
                        int K, [[maybe_unused]] int const& kRounds,
@@ -31,9 +31,11 @@ void TestRtreeParallel(int Dim, parlay::sequence<Point>& wp,
   // using Box = typename Tree::Box;
 
   // Sample points to insert into the R-tree
+  std::cout << kRTreeMaxEle << " ";
+
   std::vector<RPoint> _points(wp.size());
   std::vector<RPoint> _points_insert(wi.size());
-  assert(wp.size() == wi.size());
+  // assert(wp.size() == wi.size());
   parlay::parallel_for(0, wi.size(), [&](size_t i) {
     bg::set<0>(_points[i], wp[i].pnt[0]);
     bg::set<0>(_points_insert[i], wi[i].pnt[0]);
@@ -44,7 +46,8 @@ void TestRtreeParallel(int Dim, parlay::sequence<Point>& wp,
 
   parlay::internal::timer timer;
   timer.start();
-  bgi::rtree<RPoint, bgi::rstar<32>> tree(_points.begin(), _points.end());
+  bgi::rtree<RPoint, bgi::rstar<kRTreeMaxEle>> tree(_points.begin(),
+                                                    _points.end());
   timer.stop();
   std::cout << timer.total_time() << " " << -1 << " " << std::flush;
 
@@ -72,7 +75,7 @@ void TestRtreeParallel(int Dim, parlay::sequence<Point>& wp,
   }
 
   if (kTag & (1 << 1)) {
-    auto cgal_delete = [&](bool afterInsert = 1, double ratio = 1.0) {
+    auto rtree_delete = [&](bool afterInsert = 1, double ratio = 1.0) {
       if (!afterInsert) {
         tree.clear();
         tree.insert(_points.begin(), _points.end());
@@ -94,12 +97,12 @@ void TestRtreeParallel(int Dim, parlay::sequence<Point>& wp,
     if (kSummary) {
       parlay::sequence<double> const ratios = {0.0001, 0.001, 0.01, 0.1};
       for (size_t i = 0; i < ratios.size(); i++) {
-        cgal_delete(0, ratios[i]);
+        rtree_delete(0, ratios[i]);
       }
       tree.clear();
       tree.insert(_points.begin(), _points.end());
     } else {
-      cgal_delete(0, kBatchInsertRatio);
+      rtree_delete(0, kBatchInsertRatio);
     }
   }
 
@@ -127,8 +130,7 @@ void TestRtreeParallel(int Dim, parlay::sequence<Point>& wp,
                    std::back_inserter(knn_results));
       });
       timer.stop();
-      std::cout << timer.total_time() << " " << -1 << " " << -1 << " "
-                << std::flush;
+      std::cout << timer.total_time() << " " << std::flush;
     };
 
     size_t batchSize = static_cast<size_t>(wp.size() * batchQueryRatio);
@@ -148,8 +150,8 @@ void TestRtreeParallel(int Dim, parlay::sequence<Point>& wp,
   // std::vector<Point> range_results;
   // rtree.query(bgi::intersects(query_box), std::back_inserter(range_results));
   //
-  if (kQueryType & (1 << 3)) {  // NOTE: range query
-    auto run_cgal_range_query = [&](int type) {
+  if (kQueryType & (1 << 2)) {  // NOTE: range query
+    auto run_rtree_range_query = [&](int type) {
       int queryNum = kSummary ? kSummaryRangeQueryNum : kRangeQueryNum;
       auto [queryBox, maxSize] =
           gen_rectangles<Point, Tree, false>(queryNum, type, wp, Dim);
@@ -158,50 +160,30 @@ void TestRtreeParallel(int Dim, parlay::sequence<Point>& wp,
       // );
       std::vector<RPoint> _ans(queryNum * maxSize);
 
-      timer.reset();
-      timer.start();
-      if (kSummary) {
-        parlay::parallel_for(0, queryNum, [&](size_t s) {
-          RBox query_box(RPoint(queryBox[s].first.first.pnt[0],
-                                queryBox[s].first.first.pnt[1]),
-                         RPoint(queryBox[s].first.second.pnt[0],
-                                queryBox[s].first.second.pnt[1]));
-          std::vector<RPoint> range_results;
-          // tree.query(bgi::intersects(query_box),
-          // std::back_inserter(range_results));
-          tree.query(bgi::within(query_box), std::back_inserter(range_results));
-        });
-        timer.stop();
-        std::cout << timer.total_time() << " " << std::flush;
-      } else {
-        for (int s = 0; s < queryNum; s++) {
-          auto aveQuery = time_loop(
-              singleQueryLogRepeatNum, -1.0, [&]() {},
-              [&]() {
-                RBox query_box(RPoint(queryBox[s].first.first.pnt[0],
-                                      queryBox[s].first.first.pnt[1]),
-                               RPoint(queryBox[s].first.second.pnt[0],
-                                      queryBox[s].first.second.pnt[1]));
-                std::vector<RPoint> range_results;
-                // tree.query(bgi::intersects(query_box),
-                // std::back_inserter(range_results));
-                tree.query(bgi::within(query_box),
-                           std::back_inserter(range_results));
-              },
-              [&]() {});
-          std::cout << aveQuery << std::endl;
-        }
-      }
+      double aveQuery = time_loop(
+          kRounds, -1.0, [&]() {},
+          [&]() {
+            parlay::parallel_for(0, queryNum, [&](size_t s) {
+              RBox query_box(RPoint(queryBox[s].first.first.pnt[0],
+                                    queryBox[s].first.first.pnt[1]),
+                             RPoint(queryBox[s].first.second.pnt[0],
+                                    queryBox[s].first.second.pnt[1]));
+              std::vector<RPoint> range_results;
+              tree.query(bgi::within(query_box),
+                         std::back_inserter(range_results));
+            });
+          },
+          [&]() {});
+      std::cout << aveQuery << " " << std::flush;
     };
 
     if (kSummary == 0) {
-      std::cout << std::endl;
       int const type[3] = {0, 1, 2};
       for (int i = 0; i < 3; i++) {
-        run_cgal_range_query(type[i]);
+        run_rtree_range_query(type[i]);
       }
     } else {
-      run_cgal_range_query(2);
+      run_rtree_range_query(2);
     }
   }
   //
@@ -237,6 +219,8 @@ void TestRtreeParallel(int Dim, parlay::sequence<Point>& wp,
   //                   << std::std::endl;
   //     }
   // }
+  std::cout << std::endl;
+  return;
 }
 
 int main(int argc, char* argv[]) {
@@ -269,7 +253,7 @@ int main(int argc, char* argv[]) {
       if (input_file_path != NULL) {  // NOTE: read main Points
         name = std::string(input_file_path);
         name = name.substr(name.rfind("/") + 1);
-        std::cout << name << " ";
+        std::cout << name << " \n";
         auto [n, d] = read_points<PointTypeAlias>(input_file_path, wp, K);
         N = n;
         assert(d == kDim);
@@ -287,8 +271,16 @@ int main(int argc, char* argv[]) {
         assert(d == kDim);
       }
 
-      TestRtreeParallel<Desc>(kDim, wp, wi, N, K, kRounds, kTag, kQueryType,
-                              kSummary);
+      constexpr std::array<size_t, 5> const kMaxEleArr = {2, 4, 8, 32, 100};
+      auto callTestRtreeParallel =
+          [&]<size_t... Is>(std::index_sequence<Is...>) {
+            (TestRtreeParallel<Desc, PointTypeAlias, kMaxEleArr[Is]>(
+                 kDim, wp, wi, N, K, kRounds, kTag, kQueryType, kSummary),
+             ...);
+          };
+      callTestRtreeParallel(std::make_index_sequence<kMaxEleArr.size()>{});
+      // TestRtreeParallel<Desc>(
+      //     kDim, wp, wi, N, K, kRounds, kTag, kQueryType, kSummary);
     };
 
     if (kTag == -1) {
@@ -310,6 +302,6 @@ int main(int argc, char* argv[]) {
     // }
   };
 
-  run_test(wrapper::KDtree{});
+  run_test(wrapper::KDtree{});  // providing the data types
   return 0;
 }
