@@ -16,17 +16,32 @@ namespace bgi = boost::geometry::index;
 
 using Typename = Coord;
 // Define a 2D point
-typedef bg::model::point<Coord, 2, bg::cs::cartesian> RPoint;
 // Define a box (for range queries)
-typedef bg::model::box<RPoint> RBox;
 
-template <class TreeDesc, typename Point, size_t kRTreeMaxEle>
+template <size_t Dim, size_t MaxDim>
+struct SetPoints {
+  static void set(auto& points, auto& points_insert, auto const& wp,
+                  auto const& wi, size_t i) {
+    bg::set<Dim>(points[i], wp[i].pnt[Dim]);
+    bg::set<Dim>(points_insert[i], wi[i].pnt[Dim]);
+    SetPoints<Dim + 1, MaxDim>::set(points, points_insert, wp, wi, i);
+  }
+};
+
+template <size_t MaxDim>
+struct SetPoints<MaxDim, MaxDim> {
+  static void set(auto&, auto&, auto const&, auto const&, size_t) {
+    // End of recursion
+  }
+};
+template <class TreeDesc, typename RPoint, typename Point, size_t kRTreeMaxEle>
 void TestRtreeParallel(int Dim, parlay::sequence<Point>& wp,
                        parlay::sequence<Point>& wi, [[maybe_unused]] int N,
                        int K, [[maybe_unused]] int const& kRounds,
                        int const& kTag, int const& kQueryType,
                        int const kSummary) {
   using Tree = TreeDesc::TreeType;
+  using RBox = bg::model::box<RPoint>;
   // using Points = typename Tree::Points;
   // using Box = typename Tree::Box;
 
@@ -36,12 +51,20 @@ void TestRtreeParallel(int Dim, parlay::sequence<Point>& wp,
   std::vector<RPoint> _points(wp.size());
   std::vector<RPoint> _points_insert(wi.size());
   // assert(wp.size() == wi.size());
-  parlay::parallel_for(0, wi.size(), [&](size_t i) {
-    bg::set<0>(_points[i], wp[i].pnt[0]);
-    bg::set<0>(_points_insert[i], wi[i].pnt[0]);
 
-    bg::set<1>(_points[i], wp[i].pnt[1]);
-    bg::set<1>(_points_insert[i], wi[i].pnt[1]);
+  // NOTE: set the value of points
+  static constexpr auto const kDim = std::tuple_size_v<typename Point::Coords>;
+  auto set_points = [&]<size_t... Is>(auto& r_pt, auto& pt,
+                                      std::index_sequence<Is...>) {
+    (bg::set<Is>(r_pt, pt.pnt[Is]), ...);
+  };
+
+  parlay::parallel_for(0, wi.size(), [&](size_t i) {
+    // SetPoints<0, kDim>::set(_points, _points_insert, wp, wi, i);
+    set_points(_points[i], wp[i], std::make_index_sequence<kDim>{});
+    set_points(_points_insert[i], wi[i], std::make_index_sequence<kDim>{});
+    // bg::set<0>(_points[i], wp[i].pnt[0]);
+    // bg::set<0>(_points_insert[i], wi[i].pnt[0]);
   });
 
   parlay::internal::timer timer;
@@ -164,10 +187,17 @@ void TestRtreeParallel(int Dim, parlay::sequence<Point>& wp,
           kRounds, -1.0, [&]() {},
           [&]() {
             parlay::parallel_for(0, queryNum, [&](size_t s) {
-              RBox query_box(RPoint(queryBox[s].first.first.pnt[0],
-                                    queryBox[s].first.first.pnt[1]),
-                             RPoint(queryBox[s].first.second.pnt[0],
-                                    queryBox[s].first.second.pnt[1]));
+              // RBox query_box(RPoint(queryBox[s].first.first.pnt[0],
+              //                       queryBox[s].first.first.pnt[1]),
+              //                RPoint(queryBox[s].first.second.pnt[0],
+              //                       queryBox[s].first.second.pnt[1]));
+              RPoint a, b;
+              set_points(a, queryBox[s].first.first,
+                         std::make_index_sequence<kDim>{});
+              set_points(b, queryBox[s].first.second,
+                         std::make_index_sequence<kDim>{});
+
+              RBox query_box(a, b);
               std::vector<RPoint> range_results;
               tree.query(bgi::within(query_box),
                          std::back_inserter(range_results));
@@ -274,7 +304,9 @@ int main(int argc, char* argv[]) {
       constexpr std::array<size_t, 5> const kMaxEleArr = {2, 4, 8, 32, 100};
       auto callTestRtreeParallel =
           [&]<size_t... Is>(std::index_sequence<Is...>) {
-            (TestRtreeParallel<Desc, PointTypeAlias, kMaxEleArr[Is]>(
+            (TestRtreeParallel<Desc,
+                               bg::model::point<Coord, kDim, bg::cs::cartesian>,
+                               PointTypeAlias, kMaxEleArr[Is]>(
                  kDim, wp, wi, N, K, kRounds, kTag, kQueryType, kSummary),
              ...);
           };
