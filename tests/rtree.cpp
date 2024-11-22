@@ -59,12 +59,13 @@ void TestRtreeParallel(int Dim, parlay::sequence<Point>& wp,
     (bg::set<Is>(r_pt, pt.pnt[Is]), ...);
   };
 
-  parlay::parallel_for(0, wi.size(), [&](size_t i) {
+  parlay::parallel_for(0, wp.size(), [&](size_t i) {
     // SetPoints<0, kDim>::set(_points, _points_insert, wp, wi, i);
     set_points(_points[i], wp[i], std::make_index_sequence<kDim>{});
-    set_points(_points_insert[i], wi[i], std::make_index_sequence<kDim>{});
     // bg::set<0>(_points[i], wp[i].pnt[0]);
-    // bg::set<0>(_points_insert[i], wi[i].pnt[0]);
+  });
+  parlay::parallel_for(0, wi.size(), [&](size_t i) {
+    set_points(_points_insert[i], wi[i], std::make_index_sequence<kDim>{});
   });
 
   parlay::internal::timer timer;
