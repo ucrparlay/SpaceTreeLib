@@ -110,34 +110,6 @@ BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::SerialPartition(
   return _2ndGroup.begin();
 }
 
-// NOTE: rebuild the tree
-template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
-template <typename Leaf, typename Interior, bool granularity>
-void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::PrepareRebuild(
-    Node* T, Points& wx, Points& wo) {
-  wo = Points::uninitialized(T->size);
-  wx = Points::uninitialized(T->size);
-  FlattenRec<Leaf, Interior, Slice, granularity>(T, parlay::make_slice(wx));
-  DeleteTreeRecursive<Leaf, Interior, granularity>(T);
-  return;
-}
-
-// NOTE: rebuild with new input In
-template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
-template <typename Leaf, typename Interior, bool granularity>
-void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::PrepareRebuild(
-    Node* T, Slice In, Points& wx, Points& wo) {
-  wo = Points::uninitialized(T->size + In.size());
-  wx = Points::uninitialized(T->size + In.size());
-  parlay::parallel_for(0, In.size(), [&](size_t j) { wx[j] = In[j]; });
-  FlattenRec<Leaf, Interior, Slice, granularity>(T,
-                                                 wx.cut(In.size(), wx.size()));
-  DeleteTreeRecursive<Leaf, Interior, granularity>(T);
-  return;
-}
-
 // NOTE: retrive the bucket tag of Point p from the skeleton tags
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
