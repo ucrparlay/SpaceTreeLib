@@ -171,6 +171,20 @@ struct BinaryNode : Node {
         split(_split),
         aug(_aug) {}
 
+  // NOTE: test whether we can fetch @depth levels from @T
+  template <typename Interior>
+  static inline bool TestDepth(Node* T, int cur_depth, int depth) {
+    if (cur_depth == depth) {
+      return true;
+    }
+    if (T->is_leaf) {
+      return false;
+    }
+    auto TI = static_cast<Interior*>(T);
+    return TestDepth(TI->left, cur_depth + 1, depth) &&
+           TestDepth(TI->right, cur_depth + 1, depth);
+  }
+
   Node* left;
   Node* right;
   ST split;
@@ -198,6 +212,10 @@ struct MultiNode : Node {
         tree_nodes(_tree_nodes),
         split(_split),
         aug(_aug) {}
+
+  // TODO: remove kRegions and use GetRegions instead
+  static consteval auto GetRegions() { return 1 << kMD; }
+  static consteval auto GetLevels() { return kMD; }
 
   // NOTE: Generate the hyperplane sequences for the node
   template <typename HyperPlaneSeq>
@@ -291,7 +309,7 @@ struct MultiNode : Node {
   }
 
   NodeArr tree_nodes;
-  ST split;
+  ST split;  // BUG: split will only assume the same in orth node,
   AT aug;
 };
 

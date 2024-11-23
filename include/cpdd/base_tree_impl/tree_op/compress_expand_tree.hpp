@@ -10,6 +10,7 @@
 #include <utility>
 
 #include "../../base_tree.h"
+#include "cpdd/dependence/tree_node.h"
 
 namespace cpdd {
 
@@ -35,9 +36,10 @@ Node* BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::ExpandMultiNode(
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 template <IsBinaryNode BN, IsMultiNode MN>
-  requires std::same_as<typename BN::ST, typename MN::ST::value_type>
 Node* BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::Expand2Binary(
-    Node* T) {
+    Node* T)
+  requires std::same_as<typename BN::ST, typename MN::ST::value_type>
+{
   if (T->is_leaf) {
     return T;
   }
@@ -52,6 +54,49 @@ Node* BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::Expand2Binary(
                            return acc + n->size;
                          }) == MI->size);
   auto split = MI->split;
+  FreeNode<MN>(T);
   return ExpandMultiNode<BN, MN>(split, 1, 0, tree_nodes);
 }
+
+template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
+template <IsBinaryNode BN, IsMultiNode MN>
+void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::CompressBinaryNode(
+    Node* bn_proto, typename MN::NodeArr& tree_nodes, typename MN::ST& split,
+    BucketType idx) {
+  if (idx >= MN::GetRegions()) {
+    tree_nodes[idx - MN::GetRegions()] = bn_proto;
+    return;
+  }
+  assert(!bn_proto->is_leaf);
+  auto bn = static_cast<BN*>(bn_proto);
+  split[idx] = bn->split;
+  compress_binary_node(bn->left, tree_nodes, split, idx * 2);
+  compress_binary_node(bn->right, tree_nodes, split, idx * 2 + 1);
+  return;
+}
+
+template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
+template <IsBinaryNode BN, IsMultiNode MN>
+Node* BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::Compress2Multi(
+    Node* T)
+  requires std::same_as<typename BN::ST, typename MN::ST::value_type>
+{
+  if (T->is_leaf) {
+    return T;
+  }
+
+  auto bn = static_cast<BN*>(T);
+  if (BN::template TestDepth<BN>(T, 0, BN::GetLevels())) {
+    typename MN::NodeArr tree_nodes;
+    typename MN::ST split;
+    compress_binary_node(bn, tree_nodes, split, 1);
+    for (BucketType i = 0; i < MN::GetRegions(); ++i) {
+      tree_nodes[i] = Compress2Multi(tree_nodes[i]);
+    }
+    return AllocInteriorNode<MN>(tree_nodes, split, typename MN::AT());
+  }
+}
+
 }  // namespace cpdd

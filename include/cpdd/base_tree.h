@@ -224,7 +224,7 @@ class BaseTree {
   // NOTE: search knn in the multi node
   template <typename Leaf, IsMultiNode Interior, typename Range>
   static void KNNMulti(Node* T, Point const& q, kBoundedQueue<Point, Range>& bq,
-                       Box const& bx, KNNLogger& logger);
+                       Box const& node_box, KNNLogger& logger);
 
   // NOTE: range count stuffs
   template <typename Leaf>
@@ -284,14 +284,27 @@ class BaseTree {
             bool granularity = true>
   static void PartialFlatten(Node* T, Range Out, BucketType idx);
 
+  // NOTE: expand a multi node into a binary node
   template <IsBinaryNode BN, IsMultiNode MN>
   static Node* ExpandMultiNode(typename MN::ST const& split, BucketType idx,
                                BucketType deep,
                                parlay::sequence<Node*> const& tree_nodes);
 
+  // NOTE: expand a multi-way tree into a binary tree
   template <IsBinaryNode BN, IsMultiNode MN>
-    requires std::same_as<typename BN::ST, typename MN::ST::value_type>
-  static Node* Expand2Binary(Node* T);
+  static Node* Expand2Binary(Node* T)
+    requires std::same_as<typename BN::ST, typename MN::ST::value_type>;
+
+  // NOTE: compress several level of bianry node into a multi node
+  template <IsBinaryNode BN, IsMultiNode MN>
+  static void CompressBinaryNode(Node* bn_proto,
+                                 typename MN::NodeArr& tree_nodes,
+                                 typename MN::ST& split, BucketType idx);
+
+  // NOTE: compress a binary tree into a multi-way tree
+  template <IsBinaryNode BN, IsMultiNode MN>
+  static Node* Compress2Multi(Node* T)
+    requires std::same_as<typename BN::ST, typename MN::ST::value_type>;
 
   // NOTE: validations
   template <typename Leaf, typename Interior>
