@@ -110,8 +110,8 @@ void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::PartialFlatten(
     assert(T->size == Out.size());
     FlattenRec<Leaf, Interior>(T, Out.cut(0, T->size));
     return;
-  } else if (idx >= Interior::kRegions) {
-    Node* ns = static_cast<Interior*>(T)->tree_nodes[idx - Interior::kRegions];
+  } else if (idx >= Interior::GetRegions()) {
+    Node* ns = static_cast<Interior*>(T)->tree_nodes[idx - Interior::GetRegions()];
     assert(ns->size == Out.size());
     FlattenRec<Leaf, Interior>(ns, Out.cut(0, ns->size));
     return;

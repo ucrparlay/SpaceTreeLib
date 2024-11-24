@@ -10,6 +10,13 @@
 namespace cpdd {
 template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
+void KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::Compress2Multi() {
+  this->root_ = BT::template Compress2Multi<KdInteriorNode, CompressInterior>(
+      this->root_);
+}
+
+template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
 template <typename Range>
 auto KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::KNN(
     Node* T, Point const& q, kBoundedQueue<Point, Range>& bq) {

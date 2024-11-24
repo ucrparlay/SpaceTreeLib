@@ -147,8 +147,8 @@ BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::GetBox(Node* T) {
     Box const& right_box = GetBox<Leaf, Interior>(TI->right);
     return GetBox(left_box, right_box);
   } else if constexpr (IsMultiNode<Interior>) {
-    BoxSeq return_box_seq(TI->kRegions);
-    for (size_t i = 0; i < TI->kRegions; i++) {
+    BoxSeq return_box_seq(Interior::GetRegions());
+    for (size_t i = 0; i < Interior::GetRegions(); i++) {
       return_box_seq[i] = GetBox<Leaf, Interior>(TI->tree_nodes[i]);
     }
     return GetBox(return_box_seq);

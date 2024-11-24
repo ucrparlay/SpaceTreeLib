@@ -32,6 +32,89 @@ struct OrthTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::OrthInteriorNode
     return this->aug.has_value() ? this->aug.value()
                                  : this->size > BT::kSerialBuildCutoff;
   }
+
+  // NOTE: specific part
+
+  // NOTE: Generate the hyperplane sequences for the node
+  template <typename HyperPlaneSeq>
+  inline void GenerateHyperPlaneSeq(HyperPlaneSeq& hyper_seq, auto idx,
+                                    auto deep) {
+    if (idx >= BaseNode::GetRegions()) {
+      return;
+    }
+    hyper_seq[idx] = this->split[deep];
+    GenerateHyperPlaneSeq(hyper_seq, idx * 2, deep + 1);
+    GenerateHyperPlaneSeq(hyper_seq, idx * 2 + 1, deep + 1);
+    return;
+  }
+
+  // NOTE: given an idx in the tree skeleton, modify its value its position in
+  // left or right of the splitter
+  inline BucketType SeievePoint(Point const& p, BucketType idx) {
+    for (BucketType i = 0; i < kMD; ++i) {
+      idx = 2 * idx + 1 -
+            static_cast<BucketType>(
+                Num::Lt(p.pnt[this->split[i].second], this->split[i].first));
+    }
+    return idx;
+  }
+
+  template <typename BoxSeqSlice>
+  void ComputeSubregionsRec(BoxSeqSlice box_seq, BucketType deep) {
+    if (deep == kMD) {
+      assert(box_seq.size() == 1);
+      return;
+    }
+
+    BucketType n = box_seq.size();
+    assert(n - n / 2 == n / 2);
+
+    std::for_each_n(box_seq.begin(), n / 2, [&](auto& bx) {
+      bx.second.pnt[this->split[deep].second] = this->split[deep].first;
+    });
+    std::for_each_n(box_seq.begin() + n / 2, n - n / 2, [&](auto& bx) {
+      bx.first.pnt[this->split[deep].second] = this->split[deep].first;
+    });
+
+    ComputeSubregionsRec(box_seq.cut(0, n / 2), deep + 1);
+    ComputeSubregionsRec(box_seq.cut(n / 2, n), deep + 1);
+    return;
+  }
+
+  // NOTE: Given a box, produce new sub-boxes equivalent to modify the existing
+  // boxes
+  template <typename BoxSeq, typename Box>
+  BoxSeq ComputeSubregions(Box const& box) {
+    auto box_seq = BoxSeq(BaseNode::GetRegions(), box);
+    ComputeSubregionsRec(parlay::make_slice(box_seq), 0);
+    return std::move(box_seq);
+  }
+
+  // NOTE: Given a box and a bucket id, construct new box for that bucket
+  template <typename Box>
+  inline Box GetBoxByRegionId(BucketType id, Box const& box) {
+    Box bx(box);
+    assert(id >= 0 && id < BaseNode::GetRegions());
+
+    // PERF: cannot set i>=0 as it is unsigned int. idx 9 -> 101 -> RLR
+    for (BucketType i = kMD; i > 0; --i) {
+      auto& target = (id & (1 << (i - 1))) ? bx.first : bx.second;
+      target.pnt[this->split[kMD - i].second] = this->split[kMD - i].first;
+    }
+
+    return std::move(bx);
+  }
+
+  // NOTE: Given a box and a bucket id, modify the box for that bucket
+  template <typename Box>
+  inline void ModifyBoxById(BucketType id, Box& box) {
+    assert(id >= 0 && id <= BaseNode::GetRegions());
+    for (BucketType i = kMD; i > 0; --i) {
+      auto& target = (id & (1 << (i - 1))) ? box.first : box.second;
+      target.pnt[this->split[kMD - i].second] = this->split[kMD - i].first;
+    }
+    return;
+  }
 };
 
 // // NOTE: To expand as a kdtree node

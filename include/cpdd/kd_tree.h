@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <functional>
 #include <optional>
 #include <utility>
@@ -40,15 +41,22 @@ class KdTree
   using NodeBoxSeq = typename BT::NodeBoxSeq;
   using Splitter = HyperPlane;
   using SplitterSeq = HyperPlaneSeq;
-
   using AugType = std::optional<bool>;
-  // using AugType = bool;
-  struct KdInteriorNode;
-
   using SplitRuleType = SplitRule;
+
+  static constexpr DimsType const kMD = 2;
+  using CompressNodeSplitter = std::array<HyperPlane, 1 << kMD>;
+
+  template <uint_fast8_t kMD>
+  struct KdCompressionNode;
+
   using Leaf =
       LeafNode<Point, Slice, BT::kLeaveWrap, parlay::move_assign_tag, false>;
+  struct KdInteriorNode;
   using Interior = KdInteriorNode;
+
+  using CompressInterior = KdCompressionNode<kMD>;
+
   using InnerTree = typename BT::template InnerTree<Leaf, Interior>;
   using BoxCut = typename BT::BoxCut;
 
@@ -71,6 +79,8 @@ class KdTree
   void KdTreeTag();
 
   // NOTE: functions
+  void Compress2Multi();
+
   template <typename Range>
   void Build(Range&& In);
 

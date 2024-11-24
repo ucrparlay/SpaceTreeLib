@@ -53,7 +53,7 @@ struct BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::InnerTree {
     requires IsMultiNode<Interior>
   {
     assert(GetDepthByIndex(19) == 4);
-    assert(kDim == static_cast<BucketType>(std::log2(Interior::kRegions)));
+    assert(kDim == static_cast<BucketType>(std::log2(Interior::GetRegions())));
 
     Box bx(box);
     BucketType h = GetDepthByIndex(idx);
@@ -84,8 +84,8 @@ struct BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::InnerTree {
       AssignNodeTag(TI->left, idx << 1);
       AssignNodeTag(TI->right, idx << 1 | 1);
     } else if constexpr (IsMultiNode<Interior>) {
-      for (BucketType i = 0; i < Interior::kRegions; ++i) {
-        AssignNodeTag(TI->tree_nodes[i], idx * Interior::kRegions + i);
+      for (BucketType i = 0; i < Interior::GetRegions(); ++i) {
+        AssignNodeTag(TI->tree_nodes[i], idx * Interior::GetRegions() + i);
       }
     } else {
       static_assert(IsBinaryNode<Interior> || IsMultiNode<Interior>);
@@ -113,9 +113,9 @@ struct BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::InnerTree {
       sums_tree[idx] = sums_tree[idx << 1] + sums_tree[idx << 1 | 1];
     } else if constexpr (IsMultiNode<Interior>) {
       sums_tree[idx] = 0;
-      for (BucketType i = 0; i < Interior::kRegions; ++i) {
-        ReduceSums<kApplyForceParallel>(idx * Interior::kRegions + i);
-        sums_tree[idx] += sums_tree[idx * Interior::kRegions + i];
+      for (BucketType i = 0; i < Interior::GetRegions(); ++i) {
+        ReduceSums<kApplyForceParallel>(idx * Interior::GetRegions() + i);
+        sums_tree[idx] += sums_tree[idx * Interior::GetRegions() + i];
       }
     }
 
@@ -163,8 +163,8 @@ struct BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::InnerTree {
       PickTag(idx << 1, violate_func);
       PickTag(idx << 1 | 1, violate_func);
     } else if constexpr (IsMultiNode<Interior>) {
-      for (BucketType i = 0; i < Interior::kRegions; ++i) {
-        PickTag(idx * Interior::kRegions + i, violate_func);
+      for (BucketType i = 0; i < Interior::GetRegions(); ++i) {
+        PickTag(idx * Interior::GetRegions() + i, violate_func);
       }
     }
     return;
@@ -220,8 +220,8 @@ struct BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::InnerTree {
                box_cut.GetSecondBoxCut(), has_tomb, violate_func);
     } else if constexpr (IsMultiNode<Interior>) {
       // BoxSeq new_box(TI->template ComputeSubregions<BoxSeq>(box));
-      for (BucketType i = 0; i < Interior::kRegions; ++i) {
-        MarkTomb(idx * Interior::kRegions + i, re_num, tot_re_size, box_seq,
+      for (BucketType i = 0; i < Interior::GetRegions(); ++i) {
+        MarkTomb(idx * Interior::GetRegions() + i, re_num, tot_re_size, box_seq,
                  TI->GetBoxByRegionId(i, box), has_tomb, violate_func);
       }
     }
@@ -385,8 +385,8 @@ struct BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::InnerTree {
     }
 
     typename Interior::OrthNodeArr new_nodes;
-    for (BucketType i = 0; i < Interior::kRegions; ++i) {
-      new_nodes[i] = UpdateInnerTreeRecursive<kUT>(idx * Interior::kRegions + i,
+    for (BucketType i = 0; i < Interior::GetRegions(); ++i) {
+      new_nodes[i] = UpdateInnerTreeRecursive<kUT>(idx * Interior::GetRegions() + i,
                                                    tree_nodes, p, func);
     }
 

@@ -181,8 +181,8 @@ struct BinaryNode : Node {
       return false;
     }
     auto TI = static_cast<Interior*>(T);
-    return TestDepth(TI->left, cur_depth + 1, depth) &&
-           TestDepth(TI->right, cur_depth + 1, depth);
+    return TestDepth<Interior>(TI->left, cur_depth + 1, depth) &&
+           TestDepth<Interior>(TI->right, cur_depth + 1, depth);
   }
 
   Node* left;
@@ -194,13 +194,14 @@ struct BinaryNode : Node {
 template <typename Point, uint_fast8_t kMD, typename SplitType,
           typename AugType>
 struct MultiNode : Node {
-  static constexpr uint_fast8_t const kRegions = 1 << kMD;
-
   using BucketType = uint_fast8_t;
   using Coord = typename Point::Coord;
 
+  static consteval auto GetRegions() { return 1 << kMD; }
+  static consteval auto GetLevels() { return kMD; }
+
   using Num = Num_Comparator<Coord>;
-  using NodeArr = std::array<Node*, kRegions>;
+  using NodeArr = std::array<Node*, GetRegions()>;
   using ST = SplitType;
   using AT = AugType;
 
@@ -213,103 +214,18 @@ struct MultiNode : Node {
         split(_split),
         aug(_aug) {}
 
-  // TODO: remove kRegions and use GetRegions instead
-  static consteval auto GetRegions() { return 1 << kMD; }
-  static consteval auto GetLevels() { return kMD; }
-
-  // NOTE: Generate the hyperplane sequences for the node
-  template <typename HyperPlaneSeq>
-  inline void GenerateHyperPlaneSeq(HyperPlaneSeq& hyper_seq, auto idx,
-                                    auto deep) {
-    if (idx >= kRegions) {
-      return;
-    }
-    hyper_seq[idx] = split[deep];
-    GenerateHyperPlaneSeq(hyper_seq, idx * 2, deep + 1);
-    GenerateHyperPlaneSeq(hyper_seq, idx * 2 + 1, deep + 1);
-    return;
-  }
-
-  // NOTE: given an idx in the tree skeleton, modify its value its position in
-  // left or right of the splitter
-  inline BucketType SeievePoint(Point const& p, BucketType idx) {
-    for (BucketType i = 0; i < kMD; ++i) {
-      idx = 2 * idx + 1 -
-            static_cast<BucketType>(
-                Num::Lt(p.pnt[split[i].second], split[i].first));
-    }
-    return idx;
-  }
-
   inline size_t MergeSize(BucketType const idx) {
     if (idx == 1) {
       return this->size;
-    } else if (idx >= kRegions) {
-      return tree_nodes[idx - kRegions]->size;
+    } else if (idx >= GetRegions()) {
+      return tree_nodes[idx - GetRegions()]->size;
     } else {
       return MergeSize(2 * idx) + MergeSize(2 * idx + 1);
     }
   }
 
-  template <typename BoxSeqSlice>
-  void ComputeSubregionsRec(BoxSeqSlice box_seq, BucketType deep) {
-    if (deep == kMD) {
-      assert(box_seq.size() == 1);
-      return;
-    }
-
-    BucketType n = box_seq.size();
-    assert(n - n / 2 == n / 2);
-
-    std::for_each_n(box_seq.begin(), n / 2, [&](auto& bx) {
-      bx.second.pnt[split[deep].second] = split[deep].first;
-    });
-    std::for_each_n(box_seq.begin() + n / 2, n - n / 2, [&](auto& bx) {
-      bx.first.pnt[split[deep].second] = split[deep].first;
-    });
-
-    ComputeSubregionsRec(box_seq.cut(0, n / 2), deep + 1);
-    ComputeSubregionsRec(box_seq.cut(n / 2, n), deep + 1);
-    return;
-  }
-
-  // NOTE: Given a box, produce new sub-boxes equivalent to modify the existing
-  // boxes
-  template <typename BoxSeq, typename Box>
-  BoxSeq ComputeSubregions(Box const& box) {
-    auto box_seq = BoxSeq(kRegions, box);
-    ComputeSubregionsRec(parlay::make_slice(box_seq), 0);
-    return std::move(box_seq);
-  }
-
-  // NOTE: Given a box and a bucket id, construct new box for that bucket
-  template <typename Box>
-  inline Box GetBoxByRegionId(BucketType id, Box const& box) {
-    Box bx(box);
-    assert(id >= 0 && id < kRegions);
-
-    // PERF: cannot set i>=0 as it is unsigned int. idx 9 -> 101 -> RLR
-    for (BucketType i = kMD; i > 0; --i) {
-      auto& target = (id & (1 << (i - 1))) ? bx.first : bx.second;
-      target.pnt[split[kMD - i].second] = split[kMD - i].first;
-    }
-
-    return std::move(bx);
-  }
-
-  // NOTE: Given a box and a bucket id, modify the box for that bucket
-  template <typename Box>
-  inline void ModifyBoxById(BucketType id, Box& box) {
-    assert(id >= 0 && id <= kRegions);
-    for (BucketType i = kMD; i > 0; --i) {
-      auto& target = (id & (1 << (i - 1))) ? box.first : box.second;
-      target.pnt[split[kMD - i].second] = split[kMD - i].first;
-    }
-    return;
-  }
-
   NodeArr tree_nodes;
-  ST split;  // BUG: split will only assume the same in orth node,
+  ST split;
   AT aug;
 };
 

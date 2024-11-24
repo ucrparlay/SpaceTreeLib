@@ -71,8 +71,9 @@ void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::CompressBinaryNode(
   assert(!bn_proto->is_leaf);
   auto bn = static_cast<BN*>(bn_proto);
   split[idx] = bn->split;
-  compress_binary_node(bn->left, tree_nodes, split, idx * 2);
-  compress_binary_node(bn->right, tree_nodes, split, idx * 2 + 1);
+  CompressBinaryNode<BN, MN>(bn->left, tree_nodes, split, idx * 2);
+  CompressBinaryNode<BN, MN>(bn->right, tree_nodes, split, idx * 2 + 1);
+  FreeNode<BN>(bn_proto);
   return;
 }
 
@@ -88,14 +89,21 @@ Node* BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::Compress2Multi(
   }
 
   auto bn = static_cast<BN*>(T);
-  if (BN::template TestDepth<BN>(T, 0, BN::GetLevels())) {
+  if (BN::template TestDepth<BN>(T, 0, MN::GetLevels())) {
     typename MN::NodeArr tree_nodes;
     typename MN::ST split;
-    compress_binary_node(bn, tree_nodes, split, 1);
+    CompressBinaryNode<BN, MN>(bn, tree_nodes, split, 1);
     for (BucketType i = 0; i < MN::GetRegions(); ++i) {
-      tree_nodes[i] = Compress2Multi(tree_nodes[i]);
+      tree_nodes[i] = Compress2Multi<BN, MN>(tree_nodes[i]);
     }
     return AllocInteriorNode<MN>(tree_nodes, split, typename MN::AT());
+  } else {
+    Node* L = Compress2Multi<BN, MN>(bn->left);
+    Node* R = Compress2Multi<BN, MN>(bn->right);
+    auto o = AllocInteriorNode<BN>(L, R, bn->split, typename BN::AT());
+    assert(o->size == L->size + R->size);
+    FreeNode<BN>(T);
+    return o;
   }
 }
 

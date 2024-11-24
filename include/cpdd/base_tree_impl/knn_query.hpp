@@ -215,11 +215,11 @@ void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::KNNMultiExpand(
 
   BucketType first_idx = (idx << 1) + static_cast<BucketType>(!go_left);
   BucketType second_idx = (idx << 1) + static_cast<BucketType>(go_left);
-  bool reach_leaf = first_idx >= Interior::kRegions;
+  bool reach_leaf = first_idx >= Interior::GetRegions();
   Node* first_node =
-      reach_leaf ? TI->tree_nodes[first_idx - Interior::kRegions] : T;
+      reach_leaf ? TI->tree_nodes[first_idx - Interior::GetRegions()] : T;
   Node* second_node =
-      reach_leaf ? TI->tree_nodes[second_idx - Interior::kRegions] : T;
+      reach_leaf ? TI->tree_nodes[second_idx - Interior::GetRegions()] : T;
   if (reach_leaf) {
     first_idx = second_idx = 1;
   }
@@ -263,12 +263,12 @@ void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::KNNMulti(
 
   Interior* TI = static_cast<Interior*>(T);
 
-  BoxSeq regions(Interior::kRegions);
-  std::array<std::pair<Coord, BucketType>, Interior::kRegions> dists;
+  BoxSeq regions(Interior::GetRegions());
+  std::array<std::pair<Coord, BucketType>, Interior::GetRegions()> dists;
   TI->ComputeSubregions(
       regions, node_box, 1,
       0);  // PERF: find better way to compute the bounding boxes
-  logger.generate_box_num += Interior::kRegions * 2 - 1;
+  logger.generate_box_num += Interior::GetRegions() * 2 - 1;
 
   std::ranges::generate(dists, [i = 0, &q, &regions]() mutable {
     auto r = std::make_pair(P2BMinDistance(q, regions[i]), i);
@@ -280,7 +280,7 @@ void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::KNNMulti(
 
   KNNMulti<Leaf, Interior>(TI->tree_nodes[dists[0].second], q, bq,
                            regions[dists[0].second], logger);
-  for (BucketType i = 1; i < Interior::kRegions; ++i) {
+  for (BucketType i = 1; i < Interior::GetRegions(); ++i) {
     logger.check_box_num++;
     if (Num::Gt(dists[i].first, bq.top_value()) && bq.full()) {
       logger.skip_box_num++;

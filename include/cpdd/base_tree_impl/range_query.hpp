@@ -101,18 +101,18 @@ size_t BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::RangeCountRectangle(
 
   size_t l, r;
   idx <<= 1;
-  bool reach_leaf = idx >= Interior::kRegions;
+  bool reach_leaf = idx >= Interior::GetRegions();
   BoxCut box_cut(node_box, TI->split[dim], true);
   logger.generate_box_num++;
 
   // NOTE: visit left half
   assert(TI->split[dim].second == dim);
 
-  recurse(reach_leaf ? TI->tree_nodes[idx - Interior::kRegions] : T,
+  recurse(reach_leaf ? TI->tree_nodes[idx - Interior::GetRegions()] : T,
           box_cut.GetFirstBoxCut(), l, (dim + 1) % kDim, reach_leaf ? 1 : idx);
 
   idx |= 1;
-  recurse(reach_leaf ? TI->tree_nodes[idx - Interior::kRegions] : T,
+  recurse(reach_leaf ? TI->tree_nodes[idx - Interior::GetRegions()] : T,
           box_cut.GetSecondBoxCut(), r, (dim + 1) % kDim, reach_leaf ? 1 : idx);
 
   return l + r;
@@ -273,16 +273,16 @@ void BaseTree<Point, DerivedTree, kSkHeight,
   };
 
   idx <<= 1;
-  bool reach_leaf = idx >= Interior::kRegions;
+  bool reach_leaf = idx >= Interior::GetRegions();
   logger.generate_box_num++;
   BoxCut box_cut(node_box, TI->split[dim], true);
 
-  recurse(reach_leaf ? TI->tree_nodes[idx - Interior::kRegions] : T,
+  recurse(reach_leaf ? TI->tree_nodes[idx - Interior::GetRegions()] : T,
           box_cut.GetFirstBoxCut(), (dim + 1) % kDim, reach_leaf ? 1 : idx);
 
   // NOTE: visit right
   idx |= 1;
-  recurse(reach_leaf ? TI->tree_nodes[idx - Interior::kRegions] : T,
+  recurse(reach_leaf ? TI->tree_nodes[idx - Interior::GetRegions()] : T,
           box_cut.GetSecondBoxCut(), (dim + 1) % kDim, reach_leaf ? 1 : idx);
 
   return;
