@@ -21,7 +21,9 @@ template <typename Range>
 auto KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::KNN(
     Node* T, Point const& q, kBoundedQueue<Point, Range>& bq) {
   KNNLogger logger;
-  BT::template KNNBinary<Leaf, Interior>(T, q, bq, this->tree_box_, logger);
+  BT::template KNNMix<Leaf, KdInteriorNode, CompressInterior>(
+      T, q, 0, 1, bq, this->tree_box_, logger);
+  // BT::template KNNBinary<Leaf, Interior>(T, q, bq, this->tree_box_, logger);
   return logger;
 }
 

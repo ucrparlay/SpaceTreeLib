@@ -96,11 +96,14 @@ Node* BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::Compress2Multi(
     for (BucketType i = 0; i < MN::GetRegions(); ++i) {
       tree_nodes[i] = Compress2Multi<BN, MN>(tree_nodes[i]);
     }
-    return AllocInteriorNode<MN>(tree_nodes, split, typename MN::AT());
+    auto o = AllocInteriorNode<MN>(tree_nodes, split, typename MN::AT());
+    static_cast<MN*>(o)->SetParallelFlag(true);
+    return o;
   } else {
     Node* L = Compress2Multi<BN, MN>(bn->left);
     Node* R = Compress2Multi<BN, MN>(bn->right);
     auto o = AllocInteriorNode<BN>(L, R, bn->split, typename BN::AT());
+    static_cast<BN*>(o)->SetParallelFlag(false);
     assert(o->size == L->size + R->size);
     FreeNode<BN>(T);
     return o;

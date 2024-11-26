@@ -23,6 +23,8 @@ struct AllocEmptyLeafTag {};
 struct Node {
   Node() : is_leaf{false}, size{0} {};
   Node(bool _is_leaf, size_t _size) : is_leaf{_is_leaf}, size{_size} {};
+  virtual ~Node() =
+      default;  // Adding a virtual destructor makes Node polymorphic
 
   bool is_leaf;
   size_t size;
