@@ -315,24 +315,24 @@ void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::KNNMix(
   HyperPlane* split(nullptr);
   Node *first_node, *second_node;
   BucketType first_idx, second_idx;
-
   if (dynamic_cast<BN*>(T)) {  // NOTE: Binary node
-    BN* TI = static_cast<BN*>(T);
+    auto TI = static_cast<BN*>(T);
     assert(TI->GetParallelFlagIniStatus() && !TI->aug.value());
     split = &(TI->split);
-    go_left = Num::Gt(TI->split.first - q.pnt[TI->split.second], 0);
+    go_left = Num::Gt(split->first - q.pnt[split->second], 0);
     first_node = go_left ? TI->left : TI->right;
     second_node = go_left ? TI->right : TI->left;
     dim = 0;
     first_idx = second_idx = 1;
   } else if (dynamic_cast<MN*>(T)) {  // NOTE: Multi node
-    MN* TI = static_cast<MN*>(T);
+    auto TI = static_cast<MN*>(T);
     assert(TI->GetParallelFlagIniStatus() && TI->aug.value());
+    assert(!MN::EqualSplit());
     split = MN::EqualSplit() ? &(TI->split[dim]) : &(TI->split[idx]);
     go_left = Num::Gt(split->first - q.pnt[split->second], 0);
 
-    BucketType first_idx = (idx << 1) + static_cast<BucketType>(!go_left);
-    BucketType second_idx = (idx << 1) + static_cast<BucketType>(go_left);
+    first_idx = (idx << 1) + static_cast<BucketType>(!go_left);
+    second_idx = (idx << 1) + static_cast<BucketType>(go_left);
     bool reach_leaf =
         first_idx >= MN::GetRegions();  // whether reach the skeleton leaf
     first_node = reach_leaf ? TI->tree_nodes[first_idx - MN::GetRegions()] : T;
@@ -342,7 +342,6 @@ void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::KNNMix(
       first_idx = second_idx = 1;
     }
     dim = (dim + 1) % kDim;
-
   } else {
     assert(false);
   }

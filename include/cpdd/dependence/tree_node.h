@@ -23,8 +23,9 @@ struct AllocEmptyLeafTag {};
 struct Node {
   Node() : is_leaf{false}, size{0} {};
   Node(bool _is_leaf, size_t _size) : is_leaf{_is_leaf}, size{_size} {};
-  virtual ~Node() =
-      default;  // Adding a virtual destructor makes Node polymorphic
+
+  // Adding a virtual destructor makes Node polymorphic
+  virtual ~Node() = default;
 
   bool is_leaf;
   size_t size;
@@ -175,6 +176,9 @@ struct BinaryNode : Node {
         split(_split),
         aug(_aug) {}
 
+  // Adding a virtual destructor makes Node polymorphic
+  virtual ~BinaryNode() = default;
+
   // NOTE: test whether we can fetch @depth levels from @T
   template <typename Interior>
   static inline bool TestDepth(Node* T, int cur_depth, int depth) {
@@ -231,6 +235,9 @@ struct MultiNode : Node {
         tree_nodes(_tree_nodes),
         split(_split),
         aug(_aug) {}
+
+  // Adding a virtual destructor makes Node polymorphic
+  virtual ~MultiNode() = default;
 
   inline size_t MergeSize(BucketType const idx) {
     if (idx == 1) {

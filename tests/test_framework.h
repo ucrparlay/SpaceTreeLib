@@ -422,8 +422,7 @@ void queryKNN([[maybe_unused]] uint_fast8_t const& Dim,
   // should remove except for exp
   if constexpr (IsKdTree<Tree>) {
     pkd.Compress2Multi();
-    std::cout << "finish compress" << std::endl;
-    return;
+    KDParallelRoot = pkd.GetRoot();
   }
 
   double aveQuery = time_loop(

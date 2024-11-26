@@ -15,6 +15,9 @@ struct KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::KdInteriorNode
   KdInteriorNode(Node* _left, Node* _right, const ST& _split, const AT& _aug)
       : BinaryNode<Point, Splitter, AugType>(_left, _right, _split, _aug) {}
 
+  // Adding a virtual destructor makes Node polymorphic
+  virtual ~KdInteriorNode() = default;
+
   inline void SetParallelFlag(bool const flag) { this->aug.emplace(flag); }
 
   inline void ResetParallelFlag() { this->aug.reset(); }
@@ -45,6 +48,9 @@ struct KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::KdCompressionNode
   KdCompressionNode(KdNodeArr const& _tree_nodes, const ST& _split,
                     const AT& _aug)
       : BaseNode(_tree_nodes, _split, _aug) {}
+
+  // Adding a virtual destructor makes Node polymorphic
+  virtual ~KdCompressionNode() = default;
 
   inline void SetParallelFlag(bool const flag) { this->aug.emplace(flag); }
 

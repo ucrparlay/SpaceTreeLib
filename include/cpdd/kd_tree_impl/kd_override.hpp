@@ -13,6 +13,7 @@ template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
 void KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::Compress2Multi() {
   this->root_ = BT::template Compress2Multi<KdInteriorNode, CompressInterior>(
       this->root_);
+  return;
 }
 
 template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,

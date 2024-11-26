@@ -92,7 +92,7 @@ Node* BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::Compress2Multi(
   if (BN::template TestDepth<BN>(T, 0, MN::GetLevels())) {
     typename MN::NodeArr tree_nodes;
     typename MN::ST split;
-    CompressBinaryNode<BN, MN>(bn, tree_nodes, split, 1);
+    CompressBinaryNode<BN, MN>(T, tree_nodes, split, 1);
     for (BucketType i = 0; i < MN::GetRegions(); ++i) {
       tree_nodes[i] = Compress2Multi<BN, MN>(tree_nodes[i]);
     }
