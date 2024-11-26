@@ -27,7 +27,8 @@ if type == "batch_update":
     Dims = [3]
 elif type == "query":
     solverName = ["kdtree", "orth", "r"]
-    files = ["build", "knn_3", "count_3", "rquery_3"]
+    # files = ["build", "knn_3", "count_3", "rquery_3"]
+    files = ["build", "knn_3"]
     Dims = [2, 3]
 elif type == "summary":
     solverName = ["kdtree", "orth"]

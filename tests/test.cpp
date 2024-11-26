@@ -70,6 +70,13 @@ void TestSpacialTree([[maybe_unused]] int const& kDim,
   //   }
   // }
   //
+
+  // NOTE: compress the kdnode to MultiNode
+  // should remove except for exp
+  if constexpr (IsKdTree<Tree>) {
+    tree.Compress2Multi();
+  }
+
   if (kQueryType & (1 << 0)) {  // NOTE: KNN
     auto run_batch_knn = [&](Points const& pts, int kth, size_t batchSize) {
       Points newPts(batchSize);

@@ -311,10 +311,10 @@ void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::KNNMix(
     return;
   }
 
-  bool go_left;
+  bool go_left(false);
   HyperPlane* split(nullptr);
-  Node *first_node, *second_node;
-  BucketType first_idx, second_idx;
+  Node *first_node(nullptr), *second_node(nullptr);
+  BucketType first_idx(0), second_idx(0);
   if (dynamic_cast<BN*>(T)) {  // NOTE: Binary node
     auto TI = static_cast<BN*>(T);
     assert(TI->GetParallelFlagIniStatus() && !TI->aug.value());

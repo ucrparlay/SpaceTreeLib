@@ -1,9 +1,9 @@
 #!/bin/bash
 set -o xtrace
 
-Solvers=("rtree")
-# Solvers=("test")
-Node=(100000000)
+# Solvers=("rtree")
+Solvers=("test")
+Node=(1000000000)
 # Tree=(2)
 Tree=(0)
 Dim=(2 3)
@@ -16,7 +16,8 @@ k=10
 insNum=2
 summary=0
 read_file=0
-queryType=$((2#111)) # 1110000
+# queryType=$((2#111)) # 1110000
+queryType=$((2#1)) # 1110000
 type="query"
 round=3
 resFile=""
@@ -53,4 +54,3 @@ done
 
 current_date_time="$(date "+%d %H:%M:%S")"
 echo $current_date_time
-

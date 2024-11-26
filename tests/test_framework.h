@@ -418,13 +418,6 @@ void queryKNN([[maybe_unused]] uint_fast8_t const& Dim,
       0, n, [&](size_t i) { bq[i].resize(Out.cut(i * K, i * K + K)); });
   parlay::sequence<size_t> vis_nodes(n), gen_box(n), check_box(n), skip_box(n);
 
-  // NOTE: compress the kdnode to MultiNode
-  // should remove except for exp
-  if constexpr (IsKdTree<Tree>) {
-    pkd.Compress2Multi();
-    KDParallelRoot = pkd.GetRoot();
-  }
-
   double aveQuery = time_loop(
       rounds, loopLate,
       [&]() { parlay::parallel_for(0, n, [&](size_t i) { bq[i].reset(); }); },
