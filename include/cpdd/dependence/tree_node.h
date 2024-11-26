@@ -4,8 +4,10 @@
 #include <algorithm>
 #include <array>
 #include <bitset>
+#include <concepts>
 #include <cstdint>
 #include <numeric>
+#include <tuple>
 #include <type_traits>
 
 #include "basic_point.h"
@@ -196,14 +198,28 @@ template <typename Point, uint_fast8_t kMD, typename SplitType,
 struct MultiNode : Node {
   using BucketType = uint_fast8_t;
   using Coord = typename Point::Coord;
-
-  static consteval auto GetRegions() { return 1 << kMD; }
-  static consteval auto GetLevels() { return kMD; }
-
   using Num = Num_Comparator<Coord>;
-  using NodeArr = std::array<Node*, GetRegions()>;
   using ST = SplitType;
   using AT = AugType;
+
+  static consteval auto GetRegions() { return 1 << kMD; }
+
+  static consteval auto GetLevels() { return kMD; }
+
+  // NOTE: whether we use same splitter for same level
+  static consteval auto EqualSplit()
+    requires std::same_as<ST, std::array<typename ST::value_type, kMD>>
+  {
+    return true;  // every dimension one splitter
+  }
+
+  static consteval auto EqualSplit()
+    requires std::same_as<ST, std::array<typename ST::value_type, 1 << kMD>>
+  {
+    return false;  // the spliiter number mathes inter nodes num
+  }
+
+  using NodeArr = std::array<Node*, GetRegions()>;
 
   MultiNode(NodeArr const& _tree_nodes, const ST& _split, const AT& _aug)
       : Node{false,

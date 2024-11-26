@@ -210,12 +210,13 @@ void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::KNNMultiExpand(
   }
 
   Interior* TI = static_cast<Interior*>(T);
-  bool go_left =
-      Num::Gt(TI->split[dim].first - q.pnt[TI->split[dim].second], 0);
+  auto const& split = Interior::EqualSplit() ? TI->split[dim] : TI->split[idx];
+  bool go_left = Num::Gt(split.first - q.pnt[split.second], 0);
 
   BucketType first_idx = (idx << 1) + static_cast<BucketType>(!go_left);
   BucketType second_idx = (idx << 1) + static_cast<BucketType>(go_left);
-  bool reach_leaf = first_idx >= Interior::GetRegions();
+  bool reach_leaf =
+      first_idx >= Interior::GetRegions();  // whether reach the skeleton leaf
   Node* first_node =
       reach_leaf ? TI->tree_nodes[first_idx - Interior::GetRegions()] : T;
   Node* second_node =
@@ -224,7 +225,7 @@ void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::KNNMultiExpand(
     first_idx = second_idx = 1;
   }
 
-  BoxCut box_cut(node_box, TI->split[dim], go_left);
+  BoxCut box_cut(node_box, split, go_left);
   logger.generate_box_num += 1;
   assert((dim + 1) % kDim != 0 || (first_idx == 1 && second_idx == 1));
 

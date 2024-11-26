@@ -1,7 +1,6 @@
 #pragma once
 
 #include <algorithm>
-#include <boost/random/linear_feedback_shift.hpp>
 #include <cstddef>
 #include <cstdint>
 #include <iomanip>
@@ -423,6 +422,8 @@ void queryKNN([[maybe_unused]] uint_fast8_t const& Dim,
   // should remove except for exp
   if constexpr (IsKdTree<Tree>) {
     pkd.Compress2Multi();
+    std::cout << "finish compress" << std::endl;
+    return;
   }
 
   double aveQuery = time_loop(

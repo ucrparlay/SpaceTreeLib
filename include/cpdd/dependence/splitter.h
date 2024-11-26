@@ -20,6 +20,8 @@ struct BaseSplitterRule {
                                                              Box const& bx) = 0;
 
   constexpr virtual DimsType FindRebuildDimension(DimsType const dim) = 0;
+
+  // TODO: the spliiter should deterine how to split as well
 };
 
 template <typename Point>
