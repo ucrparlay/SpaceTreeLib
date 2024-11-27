@@ -4,95 +4,17 @@
 
 #include "test_framework.h"
 
-constexpr int MAX_DIM = 10;
+constexpr int MAX_DIM = 16;
 
-template <typename T>
-class Point {
- public:
-  void print() {
-    for (int i = 0; i < 3; i++) {
-      std::cout << x[i] << " ";
-    }
-  };
-  void print(int d) {
-    for (int i = 0; i < d; i++) {
-      std::cout << x[i] << " ";
-    }
-  }
-
- public:
-  int id;
-  T x[MAX_DIM];
-};
-
-// double const EPS = 1e-9;
-#define rep(i, a, b) for (int i = (a); i < (b); i++)
-#define per(i, a, b) for (int i = (a); i > (b); i--)
-#define LL long long
-#define Lson (index * 2)
-#define Rson (index * 2 + 1)
-#define MOD ((int)1000000007)
-#define MAXN 1000 + 5
 ///**********************************START*********************************///
-long long N = 8e5;
-long long Dim = 5;
-long long numFile = 3;
+std::string path;
+int pts_num, pts_dim, file_num, distribution;
 
-using Typename = Coord;
-Typename const dataRange = 1e6;
+Coord const data_range = 1e9;
 
-std::string path = "/localdata/0/zmen002/kdtree/uniform";
+inline std::string toString(auto const& a) { return std::to_string(a); }
 
-inline std::string toString(long long const& a) { return std::to_string(a); }
-
-Point<Typename>* wp;
-
-void generatePoints(std::ofstream& f) {
-  wp = new Point<Typename>[N];
-  Coord box_size = 1e6;
-
-  std::random_device rd;      // a seed source for the random number engine
-  std::mt19937 gen_mt(rd());  // mersenne_twister_engine seeded with rd()
-  // std::uniform_real_distribution<Typename> distrib( 1, box_size );
-  std::uniform_int_distribution<int> distrib(1, box_size);
-
-  parlay::random_generator gen(distrib(gen_mt));
-  // std::uniform_real_distribution<Typename> dis( -box_size, box_size );
-  // std::uniform_int_distribution<int> dis( -box_size, box_size );
-  std::uniform_int_distribution<int> dis(0, box_size);
-
-  // generate n random points in a cube
-  parlay::parallel_for(
-      0, N,
-      [&](long i) {
-        auto r = gen[i];
-        for (int j = 0; j < Dim; j++) {
-          wp[i].x[j] = dis(r);
-        }
-      },
-      1000);
-
-  f << N << " " << Dim << std::endl;
-  for (size_t i = 0; std::cmp_less(i, N); i++) {
-    for (int j = 0; j < Dim; j++) {
-      f << wp[i].x[j] << " ";
-    }
-    f << std::endl << std::flush;
-  }
-
-  delete[] wp;
-}
-
-// std::string path = "../benchmark/craft_var_node_integer";
 std::default_random_engine generator;
-struct kd_node_t {
-  Typename x[15];
-  struct kd_node_t *left, *right;
-  int num;  // number of nodes in subtree plus itself
-};
-
-kd_node_t* node;
-
 inline double getRealRandom(double const& a, double const& b) {
   std::uniform_real_distribution<double> distribution(a, b);
   return distribution(generator);
@@ -103,48 +25,92 @@ inline int getIntRandom(int const& a, int const& b) {
   return distribution(generator);
 }
 
-void generatePointsSerial(std::ofstream& f) {
-  node = (kd_node_t*)malloc(N * sizeof(kd_node_t));
-  f << N << " " << Dim << std::endl;
-  for (int i = 0; i < N; i++) {
-    // int idx = 0;
-    Typename a;
-    for (int j = 0; j < Dim; j++) {
-      if constexpr (std::is_integral_v<Typename>)
-        // WARN: serial will generate negative numbers
-        a = getIntRandom(-dataRange, dataRange);
-      else if (std::is_floating_point_v<Typename>) {
-        a = getRealRandom(-dataRange, dataRange);
-      }
-      node[i].x[j] = a;
-      f << a << " ";
+void print_to_file(std::string const& path, auto const& wp) {
+  std::ofstream f;
+  f.open(path);
+  f << pts_num << " " << pts_dim << std::endl;
+  for (size_t i = 0; std::cmp_less(i, pts_num); i++) {
+    for (int j = 0; j < pts_dim; j++) {
+      f << wp[i].pnt[j] << " ";
     }
-    f << std::endl;
+    f << std::endl << std::flush;
   }
-  free(node);
+  f.close();
 }
 
-int main([[maybe_unused]] int argc, char* argv[]) {
-  assert(argc >= 4);
-  path = std::string(argv[1]);
-  N = std::stoll(argv[2]);
-  Dim = std::stoll(argv[3]);
-  numFile = std::stoll(argv[4]);
-  int serial = std::stoi(argv[5]);
+template <typename Point>
+void generate_uniform_points(auto& wp) {
+  std::random_device rd;      // a seed source for the random number engine
+  std::mt19937 gen_mt(rd());  // mersenne_twister_engine seeded with rd()
+  std::uniform_int_distribution<int> distrib(1, data_range);
 
-  path += "/" + toString(N) + "_" + toString(Dim) + "/";
+  parlay::random_generator gen(distrib(gen_mt));
+  std::uniform_int_distribution<int> dis(0, data_range);
+
+  // generate n random points in a cube
+  parlay::parallel_for(
+      0, pts_num,
+      [&](size_t i) {
+        auto r = gen[i];
+        for (int j = 0; j < pts_dim; j++) {
+          wp[i].pnt[j] = dis(r);
+        }
+      },
+      1000);
+  return;
+}
+
+template <typename Point>
+void generate_varden_points(auto& wp) {
+  assert(wp.size());
+  return;
+}
+
+int main(int argc, char* argv[]) {
+  commandLine P(argc, argv,
+                "[-k {1,...,100}] [-d {2,3,5,7,9,10}] [-n <node num>] [-t "
+                "<parallelTag>] [-p <inFile>] [-r {1,...,5}] [-q {0,1}] [-i "
+                "<_insertFile>] [-s <kSummary>]");
+  path = P.getOptionValue("-p");
+  pts_num = P.getOptionIntValue("-n", 1'000'000);
+  pts_dim = P.getOptionIntValue("-d", 2);
+  file_num = P.getOptionIntValue("-f", 2);
+  distribution = P.getOptionIntValue("-t", 0);
+
+  path += "/" + toString(pts_num) + "_" + toString(pts_dim) + "/";
   std::filesystem::create_directory(path);
-  std::ofstream f;
 
-  for (long long i = 0; i < numFile; i++) {
+  auto generate = [&]<typename Point>(std::string const& new_path) {
+    using Points = parlay::sequence<Point>;
+    Points wp(pts_num);
+    if (distribution == 0) {
+      generate_uniform_points<Point>(wp);
+    } else {
+      generate_varden_points<Point>(wp);
+    }
+    print_to_file(new_path, wp);
+  };
+
+  for (int i = 0; i < file_num; i++) {
     std::string newpath = path + toString(i + 1) + ".in";
     std::cout << newpath << std::endl;
-    f.open(newpath);
-    if (serial)
-      generatePointsSerial(f);
-    else
-      generatePoints(f);
-    f.close();
+    if (pts_dim == 2) {
+      generate.operator()<PointType<Coord, 2>>(newpath);
+    } else if (pts_dim == 3) {
+      generate.operator()<PointType<Coord, 3>>(newpath);
+    } else if (pts_dim == 5) {
+      generate.operator()<PointType<Coord, 3>>(newpath);
+    } else if (pts_dim == 7) {
+      generate.operator()<PointType<Coord, 3>>(newpath);
+    } else if (pts_dim == 9) {
+      generate.operator()<PointType<Coord, 3>>(newpath);
+    } else if (pts_dim == 12) {
+      generate.operator()<PointType<Coord, 3>>(newpath);
+    } else if (pts_dim == 16) {
+      generate.operator()<PointType<Coord, 3>>(newpath);
+    } else {
+      throw std::runtime_error("Invalid dimension");
+    }
   }
   return 0;
 }
