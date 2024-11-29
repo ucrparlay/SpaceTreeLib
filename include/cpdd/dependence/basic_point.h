@@ -53,7 +53,7 @@ struct PointType {
     return std::move(p);
   }
 
-  constexpr auto GetDim() const { return std::tuple_size_v<Coords>; }
+  constexpr static auto GetDim() { return std::tuple_size_v<Coords>; }
 
   inline bool SameDimension(PointType const& b) const { return *this == b; }
 
