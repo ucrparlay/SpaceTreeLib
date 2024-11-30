@@ -31,6 +31,7 @@ def plot_points(points):
     plt.title("Scatter Plot of Points")
     plt.grid(True)
     plt.show()
+    plt.savefig("n1000_10000.png")
 
 
 if __name__ == "__main__":

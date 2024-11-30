@@ -10,7 +10,7 @@
 
 ///**********************************START*********************************///
 
-Coord const data_range = 1e9;
+Coord const data_range = 1'000'000'000;
 
 inline std::string toString(auto const& a) { return std::to_string(a); }
 
@@ -84,7 +84,7 @@ class UniformGenerator {
     return parlay::tabulate(gen_num, [&](size_t) -> Point {
       std::array<double, Point::GetDim()> coords;
       Point p;
-      double r = radius * std::pow(dis(gen), 1.0 / kDim);
+      double r = static_cast<double>(radius) * std::pow(dis(gen), 1.0 / kDim);
 
       double sum_squares = 0.0;
       for (typename Point::DimsType j = 0; j < kDim; ++j) {
@@ -98,8 +98,8 @@ class UniformGenerator {
         p[j] = static_cast<typename Point::Coord>(coords[j]) + center[j];
       }
 
-      assert(std::inner_product(p.pnt.begin(), p.pnt.end(), p.pnt.begin(), 0) <
-             radius * radius);
+      assert(std::inner_product(coords.begin(), coords.end(), coords.begin(),
+                                0) < radius * radius);
 
       return p;
     });
@@ -184,11 +184,16 @@ class VardenGenerator {
             shift_pts[0]));
 
     // TODO: may need to adjust the range of coordinates
-    return parlay::flatten(parlay::tabulate(shift_pts.size(), [&](size_t i) {
-      size_t sz = i == shift_pts.size() - 1 ? GetCRest() : gen_num - GetCRest();
-      return UniformGenerator<Point>::WithinSphere(sz, shift_pts[i].first,
-                                                   GetVincinity(prev_restart));
-    }));
+    auto pts =
+        parlay::flatten(parlay::tabulate(shift_pts.size(), [&](size_t i) {
+          size_t sz =
+              i != shift_pts.size() - 1 ? GetCRest() : gen_num - i * GetCRest();
+          return UniformGenerator<Point>::WithinSphere(
+              sz, shift_pts[i].first, GetVincinity(prev_restart));
+        }));
+
+    assert(pts.size() == gen_num);
+    return pts;
   }
 
   Points Apply(size_t const gen_num) {
@@ -210,10 +215,16 @@ class VardenGenerator {
     auto restart_idx = parlay::pack_index(r_start_pts);
     restart_idx.push_back(GetClusterPtsNum(gen_num));
 
+    // for (auto i : restart_idx) {
+    //   std::cout << i << " ";
+    // }
+
     auto cluster_seq =
         parlay::flatten(parlay::tabulate(restart_idx.size() - 1, [&](size_t i) {
           return GenerateCluster(restart_idx[i + 1] - restart_idx[i], i);
         }));
+
+    // std::cout << cluster_seq.size() << std::endl;
 
     return parlay::append(cluster_seq, UniformGenerator<Point>::WithinBox(
                                            GetNoicePtsNum(gen_num)));
@@ -244,7 +255,9 @@ int main(int argc, char* argv[]) {
   file_num = P.getOptionIntValue("-f", 2);
   varden = P.getOptionIntValue("-t", 0);
 
-  path += "/" + toString(pts_num) + "_" + toString(pts_dim) + "/";
+  // NOTE: ../kdtree/ss_varden/
+  path += (*path.rbegin() == '/' ? "" : "/") + toString(pts_num) + "_" +
+          toString(pts_dim) + "/";
   std::filesystem::create_directory(path);
 
   auto generate = [&]<typename Point>(std::string const& new_path) {
