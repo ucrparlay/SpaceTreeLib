@@ -16,6 +16,7 @@ BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::P2PDistance(
     Point const& p, Point const& q) {
   Coord r = 0;
   for (DimsType i = 0; i < kDim; ++i) {
+    // TODO: maybe std::inner_product
     r += (p.pnt[i] - q.pnt[i]) * (p.pnt[i] - q.pnt[i]);
   }
   return r;

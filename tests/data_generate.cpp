@@ -1,14 +1,14 @@
 #include <filesystem>
 #include <iostream>
+#include <numeric>
 #include <string>
 
 #include "parlay/parallel.h"
+#include "parlay/primitives.h"
 #include "parlay/sequence.h"
 #include "test_framework.h"
 
 ///**********************************START*********************************///
-std::string path;
-int pts_num, pts_dim, file_num, varden;
 
 Coord const data_range = 1e9;
 
@@ -26,98 +26,208 @@ inline int getIntRandom(int const& a, int const& b) {
 }
 
 void print_to_file(std::string const& path, auto const& wp) {
+  size_t const gen_num = wp.size();
+  auto constexpr gen_dim =
+      std::remove_reference_t<decltype(wp)>::value_type::GetDim();
+
   std::ofstream f;
   f.open(path);
-  f << pts_num << " " << pts_dim << std::endl;
-  for (size_t i = 0; std::cmp_less(i, pts_num); i++) {
-    for (int j = 0; j < pts_dim; j++) {
-      f << wp[i].pnt[j] << " ";
+  f << gen_num << " " << gen_dim << std::endl;
+
+  for (size_t i = 0; i < gen_num; i++) {
+    for (int j = 0; std::cmp_less(j, gen_dim); j++) {
+      f << wp[i].pnt[j] << " ";  // TODO: format output by type
     }
-    f << std::endl << std::flush;
+    f << std::endl;
   }
+
   f.close();
 }
 
-template <typename Point, bool kSameDensity>
-struct VardenParam {
+template <typename Point>
+class UniformGenerator {
+ public:
   using Points = parlay::sequence<Point>;
 
-  VardenParam()
-    requires(kSameDensity)
-      : i(0), r_vincinity(100), r_shift(50 * Point::GetDim()) {}
+  static Points WithinBox(size_t const gen_num) {
+    Points wp(gen_num);
 
-  VardenParam()
-    requires(!kSameDensity)
-      : i(0),
-        r_vincinity(100 * ((i % 10) + 1)),
-        r_shift(r_vincinity * Point::GetDim() / 2) {}
+    std::random_device rd;      // a seed source for the random number engine
+    std::mt19937 gen_mt(rd());  // mersenne_twister_engine seeded with rd()
+    std::uniform_int_distribution<int> distrib(1, data_range);
+
+    parlay::random_generator gen(distrib(gen_mt));
+    std::uniform_int_distribution<int> dis(
+        0, data_range);  // WARN : assume using int
+
+    // generate n random points in a cube
+    parlay::parallel_for(0, gen_num, [&](size_t i) {
+      auto r = gen[i];
+      for (typename Point::DimsType j = 0; j < Point::GetDim(); j++) {
+        wp[i].pnt[j] = dis(r);
+      }
+    });
+    return wp;
+  }
+
+  static Points WithinSphere(size_t const gen_num, Point const& center,
+                             typename Point::Coord const radius) {
+    auto constexpr kDim = Point::GetDim();
+
+    std::random_device rd;      // a seed source for the random number engine
+    std::mt19937 gen_mt(rd());  // mersenne_twister_engine seeded with rd()
+    std::uniform_int_distribution<int> distrib(1, 65536);
+    parlay::random_generator gen(
+        distrib(gen_mt));  // PARA: thread safe random generator
+    std::uniform_real_distribution<double> dis(0.0, 1.0);
+
+    return parlay::tabulate(gen_num, [&](size_t) -> Point {
+      std::array<double, Point::GetDim()> coords;
+      Point p;
+      double r = radius * std::pow(dis(gen), 1.0 / kDim);
+
+      double sum_squares = 0.0;
+      for (typename Point::DimsType j = 0; j < kDim; ++j) {
+        coords[j] = dis(gen) * 2.0 - 1.0;
+        sum_squares += coords[j] * coords[j];
+      }
+
+      double scale = r / std::sqrt(sum_squares);
+      for (typename Point::DimsType j = 0; j < kDim; ++j) {
+        coords[j] *= scale;
+        p[j] = static_cast<typename Point::Coord>(coords[j]) + center[j];
+      }
+
+      assert(std::inner_product(p.pnt.begin(), p.pnt.end(), p.pnt.begin(), 0) <
+             radius * radius);
+
+      return p;
+    });
+  }
+};
+
+template <typename Point, bool kSameDensity>
+class VardenGenerator {
+ public:
+  using Points = parlay::sequence<Point>;
+  using DimsType = Point::DimsType;
 
   constexpr static double GetRhoNoice() { return 1.0 / 10000; }
-  constexpr static size_t GetRest() { return 100; }
+
+  constexpr static size_t GetCRest() { return 100; }
+
   static double GetRhoRestart(size_t n) {
     return 10.0 / (n * (1 - GetRhoNoice()));
   }
-  void UpdateVincinity() noexcept { r_vincinity = 100 * ((i % 10) + 1); }
 
-  Points Apply() {
+  static size_t GetNoicePtsNum(size_t gen_num) {
+    return static_cast<size_t>(static_cast<double>(gen_num) * GetRhoNoice());
+  }
+
+  static size_t GetClusterPtsNum(size_t gen_num) {
+    return gen_num - GetNoicePtsNum(gen_num);
+  }
+
+  size_t GetVincinity([[maybe_unused]] size_t const prev_restart) noexcept {
+    if constexpr (kSameDensity) {
+      return 100;
+    } else {
+      return 100 * ((prev_restart % 10) + 1);
+    }
+  }
+
+  size_t GetShiftDistance([[maybe_unused]] size_t const prev_restart) noexcept {
+    if constexpr (kSameDensity) {
+      return 50 * Point::GetDim();
+    } else {
+      return GetVincinity(prev_restart) * Point::GetDim() / 2;
+    }
+  }
+
+  Points GenerateCluster(size_t const gen_num, size_t const prev_restart) {
+    using Spreader = std::pair<Point, DimsType>;
+    std::random_device rd;      // a seed source for the random number engine
+    std::mt19937 gen_mt(rd());  // mersenne_twister_engine seeded with rd()
+    std::uniform_int_distribution<int> distrib(1, data_range);
+
+    parlay::random_generator gen(distrib(gen_mt));
+    std::uniform_int_distribution<int> dis(0, data_range);
+
+    auto generate_random_point = [&]() -> Point {
+      Point p;
+      for (auto& c : p.pnt) {
+        c = dis(gen);
+      }
+      return p;
+    };
+
+    // ((a % b) + b) % b; negative modular
+    auto shift_pts = parlay::tabulate(gen_num / GetCRest() + 1, [&](size_t i) {
+      if (i) {
+        int const dir = dis(gen) % Point::GetDim();
+        Point p(static_cast<Point::Coord>(0));
+        p[dir] = GetShiftDistance(prev_restart);
+        return Spreader(p, dir);
+      } else {
+        return Spreader(generate_random_point(), 0);
+      }
+    });
+
+    parlay::scan_inclusive_inplace(
+        shift_pts.cut(1, shift_pts.size()),
+        parlay::binary_op(
+            [](Spreader const& a, Spreader const& b) {
+              Point c(a.first);  // WARN: order here matters
+              c[b.second] += b.first[b.second];
+              return Spreader(c, b.second);
+            },
+            shift_pts[0]));
+
+    // TODO: may need to adjust the range of coordinates
+    return parlay::flatten(parlay::tabulate(shift_pts.size(), [&](size_t i) {
+      size_t sz = i == shift_pts.size() - 1 ? GetCRest() : gen_num - GetCRest();
+      return UniformGenerator<Point>::WithinSphere(sz, shift_pts[i].first,
+                                                   GetVincinity(prev_restart));
+    }));
+  }
+
+  Points Apply(size_t const gen_num) {
     std::random_device rd;      // a seed source for the random number engine
     std::mt19937 gen_mt(rd());  // mersenne_twister_engine seeded with rd()
     std::uniform_int_distribution<int> distrib(1, 2024);
 
-    parlay::random_generator gen(distrib(gen_mt));
-    std::uniform_real_distribution<double> dis(0, 1);
+    parlay::random_generator gen(
+        distrib(gen_mt));  // PARA: thread safe random generator
+    std::uniform_real_distribution<double> dis(0.0, 1.0);
 
-    auto r_start_pts = parlay::tabulate(pts_num, [&](size_t i) -> bool {
-      auto r = gen[i];
-      return i == 0 || dis(r) < GetRhoRestart(pts_num);
-    });
-    // auto reduce_pts =
-    //     parlay::scan(r_start_pts, parlay::binary_op(std::plus<size_t>(), 0));
+    // NOTE: begin generate
+    auto r_start_pts =
+        parlay::tabulate(GetClusterPtsNum(gen_num), [&](size_t i) -> bool {
+          auto r = gen[i];
+          return i == 0 || dis(r) < GetRhoRestart(gen_num);
+        });
+
     auto restart_idx = parlay::pack_index(r_start_pts);
-    restart_idx.push_back(pts_num);
-    return parlay::flatten(
-        parlay::tabulate(restart_idx.size() - 1, [&](size_t i) {
-          auto l = restart_idx[i];
-          auto r = restart_idx[i + 1];
-          Points cluster;
-          return cluster;
+    restart_idx.push_back(GetClusterPtsNum(gen_num));
+
+    auto cluster_seq =
+        parlay::flatten(parlay::tabulate(restart_idx.size() - 1, [&](size_t i) {
+          return GenerateCluster(restart_idx[i + 1] - restart_idx[i], i);
         }));
+
+    return parlay::append(cluster_seq, UniformGenerator<Point>::WithinBox(
+                                           GetNoicePtsNum(gen_num)));
   }
 
-  size_t i;
+  size_t restarts_num;
   size_t r_vincinity;
   size_t r_shift;
 };
 
 template <typename Point>
-auto generate_uniform_points() {
-  using Points = parlay::sequence<Point>;
-  Points wp(pts_num);
-
-  std::random_device rd;      // a seed source for the random number engine
-  std::mt19937 gen_mt(rd());  // mersenne_twister_engine seeded with rd()
-  std::uniform_int_distribution<int> distrib(1, data_range);
-
-  parlay::random_generator gen(distrib(gen_mt));
-  std::uniform_int_distribution<int> dis(0, data_range);
-
-  // generate n random points in a cube
-  parlay::parallel_for(
-      0, pts_num,
-      [&](size_t i) {
-        auto r = gen[i];
-        for (int j = 0; j < pts_dim; j++) {
-          wp[i].pnt[j] = dis(r);
-        }
-      },
-      1000);
-  return wp;
-}
-
-template <typename Point>
-auto generate_varden_points() {
-  VardenParam<Point, false> varden;
-  return varden.Apply();
+auto generate_varden_points(size_t pts_num) {
+  VardenGenerator<Point, false> varden;
+  return varden.Apply(pts_num);
 }
 
 int main(int argc, char* argv[]) {
@@ -125,6 +235,9 @@ int main(int argc, char* argv[]) {
                 "[-k {1,...,100}] [-d {2,3,5,7,9,10}] [-n <node num>] [-t "
                 "<parallelTag>] [-p <inFile>] [-r {1,...,5}] [-q {0,1}] [-i "
                 "<_insertFile>] [-s <kSummary>]");
+  std::string path;
+  int pts_num, pts_dim, file_num, varden;
+
   path = P.getOptionValue("-p");
   pts_num = P.getOptionIntValue("-n", 1'000'000);
   pts_dim = P.getOptionIntValue("-d", 2);
@@ -136,8 +249,8 @@ int main(int argc, char* argv[]) {
 
   auto generate = [&]<typename Point>(std::string const& new_path) {
     using Points = parlay::sequence<Point>;
-    Points wp = varden ? generate_varden_points<Point>()
-                       : generate_uniform_points<Point>();
+    Points wp = varden ? VardenGenerator<Point, false>().Apply(pts_num)
+                       : UniformGenerator<Point>::WithinBox(pts_num);
     print_to_file(new_path, wp);
   };
 
