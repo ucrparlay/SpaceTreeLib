@@ -30,8 +30,23 @@ void PrintToFile(std::string const& path, auto const& wp) {
     parlay::sequence<char> cstr(str.begin(), str.end());
     return cstr;
   });
+
   // NOTE: write to file in parallel
   writeSeqToFile(header, wp_str, path.c_str());
+
+  // NOTE: sometimes parallel written cannot be finished correcly
+  // naive check for it
+  std::ifstream file(path);
+  int lineCount = 0;
+  std::string line;
+  while (std::getline(file, line)) {
+    ++lineCount;
+    if (lineCount > 3) break;
+  }
+  if (lineCount <= 3) {
+    throw std::runtime_error("parallel written error, please retry." + path);
+  }
+  file.close();
   return;
 }
 
