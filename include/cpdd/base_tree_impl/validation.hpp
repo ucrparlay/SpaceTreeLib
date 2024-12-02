@@ -17,8 +17,8 @@ BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::CheckBox(Node* T,
   if (T->is_leaf) {
     [[maybe_unused]] auto const* TL = static_cast<Leaf const*>(T);
     [[maybe_unused]] auto const node_box = GetBox<Leaf, Interior>(T);
-    assert((TL->ContainBox() && WithinBox(node_box, box)) ||
-           (!TL->ContainBox() && SameBox(node_box, box)));
+    assert((!TL->ContainBox() && WithinBox(node_box, box)) ||
+           (TL->ContainBox() && SameBox(node_box, box)));
     return GetBox<Leaf, Interior>(T);
   }
   Interior* TI = static_cast<Interior*>(T);

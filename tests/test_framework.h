@@ -19,14 +19,14 @@
 #include "parlay/primitives.h"
 #include "parlay/slice.h"
 
-using Coord = long;
-// using Coord = double;
+// using Coord = uint_fast64_t;
+using Coord = float;
 using Typename = Coord;
 using namespace cpdd;
 
 // NOTE: KNN size
-static constexpr double batchQueryRatio = 0.01;
-static constexpr size_t batchQueryOsmSize = 10000000;
+static constexpr double kBatchQueryRatio = 0.01;
+static constexpr size_t kBatchQueryOsmSize = 10000000;
 // NOTE: rectangle numbers
 static constexpr int kRangeQueryNum = 50000;
 static constexpr int singleQueryLogRepeatNum = 100;
@@ -407,10 +407,10 @@ void queryKNN([[maybe_unused]] uint_fast8_t const& Dim,
   double loopLate = rounds > 1 ? 1.0 : -0.1;
   auto* KDParallelRoot = pkd.GetRoot();
 
-  Points wp = Points::uninitialized(n);
-  parlay::copy(WP, wp);
+  Points wp = WP;
 
-  parlay::sequence<nn_pair> Out(K * n, nn_pair(std::ref(wp[0]), 0));
+  parlay::sequence<nn_pair> Out(
+      K * n, nn_pair(std::ref(wp[0]), static_cast<Coord>(0)));
   // parlay::sequence<nn_pair> Out(K * n);
   parlay::sequence<kBoundedQueue<Point, nn_pair>> bq =
       parlay::sequence<kBoundedQueue<Point, nn_pair>>::uninitialized(n);
@@ -458,13 +458,14 @@ void queryKNN([[maybe_unused]] uint_fast8_t const& Dim,
 
 // NOTE: run range count and check the correct
 template <typename Point, typename Tree>
-void RangeCount(parlay::sequence<Point> const& wp, Tree& pkd, Typename* kdknn,
-                int const& rounds, int rec_num, int rec_type, int const DIM) {
+void RangeCount(parlay::sequence<Point> const& wp, Tree& pkd, int const& rounds,
+                int rec_num, int rec_type, int const DIM) {
   // using Points = typename Tree::Points;
   // using Box = typename Tree::Box;
 
   auto [query_box_seq, max_size] =
       gen_rectangles<Point, Tree, false>(rec_num, rec_type, wp, DIM);
+  parlay::sequence<size_t> kdknn(rec_num, 0);
 
   double aveCount = time_loop(
       rounds, 1.0, [&]() {},
@@ -519,9 +520,8 @@ void rangeCountRadius(parlay::sequence<Point> const& wp, Tree& pkd,
 
 // NOTE: run range query and check the correct
 template <typename Point, typename Tree>
-void RangeQuery(parlay::sequence<Point> const& wp, Tree& pkd, Typename* kdknn,
-                int const& rounds, int const rec_num, int const rec_type,
-                int const DIM) {
+void RangeQuery(parlay::sequence<Point> const& wp, Tree& pkd, int const& rounds,
+                int const rec_num, int const rec_type, int const DIM) {
   using Points = typename Tree::Points;
 
   auto [query_box_seq, max_size] =
@@ -531,6 +531,7 @@ void RangeQuery(parlay::sequence<Point> const& wp, Tree& pkd, Typename* kdknn,
   // using ref_t = std::reference_wrapper<Point>;
   // parlay::sequence<ref_t> out_ref(Out.size(), std::ref(Out[0]));
   // parlay::sequence<double> preTime( rec_num, 0 );
+  parlay::sequence<size_t> kdknn(rec_num, 0);
 
   double aveQuery = time_loop(
       rounds, 1.0, [&]() {},

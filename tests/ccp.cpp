@@ -38,7 +38,7 @@ typedef CGAL::Fuzzy_sphere<TreeTraits> Fuzzy_circle;
 
 size_t maxReduceSize = 0;
 int query_num = 10000;
-size_t const batchQuerySize = 1000000;
+size_t const kCCPBatchQuerySize = 1000000;
 double const batchInsertCheckRatio = 0.1;
 double const kCCPBatchDiffTotalRatio = 1.0;
 double const kCCPBatchDiffOverlapRatio = 0.5;
@@ -93,7 +93,7 @@ void runCGAL(auto const& wp, auto const& wi, Typename* cgknn,
 
   if (query_type & (1 << 0)) {  //* NN
     // size_t S = wp.size();
-    size_t S = batchQuerySize;
+    size_t S = kCCPBatchQuerySize;
     tbb::parallel_for(tbb::blocked_range<std::size_t>(0, S),
                       [&](tbb::blocked_range<std::size_t> const& r) {
                         for (std::size_t s = r.begin(); s != r.end(); ++s) {
@@ -158,12 +158,14 @@ void runKDParallel(auto const& wp, auto const& wi, Typename* kdknn,
 
   // NOTE: query phase
   if (query_type & (1 << 0)) {  // NOTE: NN query
-    Points new_wp(batchQuerySize);
-    parlay::copy(wp.cut(0, batchQuerySize), new_wp.cut(0, batchQuerySize));
-    queryKNN<Point>(kDim, wp, rounds, tree, kdknn, K, true);
+    Points new_wp(kCCPBatchQuerySize);
+    parlay::copy(wp.cut(0, kCCPBatchQuerySize),
+                 new_wp.cut(0, kCCPBatchQuerySize));
+    queryKNN<Point>(kDim, new_wp, rounds, tree, kdknn, K, true);
+    std::cout << "run cgal" << std::endl;
     runCGAL<Point>(wp, wi, cgknn, query_num, tag, query_type, K);
     std::cout << "check NN" << std::endl;
-    size_t S = batchQuerySize;
+    size_t S = kCCPBatchQuerySize;
     for (size_t i = 0; i < S; i++) {
       if (std::abs(cgknn[i] - kdknn[i]) > 1e-4) {
         puts("");
@@ -180,11 +182,10 @@ void runKDParallel(auto const& wp, auto const& wi, Typename* kdknn,
       if (tag & (1 << 2)) {
         Points new_wp(tree.GetRoot()->size);
         tree.Flatten(new_wp);
-        RangeCount<Point>(new_wp, tree, kdknn, rounds, query_num,
-                          range_query_type, kDim);
-      } else {
-        RangeCount<Point>(wp, tree, kdknn, rounds, query_num, range_query_type,
+        RangeCount<Point>(new_wp, tree, rounds, query_num, range_query_type,
                           kDim);
+      } else {
+        RangeCount<Point>(wp, tree, rounds, query_num, range_query_type, kDim);
       }
     }
     std::cout << "--------------finish range count------------------"
@@ -196,11 +197,10 @@ void runKDParallel(auto const& wp, auto const& wi, Typename* kdknn,
       if (tag & (1 << 2)) {
         Points new_wp(tree.GetRoot()->size);
         tree.Flatten(new_wp);
-        RangeQuery<Point>(new_wp, tree, kdknn, rounds, query_num,
-                          range_query_type, kDim);
-      } else {
-        RangeQuery<Point>(wp, tree, kdknn, rounds, query_num, range_query_type,
+        RangeQuery<Point>(new_wp, tree, rounds, query_num, range_query_type,
                           kDim);
+      } else {
+        RangeQuery<Point>(wp, tree, rounds, query_num, range_query_type, kDim);
       }
     }
     std::cout << "--------------finish range query------------------"
@@ -286,10 +286,10 @@ int main(int argc, char* argv[]) {
           abort();
         }
       } else if (query_type & (1 << 1)) {  //* range Count
-        kdknn = new Coord[query_num];
+        kdknn = new Coord[1];
         cgknn = new Coord[1];
       } else if (query_type & (1 << 2)) {
-        kdknn = new Coord[query_num];
+        kdknn = new Coord[1];
         cgknn = new Coord[1];
       } else {
         puts("wrong query type");

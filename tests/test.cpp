@@ -29,53 +29,48 @@ void TestSpacialTree([[maybe_unused]] int const& kDim,
   Typename* kdknn = nullptr;
 
   // // NOTE: batch insert
-  // if (kTag & (1 << 0)) {
-  //   if (kSummary) {
-  //     parlay::sequence<double> const ratios = {0.0001, 0.001, 0.01, 0.1};
-  //     for (size_t i = 0; i < ratios.size(); i++) {
-  //       BatchInsert<Point, Tree, kTestTime>(tree, wp, wi, kRounds,
-  //       ratios[i]);
-  //     }
-  //   } else {
-  //     BatchInsert<Point, Tree, kTestTime>(tree, wp, wi, kRounds, 0.1);
-  //   }
-  // }
-  //
-  // // NOTE: batch delete
-  // if (kTag & (1 << 1)) {
-  //   if (kSummary) {
-  //     parlay::sequence<double> const ratios = {0.0001, 0.001, 0.01, 0.1};
-  //     for (size_t i = 0; i < ratios.size(); i++) {
-  //       BatchDelete<Point, Tree, kTestTime>(tree, wp, wp, kRounds,
-  //       ratios[i]);
-  //     }
-  //   } else {
-  //     BatchDelete<Point, Tree, kTestTime>(tree, wp, wp, kRounds,
-  //                                         kBatchInsertRatio);
-  //   }
-  // }
-  //
-  // // NOTE: batch diff
-  // if (kTag & (1 << 2)) {
-  //   if (kSummary) {
-  //     parlay::sequence<double> const overlap_ratios = {0.1, 0.2, 0.5, 1};
-  //     for (size_t i = 0; i < overlap_ratios.size(); i++) {
-  //       BatchDiff<Point, Tree, kTestTime>(
-  //           tree, wp, kRounds, kBatchDiffTotalRatio, overlap_ratios[i]);
-  //     }
-  //   } else {
-  //     BatchDiff<Point, Tree, kTestTime>(tree, wp, kRounds,
-  //     kBatchDiffTotalRatio,
-  //                                       kBatchDiffOverlapRatio);
-  //   }
-  // }
-  //
-
-  // NOTE: compress the kdnode to MultiNode
-  // should remove except for exp
-  if constexpr (IsKdTree<Tree>) {
-    tree.Compress2Multi();
+  if (kTag & (1 << 0)) {
+    if (kSummary) {
+      parlay::sequence<double> const ratios = {0.0001, 0.001, 0.01, 0.1};
+      for (size_t i = 0; i < ratios.size(); i++) {
+        BatchInsert<Point, Tree, kTestTime>(tree, wp, wi, kRounds, ratios[i]);
+      }
+    } else {
+      BatchInsert<Point, Tree, kTestTime>(tree, wp, wi, kRounds, 0.1);
+    }
   }
+
+  // NOTE: batch delete
+  if (kTag & (1 << 1)) {
+    if (kSummary) {
+      parlay::sequence<double> const ratios = {0.0001, 0.001, 0.01, 0.1};
+      for (size_t i = 0; i < ratios.size(); i++) {
+        BatchDelete<Point, Tree, kTestTime>(tree, wp, wp, kRounds, ratios[i]);
+      }
+    } else {
+      BatchDelete<Point, Tree, kTestTime>(tree, wp, wp, kRounds,
+                                          kBatchInsertRatio);
+    }
+  }
+
+  // NOTE: batch diff
+  if (kTag & (1 << 2)) {
+    if (kSummary) {
+      parlay::sequence<double> const overlap_ratios = {0.1, 0.2, 0.5, 1};
+      for (size_t i = 0; i < overlap_ratios.size(); i++) {
+        BatchDiff<Point, Tree, kTestTime>(
+            tree, wp, kRounds, kBatchDiffTotalRatio, overlap_ratios[i]);
+      }
+    } else {
+      BatchDiff<Point, Tree, kTestTime>(tree, wp, kRounds, kBatchDiffTotalRatio,
+                                        kBatchDiffOverlapRatio);
+    }
+  }
+
+  // WARN: compress the kdnode to MultiNode, should remove except for exp
+  // if constexpr (IsKdTree<Tree>) {
+  //   tree.Compress2Multi();
+  // }
 
   if (kQueryType & (1 << 0)) {  // NOTE: KNN
     auto run_batch_knn = [&](Points const& pts, int kth, size_t batchSize) {
@@ -86,7 +81,7 @@ void TestSpacialTree([[maybe_unused]] int const& kDim,
       delete[] kdknn;
     };
 
-    size_t batchSize = static_cast<size_t>(wp.size() * batchQueryRatio);
+    size_t batchSize = static_cast<size_t>(wp.size() * kBatchQueryRatio);
 
     if (kSummary == 0) {
       int k[3] = {1, 10, 100};
@@ -213,9 +208,10 @@ int main(int argc, char* argv[]) {
     run_test(wrapper::QuadTree{});
   } else if (tree_type == 1 && kDim == 3) {
     run_test(wrapper::OctTree{});
-  } else if (tree_type == 2) {
-    run_test(wrapper::RTree{});
   }
+  // else if (tree_type == 2) {
+  //   run_test(wrapper::RTree{});
+  // }
 
   return 0;
 }

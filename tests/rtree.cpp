@@ -144,7 +144,7 @@ void TestRtreeParallel(int Dim, parlay::sequence<Point>& wp,
       std::cout << timer.total_time() << " " << std::flush;
     };
 
-    size_t batchSize = static_cast<size_t>(wp.size() * batchQueryRatio);
+    size_t batchSize = static_cast<size_t>(wp.size() * kBatchQueryRatio);
     if (kSummary == 0) {
       int const k[3] = {1, 10, 100};
       for (int i = 0; i < 3; i++) {
