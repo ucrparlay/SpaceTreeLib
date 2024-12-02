@@ -3,45 +3,36 @@
 #include <numeric>
 #include <string>
 
+#include "common/IO.h"
+#include "common/geometryIO.h"
 #include "parlay/parallel.h"
 #include "parlay/primitives.h"
 #include "parlay/sequence.h"
 #include "test_framework.h"
-
 ///**********************************START*********************************///
 
-Coord const data_range = 1'000'000'000;
+Coord const kValueUB = 1'000'000'000;
 
 inline std::string toString(auto const& a) { return std::to_string(a); }
 
-std::default_random_engine generator;
-inline double getRealRandom(double const& a, double const& b) {
-  std::uniform_real_distribution<double> distribution(a, b);
-  return distribution(generator);
-}
-
-inline int getIntRandom(int const& a, int const& b) {
-  std::uniform_int_distribution<int> distribution(a, b);
-  return distribution(generator);
-}
-
-void print_to_file(std::string const& path, auto const& wp) {
+void PrintToFile(std::string const& path, auto const& wp) {
   size_t const gen_num = wp.size();
   auto constexpr gen_dim =
       std::remove_reference_t<decltype(wp)>::value_type::GetDim();
 
-  std::ofstream f;
-  f.open(path);
-  f << gen_num << " " << gen_dim << std::endl;
-
-  for (size_t i = 0; i < gen_num; i++) {
+  auto header = toString(gen_num) + " " + toString(gen_dim);
+  // NOTE: create a parlay::sequence<char> in order to call the writeSeqToFile
+  auto wp_str = parlay::tabulate(wp.size(), [&](size_t i) {
+    std::string str;
     for (int j = 0; std::cmp_less(j, gen_dim); j++) {
-      f << wp[i].pnt[j] << " ";  // TODO: format output by type
+      str += std::to_string(wp[i].pnt[j]) + " ";
     }
-    f << std::endl;
-  }
-
-  f.close();
+    parlay::sequence<char> cstr(str.begin(), str.end());
+    return cstr;
+  });
+  // NOTE: write to file in parallel
+  writeSeqToFile(header, wp_str, path.c_str());
+  return;
 }
 
 template <typename Point>
@@ -54,11 +45,11 @@ class UniformGenerator {
 
     std::random_device rd;      // a seed source for the random number engine
     std::mt19937 gen_mt(rd());  // mersenne_twister_engine seeded with rd()
-    std::uniform_int_distribution<int> distrib(1, data_range);
+    std::uniform_int_distribution<int> distrib(1, kValueUB);
 
     parlay::random_generator gen(distrib(gen_mt));
     std::uniform_int_distribution<int> dis(
-        0, data_range);  // WARN : assume using int
+        0, kValueUB);  // WARN : assume using int
 
     // generate n random points in a cube
     parlay::parallel_for(0, gen_num, [&](size_t i) {
@@ -148,10 +139,10 @@ class VardenGenerator {
     using Spreader = std::pair<Point, DimsType>;
     std::random_device rd;      // a seed source for the random number engine
     std::mt19937 gen_mt(rd());  // mersenne_twister_engine seeded with rd()
-    std::uniform_int_distribution<int> distrib(1, data_range);
+    std::uniform_int_distribution<int> distrib(1, kValueUB);
 
     parlay::random_generator gen(distrib(gen_mt));
-    std::uniform_int_distribution<int> dis(0, data_range);
+    std::uniform_int_distribution<int> dis(0, kValueUB);
 
     auto generate_random_point = [&]() -> Point {
       Point p;
@@ -215,16 +206,10 @@ class VardenGenerator {
     auto restart_idx = parlay::pack_index(r_start_pts);
     restart_idx.push_back(GetClusterPtsNum(gen_num));
 
-    // for (auto i : restart_idx) {
-    //   std::cout << i << " ";
-    // }
-
     auto cluster_seq =
         parlay::flatten(parlay::tabulate(restart_idx.size() - 1, [&](size_t i) {
           return GenerateCluster(restart_idx[i + 1] - restart_idx[i], i);
         }));
-
-    // std::cout << cluster_seq.size() << std::endl;
 
     return parlay::append(cluster_seq, UniformGenerator<Point>::WithinBox(
                                            GetNoicePtsNum(gen_num)));
@@ -254,17 +239,22 @@ int main(int argc, char* argv[]) {
   pts_dim = P.getOptionIntValue("-d", 2);
   file_num = P.getOptionIntValue("-f", 2);
   varden = P.getOptionIntValue("-t", 0);
+  std::cout << "pts_num: " << pts_num << " pts_dim: " << pts_dim
+            << " file_num: " << file_num << " varden: " << varden << std::endl;
 
-  // NOTE: ../kdtree/ss_varden/
-  path += (*path.rbegin() == '/' ? "" : "/") + toString(pts_num) + "_" +
-          toString(pts_dim) + "/";
+  // NOTE: ../kdtree/
+  path += std::string(*path.rbegin() == '/' ? "" : "/") +
+          std::string(varden ? "ss_varden/" : "uniform/") + toString(pts_num) +
+          "_" + toString(pts_dim) + "/0_" + toString(kValueUB) + "/";
   std::filesystem::create_directory(path);
 
   auto generate = [&]<typename Point>(std::string const& new_path) {
     using Points = parlay::sequence<Point>;
+    std::cout << "Generating... " << std::endl;
     Points wp = varden ? VardenGenerator<Point, false>().Apply(pts_num)
                        : UniformGenerator<Point>::WithinBox(pts_num);
-    print_to_file(new_path, wp);
+    std::cout << "Writing... " << std::endl;
+    PrintToFile(new_path, wp);
   };
 
   for (int i = 0; i < file_num; i++) {
@@ -275,15 +265,15 @@ int main(int argc, char* argv[]) {
     } else if (pts_dim == 3) {
       generate.operator()<PointType<Coord, 3>>(newpath);
     } else if (pts_dim == 5) {
-      generate.operator()<PointType<Coord, 3>>(newpath);
+      generate.operator()<PointType<Coord, 5>>(newpath);
     } else if (pts_dim == 7) {
-      generate.operator()<PointType<Coord, 3>>(newpath);
+      generate.operator()<PointType<Coord, 7>>(newpath);
     } else if (pts_dim == 9) {
-      generate.operator()<PointType<Coord, 3>>(newpath);
+      generate.operator()<PointType<Coord, 9>>(newpath);
     } else if (pts_dim == 12) {
-      generate.operator()<PointType<Coord, 3>>(newpath);
+      generate.operator()<PointType<Coord, 12>>(newpath);
     } else if (pts_dim == 16) {
-      generate.operator()<PointType<Coord, 3>>(newpath);
+      generate.operator()<PointType<Coord, 16>>(newpath);
     } else {
       throw std::runtime_error("Invalid dimension");
     }
