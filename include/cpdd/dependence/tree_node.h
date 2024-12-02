@@ -38,7 +38,7 @@ struct LeafNode : Node {
   using Points = parlay::sequence<Point>;
   using Box = std::pair<Point, Point>;  // TODO: use the version from Base tree
 
-  static consteval auto ContainBox() { return kContainBox; }
+  static constexpr auto ContainBox() { return kContainBox; }
 
   constexpr auto InitBox() const {
     if constexpr (kContainBox) {

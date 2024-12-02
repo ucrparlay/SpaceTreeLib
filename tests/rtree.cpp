@@ -60,9 +60,7 @@ void TestRtreeParallel(int Dim, parlay::sequence<Point>& wp,
   };
 
   parlay::parallel_for(0, wp.size(), [&](size_t i) {
-    // SetPoints<0, kDim>::set(_points, _points_insert, wp, wi, i);
     set_points(_points[i], wp[i], std::make_index_sequence<kDim>{});
-    // bg::set<0>(_points[i], wp[i].pnt[0]);
   });
   parlay::parallel_for(0, wi.size(), [&](size_t i) {
     set_points(_points_insert[i], wi[i], std::make_index_sequence<kDim>{});
@@ -75,45 +73,36 @@ void TestRtreeParallel(int Dim, parlay::sequence<Point>& wp,
   timer.stop();
   std::cout << timer.total_time() << " " << -1 << " " << std::flush;
 
-  if (kTag & (1 << 0)) {
-    auto rtree_insert = [&](double r) {
+  if (kTag & (1 << 0)) {  // insert
+    auto rtree_insert = [&](auto r_tree, double r) {
       timer.reset();
       timer.start();
       size_t sz = _points_insert.size() * r;
-      tree.insert(_points_insert.begin(), _points_insert.begin() + sz);
+      r_tree.insert(_points_insert.begin(), _points_insert.begin() + sz);
       std::cout << timer.total_time() << " " << std::flush;
     };
 
     if (kSummary) {
       parlay::sequence<double> const ratios = {0.0001, 0.001, 0.01, 0.1};
       for (size_t i = 0; i < ratios.size(); i++) {
-        tree.clear();
-        tree.insert(_points.begin(), _points.end());
-        rtree_insert(ratios[i]);
+        auto r_tree = tree;
+        rtree_insert(r_tree, ratios[i]);
       }
     } else {
-      rtree_insert(kBatchInsertRatio);
+      auto r_tree = tree;
+      rtree_insert(r_tree, kBatchInsertRatio);
     }
 
     if (kTag == 1) wp.append(wi);
   }
 
-  if (kTag & (1 << 1)) {
-    auto rtree_delete = [&](bool afterInsert = 1, double ratio = 1.0) {
-      if (!afterInsert) {
-        tree.clear();
-        tree.insert(_points.begin(), _points.end());
-      }
+  if (kTag & (1 << 1)) {  // delete
+    auto rtree_delete = [&](auto& r_tree, double ratio = 1.0) {
       timer.reset();
       timer.start();
-      if (afterInsert) {
-        size_t sz = _points_insert.size() * ratio;
-        tree.remove(_points_insert.begin(), _points_insert.begin() + sz);
-      } else {
-        assert(tree.size() == wp.size());
-        size_t sz = _points.size() * ratio;
-        tree.remove(_points.begin(), _points.begin() + sz);
-      }
+      assert(tree.size() == wp.size());
+      size_t sz = _points.size() * ratio;
+      r_tree.remove(_points.begin(), _points.begin() + sz);
       timer.stop();
       std::cout << timer.total_time() << " " << std::flush;
     };
@@ -121,16 +110,14 @@ void TestRtreeParallel(int Dim, parlay::sequence<Point>& wp,
     if (kSummary) {
       parlay::sequence<double> const ratios = {0.0001, 0.001, 0.01, 0.1};
       for (size_t i = 0; i < ratios.size(); i++) {
-        rtree_delete(0, ratios[i]);
+        auto r_tree = tree;
+        rtree_delete(r_tree, ratios[i]);
       }
-      tree.clear();
-      tree.insert(_points.begin(), _points.end());
     } else {
-      rtree_delete(0, kBatchInsertRatio);
+      auto r_tree = tree;
+      rtree_delete(r_tree, kBatchInsertRatio);
     }
   }
-
-  // PERF: handle the size of cgknn dynamically
 
   // kNN query: find the 3 nearest neighbors to the point (2.5, 2.5)
   // Point query_point(2.5, 2.5);

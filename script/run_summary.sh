@@ -1,8 +1,8 @@
 #!/bin/bash
 set -o xtrace
 
-Solvers=("test")
-# Solvers=("rtree")
+# Solvers=("test")
+Solvers=("rtree")
 Node=(1000000000)
 # Tree=(1)
 Tree=(0)
@@ -44,7 +44,7 @@ for solver in "${Solvers[@]}"; do
                     echo ">>>${dest}"
 
                     for ((i = 1; i <= insNum; i++)); do
-                        numactl -i all ${exe} -p "${files_path}/${i}.in" -r ${round} -k ${k} -i ${read_file} -s ${summary} -t ${tag} -d ${dim} -q ${queryType} -T ${tree} >>"${dest}"
+                        numactl -i all ${exe} -p "${files_path}/${i}.in" -r ${round} -k ${k} -i ${read_file} -s ${summary} -t ${tag} -d ${dim} -q ${queryType} -T ${tree} | tee -a "${dest}"
                     done
                 done
             done
@@ -54,4 +54,3 @@ done
 
 current_date_time="$(date "+%d %H:%M:%S")"
 echo $current_date_time
-
