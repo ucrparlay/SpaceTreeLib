@@ -5,7 +5,8 @@ import csv
 print(os.getcwd())
 
 path = "../benchmark"
-benchmarks = ["uniform", "ss_varden"]
+# benchmarks = ["uniform", "ss_varden"]
+benchmarks = ["uniform_bigint", "ss_varden_bigint"]
 storePrefix = "data/"
 Nodes = [1000000000]
 Dims = [2, 3]
@@ -26,9 +27,10 @@ if type == "batch_update":
     files = ["build", "insert", "delete"]
     Dims = [3]
 elif type == "query":
-    solverName = ["kdtree", "orth", "r"]
-    # files = ["build", "knn_3", "count_3", "rquery_3"]
-    files = ["build", "knn_3"]
+    # solverName = ["kdtree", "orth", "r"]
+    solverName = ["kdtree", "orth"]
+    files = ["build", "knn_3", "count_3", "rquery_3"]
+    # files = ["build", "knn_3"]
     Dims = [2, 3]
 elif type == "summary":
     solverName = ["kdtree", "orth"]

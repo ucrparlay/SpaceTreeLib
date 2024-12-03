@@ -10,10 +10,10 @@ inline typename BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::Coord
 BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::GetBoxMid(DimsType const d,
                                                                Box const& box) {
   if constexpr (std::is_integral_v<Coord>) {
-    // NOTE: since the points on the box line, will be put in right, therefore
-    // the box should always be rounded up as well. Consideing the example (1,
-    // 1) and (1, 2), in order to split the points, the new box should have
-    // split at y=2
+    // NOTE: since the points on the box line will be put in right, therefore
+    // the box should always be rounded up as well.
+    // Consideing the example (1, 1) and (1, 2), in order to split the points,
+    // the new box should have split at y=2
     return static_cast<Coord>(
         std::ceil(static_cast<double>(box.first.pnt[d] + box.second.pnt[d]) /
                   static_cast<double>(2)));

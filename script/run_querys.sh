@@ -5,19 +5,21 @@ set -o xtrace
 Solvers=("test")
 Node=(1000000000)
 # Tree=(2)
-Tree=(0)
+Tree=(0 1)
 Dim=(2 3)
 declare -A datas
-datas["/data/legacy/data3/zmen002/kdtree/ss_varden/"]="../benchmark/ss_varden/"
-datas["/data/legacy/data3/zmen002/kdtree/uniform/"]="../benchmark/uniform/"
+# datas["/data/legacy/data3/zmen002/kdtree/ss_varden/"]="../benchmark/ss_varden/"
+# datas["/data/legacy/data3/zmen002/kdtree/uniform/"]="../benchmark/uniform/"
+datas["/data/zmen002/kdtree/ss_varden_bigint/"]="../benchmark/ss_varden_bigint/"
+datas["/data/zmen002/kdtree/uniform_bigint/"]="../benchmark/uniform_bigint/"
 
 tag=$((2#000)) # 1110000
 k=10
 insNum=2
 summary=0
 read_file=0
-# queryType=$((2#111)) # 1110000
-queryType=$((2#1)) # 1110000
+queryType=$((2#111)) # 1110000
+# queryType=$((2#1)) # 1110000
 type="query"
 round=3
 resFile=""

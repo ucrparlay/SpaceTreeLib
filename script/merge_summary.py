@@ -5,8 +5,8 @@ import csv
 print(os.getcwd())
 
 path = "../benchmark"
-# benchmarks = ["ss_varden"]
-benchmarks = ["uniform", "ss_varden"]
+# benchmarks = ["uniform", "ss_varden"]
+benchmarks = ["uniform_bigint", "ss_varden_bigint"]
 storePrefix = "data/"
 Nodes = [1000000000]
 Dims = [2, 3]

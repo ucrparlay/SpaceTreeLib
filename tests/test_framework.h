@@ -20,7 +20,7 @@
 #include "parlay/slice.h"
 
 // using Coord = uint_fast64_t;
-using Coord = float;
+using Coord = double;
 using Typename = Coord;
 using namespace cpdd;
 

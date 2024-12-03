@@ -1,15 +1,17 @@
 #!/bin/bash
 set -o xtrace
 
-# Solvers=("test")
-Solvers=("rtree")
+Solvers=("test")
+# Solvers=("rtree")
 Node=(1000000000)
 # Tree=(1)
-Tree=(0)
+Tree=(0 1)
 Dim=(2 3)
 declare -A datas
-datas["/data/legacy/data3/zmen002/kdtree/ss_varden/"]="../benchmark/ss_varden/"
-datas["/data/legacy/data3/zmen002/kdtree/uniform/"]="../benchmark/uniform/"
+# datas["/data/legacy/data3/zmen002/kdtree/ss_varden/"]="../benchmark/ss_varden/"
+# datas["/data/legacy/data3/zmen002/kdtree/uniform/"]="../benchmark/uniform/"
+datas["/data/zmen002/kdtree/ss_varden_bigint/"]="../benchmark/ss_varden_bigint/"
+datas["/data/zmen002/kdtree/uniform_bigint/"]="../benchmark/uniform_bigint/"
 
 tag=$((2#111)) # 1110000
 k=10
