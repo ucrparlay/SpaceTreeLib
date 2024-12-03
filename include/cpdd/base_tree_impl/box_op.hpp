@@ -28,71 +28,146 @@ template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 inline bool BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::LegalBox(
     Box const& bx) {
+  constexpr uint_fast8_t kDim = Point::GetDim();
   if (bx == GetEmptyBox()) return true;
-  for (DimsType i = 0; i < kDim; ++i) {
-    if (Num::Gt(bx.first.pnt[i], bx.second.pnt[i])) {
-      return false;
+
+  if constexpr (kDim == 2) {
+    return !Num::Gt(bx.first.pnt[0], bx.second.pnt[0]) &&
+           !Num::Gt(bx.first.pnt[1], bx.second.pnt[1]);
+  } else if constexpr (kDim == 3) {
+    return !Num::Gt(bx.first.pnt[0], bx.second.pnt[0]) &&
+           !Num::Gt(bx.first.pnt[1], bx.second.pnt[1]) &&
+           !Num::Gt(bx.first.pnt[2], bx.second.pnt[2]);
+  } else {
+    for (DimsType i = 0; i < kDim; ++i) {
+      if (Num::Gt(bx.first.pnt[i], bx.second.pnt[i])) {
+        return false;
+      }
     }
+    return true;
   }
-  return true;
 }
 
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 inline bool BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::WithinBox(
     Box const& a, Box const& b) {
+  constexpr uint_fast8_t kDim = Point::GetDim();
   assert(LegalBox(a));
   assert(LegalBox(b));
-  for (DimsType i = 0; i < kDim; ++i) {
-    if (Num::Lt(a.first.pnt[i], b.first.pnt[i]) ||
-        Num::Gt(a.second.pnt[i], b.second.pnt[i])) {
-      return false;
+
+  if constexpr (kDim == 2) {
+    return !Num::Lt(a.first.pnt[0], b.first.pnt[0]) &&
+           !Num::Lt(a.first.pnt[1], b.first.pnt[1]) &&
+           !Num::Gt(a.second.pnt[0], b.second.pnt[0]) &&
+           !Num::Gt(a.second.pnt[1], b.second.pnt[1]);
+  } else if constexpr (kDim == 3) {
+    return !Num::Lt(a.first.pnt[0], b.first.pnt[0]) &&
+           !Num::Lt(a.first.pnt[1], b.first.pnt[1]) &&
+           !Num::Lt(a.first.pnt[2], b.first.pnt[2]) &&
+           !Num::Gt(a.second.pnt[0], b.second.pnt[0]) &&
+           !Num::Gt(a.second.pnt[1], b.second.pnt[1]) &&
+           !Num::Gt(a.second.pnt[2], b.second.pnt[2]);
+  } else {
+    for (DimsType i = 0; i < kDim; ++i) {
+      if (Num::Lt(a.first.pnt[i], b.first.pnt[i]) ||
+          Num::Gt(a.second.pnt[i], b.second.pnt[i])) {
+        return false;
+      }
     }
+    return true;
   }
-  return true;
 }
 
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 inline bool BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::SameBox(
     Box const& a, Box const& b) {
+  constexpr uint_fast8_t kDim = Point::GetDim();
   assert(LegalBox(a));
   assert(LegalBox(b));
-  for (DimsType i = 0; i < kDim; ++i) {
-    if (!Num::Eq(a.first.pnt[i], b.first.pnt[i]) ||
-        !Num::Eq(a.second.pnt[i], b.second.pnt[i])) {
-      return false;
+
+  if constexpr (kDim == 2) {
+    return Num::Eq(a.first.pnt[0], b.first.pnt[0]) &&
+           Num::Eq(a.first.pnt[1], b.first.pnt[1]) &&
+           Num::Eq(a.second.pnt[0], b.second.pnt[0]) &&
+           Num::Eq(a.second.pnt[1], b.second.pnt[1]);
+  } else if constexpr (kDim == 3) {
+    return Num::Eq(a.first.pnt[0], b.first.pnt[0]) &&
+           Num::Eq(a.first.pnt[1], b.first.pnt[1]) &&
+           Num::Eq(a.first.pnt[2], b.first.pnt[2]) &&
+           Num::Eq(a.second.pnt[0], b.second.pnt[0]) &&
+           Num::Eq(a.second.pnt[1], b.second.pnt[1]) &&
+           Num::Eq(a.second.pnt[2], b.second.pnt[2]);
+  } else {
+    for (DimsType i = 0; i < kDim; ++i) {
+      if (!Num::Eq(a.first.pnt[i], b.first.pnt[i]) ||
+          !Num::Eq(a.second.pnt[i], b.second.pnt[i])) {
+        return false;
+      }
     }
+    return true;
   }
-  return true;
 }
 
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 inline bool BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::WithinBox(
     Point const& p, Box const& bx) {
+  constexpr uint_fast8_t kDim = Point::GetDim();
   assert(LegalBox(bx));
-  for (DimsType i = 0; i < kDim; ++i) {
-    if (Num::Lt(p.pnt[i], bx.first.pnt[i]) ||
-        Num::Gt(p.pnt[i], bx.second.pnt[i])) {
-      return false;
+
+  if constexpr (kDim == 2) {
+    return !Num::Lt(p.pnt[0], bx.first.pnt[0]) &&
+           !Num::Lt(p.pnt[1], bx.first.pnt[1]) &&
+           !Num::Gt(p.pnt[0], bx.second.pnt[0]) &&
+           !Num::Gt(p.pnt[1], bx.second.pnt[1]);
+  } else if constexpr (kDim == 3) {
+    return !Num::Lt(p.pnt[0], bx.first.pnt[0]) &&
+           !Num::Lt(p.pnt[1], bx.first.pnt[1]) &&
+           !Num::Lt(p.pnt[2], bx.first.pnt[2]) &&
+           !Num::Gt(p.pnt[0], bx.second.pnt[0]) &&
+           !Num::Gt(p.pnt[1], bx.second.pnt[1]) &&
+           !Num::Gt(p.pnt[2], bx.second.pnt[2]);
+  } else {
+    for (DimsType i = 0; i < kDim; ++i) {
+      if (Num::Lt(p.pnt[i], bx.first.pnt[i]) ||
+          Num::Gt(p.pnt[i], bx.second.pnt[i])) {
+        return false;
+      }
     }
+    return true;
   }
-  return true;
 }
 
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 inline bool BaseTree<Point, DerivedTree, kSkHeight,
                      kImbaRatio>::BoxIntersectBox(Box const& a, Box const& b) {
+  constexpr uint_fast8_t kDim = Point::GetDim();
   assert(LegalBox(a) && LegalBox(b));
-  for (DimsType i = 0; i < kDim; ++i) {
-    if (Num::Lt(a.second.pnt[i], b.first.pnt[i]) ||
-        Num::Gt(a.first.pnt[i], b.second.pnt[i])) {
-      return false;
+
+  if constexpr (kDim == 2) {
+    return !(Num::Lt(a.second.pnt[0], b.first.pnt[0]) ||
+             Num::Gt(a.first.pnt[0], b.second.pnt[0]) ||
+             Num::Lt(a.second.pnt[1], b.first.pnt[1]) ||
+             Num::Gt(a.first.pnt[1], b.second.pnt[1]));
+  } else if constexpr (kDim == 3) {
+    return !(Num::Lt(a.second.pnt[0], b.first.pnt[0]) ||
+             Num::Gt(a.first.pnt[0], b.second.pnt[0]) ||
+             Num::Lt(a.second.pnt[1], b.first.pnt[1]) ||
+             Num::Gt(a.first.pnt[1], b.second.pnt[1]) ||
+             Num::Lt(a.second.pnt[2], b.first.pnt[2]) ||
+             Num::Gt(a.first.pnt[2], b.second.pnt[2]));
+  } else {
+    for (DimsType i = 0; i < kDim; ++i) {
+      if (Num::Lt(a.second.pnt[i], b.first.pnt[i]) ||
+          Num::Gt(a.first.pnt[i], b.second.pnt[i])) {
+        return false;
+      }
     }
+    return true;
   }
-  return true;
 }
 
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
