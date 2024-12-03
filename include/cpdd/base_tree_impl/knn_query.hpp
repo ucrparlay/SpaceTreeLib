@@ -14,11 +14,23 @@ template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
 inline typename BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::Coord
 BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::P2PDistance(
     Point const& p, Point const& q) {
+  constexpr uint_fast8_t kDim = Point::GetDim();
   Coord r = 0;
-  for (DimsType i = 0; i < kDim; ++i) {
-    // TODO: maybe std::inner_product
-    r += (p.pnt[i] - q.pnt[i]) * (p.pnt[i] - q.pnt[i]);
+
+  if constexpr (kDim == 2) {
+    r += (p.pnt[0] - q.pnt[0]) * (p.pnt[0] - q.pnt[0]);
+    r += (p.pnt[1] - q.pnt[1]) * (p.pnt[1] - q.pnt[1]);
+  } else if constexpr (kDim == 3) {
+    r += (p.pnt[0] - q.pnt[0]) * (p.pnt[0] - q.pnt[0]);
+    r += (p.pnt[1] - q.pnt[1]) * (p.pnt[1] - q.pnt[1]);
+    r += (p.pnt[2] - q.pnt[2]) * (p.pnt[2] - q.pnt[2]);
+  } else {
+    for (DimsType i = 0; i < kDim; ++i) {
+      // TODO: maybe std::inner_product
+      r += (p.pnt[i] - q.pnt[i]) * (p.pnt[i] - q.pnt[i]);
+    }
   }
+
   return r;
 }
 

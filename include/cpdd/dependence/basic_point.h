@@ -40,18 +40,40 @@ struct PointType {
 
   PointType const MinCoords(PointType const& b) const {
     PointType p;
-    for (DimsType i = 0; i < d; i++) {
-      p.pnt[i] = Num::min(this->pnt[i], b.pnt[i]);
+
+    if constexpr (d == 2) {
+      p.pnt[0] = Num::min(this->pnt[0], b.pnt[0]);
+      p.pnt[1] = Num::min(this->pnt[1], b.pnt[1]);
+    } else if constexpr (d == 3) {
+      p.pnt[0] = Num::min(this->pnt[0], b.pnt[0]);
+      p.pnt[1] = Num::min(this->pnt[1], b.pnt[1]);
+      p.pnt[2] = Num::min(this->pnt[2], b.pnt[2]);
+    } else {
+      for (DimsType i = 0; i < d; i++) {
+        p.pnt[i] = Num::min(this->pnt[i], b.pnt[i]);
+      }
     }
-    return std::move(p);
+
+    return p;
   }
 
   PointType const MaxCoords(PointType const& b) const {
     PointType p;
-    for (DimsType i = 0; i < d; i++) {
-      p.pnt[i] = Num::max(this->pnt[i], b.pnt[i]);
+
+    if constexpr (d == 2) {
+      p.pnt[0] = Num::max(this->pnt[0], b.pnt[0]);
+      p.pnt[1] = Num::max(this->pnt[1], b.pnt[1]);
+    } else if constexpr (d == 3) {
+      p.pnt[0] = Num::max(this->pnt[0], b.pnt[0]);
+      p.pnt[1] = Num::max(this->pnt[1], b.pnt[1]);
+      p.pnt[2] = Num::max(this->pnt[2], b.pnt[2]);
+    } else {
+      for (DimsType i = 0; i < d; i++) {
+        p.pnt[i] = Num::max(this->pnt[i], b.pnt[i]);
+      }
     }
-    return std::move(p);
+
+    return p;
   }
 
   static consteval auto GetDim() { return std::tuple_size_v<Coords>; }
