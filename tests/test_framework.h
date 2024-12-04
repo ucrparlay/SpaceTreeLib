@@ -137,12 +137,14 @@ auto gen_rectangles(int rec_num, int const type,
 
     // NOTE: special handle for large dimension datasets
 
-    if (n == 100000000)
-      range.second = n / 100 - 1;
-    else if (n == 1000000000)
+    if (n >= 1'000'000'000)
       range.second = n / 1000 - 1;
+    else if (n >= 100'000'000)
+      range.second = n / 100 - 1;
+    else if (n >= 10'000'000)
+      range.second = n / 10 - 1;
     else
-      range.second = 10000;
+      range.second = n - 1;
   }
   BoxSeq box_seq(rec_num);
   int cnt = 0;

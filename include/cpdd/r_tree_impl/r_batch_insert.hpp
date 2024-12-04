@@ -7,17 +7,17 @@ namespace cpdd {
 template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 void RTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchInsert(Slice A) {
-  if (this->root_ == nullptr) {  // TODO: may check using explicity tag
-    return Build_(A);
-  }
+  // if (this->root_ == nullptr) {  // TODO: may check using explicity tag
+  //   return Build_(A);
+  // }
 
   Points B = Points::uninitialized(A.size());
-  Node* T = this->root_;
-  this->tree_box_ = BT::GetBox(this->tree_box_, BT::GetBox(A));
-  DimsType d = T->is_leaf ? 0 : static_cast<Interior*>(T)->split.second;
-  this->root_ = BatchInsertRecursive(T, A, B.cut(0, A.size()), d);
-  assert(this->root_ != NULL);
-  return;
+  // Node* T = this->root_;
+  // this->tree_box_ = BT::GetBox(this->tree_box_, BT::GetBox(A));
+  // DimsType d = T->is_leaf ? 0 : static_cast<Interior*>(T)->split.second;
+  // this->root_ = BatchInsertRecursive(T, A, B.cut(0, A.size()), d);
+  // assert(this->root_ != NULL);
+  // return;
 }
 
 // NOTE: return the updated Node
