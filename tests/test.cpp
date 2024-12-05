@@ -94,15 +94,17 @@ void TestSpacialTree([[maybe_unused]] int const& kDim,
   }
 
   if (kQueryType & (1 << 1)) {  // NOTE: range count
-    int recNum = kRangeQueryNum;
-    kdknn = new Typename[recNum];
+    if (!kSummary) {
+      int recNum = kRangeQueryNum;
+      kdknn = new Typename[recNum];
 
-    // std::cout << std::endl;
-    for (int i = 0; i < 3; i++) {
-      rangeCountFix<Point>(wp, tree, kdknn, kRounds, i, recNum, kDim);
+      // std::cout << std::endl;
+      for (int i = 0; i < 3; i++) {
+        rangeCountFix<Point>(wp, tree, kdknn, kRounds, i, recNum, kDim);
+      }
+
+      delete[] kdknn;
     }
-
-    delete[] kdknn;
   }
 
   if (kQueryType & (1 << 2)) {  // NOTE: range query

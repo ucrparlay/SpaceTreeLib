@@ -137,12 +137,14 @@ auto gen_rectangles(int rec_num, int const type,
 
     // NOTE: special handle for large dimension datasets
 
-    if (n >= 1'000'000'000)
-      range.second = n / 1000 - 1;
-    else if (n >= 100'000'000)
-      range.second = n / 100 - 1;
-    else if (n >= 10'000'000)
-      range.second = n / 10 - 1;
+    // if (n >= 1'000'000'000)
+    //   range.second = n / 1000 - 1;
+    // else if (n >= 100'000'000)
+    //   range.second = n / 100 - 1;
+    // else if (n >= 10'000'000)
+    //   range.second = n / 10 - 1;
+    if (n >= 1'000'000)
+      range.second = 1'000'000;  // ensure we can generate 50k rect.
     else
       range.second = n - 1;
   }
@@ -152,7 +154,7 @@ auto gen_rectangles(int rec_num, int const type,
 
   srand(10);
 
-  // std::cout << " " << range.first << " " << range.second << std::endl;
+  std::cout << " " << range.first << " " << range.second << std::endl;
 
   size_t max_size = 0;
   while (cnt < rec_num) {
