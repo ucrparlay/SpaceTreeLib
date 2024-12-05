@@ -259,8 +259,9 @@ int main(int argc, char* argv[]) {
 
   // NOTE: ../kdtree/
   path += std::string(*path.rbegin() == '/' ? "" : "/") +
-          std::string(varden ? "ss_varden/" : "uniform/") + toString(pts_num) +
-          "_" + toString(pts_dim) + "/0_" + toString(kValueUB) + "/";
+          std::string(varden ? "ss_varden_bigint/" : "uniform_bigint/") +
+          toString(pts_num) + "_" + toString(pts_dim) + "/";
+  // + "/0_" + toString(static_cast<size_t>(kValueUB)) + "/";
   std::filesystem::create_directory(path);
 
   auto generate = [&]<typename Point>(std::string const& new_path) {

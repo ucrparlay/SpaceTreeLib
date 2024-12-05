@@ -28,7 +28,7 @@ struct OrthTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::OrthInteriorNode
   // rebuilt. If aug is not INITIALIZED, then it means there is no need to
   // rebuild; otherwise, the value depends on the initial tree size before
   // rebuilding.
-  inline bool ForceParallel() const {
+  bool ForceParallel() const {
     return this->aug.has_value() ? this->aug.value()
                                  : this->size > BT::kSerialBuildCutoff;
   }
@@ -37,8 +37,7 @@ struct OrthTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::OrthInteriorNode
 
   // NOTE: Generate the hyperplane sequences for the node
   template <typename HyperPlaneSeq>
-  inline void GenerateHyperPlaneSeq(HyperPlaneSeq& hyper_seq, auto idx,
-                                    auto deep) {
+  void GenerateHyperPlaneSeq(HyperPlaneSeq& hyper_seq, auto idx, auto deep) {
     if (idx >= BaseNode::GetRegions()) {
       return;
     }
@@ -50,11 +49,30 @@ struct OrthTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::OrthInteriorNode
 
   // NOTE: given an idx in the tree skeleton, modify its value its position in
   // left or right of the splitter
-  inline BucketType SeievePoint(Point const& p, BucketType idx) {
-    for (BucketType i = 0; i < kMD; ++i) {
+  BucketType SeievePoint(Point const& p, BucketType idx) {
+    if constexpr (kMD == 2) {
       idx = 2 * idx + 1 -
             static_cast<BucketType>(
-                Num::Lt(p.pnt[this->split[i].second], this->split[i].first));
+                Num::Lt(p.pnt[this->split[0].second], this->split[0].first));
+      idx = 2 * idx + 1 -
+            static_cast<BucketType>(
+                Num::Lt(p.pnt[this->split[1].second], this->split[1].first));
+    } else if constexpr (kMD == 3) {
+      idx = 2 * idx + 1 -
+            static_cast<BucketType>(
+                Num::Lt(p.pnt[this->split[0].second], this->split[0].first));
+      idx = 2 * idx + 1 -
+            static_cast<BucketType>(
+                Num::Lt(p.pnt[this->split[1].second], this->split[1].first));
+      idx = 2 * idx + 1 -
+            static_cast<BucketType>(
+                Num::Lt(p.pnt[this->split[2].second], this->split[2].first));
+    } else {
+      for (BucketType i = 0; i < kMD; ++i) {
+        idx = 2 * idx + 1 -
+              static_cast<BucketType>(
+                  Num::Lt(p.pnt[this->split[i].second], this->split[i].first));
+      }
     }
     return idx;
   }
@@ -92,14 +110,30 @@ struct OrthTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::OrthInteriorNode
 
   // NOTE: Given a box and a bucket id, construct new box for that bucket
   template <typename Box>
-  inline Box GetBoxByRegionId(BucketType id, Box const& box) {
+  Box GetBoxByRegionId(BucketType id, Box const& box) {
     Box bx(box);
     assert(id >= 0 && id < BaseNode::GetRegions());
 
-    // PERF: cannot set i>=0 as it is unsigned int. idx 9 -> 101 -> RLR
-    for (BucketType i = kMD; i > 0; --i) {
-      auto& target = (id & (1 << (i - 1))) ? bx.first : bx.second;
-      target.pnt[this->split[kMD - i].second] = this->split[kMD - i].first;
+    if constexpr (kMD == 2) {  // dim = 2
+      auto& target1 = (id & (1 << 1)) ? bx.first : bx.second;
+      target1.pnt[this->split[0].second] = this->split[0].first;
+
+      auto& target2 = (id & (1 << 0)) ? bx.first : bx.second;
+      target2.pnt[this->split[1].second] = this->split[1].first;
+    } else if constexpr (kMD == 3) {  // dim = 3
+      auto& target1 = (id & (1 << 2)) ? bx.first : bx.second;
+      target1.pnt[this->split[0].second] = this->split[0].first;
+
+      auto& target2 = (id & (1 << 1)) ? bx.first : bx.second;
+      target2.pnt[this->split[1].second] = this->split[1].first;
+
+      auto& target3 = (id & (1 << 0)) ? bx.first : bx.second;
+      target3.pnt[this->split[2].second] = this->split[2].first;
+    } else {  // higher dim
+      for (BucketType i = kMD; i > 0; --i) {
+        auto& target = (id & (1 << (i - 1))) ? bx.first : bx.second;
+        target.pnt[this->split[kMD - i].second] = this->split[kMD - i].first;
+      }
     }
 
     return std::move(bx);
@@ -109,9 +143,27 @@ struct OrthTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::OrthInteriorNode
   template <typename Box>
   inline void ModifyBoxById(BucketType id, Box& box) {
     assert(id >= 0 && id <= BaseNode::GetRegions());
-    for (BucketType i = kMD; i > 0; --i) {
-      auto& target = (id & (1 << (i - 1))) ? box.first : box.second;
-      target.pnt[this->split[kMD - i].second] = this->split[kMD - i].first;
+
+    if constexpr (kMD == 2) {  // dim =2
+      auto& target1 = (id & (1 << 1)) ? box.first : box.second;
+      target1.pnt[this->split[0].second] = this->split[0].first;
+
+      auto& target2 = (id & (1 << 0)) ? box.first : box.second;
+      target2.pnt[this->split[1].second] = this->split[1].first;
+    } else if constexpr (kMD == 3) {  // dim =3
+      auto& target1 = (id & (1 << 2)) ? box.first : box.second;
+      target1.pnt[this->split[0].second] = this->split[0].first;
+
+      auto& target2 = (id & (1 << 1)) ? box.first : box.second;
+      target2.pnt[this->split[1].second] = this->split[1].first;
+
+      auto& target3 = (id & (1 << 0)) ? box.first : box.second;
+      target3.pnt[this->split[2].second] = this->split[2].first;
+    } else {  // dim > 3
+      for (BucketType i = kMD; i > 0; --i) {
+        auto& target = (id & (1 << (i - 1))) ? box.first : box.second;
+        target.pnt[this->split[kMD - i].second] = this->split[kMD - i].first;
+      }
     }
     return;
   }
