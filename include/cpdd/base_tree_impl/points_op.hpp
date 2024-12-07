@@ -168,15 +168,15 @@ void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::SeievePoints(
   for (size_t i = 0; i < num_block; i++) {
     auto t = offset[i];
     offset[i] = sums;
-    for (int j = 0; j < tags_num; j++) {
+    for (BucketType j = 0; j < tags_num; ++j) {
       sums[j] += t[j];
     }
   }
 
   parlay::parallel_for(0, num_block, [&](size_t i) {
     auto v = parlay::sequence<BallsType>::uninitialized(tags_num);
-    int tot = 0, s_offset = 0;
-    for (int k = 0; k < tags_num - 1; k++) {
+    size_t tot = 0, s_offset = 0;
+    for (BucketType k = 0; k < tags_num - 1; ++k) {
       v[k] = tot + offset[i][k];
       tot += sums[k];
       s_offset += offset[i][k];

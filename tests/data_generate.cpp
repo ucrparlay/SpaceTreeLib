@@ -11,6 +11,7 @@
 #include "test_framework.h"
 ///**********************************START*********************************///
 
+// WARN: change the coord in test_framework.h
 Coord const kValueUB = 1'000'000'000;
 
 inline std::string toString(auto const& a) { return std::to_string(a); }
