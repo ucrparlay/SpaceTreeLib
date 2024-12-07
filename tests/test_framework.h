@@ -74,14 +74,14 @@ size_t recurse_box(parlay::slice<Point*, Point*> In, auto& box_seq, int DIM,
       box_seq[idx++] = std::make_pair(Tree::GetBox(In), In.size());
     }
 
-    // NOTE: handle the cose that all Points are the same then become un -
-    // divideable
-    // Modify the coefficient to make the rectangle size
-    // distribute as uniform as possible within the range
-    if ((type == 0 && n < 40 * range.first) ||
-        (type == 1 && n < 10 * range.first) ||
-        (type == 2 && n < 2 * range.first) ||
-        parlay::all_of(In, [&](Point const& p) { return p == In[0]; })) {
+    // WARN: Modify the coefficient to make the rectangle size distribute as
+    // uniform as possible within the range in lograthmic scale
+    // if ((type == 0 && n < 40 * range.first) ||
+    //     (type == 1 && n < 10 * range.first) ||
+    //     (type == 2 && n < 2 * range.first) ||
+    if (parlay::all_of(In, [&](Point const& p) { return p == In[0]; })) {
+      // NOTE: handle the cose that all Points are the same which is
+      // undivideable
       return In.size();
     } else {
       goon = true;
@@ -102,7 +102,7 @@ size_t recurse_box(parlay::slice<Point*, Point*> In, auto& box_seq, int DIM,
 
   assert(Out.size() == n);
   // std::cout << dim << " " << Out[0] << Out[m] << std::endl;
-  size_t l, r;
+  size_t l = 0, r = 0;
   l = recurse_box<Point, Tree, SavePoint>(Out.cut(0, m), box_seq, DIM, range,
                                           idx, rec_num, type);
   r = recurse_box<Point, Tree, SavePoint>(Out.cut(m, n), box_seq, DIM, range,
@@ -154,7 +154,7 @@ auto gen_rectangles(int rec_num, int const type,
 
   srand(10);
 
-  std::cout << " " << range.first << " " << range.second << std::endl;
+  // std::cout << " " << range.first << " " << range.second << std::endl;
 
   size_t max_size = 0;
   while (cnt < rec_num) {
