@@ -76,7 +76,7 @@ struct PointType {
     return p;
   }
 
-  static consteval auto GetDim() { return std::tuple_size_v<Coords>; }
+  static consteval auto GetDim() { return d; }
 
   bool SameDimension(PointType const& b) const { return *this == b; }
 

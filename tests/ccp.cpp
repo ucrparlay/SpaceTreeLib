@@ -308,12 +308,12 @@ int main(int argc, char* argv[]) {
       run(std::integral_constant<int, 2>{});
     } else if (kDim == 3) {
       run(std::integral_constant<int, 3>{});
+    } else if (kDim == 5) {
+      run(std::integral_constant<int, 5>{});
+    } else if (kDim == 7) {
+      run(std::integral_constant<int, 7>{});
     }
-    // } else if (kDim == 5) {
-    //     run(std::integral_constant<int, 5>{});
-    // } else if (kDim == 7) {
-    //     run(std::integral_constant<int, 7>{});
-    // } else if (kDim == 9) {
+    // else if (kDim == 9) {
     //     run(std::integral_constant<int, 9>{});
     // } else if (kDim == 10) {
     //     run(std::integral_constant<int, 10>{});
@@ -323,12 +323,9 @@ int main(int argc, char* argv[]) {
   if (tree_type == 0) {
     std::cout << "run KDtree" << std::endl;
     run_test(wrapper::KDtree{});
-  } else if (tree_type == 1 && kDim == 2) {
-    std::cout << "run QuadTree" << std::endl;
-    run_test(wrapper::QuadTree{});
-  } else if (tree_type == 1 && kDim == 3) {
-    std::cout << "run OctTree" << std::endl;
-    run_test(wrapper::OctTree{});
+  } else if (tree_type == 1) {
+    std::cout << "run Orthtree" << std::endl;
+    run_test(wrapper::OrthTree{});
   } else if (tree_type == 2) {
     std::cout << "run RTree" << std::endl;
     run_test(wrapper::RTree{});

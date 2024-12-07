@@ -1042,16 +1042,38 @@ std::pair<size_t, int> read_points(char const* iFile,
 }
 
 struct wrapper {
+  // NOTE: determine the build depth once for the orth tree
+  static consteval uint8_t OrthGetBuildDepthOnce(uint8_t const dim) {
+    if (dim == 2 || dim == 3) {
+      return 6;
+    } else if (dim == 4) {
+      return 8;
+    } else if (dim >= 5 && dim <= 8) {
+      return dim;
+    } else {
+      static_assert("Cannot decide the build tree depth once for this dim");
+      return 0;
+    }
+  }
+
   struct QuadTree {
     template <class Point>
     struct Desc {
-      using TreeType = cpdd::OrthTree<Point, cpdd::RotateDim<Point>, 2>;
+      using TreeType = cpdd::OrthTree<Point, cpdd::RotateDim<Point>, 2, 6>;
     };
   };
   struct OctTree {
     template <class Point>
     struct Desc {
-      using TreeType = cpdd::OrthTree<Point, cpdd::RotateDim<Point>, 3>;
+      using TreeType = cpdd::OrthTree<Point, cpdd::RotateDim<Point>, 3, 6>;
+    };
+  };
+  struct OrthTree {
+    template <class Point>
+    struct Desc {
+      using TreeType =
+          cpdd::OrthTree<Point, cpdd::RotateDim<Point>, Point::GetDim(),
+                         OrthGetBuildDepthOnce(Point::GetDim())>;
     };
   };
   struct KDtree {

@@ -152,8 +152,8 @@ int main(int argc, char* argv[]) {
 
   auto run_test = [&]<class Wrapper>(Wrapper) {
     auto run = [&](auto dim_wrapper) {
-      constexpr auto const kDim = decltype(dim_wrapper)::value;
-      using PointTypeAlias = PointType<Coord, kDim>;
+      constexpr auto const dims = decltype(dim_wrapper)::value;
+      using PointTypeAlias = PointType<Coord, dims>;
       using Points = parlay::sequence<PointTypeAlias>;
       using Desc = typename Wrapper::template Desc<PointTypeAlias>;
 
@@ -166,7 +166,7 @@ int main(int argc, char* argv[]) {
         std::cout << name << " ";
         auto [n, d] = read_points<PointTypeAlias>(input_file_path, wp, K);
         N = n;
-        assert(d == kDim);
+        assert(d == dims);
       }
 
       if (read_insert_file == 1) {  // NOTE: read Points to be inserted
@@ -178,10 +178,10 @@ int main(int argc, char* argv[]) {
                            std::to_string(id) + ".in";
         [[maybe_unused]] auto [n, d] =
             read_points<PointTypeAlias>(insert_file_path.c_str(), wi, K);
-        assert(d == kDim);
+        assert(d == dims);
       }
 
-      TestSpacialTree<Desc>(kDim, wp, wi, N, K, kRounds, insert_file_path, kTag,
+      TestSpacialTree<Desc>(dims, wp, wi, N, K, kRounds, insert_file_path, kTag,
                             kQueryType, kSummary);
     };
 
@@ -192,12 +192,12 @@ int main(int argc, char* argv[]) {
       run(std::integral_constant<int, 2>{});
     } else if (kDim == 3) {
       run(std::integral_constant<int, 3>{});
+    } else if (kDim == 5) {
+      run(std::integral_constant<int, 5>{});
+    } else if (kDim == 7) {
+      run(std::integral_constant<int, 7>{});
     }
-    // } else if (kDim == 5) {
-    //     run(std::integral_constant<int, 5>{});
-    // } else if (kDim == 7) {
-    //     run(std::integral_constant<int, 7>{});
-    // } else if (kDim == 9) {
+    // else if (kDim == 9) {
     //     run(std::integral_constant<int, 9>{});
     // } else if (kDim == 10) {
     //     run(std::integral_constant<int, 10>{});
@@ -206,10 +206,8 @@ int main(int argc, char* argv[]) {
 
   if (tree_type == 0) {
     run_test(wrapper::KDtree{});
-  } else if (tree_type == 1 && kDim == 2) {
-    run_test(wrapper::QuadTree{});
-  } else if (tree_type == 1 && kDim == 3) {
-    run_test(wrapper::OctTree{});
+  } else if (tree_type == 1) {
+    run_test(wrapper::OrthTree{});
   } else if (tree_type == 2) {
     run_test(wrapper::RTree{});
   }

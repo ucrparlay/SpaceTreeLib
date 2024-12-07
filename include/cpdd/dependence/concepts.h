@@ -85,29 +85,35 @@ ReturnType InvokeWithOptionalArg(Func&& func, Arg&& arg) {
   }
 }
 
+// NOTE: define the what is a binary node
 template <typename T>
 concept IsBinaryNode = std::is_base_of_v<
     BinaryNode<typename T::PT, typename T::ST, typename T::AT>, T>;
 
-template <typename T>
-concept IsMultiNode =
-    std::is_base_of_v<
-        MultiNode<typename T::PT, 2, typename T::ST, typename T::AT>, T> ||
-    std::is_base_of_v<
-        MultiNode<typename T::PT, 3, typename T::ST, typename T::AT>, T> ||
-    std::is_base_of_v<
-        MultiNode<typename T::PT, 6, typename T::ST, typename T::AT>, T>;
+// NOTE: helper for decide a multi-way node
+template <typename T, std::size_t... Ns>
+concept IsMultiNodeHelper =
+    (std::is_base_of_v<
+         MultiNode<typename T::PT, Ns, typename T::ST, typename T::AT>, T> ||
+     ...);
 
+// NOTE: define the what is a multi-way node
+template <typename T>
+concept IsMultiNode = IsMultiNodeHelper<T, 2, 3, 4, 5, 6, 7, 8>;
+
+// NOTE: tag a orth tree
 template <typename T>
 concept IsOrthTree = requires(T t) {
   { t.OrthTreeTag() } -> std::same_as<void>;
 };
 
+// NOTE: tag a kd tree
 template <typename T>
 concept IsKdTree = requires(T t) {
   { t.KdTreeTag() } -> std::same_as<void>;
 };
 
+// NOTE: tag a rtree
 template <typename T>
 concept IsRTree = requires(T t) {
   { t.RTreeTag() } -> std::same_as<void>;
