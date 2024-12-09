@@ -156,9 +156,10 @@ Node* OrthTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::BuildRecursive(
     Slice In, Slice Out, Box const& box) {
   // TODO: may ensure the bucket is corresponding the the splitter
   assert(In.size() == 0 || BT::WithinBox(BT::GetBox(In), box));
+  size_t n = In.size();
 
   // if (In.size()) {
-  if (In.size() <= BT::kSerialBuildCutoff) {
+  if (n <= BT::kSerialBuildCutoff) {
     return SerialBuildRecursive(In, Out, box, false);
   }
 
@@ -174,10 +175,16 @@ Node* OrthTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::BuildRecursive(
   // serail approach
   auto tree_nodes = parlay::sequence<Node*>::uninitialized(BT::kBucketNum);
   auto nodes_map = BucketSeq::uninitialized(BT::kBucketNum);
-  BucketType zeros = 0, cnt = 0;
+  BucketType zeros = std::ranges::count(sums, 0), cnt = 0;
+
+  if (zeros == BT::kBucketNum - 1) {  // NOTE: switch to seral
+    // TODO: add parallelsim within this call
+    // see parallel kth element
+    return SerialBuildRecursive(In, Out, box, false);
+  }
+
   for (BucketType i = 0; i < BT::kBucketNum; ++i) {
-    if (!sums[i]) {
-      ++zeros;
+    if (sums[i] == 0) {
       tree_nodes[i] = AllocEmptyLeafNode<Slice, Leaf>();
     } else {
       nodes_map[cnt++] = i;
