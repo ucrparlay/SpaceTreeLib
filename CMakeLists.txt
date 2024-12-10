@@ -24,6 +24,8 @@ option(STDALLOC "" OFF)
 option(CGAL "" ON)
 option(MEMCHECK "" OFF)
 option(JEMA "" OFF)
+option(CCP "" ON)
+
 
 if(CILKPLUS)
 	add_compile_options(-DPARLAY_CILKPLUS -DCILK -fcilkplus)
@@ -37,9 +39,12 @@ endif()
 
 if(DEBUG)
 	set(CMAKE_BUILD_TYPE "Debug")
-
 	add_compile_options(-g -mcx16 -march=native)
-	# add_compile_options(-O3 -mcx16 -march=native)
+elseif(CCP)
+	set(CMAKE_BUILD_TYPE "Debug")
+	add_compile_options(-g -mcx16 -march=native)
+	message("CCP=ON")
+	add_compile_options(-DCCP)
 elseif(MEMCHECK)
 	set(CMAKE_BUILD_TYPE "Debug")
 	add_compile_options(-Og -mcx16 -DPARLAY_SEQUENTIAL)

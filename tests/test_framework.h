@@ -21,8 +21,12 @@
 #include "parlay/primitives.h"
 #include "parlay/slice.h"
 
-// using Coord = uint_fast64_t;
+#ifdef CCP
 using Coord = float;
+#else
+using Coord = double;
+#endif  // CCP
+
 using Typename = Coord;
 using namespace cpdd;
 
@@ -540,7 +544,6 @@ void RangeQuery(parlay::sequence<Point> const& wp, Tree& pkd, int const& rounds,
           [&](size_t i) -> size_t { return query_box_seq[i].second.size(); }),
       parlay::addm<size_t>());
   offset.push_back(tot_size);
-  std::cout << offset.size() << std::endl;
   Points Out(tot_size);
   parlay::sequence<size_t> kdknn(rec_num, 0);
 
