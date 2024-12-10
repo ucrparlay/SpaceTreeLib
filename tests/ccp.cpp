@@ -37,7 +37,7 @@ typedef CGAL::Fuzzy_iso_box<TreeTraits> Fuzzy_iso_box;
 typedef CGAL::Fuzzy_sphere<TreeTraits> Fuzzy_circle;
 
 size_t maxReduceSize = 0;
-int query_num = 10000;
+int const kCCPQueryNum = 10000;
 size_t const kCCPBatchQuerySize = 1000000;
 double const batchInsertCheckRatio = 0.1;
 double const kCCPBatchDiffTotalRatio = 1.0;
@@ -191,14 +191,16 @@ void runKDParallel(auto const& wp, auto const& wi, Typename* kdknn,
   }
 
   if (query_type & (1 << 2)) {  // NOTE: range query
+    int const tmp_query_num = kDim < 5 ? kCCPQueryNum : 5000;
     for (auto range_query_type : {0, 1, 2}) {
       if (tag & (1 << 2)) {
         Points new_wp(tree.GetRoot()->size);
         tree.Flatten(new_wp);
-        RangeQuery<Point>(new_wp, tree, rounds, query_num, range_query_type,
+        RangeQuery<Point>(new_wp, tree, rounds, tmp_query_num, range_query_type,
                           kDim);
       } else {
-        RangeQuery<Point>(wp, tree, rounds, query_num, range_query_type, kDim);
+        RangeQuery<Point>(wp, tree, rounds, tmp_query_num, range_query_type,
+                          kDim);
       }
     }
     std::cout << "--------------finish range query------------------"
@@ -295,7 +297,7 @@ int main(int argc, char* argv[]) {
       }
 
       // NOTE: run the test
-      runKDParallel<PointTypeAlias, Desc>(wp, wi, kdknn, cgknn, query_num,
+      runKDParallel<PointTypeAlias, Desc>(wp, wi, kdknn, cgknn, kCCPQueryNum,
                                           query_type, K, tag, kRounds);
       delete[] cgknn;
       delete[] kdknn;
