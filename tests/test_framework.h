@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <iomanip>
 #include <ios>
+#include <iostream>
 
 #include "common/geometryIO.h"
 #include "common/parse_command_line.h"
@@ -21,7 +22,7 @@
 #include "parlay/slice.h"
 
 // using Coord = uint_fast64_t;
-using Coord = double;
+using Coord = float;
 using Typename = Coord;
 using namespace cpdd;
 
@@ -538,8 +539,9 @@ void RangeQuery(parlay::sequence<Point> const& wp, Tree& pkd, int const& rounds,
           rec_num,
           [&](size_t i) -> size_t { return query_box_seq[i].second.size(); }),
       parlay::addm<size_t>());
+  offset.push_back(tot_size);
+  std::cout << offset.size() << std::endl;
   Points Out(tot_size);
-  size_t step = Out.size() / rec_num;
   parlay::sequence<size_t> kdknn(rec_num, 0);
 
   double aveQuery = time_loop(
@@ -560,11 +562,10 @@ void RangeQuery(parlay::sequence<Point> const& wp, Tree& pkd, int const& rounds,
     // std::cout << kdknn[i] << " " << query_box_seq[i].second.size() << " "
     //     << query_box_seq[i].first.first << query_box_seq[i].first.second
     //     << std::endl;
-    parlay::sort_inplace(
-        Out.cut(i * step, i * step + query_box_seq[i].second.size()));
+    parlay::sort_inplace(Out.cut(offset[i], offset[i + 1]));
     parlay::sort_inplace(query_box_seq[i].second);
     for (size_t j = 0; j < query_box_seq[i].second.size(); j++) {
-      assert(Out[i * step + j] == query_box_seq[i].second.at(j));
+      assert(Out[offset[i] + j] == query_box_seq[i].second.at(j));
       // if (Out[i * step + j] != query_box_seq[i].second.at(j)) std::cout <<
       // "wrong
       // "; std::cout << Out[j] << " " << query_box_seq[i].second.at(j) <<
@@ -673,6 +674,7 @@ void rangeQueryFix(parlay::sequence<Point> const& WP, Tree& pkd,
       parlay::delayed_tabulate(
           rec_num, [&](size_t i) -> size_t { return query_box_seq[i].second; }),
       parlay::binary_op(std::plus<size_t>(), 0));
+  offset.push_back(tot_size);
   Out.resize(tot_size);
 
   // int n = WP.size();
