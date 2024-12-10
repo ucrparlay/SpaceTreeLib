@@ -8,16 +8,15 @@ DataPath="/data/legacy/data3/zmen002/kdtree/geometry"
 declare -A file2Dims
 file2Dims["Cosmo50"]="3"
 file2Dims["GeoLifeNoScale"]="3"
-file2Dims["OpenStreetMap"]="2"
+file2Dims["osm"]="2"
 # file2Dims["Household"]="7"
 # file2Dims["HT"]="10"
 
 tag=0
 k=10
 onecore=0
-insNum=2
 readFile=0
-summary=1
+summary=0
 queryType=$((2#111)) # 1110000
 # queryType=1 # 1110000
 type="real_world"

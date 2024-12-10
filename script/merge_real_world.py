@@ -5,31 +5,37 @@ import csv
 print(os.getcwd())
 
 path = "../benchmark"
-benchmarks = ["real_world"]
-storePrefix = "data/"
+storePrefix = "data/real_world/"
 Nodes = [1000000000]
 Dims = [2, 3]
 
-solverName = ["kd", "orth" "r"]
+solverName = ["kd", "orth", "r"]
 
-benchmarks = {
+bench_node = {
+    "osm": "1298M",
+    "Cosmo50": "321M",
+    "GeoLifeNoScale": "24M",
+    "Household": "2.04M",
+    "HT": "928K",
+}
+bench_dim = {
     "osm": "2",
     "Cosmo50": "3",
-    "GeiLifeNoScale": "3",
+    "GeoLifeNoScale": "3",
     "Household": "7",
     "HT": "10",
 }
 
 resMap = {
-    "kd": "res_0_summary.out",
-    "orth": "res_1_summary.out",
-    "r": "res_2_summary.out",
+    "kd": "res_0_real_world.out",
+    "orth": "res_1_real_world.out",
+    "r": "res_2_real_world.out",
 }
 
-common = ["solver", "file"]
+common = ["solver", "file", "nodes", "dims"]
 
 #! order by test order
-files = ["real_world"]
+files = ["build", "knn_3", "count_3", "rquery_3"]
 
 build_header = [
     "build",
@@ -61,7 +67,10 @@ rquery_3_header = count_3_header
 
 summary_header = build_header + knn_3_header + count_3_header + rquery_3_header
 file_header = {
-    "real_world": summary_header,
+    "build": build_header,
+    "knn_3": knn_3_header,
+    "count_3": count_3_header,
+    "rquery_3": rquery_3_header,
 }
 
 prefix = [0] * len(files)
@@ -80,11 +89,16 @@ def combine(P, file, csvWriter, solver):
         l = l.split(" ")
         if l[0].endswith(".in"):
             l[0] = l[0][:-3]
-            continue
-        sep_lines.append([solver] + l)
+        width = len(file_header[file])
+        left = prefix[files.index(file)]
+        right = left + width
+        sep_lines.append(
+            [l[0], bench_node[l[0]], bench_dim[l[0]]] + [solver] + l[left:right]
+        )
 
 
 def write(csvWriter):
+    sep_lines.sort(key=lambda x: x[0])
     for line in sep_lines:
         csvWriter.writerow(line)
 
@@ -114,11 +128,12 @@ def calculatePrefix():
 if len(sys.argv) > 1 and int(sys.argv[1]) == 1:
     calculatePrefix()
     for file in files:
+        sep_lines = []
         csvWriter, csvFilePointer = csvSetup(file)
-        for bench in benchmarks:
-            for solver in solverName:
-                P = path + "/" + bench + "/" + resMap[solver]
-                combine(P, file, csvWriter, solver)
+        for solver in solverName:
+            P = path + "/real_world/" + resMap[solver]
+            combine(P, file, csvWriter, solver)
+        write(csvWriter)
         csvFilePointer.close()
 
     # reorder()
