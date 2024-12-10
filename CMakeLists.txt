@@ -24,7 +24,7 @@ option(STDALLOC "" OFF)
 option(CGAL "" ON)
 option(MEMCHECK "" OFF)
 option(JEMA "" OFF)
-option(CCP "" ON)
+option(CCP "" OFF)
 
 
 if(CILKPLUS)

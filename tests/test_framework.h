@@ -676,8 +676,11 @@ void rangeQueryFix(parlay::sequence<Point> const& WP, Tree& pkd,
   auto [offset, tot_size] = parlay::scan(
       parlay::delayed_tabulate(
           rec_num, [&](size_t i) -> size_t { return query_box_seq[i].second; }),
-      parlay::binary_op(std::plus<size_t>(), 0));
+      parlay::addm<size_t>());
   offset.push_back(tot_size);
+  // std::cout << "range query: " << rec_num << " " << rec_type << " " <<
+  // tot_size
+  //           << std::endl;
   Out.resize(tot_size);
 
   // int n = WP.size();
