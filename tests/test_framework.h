@@ -15,6 +15,7 @@
 #include "cpdd/orth_tree.h"
 #include "cpdd/r_tree.h"
 #include "parlay/internal/group_by.h"
+#include "parlay/monoid.h"
 #include "parlay/parallel.h"
 #include "parlay/primitives.h"
 #include "parlay/slice.h"
@@ -128,12 +129,12 @@ auto gen_rectangles(int rec_num, int const type,
   std::pair<size_t, size_t> range;
   if (type == 0) {  //* small bracket
     range.first = 1;
-    range.second = size_t(std::sqrt(std::sqrt(n)));
+    range.second = static_cast<size_t>(std::sqrt(std::sqrt(1.0 * n)));
   } else if (type == 1) {  //* medium bracket
-    range.first = size_t(std::sqrt(std::sqrt(n)));
-    range.second = size_t(std::sqrt(n));
+    range.first = static_cast<size_t>(std::sqrt(std::sqrt(1.0 * n)));
+    range.second = static_cast<size_t>(std::sqrt(1.0 * n));
   } else if (type == 2) {  //* large bracket
-    range.first = size_t(std::sqrt(n));
+    range.first = static_cast<size_t>(std::sqrt(1.0 * n));
 
     // NOTE: special handle for large dimension datasets
 
@@ -143,10 +144,12 @@ auto gen_rectangles(int rec_num, int const type,
     //   range.second = n / 100 - 1;
     // else if (n >= 10'000'000)
     //   range.second = n / 10 - 1;
-    if (n >= 1'000'000)
-      range.second = 1'000'000;  // ensure we can generate 50k rect.
-    else
+    if (n > 1'000'000) {
+      range.second = 1'000'000;
+    }  // ensure we can generate 50k rect.
+    else {
       range.second = n - 1;
+    }
   }
   BoxSeq box_seq(rec_num);
   int cnt = 0;
@@ -530,11 +533,13 @@ void RangeQuery(parlay::sequence<Point> const& wp, Tree& pkd, int const& rounds,
 
   auto [query_box_seq, max_size] =
       gen_rectangles<Point, Tree, true>(rec_num, rec_type, wp, DIM);
-  Points Out(rec_num * max_size);
+  auto [offset, tot_size] = parlay::scan(
+      parlay::delayed_tabulate(
+          rec_num,
+          [&](size_t i) -> size_t { return query_box_seq[i].second.size(); }),
+      parlay::addm<size_t>());
+  Points Out(tot_size);
   size_t step = Out.size() / rec_num;
-  // using ref_t = std::reference_wrapper<Point>;
-  // parlay::sequence<ref_t> out_ref(Out.size(), std::ref(Out[0]));
-  // parlay::sequence<double> preTime( rec_num, 0 );
   parlay::sequence<size_t> kdknn(rec_num, 0);
 
   double aveQuery = time_loop(
@@ -542,7 +547,7 @@ void RangeQuery(parlay::sequence<Point> const& wp, Tree& pkd, int const& rounds,
       [&]() {
         parlay::parallel_for(0, rec_num, [&](size_t i) {
           auto [size, logger] = pkd.RangeQuery(
-              query_box_seq[i].first, Out.cut(i * step, (i + 1) * step));
+              query_box_seq[i].first, Out.cut(offset[i], offset[i + 1]));
           kdknn[i] = size;
         });
       },
@@ -664,10 +669,14 @@ void rangeQueryFix(parlay::sequence<Point> const& WP, Tree& pkd,
       gen_rectangles<Point, Tree, false>(rec_num, rec_type, WP, DIM);
   parlay::sequence<size_t> vis_nodes(rec_num), gen_box(rec_num),
       full_box(rec_num), skip_box(rec_num);
-  Out.resize(rec_num * max_size);
+  auto [offset, tot_size] = parlay::scan(
+      parlay::delayed_tabulate(
+          rec_num, [&](size_t i) -> size_t { return query_box_seq[i].second; }),
+      parlay::binary_op(std::plus<size_t>(), 0));
+  Out.resize(tot_size);
 
   // int n = WP.size();
-  size_t step = Out.size() / rec_num;
+  // size_t step = Out.size() / rec_num;
   // using ref_t = std::reference_wrapper<Point>;
   // parlay::sequence<ref_t> out_ref( Out.size(), std::ref( Out[0] ) );
 
@@ -676,7 +685,7 @@ void rangeQueryFix(parlay::sequence<Point> const& WP, Tree& pkd,
       [&]() {
         parlay::parallel_for(0, rec_num, [&](size_t i) {
           auto [size, logger] = pkd.RangeQuery(
-              query_box_seq[i].first, Out.cut(i * step, (i + 1) * step));
+              query_box_seq[i].first, Out.cut(offset[i], offset[i + 1]));
 
           kdknn[i] = size;
           vis_nodes[i] = logger.vis_node_num;

@@ -191,15 +191,14 @@ void runKDParallel(auto const& wp, auto const& wi, Typename* kdknn,
   }
 
   if (query_type & (1 << 2)) {  // NOTE: range query
-    int const tmp_query_num = kDim < 5 ? kCCPQueryNum : 5000;
     for (auto range_query_type : {0, 1, 2}) {
       if (tag & (1 << 2)) {
         Points new_wp(tree.GetRoot()->size);
         tree.Flatten(new_wp);
-        RangeQuery<Point>(new_wp, tree, rounds, tmp_query_num, range_query_type,
+        RangeQuery<Point>(new_wp, tree, rounds, kCCPQueryNum, range_query_type,
                           kDim);
       } else {
-        RangeQuery<Point>(wp, tree, rounds, tmp_query_num, range_query_type,
+        RangeQuery<Point>(wp, tree, rounds, kCCPQueryNum, range_query_type,
                           kDim);
       }
     }
