@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.15)
 
 project(
-	SpatialTrees
+	PSTP
 	VERSION 0.1
 	DESCRIPTION "spatial partition tree"
 	HOMEPAGE_URL ""
@@ -60,30 +60,28 @@ elseif(JEMA)
 	set(CMAKE_BUILD_RPATH "/usr/local/lib")
 endif()
 
+message(STATUS "---------------------------- PARLAY -----------------------------")
 add_subdirectory(include/parlaylib)
+message(STATUS "---------------------------- END PARLAY -----------------------------")
 # add_subdirectory(libmorton)
 
-# set(source_files
-# ${PROJECT_SOURCE_DIR}/include/cpdd/SpatialTrees.hpp
-# )
+list(REMOVE_ITEM CMAKE_MODULE_PATH "${PARLAY_SOURCE_DIR}/cmake")
+list(APPEND CMAKE_MODULE_PATH "${PSTP_SOURCE_DIR}/cmake")
 
-# my kd
-add_library(SpatialTrees INTERFACE)
-target_link_libraries(SpatialTrees INTERFACE parlay)
-# target_link_libraries(SpatialTrees INTERFACE libmorton)
-target_include_directories(SpatialTrees INTERFACE ${PROJECT_SOURCE_DIR}/include)
+add_library(PSTP INTERFACE)
+set(PSTP_INCLUDE_DIR "${PSTP_SOURCE_DIR}/include/cpdd")
+target_link_libraries(PSTP INTERFACE parlay)
+target_include_directories(PSTP INTERFACE $<BUILD_INTERFACE:${PSTP_INCLUDE_DIR}>
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 
+add_subdirectory(static_analysis)
 include(GNUInstallDirs)
-install(TARGETS SpatialTrees
+install(TARGETS PSTP
 	LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
 	PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
-# add_executable(test ${PROJECT_SOURCE_DIR}/tests/test.cpp)
-# target_link_libraries(test PUBLIC SpatialTrees)
-# target_include_directories(test PUBLIC ${PROJECT_SOURCE_DIR}/include)
-
 add_executable(test ${PROJECT_SOURCE_DIR}/tests/test.cpp)
-target_link_libraries(test PUBLIC SpatialTrees)
+target_link_libraries(test PUBLIC PSTP)
 target_include_directories(test PUBLIC ${PROJECT_SOURCE_DIR}/include)
 
 if(JEMA)
@@ -91,12 +89,12 @@ if(JEMA)
 endif()
 
 add_executable(data_generator ${PROJECT_SOURCE_DIR}/tests/data_generate.cpp)
-target_link_libraries(data_generator PUBLIC SpatialTrees)
+target_link_libraries(data_generator PUBLIC PSTP)
 target_include_directories(data_generator PUBLIC ${PROJECT_SOURCE_DIR}/include)
 
 find_package(Boost REQUIRED)
 add_executable(rtree ${PROJECT_SOURCE_DIR}/tests/rtree.cpp)
-target_link_libraries(rtree PUBLIC SpatialTrees ${Boost_LIBRARIES})
+target_link_libraries(rtree PUBLIC PSTP ${Boost_LIBRARIES})
 target_include_directories(rtree PUBLIC ${PROJECT_SOURCE_DIR}/include ${Boost_INCLUDE_DIRS})
 
 # CGAL
@@ -124,16 +122,17 @@ if(CGAL)
 
 	# executables
 	# add_executable(cgal ${PROJECT_SOURCE_DIR}/tests/cgal.cpp)
-	# target_link_libraries(cgal PUBLIC SpatialTrees CGAL::CGAL CGAL::TBB_support)
+	# target_link_libraries(cgal PUBLIC PSTP CGAL::CGAL CGAL::TBB_support)
 	# target_include_directories(cgal PUBLIC ${PROJECT_SOURCE_DIR}/include )
 
 	add_executable(ccp ${PROJECT_SOURCE_DIR}/tests/ccp.cpp)
-	target_link_libraries(ccp PUBLIC SpatialTrees CGAL::CGAL CGAL::TBB_support)
+	target_link_libraries(ccp PUBLIC PSTP CGAL::CGAL CGAL::TBB_support)
 endif()
 
 set(all_files
   ${PROJECT_SOURCE_DIR}/include/cpdd/*
 )
+
 
 FIND_PROGRAM(CLANG_FORMAT "clang-format")
 
