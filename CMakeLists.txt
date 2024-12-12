@@ -123,6 +123,7 @@ if(CGAL)
 
 	add_executable(ccp ${PROJECT_SOURCE_DIR}/tests/ccp.cpp)
 	target_link_libraries(ccp PUBLIC PSTP CGAL::CGAL CGAL::TBB_support)
+	target_include_directories(ccp PUBLIC ${PROJECT_SOURCE_DIR}/include)
 endif()
 
 set(all_files
