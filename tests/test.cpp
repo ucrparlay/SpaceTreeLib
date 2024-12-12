@@ -3,8 +3,8 @@
 #include <cstddef>
 #include <cstdlib>
 
-#include "cpdd/dependence/splitter.h"
-#include "cpdd/kd_tree.h"
+#include "pstp/dependence/splitter.h"
+#include "pstp/kd_tree.h"
 #include "parlay/primitives.h"
 #include "test_framework.h"
 
