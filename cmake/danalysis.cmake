@@ -7,8 +7,8 @@
 # -------------------------------------------------------------------
 
 # User options to enable static analysis tools
-option(PSTP_ENABLE_CPPCHECK     "Enable cppcheck static analysis"      OFF)
-option(PSTP_ENABLE_CLANG_TIDY   "Enable clang-tidy static analysis"    OFF)
+option(PSTP_ENABLE_CPPCHECK     "Enable cppcheck static analysis"      ON)
+option(PSTP_ENABLE_CLANG_TIDY   "Enable clang-tidy static analysis"    ON)
 option(PSTP_ENABLE_IWYU         "Enable include-what-you-use analysis" OFF)
 
 function(CONFIGURE_DANALYSIS)
@@ -83,7 +83,7 @@ function(CONFIGURE_DANALYSIS)
 
     endif()
   else()
-    message(STATUS "cppcheck:                     Disabled (enable with -DENABLE_CPPCHECK=On)")
+    message(STATUS "cppcheck:                     Disabled (enable with -DPSTP_ENABLE_CPPCHECK=On)")
   endif()
 
   # --------------------------- clang-tidy ----------------------------
@@ -149,7 +149,7 @@ function(CONFIGURE_DANALYSIS)
 
     endif()
   else()
-    message(STATUS "clang-tidy:                   Disabled (enable with -DENABLE_CLANG_TIDY=On)")
+    message(STATUS "clang-tidy:                   Disabled (enable with -DPSTP_ENABLE_CLANG_TIDY=On)")
   endif()
 
   # ----------------------- include-what-you-use --------------------------
@@ -171,7 +171,7 @@ function(CONFIGURE_DANALYSIS)
       set(IWYU_ARGS 
         "${CONFIGURE_DANALYSIS_INCLUDES}"
         "-w"
-        "-std=c++17"
+        "-std=c++20"
         "-xc++"
       )
 
@@ -203,7 +203,7 @@ function(CONFIGURE_DANALYSIS)
 
     endif()
   else()
-    message(STATUS "include-what-you-use:         Disabled (enable with -DENABLE_IWYU=On)")
+    message(STATUS "include-what-you-use:         Disabled (enable with -DPSTP_ENABLE_IWYU=On)")
   endif()
 
   # ---------------------------- all linters ------------------------------

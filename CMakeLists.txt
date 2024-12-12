@@ -13,8 +13,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON) # works
 # add_compile_options(-Wall -Wextra -Wshadow -Wconversion -Wunused -Wsign-conversion -Wfloat-equal -Wpedantic -Wuninitialized -Wformat -Wformat-security -Wmissing-braces -Wparentheses -Wsequence-point -Wswitch -Wswitch-enum -Wstrict-aliasing -Wdeprecated-declarations -Wreturn-type -Wunused-result)
 add_compile_options(-Wall -Wextra -Werror)
-# set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c++20 ")
-# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++20 ")
 
 option(DEBUG "" OFF)
 option(CILKPLUS "" OFF)
@@ -23,7 +21,7 @@ option(SERIAL "" OFF)
 option(STDALLOC "" OFF)
 option(CGAL "" ON)
 option(MEMCHECK "" OFF)
-option(JEMA "" OFF)
+option(JEMA "" ON)
 option(CCP "" OFF)
 
 
@@ -45,9 +43,6 @@ elseif(CCP)
 	add_compile_options(-g -mcx16 -march=native)
 	message("CCP=ON")
 	add_compile_options(-DCCP)
-elseif(MEMCHECK)
-	set(CMAKE_BUILD_TYPE "Debug")
-	add_compile_options(-Og -mcx16 -DPARLAY_SEQUENTIAL)
 else()
 	set(CMAKE_BUILD_TYPE "Release")
 	add_compile_options(-O3 -mcx16 -march=native)
@@ -60,11 +55,11 @@ elseif(JEMA)
 	set(CMAKE_BUILD_RPATH "/usr/local/lib")
 endif()
 
-message(STATUS "---------------------------- PARLAY -----------------------------")
+message(STATUS "\n\n---------------------------- PARLAY -----------------------------")
 add_subdirectory(include/parlaylib)
-message(STATUS "---------------------------- END PARLAY -----------------------------")
-# add_subdirectory(libmorton)
+message(STATUS "---------------------------- END PARLAY -----------------------------\n\n")
 
+# NOTE: clear CMAKE_MODULE_PATH to avoid finding parlay's cmake files
 list(REMOVE_ITEM CMAKE_MODULE_PATH "${PARLAY_SOURCE_DIR}/cmake")
 list(APPEND CMAKE_MODULE_PATH "${PSTP_SOURCE_DIR}/cmake")
 
@@ -75,6 +70,7 @@ target_include_directories(PSTP INTERFACE $<BUILD_INTERFACE:${PSTP_INCLUDE_DIR}>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 
 add_subdirectory(static_analysis)
+
 include(GNUInstallDirs)
 install(TARGETS PSTP
 	LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
