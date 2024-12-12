@@ -9,14 +9,14 @@ resFile="Correct.out"
 dest="logger.in"
 out="log.in"
 : >${dest}
-# tag=$((2#111))
-tag=$((2#0))
+tag=$((2#111))
+# tag=$((2#0))
 count=1 # count the number of ok in the output
-dims=(2 3)
+dims=(2 3 5)
 queryTypes=$((2#111))
-trees=(2)
+trees=(1 0)
 
-Paths=("/data/zmen002/kdtree/ss_varden/" "/data/zmen002/kdtree/uniform/")
+Paths=("/ssd1/zmen002/kdtree/ss_varden/" "/ssd1/zmen002/kdtree/uniform/")
 
 #* check node
 for queryType in "${queryTypes[@]}"; do
