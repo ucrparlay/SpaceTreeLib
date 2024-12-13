@@ -4,7 +4,7 @@ include(danalysis)
 configure_danalysis(
   INCLUDES
     ${PSTP_INCLUDE_DIR}
-    ${PSTP_INCLUDE_DIR}/cpdd
+    ${PSTP_INCLUDE_DIR}/pstp
   FILES
     ${PSTP_INCLUDE_DIR}/base_tree_impl/box_cut.hpp
     ${PSTP_INCLUDE_DIR}/base_tree_impl/delete_tree.hpp
@@ -14,7 +14,6 @@ configure_danalysis(
     ${PSTP_INCLUDE_DIR}/base_tree_impl/knn_query.hpp
     ${PSTP_INCLUDE_DIR}/base_tree_impl/points_op.hpp
     ${PSTP_INCLUDE_DIR}/base_tree_impl/range_query.hpp
-    ${PSTP_INCLUDE_DIR}/base_tree_impl/tree_op
     ${PSTP_INCLUDE_DIR}/base_tree_impl/tree_op/build_inner_tree.hpp
     ${PSTP_INCLUDE_DIR}/base_tree_impl/tree_op/compress_expand_tree.hpp
     ${PSTP_INCLUDE_DIR}/base_tree_impl/tree_op/flatten.hpp

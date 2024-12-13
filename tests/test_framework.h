@@ -10,16 +10,16 @@
 #include "common/geometryIO.h"
 #include "common/parse_command_line.h"
 #include "common/time_loop.h"
-#include "cpdd/base_tree.h"
-#include "cpdd/dependence/splitter.h"
-#include "cpdd/kd_tree.h"
-#include "cpdd/orth_tree.h"
-#include "cpdd/r_tree.h"
 #include "parlay/internal/group_by.h"
 #include "parlay/monoid.h"
 #include "parlay/parallel.h"
 #include "parlay/primitives.h"
 #include "parlay/slice.h"
+#include "pstp/base_tree.h"
+#include "pstp/dependence/splitter.h"
+#include "pstp/kd_tree.h"
+#include "pstp/orth_tree.h"
+#include "pstp/r_tree.h"
 
 #ifdef CCP
 using Coord = float;
@@ -28,7 +28,7 @@ using Coord = double;
 #endif  // CCP
 
 using Typename = Coord;
-using namespace cpdd;
+using namespace pstp;
 
 // NOTE: KNN size
 static constexpr double kBatchQueryRatio = 0.01;
@@ -99,7 +99,7 @@ size_t recurse_box(parlay::slice<Point*, Point*> In, auto& box_seq, int DIM,
   size_t pos = get_random_index(0, n, rand());
   parlay::sequence<bool> flag(n, 0);
   parlay::parallel_for(0, n, [&](size_t i) {
-    if (cpdd::Num_Comparator<Coord>::Gt(In[i].pnt[dim], In[pos].pnt[dim]))
+    if (pstp::Num_Comparator<Coord>::Gt(In[i].pnt[dim], In[pos].pnt[dim]))
       flag[i] = 1;
     else
       flag[i] = 0;
@@ -232,10 +232,10 @@ void BatchInsert(Tree& pkd, parlay::sequence<Point> const& WP,
 
   // NOTE: build the tree by type
   auto build_tree_by_type = [&]() {
-    if constexpr (cpdd::IsKdTree<Tree>) {
+    if constexpr (pstp::IsKdTree<Tree>) {
       parlay::copy(WP, wp), parlay::copy(WI, wi);
       pkd.Build(parlay::make_slice(wp));
-    } else if constexpr (cpdd::IsOrthTree<Tree>) {
+    } else if constexpr (pstp::IsOrthTree<Tree>) {
       parlay::copy(WP, wp), parlay::copy(WI, wi);
       auto box1 = Tree::GetBox(parlay::make_slice(wp));
       auto box2 =
@@ -1073,38 +1073,50 @@ struct wrapper {
     }
   }
 
+  // NOTE: Trees
   struct QuadTree {
     template <class Point>
     struct Desc {
-      using TreeType = cpdd::OrthTree<Point, cpdd::RotateDim<Point>, 2, 6>;
+      using TreeType = pstp::OrthTree<
+          Point,
+          pstp::SplitRule<pstp::RotateDim<Point>, pstp::SpatialMedian<Point>>,
+          2, 6>;
     };
   };
   struct OctTree {
     template <class Point>
     struct Desc {
-      using TreeType = cpdd::OrthTree<Point, cpdd::RotateDim<Point>, 3, 6>;
+      using TreeType = pstp::OrthTree<
+          Point,
+          pstp::SplitRule<pstp::RotateDim<Point>, pstp::SpatialMedian<Point>>,
+          3, 6>;
     };
   };
   struct OrthTree {
     template <class Point>
     struct Desc {
-      using TreeType =
-          cpdd::OrthTree<Point, cpdd::RotateDim<Point>, Point::GetDim(),
-                         OrthGetBuildDepthOnce(Point::GetDim())>;
+      using TreeType = pstp::OrthTree<
+          Point,
+          pstp::SplitRule<pstp::RotateDim<Point>, pstp::SpatialMedian<Point>>,
+          Point::GetDim(), OrthGetBuildDepthOnce(Point::GetDim())>;
     };
   };
   struct KDtree {
     template <class Point>
     struct Desc {
-      using TreeType = cpdd::KdTree<Point, cpdd::MaxStretchDim<Point>>;
-      // using TreeType = cpdd::KdTree<Point, cpdd::RotateDim<Point>>;
+      using TreeType =
+          pstp::KdTree<Point, pstp::SplitRule<pstp::MaxStretchDim<Point>,
+                                              pstp::ObjectMedian<Point>>>;
+      // using TreeType = pstp::KdTree<Point, pstp::RotateDim<Point>>;
     };
   };
   struct RTree {
     template <class Point>
     struct Desc {
-      using TreeType = cpdd::RTree<Point, cpdd::MaxStretchDim<Point>>;
-      // using TreeType = cpdd::KdTree<Point, cpdd::RotateDim<Point>>;
+      using TreeType =
+          pstp::RTree<Point, pstp::SplitRule<pstp::MaxStretchDim<Point>,
+                                             pstp::ObjectMedian<Point>>>;
+      // using TreeType = pstp::KdTree<Point, pstp::RotateDim<Point>>;
     };
   };
 };

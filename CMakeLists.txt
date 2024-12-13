@@ -64,7 +64,7 @@ list(REMOVE_ITEM CMAKE_MODULE_PATH "${PARLAY_SOURCE_DIR}/cmake")
 list(APPEND CMAKE_MODULE_PATH "${PSTP_SOURCE_DIR}/cmake")
 
 add_library(PSTP INTERFACE)
-set(PSTP_INCLUDE_DIR "${PSTP_SOURCE_DIR}/include/cpdd")
+set(PSTP_INCLUDE_DIR "${PSTP_SOURCE_DIR}/include/pstp")
 target_link_libraries(PSTP INTERFACE parlay)
 target_include_directories(PSTP INTERFACE $<BUILD_INTERFACE:${PSTP_INCLUDE_DIR}>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
@@ -123,10 +123,11 @@ if(CGAL)
 
 	add_executable(ccp ${PROJECT_SOURCE_DIR}/tests/ccp.cpp)
 	target_link_libraries(ccp PUBLIC PSTP CGAL::CGAL CGAL::TBB_support)
+	target_include_directories(ccp PUBLIC ${PROJECT_SOURCE_DIR}/include)
 endif()
 
 set(all_files
-  ${PROJECT_SOURCE_DIR}/include/cpdd/*
+  ${PROJECT_SOURCE_DIR}/include/pstp/*
 )
 
 
