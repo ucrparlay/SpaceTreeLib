@@ -1,9 +1,9 @@
 solver,benchType,nodes,dims,build,max-depth,ave-depth
-kdtree,uniform_bigint,1000M,2,4.46522,28.0,25.52565
-orth,uniform_bigint,1000M,2,3.89449,14.0,13.0001
-kdtree,uniform_bigint,1000M,3,5.42193,28.0,25.5267
-orth,uniform_bigint,1000M,3,4.66315,9.0,8.99999
-kdtree,ss_varden_bigint,1000M,2,5.8449,28.0,25.52375
-orth,ss_varden_bigint,1000M,2,8.01686,25.5,21.40955
-kdtree,ss_varden_bigint,1000M,3,7.47584,28.0,25.5253
-orth,ss_varden_bigint,1000M,3,14.1803,25.0,20.76125
+kdtree,uniform_bigint,1000M,2,3.40616,28.0,25.52565
+orth,uniform_bigint,1000M,2,2.97205,14.0,13.0001
+kdtree,uniform_bigint,1000M,3,4.14961,28.0,25.5267
+orth,uniform_bigint,1000M,3,3.72101,9.0,8.99999
+kdtree,ss_varden_bigint,1000M,2,4.77735,28.0,25.52375
+orth,ss_varden_bigint,1000M,2,7.01802,25.5,21.41915
+kdtree,ss_varden_bigint,1000M,3,6.62391,28.0,25.5253
+orth,ss_varden_bigint,1000M,3,14.85675,25.0,20.825
