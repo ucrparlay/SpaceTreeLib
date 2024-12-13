@@ -22,8 +22,10 @@ template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
 inline bool BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::ImbalanceNode(
     size_t const l, size_t const n) {
   if (n == 0) return true;
-  return Num::Gt(static_cast<size_t>(std::abs(100.0 * l / n - 50.0)),
-                 GetImbalanceRatio());
+  return Num::Gt(
+      static_cast<size_t>(std::abs(
+          100.0 * static_cast<double>(l) / static_cast<double>(n) - 50.0)),
+      GetImbalanceRatio());
 }
 
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,

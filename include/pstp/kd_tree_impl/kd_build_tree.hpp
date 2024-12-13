@@ -27,32 +27,27 @@ template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 void KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::DivideRotate(
     Slice In, SplitterSeq& pivots, DimsType dim, BucketType idx,
-    BoxSeq& box_seq, Box const& bx) {
+    BoxSeq& box_seq, Box const& box) {
   if (idx > BT::kPivotNum) {
     // WARN: sometimes cut dimension can be -1
     //  never use pivots[idx].first to check whether it is in bucket;
     //  instead, use idx > PIVOT_NUM
-    box_seq[idx - BT::kBucketNum] = bx;
+    box_seq[idx - BT::kBucketNum] = box;
     pivots[idx] = Splitter(0, idx - BT::kBucketNum);
     return;
   }
   size_t n = In.size();
-  DimsType d = split_rule_.FindCuttingDimension(bx, dim);
-  assert(d < BT::kDim);
+  DimsType cutting_dim = split_rule_.FindCuttingDimension(box, dim);
+  assert(cutting_dim < BT::kDim);
 
-  std::ranges::nth_element(In, In.begin() + n / 2,
-                           [&](Point const& p1, Point const& p2) {
-                             return Num::Lt(p1.pnt[d], p2.pnt[d]);
-                           });
+  pivots[idx] = split_rule_.SplitSample(In, cutting_dim, box);
 
-  pivots[idx] = Splitter(In[n / 2].pnt[d], d);
+  BoxCut box_cut(box, pivots[idx], true);
 
-  BoxCut box_cut(bx, pivots[idx], true);
-
-  d = (d + 1) % BT::kDim;
-  DivideRotate(In.cut(0, n / 2), pivots, d, 2 * idx, box_seq,
+  cutting_dim = (cutting_dim + 1) % BT::kDim;
+  DivideRotate(In.cut(0, n / 2), pivots, cutting_dim, 2 * idx, box_seq,
                box_cut.GetFirstBoxCut());
-  DivideRotate(In.cut(n / 2, n), pivots, d, 2 * idx + 1, box_seq,
+  DivideRotate(In.cut(n / 2, n), pivots, cutting_dim, 2 * idx + 1, box_seq,
                box_cut.GetSecondBoxCut());
   return;
 }
@@ -77,15 +72,15 @@ void KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::PickPivots(
 template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 Node* KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::SerialBuildRecursive(
-    Slice In, Slice Out, DimsType dim, Box const& bx) {
+    Slice In, Slice Out, DimsType dim, Box const& box) {
   size_t n = In.size();
 
   if (n == 0) return AllocEmptyLeafNode<Slice, Leaf>();
 
   if (n <= BT::kLeaveWrap) return AllocNormalLeafNode<Slice, Leaf>(In);
 
-  DimsType d = split_rule_.FindCuttingDimension(bx, dim);
-  PointsIter split_iter = BT::SerialPartition(In, d);
+  DimsType d = split_rule_.FindCuttingDimension(box, dim);
+  PointsIter split_iter = split_rule_.SplitInput(In, d, box);
 
   Splitter split;
 
@@ -103,7 +98,7 @@ Node* KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::SerialBuildRecursive(
     return AllocDummyLeafNode<Slice, Leaf>(In);
   } else {  // NOTE: current dim d is same but other dims are not
     // WARN: this will break the rotate dimension mannar
-    auto [new_box, new_dim] = split_rule_.SwitchDimension(In, d, bx);
+    auto [new_box, new_dim] = split_rule_.SwitchDimension(In, d, box);
     assert(IsMaxStretchSplit<SplitRule> || new_dim != d);
     return SerialBuildRecursive(In, Out, new_dim, new_box);
   }
@@ -115,7 +110,7 @@ Node* KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::SerialBuildRecursive(
     return Num::Geq(p.pnt[split.second], split.first);
   }));
 
-  BoxCut box_cut(bx, split, true);
+  BoxCut box_cut(box, split, true);
 
   d = (d + 1) % BT::kDim;
   Node *L, *R;

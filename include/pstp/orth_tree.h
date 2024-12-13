@@ -119,8 +119,7 @@ class OrthTree
   void Build_(Slice In, Box const& box);
 
   void SerialSplit(Slice In, DimsType dim, DimsType idx, Box const& box,
-                   Splitter const& split, parlay::sequence<BallsType>& sums,
-                   BoxSeq& box_seq);
+                   parlay::sequence<BallsType>& sums);
 
   void SerialSplitSkeleton(Node* T, Slice In, DimsType dim, DimsType idx,
                            parlay::sequence<BallsType>& sums);

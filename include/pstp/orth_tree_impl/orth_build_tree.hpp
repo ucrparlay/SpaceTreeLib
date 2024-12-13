@@ -28,6 +28,7 @@ void OrthTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::Build(
   Build_(A, std::forward<Args>(args)...);
 }
 
+// TODO: maybe we don't need this function, it can be directly computed by value
 template <typename Point, typename SplitRule, uint_fast8_t kMD,
           uint_fast8_t kSkHeight, uint_fast8_t kImbaRatio>
 void OrthTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::DivideRotate(
@@ -41,19 +42,12 @@ void OrthTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::DivideRotate(
     return;
   }
 
-  // pivots[idx] = HyperPlane(
-  //     static_cast<Coord>((box.first.pnt[dim] + box.second.pnt[dim]) / 2),
-  //     dim);
-  pivots[idx] = HyperPlane(BT::GetBoxMid(dim, box), dim);
+  pivots[idx] = split_rule_.SplitSample(Slice(nullptr, nullptr), dim, box);
 
-  // TODO: maybe using box cut
-  Box lbox(box), rbox(box);
-  lbox.second.pnt[dim] = pivots[idx].first;
-  rbox.first.pnt[dim] = pivots[idx].first;
-
+  BoxCut box_cut(box, pivots[idx], true);
   dim = (dim + 1) % BT::kDim;
-  DivideRotate(pivots, dim, 2 * idx, box_seq, lbox);
-  DivideRotate(pivots, dim, 2 * idx + 1, box_seq, rbox);
+  DivideRotate(pivots, dim, 2 * idx, box_seq, box_cut.GetFirstBoxCut());
+  DivideRotate(pivots, dim, 2 * idx + 1, box_seq, box_cut.GetSecondBoxCut());
 
   return;
 }
@@ -61,31 +55,20 @@ void OrthTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::DivideRotate(
 template <typename Point, typename SplitRule, uint_fast8_t kMD,
           uint_fast8_t kSkHeight, uint_fast8_t kImbaRatio>
 void OrthTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::SerialSplit(
-    Slice In, DimsType dim, DimsType idx, Box const& box, Splitter const& split,
-    parlay::sequence<BallsType>& sums, BoxSeq& box_seq) {
+    Slice In, DimsType dim, DimsType idx, Box const& box,
+    parlay::sequence<BallsType>& sums) {
   assert(dim <= BT::kDim);
 
   if (dim == BT::kDim) {
     sums[idx - kNodeRegions] = In.size();
-    box_seq[idx - kNodeRegions] = box;
     return;
   }
 
-  auto mid = split[dim].first;
-  assert(dim == split[dim].second);
+  PointsIter split_iter = split_rule_.SplitInput(In, dim, box);
 
-  PointsIter split_iter = std::ranges::partition(In, [&](Point const& p) {
-                            return Num::Lt(p.pnt[dim], mid);
-                          }).begin();
-
-  // TODO: maybe we can remove them using BoxCut
-  Box lbox(box), rbox(box);
-  lbox.second.pnt[dim] = mid;
-  rbox.first.pnt[dim] = mid;
-  SerialSplit(In.cut(0, split_iter - In.begin()), dim + 1, idx << 1, lbox,
-              split, sums, box_seq);
+  SerialSplit(In.cut(0, split_iter - In.begin()), dim + 1, idx << 1, box, sums);
   SerialSplit(In.cut(split_iter - In.begin(), In.size()), dim + 1, idx << 1 | 1,
-              rbox, split, sums, box_seq);
+              box, sums);
 }
 
 template <typename Point, typename SplitRule, uint_fast8_t kMD,
@@ -107,15 +90,10 @@ Node* OrthTree<Point, SplitRule, kMD, kSkHeight,
 
   assert(kSplitterNum == BT::kDim);
 
-  Splitter split;
-  for (DimsType i = 0; i < kSplitterNum; ++i) {
-    split[i] = HyperPlane(BT::GetBoxMid(i, box), i);
-  }
-
   DimsType dim = 0;
   parlay::sequence<BallsType> sums(kNodeRegions, 0);
-  BoxSeq box_seq(kNodeRegions);
-  SerialSplit(In, dim, 1, box, split, sums, box_seq);
+  auto splitter = Interior::ComputeSplitter(box);
+  SerialSplit(In, dim, 1, box, sums);
   assert(std::cmp_equal(std::accumulate(sums.begin(), sums.end(), 0), n));
 
   if (std::ranges::count(sums, 0) == kNodeRegions - 1) {
@@ -142,13 +120,13 @@ Node* OrthTree<Point, SplitRule, kMD, kSkHeight,
   for (DimsType i = 0; i < kNodeRegions; ++i) {
     // NOTE: iterate through non-empty partitions, put them into the
     // position identified by non_empty_node
-    tree_nodes[i] = SerialBuildRecursive(In.cut(start, start + sums[i]),
-                                         Out.cut(start, start + sums[i]),
-                                         box_seq[i], checked_duplicate);
+    tree_nodes[i] = SerialBuildRecursive(
+        In.cut(start, start + sums[i]), Out.cut(start, start + sums[i]),
+        Interior::GetBoxByRegionId(i, splitter, box), checked_duplicate);
     start += sums[i];
   }
 
-  return AllocInteriorNode<Interior>(tree_nodes, split, AugType());
+  return AllocInteriorNode<Interior>(tree_nodes, splitter, AugType());
 }
 
 template <typename Point, typename SplitRule, uint_fast8_t kMD,

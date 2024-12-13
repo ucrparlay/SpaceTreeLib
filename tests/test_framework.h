@@ -10,16 +10,16 @@
 #include "common/geometryIO.h"
 #include "common/parse_command_line.h"
 #include "common/time_loop.h"
-#include "pstp/base_tree.h"
-#include "pstp/dependence/splitter.h"
-#include "pstp/kd_tree.h"
-#include "pstp/orth_tree.h"
-#include "pstp/r_tree.h"
 #include "parlay/internal/group_by.h"
 #include "parlay/monoid.h"
 #include "parlay/parallel.h"
 #include "parlay/primitives.h"
 #include "parlay/slice.h"
+#include "pstp/base_tree.h"
+#include "pstp/dependence/splitter.h"
+#include "pstp/kd_tree.h"
+#include "pstp/orth_tree.h"
+#include "pstp/r_tree.h"
 
 #ifdef CCP
 using Coord = float;
@@ -1073,37 +1073,49 @@ struct wrapper {
     }
   }
 
+  // NOTE: Trees
   struct QuadTree {
     template <class Point>
     struct Desc {
-      using TreeType = pstp::OrthTree<Point, pstp::RotateDim<Point>, 2, 6>;
+      using TreeType = pstp::OrthTree<
+          Point,
+          pstp::SplitRule<pstp::RotateDim<Point>, pstp::SpatialMedian<Point>>,
+          2, 6>;
     };
   };
   struct OctTree {
     template <class Point>
     struct Desc {
-      using TreeType = pstp::OrthTree<Point, pstp::RotateDim<Point>, 3, 6>;
+      using TreeType = pstp::OrthTree<
+          Point,
+          pstp::SplitRule<pstp::RotateDim<Point>, pstp::SpatialMedian<Point>>,
+          3, 6>;
     };
   };
   struct OrthTree {
     template <class Point>
     struct Desc {
-      using TreeType =
-          pstp::OrthTree<Point, pstp::RotateDim<Point>, Point::GetDim(),
-                         OrthGetBuildDepthOnce(Point::GetDim())>;
+      using TreeType = pstp::OrthTree<
+          Point,
+          pstp::SplitRule<pstp::RotateDim<Point>, pstp::SpatialMedian<Point>>,
+          Point::GetDim(), OrthGetBuildDepthOnce(Point::GetDim())>;
     };
   };
   struct KDtree {
     template <class Point>
     struct Desc {
-      using TreeType = pstp::KdTree<Point, pstp::MaxStretchDim<Point>>;
+      using TreeType =
+          pstp::KdTree<Point, pstp::SplitRule<pstp::MaxStretchDim<Point>,
+                                              pstp::ObjectMedian<Point>>>;
       // using TreeType = pstp::KdTree<Point, pstp::RotateDim<Point>>;
     };
   };
   struct RTree {
     template <class Point>
     struct Desc {
-      using TreeType = pstp::RTree<Point, pstp::MaxStretchDim<Point>>;
+      using TreeType =
+          pstp::RTree<Point, pstp::SplitRule<pstp::MaxStretchDim<Point>,
+                                             pstp::ObjectMedian<Point>>>;
       // using TreeType = pstp::KdTree<Point, pstp::RotateDim<Point>>;
     };
   };
