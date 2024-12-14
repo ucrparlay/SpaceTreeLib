@@ -123,8 +123,8 @@ struct OrthTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::OrthInteriorNode
       bx.first.pnt[split[deep].second] = split[deep].first;
     });
 
-    ComputeSubregionsRec(box_seq.cut(0, n / 2), deep + 1);
-    ComputeSubregionsRec(box_seq.cut(n / 2, n), deep + 1);
+    ComputeSubregionsRec(box_seq.cut(0, n / 2), split, deep + 1);
+    ComputeSubregionsRec(box_seq.cut(n / 2, n), split, deep + 1);
     return;
   }
 
