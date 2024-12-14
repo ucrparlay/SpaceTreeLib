@@ -22,7 +22,7 @@
 #include "pstp/r_tree.h"
 
 #ifdef CCP
-using Coord = float;
+using Coord = long;
 #else
 using Coord = double;
 #endif  // CCP
@@ -1105,8 +1105,11 @@ struct wrapper {
     template <class Point>
     struct Desc {
       using TreeType =
-          pstp::KdTree<Point, pstp::SplitRule<pstp::MaxStretchDim<Point>,
-                                              pstp::ObjectMedian<Point>>>;
+          pstp::KdTree<Point, pstp::SplitRule<pstp::RotateDim<Point>,
+                                              pstp::SpatialMedian<Point>>>;
+      // using TreeType =
+      //     pstp::KdTree<Point, pstp::SplitRule<pstp::MaxStretchDim<Point>,
+      //                                         pstp::ObjectMedian<Point>>>;
       // using TreeType = pstp::KdTree<Point, pstp::RotateDim<Point>>;
     };
   };

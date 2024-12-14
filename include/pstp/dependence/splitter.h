@@ -113,9 +113,10 @@ struct BaseSplitPartitionRule {
   using Coord = BT::Coord;
   using HyperPlane = BT::HyperPlane;
   using PointsIter = BT::PointsIter;
+  using IterHyperPair = std::pair<PointsIter, std::optional<HyperPlane>>;
 
-  constexpr virtual PointsIter const SplitInput(Slice In, DimsType const dim,
-                                                Box const& box) const = 0;
+  constexpr virtual IterHyperPair const SplitInput(Slice In, DimsType const dim,
+                                                   Box const& box) const = 0;
   constexpr virtual HyperPlane const SplitSample(Slice In, DimsType const dim,
                                                  Box const& box) const = 0;
 };
@@ -131,10 +132,11 @@ struct ObjectMedian : BaseSplitPartitionRule<Point> {
   using Num = BSR::Num;
   using PointsIter = BSR::PointsIter;
   using HyperPlane = BSR::HyperPlane;
+  using IterHyperPair = BSR::IterHyperPair;
 
   void ObjectMedianTag() {}
 
-  constexpr PointsIter const SplitInput(
+  constexpr IterHyperPair const SplitInput(
       Slice In, DimsType const dim,
       [[maybe_unused]] Box const& box) const override {
     size_t n = In.size();
@@ -143,20 +145,38 @@ struct ObjectMedian : BaseSplitPartitionRule<Point> {
                                return Num::Lt(p1.pnt[dim], p2.pnt[dim]);
                              });
 
-    std::ranges::subrange _2ndGroup = std::ranges::partition(
-        In.begin(), In.begin() + n / 2, [&](Point const& p) {
-          return Num::Lt(p.pnt[dim], In[n / 2].pnt[dim]);
-        });
+    auto split_iter =
+        std::ranges::partition(In.begin(), In.begin() + n / 2,
+                               [&](Point const& p) {
+                                 return Num::Lt(p.pnt[dim], In[n / 2].pnt[dim]);
+                               })
+            .begin();
 
-    if (_2ndGroup.begin() == In.begin()) {  // NOTE: handle duplicated medians
-      _2ndGroup = std::ranges::partition(
-          In.begin() + n / 2, In.end(), [&](Point const& p) {
-            return Num::Eq(p.pnt[dim], In[n / 2].pnt[dim]);
-          });  // NOTE: now all duplicated median is on the left
+    if (split_iter == In.begin()) {  // NOTE: handle duplicated medians
+      split_iter =
+          std::ranges::partition(In.begin() + n / 2, In.end(),
+                                 [&](Point const& p) {
+                                   return Num::Eq(p.pnt[dim],
+                                                  In[n / 2].pnt[dim]);
+                                 })
+              .begin();  // NOTE: now all duplicated median is on the left
     }
-    return _2ndGroup.begin();
+    // return split_iter;
+    if (split_iter <= In.begin() + n / 2) {  // NOTE: split is on left half
+      return IterHyperPair(split_iter, HyperPlane(In[n / 2].pnt[dim], dim));
+    } else if (split_iter != In.end()) {  // NOTE: split is on right half
+      auto min_elem_iter = std::ranges::min_element(
+          split_iter, In.end(), [&](Point const& p1, Point const& p2) {
+            return Num::Lt(p1.pnt[dim], p2.pnt[dim]);
+          });
+      return IterHyperPair(split_iter,
+                           HyperPlane(min_elem_iter->pnt[dim], dim));
+    } else {  // NOTE: all the same
+      return IterHyperPair(split_iter, std::nullopt);
+    }
   }
 
+  // TODO: the sample may handle the duplicates as well
   constexpr HyperPlane const SplitSample(
       Slice In, DimsType const dim,
       [[maybe_unused]] Box const& box) const override {
@@ -180,17 +200,22 @@ struct SpatialMedian : BaseSplitPartitionRule<Point> {
   using Num = BSR::Num;
   using PointsIter = BSR::PointsIter;
   using HyperPlane = BSR::HyperPlane;
+  using IterHyperPair = BSR::IterHyperPair;
 
   void SpatialMedianTag() {}
 
   constexpr PointsIter const SplitInput(Slice In, DimsType const dim,
                                         Box const& box) const override {
-    return std::ranges::partition(In,
-                                  [&](Point const& p) {
-                                    return Num::Lt(p.pnt[dim],
-                                                   BT::GetBoxMid(dim, box));
-                                  })
-        .begin();
+    auto split_iter = std::ranges::partition(In, [&](Point const& p) {
+                        return Num::Lt(p.pnt[dim], BT::GetBoxMid(dim, box));
+                      }).begin();
+
+    if (split_iter == In.begin() || split_iter == In.end()) {
+      return IterHyperPair(split_iter, std::nullopt);
+    } else {
+      return IterHyperPair(split_iter,
+                           HyperPlane(BT::GetBoxMid(dim, box), dim));
+    }
   }
 
   constexpr HyperPlane const SplitSample([[maybe_unused]] Slice In,

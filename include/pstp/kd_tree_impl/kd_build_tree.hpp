@@ -80,27 +80,19 @@ Node* KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::SerialBuildRecursive(
   if (n <= BT::kLeaveWrap) return AllocNormalLeafNode<Slice, Leaf>(In);
 
   DimsType d = split_rule_.FindCuttingDimension(box, dim);
-  PointsIter split_iter = split_rule_.SplitInput(In, d, box);
+  auto [split_iter, split] = split_rule_.SplitInput(In, d, box);
 
-  Splitter split;
-
-  if (split_iter <= In.begin() + n / 2) {  // NOTE: split is on left half
-    split = Splitter(In[n / 2].pnt[d], d);
-  } else if (split_iter != In.end()) {  // NOTE: split is on right half
-    auto min_elem_iter = std::ranges::min_element(
-        split_iter, In.end(), [&](Point const& p1, Point const& p2) {
-          return Num::Lt(p1.pnt[d], p2.pnt[d]);
-        });
-    split = Splitter(min_elem_iter->pnt[d], d);
-  } else if (In.end() == std::ranges::find_if_not(In, [&](Point const& p) {
-               return p.SameDimension(In[0]);
-             })) {  // NOTE: check whether all elements are identical
-    return AllocDummyLeafNode<Slice, Leaf>(In);
-  } else {  // NOTE: current dim d is same but other dims are not
-    // WARN: this will break the rotate dimension mannar
-    auto [new_box, new_dim] = split_rule_.SwitchDimension(In, d, box);
-    assert(IsMaxStretchSplit<SplitRule> || new_dim != d);
-    return SerialBuildRecursive(In, Out, new_dim, new_box);
+  if (!split.has_value()) {
+    if (In.end() == std::ranges::find_if_not(In, [&](Point const& p) {
+          return p.SameDimension(In[0]);
+        })) {  // NOTE: check whether all elements are identical
+      return AllocDummyLeafNode<Slice, Leaf>(In);
+    } else {  // NOTE: current dim d is same but other dims are not
+      // WARN: this will break the rotate dimension mannar
+      auto [new_box, new_dim] = split_rule_.SwitchDimension(In, d, box);
+      assert(IsMaxStretchSplit<SplitRule> || new_dim != d);
+      return SerialBuildRecursive(In, Out, new_dim, new_box);
+    }
   }
 
   assert(std::ranges::all_of(In.begin(), split_iter, [&](Point& p) {
@@ -130,8 +122,8 @@ Node* KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BuildRecursive(
     Slice In, Slice Out, DimsType dim, Box const& bx) {
   assert(In.size() == 0 || BT::WithinBox(BT::GetBox(In), bx));
 
-  // if (In.size()) {
-  if (In.size() <= BT::kSerialBuildCutoff) {
+  if (In.size()) {
+    // if (In.size() <= BT::kSerialBuildCutoff) {
     return SerialBuildRecursive(In, Out, dim, bx);
   }
 
