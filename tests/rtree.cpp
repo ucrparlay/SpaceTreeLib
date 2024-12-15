@@ -249,79 +249,58 @@ int main(int argc, char* argv[]) {
 
   char* input_file_path = P.getOptionValue("-p");
   int K = P.getOptionIntValue("-k", 100);
-  int kDim = P.getOptionIntValue("-d", 3);
+  int dims = P.getOptionIntValue("-d", 3);
   size_t N = P.getOptionLongValue("-n", -1);
-  int kTag = P.getOptionIntValue("-t", 1);
-  int kRounds = P.getOptionIntValue("-r", 3);
-  int kQueryType = P.getOptionIntValue("-q", 0);
+  int tags = P.getOptionIntValue("-t", 1);
+  int rounds = P.getOptionIntValue("-r", 3);
+  int query_type = P.getOptionIntValue("-q", 0);
   int read_insert_file = P.getOptionIntValue("-i", 1);
-  int kSummary = P.getOptionIntValue("-s", 0);
+  int summary = P.getOptionIntValue("-s", 0);
   // int tree_type = P.getOptionIntValue("-T", 0);
 
-  auto run_test = [&]<class Wrapper>(Wrapper) {
-    auto run = [&](auto dim_wrapper) {
-      constexpr auto const kDim = decltype(dim_wrapper)::value;
-      using PointTypeAlias = PointType<Coord, kDim>;
-      using Points = parlay::sequence<PointTypeAlias>;
-      using Desc = typename Wrapper::template Desc<PointTypeAlias>;
+  auto run = [&]<typename TreeWrapper>() {
+    using Point = typename TreeWrapper::Point;
+    using Points = parlay::sequence<Point>;
+    constexpr auto kDim = Point::GetDim();
 
-      std::string name, insert_file_path = "";
-      Points wp, wi;
+    std::string name, insert_file_path = "";
+    Points wp, wi;
 
-      if (input_file_path != NULL) {  // NOTE: read main Points
-        name = std::string(input_file_path);
-        name = name.substr(name.rfind("/") + 1);
-        std::cout << name << " \n";
-        auto [n, d] = read_points<PointTypeAlias>(input_file_path, wp, K);
-        N = n;
-        assert(d == kDim);
-      }
-
-      if (read_insert_file == 1) {  // NOTE: read Points to be inserted
-        int id = std::stoi(name.substr(0, name.find_first_of('.')));
-        id = (id + 1) % 3;  // WARN: MOD graph number used to test
-        if (!id) id++;
-        int pos = std::string(input_file_path).rfind("/") + 1;
-        insert_file_path = std::string(input_file_path).substr(0, pos) +
-                           std::to_string(id) + ".in";
-        [[maybe_unused]] auto [n, d] =
-            read_points<PointTypeAlias>(insert_file_path.c_str(), wi, K);
-        assert(d == kDim);
-      }
-
-      constexpr std::array<size_t, 5> const kMaxEleArr = {2, 4, 8, 32, 100};
-      auto callTestRtreeParallel =
-          [&]<size_t... Is>(std::index_sequence<Is...>) {
-            (TestRtreeParallel<Desc,
-                               bg::model::point<Coord, kDim, bg::cs::cartesian>,
-                               PointTypeAlias, kMaxEleArr[Is]>(
-                 kDim, wp, wi, N, K, kRounds, kTag, kQueryType, kSummary),
-             ...);
-          };
-      callTestRtreeParallel(std::make_index_sequence<kMaxEleArr.size()>{});
-      // TestRtreeParallel<Desc>(
-      //     kDim, wp, wi, N, K, kRounds, kTag, kQueryType, kSummary);
-    };
-
-    if (kTag == -1) {
-      // NOTE: serial run
-      ;
-    } else if (kDim == 2) {
-      run(std::integral_constant<int, 2>{});
-    } else if (kDim == 3) {
-      run(std::integral_constant<int, 3>{});
+    if (input_file_path != NULL) {  // NOTE: read main Points
+      name = std::string(input_file_path);
+      name = name.substr(name.rfind('/') + 1);
+      std::cout << name << " \n";
+      auto [n, d] = read_points<Point>(input_file_path, wp, K);
+      N = n;
+      assert(d == kDim);
     }
-    // } else if (kDim == 5) {
-    //     run(std::integral_constant<int, 5>{});
-    // } else if (kDim == 7) {
-    //     run(std::integral_constant<int, 7>{});
-    // } else if (kDim == 9) {
-    //     run(std::integral_constant<int, 9>{});
-    // } else if (kDim == 10) {
-    //     run(std::integral_constant<int, 10>{});
-    // }
+
+    if (read_insert_file == 1) {  // NOTE: read Points to be inserted
+      int id = std::stoi(name.substr(0, name.find_first_of('.')));
+      id = (id + 1) % 3;  // WARN: MOD graph number used to test
+      if (!id) id++;
+      auto pos = std::string(input_file_path).rfind('/') + 1;
+      insert_file_path = std::string(input_file_path).substr(0, pos) +
+                         std::to_string(id) + ".in";
+      [[maybe_unused]] auto [n, d] =
+          read_points<Point>(insert_file_path.c_str(), wi, K);
+      assert(d == kDim);
+    }
+
+    constexpr std::array<size_t, 5> const kMaxEleArr = {2, 4, 8, 32, 100};
+    auto callTestRtreeParallel = [&]<size_t... Is>(std::index_sequence<Is...>) {
+      (TestRtreeParallel<TreeWrapper,
+                         bg::model::point<Coord, kDim, bg::cs::cartesian>,
+                         Point, kMaxEleArr[Is]>(kDim, wp, wi, N, K, rounds,
+                                                tags, query_type, summary),
+       ...);
+    };
+    callTestRtreeParallel(std::make_index_sequence<kMaxEleArr.size()>{});
+    // TestRtreeParallel<Desc>(
+    //     kDim, wp, wi, N, K, kRounds, kTag, kQueryType, kSummary);
   };
 
-  run_test(wrapper::KDtree{});  // providing the data types
+  Wrapper::Apply(0, dims, 0, run);
+
   return 0;
 }

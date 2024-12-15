@@ -61,15 +61,6 @@ class KdTree
   using InnerTree = typename BT::template InnerTree<Leaf, Interior>;
   using BoxCut = typename BT::BoxCut;
 
-  // NOTE: expose basetree interface
-  using BT::GetAveTreeHeight;
-  using BT::GetBox;
-  using BT::GetMaxTreeDepth;
-  using BT::GetRoot;
-  using BT::GetRootBox;
-  using BT::SetRoot;
-  using BT::Validate;
-
   template <typename Leaf, typename Interior, bool granularity,
             typename... Args>
   friend Node* BT::RebuildSingleTree(Node* T, Args&&... args);
@@ -138,6 +129,8 @@ class KdTree
   Node* SerialBuildRecursive(Slice In, Slice Out, DimsType dim, Box const& bx);
 
   void Build_(Slice In);
+
+  constexpr static char const* GetTreeName() { return "KdTree"; }
 
   SplitRule split_rule_;
 };

@@ -40,6 +40,7 @@ struct MaxStretchDim : BaseSplitDimRule<Point> {
   using HyperPlane = BT::HyperPlane;
 
   void MaxStretchTag() {}
+  static std::string GetName() { return "MaxStretchDim"; }
 
   constexpr DimsType const FindCuttingDimension(
       Box const& bx, [[maybe_unused]] DimsType const dim) const override {
@@ -80,6 +81,7 @@ struct RotateDim : BaseSplitDimRule<Point> {
   using HyperPlane = BT::HyperPlane;
 
   void RotateDimTag() {}
+  static std::string GetName() { return "RotateDim"; }
 
   constexpr DimsType const FindCuttingDimension(
       [[maybe_unused]] Box const& bx, DimsType const dim) const override {
@@ -137,6 +139,7 @@ struct ObjectMedian : BaseSplitPartitionRule<Point> {
   using IterHyperPair = BSR::IterHyperPair;
 
   void ObjectMedianTag() {}
+  static std::string GetName() { return "ObjectMedian"; }
 
   constexpr IterHyperPair const SplitInput(
       Slice In, DimsType const dim,
@@ -205,6 +208,7 @@ struct SpatialMedian : BaseSplitPartitionRule<Point> {
   using IterHyperPair = BSR::IterHyperPair;
 
   void SpatialMedianTag() {}
+  static std::string GetName() { return "SpatialMedian"; }
 
   constexpr IterHyperPair const SplitInput(Slice In, DimsType const dim,
                                            Box const& box) const override {
@@ -231,6 +235,10 @@ template <class DimRule, class PartitionRule>
 struct SplitRule {
   using DimRuleType = DimRule;
   using PartitionRuleType = PartitionRule;
+
+  static std::string GetSplitName() {
+    return DimRule::GetName() + "-" + PartitionRule::GetName();
+  }
 
   // NOTE: dimension
   template <typename... Args>

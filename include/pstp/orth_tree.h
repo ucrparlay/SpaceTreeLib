@@ -142,6 +142,8 @@ class OrthTree
 
   Node* BatchDiffRecursive(Node* T, Slice In, Slice Out);
 
+  constexpr static char const* GetTreeName() { return "OrthTree"; }
+
   SplitRule split_rule_;
   size_t alloc_dummy_num_ = 0;
   size_t alloc_empty_num_ = 0;

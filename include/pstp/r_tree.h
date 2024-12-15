@@ -130,6 +130,8 @@ class RTree
 
   void Build_(Slice In);
 
+  constexpr static char const* GetTreeName() { return "RTree"; }
+
   SplitRule split_rule_;
 };
 

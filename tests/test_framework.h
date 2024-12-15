@@ -1058,6 +1058,24 @@ std::pair<size_t, int> read_points(char const* iFile,
   return std::make_pair(N, Dim);
 }
 
+template <typename TreeWrapper>
+void PrintTreeParam() {
+  std::cout << "Tree: " << TreeWrapper::TreeType::GetTreeName() << "\t"
+            << "Split: " << TreeWrapper::SplitRule::GetSplitName() << "\t"
+            << "BDO: " << TreeWrapper::TreeType::GetBuildDepthOnce() << "\t"
+            << "Inba: " << TreeWrapper::TreeType::GetImbalanceRatio() << "\t";
+
+  if constexpr (std::is_integral_v<typename TreeWrapper::Point::Coord>) {
+    std::cout << "Coord: integer"
+              << "\t";
+  } else if (std::is_floating_point_v<typename TreeWrapper::Point::Coord>) {
+    std::cout << "Coord: float"
+              << "\t";
+  }
+  std::cout << "\n" << std::flush;
+  return;
+}
+
 struct Wrapper {
   // NOTE: determine the build depth once for the orth tree
   static consteval uint8_t OrthGetBuildDepthOnce(uint8_t const dim) {
@@ -1074,23 +1092,26 @@ struct Wrapper {
   }
 
   // NOTE: Trees
-  template <class PointType, class SplitRule>
+  template <class PointType, class SplitRuleType>
   struct OrthTreeWrapper {
     using Point = PointType;
+    using SplitRule = SplitRuleType;
     using TreeType =
         typename pstp::OrthTree<Point, SplitRule, Point::GetDim(),
                                 OrthGetBuildDepthOnce(Point::GetDim())>;
   };
 
-  template <class PointType, class SplitRule>
+  template <class PointType, class SplitRuleType>
   struct KdTreeWrapper {
     using Point = PointType;
+    using SplitRule = SplitRuleType;
     using TreeType = typename pstp::KdTree<Point, SplitRule>;
   };
 
-  template <class PointType, class SplitRule>
+  template <class PointType, class SplitRuleType>
   struct RTreeWrapper {
     using Point = PointType;
+    using SplitRule = SplitRuleType;
     using TreeType = typename pstp::RTree<Point, SplitRule>;
   };
 
@@ -1110,18 +1131,22 @@ struct Wrapper {
 
     auto run_with_split_type = [&]<typename Point>() {
       if (!(split_type & (1 << 0)) && !(split_type & (1 << 1))) {
+        // NOTE: 0 -> max_stretch + object_mid
         build_tree_type.template
         operator()<Point, pstp::SplitRule<pstp::MaxStretchDim<Point>,
                                           pstp::ObjectMedian<Point>>>();
       } else if ((split_type & (1 << 0)) && !(split_type & (1 << 1))) {
+        // NOTE: 1 -> rotate_dim + object_mid
         build_tree_type.template
         operator()<Point, pstp::SplitRule<pstp::RotateDim<Point>,
                                           pstp::ObjectMedian<Point>>>();
       } else if (!(split_type & (1 << 0)) && (split_type & (1 << 1))) {
+        // NOTE: 2 -> max_stretch + spatial_median
         build_tree_type.template
         operator()<Point, pstp::SplitRule<pstp::MaxStretchDim<Point>,
                                           pstp::SpatialMedian<Point>>>();
       } else if ((split_type & (1 << 0)) && (split_type & (1 << 1))) {
+        // NOTE: 3 -> rotate + spatial_median
         build_tree_type.template
         operator()<Point, pstp::SplitRule<pstp::RotateDim<Point>,
                                           pstp::SpatialMedian<Point>>>();

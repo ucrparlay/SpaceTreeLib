@@ -341,12 +341,14 @@ class BaseTree {
   void CountTreeHeights(Node* T, size_t deep, size_t& idx,
                         parlay::sequence<size_t>& heights);
 
-  // NOTE: interfaces
-  inline void SetRoot(Node* root) { this->root_ = root; }
+  // NOTE: param interfaces
+  void SetRoot(Node* root) { this->root_ = root; }
 
-  inline Node* GetRoot() { return this->root_; }
+  Node* GetRoot() { return this->root_; }
 
-  inline Box GetRootBox() { return this->tree_box_; }
+  Box GetRootBox() { return this->tree_box_; }
+
+  consteval static auto GetBuildDepthOnce() { return kBuildDepthOnce; }
 
  protected:
   Node* root_ = nullptr;

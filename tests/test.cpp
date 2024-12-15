@@ -141,76 +141,52 @@ int main(int argc, char* argv[]) {
 
   char* input_file_path = P.getOptionValue("-p");
   int K = P.getOptionIntValue("-k", 100);
-  int kDim = P.getOptionIntValue("-d", 3);
+  int dims = P.getOptionIntValue("-d", 3);
   size_t N = P.getOptionLongValue("-n", -1);
-  int kTag = P.getOptionIntValue("-t", 1);
-  int kRounds = P.getOptionIntValue("-r", 3);
-  int kQueryType = P.getOptionIntValue("-q", 0);
+  int tag = P.getOptionIntValue("-t", 1);
+  int rounds = P.getOptionIntValue("-r", 3);
+  int query_type = P.getOptionIntValue("-q", 0);
   int read_insert_file = P.getOptionIntValue("-i", 1);
-  int kSummary = P.getOptionIntValue("-s", 0);
+  int summary = P.getOptionIntValue("-s", 0);
   int tree_type = P.getOptionIntValue("-T", 0);
+  int split_type = P.getOptionIntValue("-l", 0);
 
-  auto run_test = [&]<class Wrapper>(Wrapper) {
-    auto run = [&](auto dim_wrapper) {
-      constexpr auto const dims = decltype(dim_wrapper)::value;
-      using PointTypeAlias = PointType<Coord, dims>;
-      using Points = parlay::sequence<PointTypeAlias>;
-      using Desc = typename Wrapper::template Desc<PointTypeAlias>;
+  auto run = [&]<typename TreeWrapper>() {
+    using Point = typename TreeWrapper::Point;
+    using Points = parlay::sequence<Point>;
+    constexpr auto kDim = Point::GetDim();
 
-      std::string name, insert_file_path = "";
-      Points wp, wi;
+    PrintTreeParam<TreeWrapper>();
 
-      if (input_file_path != NULL) {  // NOTE: read main Points
-        name = std::string(input_file_path);
-        name = name.substr(name.rfind("/") + 1);
-        std::cout << name << " ";
-        auto [n, d] = read_points<PointTypeAlias>(input_file_path, wp, K);
-        N = n;
-        assert(d == dims);
-      }
+    std::string name, insert_file_path = "";
+    Points wp, wi;
 
-      if (read_insert_file == 1) {  // NOTE: read Points to be inserted
-        int id = std::stoi(name.substr(0, name.find_first_of('.')));
-        id = (id + 1) % 3;  // WARN: MOD graph number used to test
-        if (!id) id++;
-        int pos = std::string(input_file_path).rfind("/") + 1;
-        insert_file_path = std::string(input_file_path).substr(0, pos) +
-                           std::to_string(id) + ".in";
-        [[maybe_unused]] auto [n, d] =
-            read_points<PointTypeAlias>(insert_file_path.c_str(), wi, K);
-        assert(d == dims);
-      }
-
-      TestSpacialTree<Desc>(dims, wp, wi, N, K, kRounds, insert_file_path, kTag,
-                            kQueryType, kSummary);
-    };
-
-    if (kTag == -1) {
-      // NOTE: serial run
-      ;
-    } else if (kDim == 2) {
-      run(std::integral_constant<int, 2>{});
-    } else if (kDim == 3) {
-      run(std::integral_constant<int, 3>{});
-    } else if (kDim == 5) {
-      run(std::integral_constant<int, 5>{});
-    } else if (kDim == 7) {
-      run(std::integral_constant<int, 7>{});
+    if (input_file_path != NULL) {  // NOTE: read main Points
+      name = std::string(input_file_path);
+      name = name.substr(name.rfind('/') + 1);
+      std::cout << name << " ";
+      auto [n, d] = read_points<Point>(input_file_path, wp, K);
+      N = n;
+      assert(d == kDim);
     }
-    // else if (kDim == 9) {
-    //     run(std::integral_constant<int, 9>{});
-    // } else if (kDim == 10) {
-    //     run(std::integral_constant<int, 10>{});
-    // }
+
+    if (read_insert_file == 1) {  // NOTE: read Points to be inserted
+      int id = std::stoi(name.substr(0, name.find_first_of('.')));
+      id = (id + 1) % 3;  // WARN: MOD graph number used to test
+      if (!id) id++;
+      auto pos = std::string(input_file_path).rfind('/') + 1;
+      insert_file_path = std::string(input_file_path).substr(0, pos) +
+                         std::to_string(id) + ".in";
+      [[maybe_unused]] auto [n, d] =
+          read_points<Point>(insert_file_path.c_str(), wi, K);
+      assert(d == kDim);
+    }
+
+    TestSpacialTree<TreeWrapper, Point>(
+        kDim, wp, wi, N, K, rounds, insert_file_path, tag, query_type, summary);
   };
 
-  if (tree_type == 0) {
-    run_test(wrapper::KDtree{});
-  } else if (tree_type == 1) {
-    run_test(wrapper::OrthTree{});
-  } else if (tree_type == 2) {
-    run_test(wrapper::RTree{});
-  }
+  Wrapper::Apply(tree_type, dims, split_type, run);
 
   return 0;
 }

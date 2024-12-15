@@ -229,6 +229,8 @@ int main(int argc, char* argv[]) {
     using Points = parlay::sequence<Point>;
     constexpr auto kDim = Point::GetDim();
 
+    PrintTreeParam<TreeWrapper>();
+
     std::string name, insert_file_path = "";
     Points wp, wi;
 
