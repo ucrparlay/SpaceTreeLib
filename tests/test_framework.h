@@ -1058,7 +1058,7 @@ std::pair<size_t, int> read_points(char const* iFile,
   return std::make_pair(N, Dim);
 }
 
-struct wrapper {
+struct Wrapper {
   // NOTE: determine the build depth once for the orth tree
   static consteval uint8_t OrthGetBuildDepthOnce(uint8_t const dim) {
     if (dim == 2 || dim == 3) {
@@ -1074,52 +1074,76 @@ struct wrapper {
   }
 
   // NOTE: Trees
-  struct QuadTree {
-    template <class Point>
-    struct Desc {
-      using TreeType = pstp::OrthTree<
-          Point,
-          pstp::SplitRule<pstp::RotateDim<Point>, pstp::SpatialMedian<Point>>,
-          2, 6>;
-    };
+  template <class PointType, class SplitRule>
+  struct OrthTreeWrapper {
+    using Point = PointType;
+    using TreeType =
+        typename pstp::OrthTree<Point, SplitRule, Point::GetDim(),
+                                OrthGetBuildDepthOnce(Point::GetDim())>;
   };
-  struct OctTree {
-    template <class Point>
-    struct Desc {
-      using TreeType = pstp::OrthTree<
-          Point,
-          pstp::SplitRule<pstp::RotateDim<Point>, pstp::SpatialMedian<Point>>,
-          3, 6>;
-    };
+
+  template <class PointType, class SplitRule>
+  struct KdTreeWrapper {
+    using Point = PointType;
+    using TreeType = typename pstp::KdTree<Point, SplitRule>;
   };
-  struct OrthTree {
-    template <class Point>
-    struct Desc {
-      using TreeType = pstp::OrthTree<
-          Point,
-          pstp::SplitRule<pstp::RotateDim<Point>, pstp::SpatialMedian<Point>>,
-          Point::GetDim(), OrthGetBuildDepthOnce(Point::GetDim())>;
-    };
+
+  template <class PointType, class SplitRule>
+  struct RTreeWrapper {
+    using Point = PointType;
+    using TreeType = typename pstp::RTree<Point, SplitRule>;
   };
-  struct KDtree {
-    template <class Point>
-    struct Desc {
-      using TreeType =
-          pstp::KdTree<Point, pstp::SplitRule<pstp::RotateDim<Point>,
-                                              pstp::SpatialMedian<Point>>>;
-      // using TreeType =
-      //     pstp::KdTree<Point, pstp::SplitRule<pstp::MaxStretchDim<Point>,
-      //                                         pstp::ObjectMedian<Point>>>;
-      // using TreeType = pstp::KdTree<Point, pstp::RotateDim<Point>>;
+
+  // NOTE: Apply the dim and split rule
+  template <typename RunFunc>
+  static void Apply(int const tree_type, int const dim, int const split_type,
+                    RunFunc run) {
+    auto build_tree_type = [&]<typename Point, typename SplitRule>() {
+      if (tree_type == 0) {
+        run.template operator()<KdTreeWrapper<Point, SplitRule>>();
+      } else if (tree_type == 1) {
+        run.template operator()<OrthTreeWrapper<Point, SplitRule>>();
+      } else if (tree_type == 2) {
+        run.template operator()<RTreeWrapper<Point, SplitRule>>();
+      }
     };
-  };
-  struct RTree {
-    template <class Point>
-    struct Desc {
-      using TreeType =
-          pstp::RTree<Point, pstp::SplitRule<pstp::MaxStretchDim<Point>,
-                                             pstp::ObjectMedian<Point>>>;
-      // using TreeType = pstp::KdTree<Point, pstp::RotateDim<Point>>;
+
+    auto run_with_split_type = [&]<typename Point>() {
+      if (!(split_type & (1 << 0)) && !(split_type & (1 << 1))) {
+        build_tree_type.template
+        operator()<Point, pstp::SplitRule<pstp::MaxStretchDim<Point>,
+                                          pstp::ObjectMedian<Point>>>();
+      } else if ((split_type & (1 << 0)) && !(split_type & (1 << 1))) {
+        build_tree_type.template
+        operator()<Point, pstp::SplitRule<pstp::RotateDim<Point>,
+                                          pstp::ObjectMedian<Point>>>();
+      } else if (!(split_type & (1 << 0)) && (split_type & (1 << 1))) {
+        build_tree_type.template
+        operator()<Point, pstp::SplitRule<pstp::MaxStretchDim<Point>,
+                                          pstp::SpatialMedian<Point>>>();
+      } else if ((split_type & (1 << 0)) && (split_type & (1 << 1))) {
+        build_tree_type.template
+        operator()<Point, pstp::SplitRule<pstp::RotateDim<Point>,
+                                          pstp::SpatialMedian<Point>>>();
+      }
     };
-  };
+
+    if (dim == 2) {
+      run_with_split_type.template operator()<PointType<Coord, 2>>();
+    } else if (dim == 3) {
+      run_with_split_type.template operator()<PointType<Coord, 3>>();
+    } else if (dim == 5) {
+      run_with_split_type.template operator()<PointType<Coord, 5>>();
+    } else if (dim == 7) {
+      run_with_split_type.template operator()<PointType<Coord, 7>>();
+    }
+    // else if (dim == 9) {
+    //   run_with_split_type(std::integral_constant<int, 9>{});
+    // } else if (dim == 10) {
+    //   run_with_split_type(std::integral_constant<int, 10>{});
+    // } else {
+    //   std::cerr << "Unsupported dimension: " << dim << std::endl;
+    //   abort();
+    // }
+  }
 };

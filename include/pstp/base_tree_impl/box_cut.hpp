@@ -27,6 +27,8 @@ struct BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::BoxCut {
 
   inline Box const& GetBox() const { return box; }
 
+  inline HyperPlane const& GetHyperPlane() const { return hp; }
+
   Box box;
   Coord* mod_dim;
   HyperPlane hp;  // PARA: the split and the cutting dimension

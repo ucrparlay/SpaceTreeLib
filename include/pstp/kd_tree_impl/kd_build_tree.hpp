@@ -88,21 +88,18 @@ Node* KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::SerialBuildRecursive(
         })) {  // NOTE: check whether all elements are identical
       return AllocDummyLeafNode<Slice, Leaf>(In);
     } else {  // NOTE: current dim d is same but other dims are not
-      // WARN: this will break the rotate dimension mannar
-      auto [new_box, new_dim] = split_rule_.SwitchDimension(In, d, box);
-      assert(IsMaxStretchSplit<SplitRule> || new_dim != d);
-      return SerialBuildRecursive(In, Out, new_dim, new_box);
+      return split_rule_.HandlingUndivide(*this, In, Out, dim, box, split_iter);
     }
   }
 
   assert(std::ranges::all_of(In.begin(), split_iter, [&](Point& p) {
-    return Num::Lt(p.pnt[split.second], split.first);
+    return Num::Lt(p.pnt[split.value().second], split.value().first);
   }));
   assert(std::ranges::all_of(split_iter, In.end(), [&](Point& p) {
-    return Num::Geq(p.pnt[split.second], split.first);
+    return Num::Geq(p.pnt[split.value().second], split.value().first);
   }));
 
-  BoxCut box_cut(box, split, true);
+  BoxCut box_cut(box, split.value(), true);
 
   d = (d + 1) % BT::kDim;
   Node *L, *R;
@@ -113,7 +110,7 @@ Node* KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::SerialBuildRecursive(
   R = SerialBuildRecursive(In.cut(split_iter - In.begin(), n),
                            Out.cut(split_iter - In.begin(), n), d,
                            box_cut.GetSecondBoxCut());
-  return AllocInteriorNode<Interior>(L, R, split, AugType());
+  return AllocInteriorNode<Interior>(L, R, split.value(), AugType());
 }
 
 template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,

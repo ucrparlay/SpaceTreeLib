@@ -2,6 +2,8 @@
 #define PSTP_DEPENDENCE_SPLITTER_H
 
 #include "../base_tree.h"
+#include "dependence/concepts.h"
+#include "dependence/tree_node.h"
 
 namespace pstp {
 template <typename Point>
@@ -204,8 +206,8 @@ struct SpatialMedian : BaseSplitPartitionRule<Point> {
 
   void SpatialMedianTag() {}
 
-  constexpr PointsIter const SplitInput(Slice In, DimsType const dim,
-                                        Box const& box) const override {
+  constexpr IterHyperPair const SplitInput(Slice In, DimsType const dim,
+                                           Box const& box) const override {
     auto split_iter = std::ranges::partition(In, [&](Point const& p) {
                         return Num::Lt(p.pnt[dim], BT::GetBoxMid(dim, box));
                       }).begin();
@@ -227,6 +229,9 @@ struct SpatialMedian : BaseSplitPartitionRule<Point> {
 
 template <class DimRule, class PartitionRule>
 struct SplitRule {
+  using DimRuleType = DimRule;
+  using PartitionRuleType = PartitionRule;
+
   // NOTE: dimension
   template <typename... Args>
   auto FindCuttingDimension(Args&&... args) {
@@ -253,6 +258,52 @@ struct SplitRule {
   template <typename... Args>
   auto SplitSample(Args&&... args) {
     return partition_rule.SplitSample(std::forward<Args>(args)...);
+  }
+
+  // NOTE: cannot divide the points on @dim, while the points are not the same
+  template <typename Tree, typename Slice, typename DimsType, typename Box,
+            typename SplitIter>
+  auto HandlingUndivide(Tree& tree, Slice In, Slice Out, DimsType dim,
+                        Box const& box, SplitIter pre_split_iter) {
+    if constexpr (IsObjectMedianSplit<PartitionRule>) {
+      // NOTE: in object median, if current dimension is not divideable, then
+      // switch to another dimension then continue
+      auto [new_box, new_dim] = dim_rule.SwitchDimension(In, dim, box);
+      assert(IsMaxStretchDim<SplitRule> || new_dim != dim);
+      return tree.SerialBuildRecursive(In, Out, new_dim, new_box);
+    } else if constexpr (IsSpatialMedianSplit<PartitionRule>) {
+      // NOTE: in spatial median, then we simply reduce the box by half on
+      // current dim, then switch to next dim.
+      auto [new_box, new_dim] = dim_rule.SwitchDimension(In, dim, box);
+
+      assert(Tree::SameBox(new_box, box));
+      assert(pre_split_iter == In.begin() || pre_split_iter == In.end());
+
+      if constexpr (IsRotateDimSplit<DimRule> || IsMaxStretchDim<DimRule>) {
+        // TODO: add support for multi node
+        assert(IsBinaryNode<typename Tree::Interior>);
+
+        typename Tree::BoxCut box_cut(
+            box, typename Tree::Splitter(Tree::GetBoxMid(dim, box), dim),
+            pre_split_iter == In.end());
+
+        Node* L = tree.SerialBuildRecursive(In, Out, new_dim,
+                                            box_cut.GetFirstBoxCut());
+        Node* R = AllocEmptyLeafNode<Slice, typename Tree::Leaf>();
+
+        assert(Tree::WithinBox(Tree::GetBox(In), box_cut.GetBox()));
+
+        if (pre_split_iter != In.end()) {
+          std::ranges::swap(L, R);
+        }
+        return AllocInteriorNode<typename Tree::Interior>(
+            L, R, box_cut.GetHyperPlane(), typename Tree::AugType());
+      } else {
+        static_assert(false);
+      }
+    } else {
+      static_assert(false);
+    }
   }
 
   DimRule const dim_rule;

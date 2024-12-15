@@ -11,9 +11,9 @@ namespace pstp {
 template <typename Point, typename SplitRule, uint_fast8_t kMD = 2,
           uint_fast8_t kSkHeight = 6, uint_fast8_t kImbaRatio = 30>
 class OrthTree
-    : private BaseTree<Point,
-                       OrthTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>,
-                       kSkHeight, kImbaRatio> {
+    : public BaseTree<Point,
+                      OrthTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>,
+                      kSkHeight, kImbaRatio> {
  public:
   static constexpr size_t kSplitterNum = kMD;
   static constexpr size_t kNodeRegions = 1 << kMD;
@@ -113,7 +113,6 @@ class OrthTree
   template <typename Range>
   auto RangeQuery(Box const& query_box, Range&& Out);
 
- private:
   void Build_(Slice In);
 
   void Build_(Slice In, Box const& box);

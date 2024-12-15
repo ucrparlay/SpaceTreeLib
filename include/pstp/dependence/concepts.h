@@ -125,13 +125,23 @@ concept SupportsForceParallel = requires(T t) {
 };
 
 template <typename T>
-concept IsMaxStretchSplit = requires(T t) {
+concept IsMaxStretchDim = requires(T t) {
   { t.MaxStretchTag() } -> std::same_as<void>;
 };
 
 template <typename T>
 concept IsRotateDimSplit = requires(T t) {
   { t.RotateDimTag() } -> std::same_as<void>;
+};
+
+template <typename T>
+concept IsObjectMedianSplit = requires(T t) {
+  { t.ObjectMedianTag() } -> std::same_as<void>;
+};
+
+template <typename T>
+concept IsSpatialMedianSplit = requires(T t) {
+  { t.SpatialMedianTag() } -> std::same_as<void>;
 };
 
 struct FullCoveredTag {};

@@ -64,7 +64,7 @@ void OrthTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::SerialSplit(
     return;
   }
 
-  PointsIter split_iter = split_rule_.SplitInput(In, dim, box);
+  auto [split_iter, split] = split_rule_.SplitInput(In, dim, box);
 
   SerialSplit(In.cut(0, split_iter - In.begin()), dim + 1, idx << 1, box, sums);
   SerialSplit(In.cut(split_iter - In.begin(), In.size()), dim + 1, idx << 1 | 1,

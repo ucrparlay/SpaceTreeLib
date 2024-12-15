@@ -13,8 +13,8 @@ namespace pstp {
 template <typename Point, typename SplitRule, uint_fast8_t kSkHeight = 6,
           uint_fast8_t kImbaRatio = 30>
 class KdTree
-    : private BaseTree<Point, KdTree<Point, SplitRule, kSkHeight, kImbaRatio>,
-                       kSkHeight, kImbaRatio> {
+    : public BaseTree<Point, KdTree<Point, SplitRule, kSkHeight, kImbaRatio>,
+                      kSkHeight, kImbaRatio> {
  public:
   using BT = BaseTree<Point, KdTree<Point, SplitRule, kSkHeight, kImbaRatio>,
                       kSkHeight, kImbaRatio>;
@@ -127,7 +127,6 @@ class KdTree
   template <typename Range>
   auto RangeQuery(Box const& query_box, Range&& Out);
 
- private:
   void DivideRotate(Slice In, SplitterSeq& pivots, DimsType dim, BucketType idx,
                     BoxSeq& box_seq, Box const& bx);
 
