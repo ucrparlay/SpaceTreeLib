@@ -106,8 +106,7 @@ void BaseTree<Point, DerivedTree, kSkHeight,
   if constexpr (IsBinaryNode<Interior>) {
     Interior* TI = static_cast<Interior*>(T);
     if (TI->split.second != dim) {
-      std::cout << int(TI->split.second) << " " << int(dim) << " " << TI->size
-                << std::endl;
+      std::cout << int(TI->split.second) << " " << int(dim) << " " << TI->size;
     }
     assert(TI->split.second == dim);
     dim = (dim + 1) % kDim;
@@ -135,11 +134,11 @@ template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 template <typename Leaf, typename Interior, typename SplitRule>
 void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::Validate() {
-  std::cout << ">>> begin validate tree" << std::endl << std::flush;
+  std::cout << ">>> begin validate tree\n" << std::flush;
   if (LegalBox(CheckBox<Leaf, Interior>(this->root_, this->tree_box_))) {
-    std::cout << "Correct bounding Box" << std::endl << std::flush;
+    std::cout << "Correct bounding Box\n" << std::flush;
   } else {
-    std::cout << "wrong bounding Box" << std::endl << std::flush;
+    std::cout << "wrong bounding Box\n" << std::flush;
     abort();
   }
 
@@ -147,18 +146,19 @@ void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::Validate() {
   // For kdtree binary node, the dummy node may break the rotation manner,
   // since if current dimension is un-splitable, one has to switch to another
   // dimension
-  if constexpr (IsRotateDimSplit<SplitRule> && IsMultiNode<Interior>) {
+  if constexpr (IsRotateDimSplit<typename SplitRule::DimRuleType> &&
+                IsMultiNode<Interior>) {
     CheckTreeSameSequential<Leaf, Interior>(this->root_, 0);
-    std::cout << "Correct rotate dimension" << std::endl << std::flush;
+    std::cout << "Correct rotate dimension\n" << std::flush;
   }
 
   if (CheckSize<Leaf, Interior>(this->root_) == this->root_->size) {
-    std::cout << "Correct size" << std::endl << std::flush;
+    std::cout << "Correct size\n" << std::flush;
   } else {
-    std::cout << "wrong tree size" << std::endl << std::flush;
+    std::cout << "wrong tree size\n" << std::flush;
     abort();
   }
-  std::cout << "<<< end validate tree" << std::endl << std::flush;
+  std::cout << "<<< end validate tree\n" << std::flush;
   return;
 }
 

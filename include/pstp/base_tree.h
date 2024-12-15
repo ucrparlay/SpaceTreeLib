@@ -348,7 +348,9 @@ class BaseTree {
 
   Box GetRootBox() { return this->tree_box_; }
 
-  consteval static auto GetBuildDepthOnce() { return kBuildDepthOnce; }
+  consteval static auto GetBuildDepthOnce() {
+    return static_cast<int>(kBuildDepthOnce);
+  }
 
  protected:
   Node* root_ = nullptr;

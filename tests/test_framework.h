@@ -1060,17 +1060,15 @@ std::pair<size_t, int> read_points(char const* iFile,
 
 template <typename TreeWrapper>
 void PrintTreeParam() {
-  std::cout << "Tree: " << TreeWrapper::TreeType::GetTreeName() << "\t"
-            << "Split: " << TreeWrapper::SplitRule::GetSplitName() << "\t"
-            << "BDO: " << TreeWrapper::TreeType::GetBuildDepthOnce() << "\t"
-            << "Inba: " << TreeWrapper::TreeType::GetImbalanceRatio() << "\t";
+  std::cout << "Tree: " << TreeWrapper::TreeType::GetTreeName() << "; "
+            << "Split: " << TreeWrapper::SplitRule::GetSplitName() << "; "
+            << "BDO: " << TreeWrapper::TreeType::GetBuildDepthOnce() << "; "
+            << "Inba: " << TreeWrapper::TreeType::GetImbalanceRatio() << "; ";
 
   if constexpr (std::is_integral_v<typename TreeWrapper::Point::Coord>) {
-    std::cout << "Coord: integer"
-              << "\t";
+    std::cout << "Coord: integer" << "; ";
   } else if (std::is_floating_point_v<typename TreeWrapper::Point::Coord>) {
-    std::cout << "Coord: float"
-              << "\t";
+    std::cout << "Coord: float" << "; ";
   }
   std::cout << "\n" << std::flush;
   return;

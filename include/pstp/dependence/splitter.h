@@ -277,7 +277,7 @@ struct SplitRule {
       // NOTE: in object median, if current dimension is not divideable, then
       // switch to another dimension then continue
       auto [new_box, new_dim] = dim_rule.SwitchDimension(In, dim, box);
-      assert(IsMaxStretchDim<SplitRule> || new_dim != dim);
+      assert(IsMaxStretchDim<DimRule> || new_dim != dim);
       return tree.SerialBuildRecursive(In, Out, new_dim, new_box);
     } else if constexpr (IsSpatialMedianSplit<PartitionRule>) {
       // NOTE: in spatial median, then we simply reduce the box by half on
