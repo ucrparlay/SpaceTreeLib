@@ -1153,13 +1153,14 @@ struct Wrapper {
 
     if (dim == 2) {
       run_with_split_type.template operator()<PointType<Coord, 2>>();
-    } else if (dim == 3) {
-      run_with_split_type.template operator()<PointType<Coord, 3>>();
-    } else if (dim == 5) {
-      run_with_split_type.template operator()<PointType<Coord, 5>>();
-    } else if (dim == 7) {
-      run_with_split_type.template operator()<PointType<Coord, 7>>();
     }
+    // else if (dim == 3) {
+    //   run_with_split_type.template operator()<PointType<Coord, 3>>();
+    // } else if (dim == 5) {
+    //   run_with_split_type.template operator()<PointType<Coord, 5>>();
+    // } else if (dim == 7) {
+    //   run_with_split_type.template operator()<PointType<Coord, 7>>();
+    // }
     // else if (dim == 9) {
     //   run_with_split_type(std::integral_constant<int, 9>{});
     // } else if (dim == 10) {
