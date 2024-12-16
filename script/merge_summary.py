@@ -7,19 +7,28 @@ print(os.getcwd())
 path = "../benchmark"
 # benchmarks = ["uniform", "ss_varden"]
 benchmarks = ["uniform_bigint", "ss_varden_bigint"]
-storePrefix = "data/"
+store_prefix = "data/"
 Nodes = [1000000000]
 Dims = [2, 3]
 
-solverName = ["kd", "orth"]
-resMap = {
-    "kd": "res_0_summary.out",
-    "orth": "res_1_summary.out",
-    "r": "res_2_summary.out",
+solver_name = ["kd", "orth"]
+res_map = {
+    "kd": "res_0_",
+    "orth": "res_1_",
+    "r": "res_2_",
 }
+split_name = {"0", "1", "2", "3"}
+split_map = {
+    "0": "MaxStr/Obj",
+    "1": "Rot/Obj",
+    "2": "MaxStr/SpaMid",
+    "3": "Rot/SpaMid",
+}
+type = "summary"
 
 common = [
     "solver",
+    "split",
     "benchType",
     "nodes",
     "dims",
@@ -79,24 +88,28 @@ nodes_map = {
 prefix = [0] * len(files)
 
 
-def combine(P, file, csvWriter, solver, benchName, node, dim):
+def combine(P, file, csv_writer, solver, bench_name, node, dim, split):
     if not os.path.isfile(P):
         print("No file fonund: " + P)
         if solver == "zdtree":
-            csvWriter.writerow(
-                [solver, benchName, node, dim] + ["-"] * len(build_header)
+            csv_writer.writerow(
+                [solver, bench_name, node, dim] + ["-"] * len(build_header)
             )
         elif solver == "cgal":
-            csvWriter.writerow(
-                [solver, benchName, node, dim] + ["T"] * len(build_header)
+            csv_writer.writerow(
+                [solver, bench_name, node, dim] + ["T"] * len(build_header)
             )
         return
+
+    # NOTE: begin to read the file
     print(P)
     lines = open(P, "r").readlines()
     if len(lines) == 0:
         return
     sep_lines = []
-    for line in lines:
+    for index, line in enumerate(lines):
+        if index % 2 == 0:
+            continue
         l = " ".join(line.split())
         l = l.split(" ")
         sep_lines.append(l)
@@ -104,20 +117,23 @@ def combine(P, file, csvWriter, solver, benchName, node, dim):
     width = len(file_header[file])
     l = prefix[files.index(file)]
     r = l + width
-    num = len(lines)
+    num = int(len(lines) / 2)
     for i in range(0, len(sep_lines), num):
         line = [0.0] * width
+        # print(sep_lines[i])
         for j in range(i, num):
             for k in range(l, r):
+                # print(f"j: {j}, k: {k}, l: {l}, r: {r}")
                 line[k - l] = line[k - l] + float(sep_lines[j][k]) / num
 
-        csvWriter.writerow(
-            [solver, benchName, node, dim] + list(map(lambda x: round(x, 5), line))
+        csv_writer.writerow(
+            [solver, split_map[split], bench_name, node, dim]
+            + list(map(lambda x: round(x, 5), line))
         )
 
 
 def csvSetup(file):
-    csvFilePointer = open(storePrefix + file + ".csv", "w", newline="")
+    csvFilePointer = open(store_prefix + file + ".csv", "w", newline="")
     csvFilePointer.truncate()
     csvWriter = csv.writer(csvFilePointer)
     csvWriter.writerow(common + file_header[file])
@@ -144,20 +160,35 @@ if len(sys.argv) > 1 and int(sys.argv[1]) == 1:
         csvWriter, csvFilePointer = csvSetup(file)
         for bench in benchmarks:
             for dim in Dims:
-                for solver in solverName:
-                    for node in Nodes:
-                        P = (
-                            path
-                            + "/"
-                            + bench
-                            + "/"
-                            + str(node)
-                            + "_"
-                            + str(dim)
-                            + "/"
-                            + resMap[solver]
-                        )
-                        combine(P, file, csvWriter, solver, bench, nodes_map[node], dim)
+                for solver in solver_name:
+                    for split in split_name:
+                        for node in Nodes:
+                            P = (
+                                path
+                                + "/"
+                                + bench
+                                + "/"
+                                + str(node)
+                                + "_"
+                                + str(dim)
+                                + "/"
+                                + res_map[solver]
+                                + type
+                                + "_"
+                                + split
+                                + ".out"
+                            )
+                            combine(
+                                P,
+                                file,
+                                csvWriter,
+                                solver,
+                                bench,
+                                nodes_map[node],
+                                dim,
+                                split,
+                            )
         csvFilePointer.close()
 
-    # reorder()
+print(">>>ok, done")
+# reorder()

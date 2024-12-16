@@ -20,41 +20,51 @@ type = "query"
 
 #! order by test order
 files = []
-solverName = []
+solver_name = []
 
 if type == "batch_update":
-    solverName = ["test", "zdtree", "cgal"]
+    solver_name = ["test", "zdtree", "cgal"]
     files = ["build", "insert", "delete"]
     Dims = [3]
 elif type == "query":
     # solverName = ["kdtree", "orth", "r"]
-    solverName = ["kdtree", "orth"]
+    solver_name = ["kdtree", "orth"]
     files = ["build", "knn_3", "count_3", "rquery_3"]
     # files = ["build", "knn_3"]
     Dims = [2, 3]
 elif type == "summary":
-    solverName = ["kdtree", "orth"]
+    solver_name = ["kdtree", "orth"]
     files = ["build", "insert", "delete", "diff", "knn_1", "count_1", "rquery_1"]
     Dims = [2, 3]
 elif type == "quality":
-    solverName = ["test"]
+    solver_name = ["test"]
     files = ["build", "increBuild", "decreBuild", "increKNN"]
 elif type == "real_world":
-    solverName = ["test", "zdtree", "cgal", "LogTree", "BhlTree"]
+    solver_name = ["test", "zdtree", "cgal", "LogTree", "BhlTree"]
     files = ["real_world"]
 elif type == "count":
-    solverName = ["test"]
+    solver_name = ["test"]
     files = ["build", "count"]
     Dims = [2, 3, 5, 9]
 
-resMap = {
-    "kdtree": "res_0_" + type + ".out",
-    "orth": "res_1_" + type + ".out",
-    "r": "res_2_" + type + ".out",
+res_map = {
+    "kdtree": "res_0_",
+    "orth": "res_1_",
+    "r": "res_2_",
 }
+
+split_name = {"0", "1", "2", "3"}
+split_map = {
+    "0": "MaxStr/Obj",
+    "1": "Rot/Obj",
+    "2": "MaxStr/SpaMid",
+    "3": "Rot/SpaMid",
+}
+res_suffix = "_summary.out"
 
 common = [
     "solver",
+    "split",
     "benchType",
     "nodes",
     "dims",
@@ -122,14 +132,16 @@ nodes_map = {
 prefix = [0] * len(files)
 
 
-def combine(P, file, csvWriter, solver, benchName, node, dim):
+def combine(P, file, csv_writer, solver, bench_name, node, dim, split):
     if not os.path.isfile(P):
         print("No file found: " + P)
         return
 
     lines = open(P, "r").readlines()
     sep_lines = []
-    for line in lines:
+    for index, line in enumerate(lines):
+        if index % 2 == 0:
+            continue
         l = " ".join(line.split())
         l = l.split(" ")
         sep_lines.append(l)
@@ -140,7 +152,7 @@ def combine(P, file, csvWriter, solver, benchName, node, dim):
     for i in range(0, len(sep_lines)):
         if r > len(sep_lines[i]):
             print(
-                f"l ({l}), r ({r}), solver ({solver}), bench ({benchName}), node ({node}), dim ({dim})"
+                f"l ({l}), r ({r}), solver ({solver}), bench ({bench_name}), node ({node}), dim ({dim})"
             )
             print(f"len(sep_lines[{i}]): {len(sep_lines[i])}")
             raise ValueError(
@@ -148,7 +160,7 @@ def combine(P, file, csvWriter, solver, benchName, node, dim):
             )
 
     # num = 2 if solverName.index(solver)<=2 else 1
-    num = len(lines)
+    num = int(len(lines) / 2)
     for i in range(0, len(sep_lines), num):
         line = [0.0] * width
         for j in range(i, num):
@@ -157,8 +169,8 @@ def combine(P, file, csvWriter, solver, benchName, node, dim):
 
             # print([solver, benchName, node, dim] + list(map(lambda x: round(x, 5), line)))
 
-        csvWriter.writerow(
-            [solver, benchName, nodes_map[node], dim]
+        csv_writer.writerow(
+            [solver, split_map[split], bench_name, nodes_map[node], dim]
             + list(map(lambda x: round(x, 5), line))
         )
 
@@ -193,16 +205,23 @@ if len(sys.argv) > 1 and int(sys.argv[1]) == 1:
         for bench in benchmarks:
             for dim in Dims:
                 for node in Nodes:
-                    for solver in solverName:
-                        P = (
-                            path
-                            + "/"
-                            + bench
-                            + "/"
-                            + str(node)
-                            + "_"
-                            + str(dim)
-                            + "/"
-                            + resMap[solver]
-                        )
-                        combine(P, file, csvWriter, solver, bench, node, dim)
+                    for solver in solver_name:
+                        for split in split_map:
+                            P = (
+                                path
+                                + "/"
+                                + bench
+                                + "/"
+                                + str(node)
+                                + "_"
+                                + str(dim)
+                                + "/"
+                                + res_map[solver]
+                                + type
+                                + "_"
+                                + split
+                                + ".out"
+                            )
+                            combine(P, file, csvWriter, solver, bench, node, dim, split)
+
+print(">>>ok, done")
