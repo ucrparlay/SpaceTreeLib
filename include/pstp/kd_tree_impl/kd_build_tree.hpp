@@ -119,8 +119,8 @@ Node* KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BuildRecursive(
     Slice In, Slice Out, DimsType dim, Box const& bx) {
   assert(In.size() == 0 || BT::WithinBox(BT::GetBox(In), bx));
 
-  if (In.size()) {
-    // if (In.size() <= BT::kSerialBuildCutoff) {
+  // if (In.size()) {
+  if (In.size() <= BT::kSerialBuildCutoff) {
     return SerialBuildRecursive(In, Out, dim, bx);
   }
 
