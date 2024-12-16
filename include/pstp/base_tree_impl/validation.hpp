@@ -109,6 +109,7 @@ void BaseTree<Point, DerivedTree, kSkHeight,
       std::cout << int(TI->split.second) << " " << int(dim) << " " << TI->size;
     }
     assert(TI->split.second == dim);
+    // TODO: maybe need to add the split rule in the base tree?
     dim = (dim + 1) % kDim;
     parlay::par_do_if(
         T->size > 1000,

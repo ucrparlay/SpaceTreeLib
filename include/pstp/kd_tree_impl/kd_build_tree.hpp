@@ -44,7 +44,7 @@ void KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::DivideRotate(
 
   BoxCut box_cut(box, pivots[idx], true);
 
-  cutting_dim = (cutting_dim + 1) % BT::kDim;
+  split_rule_.NextDimension(cutting_dim);
   DivideRotate(In.cut(0, n / 2), pivots, cutting_dim, 2 * idx, box_seq,
                box_cut.GetFirstBoxCut());
   DivideRotate(In.cut(n / 2, n), pivots, cutting_dim, 2 * idx + 1, box_seq,
@@ -82,7 +82,7 @@ Node* KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::SerialBuildRecursive(
   DimsType d = split_rule_.FindCuttingDimension(box, dim);
   auto [split_iter, split] = split_rule_.SplitInput(In, d, box);
 
-  if (!split.has_value()) {
+  if (!split.has_value()) {  // split fails
     if (In.end() == std::ranges::find_if_not(In, [&](Point const& p) {
           return p.SameDimension(In[0]);
         })) {  // NOTE: check whether all elements are identical
@@ -152,7 +152,9 @@ Node* KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BuildRecursive(
     }
   }
 
-  dim = (dim + BT::kBuildDepthOnce) % BT::kDim;
+  for (BucketType i = 0; i < BT::kBuildDepthOnce; ++i) {
+    dim = split_rule_.NextDimension(dim);
+  }
 
   parlay::parallel_for(
       0, BT::kBucketNum - zeros,
