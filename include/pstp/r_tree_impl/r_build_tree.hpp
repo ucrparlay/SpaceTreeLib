@@ -119,7 +119,10 @@ Node* RTree<Point, SplitRule, kSkHeight, kImbaRatio>::SerialBuildRecursive(
     return AllocDummyLeafNode<Slice, Leaf>(In);
   } else {  //  current dim d is same but other dims are not
     // WARN: this will break the rotate dimension mannar
-    auto [new_box, new_dim] = split_rule_.SwitchDimension(In, d, bx);
+    // auto [new_box, new_dim] = split_rule_.SwitchDimension(In, d, bx);
+    // BUG: handling rtree switch
+    auto new_dim = 0;
+    auto new_box = BT::GetBox(In);
     assert(IsMaxStretchDim<SplitRule> || new_dim != d);
     return SerialBuildRecursive(In, Out, new_dim, new_box);
   }

@@ -101,7 +101,7 @@ Node* KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::SerialBuildRecursive(
 
   BoxCut box_cut(box, split.value(), true);
 
-  d = (d + 1) % BT::kDim;
+  d = split_rule_.NextDimension(d);
   Node *L, *R;
 
   L = SerialBuildRecursive(In.cut(0, split_iter - In.begin()),
