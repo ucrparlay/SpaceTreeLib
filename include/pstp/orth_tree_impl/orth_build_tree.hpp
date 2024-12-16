@@ -45,7 +45,8 @@ void OrthTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::DivideRotate(
   pivots[idx] = split_rule_.SplitSample(Slice(nullptr, nullptr), dim, box);
 
   BoxCut box_cut(box, pivots[idx], true);
-  dim = (dim + 1) % BT::kDim;
+  // dim = (dim + 1) % BT::kDim;
+  dim = split_rule_.NextDimension(dim);
   DivideRotate(pivots, dim, 2 * idx, box_seq, box_cut.GetFirstBoxCut());
   DivideRotate(pivots, dim, 2 * idx + 1, box_seq, box_cut.GetSecondBoxCut());
 

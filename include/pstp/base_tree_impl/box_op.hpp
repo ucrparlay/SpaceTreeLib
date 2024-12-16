@@ -28,7 +28,7 @@ template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 inline bool BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::LegalBox(
     Box const& bx) {
-  constexpr uint_fast8_t kDim = Point::GetDim();
+  // TODO: remove it
   if (bx == GetEmptyBox()) return true;
 
   if constexpr (kDim == 2) {
@@ -83,7 +83,6 @@ template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 inline bool BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::SameBox(
     Box const& a, Box const& b) {
-  constexpr uint_fast8_t kDim = Point::GetDim();
   assert(LegalBox(a));
   assert(LegalBox(b));
 
@@ -99,7 +98,6 @@ inline bool BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::SameBox(
            Num::Eq(a.second.pnt[0], b.second.pnt[0]) &&
            Num::Eq(a.second.pnt[1], b.second.pnt[1]) &&
            Num::Eq(a.second.pnt[2], b.second.pnt[2]);
-  } else {
     for (DimsType i = 0; i < kDim; ++i) {
       if (!Num::Eq(a.first.pnt[i], b.first.pnt[i]) ||
           !Num::Eq(a.second.pnt[i], b.second.pnt[i])) {
@@ -114,7 +112,6 @@ template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 inline bool BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::WithinBox(
     Point const& p, Box const& bx) {
-  constexpr uint_fast8_t kDim = Point::GetDim();
   assert(LegalBox(bx));
 
   if constexpr (kDim == 2) {
@@ -144,7 +141,6 @@ template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 inline bool BaseTree<Point, DerivedTree, kSkHeight,
                      kImbaRatio>::BoxIntersectBox(Box const& a, Box const& b) {
-  constexpr uint_fast8_t kDim = Point::GetDim();
   assert(LegalBox(a) && LegalBox(b));
 
   if constexpr (kDim == 2) {
@@ -168,6 +164,16 @@ inline bool BaseTree<Point, DerivedTree, kSkHeight,
     }
     return true;
   }
+}
+
+template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
+inline bool BaseTree<Point, DerivedTree, kSkHeight,
+                     kImbaRatio>::VerticalLineIntersectBox(Coord const& l,
+                                                           Box const& box,
+                                                           DimsType d) {
+  assert(LegalBox(box));
+  return Num::Geq(l, box.first.pnt[d]) && Num::Leq(l, box.second.pnt[d]);
 }
 
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,

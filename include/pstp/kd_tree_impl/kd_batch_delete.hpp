@@ -86,16 +86,17 @@ KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDeleteRecursive(
     has_tomb = putTomb ? false : has_tomb;
     assert(putTomb ? (!has_tomb) : true);
 
-    DimsType nextDim = (d + 1) % BT::kDim;
+    // DimsType next_dim = (d + 1) % BT::kDim;
+    DimsType next_dim = split_rule_.NextDimension(d);
     BoxCut box_cut(bx, TI->split, true);
 
     auto [L, Lbox] = BatchDeleteRecursive(
         TI->left, box_cut.GetFirstBoxCut(), In.cut(0, split_iter - In.begin()),
-        Out.cut(0, split_iter - In.begin()), nextDim, has_tomb);
+        Out.cut(0, split_iter - In.begin()), next_dim, has_tomb);
     auto [R, Rbox] = BatchDeleteRecursive(TI->right, box_cut.GetSecondBoxCut(),
                                           In.cut(split_iter - In.begin(), n),
                                           Out.cut(split_iter - In.begin(), n),
-                                          nextDim, has_tomb);
+                                          next_dim, has_tomb);
 
     TI->SetParallelFlag(TI->size > BT::kSerialBuildCutoff);
     BT::template UpdateInterior<Interior>(T, L, R);
@@ -150,12 +151,15 @@ KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDeleteRecursive(
             BT::GetBox(Out.cut(start, start + IT.sums[i])),
             BT::template GetBox<Leaf, Interior>(IT.tags[IT.rev_tag[i]].first)));
 
-        DimsType nextDim = (d + IT.GetDepthByIndex(IT.rev_tag[i])) % BT::kDim;
+        DimsType next_dim = d, depth = IT.GetDepthByIndex(IT.rev_tag[i]);
+        for (BucketType i = 0; i < depth; i++) {
+          next_dim = split_rule_.NextDimension(next_dim);
+        }
 
         tree_nodes[i] = BatchDeleteRecursive(
             IT.tags[IT.rev_tag[i]].first, box_seq[i],
             Out.cut(start, start + IT.sums[i]),
-            In.cut(start, start + IT.sums[i]), nextDim,
+            In.cut(start, start + IT.sums[i]), next_dim,
             IT.tags[IT.rev_tag[i]].second == BT::kBucketNum + 1);
       },
       1);
@@ -179,7 +183,10 @@ KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDeleteRecursive(
           BT::template GetBox<Leaf, Interior>(IT.tags[IT.rev_tag[i]].first),
           box_seq[i]));
 
-      auto next_dim = (d + IT.GetDepthByIndex(IT.rev_tag[i])) % BT::kDim;
+      DimsType next_dim = d, depth = IT.GetDepthByIndex(IT.rev_tag[i]);
+      for (BucketType i = 0; i < depth; i++) {
+        next_dim = split_rule_.NextDimension(next_dim);
+      }
       IT.tags[IT.rev_tag[i]].first =
           BT::template RebuildSingleTree<Leaf, Interior, false>(
               IT.tags[IT.rev_tag[i]].first, next_dim, box_seq[i]);

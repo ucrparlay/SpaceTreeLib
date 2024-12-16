@@ -58,7 +58,7 @@ Node* KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchInsertRecursive(
 
     // NOTE: continue
     Node *L, *R;
-    d = (d + 1) % BT::kDim;
+    d = split_rule_.NextDimension(d);
     L = BatchInsertRecursive(TI->left, In.cut(0, split_pos),
                              Out.cut(0, split_pos), d);
     R = BatchInsertRecursive(TI->right, In.cut(split_pos, n),
@@ -94,13 +94,17 @@ Node* KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchInsertRecursive(
           s += IT.sums_tree[IT.rev_tag[j]];
         }
 
-        DimsType nextDim = (d + IT.GetDepthByIndex(IT.rev_tag[i])) % BT::kDim;
+        DimsType next_dim = d, depth = IT.GetDepthByIndex(IT.rev_tag[i]);
+        for (BucketType i = 0; i < depth; i++) {
+          next_dim = split_rule_.NextDimension(next_dim);
+        }
+        // = (d + IT.GetDepthByIndex(IT.rev_tag[i])) % BT::kDim;
         if (IT.tags[IT.rev_tag[i]].second == BT::kBucketNum + 1) {
           // NOTE: continue sieve
           tree_nodes[i] = BatchInsertRecursive(
               IT.tags[IT.rev_tag[i]].first,
               Out.cut(s, s + IT.sums_tree[IT.rev_tag[i]]),
-              In.cut(s, s + IT.sums_tree[IT.rev_tag[i]]), nextDim);
+              In.cut(s, s + IT.sums_tree[IT.rev_tag[i]]), next_dim);
         } else {  // NOTE: launch rebuild subtree
           assert(IT.tags[IT.rev_tag[i]].second == BT::kBucketNum + 2);
           assert(IT.tags[IT.rev_tag[i]].first->size +
@@ -109,7 +113,7 @@ Node* KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchInsertRecursive(
 
           tree_nodes[i] = BT::template RebuildWithInsert<Leaf, Interior>(
               IT.tags[IT.rev_tag[i]].first,
-              Out.cut(s, s + IT.sums_tree[IT.rev_tag[i]]), nextDim);
+              Out.cut(s, s + IT.sums_tree[IT.rev_tag[i]]), next_dim);
         }
       },
       1);

@@ -35,7 +35,8 @@ void KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDiff_(Slice A) {
   // NOTE: launch rebuild
   d = T->is_leaf ? 0 : static_cast<Interior*>(T)->split.second;
   auto prepare_rebuild_func = [&](Node* T, DimsType d, Box const& box) {
-    DimsType new_dim = (d + 1) % BT::kDim;
+    // DimsType new_dim = (d + 1) % BT::kDim;
+    DimsType new_dim = split_rule_.NextDimension(d);
     BoxCut box_cut(box, static_cast<Interior*>(T)->split, true);
     auto left_args = std::make_pair(new_dim, box_cut.GetFirstBoxCut());
     auto right_args = std::make_pair(new_dim, box_cut.GetSecondBoxCut());
@@ -72,16 +73,17 @@ KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDiffRecursive(
           return Num::Lt(p.pnt[TI->split.second], TI->split.first);
         }).begin();
 
-    DimsType nextDim = (d + 1) % BT::kDim;
+    // DimsType nextDim = (d + 1) % BT::kDim;
+    DimsType next_dim = split_rule_.NextDimension(d);
 
     BoxCut box_cut(box, TI->split, true);
     auto [L, Lbox] = BatchDiffRecursive(
         TI->left, box_cut.GetFirstBoxCut(), In.cut(0, split_iter - In.begin()),
-        Out.cut(0, split_iter - In.begin()), nextDim);
+        Out.cut(0, split_iter - In.begin()), next_dim);
     auto [R, Rbox] =
         BatchDiffRecursive(TI->right, box_cut.GetSecondBoxCut(),
                            In.cut(split_iter - In.begin(), n),
-                           Out.cut(split_iter - In.begin(), n), nextDim);
+                           Out.cut(split_iter - In.begin(), n), next_dim);
 
     TI->SetParallelFlag(TI->size > BT::kSerialBuildCutoff);
     BT::template UpdateInterior<Interior>(T, L, R);
@@ -117,11 +119,16 @@ KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDiffRecursive(
           start += IT.sums[j];
         }
 
-        DimsType nextDim = (d + IT.GetDepthByIndex(IT.rev_tag[i])) % BT::kDim;
+        // DimsType nextDim = (d + IT.GetDepthByIndex(IT.rev_tag[i])) %
+        // BT::kDim;
+        DimsType next_dim = d, depth = IT.GetDepthByIndex(IT.rev_tag[i]);
+        for (BucketType i = 0; i < depth; i++) {
+          next_dim = split_rule_.NextDimension(next_dim);
+        }
         tree_nodes[i] =
             BatchDiffRecursive(IT.tags[IT.rev_tag[i]].first, box_seq[i],
                                Out.cut(start, start + IT.sums[i]),
-                               In.cut(start, start + IT.sums[i]), nextDim);
+                               In.cut(start, start + IT.sums[i]), next_dim);
       },
       1);
 

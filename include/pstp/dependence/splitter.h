@@ -19,12 +19,10 @@ struct BaseSplitDimRule {
   constexpr virtual DimsType const FindCuttingDimension(
       Box const& bx, DimsType const dim) const = 0;
 
-  constexpr virtual std::pair<Box, DimsType> const SwitchDimension(
-      Slice const In, DimsType const dim, Box const& bx) const = 0;
-
   constexpr virtual DimsType const FindRebuildDimension(
       DimsType const dim) const = 0;
 
+  constexpr virtual DimsType const NextDimension(DimsType const dim) const = 0;
   // TODO: the spliiter should deterine how to split as well
 };
 
@@ -42,8 +40,8 @@ struct MaxStretchDim : BaseSplitDimRule<Point> {
   void MaxStretchTag() {}
   static std::string GetName() { return "MaxStretchDim"; }
 
-  constexpr DimsType const FindCuttingDimension(
-      Box const& bx, [[maybe_unused]] DimsType const dim) const override {
+  constexpr DimsType const FindCuttingDimension(Box const& bx,
+                                                DimsType) const override {
     DimsType d(0);
     Coord diff(bx.second.pnt[0] - bx.first.pnt[0]);
     assert(Num::Geq(diff, 0));
@@ -56,16 +54,11 @@ struct MaxStretchDim : BaseSplitDimRule<Point> {
     return d;
   };
 
-  constexpr DimsType const FindRebuildDimension(
-      [[maybe_unused]] DimsType const dim) const override {
+  constexpr DimsType const FindRebuildDimension(DimsType) const override {
     return 0;
   };
 
-  constexpr std::pair<Box, DimsType> const SwitchDimension(
-      Slice const In, DimsType const dim,
-      [[maybe_unused]] Box const& bx) const override {
-    return std::make_pair(BT::GetBox(In), dim);
-  };
+  constexpr DimsType const NextDimension(DimsType) const override { return 0; };
 };
 
 template <typename Point>
@@ -93,17 +86,8 @@ struct RotateDim : BaseSplitDimRule<Point> {
     return dim;
   };
 
-  constexpr std::pair<Box, DimsType> const SwitchDimension(
-      [[maybe_unused]] Slice const In, DimsType const dim,
-      [[maybe_unused]] Box const& bx) const override {
-    DimsType d = (dim + 1) % BT::kDim;
-    // for (DimsType i = 0; i < BT::kDim; ++i, ++d) {
-    //     if (!Num::Eq(In.begin()->pnt[d], std::prev(In.end())->pnt[d])) {
-    //         break;
-    //     }
-    // }
-    assert(d != dim);
-    return std::make_pair(bx, d);
+  constexpr DimsType const NextDimension(DimsType dim) const override {
+    return (dim + 1) % BT::kDim;
   };
 };
 
@@ -247,13 +231,13 @@ struct SplitRule {
   }
 
   template <typename... Args>
-  auto SwitchDimension(Args&&... args) {
-    return dim_rule.SwitchDimension(std::forward<Args>(args)...);
+  auto FindRebuildDimension(Args&&... args) {
+    return dim_rule.FindRebuildDimension(std::forward<Args>(args)...);
   }
 
   template <typename... Args>
-  auto FindRebuildDimension(Args&&... args) {
-    return dim_rule.FindRebuildDimension(std::forward<Args>(args)...);
+  auto NextDimension(Args&&... args) {
+    return dim_rule.NextDimension(std::forward<Args>(args)...);
   }
 
   // NOTE: serial parititon used in algorithm
@@ -268,48 +252,63 @@ struct SplitRule {
     return partition_rule.SplitSample(std::forward<Args>(args)...);
   }
 
+  // NOTE: helper for handling the duplicate
+  // NOTE: divide the Space until the split cut the input box
+  template <typename Tree, typename Slice, typename DimsType, typename Box>
+  Node* DivideSpace(Tree& tree, Slice In, Slice Out, DimsType dim,
+                    Box const& node_box, Box const& input_box) {
+    if (Tree::VerticalLineIntersectBox(Tree::GetBoxMid(dim, node_box),
+                                       input_box, dim)) {
+      return tree.BuildRecursive(In, Out, dim, node_box);
+    }
+
+    auto cut_dim = dim_rule.FindCuttingDimension(node_box, dim);
+    bool split_is_right = Tree::Num::Gt(Tree::GetBoxMid(cut_dim, node_box),
+                                        input_box.second[cut_dim]);
+
+    typename Tree::BoxCut box_cut(
+        node_box,
+        typename Tree::Splitter(Tree::GetBoxMid(cut_dim, node_box), cut_dim),
+        split_is_right);
+
+    // BUG: in max_stretch dim this will have bug
+    Node* L = DivideSpace(tree, In, Out, dim_rule.NextDimension(cut_dim),
+                          box_cut.GetFirstBoxCut(), input_box);
+    Node* R = AllocEmptyLeafNode<Slice, typename Tree::Leaf>();
+    assert(Tree::WithinBox(input_box, box_cut.GetBox()));
+
+    if (!split_is_right) {
+      assert(Tree::Num::Lt(Tree::GetBoxMid(cut_dim, node_box),
+                           input_box.first[cut_dim]));
+      std::ranges::swap(L, R);
+    }
+
+    return AllocInteriorNode<typename Tree::Interior>(
+        L, R, box_cut.GetHyperPlane(), typename Tree::AugType());
+  }
+
   // NOTE: cannot divide the points on @dim, while the points are not the same
-  template <typename Tree, typename Slice, typename DimsType, typename Box,
-            typename SplitIter>
+  template <typename Tree, typename Slice, typename DimsType, typename Box>
   auto HandlingUndivide(Tree& tree, Slice In, Slice Out, DimsType dim,
-                        Box const& box, SplitIter pre_split_iter) {
+                        Box const& box) {
     if constexpr (IsObjectMedianSplit<PartitionRule>) {
       // NOTE: in object median, if current dimension is not divideable, then
-      // switch to another dimension then continue
-      auto [new_box, new_dim] = dim_rule.SwitchDimension(In, dim, box);
-      assert(IsMaxStretchDim<DimRule> || new_dim != dim);
-      return tree.SerialBuildRecursive(In, Out, new_dim, new_box);
+      // switch to another dimension then continue. This works since unless all
+      // points are same, otherwise we can always slice some points out.
+      return tree.SerialBuildRecursive(In, Out, dim_rule.NextDimension(dim),
+                                       Tree::GetBox(In));
+
     } else if constexpr (IsSpatialMedianSplit<PartitionRule>) {
-      // NOTE: in spatial median, then we simply reduce the box by half on
+      // NOTE: in spatial median, we simply reduce the box by half on
       // current dim, then switch to next dim.
-      auto [new_box, new_dim] = dim_rule.SwitchDimension(In, dim, box);
-
-      assert(Tree::SameBox(new_box, box));
-      assert(pre_split_iter == In.begin() || pre_split_iter == In.end());
-
       if constexpr (IsRotateDimSplit<DimRule> || IsMaxStretchDim<DimRule>) {
         // TODO: add support for multi node
         assert(IsBinaryNode<typename Tree::Interior>);
-
-        typename Tree::BoxCut box_cut(
-            box, typename Tree::Splitter(Tree::GetBoxMid(dim, box), dim),
-            pre_split_iter == In.end());
-
-        Node* L = tree.SerialBuildRecursive(In, Out, new_dim,
-                                            box_cut.GetFirstBoxCut());
-        Node* R = AllocEmptyLeafNode<Slice, typename Tree::Leaf>();
-
-        assert(Tree::WithinBox(Tree::GetBox(In), box_cut.GetBox()));
-
-        if (pre_split_iter != In.end()) {
-          std::ranges::swap(L, R);
-        }
-        return AllocInteriorNode<typename Tree::Interior>(
-            L, R, box_cut.GetHyperPlane(), typename Tree::AugType());
-      } else {
+        return DivideSpace(tree, In, Out, dim, box, Tree::GetBox(In));
+      } else {  // define the behavior of other dim rule
         static_assert(false);
       }
-    } else {
+    } else {  // define the behavior of other partition rule
       static_assert(false);
     }
   }

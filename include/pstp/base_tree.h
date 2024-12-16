@@ -83,6 +83,8 @@ class BaseTree {
   static inline bool SameBox(Box const& a, Box const& b);
   static inline bool WithinBox(Point const& p, Box const& bx);
   static inline bool BoxIntersectBox(Box const& a, Box const& b);
+  static inline bool VerticalLineIntersectBox(Coord const& l, Box const& box,
+                                              DimsType d);
   static inline Box GetEmptyBox();
   static Box GetBox(Box const& x, Box const& y);
   static Box GetBox(Slice V);
