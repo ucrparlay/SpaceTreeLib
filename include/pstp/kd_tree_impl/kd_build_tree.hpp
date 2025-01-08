@@ -44,7 +44,7 @@ void KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::DivideRotate(
 
   BoxCut box_cut(box, pivots[idx], true);
 
-  split_rule_.NextDimension(cutting_dim);
+  cutting_dim = split_rule_.NextDimension(cutting_dim);
   DivideRotate(In.cut(0, n / 2), pivots, cutting_dim, 2 * idx, box_seq,
                box_cut.GetFirstBoxCut());
   DivideRotate(In.cut(n / 2, n), pivots, cutting_dim, 2 * idx + 1, box_seq,
