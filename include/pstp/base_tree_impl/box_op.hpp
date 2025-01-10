@@ -176,6 +176,17 @@ inline bool BaseTree<Point, DerivedTree, kSkHeight,
   return Num::Geq(l, box.first.pnt[d]) && Num::Leq(l, box.second.pnt[d]);
 }
 
+// NOTE: if the line @l is one the boundary of the box, then it will be
+// considered as not intersect
+template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
+inline bool BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::
+    VerticalLineIntersectBoxExclude(Coord const& l, Box const& box,
+                                    DimsType d) {
+  assert(LegalBox(box));
+  return Num::Gt(l, box.first.pnt[d]) && Num::Lt(l, box.second.pnt[d]);
+}
+
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 inline typename BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::Box
