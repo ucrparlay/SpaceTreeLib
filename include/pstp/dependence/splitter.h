@@ -258,39 +258,32 @@ struct SplitRule {
   template <typename Tree, typename Slice, typename DimsType, typename Box>
   Node* DivideSpace(Tree& tree, Slice In, Slice Out, DimsType dim,
                     Box const& node_box, Box const& input_box) {
+    assert(Tree::WithinBox(input_box, node_box));
+
     // the mid of the box split the box for input points
     if (Tree::VerticalLineIntersectBoxExclude(Tree::GetBoxMid(dim, node_box),
                                               input_box, dim)) {
-      // std::cout << "node_box: " << node_box.first << node_box.second <<
-      // "----"
-      //           << "input_box: " << input_box.first << input_box.second
-      //           << Tree::GetBoxMid(dim, node_box) << "----"
-      //           << static_cast<int>(dim) << std::endl;
-
       return tree.BuildRecursive(In, Out, dim, node_box);
     }
 
-    // NOTE: the mid of the box is on the boundary of the input box, meaning all
-    // input points are on one side of the split, need to find a new dimension
-    // to split
-    if (Tree::VerticalLineIntersectBox(Tree::GetBoxMid(dim, node_box),
-                                       input_box, dim)) {
-      return this->DivideSpace(tree, In, Out, dim_rule.NextDimension(dim),
-                               node_box, input_box);
-    }
-
     auto cut_dim = dim_rule.FindCuttingDimension(node_box, dim);
-    bool split_is_right = Tree::Num::Gt(Tree::GetBoxMid(cut_dim, node_box),
-                                        input_box.second[cut_dim]);
+    auto cut_val = Tree::GetBoxMid(cut_dim, node_box);
+
+    // if the line is on the left of the boundary, then we should generate the
+    // box to the right, and vice versa.
+    // otherwise determine the position by comparing the mid of the box
+    // This should work for the max stretch dim as well
+    bool split_is_right = Tree::Num::Geq(Tree::GetBoxMid(cut_dim, node_box),
+                                         input_box.second[cut_dim]);
+    assert(split_is_right || Tree::Num::Leq(Tree::GetBoxMid(cut_dim, node_box),
+                                            input_box.first[cut_dim]));
 
     typename Tree::BoxCut box_cut(
-        node_box,
-        typename Tree::Splitter(Tree::GetBoxMid(cut_dim, node_box), cut_dim),
-        split_is_right);
+        node_box, typename Tree::Splitter(cut_val, cut_dim), split_is_right);
 
     // BUG: in max_stretch dim this will have bug
-    Node* L = this->DivideSpace(tree, In, Out, dim_rule.NextDimension(cut_dim),
-                                box_cut.GetFirstBoxCut(), input_box);
+    Node* L = DivideSpace(tree, In, Out, dim_rule.NextDimension(cut_dim),
+                          box_cut.GetFirstBoxCut(), input_box);
     Node* R = AllocEmptyLeafNode<Slice, typename Tree::Leaf>();
     assert(Tree::WithinBox(input_box, box_cut.GetBox()));
 
