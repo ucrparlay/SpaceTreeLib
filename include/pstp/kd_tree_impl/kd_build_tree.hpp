@@ -83,11 +83,6 @@ Node* KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::SerialBuildRecursive(
   auto [split_iter, split] = split_rule_.SplitInput(In, d, box);
 
   if (!split.has_value()) {  // split fails
-    // for (auto i : In) {
-    //   std::cout << i.pnt[dim] << " ";
-    // }
-    // std::cout << std::endl;
-
     if (In.end() == std::ranges::find_if_not(In, [&](Point const& p) {
           return p.SameDimension(In[0]);
         })) {  // NOTE: check whether all elements are identical

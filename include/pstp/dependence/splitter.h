@@ -281,7 +281,6 @@ struct SplitRule {
     typename Tree::BoxCut box_cut(
         node_box, typename Tree::Splitter(cut_val, cut_dim), split_is_right);
 
-    // BUG: in max_stretch dim this will have bug
     Node* L = DivideSpace(tree, In, Out, dim_rule.NextDimension(cut_dim),
                           box_cut.GetFirstBoxCut(), input_box);
     Node* R = AllocEmptyLeafNode<Slice, typename Tree::Leaf>();
