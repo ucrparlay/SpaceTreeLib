@@ -126,7 +126,7 @@ void TestSpacialTree([[maybe_unused]] int const& kDim,
     }
   }
 
-  std::cout << std::endl << std::flush;
+  std::cout << "\n" << std::flush;
 
   tree.DeleteTree();
 

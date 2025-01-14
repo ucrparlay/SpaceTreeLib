@@ -245,7 +245,7 @@ void BatchInsert(Tree& pkd, parlay::sequence<Point> const& WP,
       // std::cout << box2.first << ' ' << box2.second << std::endl;
       pkd.Build(parlay::make_slice(wp), box);
     } else {
-      std::cout << "Not supported Tree type" << std::endl;
+      std::cout << "Not supported Tree type\n" << std::flush;
     }
   };
 
