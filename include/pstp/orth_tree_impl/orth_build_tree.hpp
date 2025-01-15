@@ -97,13 +97,14 @@ Node* OrthTree<Point, SplitRule, kMD, kSkHeight,
   SerialSplit(In, dim, 1, box, sums);
   assert(std::cmp_equal(std::accumulate(sums.begin(), sums.end(), 0), n));
 
+  // TODO: replace here using the split rule
   if (std::ranges::count(sums, 0) == kNodeRegions - 1) {
     // NOTE: avoid the repeat check as the last
     if (!checked_duplicate) {
       if (std::ranges::find_if_not(In, [&](Point const& p) {  // early return
             return p.SameDimension(In[0]);
           }) == In.end()) {
-        // WARN: Need to pass full range
+        // WARN: Need to pass full range, since it needs to compute the size
         return AllocDummyLeafNode<Slice, Leaf>(In);
       }
       checked_duplicate = true;
@@ -151,8 +152,6 @@ Node* OrthTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::BuildRecursive(
   DivideRotate(pivots, 0, 1, box_seq, box);
   BT::Partition(In, Out, In.size(), pivots, sums);
 
-  // NOTE: if random sampling failed to split points, re-partitions using
-  // serail approach
   auto tree_nodes = parlay::sequence<Node*>::uninitialized(BT::kBucketNum);
   auto nodes_map = BucketSeq::uninitialized(BT::kBucketNum);
   BucketType zeros = std::ranges::count(sums, 0), cnt = 0;

@@ -76,6 +76,8 @@ concept CallableWithArg = requires(Func func, Arg arg) {
 };
 
 // NOTE: Function to handle the conditional call
+// if func accepts a parameter arg, then call it; otherwise return func()
+// directly
 template <typename ReturnType, typename Func, typename Arg>
 ReturnType InvokeWithOptionalArg(Func&& func, Arg&& arg) {
   if constexpr (CallableWithArg<ReturnType, Func, Arg>) {

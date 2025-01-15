@@ -55,9 +55,7 @@ class KdTree
       LeafNode<Point, Slice, BT::kLeaveWrap, parlay::move_assign_tag, false>;
   struct KdInteriorNode;
   using Interior = KdInteriorNode;
-
   using CompressInterior = KdCompressionNode<kMD>;
-
   using InnerTree = typename BT::template InnerTree<Leaf, Interior>;
   using BoxCut = typename BT::BoxCut;
 

@@ -98,7 +98,7 @@ Node* KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchInsertRecursive(
         for (BucketType i = 0; i < depth; i++) {
           next_dim = split_rule_.NextDimension(next_dim);
         }
-        // = (d + IT.GetDepthByIndex(IT.rev_tag[i])) % BT::kDim;
+
         if (IT.tags[IT.rev_tag[i]].second == BT::kBucketNum + 1) {
           // NOTE: continue sieve
           tree_nodes[i] = BatchInsertRecursive(

@@ -109,6 +109,8 @@ struct BaseSplitPartitionRule {
                                                    Box const& box) const = 0;
   constexpr virtual HyperPlane const SplitSample(Slice In, DimsType const dim,
                                                  Box const& box) const = 0;
+
+  constexpr virtual bool AllowRebuild() const = 0;
 };
 
 template <typename Point>
@@ -125,7 +127,10 @@ struct ObjectMedian : BaseSplitPartitionRule<Point> {
   using IterHyperPair = BSR::IterHyperPair;
 
   void ObjectMedianTag() {}
+
   static std::string GetName() { return "ObjectMedian"; }
+
+  constexpr bool AllowRebuild() { return true; };
 
   constexpr IterHyperPair const SplitInput(
       Slice In, DimsType const dim,
@@ -194,7 +199,10 @@ struct SpatialMedian : BaseSplitPartitionRule<Point> {
   using IterHyperPair = BSR::IterHyperPair;
 
   void SpatialMedianTag() {}
+
   static std::string GetName() { return "SpatialMedian"; }
+
+  constexpr bool AllowRebuild() { return false; };
 
   constexpr IterHyperPair const SplitInput(Slice In, DimsType const dim,
                                            Box const& box) const override {
@@ -251,6 +259,12 @@ struct SplitRule {
   template <typename... Args>
   auto SplitSample(Args&&... args) {
     return partition_rule.SplitSample(std::forward<Args>(args)...);
+  }
+
+  // NOTE: query whether to launch the rebuild
+  template <typename... Args>
+  auto AllowRebuild(Args&&... args) {
+    return partition_rule.AllowRebuild(std::forward<Args>(args)...);
   }
 
   // NOTE: helper for handling the duplicate
