@@ -190,9 +190,7 @@ struct BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::InnerTree {
                 ViolateFunc&& violate_func) {
     if (idx > kPivotNum || tags[idx].first->is_leaf) {
       assert(tags[idx].second >= 0 && tags[idx].second < kBucketNum);
-      if (!has_tomb) {  // NOTE: this subtree needs to be rebuilt in the
-                        // future, therefore, ensure the granularity
-                        // control by assign to aug_flag
+      if (!has_tomb) {
         tags[idx].second = kBucketNum + 2;
       } else {
         tags[idx].second = kBucketNum + 1;
@@ -244,7 +242,7 @@ struct BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::InnerTree {
     return std::make_pair(re_num, tot_re_size);
   }
 
-  // NOTE: kUpdtaePointer: Update the pointer only, if it contains box, return
+  // NOTE: kUpdatePointer: Update the pointer only, if it contains box, return
   //   empty box
   // kUpdatePointerBox: Update pointer and box
   // kTagRebuildNode: Update the pointer and box, meanwhile it assign the

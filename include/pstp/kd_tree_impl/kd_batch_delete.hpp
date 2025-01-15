@@ -57,7 +57,7 @@ KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDeleteRecursive(
       BT::template DeleteTreeRecursive<Leaf, Interior>(T);
       return NodeBox(AllocEmptyLeafNode<Slice, Leaf>(), BT::GetEmptyBox());
     }
-    // wihtin a rebuild tree
+    // within a rebuild tree
     if (!T->is_leaf) {
       auto TI = static_cast<Interior*>(T);
       // WARN: only set the flag for root ,rather than the whole sub-tree
@@ -79,10 +79,11 @@ KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDeleteRecursive(
           return Num::Lt(p.pnt[TI->split.second], TI->split.first);
         }).begin();
 
-    bool putTomb = has_tomb && (BT::ImbalanceNode(
-                                    TI->left->size - (split_iter - In.begin()),
-                                    TI->size - In.size()) ||
-                                TI->size - In.size() < BT::kThinLeaveWrap);
+    bool putTomb =
+        split_rule_.AllowRebuild() && has_tomb &&
+        (BT::ImbalanceNode(TI->left->size - (split_iter - In.begin()),
+                           TI->size - In.size()) ||
+         TI->size - In.size() < BT::kThinLeaveWrap);
     has_tomb = putTomb ? false : has_tomb;
     assert(putTomb ? (!has_tomb) : true);
 
@@ -106,8 +107,9 @@ KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDeleteRecursive(
 
     // NOTE: rebuild
     if (putTomb) {
-      assert(BT::ImbalanceNode(TI->left->size, TI->size) ||
-             TI->size < BT::kThinLeaveWrap);
+      assert(split_rule_.AllowRebuild() &&
+             (BT::ImbalanceNode(TI->left->size, TI->size) ||
+              TI->size < BT::kThinLeaveWrap));
       auto const new_box = BT::GetBox(Lbox, Rbox);
       assert(BT::WithinBox(BT::template GetBox<Leaf, Interior>(T), new_box));
       return NodeBox(
@@ -130,13 +132,15 @@ KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDeleteRecursive(
   [[maybe_unused]] auto [re_num, tot_re_size] = IT.TagInbalanceNodeDeletion(
       box_seq, bx, has_tomb, [&](BucketType idx) -> bool {
         Interior* TI = static_cast<Interior*>(IT.tags[idx].first);
-        return BT::ImbalanceNode(TI->left->size - IT.sums_tree[idx << 1],
-                                 TI->size - IT.sums_tree[idx]) ||
-               (TI->size - IT.sums_tree[idx] < BT::kThinLeaveWrap);
+        return split_rule_.AllowRebuild() &&
+               (BT::ImbalanceNode(TI->left->size - IT.sums_tree[idx << 1],
+                                  TI->size - IT.sums_tree[idx]) ||
+                (TI->size - IT.sums_tree[idx] < BT::kThinLeaveWrap));
       });
 
   assert(re_num <= IT.tags_num);
 
+  // NOTE: delete the points in the tree
   parlay::parallel_for(
       0, IT.tags_num,
       [&](decltype(IT.tags_num) i) {
@@ -171,6 +175,7 @@ KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDeleteRecursive(
           tree_nodes, box_seq));
   assert(IT.tags_num == re_num);
 
+  // NOTE: launch the rebuild in parallel
   parlay::parallel_for(0, IT.tags_num, [&](size_t i) {
     assert(IT.tags[IT.rev_tag[i]].second == BT::kBucketNum + 3);
 
@@ -191,7 +196,7 @@ KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDeleteRecursive(
           BT::template RebuildSingleTree<Leaf, Interior, false>(
               IT.tags[IT.rev_tag[i]].first, next_dim, box_seq[i]);
     }
-  });
+  });  // PERF: let the parlay decide granularity
 
   // PARA: op == 0 -> toggle whether under a rebuild tree
   // op == 1 -> query current status

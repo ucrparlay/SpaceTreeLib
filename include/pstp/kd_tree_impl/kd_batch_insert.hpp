@@ -52,7 +52,8 @@ Node* KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchInsertRecursive(
                        static_cast<PointsIter>(In.begin());
 
     // NOTE: rebuild
-    if (BT::ImbalanceNode(TI->left->size + split_pos, TI->size + n)) {
+    if (split_rule_.AllowRebuild() &&
+        BT::ImbalanceNode(TI->left->size + split_pos, TI->size + n)) {
       return BT::template RebuildWithInsert<Leaf, Interior>(T, In, d);
     }
 
@@ -80,7 +81,8 @@ Node* KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchInsertRecursive(
 
   IT.TagInbalanceNode([&](BucketType idx) -> bool {
     auto const TI = static_cast<Interior*>(IT.tags[idx].first);
-    return BT::ImbalanceNode(TI->left->size + IT.sums_tree[idx << 1],
+    return split_rule_.AllowRebuild() &&
+           BT::ImbalanceNode(TI->left->size + IT.sums_tree[idx << 1],
                              TI->size + IT.sums_tree[idx]);
   });
   assert(IT.tags_num > 0 && IT.tags_num <= BT::kBucketNum);
