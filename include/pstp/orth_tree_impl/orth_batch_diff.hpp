@@ -34,13 +34,15 @@ void OrthTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::BatchDiff_(
   this->root_ = BatchDiffRecursive(this->root_, A, parlay::make_slice(B));
 
   // NOTE: launch the rebuild
+  // PARA: @prepare_func: function that computes the new parameters before the
+  // rebuildtree recursive
   auto prepare_func = [&](Node* T, size_t i, Box const& box) {
     auto new_box = static_cast<Interior*>(T)->GetBoxByRegionId(i, box);
     assert(BT::WithinBox(new_box, box));
     return std::make_tuple(std::move(new_box));
   };
   this->root_ = BT::template RebuildTreeRecursive<Leaf, Interior>(
-      this->root_, prepare_func, this->tree_box_);
+      this->root_, prepare_func, split_rule_.AllowRebuild(), this->tree_box_);
   return;
 }
 
@@ -105,7 +107,7 @@ Node* OrthTree<Point, SplitRule, kMD, kSkHeight,
 
         // NOTE: after pick the tag, the tag id is same as the bucket id.
         // In order to match the base case in UpdateInnerTree, we need to
-        // manually change it to kBucketNum+2, i.e., non-of its ancestor has
+        // manually change it to kBucketNum+2, i.e., none-of its ancestor has
         // been rebuilt
         IT.tags[IT.rev_tag[i]].second = BT::kBucketNum + 2;
       },

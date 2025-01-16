@@ -32,7 +32,9 @@ template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 inline bool BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::SparcyNode(
     size_t const rm, size_t const n) {
-  return n - rm < kLeaveWrap;
+  // PERF: to avoid the case that the new leaf is about 32 and then next slight
+  // larger insert will break the leaf
+  return n - rm < kThinLeaveWrap;
 }
 }  // namespace pstp
 

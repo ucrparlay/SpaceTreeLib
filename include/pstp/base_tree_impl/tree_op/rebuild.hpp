@@ -71,18 +71,22 @@ Node* BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::RebuildSingleTree(
       std::forward<Args>(args)...);
 }
 
+// NOTE: rebuild a binary tree
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 template <typename Leaf, IsBinaryNode Interior, bool granularity,
           typename PrepareFunc, typename... Args>
 Node* BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::RebuildTreeRecursive(
-    Node* T, PrepareFunc&& prepare_func, Args&&... args) {
+    Node* T, PrepareFunc&& prepare_func, bool const allow_inba_rebuild,
+    Args&&... args) {
   if (T->is_leaf) {
     return T;
   }
 
   Interior* TI = static_cast<Interior*>(T);
-  if (ImbalanceNode(TI->left->size, TI->size)) {
+  // NOTE: rebuild the tree if it is sparcy or imbalance
+  if (SparcyNode(0, TI->size) ||
+      (allow_inba_rebuild && ImbalanceNode(TI->left->size, TI->size))) {
     return RebuildSingleTree<Leaf, Interior, granularity>(
         T, std::forward<Args>(args)...);
   }
@@ -97,7 +101,7 @@ Node* BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::RebuildTreeRecursive(
         L = std::apply(
             [&](auto&&... left_args) {
               return RebuildTreeRecursive<Leaf, Interior, granularity>(
-                  TI->left, prepare_func,
+                  TI->left, prepare_func, allow_inba_rebuild,
                   std::forward<decltype(left_args)>(left_args)...);
             },
             left_args);
@@ -106,7 +110,7 @@ Node* BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::RebuildTreeRecursive(
         R = std::apply(
             [&](auto&&... right_args) {
               return RebuildTreeRecursive<Leaf, Interior, granularity>(
-                  TI->right, prepare_func,
+                  TI->right, prepare_func, allow_inba_rebuild,
                   std::forward<decltype(right_args)>(right_args)...);
             },
             right_args);
@@ -117,12 +121,14 @@ Node* BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::RebuildTreeRecursive(
   return T;
 }
 
+// NOTE: rebuild a multi-node tree
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 template <typename Leaf, IsMultiNode Interior, bool granularity,
           typename PrepareFunc, typename... Args>
 Node* BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::RebuildTreeRecursive(
-    Node* T, PrepareFunc&& prepare_func, Args&&... args) {
+    Node* T, PrepareFunc&& prepare_func,
+    [[maybe_unused]] bool const allow_inba_rebuild, Args&&... args) {
   if (T->is_leaf) {
     return T;
   }
@@ -131,8 +137,9 @@ Node* BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::RebuildTreeRecursive(
   if (SparcyNode(0,
                  TI->size)) {  // NOTE: after diff points from the tree, all
                                // points has been removed, so there the remove
-                               // points are 0, simply use it to check whether
-                               // the number of points are below kLeaveWrap
+                               // points are 0 (points to be removed), this
+                               // equivalent to check whether the number of
+                               // points are below kLeaveWrap
     return RebuildSingleTree<Leaf, Interior, granularity>(
         T, std::forward<Args>(args)...);
   }
@@ -144,7 +151,7 @@ Node* BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::RebuildTreeRecursive(
       std::apply(
           [&](auto&&... new_args) {
             new_nodes[i] = RebuildTreeRecursive<Leaf, Interior, granularity>(
-                TI->tree_nodes[i], prepare_func,
+                TI->tree_nodes[i], prepare_func, allow_inba_rebuild,
                 std::forward<decltype(new_args)>(new_args)...);
           },
           new_args);
@@ -155,7 +162,7 @@ Node* BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::RebuildTreeRecursive(
       std::apply(
           [&](auto&&... new_args) {
             new_nodes[i] = RebuildTreeRecursive<Leaf, Interior, granularity>(
-                TI->tree_nodes[i], prepare_func,
+                TI->tree_nodes[i], prepare_func, allow_inba_rebuild,
                 std::forward<decltype(new_args)>(new_args)...);
           },
           new_args);

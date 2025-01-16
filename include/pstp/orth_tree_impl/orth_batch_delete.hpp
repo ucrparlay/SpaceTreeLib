@@ -47,7 +47,8 @@ Node* OrthTree<Point, SplitRule, kMD, kSkHeight,
     return T;
   }
 
-  // INFO: may can be used to accelerate the whole deletion process
+  // INFO: delete the whole tree directly if its size equals to the input size,
+  // can be used to accelerate the whole deletion process
   if (n == T->size) {
     if (has_tomb) {
       BT::template DeleteTreeRecursive<Leaf, Interior>(T);
@@ -92,8 +93,8 @@ Node* OrthTree<Point, SplitRule, kMD, kSkHeight,
     assert(T->is_leaf == false);
 
     if (putTomb) {
-      // PERF: rebuild size is at most BT::kLeaveWrap, we can get the box
-      // by traversing the tree
+      // NOTE: the box is the one that passed from the top, which should be the
+      // correct one associated with this node
       assert(T->size <= BT::kLeaveWrap);
       assert(BT::WithinBox(BT::template GetBox<Leaf, Interior>(T), box));
       return BT::template RebuildSingleTree<Leaf, Interior, false>(T, box);
@@ -110,6 +111,7 @@ Node* OrthTree<Point, SplitRule, kMD, kSkHeight,
   BoxSeq box_seq(IT.tags_num);  // PARA: the box for bucket nodes
   [[maybe_unused]] auto [re_num, tot_re_size] = IT.TagInbalanceNodeDeletion(
       box_seq, box, has_tomb, [&](BucketType idx) -> bool {
+        // NOTE: only the sparcy node will be rebuilt
         return BT::SparcyNode(IT.sums_tree[idx], IT.tags[idx].first->size);
       });
 

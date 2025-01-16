@@ -95,6 +95,8 @@ RT BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::DeletePoints4Leaf(
   }
 }
 
+// NOTE: diff points from the leaf using std::set_difference
+// {1, 2, 5, 5, 5, 9} ∖ {2, 5, 7} == {1, 5, 5, 9}
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 template <typename Leaf, typename RT>
@@ -106,7 +108,8 @@ RT BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::DiffPoints4Leaf(
     size_t cnt = parlay::count(In, TL->pts[0]);
     TL->size = TL->size >= cnt ? TL->size - cnt : 0;
     assert(TL->size >= 0);
-    if (TL->size == 0) {
+    if (TL->size == 0) {  // set points to normal leaf when all points in dummy
+                          // node has been deleted
       TL->is_dummy = false;
       TL->pts = Points::uninitialized(kLeaveWrap);
     }
@@ -120,7 +123,7 @@ RT BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::DiffPoints4Leaf(
     }
   }
 
-  // NOTE: need to check whether all Points are in the Leaf
+  // NOTE: for normal leaf, need to check whether all Points are in the leaf
   auto diff_res = std::ranges::set_difference(
       parlay::sort(TL->pts.cut(0, TL->size)), parlay::sort(In), TL->pts.begin(),
       [](Point const& p1, Point const& p2) { return p1 < p2; });

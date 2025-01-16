@@ -107,8 +107,6 @@ Node* OrthTree<Point, SplitRule, kMD, kSkHeight,
 
   // NOTE: assign each Node a tag
   InnerTree IT(*this);
-  // IT.Init();
-  // assert(IT.rev_tag.size() == BT::kBucketNum);
   IT.AssignNodeTag(T, 1);
   assert(IT.tags_num > 0 && IT.tags_num <= BT::kBucketNum);
 

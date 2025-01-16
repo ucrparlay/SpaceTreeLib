@@ -158,12 +158,12 @@ class BaseTree {
   template <typename Leaf, IsBinaryNode Interior, bool granularity = false,
             typename PrepareFunc, typename... Args>
   Node* RebuildTreeRecursive(Node* T, PrepareFunc&& prepare_func,
-                             Args&&... args);
+                             bool const allow_rebuild, Args&&... args);
 
   template <typename Leaf, IsMultiNode Interior, bool granularity = false,
             typename PrepareFunc, typename... Args>
   Node* RebuildTreeRecursive(Node* T, PrepareFunc&& prepare_func,
-                             Args&&... args);
+                             bool const allow_rebuild, Args&&... args);
 
   template <typename Leaf, IsBinaryNode Interior, typename Base>
   static Base BuildInnerTree(BucketType idx, HyperPlaneSeq const& pivots,

@@ -27,15 +27,15 @@ void KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDiff_(Slice A) {
   Node* T = this->root_;
   Box box = this->tree_box_;
 
-  // NOTE: diff poitns from the tree
+  // NOTE: diff points from the tree
   DimsType d = T->is_leaf ? 0 : static_cast<Interior*>(T)->split.second;
   std::tie(T, this->tree_box_) =
       BatchDiffRecursive(T, box, A, parlay::make_slice(B), d);
 
-  // NOTE: launch rebuild
+  // NOTE: launch rebuild to either: rebuild the imbalance tree or remove the
+  // sparcy node
   d = T->is_leaf ? 0 : static_cast<Interior*>(T)->split.second;
   auto prepare_rebuild_func = [&](Node* T, DimsType d, Box const& box) {
-    // DimsType new_dim = (d + 1) % BT::kDim;
     DimsType new_dim = split_rule_.NextDimension(d);
     BoxCut box_cut(box, static_cast<Interior*>(T)->split, true);
     auto left_args = std::make_pair(new_dim, box_cut.GetFirstBoxCut());
@@ -43,7 +43,8 @@ void KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDiff_(Slice A) {
     return std::make_pair(std::move(left_args), std::move(right_args));
   };
   this->root_ = BT::template RebuildTreeRecursive<Leaf, Interior>(
-      T, prepare_rebuild_func, d, this->tree_box_);
+      T, prepare_rebuild_func, this->split_rule_.AllowRebuild(), d,
+      this->tree_box_);
 
   return;
 }
@@ -73,7 +74,6 @@ KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDiffRecursive(
           return Num::Lt(p.pnt[TI->split.second], TI->split.first);
         }).begin();
 
-    // DimsType nextDim = (d + 1) % BT::kDim;
     DimsType next_dim = split_rule_.NextDimension(d);
 
     BoxCut box_cut(box, TI->split, true);
@@ -103,7 +103,8 @@ KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDiffRecursive(
   auto box_seq = parlay::sequence<Box>::uninitialized(IT.tags_num);
 
   // NOTE: never set tomb, this equivalent to only compute the bounding box,
-  // and set force par flag using sums_tree
+  // in @box_seq and set force par flag using sums_tree
+  // PARA: the has_tomb variable to IT.MarkTomb is false
   [[maybe_unused]] auto [re_num, tot_re_size] =
       IT.TagInbalanceNodeDeletion(box_seq, box, false, []() { return false; });
   assert(re_num == 0 && tot_re_size == 0);
@@ -119,8 +120,6 @@ KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDiffRecursive(
           start += IT.sums[j];
         }
 
-        // DimsType nextDim = (d + IT.GetDepthByIndex(IT.rev_tag[i])) %
-        // BT::kDim;
         DimsType next_dim = d, depth = IT.GetDepthByIndex(IT.rev_tag[i]);
         for (BucketType i = 0; i < depth; i++) {
           next_dim = split_rule_.NextDimension(next_dim);

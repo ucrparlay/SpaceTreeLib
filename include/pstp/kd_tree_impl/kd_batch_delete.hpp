@@ -60,7 +60,7 @@ KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDeleteRecursive(
     // within a rebuild tree
     if (!T->is_leaf) {
       auto TI = static_cast<Interior*>(T);
-      // WARN: only set the flag for root ,rather than the whole sub-tree
+      // WARN: only set the flag for root, the remaining tree is still unset
       TI->SetParallelFlag(T->size > BT::kSerialBuildCutoff);
     }
     T->size = 0;
@@ -79,11 +79,13 @@ KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDeleteRecursive(
           return Num::Lt(p.pnt[TI->split.second], TI->split.first);
         }).begin();
 
+    // NOTE: put the tomb if the remaining points number are below
+    // kThinLeaveWrap or inbalance
     bool putTomb =
-        split_rule_.AllowRebuild() && has_tomb &&
-        (BT::ImbalanceNode(TI->left->size - (split_iter - In.begin()),
-                           TI->size - In.size()) ||
-         TI->size - In.size() < BT::kThinLeaveWrap);
+        BT::SparcyNode(In.size(), TI->size) ||
+        (split_rule_.AllowRebuild() && has_tomb &&
+         BT::ImbalanceNode(TI->left->size - (split_iter - In.begin()),
+                           TI->size - In.size()));
     has_tomb = putTomb ? false : has_tomb;
     assert(putTomb ? (!has_tomb) : true);
 
@@ -107,9 +109,9 @@ KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDeleteRecursive(
 
     // NOTE: rebuild
     if (putTomb) {
-      assert(split_rule_.AllowRebuild() &&
-             (BT::ImbalanceNode(TI->left->size, TI->size) ||
-              TI->size < BT::kThinLeaveWrap));
+      assert(BT::SparcyNode(0, TI->size) ||
+             (split_rule_.AllowRebuild() &&
+              BT::ImbalanceNode(TI->left->size, TI->size)));
       auto const new_box = BT::GetBox(Lbox, Rbox);
       assert(BT::WithinBox(BT::template GetBox<Leaf, Interior>(T), new_box));
       return NodeBox(
@@ -132,10 +134,10 @@ KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDeleteRecursive(
   [[maybe_unused]] auto [re_num, tot_re_size] = IT.TagInbalanceNodeDeletion(
       box_seq, bx, has_tomb, [&](BucketType idx) -> bool {
         Interior* TI = static_cast<Interior*>(IT.tags[idx].first);
-        return split_rule_.AllowRebuild() &&
-               (BT::ImbalanceNode(TI->left->size - IT.sums_tree[idx << 1],
-                                  TI->size - IT.sums_tree[idx]) ||
-                (TI->size - IT.sums_tree[idx] < BT::kThinLeaveWrap));
+        return BT::SparcyNode(IT.sums_tree[idx], TI->size) ||
+               (split_rule_.AllowRebuild() &&
+                BT::ImbalanceNode(TI->left->size - IT.sums_tree[idx << 1],
+                                  TI->size - IT.sums_tree[idx]));
       });
 
   assert(re_num <= IT.tags_num);
@@ -168,7 +170,7 @@ KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDeleteRecursive(
       },
       1);
 
-  // NOTE: handling of rebuild
+  // NOTE: handling of rebuild (in parallel)
   // NOTE: get new box for skeleton root and rebuild nodes
   Box const new_box =
       std::get<1>(IT.template UpdateInnerTree<InnerTree::kTagRebuildNode>(
