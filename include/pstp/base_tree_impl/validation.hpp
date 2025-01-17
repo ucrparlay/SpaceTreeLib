@@ -23,11 +23,13 @@ BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::CheckBox(Node* T,
     return GetBox<Leaf, Interior>(T);
   }
   Interior* TI = static_cast<Interior*>(T);
+  assert(!TI->GetParallelFlagIniStatus());  // NOTE: ensure that uninitialized
+                                            // force parallelism
   if constexpr (IsBinaryNode<Interior> &&
                 std::same_as<typename Interior::ST,
-                             HyperPlane>) {  // use hyperplane as splitter
+                             HyperPlane>) {  // NOTE: use hyperplane as splitter
     Box lbox(box), rbox(box);
-    lbox.second.pnt[TI->split.second] = TI->split.first;  //* loose
+    lbox.second.pnt[TI->split.second] = TI->split.first;
     rbox.first.pnt[TI->split.second] = TI->split.first;
     Box const left_return_box = CheckBox<Leaf, Interior>(TI->left, lbox);
     Box const right_return_box = CheckBox<Leaf, Interior>(TI->right, rbox);
