@@ -151,16 +151,16 @@ class BaseTree {
   template <typename Leaf, typename Interior, typename... Args>
   Node* RebuildWithInsert(Node* T, Slice In, Args&&... args);
 
-  template <typename Leaf, typename Interior, bool granularity = false,
+  template <typename Leaf, typename Interior, bool granularity,
             typename... Args>
   Node* RebuildSingleTree(Node* T, Args&&... args);
 
-  template <typename Leaf, IsBinaryNode Interior, bool granularity = false,
+  template <typename Leaf, IsBinaryNode Interior, bool granularity,
             typename PrepareFunc, typename... Args>
   Node* RebuildTreeRecursive(Node* T, PrepareFunc&& prepare_func,
                              bool const allow_rebuild, Args&&... args);
 
-  template <typename Leaf, IsMultiNode Interior, bool granularity = false,
+  template <typename Leaf, IsMultiNode Interior, bool granularity,
             typename PrepareFunc, typename... Args>
   Node* RebuildTreeRecursive(Node* T, PrepareFunc&& prepare_func,
                              bool const allow_rebuild, Args&&... args);

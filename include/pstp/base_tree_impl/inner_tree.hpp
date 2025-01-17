@@ -184,7 +184,7 @@ struct BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::InnerTree {
   // the *bucket* Node whose ancestor has been rebuilt has tag kBucketNum+2
   // the *bucket* Node whose ancestor has not been ... has kBucketNum+1
   // otherwise, it's kBucketNum
-  template <typename ViolateFunc>
+  template <bool kSetParallelFlag, typename ViolateFunc>
   void MarkTomb(BucketType idx, BucketType& re_num, size_t& tot_re_size,
                 BoxSeq& box_seq, Box const& box, bool has_tomb,
                 ViolateFunc&& violate_func) {
@@ -192,6 +192,15 @@ struct BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::InnerTree {
       assert(tags[idx].second >= 0 && tags[idx].second < kBucketNum);
       if (!has_tomb) {
         tags[idx].second = kBucketNum + 2;
+
+        if constexpr (kSetParallelFlag) {  // INFO: the sub-tree will be rebuilt
+                                           // in the future and need to force
+                                           // the parallisim
+          if (!tags[idx].first->is_leaf) {
+            auto TI = static_cast<Interior*>(tags[idx].first);
+            TI->SetParallelFlag(TI->size > BT::kSerialBuildCutoff);
+          }
+        }
       } else {
         tags[idx].second = kBucketNum + 1;
       }
@@ -207,21 +216,24 @@ struct BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::InnerTree {
     if (has_tomb && InvokeWithOptionalArg<bool>(violate_func, idx)) {
       tags[idx].second = kBucketNum + 3;
       has_tomb = false;
-      re_num++;
-      tot_re_size += TI->size;
+      TI->SetParallelFlag(TI->size > BT::kSerialBuildCutoff);
+      re_num++, tot_re_size += TI->size;
     }
 
     if constexpr (IsBinaryNode<Interior>) {
       BoxCut box_cut(box, TI->split, true);
-      MarkTomb(idx << 1, re_num, tot_re_size, box_seq, box_cut.GetFirstBoxCut(),
-               has_tomb, violate_func);
-      MarkTomb(idx << 1 | 1, re_num, tot_re_size, box_seq,
-               box_cut.GetSecondBoxCut(), has_tomb, violate_func);
+      MarkTomb<kSetParallelFlag>(idx << 1, re_num, tot_re_size, box_seq,
+                                 box_cut.GetFirstBoxCut(), has_tomb,
+                                 violate_func);
+      MarkTomb<kSetParallelFlag>(idx << 1 | 1, re_num, tot_re_size, box_seq,
+                                 box_cut.GetSecondBoxCut(), has_tomb,
+                                 violate_func);
     } else if constexpr (IsMultiNode<Interior>) {
       // BoxSeq new_box(TI->template ComputeSubregions<BoxSeq>(box));
       for (BucketType i = 0; i < Interior::GetRegions(); ++i) {
-        MarkTomb(idx * Interior::GetRegions() + i, re_num, tot_re_size, box_seq,
-                 TI->GetBoxByRegionId(i, box), has_tomb, violate_func);
+        MarkTomb<kSetParallelFlag>(
+            idx * Interior::GetRegions() + i, re_num, tot_re_size, box_seq,
+            TI->GetBoxByRegionId(i, box), has_tomb, violate_func);
       }
     }
     return;
@@ -232,13 +244,14 @@ struct BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::InnerTree {
   // the *bucket* Node whose ancestor has not been ... has kBucketNum+1
   // otherwise, it's kBucketNum
 
-  template <typename... Args>
+  template <bool kSetParallelFlag, typename... Args>
   auto TagInbalanceNodeDeletion(Args&&... args) {
     ReduceSums<true>(1);
     ResetTagsNum();
     BucketType re_num = 0;
     size_t tot_re_size = 0;
-    MarkTomb(1, re_num, tot_re_size, std::forward<Args>(args)...);
+    MarkTomb<kSetParallelFlag>(1, re_num, tot_re_size,
+                               std::forward<Args>(args)...);
     return std::make_pair(re_num, tot_re_size);
   }
 
@@ -247,8 +260,8 @@ struct BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::InnerTree {
   // kUpdatePointerBox: Update pointer and box
   // kTagRebuildNode: Update the pointer and box, meanwhile it assign the
   //   imbalance node with a new tag
-  // kPostDelUpdate: Update the skeleton after rebuild, which needs to avoid
-  //   touch the deleted nodes
+  // kPostDelUpdate: Update the skeleton after rebuild (e.g., size, children),
+  //   which needs to avoid touch the deleted nodes
   enum UpdateType {
     kUpdatePointer,
     kUpdatePointerBox,
@@ -268,6 +281,8 @@ struct BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::InnerTree {
       return UpdateInnerTreeRecursive<kUT>(1, tree_nodes, p, [&]() {});
     } else if constexpr (kUT == kTagRebuildNode) {  // NOTE: tag the node that
                                                     // needs to be rebuild
+      this->ResetTagsNum();
+
       auto func_2_rebuild_node = [&](auto const&... params) -> void {
         if constexpr (IsBinaryNode<Interior>) {  // NOTE: needs to save the box
           auto const& new_box = std::get<0>(std::forward_as_tuple(params...));
@@ -282,11 +297,12 @@ struct BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::InnerTree {
         }
       };
 
-      this->ResetTagsNum();
       return UpdateInnerTreeRecursive<kUT>(1, tree_nodes, p,
                                            func_2_rebuild_node);
     } else if constexpr (kUT == kPostDelUpdate) {  // NOTE: avoid touch the node
                                                    // that has been deleted
+      // PARA: op == 0 -> toggle whether under a rebuild tree
+      // op == 1 -> query current status
       bool under_rebuild_tree = false;
       return UpdateInnerTreeRecursive<kUT>(
           1, tree_nodes, p, [&](bool op) -> bool {
@@ -345,12 +361,9 @@ struct BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::InnerTree {
                                                    // for deleted trees
       if (!func(1)) {  // query whether under the rebuild_tree
         UpdateInterior<Interior>(this->tags[idx].first, left, right);
-        if (!this->tags[idx].first->is_leaf) {
-          static_cast<Interior*>(this->tags[idx].first)->ResetParallelFlag();
-        }
         return NodeBox(this->tags[idx].first,
                        Box());  // box has been computed before
-      } else if (this->tags[idx].second == kBucketNum + 3) {  // back
+      } else if (this->tags[idx].second == kBucketNum + 3) {  // recurse back
         func(0);  // disable the under_rebuild_tree flag
         if (!this->tags[idx].first->is_leaf) {
           static_cast<Interior*>(this->tags[idx].first)->ResetParallelFlag();
@@ -402,9 +415,6 @@ struct BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::InnerTree {
                                                    // pointers for deleted trees
       if (!func(1)) {                              // not under rebuild tree
         UpdateInterior<Interior>(this->tags[idx].first, new_nodes);
-        if (!this->tags[idx].first->is_leaf) {
-          static_cast<Interior*>(this->tags[idx].first)->ResetParallelFlag();
-        }
         return this->tags[idx].first;  // box has been computed before
       } else if (this->tags[idx].second == kBucketNum + 3) {  // back
         func(0);  // disable the under_rebuild_tree flag

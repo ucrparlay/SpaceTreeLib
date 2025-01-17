@@ -77,7 +77,6 @@ Node* OrthTree<Point, SplitRule, kMD, kSkHeight,
 
     auto TI = static_cast<Interior*>(T);
     OrthNodeArr new_nodes;
-    // BoxSeq new_box(TI->template ComputeSubregions<BoxSeq>(box));
 
     size_t start = 0;
     for (DimsType i = 0; i < kNodeRegions; ++i) {
@@ -88,9 +87,14 @@ Node* OrthTree<Point, SplitRule, kMD, kSkHeight,
       start += sums[i];
     }
 
-    TI->SetParallelFlag(TI->size > BT::kSerialBuildCutoff);
+    bool const force_parallel_flag = TI->size > BT::kSerialBuildCutoff;
+
     BT::template UpdateInterior<Interior>(T, new_nodes);
     assert(T->is_leaf == false);
+
+    if (!has_tomb) {
+      TI->SetParallelFlag(force_parallel_flag);
+    }
 
     if (putTomb) {
       // NOTE: the box is the one that passed from the top, which should be the
@@ -109,14 +113,16 @@ Node* OrthTree<Point, SplitRule, kMD, kSkHeight,
                                       IT.tags_num);
 
   BoxSeq box_seq(IT.tags_num);  // PARA: the box for bucket nodes
-  [[maybe_unused]] auto [re_num, tot_re_size] = IT.TagInbalanceNodeDeletion(
-      box_seq, box, has_tomb, [&](BucketType idx) -> bool {
-        // NOTE: only the sparcy node will be rebuilt
-        return BT::SparcyNode(IT.sums_tree[idx], IT.tags[idx].first->size);
-      });
+  [[maybe_unused]] auto [re_num, tot_re_size] =
+      IT.template TagInbalanceNodeDeletion<true>(
+          box_seq, box, has_tomb, [&](BucketType idx) -> bool {
+            // NOTE: only the sparcy node will be rebuilt
+            return BT::SparcyNode(IT.sums_tree[idx], IT.tags[idx].first->size);
+          });
 
   assert(re_num <= IT.tags_num);
 
+  // NOTE: continue seieving points to leaf first
   auto tree_nodes = parlay::sequence<Node*>::uninitialized(IT.tags_num);
   parlay::parallel_for(
       0, IT.tags_num,

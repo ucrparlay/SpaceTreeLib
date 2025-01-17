@@ -1066,11 +1066,9 @@ void PrintTreeParam() {
             << "Inba: " << TreeWrapper::TreeType::GetImbalanceRatio() << "; ";
 
   if constexpr (std::is_integral_v<typename TreeWrapper::Point::Coord>) {
-    std::cout << "Coord: integer"
-              << "; ";
+    std::cout << "Coord: integer" << "; ";
   } else if (std::is_floating_point_v<typename TreeWrapper::Point::Coord>) {
-    std::cout << "Coord: float"
-              << "; ";
+    std::cout << "Coord: float" << "; ";
   }
   std::cout << "\n" << std::flush;
   return;
@@ -1093,19 +1091,19 @@ struct Wrapper {
 
   // NOTE: Trees
   template <class PointType, class SplitRuleType>
+  struct KdTreeWrapper {
+    using Point = PointType;
+    using SplitRule = SplitRuleType;
+    using TreeType = typename pstp::KdTree<Point, SplitRule>;
+  };
+
+  template <class PointType, class SplitRuleType>
   struct OrthTreeWrapper {
     using Point = PointType;
     using SplitRule = SplitRuleType;
     using TreeType =
         typename pstp::OrthTree<Point, SplitRule, Point::GetDim(),
                                 OrthGetBuildDepthOnce(Point::GetDim())>;
-  };
-
-  template <class PointType, class SplitRuleType>
-  struct KdTreeWrapper {
-    using Point = PointType;
-    using SplitRule = SplitRuleType;
-    using TreeType = typename pstp::KdTree<Point, SplitRule>;
   };
 
   template <class PointType, class SplitRuleType>

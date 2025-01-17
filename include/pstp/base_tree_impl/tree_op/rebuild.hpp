@@ -57,6 +57,9 @@ Node* BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::RebuildWithInsert(
       std::forward<Args>(args)..., GetBox(parlay::make_slice(wx)));
 }
 
+// PARA: when granularity set to false, it will disable the default value for
+// granularity size, which is BT::kSerialBuildCutoff; instead, it will check
+// whether the force parallel flag has been enabled
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 template <typename Leaf, typename Interior, bool granularity, typename... Args>
@@ -72,6 +75,8 @@ Node* BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::RebuildSingleTree(
 }
 
 // NOTE: rebuild a binary tree
+// PARA: if allow_enable_rebuild enabled, this method will re-balance the tree;
+// otherwise, it flattens all sparcy node into leaf nodes
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 template <typename Leaf, IsBinaryNode Interior, bool granularity,
@@ -116,7 +121,6 @@ Node* BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::RebuildTreeRecursive(
             right_args);
       });
 
-  TI->ResetParallelFlag();
   UpdateInterior<Interior>(T, L, R);
   return T;
 }
@@ -169,7 +173,6 @@ Node* BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::RebuildTreeRecursive(
     }
   }
 
-  TI->ResetParallelFlag();
   UpdateInterior<Interior>(T, new_nodes);
   return T;
 }

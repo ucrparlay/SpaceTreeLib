@@ -41,7 +41,7 @@ void OrthTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::BatchDiff_(
     assert(BT::WithinBox(new_box, box));
     return std::make_tuple(std::move(new_box));
   };
-  this->root_ = BT::template RebuildTreeRecursive<Leaf, Interior>(
+  this->root_ = BT::template RebuildTreeRecursive<Leaf, Interior, true>(
       this->root_, prepare_func, split_rule_.AllowRebuild(), this->tree_box_);
   return;
 }
@@ -68,7 +68,6 @@ Node* OrthTree<Point, SplitRule, kMD, kSkHeight,
 
     auto TI = static_cast<Interior*>(T);
     OrthNodeArr new_nodes;
-    // BoxSeq new_box(TI->template ComputeSubregions<BoxSeq>(box));
 
     size_t start = 0;
     for (DimsType i = 0; i < kNodeRegions; ++i) {
@@ -78,7 +77,6 @@ Node* OrthTree<Point, SplitRule, kMD, kSkHeight,
       start += sums[i];
     }
 
-    TI->SetParallelFlag(TI->size > BT::kSerialBuildCutoff);
     BT::template UpdateInterior<Interior>(T, new_nodes);
     assert(T->is_leaf == false);
 
@@ -91,6 +89,8 @@ Node* OrthTree<Point, SplitRule, kMD, kSkHeight,
   BT::template SeievePoints<Interior>(In, Out, n, IT.tags, IT.sums,
                                       IT.tags_num);
   IT.template ReduceSums<true>(1);  // NOTE: to set the parallel flag
+  // PERF: no need to call tag inbalance node here, as the bounding box for
+  // orth-tree is fixed
 
   auto tree_nodes = parlay::sequence<Node*>::uninitialized(IT.tags_num);
   parlay::parallel_for(

@@ -42,7 +42,11 @@ void KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDiff_(Slice A) {
     auto right_args = std::make_pair(new_dim, box_cut.GetSecondBoxCut());
     return std::make_pair(std::move(left_args), std::move(right_args));
   };
-  this->root_ = BT::template RebuildTreeRecursive<Leaf, Interior>(
+
+  // PERF: in the batch diff, there is no need to set the force parallel flag,
+  // as the size of the tree has been updated in the first time traversal, the
+  // second time only need to follow the size of the current tree
+  this->root_ = BT::template RebuildTreeRecursive<Leaf, Interior, true>(
       T, prepare_rebuild_func, this->split_rule_.AllowRebuild(), d,
       this->tree_box_);
 
@@ -85,7 +89,7 @@ KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDiffRecursive(
                            In.cut(split_iter - In.begin(), n),
                            Out.cut(split_iter - In.begin(), n), next_dim);
 
-    TI->SetParallelFlag(TI->size > BT::kSerialBuildCutoff);
+    assert(!TI->GetParallelFlagIniStatus());
     BT::template UpdateInterior<Interior>(T, L, R);
     assert(T->size == L->size + R->size && TI->split.second >= 0 &&
            TI->is_leaf == false);
@@ -102,11 +106,13 @@ KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDiffRecursive(
   auto tree_nodes = NodeBoxSeq::uninitialized(IT.tags_num);
   auto box_seq = parlay::sequence<Box>::uninitialized(IT.tags_num);
 
-  // NOTE: never set tomb, this equivalent to only compute the bounding box,
-  // in @box_seq and set force par flag using sums_tree
+  // NOTE: never set tomb, this equivalent to only compute the bounding box
+  // (required in kdtree as it neeeds to update the box after deletion), in
+  // @box_seq and set force par flag using sums_tree
   // PARA: the has_tomb variable to IT.MarkTomb is false
   [[maybe_unused]] auto [re_num, tot_re_size] =
-      IT.TagInbalanceNodeDeletion(box_seq, box, false, []() { return false; });
+      IT.template TagInbalanceNodeDeletion<false>(box_seq, box, false,
+                                                  []() { return false; });
   assert(re_num == 0 && tot_re_size == 0);
 
   parlay::parallel_for(
