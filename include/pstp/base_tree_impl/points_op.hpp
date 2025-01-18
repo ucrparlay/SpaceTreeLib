@@ -47,8 +47,9 @@ void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::Partition(
   size_t num_block = (n + kBlockSize - 1) >> kLog2Base;
   parlay::sequence<parlay::sequence<BallsType>> offset(
       num_block, parlay::sequence<BallsType>(kBucketNum));
-  assert(offset.size() == num_block && offset[0].size() == kBucketNum &&
-         offset[0][0] == 0);
+  assert(offset.size() == num_block);
+  assert(offset[0].size() == kBucketNum);
+  assert(offset[0][0] == 0);
   parlay::parallel_for(0, num_block, [&](size_t i) {
     for (size_t j = i << kLog2Base; j < std::min((i + 1) << kLog2Base, n);
          j++) {

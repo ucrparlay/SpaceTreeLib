@@ -88,7 +88,8 @@ Node* OrthTree<Point, SplitRule, kMD, kSkHeight,
   assert(IT.tags_num > 0 && IT.tags_num <= BT::kBucketNum);
   BT::template SeievePoints<Interior>(In, Out, n, IT.tags, IT.sums,
                                       IT.tags_num);
-  IT.template ReduceSums<true>(1);  // NOTE: to set the parallel flag
+  IT.ReduceSums(1);  // NOTE: to set the parallel flag
+
   // PERF: no need to call tag inbalance node here, as the bounding box for
   // orth-tree is fixed
 

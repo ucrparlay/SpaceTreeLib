@@ -23,6 +23,7 @@
 
 #ifdef CCP
 using Coord = long;
+// using Coord = double;
 #else
 using Coord = long;
 #endif  // CCP

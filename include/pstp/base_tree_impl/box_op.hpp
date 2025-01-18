@@ -169,22 +169,32 @@ inline bool BaseTree<Point, DerivedTree, kSkHeight,
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 inline bool BaseTree<Point, DerivedTree, kSkHeight,
-                     kImbaRatio>::VerticalLineIntersectBox(Coord const& l,
+                     kImbaRatio>::VerticalLineOnBoxEdge(Coord const& line,
+                                                        Box const& box,
+                                                        DimsType d) {
+  assert(LegalBox(box));
+  return Num::Eq(line, box.first.pnt[d]) || Num::Eq(line, box.second.pnt[d]);
+}
+
+template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
+inline bool BaseTree<Point, DerivedTree, kSkHeight,
+                     kImbaRatio>::VerticalLineIntersectBox(Coord const& line,
                                                            Box const& box,
                                                            DimsType d) {
   assert(LegalBox(box));
-  return Num::Geq(l, box.first.pnt[d]) && Num::Leq(l, box.second.pnt[d]);
+  return Num::Geq(line, box.first.pnt[d]) && Num::Leq(line, box.second.pnt[d]);
 }
 
-// NOTE: if the line @l is one the boundary of the box, then it will be
+// NOTE: if the line @line is one the boundary of the box, then it will be
 // considered as not intersect
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 inline bool BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::
-    VerticalLineIntersectBoxExclude(Coord const& l, Box const& box,
+    VerticalLineIntersectBoxExclude(Coord const& line, Box const& box,
                                     DimsType d) {
   assert(LegalBox(box));
-  return Num::Gt(l, box.first.pnt[d]) && Num::Lt(l, box.second.pnt[d]);
+  return Num::Gt(line, box.first.pnt[d]) && Num::Lt(line, box.second.pnt[d]);
 }
 
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,

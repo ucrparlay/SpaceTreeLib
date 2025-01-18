@@ -272,7 +272,9 @@ struct SplitRule {
                     Box const& node_box, Box const& input_box) {
     assert(Tree::WithinBox(input_box, node_box));
 
-    // the mid of the box split the box for input points
+    // NOTE: the mid of the box split the box for input points
+    // or for integer coordinates, when the length of one bounding box is 1, the
+    // new generated box will be the same as the input box.
     if (Tree::VerticalLineIntersectBoxExclude(Tree::GetBoxMid(dim, node_box),
                                               input_box, dim)) {
       return tree.BuildRecursive(In, Out, dim, node_box);
@@ -281,14 +283,30 @@ struct SplitRule {
     auto cut_dim = dim_rule.FindCuttingDimension(node_box, dim);
     auto cut_val = Tree::GetBoxMid(cut_dim, node_box);
 
-    // if the line is on the left of the boundary, then we should generate the
-    // box to the right, and vice versa.
-    // otherwise determine the position by comparing the mid of the box
-    // This should work for the max stretch dim as well
-    bool split_is_right = Tree::Num::Geq(Tree::GetBoxMid(cut_dim, node_box),
-                                         input_box.second[cut_dim]);
-    assert(split_is_right || Tree::Num::Leq(Tree::GetBoxMid(cut_dim, node_box),
-                                            input_box.first[cut_dim]));
+    // NOTE: if the mid of box is the same as the box edge, then this time the
+    // recursion will usless, the worst case is that all the mid on all
+    // dimension is on the box edge, i.e., (0,1), (0,1), then a correct split
+    // algorithm will handle this case
+    DimsType dim_cnt = 0;
+    while (dim_cnt != Tree::kDim) {
+      if (!Tree::VerticalLineOnBoxEdge(cut_val, node_box, cut_dim)) {
+        break;
+      }
+      cut_dim = dim_rule.NextDimension(cut_dim);
+      cut_val = Tree::GetBoxMid(cut_dim, node_box);
+      dim_cnt++;
+    }
+    if (dim_cnt == Tree::kDim) {
+      return tree.BuildRecursive(In, Out, dim_rule.NextDimension(dim),
+                                 node_box);
+    }
+
+    // NOTE: if the line is on the left of the boundary, then we should generate
+    // the box to the right, and vice versa. otherwise determine the position by
+    // comparing the mid of the box This should work for the max stretch dim as
+    // well
+    bool split_is_right = Tree::Num::Geq(cut_val, input_box.second[cut_dim]);
+    assert(split_is_right || Tree::Num::Leq(cut_val, input_box.first[cut_dim]));
 
     typename Tree::BoxCut box_cut(
         node_box, typename Tree::Splitter(cut_val, cut_dim), split_is_right);

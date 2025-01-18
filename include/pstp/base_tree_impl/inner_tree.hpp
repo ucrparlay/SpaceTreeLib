@@ -97,7 +97,6 @@ struct BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::InnerTree {
   // NOTE: reduce sums is travsersal of the skeleton with counting the points
   // seieved onto every node, it is good to determine whether we need forcing
   // parallel in the following operations, e.g., flatten/rebuild the tree.
-  template <bool kApplyForceParallel>
   void ReduceSums(BucketType idx) const {
     if (idx > kPivotNum || tags[idx].first->is_leaf) {
       assert(tags[idx].second < kBucketNum);
@@ -109,26 +108,20 @@ struct BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::InnerTree {
     }
 
     if constexpr (IsBinaryNode<Interior>) {
-      ReduceSums<kApplyForceParallel>(idx << 1);
-      ReduceSums<kApplyForceParallel>(idx << 1 | 1);
+      ReduceSums(idx << 1);
+      ReduceSums(idx << 1 | 1);
       sums_tree[idx] = sums_tree[idx << 1] + sums_tree[idx << 1 | 1];
     } else if constexpr (IsMultiNode<Interior>) {
       sums_tree[idx] = 0;
       for (BucketType i = 0; i < Interior::GetRegions(); ++i) {
-        ReduceSums<kApplyForceParallel>(idx * Interior::GetRegions() + i);
+        ReduceSums(idx * Interior::GetRegions() + i);
         sums_tree[idx] += sums_tree[idx * Interior::GetRegions() + i];
       }
     }
 
-    // NOTE: enable the parallel flag for the tree
-    if constexpr (kApplyForceParallel) {
-      if (!tags[idx].first->is_leaf && sums_tree[idx] != 0) {
-        auto TI = static_cast<Interior*>(tags[idx].first);
-        assert(!TI->GetParallelFlagIniStatus());
-        TI->SetParallelFlag(tags[idx].first->size > kSerialBuildCutoff);
-        assert(TI->GetParallelFlagIniStatus());
-      }
-    }
+    // PERF: Don't add force parallel here as it not precise: whether a node
+    // should be rebuilt depends on only the tomb status, rather than the points
+    // sieved to that node
     return;
   }
 
@@ -173,7 +166,7 @@ struct BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::InnerTree {
 
   template <typename... Args>
   void TagInbalanceNode(Args&&... args) {
-    ReduceSums<false>(1);
+    ReduceSums(1);
     ResetTagsNum();
     PickTag(1, std::forward<Args>(args)...);
     assert(AssertSize(tags[1].first));
@@ -246,7 +239,7 @@ struct BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::InnerTree {
 
   template <bool kSetParallelFlag, typename... Args>
   auto TagInbalanceNodeDeletion(Args&&... args) {
-    ReduceSums<true>(1);
+    ReduceSums(1);
     ResetTagsNum();
     BucketType re_num = 0;
     size_t tot_re_size = 0;
