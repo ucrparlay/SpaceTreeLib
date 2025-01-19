@@ -48,6 +48,7 @@ template <typename Point, typename SplitRule, uint_fast8_t kMD,
 void OrthTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::
     SerialSplitSkeleton(Node* T, Slice In, DimsType dim, DimsType idx,
                         parlay::sequence<BallsType>& sums) {
+  // TODO: change it using the split_rule_.split()
   if (dim == BT::kDim) {
     sums[idx - kNodeRegions] = In.size();
     return;
@@ -77,6 +78,8 @@ Node* OrthTree<Point, SplitRule, kMD, kSkHeight,
 
   if (T->is_leaf) {
     Leaf* TL = static_cast<Leaf*>(T);
+    // NOTE: insert the points to normal leaf if the capacity allows;
+    // or check if the leaf is dummy and contains same points as inputs
     if ((!TL->is_dummy && n + T->size <= BT::kLeaveWrap) ||
         (TL->is_dummy &&
          parlay::all_of(In, [&](Point const& p) { return p == TL->pts[0]; }))) {

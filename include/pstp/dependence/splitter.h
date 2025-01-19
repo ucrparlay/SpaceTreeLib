@@ -269,7 +269,9 @@ struct SplitRule {
   // NOTE: divide the space until the split cut the input box
   template <typename Tree, typename Slice, typename DimsType, typename Box>
   Node* DivideSpace(Tree& tree, Slice In, Slice Out, DimsType dim,
-                    Box const& node_box, Box const& input_box) {
+                    Box const& node_box, Box const& input_box)
+    requires(IsBinaryNode<typename Tree::Interior>)
+  {
     assert(Tree::WithinBox(input_box, node_box));
 
     // NOTE: the mid of the box split the box for input points
@@ -296,7 +298,7 @@ struct SplitRule {
       cut_val = Tree::GetBoxMid(cut_dim, node_box);
       dim_cnt++;
     }
-    if (dim_cnt == Tree::kDim) {
+    if (dim_cnt == Tree::kDim) {  // WARN:this breaks rotation manner
       return tree.BuildRecursive(In, Out, dim_rule.NextDimension(dim),
                                  node_box);
     }
@@ -326,7 +328,75 @@ struct SplitRule {
         L, R, box_cut.GetHyperPlane(), typename Tree::AugType());
   }
 
+  template <typename Tree, typename Slice, typename DimsType, typename Box>
+  Node* DivideSpace(Tree& tree, Slice In, Slice Out, DimsType dim,
+                    Box const& node_box, Box const& input_box)
+    requires(IsMultiNode<typename Tree::Interior>)
+  {
+    assert(Tree::WithinBox(input_box, node_box));
+
+    // NOTE: the mid of the box split the box for input points
+    // or for integer coordinates, when the length of one bounding box is 1, the
+    // new generated box will be the same as the input box.
+    auto nodebox_split = Tree::Interior::ComputeSplitter(node_box);
+    for (auto const& split : nodebox_split) {
+      if (Tree::VerticalLineIntersectBoxExclude(split.first, input_box,
+                                                split.second)) {
+        return tree.BuildRecursive(In, Out, node_box);
+      }
+    }
+
+    // NOTE: if the mid of box is the same as the box edge, then this time the
+    // recursion will useless, the worst case is that all the mid on all
+    // dimension is on the box edge, i.e., (0,1), (0,1), then a correct split
+    // algorithm will handle this case
+    if (std::ranges::all_of(nodebox_split, [&](auto const& split) {
+          return Tree::VerticalLineOnBoxEdge(split.first, node_box,
+                                             split.second);
+        })) {
+      return tree.BuildRecursive(In, Out, node_box);
+    }
+
+    // NOTE: if the line is on the left of the boundary, then we should generate
+    // the box to the right, and vice versa. otherwise determine the position by
+    // comparing the mid of the box This should work for the max stretch dim as
+    // well
+    typename Tree::Interior::BucketType non_empty_node_id = 1;
+    for (auto const& split : nodebox_split) {
+      non_empty_node_id =
+          non_empty_node_id * 2 +
+          static_cast<typename Tree::Interior::BucketType>(
+              !Tree::Num::Geq(split.first, input_box.second[split.second]));
+    }
+    // for (DimsType i = 0; i < Tree::Interior::GetSplitNums(); i++) {
+    //   non_empty_node_id = Tree::Num::Geq(
+    //       nodebox_split[i].first, input_box.second[nodebox_split[i].second]);
+    //   non_empty_node_id *= 2;
+    //   if (!split_is_right[i]) {
+    //     non_empty_node_id += 1;
+    //   }
+    // }
+    non_empty_node_id -= Tree::Interior::GetRegions();
+
+    typename Tree::Interior::NodeArr tree_nodes;
+    // TODO:remove conditional branch within loop
+    for (DimsType i = 0; i < Tree::Interior::GetRegions(); i++) {
+      if (non_empty_node_id == i) {
+        tree_nodes[i] = DivideSpace(
+            tree, In, Out, dim,
+            Tree::Interior::GetBoxByRegionId(i, nodebox_split, node_box),
+            input_box);
+      } else {
+        tree_nodes[i] = AllocEmptyLeafNode<Slice, typename Tree::Leaf>();
+      }
+    }
+
+    return AllocInteriorNode<typename Tree::Interior>(tree_nodes, nodebox_split,
+                                                      typename Tree::AugType());
+  }
+
   // NOTE: cannot divide the points on @dim, while the points are not the same
+  // TODO: redesign based on node type
   template <typename Tree, typename Slice, typename DimsType, typename Box>
   auto HandlingUndivide(Tree& tree, Slice In, Slice Out, DimsType dim,
                         Box const& box) {
@@ -334,8 +404,13 @@ struct SplitRule {
       // NOTE: in object median, if current dimension is not divideable, then
       // switch to another dimension then continue. This works since unless all
       // points are same, otherwise we can always slice some points out.
-      return tree.SerialBuildRecursive(In, Out, dim_rule.NextDimension(dim),
-                                       Tree::GetBox(In));
+      if constexpr (IsBinaryNode<typename Tree::Interior>) {
+        return tree.SerialBuildRecursive(In, Out, dim_rule.NextDimension(dim),
+                                         Tree::GetBox(In));
+      } else {
+        // TODO: tooo brute force
+        return tree.BuildRecursive(In, Out, Tree::GetBox(In));
+      }
 
     } else if constexpr (IsSpatialMedianSplit<PartitionRule>) {
       // NOTE: in spatial median, we simply reduce the box by half on

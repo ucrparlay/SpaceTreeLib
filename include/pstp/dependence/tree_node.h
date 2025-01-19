@@ -214,6 +214,8 @@ struct MultiNode : Node {
 
   static consteval auto GetLevels() { return kMD; }
 
+  static consteval auto GetSplitNums() { return kMD; }
+
   // NOTE: whether we use same splitter for same level
   static consteval auto EqualSplit()
     requires std::same_as<ST, std::array<typename ST::value_type, kMD>>

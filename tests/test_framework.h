@@ -242,8 +242,9 @@ void BatchInsert(Tree& pkd, parlay::sequence<Point> const& WP,
       auto box2 =
           Tree::GetBox(wi.cut(0, static_cast<size_t>(wi.size() * ratio)));
       Box box = Tree::GetBox(box1, box2);
-      // std::cout << box1.first << ' ' << box1.second << std::endl;
-      // std::cout << box2.first << ' ' << box2.second << std::endl;
+      // std::cout << box1.first << ' ' << box1.second;
+      // std::cout << box2.first << ' ' << box2.second;
+      // std::cout << box.first << ' ' << box.second << std::endl;
       pkd.Build(parlay::make_slice(wp), box);
     } else {
       std::cout << "Not supported Tree type\n" << std::flush;
@@ -1067,9 +1068,11 @@ void PrintTreeParam() {
             << "Inba: " << TreeWrapper::TreeType::GetImbalanceRatio() << "; ";
 
   if constexpr (std::is_integral_v<typename TreeWrapper::Point::Coord>) {
-    std::cout << "Coord: integer" << "; ";
+    std::cout << "Coord: integer"
+              << "; ";
   } else if (std::is_floating_point_v<typename TreeWrapper::Point::Coord>) {
-    std::cout << "Coord: float" << "; ";
+    std::cout << "Coord: float"
+              << "; ";
   }
   std::cout << "\n" << std::flush;
   return;

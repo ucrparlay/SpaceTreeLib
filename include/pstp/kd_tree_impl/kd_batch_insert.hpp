@@ -79,7 +79,7 @@ Node* KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchInsertRecursive(
   BT::template SeievePoints<Interior>(In, Out, n, IT.tags, IT.sums,
                                       IT.tags_num);
 
-  IT.TagInbalanceNode([&](BucketType idx) -> bool {
+  IT.TagInbalanceNode([&]([[maybe_unused]] BucketType idx) -> bool {
     auto const TI = static_cast<Interior*>(IT.tags[idx].first);
     return split_rule_.AllowRebuild() &&
            BT::ImbalanceNode(TI->left->size + IT.sums_tree[idx << 1],
