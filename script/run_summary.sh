@@ -53,7 +53,7 @@ for solver in "${Solvers[@]}"; do
                         echo ">>>${dest}"
 
                         for ((i = 1; i <= insNum; i++)); do
-                            numactl -i all ${exe} -p "${files_path}/${i}.in" -r ${round} -k ${k} -i ${read_file} -s ${summary} -t ${tag} -d ${dim} -q ${queryType} -T ${tree} -l ${split} | tee -a "${dest}"
+                            numactl -i all ${exe} -p "${files_path}/${i}.in" -r ${round} -k ${k} -i ${read_file} -s ${summary} -t ${tag} -d ${dim} -q ${queryType} -T ${tree} -l ${split} 2>&1 | tee -a "${dest}"
                         done
                     done
                 done

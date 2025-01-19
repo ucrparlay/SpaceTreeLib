@@ -5,7 +5,7 @@ set -o xtrace
 Solvers=("test")
 Node=(1000000000)
 # Tree=(2)
-Tree=(0 1 2)
+Tree=(0 1)
 Dim=(2 3)
 declare -A datas
 # datas["/data/legacy/data3/zmen002/kdtree/ss_varden/"]="../benchmark/ss_varden/"
@@ -54,7 +54,7 @@ for solver in "${Solvers[@]}"; do
                         echo ">>>${dest}"
 
                         for ((i = 1; i <= insNum; i++)); do
-                            numactl -i all ${exe} -p "${files_path}/${i}.in" -r ${round} -k ${k} -i ${read_file} -s ${summary} -t ${tag} -d ${dim} -q ${queryType} -T ${tree} -l ${split} | tee -a "${dest}"
+                            numactl -i all ${exe} -p "${files_path}/${i}.in" -r ${round} -k ${k} -i ${read_file} -s ${summary} -t ${tag} -d ${dim} -q ${queryType} -T ${tree} -l ${split} 2>&1 | tee -a "${dest}"
                         done
                     done
                 done
