@@ -97,28 +97,15 @@ Node* OrthTree<Point, SplitRule, kMD, kSkHeight,
   SerialSplit(In, dim, 1, box, sums);
   assert(std::cmp_equal(std::accumulate(sums.begin(), sums.end(), 0), n));
 
-  // TODO: replace here using the split rule
-  // if (std::ranges::count(sums, 0) == kNodeRegions - 1) {
-  //   // NOTE: avoid the repeat check as the last
-  //   if (!checked_duplicate) {
-  //     if (std::ranges::find_if_not(In, [&](Point const& p) {  // early return
-  //           return p.SameDimension(In[0]);
-  //         }) == In.end()) {
-  //       // WARN: Need to pass full range, since it needs to compute the size
-  //       return AllocDummyLeafNode<Slice, Leaf>(In);
-  //     }
-  //     checked_duplicate = true;
-  //   }
-  // } else {
-  //   checked_duplicate = false;
-  // }
-
-  // assert(!(checked_duplicate && std::ranges::all_of(In, [&](Point const& p) {
-  //            return p == In[0];
-  //          })));
-
-  if (std::ranges::count(sums, 0) == kNodeRegions - 1) {
-    return split_rule_.HandlingUndivide(*this, In, Out, 0, box);
+  if (std::ranges::count(sums, 0) == kNodeRegions - 1) {    // split fails
+    if (std::ranges::find_if_not(In, [&](Point const& p) {  // early return
+          return p.SameDimension(In[0]);
+        }) == In.end()) {
+      // WARN: Need to pass full range, since it needs to compute the size
+      return AllocDummyLeafNode<Slice, Leaf>(In);
+    } else {
+      return split_rule_.HandlingUndivide(*this, In, Out, box);
+    }
   }
 
   OrthNodeArr tree_nodes;

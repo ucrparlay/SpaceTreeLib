@@ -88,7 +88,7 @@ Node* KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::SerialBuildRecursive(
         })) {  // NOTE: check whether all elements are identical
       return AllocDummyLeafNode<Slice, Leaf>(In);
     } else {  // NOTE: current dim d is same but other dims are not
-      return split_rule_.HandlingUndivide(*this, In, Out, dim, box);
+      return split_rule_.HandlingUndivide(*this, In, Out, box, dim);
     }
   }
 

@@ -43,7 +43,7 @@ for queryType in "${queryTypes[@]}"; do
 
 						for file in "${files_path}/"*.in; do
 							echo "------->${file}"
-							../build/${tester} -p "${file}" -d "${dim}" -k ${K} -t ${tag} -r 2 -l "${split}" -T "${tree}" -q ${queryType} >>${dest}
+							../build/${tester} -p "${file}" -i 1 -s 0 -d "${dim}" -k ${K} -t ${tag} -r 2 -l "${split}" -T "${tree}" -q ${queryType} >>${dest}
 
 							nc=$(grep -i -o "ok" ${dest} | wc -l)
 							if [[ ${nc} -ne ${count} ]]; then
