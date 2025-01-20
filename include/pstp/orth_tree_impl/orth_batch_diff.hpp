@@ -61,6 +61,7 @@ Node* OrthTree<Point, SplitRule, kMD, kSkHeight,
     return BT::template DiffPoints4Leaf<Leaf, Node*>(T, In);
   }
 
+  // if (In.size()) {
   if (In.size() <= BT::kSerialBuildCutoff) {
     parlay::sequence<BallsType> sums(kNodeRegions, 0);
     SerialSplitSkeleton(T, In, 0, 1, sums);

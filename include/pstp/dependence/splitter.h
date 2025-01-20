@@ -275,18 +275,19 @@ struct SplitRule {
   {
     assert(Tree::WithinBox(input_box, node_box));
 
-    // NOTE: the mid of the box split the box for input points
-    // or for integer coordinates, when the length of one bounding box is 1, the
-    // new generated box will be the same as the input box.
     if (Tree::VerticalLineIntersectBoxExclude(Tree::GetBoxMid(dim, node_box),
-                                              input_box, dim)) {
+                                              input_box, dim)
+        // || Tree::VerticalLineOnBoxRightEdge(Tree::GetBoxMid(dim, node_box),
+        //                                    input_box, dim)
+    ) {
       return tree.BuildRecursive(In, Out, dim, node_box);
     }
 
     auto cut_dim = dim_rule.FindCuttingDimension(node_box, dim);
     auto cut_val = Tree::GetBoxMid(cut_dim, node_box);
 
-    // NOTE: if the mid of box is the same as the box edge, then this time the
+    // INFO: test whether the node_box will remain unchanged after the split.
+    // If the mid of box is the same as the box edge, then this time the
     // recursion will usless, the worst case is that all the mid on all
     // dimension is on the box edge, i.e., (0,1), (0,1), then a correct split
     // algorithm will handle this case
@@ -340,7 +341,10 @@ struct SplitRule {
     auto nodebox_split = Tree::Interior::ComputeSplitter(node_box);
     for (auto const& split : nodebox_split) {
       if (Tree::VerticalLineIntersectBoxExclude(split.first, input_box,
-                                                split.second)) {
+                                                split.second) ||
+          Tree::VerticalLineOnBoxRightEdge(split.first, input_box,
+                                           split.second)) {
+        // NOTE: any point on the split should be put on the right
         return tree.BuildRecursive(In, Out, node_box);
       }
     }
@@ -348,19 +352,25 @@ struct SplitRule {
     if (std::ranges::all_of(nodebox_split, [&](auto const& split) {
           return Tree::VerticalLineOnBoxEdge(split.first, node_box,
                                              split.second);
-        })) {
+        })) {  // NOTE: new box will be same as the old ones
       return tree.BuildRecursive(In, Out, node_box);
     }
 
-    typename Tree::Interior::BucketType pivot_region_id =
-        1;  // PARA: node id contains the input box
+    // PARA: node id contains the input box
+    typename Tree::Interior::BucketType pivot_region_id = 1;
+    // NOTE: considering three cases:
+    // 1: the split is LESS than the left input box edge
+    // 2: the split is EQ the left box edge
+    // 3: same as 2 but left and right edge is same, aka. a line
+    // The special judge above has prune out the case that split intersect the
+    // box, therefore split Lt or Eq the RIGHT edge will cover all the cases
     for (auto const& split : nodebox_split) {
       pivot_region_id =
           pivot_region_id * 2 +
-          static_cast<typename Tree::Interior::BucketType>(Tree::Num::Lt(
-              split.first,
-              input_box.second[split.second]));  // equivalent to not Geq
+          static_cast<typename Tree::Interior::BucketType>(
+              Tree::Num::Leq(split.first, input_box.second[split.second]));
     }
+    assert(pivot_region_id >= 4 && pivot_region_id <= 7);
     pivot_region_id -= Tree::Interior::GetRegions();
 
     typename Tree::Interior::NodeArr tree_nodes;
@@ -379,7 +389,6 @@ struct SplitRule {
   }
 
   // NOTE: cannot divide the points on @dim, while the points are not the same
-  // TODO: redesign based on node type
   template <typename Tree, typename Slice, typename Box, typename... Args>
   auto HandlingUndivide(Tree& tree, Slice In, Slice Out, Box const& box,
                         Args&&... args) {
@@ -388,11 +397,11 @@ struct SplitRule {
       // switch to another dimension then continue. This works since unless all
       // points are same, otherwise we can always slice some points out.
       if constexpr (IsBinaryNode<typename Tree::Interior>) {
+        // TODO: tooo brute force
         return tree.SerialBuildRecursive(
             In, Out, dim_rule.NextDimension(std::forward<Args>(args)...),
             Tree::GetBox(In));
       } else {
-        // TODO: tooo brute force
         return tree.BuildRecursive(In, Out, Tree::GetBox(In));
       }
 

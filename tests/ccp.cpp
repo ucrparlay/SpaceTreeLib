@@ -146,11 +146,12 @@ void runKDParallel(auto const& wp, auto const& wi, Typename* kdknn,
   if (tag & (1 << 2)) {
     BatchDiff<Point, Tree, kTestTime>(tree, wp, 2, kCCPBatchDiffTotalRatio,
                                       kCCPBatchDiffOverlapRatio);
+    // BatchDiff<Point, Tree, kTestTime>(tree, wp, 2, 0.5, 1.0);
+    tree.template Validate<typename Tree::Leaf, typename Tree::Interior,
+                           typename Tree::SplitRuleType>();
     assert(tree.GetRoot()->size ==
            wp.size() - static_cast<size_t>(wp.size() * kCCPBatchDiffTotalRatio *
                                            kCCPBatchDiffOverlapRatio));
-    tree.template Validate<typename Tree::Leaf, typename Tree::Interior,
-                           typename Tree::SplitRuleType>();
     std::cout << "---------------finish diff------------------\n" << std::flush;
   }
 

@@ -308,6 +308,7 @@ void BatchDiff(Tree& pkd, parlay::sequence<Point> const& WP, int const& rounds,
   using Points = typename Tree::Points;
   size_t total_batch_size = static_cast<size_t>(WP.size() * total_ratio);
   size_t overlap_size = static_cast<size_t>(total_batch_size * overlap_ratio);
+  // std::cout << total_batch_size << " " << overlap_size << std::endl;
 
   Points WI = parlay::tabulate(total_batch_size, [&](size_t i) -> Point {
     if (i < overlap_size) {
@@ -319,6 +320,7 @@ void BatchDiff(Tree& pkd, parlay::sequence<Point> const& WP, int const& rounds,
       return p;
     }
   });
+  // std::cout << WI.size() << std::endl;
 
   Points wp = Points::uninitialized(WP.size());
   Points wi = Points::uninitialized(WI.size());
@@ -1068,11 +1070,9 @@ void PrintTreeParam() {
             << "Inba: " << TreeWrapper::TreeType::GetImbalanceRatio() << "; ";
 
   if constexpr (std::is_integral_v<typename TreeWrapper::Point::Coord>) {
-    std::cout << "Coord: integer"
-              << "; ";
+    std::cout << "Coord: integer" << "; ";
   } else if (std::is_floating_point_v<typename TreeWrapper::Point::Coord>) {
-    std::cout << "Coord: float"
-              << "; ";
+    std::cout << "Coord: float" << "; ";
   }
   std::cout << "\n" << std::flush;
   return;

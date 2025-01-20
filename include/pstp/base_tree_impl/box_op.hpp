@@ -169,11 +169,32 @@ inline bool BaseTree<Point, DerivedTree, kSkHeight,
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 inline bool BaseTree<Point, DerivedTree, kSkHeight,
+                     kImbaRatio>::VerticalLineOnBoxLeftEdge(Coord const& line,
+                                                            Box const& box,
+                                                            DimsType d) {
+  assert(LegalBox(box));
+  return Num::Eq(line, box.first.pnt[d]);
+}
+
+template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
+inline bool BaseTree<Point, DerivedTree, kSkHeight,
+                     kImbaRatio>::VerticalLineOnBoxRightEdge(Coord const& line,
+                                                             Box const& box,
+                                                             DimsType d) {
+  assert(LegalBox(box));
+  return Num::Eq(line, box.second.pnt[d]);
+}
+
+template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
+inline bool BaseTree<Point, DerivedTree, kSkHeight,
                      kImbaRatio>::VerticalLineOnBoxEdge(Coord const& line,
                                                         Box const& box,
                                                         DimsType d) {
   assert(LegalBox(box));
-  return Num::Eq(line, box.first.pnt[d]) || Num::Eq(line, box.second.pnt[d]);
+  return VerticalLineOnBoxLeftEdge(line, box, d) ||
+         VerticalLineOnBoxRightEdge(line, box, d);
 }
 
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
