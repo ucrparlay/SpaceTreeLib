@@ -15,7 +15,7 @@ tag=$((2#111))
 count=1 # count the number of ok in the output
 dims=(2 3 5)
 queryTypes=$((2#111))
-trees=(0 1)
+trees=(1 0)
 
 Paths=("/ssd1/zmen002/kdtree/ss_varden/" "/ssd1/zmen002/kdtree/uniform/")
 
@@ -26,7 +26,8 @@ for queryType in "${queryTypes[@]}"; do
 			for dim in "${dims[@]}"; do
 				for tree in "${trees[@]}"; do
 					if [[ ${tree} -eq 0 ]]; then
-						splits=(0 3)
+						# splits=(0 3)
+						splits=(3)
 					elif [[ ${tree} -eq 1 ]]; then
 						splits=(3)
 					elif [[ ${tree} -eq 2 ]]; then

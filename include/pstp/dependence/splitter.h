@@ -275,18 +275,16 @@ struct SplitRule {
   {
     assert(Tree::WithinBox(input_box, node_box));
 
-    if (Tree::VerticalLineIntersectBoxExclude(Tree::GetBoxMid(dim, node_box),
-                                              input_box, dim)
-        // || Tree::VerticalLineOnBoxRightEdge(Tree::GetBoxMid(dim, node_box),
-        //                                    input_box, dim)
-    ) {
+    // Main logic
+    if (Tree::VerticalLineSplitBox(Tree::GetBoxMid(dim, node_box), input_box,
+                                   dim)) {
       return tree.BuildRecursive(In, Out, dim, node_box);
     }
 
     auto cut_dim = dim_rule.FindCuttingDimension(node_box, dim);
     auto cut_val = Tree::GetBoxMid(cut_dim, node_box);
 
-    // INFO: test whether the node_box will remain unchanged after the split.
+    // INFO: Test whether the node_box will remain unchanged after the split.
     // If the mid of box is the same as the box edge, then this time the
     // recursion will usless, the worst case is that all the mid on all
     // dimension is on the box edge, i.e., (0,1), (0,1), then a correct split
@@ -300,16 +298,19 @@ struct SplitRule {
       cut_val = Tree::GetBoxMid(cut_dim, node_box);
       dim_cnt++;
     }
+
     if (dim_cnt == Tree::kDim) {  // WARN:this breaks rotation manner
+      // NOTE: checks whether the node box is separatable
       return tree.BuildRecursive(In, Out, dim_rule.NextDimension(dim),
                                  node_box);
+    } else if (Tree::VerticalLineSplitBox(cut_val, input_box, cut_dim)) {
+      // NOTE: above while loop may changed to new dim and need to re-check
+      // whether it can split the input. This is necessary as the
+      // following left/right test assumes the @cut_val does not split box
+      return tree.BuildRecursive(In, Out, cut_dim, node_box);
     }
 
-    // NOTE: if the line is on the left of the boundary, then we should generate
-    // the box to the right, and vice versa. otherwise determine the position by
-    // comparing the mid of the box This should work for the max stretch dim as
-    // well
-    bool split_is_right = Tree::Num::Geq(cut_val, input_box.second[cut_dim]);
+    bool split_is_right = Tree::Num::Gt(cut_val, input_box.second[cut_dim]);
     assert(split_is_right || Tree::Num::Leq(cut_val, input_box.first[cut_dim]));
 
     typename Tree::BoxCut box_cut(
@@ -340,11 +341,8 @@ struct SplitRule {
 
     auto nodebox_split = Tree::Interior::ComputeSplitter(node_box);
     for (auto const& split : nodebox_split) {
-      if (Tree::VerticalLineIntersectBoxExclude(split.first, input_box,
-                                                split.second) ||
-          Tree::VerticalLineOnBoxRightEdge(split.first, input_box,
-                                           split.second)) {
-        // NOTE: any point on the split should be put on the right
+      if (Tree::VerticalLineSplitBox(split.first, input_box, split.second)) {
+        // any point on the split should be put on the right
         return tree.BuildRecursive(In, Out, node_box);
       }
     }

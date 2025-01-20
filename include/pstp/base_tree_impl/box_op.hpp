@@ -169,6 +169,27 @@ inline bool BaseTree<Point, DerivedTree, kSkHeight,
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 inline bool BaseTree<Point, DerivedTree, kSkHeight,
+                     kImbaRatio>::IsBoxLineInDimension(Box const& box,
+                                                       DimsType d) {
+  assert(LegalBox(box));
+  return Num::Eq(box.first[d], box.second[d]);
+}
+
+template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
+inline bool BaseTree<Point, DerivedTree, kSkHeight,
+                     kImbaRatio>::VerticalLineSplitBox(Coord const& line,
+                                                       Box const& box,
+                                                       DimsType d) {
+  assert(LegalBox(box));
+  return VerticalLineIntersectBoxExclude(line, box, d) ||
+         (VerticalLineOnBoxRightEdge(line, box, d) &&
+          !IsBoxLineInDimension(box, d));
+}
+
+template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
+inline bool BaseTree<Point, DerivedTree, kSkHeight,
                      kImbaRatio>::VerticalLineOnBoxLeftEdge(Coord const& line,
                                                             Box const& box,
                                                             DimsType d) {
