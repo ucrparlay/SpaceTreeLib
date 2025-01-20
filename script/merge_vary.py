@@ -206,7 +206,7 @@ if len(sys.argv) > 1 and int(sys.argv[1]) == 1:
             for dim in Dims:
                 for node in Nodes:
                     for solver in solver_name:
-                        for split in split_map:
+                        for split in list(split_name):
                             P = (
                                 path
                                 + "/"

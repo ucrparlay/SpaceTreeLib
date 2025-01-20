@@ -161,7 +161,7 @@ if len(sys.argv) > 1 and int(sys.argv[1]) == 1:
         for bench in benchmarks:
             for dim in Dims:
                 for solver in solver_name:
-                    for split in split_name:
+                    for split in list(split_name):
                         for node in Nodes:
                             P = (
                                 path
