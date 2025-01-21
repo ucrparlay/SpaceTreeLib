@@ -368,7 +368,6 @@ struct SplitRule {
           static_cast<typename Tree::Interior::BucketType>(
               Tree::Num::Leq(split.first, input_box.second[split.second]));
     }
-    assert(pivot_region_id >= 4 && pivot_region_id <= 7);
     pivot_region_id -= Tree::Interior::GetRegions();
 
     typename Tree::Interior::NodeArr tree_nodes;
