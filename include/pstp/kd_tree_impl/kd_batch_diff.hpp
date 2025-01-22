@@ -27,10 +27,13 @@ void KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDiff_(Slice A) {
   Node* T = this->root_;
   Box box = this->tree_box_;
 
+  parlay::internal::timer t;
+  t.reset(), t.start();
   // NOTE: diff points from the tree
   DimsType d = T->is_leaf ? 0 : static_cast<Interior*>(T)->split.second;
   std::tie(T, this->tree_box_) =
       BatchDiffRecursive(T, box, A, parlay::make_slice(B), d);
+  std::cout << "Sieve time: " << t.total_time() << std::endl;
 
   // NOTE: launch rebuild to either: rebuild the imbalance tree or remove the
   // sparcy node
@@ -43,12 +46,14 @@ void KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDiff_(Slice A) {
     return std::make_pair(std::move(left_args), std::move(right_args));
   };
 
+  t.reset(), t.start();
   // PERF: in the batch diff, there is no need to set the force parallel flag,
   // as the size of the tree has been updated in the first time traversal, the
   // second time only need to follow the size of the current tree
   this->root_ = BT::template RebuildTreeRecursive<Leaf, Interior, true>(
       T, prepare_rebuild_func, this->split_rule_.AllowRebuild(), d,
       this->tree_box_);
+  std::cout << ">>>Rebuild time: " << t.total_time() << std::endl;
 
   return;
 }
@@ -106,13 +111,7 @@ KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDiffRecursive(
   auto tree_nodes = NodeBoxSeq::uninitialized(IT.tags_num);
   auto box_seq = parlay::sequence<Box>::uninitialized(IT.tags_num);
 
-  // NOTE: never set tomb, this equivalent to only compute the bounding box
-  // (required in kdtree as it neeeds to update the box after deletion), in
-  // @box_seq and set force par flag using sums_tree
-  // PARA: the has_tomb variable to IT.MarkTomb is false
-  [[maybe_unused]] auto [re_num, tot_re_size] =
-      IT.template TagInbalanceNodeDeletion<false>(box_seq, box, false,
-                                                  []() { return false; });
+  IT.TagPuffyNodes();
   assert(re_num == 0 && tot_re_size == 0);
 
   parlay::parallel_for(
@@ -137,7 +136,8 @@ KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDiffRecursive(
       },
       1);
 
-  return IT.template UpdateInnerTree<InnerTree::kUpdatePointerBox>(tree_nodes);
+  return IT.template UpdateInnerTree<InnerTree::kUpdatePointerBox, false>(
+      tree_nodes);
 }
 
 }  // namespace pstp

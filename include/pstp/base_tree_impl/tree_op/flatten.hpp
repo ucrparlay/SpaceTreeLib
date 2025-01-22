@@ -59,10 +59,6 @@ template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
 template <typename Leaf, IsMultiNode Interior, typename Range, bool granularity>
 void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::FlattenRec(
     Node* T, Range Out) {
-  if (T->size != Out.size()) {
-    std::cout << "T->size: " << T->size << " Out.size(): " << Out.size()
-              << std::endl;
-  }
   assert(T->size == Out.size());
 
   if (T->size == 0) return;

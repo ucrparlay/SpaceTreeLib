@@ -1068,9 +1068,11 @@ void PrintTreeParam() {
             << "Inba: " << TreeWrapper::TreeType::GetImbalanceRatio() << "; ";
 
   if constexpr (std::is_integral_v<typename TreeWrapper::Point::Coord>) {
-    std::cout << "Coord: integer" << "; ";
+    std::cout << "Coord: integer"
+              << "; ";
   } else if (std::is_floating_point_v<typename TreeWrapper::Point::Coord>) {
-    std::cout << "Coord: float" << "; ";
+    std::cout << "Coord: float"
+              << "; ";
   }
   std::cout << "\n" << std::flush;
   return;

@@ -29,12 +29,14 @@ BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::GetSplit(Node const* node)
 // NOTE: update the info of T by new children L and R
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
-template <IsBinaryNode Interior>
+template <IsBinaryNode Interior, bool UpdateParFlag>
 inline void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::UpdateInterior(
     Node* T, Node* L, Node* R) {
   assert(!T->is_leaf);
   Interior* TI = static_cast<Interior*>(T);
-  TI->ResetParallelFlag();
+  if constexpr (UpdateParFlag) {
+    TI->ResetParallelFlag();
+  }
   TI->size = L->size + R->size;
   TI->left = L;
   TI->right = R;
@@ -43,12 +45,14 @@ inline void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::UpdateInterior(
 
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
-template <IsBinaryNode Interior>
+template <IsBinaryNode Interior, bool UpdateParFlag>
 inline void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::UpdateInterior(
     Node* T, NodeBox const& L, NodeBox const& R) {
   assert(!T->is_leaf);
   Interior* TI = static_cast<Interior*>(T);
-  TI->ResetParallelFlag();
+  if constexpr (UpdateParFlag) {
+    TI->ResetParallelFlag();
+  }
   TI->size = L.first->size + R.first->size;
   TI->left = L.first;
   TI->right = R.first;
@@ -57,12 +61,14 @@ inline void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::UpdateInterior(
 
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
-template <IsMultiNode Interior>
+template <IsMultiNode Interior, bool UpdateParFlag>
 inline void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::UpdateInterior(
     Node* T, typename Interior::NodeArr const& new_nodes) {
   assert(!T->is_leaf);
   Interior* TI = static_cast<Interior*>(T);
-  TI->ResetParallelFlag();
+  if constexpr (UpdateParFlag) {
+    TI->ResetParallelFlag();
+  }
   TI->size = std::accumulate(
       new_nodes.begin(), new_nodes.end(), 0,
       [](size_t acc, Node* n) -> size_t { return acc + n->size; });

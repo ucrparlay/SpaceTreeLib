@@ -90,18 +90,19 @@ Node* BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::RebuildTreeRecursive(
 
   Interior* TI = static_cast<Interior*>(T);
   // NOTE: rebuild the tree if it is sparcy or imbalance
-  if (SparcyNode(0, TI->size) ||
-      (allow_inba_rebuild && ImbalanceNode(TI->left->size, TI->size))) {
-    return RebuildSingleTree<Leaf, Interior, granularity>(
-        T, std::forward<Args>(args)...);
-  }
+  // if (SparcyNode(0, TI->size) ||
+  //     (allow_inba_rebuild && ImbalanceNode(TI->left->size, TI->size))) {
+  //   return RebuildSingleTree<Leaf, Interior, granularity>(
+  //       T, std::forward<Args>(args)...);
+  // }
 
   auto const [left_args, right_args] =
       prepare_func(T, std::forward<Args>(args)...);
 
   Node *L, *R;
   parlay::par_do_if(
-      ForceParallelRecursion<Interior, granularity>(TI),
+      // ForceParallelRecursion<Interior, granularity>(TI),
+      1,
       [&] {
         L = std::apply(
             [&](auto&&... left_args) {
@@ -138,40 +139,27 @@ Node* BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::RebuildTreeRecursive(
   }
 
   Interior* TI = static_cast<Interior*>(T);
-  if (SparcyNode(0,
-                 TI->size)) {  // NOTE: after diff points from the tree, all
-                               // points has been removed, so there the remove
-                               // points are 0 (points to be removed), this
-                               // equivalent to check whether the number of
-                               // points are below kLeaveWrap
+  if (SparcyNode(0, TI->size)) {
     return RebuildSingleTree<Leaf, Interior, granularity>(
         T, std::forward<Args>(args)...);
   }
 
   typename Interior::NodeArr new_nodes;
-  if (ForceParallelRecursion<Interior, granularity>(TI)) {
-    parlay::parallel_for(0, TI->tree_nodes.size(), [&](BucketType i) {
-      auto const new_args = prepare_func(T, i, std::forward<Args>(args)...);
-      std::apply(
-          [&](auto&&... new_args) {
-            new_nodes[i] = RebuildTreeRecursive<Leaf, Interior, granularity>(
-                TI->tree_nodes[i], prepare_func, allow_inba_rebuild,
-                std::forward<decltype(new_args)>(new_args)...);
-          },
-          new_args);
-    });
-  } else {
-    for (BucketType i = 0; i < TI->tree_nodes.size(); ++i) {
-      auto const new_args = prepare_func(T, i, std::forward<Args>(args)...);
-      std::apply(
-          [&](auto&&... new_args) {
-            new_nodes[i] = RebuildTreeRecursive<Leaf, Interior, granularity>(
-                TI->tree_nodes[i], prepare_func, allow_inba_rebuild,
-                std::forward<decltype(new_args)>(new_args)...);
-          },
-          new_args);
-    }
-  }
+  parlay::parallel_for(
+      0, Interior::GetRegions(),
+      [&](BucketType i) {
+        auto const new_args = prepare_func(T, i, std::forward<Args>(args)...);
+        std::apply(
+            [&](auto&&... new_args) {
+              new_nodes[i] = RebuildTreeRecursive<Leaf, Interior, granularity>(
+                  TI->tree_nodes[i], prepare_func, allow_inba_rebuild,
+                  std::forward<decltype(new_args)>(new_args)...);
+            },
+            new_args);
+      },
+      ForceParallelRecursion<Interior, granularity>(TI)
+          ? 1
+          : Interior::GetRegions());
 
   UpdateInterior<Interior>(T, new_nodes);
   return T;

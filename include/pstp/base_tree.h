@@ -114,14 +114,14 @@ class BaseTree {
   static inline BucketType FindBucket(Point const& p,
                                       HyperPlaneSeq const& pivots);
 
-  template <IsBinaryNode Interior>
+  template <IsBinaryNode Interior, bool UpdateParFlag = true>
   static inline void UpdateInterior(Node* T, Node* L, Node* R);
 
-  template <IsBinaryNode Interior>
+  template <IsBinaryNode Interior, bool UpdateParFlag = true>
   static inline void UpdateInterior(Node* T, NodeBox const& L,
                                     NodeBox const& R);
 
-  template <IsMultiNode Interior>
+  template <IsMultiNode Interior, bool UpdateParFlag = true>
   static inline void UpdateInterior(
       Node* T, typename Interior::NodeArr const& new_nodes);
 

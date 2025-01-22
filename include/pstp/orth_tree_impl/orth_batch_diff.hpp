@@ -31,18 +31,25 @@ void OrthTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::BatchDiff_(
     Slice A) {
   // NOTE: diff points from the tree
   Points B = Points::uninitialized(A.size());
+  parlay::internal::timer t;
+  t.reset(), t.start();
   this->root_ = BatchDiffRecursive(this->root_, A, parlay::make_slice(B));
+  std::cout << "Sieve time: " << t.total_time() << std::endl;
 
   // NOTE: launch the rebuild
   // PARA: @prepare_func: function that computes the new parameters before the
   // rebuildtree recursive
-  auto prepare_func = [&](Node* T, size_t i, Box const& box) {
+  auto prepare_func = [&]([[maybe_unused]] Node* T, [[maybe_unused]] size_t i,
+                          Box const& box) {
     auto new_box = static_cast<Interior*>(T)->GetBoxByRegionId(i, box);
     assert(BT::WithinBox(new_box, box));
     return std::make_tuple(std::move(new_box));
   };
-  this->root_ = BT::template RebuildTreeRecursive<Leaf, Interior, true>(
+  t.reset(), t.start();
+  this->root_ = BT::template RebuildTreeRecursive<Leaf, Interior, false>(
       this->root_, prepare_func, split_rule_.AllowRebuild(), this->tree_box_);
+  t.stop();
+  std::cout << ">>>Rebuild time: " << t.total_time() << std::endl;
   return;
 }
 
@@ -78,8 +85,16 @@ Node* OrthTree<Point, SplitRule, kMD, kSkHeight,
       start += sums[i];
     }
 
+    bool const force_parallel_flag = TI->size > BT::kSerialBuildCutoff;
     BT::template UpdateInterior<Interior>(T, new_nodes);
     assert(T->is_leaf == false);
+
+    if (BT::SparcyNode(0, TI->size)) {
+      TI->SetParallelFlag(force_parallel_flag);
+      assert(TI->GetParallelFlagIniStatus() &&
+             BT::template ForceParallelRecursion<false>(TI) ==
+                 force_parallel_flag);
+    }
 
     return T;
   }
@@ -89,7 +104,7 @@ Node* OrthTree<Point, SplitRule, kMD, kSkHeight,
   assert(IT.tags_num > 0 && IT.tags_num <= BT::kBucketNum);
   BT::template SeievePoints<Interior>(In, Out, n, IT.tags, IT.sums,
                                       IT.tags_num);
-  IT.ReduceSums(1);  // NOTE: to set the parallel flag
+  IT.TagPuffyNodes();
 
   // PERF: no need to call tag inbalance node here, as the bounding box for
   // orth-tree is fixed
@@ -115,7 +130,8 @@ Node* OrthTree<Point, SplitRule, kMD, kSkHeight,
       },
       1);
 
-  return IT.template UpdateInnerTree<InnerTree::kUpdatePointer>(tree_nodes);
+  return IT.template UpdateInnerTree<InnerTree::kUpdatePointer, false>(
+      tree_nodes);
 }
 
 }  // namespace pstp
