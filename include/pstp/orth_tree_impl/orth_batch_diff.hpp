@@ -91,9 +91,6 @@ Node* OrthTree<Point, SplitRule, kMD, kSkHeight,
 
     if (BT::SparcyNode(0, TI->size)) {
       TI->SetParallelFlag(force_parallel_flag);
-      assert(TI->GetParallelFlagIniStatus() &&
-             BT::template ForceParallelRecursion<false>(TI) ==
-                 force_parallel_flag);
     }
 
     return T;

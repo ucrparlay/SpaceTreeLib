@@ -51,15 +51,17 @@ struct BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::InnerTree {
   // NOTE: cores
   inline void ResetTagsNum() { tags_num = 0; }
 
-  Box GetBoxByRegionIdx(BucketType idx, Box const& box) {
+  Box GetBoxByRegionIdx(BucketType const idx, Box const& box) {
     if constexpr (IsBinaryNode<Interior>) {
+      assert(GetDepthByIndex(10) == 3);
       Box bx(box);
-      for (BucketType i = GetDepthByIndex(idx) - 1, new_idx = 1; i >= 0; i--) {
-        BucketType local_id = idx & (1 << i);
+      for (int i = GetDepthByIndex(idx) - 1, new_idx = 1; i >= 0; i--) {
+        bool local_id = (idx >> i) & 1;
         auto TI = static_cast<Interior*>(tags[new_idx].first);
         auto& target = local_id ? bx.first : bx.second;
         target.pnt[TI->split.second] = TI->split.first;
         new_idx = new_idx << 1 | local_id;
+        assert(new_idx <= idx);
       }
       return std::move(bx);
     } else if constexpr (IsMultiNode<Interior>) {

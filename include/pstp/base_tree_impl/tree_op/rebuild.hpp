@@ -90,19 +90,18 @@ Node* BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::RebuildTreeRecursive(
 
   Interior* TI = static_cast<Interior*>(T);
   // NOTE: rebuild the tree if it is sparcy or imbalance
-  // if (SparcyNode(0, TI->size) ||
-  //     (allow_inba_rebuild && ImbalanceNode(TI->left->size, TI->size))) {
-  //   return RebuildSingleTree<Leaf, Interior, granularity>(
-  //       T, std::forward<Args>(args)...);
-  // }
+  if (SparcyNode(0, TI->size) ||
+      (allow_inba_rebuild && ImbalanceNode(TI->left->size, TI->size))) {
+    return RebuildSingleTree<Leaf, Interior, granularity>(
+        T, std::forward<Args>(args)...);
+  }
 
   auto const [left_args, right_args] =
       prepare_func(T, std::forward<Args>(args)...);
 
   Node *L, *R;
   parlay::par_do_if(
-      // ForceParallelRecursion<Interior, granularity>(TI),
-      1,
+      ForceParallelRecursion<Interior, granularity>(TI),
       [&] {
         L = std::apply(
             [&](auto&&... left_args) {

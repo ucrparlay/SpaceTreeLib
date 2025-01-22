@@ -94,10 +94,16 @@ KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDiffRecursive(
                            In.cut(split_iter - In.begin(), n),
                            Out.cut(split_iter - In.begin(), n), next_dim);
 
-    assert(!TI->GetParallelFlagIniStatus());
+    bool const force_parallel_flag = TI->size > BT::kSerialBuildCutoff;
     BT::template UpdateInterior<Interior>(T, L, R);
     assert(T->size == L->size + R->size && TI->split.second >= 0 &&
            TI->is_leaf == false);
+
+    if (BT::SparcyNode(0, TI->size) ||
+        (split_rule_.AllowRebuild() &&
+         BT::ImbalanceNode(TI->left->size, TI->size))) {
+      TI->SetParallelFlag(force_parallel_flag);
+    }
 
     return NodeBox(T, BT::GetBox(Lbox, Rbox));
   }
@@ -109,10 +115,8 @@ KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDiffRecursive(
                                       IT.tags_num);
 
   auto tree_nodes = NodeBoxSeq::uninitialized(IT.tags_num);
-  auto box_seq = parlay::sequence<Box>::uninitialized(IT.tags_num);
 
   IT.TagPuffyNodes();
-  assert(re_num == 0 && tot_re_size == 0);
 
   parlay::parallel_for(
       0, IT.tags_num,
@@ -129,8 +133,14 @@ KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDiffRecursive(
         for (BucketType i = 0; i < depth; i++) {
           next_dim = split_rule_.NextDimension(next_dim);
         }
+
+        assert(BT::WithinBox(
+            BT::template GetBox<Leaf, Interior>(IT.tags[IT.rev_tag[i]].first),
+            IT.GetBoxByRegionIdx(IT.rev_tag[i], box)));
+
         tree_nodes[i] =
-            BatchDiffRecursive(IT.tags[IT.rev_tag[i]].first, box_seq[i],
+            BatchDiffRecursive(IT.tags[IT.rev_tag[i]].first,
+                               IT.GetBoxByRegionIdx(IT.rev_tag[i], box),
                                Out.cut(start, start + IT.sums[i]),
                                In.cut(start, start + IT.sums[i]), next_dim);
       },
