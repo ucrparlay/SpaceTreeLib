@@ -46,7 +46,7 @@ void KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDiff_(Slice A) {
   // PERF: in the batch diff, there is no need to set the force parallel flag,
   // as the size of the tree has been updated in the first time traversal, the
   // second time only need to follow the size of the current tree
-  this->root_ = BT::template RebuildTreeRecursive<Leaf, Interior, true>(
+  this->root_ = BT::template RebuildTreeRecursive<Leaf, Interior, false>(
       T, prepare_rebuild_func, this->split_rule_.AllowRebuild(), d,
       this->tree_box_);
 
