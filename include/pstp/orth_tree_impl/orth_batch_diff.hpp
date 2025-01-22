@@ -31,10 +31,7 @@ void OrthTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::BatchDiff_(
     Slice A) {
   // NOTE: diff points from the tree
   Points B = Points::uninitialized(A.size());
-  parlay::internal::timer t;
-  t.reset(), t.start();
   this->root_ = BatchDiffRecursive(this->root_, A, parlay::make_slice(B));
-  std::cout << "Sieve time: " << t.total_time() << std::endl;
 
   // NOTE: launch the rebuild
   // PARA: @prepare_func: function that computes the new parameters before the
@@ -45,11 +42,8 @@ void OrthTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::BatchDiff_(
     assert(BT::WithinBox(new_box, box));
     return std::make_tuple(std::move(new_box));
   };
-  t.reset(), t.start();
   this->root_ = BT::template RebuildTreeRecursive<Leaf, Interior, false>(
       this->root_, prepare_func, split_rule_.AllowRebuild(), this->tree_box_);
-  t.stop();
-  std::cout << ">>>Rebuild time: " << t.total_time() << std::endl;
   return;
 }
 

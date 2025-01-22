@@ -27,13 +27,10 @@ void KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDiff_(Slice A) {
   Node* T = this->root_;
   Box box = this->tree_box_;
 
-  parlay::internal::timer t;
-  t.reset(), t.start();
   // NOTE: diff points from the tree
   DimsType d = T->is_leaf ? 0 : static_cast<Interior*>(T)->split.second;
   std::tie(T, this->tree_box_) =
       BatchDiffRecursive(T, box, A, parlay::make_slice(B), d);
-  std::cout << "Sieve time: " << t.total_time() << std::endl;
 
   // NOTE: launch rebuild to either: rebuild the imbalance tree or remove the
   // sparcy node
@@ -46,14 +43,12 @@ void KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDiff_(Slice A) {
     return std::make_pair(std::move(left_args), std::move(right_args));
   };
 
-  t.reset(), t.start();
   // PERF: in the batch diff, there is no need to set the force parallel flag,
   // as the size of the tree has been updated in the first time traversal, the
   // second time only need to follow the size of the current tree
   this->root_ = BT::template RebuildTreeRecursive<Leaf, Interior, true>(
       T, prepare_rebuild_func, this->split_rule_.AllowRebuild(), d,
       this->tree_box_);
-  std::cout << ">>>Rebuild time: " << t.total_time() << std::endl;
 
   return;
 }
@@ -99,6 +94,8 @@ KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDiffRecursive(
     assert(T->size == L->size + R->size && TI->split.second >= 0 &&
            TI->is_leaf == false);
 
+    // TODO: replace this one by a lambda that can be pssed to rebuild function
+    // as well
     if (BT::SparcyNode(0, TI->size) ||
         (split_rule_.AllowRebuild() &&
          BT::ImbalanceNode(TI->left->size, TI->size))) {
