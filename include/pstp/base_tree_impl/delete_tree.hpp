@@ -53,18 +53,15 @@ void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::DeleteTreeRecursive(
 
     // NOTE: enable granularity control by default, if it is disabled,
     // always delete in parallel
-    if (ForceParallelRecursion<Interior, granularity>(TI)) {
-      parlay::parallel_for(
-          0, TI->tree_nodes.size(),
-          [&](size_t i) {
-            DeleteTreeRecursive<Leaf, Interior>(TI->tree_nodes[i]);
-          },
-          1);
-    } else {
-      for (size_t i = 0; i < TI->tree_nodes.size(); ++i) {
-        DeleteTreeRecursive<Leaf, Interior>(TI->tree_nodes[i]);
-      }
-    }
+    parlay::parallel_for(
+        0, TI->tree_nodes.size(),
+        [&](size_t i) {
+          DeleteTreeRecursive<Leaf, Interior>(TI->tree_nodes[i]);
+        },
+        ForceParallelRecursion<Interior, granularity>(TI)
+            ? 1
+            : Interior::GetRegions());
+
     FreeNode<Interior>(T);
   }
 }

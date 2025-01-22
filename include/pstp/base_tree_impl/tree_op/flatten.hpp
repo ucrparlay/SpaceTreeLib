@@ -76,23 +76,19 @@ void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::FlattenRec(
              static_cast<size_t>(0),
              [](size_t acc, Node* n) -> size_t { return acc + n->size; }));
 
-  if (ForceParallelRecursion<Interior, granularity>(TI)) {
-    parlay::parallel_for(0, TI->tree_nodes.size(), [&](BucketType i) {
-      size_t start = 0;
-      for (BucketType j = 0; j < i; ++j) {
-        start += TI->tree_nodes[j]->size;
-      }
-      FlattenRec<Leaf, Interior, Range>(
-          TI->tree_nodes[i], Out.cut(start, start + TI->tree_nodes[i]->size));
-    });
-  } else {
-    size_t start = 0;
-    for (BucketType i = 0; i < TI->tree_nodes.size(); ++i) {
-      FlattenRec<Leaf, Interior, Range>(
-          TI->tree_nodes[i], Out.cut(start, start + TI->tree_nodes[i]->size));
-      start += TI->tree_nodes[i]->size;
-    }
-  }
+  parlay::parallel_for(
+      0, TI->tree_nodes.size(),
+      [&](BucketType i) {
+        size_t start = 0;
+        for (BucketType j = 0; j < i; ++j) {
+          start += TI->tree_nodes[j]->size;
+        }
+        FlattenRec<Leaf, Interior, Range>(
+            TI->tree_nodes[i], Out.cut(start, start + TI->tree_nodes[i]->size));
+      },
+      ForceParallelRecursion<Interior, granularity>(TI)
+          ? 1
+          : Interior::GetRegions());
 
   return;
 }
