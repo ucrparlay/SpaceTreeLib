@@ -266,6 +266,9 @@ struct BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::InnerTree {
 
   void TagPuffyNodesRecursive(BucketType idx) {
     if (idx > kPivotNum || tags[idx].first->is_leaf) {
+      tags[idx].second =
+          kBucketNum +
+          2;  // PERF: ensure the following UpdateInterior meets the base case
       if (!tags[idx].first->is_leaf) {
         Interior* TI = static_cast<Interior*>(tags[idx].first);
         TI->SetParallelFlag(TI->size > BT::kSerialBuildCutoff);
