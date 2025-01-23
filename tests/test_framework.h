@@ -461,10 +461,18 @@ void queryKNN([[maybe_unused]] uint_fast8_t const& Dim,
               << std::flush;
   }
   if (printVisNode) {
-    std::cout << parlay::reduce(vis_nodes.cut(0, n)) / n << " " << std::flush;
-    std::cout << parlay::reduce(gen_box.cut(0, n)) / n << " " << std::flush;
-    std::cout << parlay::reduce(check_box.cut(0, n)) / n << " " << std::flush;
-    std::cout << parlay::reduce(skip_box.cut(0, n)) / n << " " << std::flush;
+    std::cout << static_cast<double>(parlay::reduce(vis_nodes.cut(0, n))) /
+                     static_cast<double>(n)
+              << " " << std::flush;
+    std::cout << static_cast<double>(parlay::reduce(gen_box.cut(0, n))) /
+                     static_cast<double>(n)
+              << " " << std::flush;
+    std::cout << static_cast<double>(parlay::reduce(check_box.cut(0, n))) /
+                     static_cast<double>(n)
+              << " " << std::flush;
+    std::cout << static_cast<double>(parlay::reduce(skip_box.cut(0, n))) /
+                     static_cast<double>(n)
+              << " " << std::flush;
   }
 
   return;
@@ -617,14 +625,18 @@ void rangeCountFix(parlay::sequence<Point> const& WP, Tree& pkd,
       [&]() {});
 
   std::cout << aveCount << " " << std::flush;
-  std::cout << parlay::reduce(vis_nodes.cut(0, rec_num)) / rec_num << " "
-            << std::flush;
-  std::cout << parlay::reduce(gen_box.cut(0, rec_num)) / rec_num << " "
-            << std::flush;
-  std::cout << parlay::reduce(full_box.cut(0, rec_num)) / rec_num << " "
-            << std::flush;
-  std::cout << parlay::reduce(skip_box.cut(0, rec_num)) / rec_num << " "
-            << std::flush;
+  std::cout << static_cast<double>(parlay::reduce(vis_nodes.cut(0, rec_num))) /
+                   static_cast<double>(rec_num)
+            << " " << std::flush;
+  std::cout << static_cast<double>(parlay::reduce(gen_box.cut(0, rec_num))) /
+                   static_cast<double>(rec_num)
+            << " " << std::flush;
+  std::cout << static_cast<double>(parlay::reduce(full_box.cut(0, rec_num))) /
+                   static_cast<double>(rec_num)
+            << " " << std::flush;
+  std::cout << static_cast<double>(parlay::reduce(skip_box.cut(0, rec_num))) /
+                   static_cast<double>(rec_num)
+            << " " << std::flush;
 
   return;
 }
@@ -707,14 +719,18 @@ void rangeQueryFix(parlay::sequence<Point> const& WP, Tree& pkd,
       [&]() {});
 
   std::cout << aveQuery << " " << std::flush;
-  std::cout << parlay::reduce(vis_nodes.cut(0, rec_num)) / rec_num << " "
-            << std::flush;
-  std::cout << parlay::reduce(gen_box.cut(0, rec_num)) / rec_num << " "
-            << std::flush;
-  std::cout << parlay::reduce(full_box.cut(0, rec_num)) / rec_num << " "
-            << std::flush;
-  std::cout << parlay::reduce(skip_box.cut(0, rec_num)) / rec_num << " "
-            << std::flush;
+  std::cout << static_cast<double>(parlay::reduce(vis_nodes.cut(0, rec_num))) /
+                   static_cast<double>(rec_num)
+            << " " << std::flush;
+  std::cout << static_cast<double>(parlay::reduce(gen_box.cut(0, rec_num))) /
+                   static_cast<double>(rec_num)
+            << " " << std::flush;
+  std::cout << static_cast<double>(parlay::reduce(full_box.cut(0, rec_num))) /
+                   static_cast<double>(rec_num)
+            << " " << std::flush;
+  std::cout << static_cast<double>(parlay::reduce(skip_box.cut(0, rec_num))) /
+                   static_cast<double>(rec_num)
+            << " " << std::flush;
   return;
 }
 //
