@@ -3,7 +3,7 @@ set -o xtrace
 
 # Solvers=("test" "zdtree" "cgal")
 Solvers=("test")
-Tree=(0 1 2)
+Tree=(0 1)
 DataPath="/data/legacy/data3/zmen002/kdtree/geometry"
 declare -A file2Dims
 file2Dims["Cosmo50"]="3"
@@ -24,26 +24,35 @@ resFile=""
 
 for solver in ${Solvers[@]}; do
 	exe="../build/${solver}"
-
 	for tree in "${Tree[@]}"; do
-		#* decide output file
-		if [[ ${solver} == "rtree" ]]; then
-			resFile="rtree.out"
-		elif [[ ${solver} == "test" ]]; then
-			resFile="res_${tree}_${type}.out"
+		if [[ ${tree} -eq 0 ]]; then
+			splits=(0 3)
+		elif [[ ${tree} -eq 1 ]]; then
+			splits=(3)
+		elif [[ ${tree} -eq 2 ]]; then
+			splits=(0)
 		fi
 
-		log_path="../benchmark/real_world"
-		mkdir -p ${log_path}
-		dest="${log_path}/${resFile}"
-		: >${dest}
-		echo ">>>${dest}"
+		for split in "${splits[@]}"; do
+			#* decide output file
+			if [[ ${solver} == "rtree" ]]; then
+				resFile="rtree.out"
+			elif [[ ${solver} == "test" ]]; then
+				resFile="res_${tree}_${type}_${split}.out"
+			fi
 
-		for filename in "${!file2Dims[@]}"; do
-			echo ${filename}
+			log_path="../benchmark/real_world"
+			mkdir -p ${log_path}
+			dest="${log_path}/${resFile}"
+			: >${dest}
+			echo ">>>${dest}"
 
-			numactl -i all ${exe} -p "${DataPath}/${filename}.in" -k ${k} -t ${tag} -d ${file2Dims[${filename}]} -q ${queryType} -i ${readFile} -s ${summary} -T ${tree} | tee -a "${dest}"
+			for filename in "${!file2Dims[@]}"; do
+				echo ${filename}
 
+				numactl -i all ${exe} -p "${DataPath}/${filename}.in" -k ${k} -t ${tag} -d ${file2Dims[${filename}]} -q ${queryType} -i ${readFile} -s ${summary} -T ${tree} -l ${split} 2>&1 | tee -a "${dest}"
+
+			done
 		done
 	done
 done
