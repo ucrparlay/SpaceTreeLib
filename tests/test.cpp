@@ -26,105 +26,108 @@ void TestSpacialTree([[maybe_unused]] int const& kDim,
 
   BuildTree<Point, Tree, kTestTime, 2>(wp, kRounds, tree);
 
-  Typename* kdknn = nullptr;
+  // Typename* kdknn = nullptr;
 
   // // NOTE: batch insert
-  if (kTag & (1 << 0)) {
-    if (kSummary) {
-      parlay::sequence<double> const ratios = {0.0001, 0.001, 0.01, 0.1};
-      for (size_t i = 0; i < ratios.size(); i++) {
-        BatchInsert<Point, Tree, kTestTime>(tree, wp, wi, kRounds, ratios[i]);
-      }
-    } else {
-      BatchInsert<Point, Tree, kTestTime>(tree, wp, wi, kRounds, 0.1);
-    }
-  }
-
-  // NOTE: batch delete
-  if (kTag & (1 << 1)) {
-    if (kSummary) {
-      parlay::sequence<double> const ratios = {0.0001, 0.001, 0.01, 0.1};
-      for (size_t i = 0; i < ratios.size(); i++) {
-        BatchDelete<Point, Tree, kTestTime>(tree, wp, wp, kRounds, ratios[i]);
-      }
-    } else {
-      BatchDelete<Point, Tree, kTestTime>(tree, wp, wp, kRounds,
-                                          kBatchInsertRatio);
-    }
-  }
-
-  // NOTE: batch diff
-  if (kTag & (1 << 2)) {
-    if (kSummary) {
-      parlay::sequence<double> const overlap_ratios = {0.1, 0.2, 0.5, 1};
-      for (size_t i = 0; i < overlap_ratios.size(); i++) {
-        BatchDiff<Point, Tree, kTestTime>(
-            tree, wp, kRounds, kBatchDiffTotalRatio, overlap_ratios[i]);
-      }
-    } else {
-      BatchDiff<Point, Tree, kTestTime>(tree, wp, kRounds, kBatchDiffTotalRatio,
-                                        kBatchDiffOverlapRatio);
-    }
-  }
-
-  // WARN: compress the kdnode to MultiNode, should remove except for exp
-  // if constexpr (IsKdTree<Tree>) {
-  //   tree.Compress2Multi();
+  // if (kTag & (1 << 0)) {
+  //   if (kSummary) {
+  //     parlay::sequence<double> const ratios = {0.0001, 0.001, 0.01, 0.1};
+  //     for (size_t i = 0; i < ratios.size(); i++) {
+  //       BatchInsert<Point, Tree, kTestTime>(tree, wp, wi, kRounds,
+  //       ratios[i]);
+  //     }
+  //   } else {
+  //     BatchInsert<Point, Tree, kTestTime>(tree, wp, wi, kRounds, 0.1);
+  //   }
   // }
-
-  if (kQueryType & (1 << 0)) {  // NOTE: KNN
-    auto run_batch_knn = [&](Points const& pts, int kth, size_t batchSize) {
-      Points newPts(batchSize);
-      parlay::copy(pts.cut(0, batchSize), newPts.cut(0, batchSize));
-      kdknn = new Typename[batchSize];
-      queryKNN<Point>(kDim, newPts, kRounds, tree, kdknn, kth, true);
-      delete[] kdknn;
-    };
-
-    size_t batchSize = static_cast<size_t>(wp.size() * kBatchQueryRatio);
-
-    if (kSummary == 0) {
-      int k[3] = {1, 10, 100};
-      for (int i = 0; i < 3; i++) {
-        run_batch_knn(wp, k[i], batchSize);
-      }
-    } else {  // test kSummary
-      run_batch_knn(wp, K, batchSize);
-    }
-  }
-
-  if (kQueryType & (1 << 1)) {  // NOTE: range count
-    if (!kSummary) {
-      int recNum = kRangeQueryNum;
-      kdknn = new Typename[recNum];
-
-      // std::cout << std::endl;
-      for (int i = 0; i < 3; i++) {
-        rangeCountFix<Point>(wp, tree, kdknn, kRounds, i, recNum, kDim);
-      }
-
-      delete[] kdknn;
-    }
-  }
-
-  if (kQueryType & (1 << 2)) {  // NOTE: range query
-    if (kSummary == 0) {
-      int recNum = kRangeQueryNum;
-      kdknn = new Typename[recNum];
-
-      for (int i = 0; i < 3; i++) {
-        Points Out;
-        rangeQueryFix<Point>(wp, tree, kdknn, kRounds, Out, i, recNum, kDim);
-      }
-      delete[] kdknn;
-    } else if (kSummary == 1) {  // NOTE: for kSummary
-      kdknn = new Typename[kSummaryRangeQueryNum];
-      Points Out;
-      rangeQueryFix<Point>(wp, tree, kdknn, kRounds, Out, 2,
-                           kSummaryRangeQueryNum, kDim);
-      delete[] kdknn;
-    }
-  }
+  //
+  // // NOTE: batch delete
+  // if (kTag & (1 << 1)) {
+  //   if (kSummary) {
+  //     parlay::sequence<double> const ratios = {0.0001, 0.001, 0.01, 0.1};
+  //     for (size_t i = 0; i < ratios.size(); i++) {
+  //       BatchDelete<Point, Tree, kTestTime>(tree, wp, wp, kRounds,
+  //       ratios[i]);
+  //     }
+  //   } else {
+  //     BatchDelete<Point, Tree, kTestTime>(tree, wp, wp, kRounds,
+  //                                         kBatchInsertRatio);
+  //   }
+  // }
+  //
+  // // NOTE: batch diff
+  // if (kTag & (1 << 2)) {
+  //   if (kSummary) {
+  //     parlay::sequence<double> const overlap_ratios = {0.1, 0.2, 0.5, 1};
+  //     for (size_t i = 0; i < overlap_ratios.size(); i++) {
+  //       BatchDiff<Point, Tree, kTestTime>(
+  //           tree, wp, kRounds, kBatchDiffTotalRatio, overlap_ratios[i]);
+  //     }
+  //   } else {
+  //     BatchDiff<Point, Tree, kTestTime>(tree, wp, kRounds,
+  //     kBatchDiffTotalRatio,
+  //                                       kBatchDiffOverlapRatio);
+  //   }
+  // }
+  //
+  // // WARN: compress the kdnode to MultiNode, should remove except for exp
+  // // if constexpr (IsKdTree<Tree>) {
+  // //   tree.Compress2Multi();
+  // // }
+  //
+  // if (kQueryType & (1 << 0)) {  // NOTE: KNN
+  //   auto run_batch_knn = [&](Points const& pts, int kth, size_t batchSize) {
+  //     Points newPts(batchSize);
+  //     parlay::copy(pts.cut(0, batchSize), newPts.cut(0, batchSize));
+  //     kdknn = new Typename[batchSize];
+  //     queryKNN<Point>(kDim, newPts, kRounds, tree, kdknn, kth, true);
+  //     delete[] kdknn;
+  //   };
+  //
+  //   size_t batchSize = static_cast<size_t>(wp.size() * kBatchQueryRatio);
+  //
+  //   if (kSummary == 0) {
+  //     int k[3] = {1, 10, 100};
+  //     for (int i = 0; i < 3; i++) {
+  //       run_batch_knn(wp, k[i], batchSize);
+  //     }
+  //   } else {  // test kSummary
+  //     run_batch_knn(wp, K, batchSize);
+  //   }
+  // }
+  //
+  // if (kQueryType & (1 << 1)) {  // NOTE: range count
+  //   if (!kSummary) {
+  //     int recNum = kRangeQueryNum;
+  //     kdknn = new Typename[recNum];
+  //
+  //     // std::cout << std::endl;
+  //     for (int i = 0; i < 3; i++) {
+  //       rangeCountFix<Point>(wp, tree, kdknn, kRounds, i, recNum, kDim);
+  //     }
+  //
+  //     delete[] kdknn;
+  //   }
+  // }
+  //
+  // if (kQueryType & (1 << 2)) {  // NOTE: range query
+  //   if (kSummary == 0) {
+  //     int recNum = kRangeQueryNum;
+  //     kdknn = new Typename[recNum];
+  //
+  //     for (int i = 0; i < 3; i++) {
+  //       Points Out;
+  //       rangeQueryFix<Point>(wp, tree, kdknn, kRounds, Out, i, recNum, kDim);
+  //     }
+  //     delete[] kdknn;
+  //   } else if (kSummary == 1) {  // NOTE: for kSummary
+  //     kdknn = new Typename[kSummaryRangeQueryNum];
+  //     Points Out;
+  //     rangeQueryFix<Point>(wp, tree, kdknn, kRounds, Out, 2,
+  //                          kSummaryRangeQueryNum, kDim);
+  //     delete[] kdknn;
+  //   }
+  // }
 
   std::cout << "\n" << std::flush;
 

@@ -8,19 +8,14 @@
 
 namespace pstp {
 
-template <typename Point, typename SplitRule, uint_fast8_t kMD = 2,
-          uint_fast8_t kSkHeight = 6, uint_fast8_t kImbaRatio = 30>
+template <typename Point, typename SplitRule, uint_fast8_t kSkHeight = 6,
+          uint_fast8_t kImbaRatio = 30>
 class CoverTree
-    : public BaseTree<Point,
-                      CoverTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>,
+    : public BaseTree<Point, CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>,
                       kSkHeight, kImbaRatio> {
  public:
-  static constexpr size_t kSplitterNum = kMD;
-  static constexpr size_t kNodeRegions = 1 << kMD;
-
-  using BT =
-      BaseTree<Point, CoverTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>,
-               kSkHeight, kImbaRatio>;
+  using BT = BaseTree<Point, CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>,
+                      kSkHeight, kImbaRatio>;
 
   using BucketType = BT::BucketType;
   using BallsType = BT::BallsType;
@@ -39,14 +34,13 @@ class CoverTree
 
   using HyperPlane = BT::HyperPlane;
   using HyperPlaneSeq = BT::HyperPlaneSeq;
-  using Splitter = std::array<HyperPlane, kSplitterNum>;
+  using Splitter = parlay::sequence<Circle>;
   using SplitterSeq = parlay::sequence<Splitter>;
   using NodeTagSeq = BT::NodeTagSeq;
   using NodeBoxSeq = BT::NodeBoxSeq;
   using NodeBox = BT::NodeBox;
   using AugType = std::optional<bool>;
 
-  // struct KdInteriorNode;
   struct CoverInteriorNode;
 
   using SplitRuleType = SplitRule;
@@ -150,4 +144,4 @@ class CoverTree
 #include "cover_tree_impl/cover_inter_node.hpp"
 #include "cover_tree_impl/cover_override.hpp"
 
-#endif  // PSTP_Cover_TREE_H
+#endif  // PSTP_COVER_TREE_H

@@ -223,7 +223,7 @@ struct SpatialMedian : BaseSplitPartitionRule<Point> {
 };
 
 template <class DimRule, class PartitionRule>
-struct SplitRule {
+struct OrthogonalSplitRule {
   using DimRuleType = DimRule;
   using PartitionRuleType = PartitionRule;
 
@@ -420,6 +420,7 @@ struct SplitRule {
   PartitionRule const partition_rule;
 };
 
+struct CircleSplitRule {};
 }  // namespace pstp
 
 #endif  // PSTP_DEPENDENCE_SPLITTER_H
