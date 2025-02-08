@@ -201,6 +201,7 @@ struct BinaryNode : Node {
   AT aug;
 };
 
+// NOTE: multi-way node whose children # is fixed
 template <typename Point, uint_fast8_t kMD, typename SplitType,
           typename AugType>
 struct MultiNode : Node {
@@ -253,6 +254,34 @@ struct MultiNode : Node {
       return MergeSize(2 * idx) + MergeSize(2 * idx + 1);
     }
   }
+
+  NodeArr tree_nodes;
+  ST split;
+  AT aug;
+};
+
+// NOTE: dynamic multi-way node whose children # is dynamic
+template <typename Point, typename SplitType, typename AugType>
+struct DynamicNode : Node {
+  using BucketType = uint_fast8_t;
+  using Coord = typename Point::Coord;
+  using Num = Num_Comparator<Coord>;
+  using ST = SplitType;
+  using AT = AugType;
+  using NodeArr = parlay::sequence<Node*>;
+
+  DynamicNode(NodeArr const& _tree_nodes, const ST& _split, const AT& _aug)
+      : Node{false,
+             std::accumulate(
+                 _tree_nodes.begin(), _tree_nodes.end(), static_cast<size_t>(0),
+                 [](size_t acc, Node* n) -> size_t { return acc + n->size; })},
+        tree_nodes(_tree_nodes),
+        split(_split),
+        aug(_aug) {}
+
+  // Adding a virtual destructor makes Node polymorphic
+  // TODO: check whether it is possible to remove it then KNN-mix
+  virtual ~DynamicNode() override = default;
 
   NodeArr tree_nodes;
   ST split;
