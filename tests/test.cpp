@@ -19,7 +19,7 @@ void TestSpacialTree([[maybe_unused]] int const& kDim,
                      [[maybe_unused]] int const& kQueryType,
                      [[maybe_unused]] int const kSummary) {
   using Tree = TreeDesc::TreeType;
-  using Points = typename Tree::Points;
+  // using Points = typename Tree::Points;
 
   Tree tree;
   constexpr bool kTestTime = true;

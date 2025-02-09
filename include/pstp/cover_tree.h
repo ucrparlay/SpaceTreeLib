@@ -137,9 +137,9 @@ class CoverTree
 
 }  // namespace pstp
 
-#include "cover_tree_impl/cover_batch_delete.hpp"
-#include "cover_tree_impl/cover_batch_diff.hpp"
-#include "cover_tree_impl/cover_batch_insert.hpp"
+// #include "cover_tree_impl/cover_batch_delete.hpp"
+// #include "cover_tree_impl/cover_batch_diff.hpp"
+// #include "cover_tree_impl/cover_batch_insert.hpp"
 #include "cover_tree_impl/cover_build_tree.hpp"
 #include "cover_tree_impl/cover_inter_node.hpp"
 #include "cover_tree_impl/cover_override.hpp"
