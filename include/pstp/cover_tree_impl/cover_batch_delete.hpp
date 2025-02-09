@@ -6,10 +6,10 @@
 namespace pstp {
 
 // NOTE: default batch delete
-template <typename Point, typename SplitRule, uint_fast8_t kMD,
+template <typename Point, typename SplitRule,
           uint_fast8_t kSkHeight, uint_fast8_t kImbaRatio>
 template <typename Range>
-void CoverTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::BatchDelete(
+void CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDelete(
     Range&& In) {
   static_assert(parlay::is_random_access_range_v<Range>);
   static_assert(
@@ -23,9 +23,9 @@ void CoverTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::BatchDelete(
 }
 
 // NOTE: assume all Points are fully covered in the tree
-template <typename Point, typename SplitRule, uint_fast8_t kMD,
+template <typename Point, typename SplitRule,
           uint_fast8_t kSkHeight, uint_fast8_t kImbaRatio>
-void CoverTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::BatchDelete_(
+void CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDelete_(
     Slice A) {
   Points B = Points::uninitialized(A.size());
   this->root_ = BatchDeleteRecursive(this->root_, A, parlay::make_slice(B),
@@ -35,7 +35,7 @@ void CoverTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::BatchDelete_(
 
 // NOTE: delete with rebuild, with the assumption that all Points are in the
 // tree
-template <typename Point, typename SplitRule, uint_fast8_t kMD,
+template <typename Point, typename SplitRule,
           uint_fast8_t kSkHeight, uint_fast8_t kImbaRatio>
 Node* CoverTree<Point, SplitRule, kMD, kSkHeight,
                kImbaRatio>::BatchDeleteRecursive(Node* T, Slice In, Slice Out,

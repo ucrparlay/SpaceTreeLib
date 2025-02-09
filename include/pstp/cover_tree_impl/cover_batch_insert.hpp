@@ -7,10 +7,10 @@
 
 namespace pstp {
 
-template <typename Point, typename SplitRule, uint_fast8_t kMD,
+template <typename Point, typename SplitRule,
           uint_fast8_t kSkHeight, uint_fast8_t kImbaRatio>
 template <typename Range>
-void CoverTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::BatchInsert(
+void CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchInsert(
     Range&& In) {
   static_assert(parlay::is_random_access_range_v<Range>);
   static_assert(
@@ -26,9 +26,9 @@ void CoverTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::BatchInsert(
   BatchInsert_(A);
 }
 
-template <typename Point, typename SplitRule, uint_fast8_t kMD,
+template <typename Point, typename SplitRule,
           uint_fast8_t kSkHeight, uint_fast8_t kImbaRatio>
-void CoverTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::BatchInsert_(
+void CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchInsert_(
     Slice A) {
   if (this->root_ == nullptr) {  // TODO: may check using explicity tag
     return Build_(A);
@@ -43,9 +43,9 @@ void CoverTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::BatchInsert_(
   return;
 }
 
-template <typename Point, typename SplitRule, uint_fast8_t kMD,
+template <typename Point, typename SplitRule,
           uint_fast8_t kSkHeight, uint_fast8_t kImbaRatio>
-void CoverTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::
+void CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::
     SerialSplitSkeleton(Node* T, Slice In, DimsType dim, DimsType idx,
                         parlay::sequence<BallsType>& sums) {
   // TODO: change it using the split_rule_.split()
@@ -68,7 +68,7 @@ void CoverTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::
   return;
 }
 
-template <typename Point, typename SplitRule, uint_fast8_t kMD,
+template <typename Point, typename SplitRule,
           uint_fast8_t kSkHeight, uint_fast8_t kImbaRatio>
 Node* CoverTree<Point, SplitRule, kMD, kSkHeight,
                kImbaRatio>::BatchInsertRecursive(Node* T, Slice In, Slice Out) {

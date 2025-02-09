@@ -199,6 +199,9 @@ class BaseTree {
   template <typename Leaf, IsMultiNode Interior, bool granularity = true>
   static void DeleteTreeRecursive(Node* T);
 
+  template <typename Leaf, IsDynamicNode Interior, bool granularity = true>
+  static void DeleteTreeRecursive(Node* T);
+
   // NOTE: KNN query stuffs
   static inline Coord P2PDistance(Point const& p, Point const& q);
 

@@ -419,8 +419,6 @@ struct OrthogonalSplitRule {
   DimRule const dim_rule;
   PartitionRule const partition_rule;
 };
-
-struct CircleSplitRule {};
 }  // namespace pstp
 
 #endif  // PSTP_DEPENDENCE_SPLITTER_H

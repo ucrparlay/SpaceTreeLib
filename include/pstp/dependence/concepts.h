@@ -103,6 +103,11 @@ concept IsMultiNodeHelper =
 template <typename T>
 concept IsMultiNode = IsMultiNodeHelper<T, 2, 3, 4, 5, 6, 7, 8>;
 
+// NOTE: define the what is a binary node
+template <typename T>
+concept IsDynamicNode = std::is_base_of_v<
+    DynamicNode<typename T::PT, typename T::ST, typename T::AT>, T>;
+
 // NOTE: tag a orth tree
 template <typename T>
 concept IsOrthTree = requires(T t) {
@@ -119,6 +124,12 @@ concept IsKdTree = requires(T t) {
 template <typename T>
 concept IsRTree = requires(T t) {
   { t.RTreeTag() } -> std::same_as<void>;
+};
+
+// NOTE: tag a rtree
+template <typename T>
+concept IsCoverTree = requires(T t) {
+  { t.CoverTreeTag() } -> std::same_as<void>;
 };
 
 template <typename T>

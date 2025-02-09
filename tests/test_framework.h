@@ -1158,30 +1158,26 @@ struct Wrapper {
 
     // NOTE: pick the split rule
     auto run_with_split_type = [&]<typename Point>() {
-      if (tree_type <= 2) {  // NOTE: Kd, Orth, RTree
-        if (!(split_type & (1 << 0)) && !(split_type & (1 << 1))) {
-          // NOTE: 0 -> max_stretch + object_mid
-          build_tree_type.template operator()<
-              Point, pstp::OrthogonalSplitRule<pstp::MaxStretchDim<Point>,
-                                               pstp::ObjectMedian<Point>>>();
-        } else if ((split_type & (1 << 0)) && !(split_type & (1 << 1))) {
-          // NOTE: 1 -> rotate_dim + object_mid
-          build_tree_type.template operator()<
-              Point, pstp::OrthogonalSplitRule<pstp::RotateDim<Point>,
-                                               pstp::ObjectMedian<Point>>>();
-        } else if (!(split_type & (1 << 0)) && (split_type & (1 << 1))) {
-          // NOTE: 2 -> max_stretch + spatial_median
-          build_tree_type.template operator()<
-              Point, pstp::OrthogonalSplitRule<pstp::MaxStretchDim<Point>,
-                                               pstp::SpatialMedian<Point>>>();
-        } else if ((split_type & (1 << 0)) && (split_type & (1 << 1))) {
-          // NOTE: 3 -> rotate + spatial_median
-          build_tree_type.template operator()<
-              Point, pstp::OrthogonalSplitRule<pstp::RotateDim<Point>,
-                                               pstp::SpatialMedian<Point>>>();
-        }
-      } else {
-        build_tree_type.template operator()<Point, pstp::CircleSplitRule>();
+      if (!(split_type & (1 << 0)) && !(split_type & (1 << 1))) {
+        // NOTE: 0 -> max_stretch + object_mid
+        build_tree_type.template operator()<
+            Point, pstp::OrthogonalSplitRule<pstp::MaxStretchDim<Point>,
+                                             pstp::ObjectMedian<Point>>>();
+      } else if ((split_type & (1 << 0)) && !(split_type & (1 << 1))) {
+        // NOTE: 1 -> rotate_dim + object_mid
+        build_tree_type.template operator()<
+            Point, pstp::OrthogonalSplitRule<pstp::RotateDim<Point>,
+                                             pstp::ObjectMedian<Point>>>();
+      } else if (!(split_type & (1 << 0)) && (split_type & (1 << 1))) {
+        // NOTE: 2 -> max_stretch + spatial_median
+        build_tree_type.template operator()<
+            Point, pstp::OrthogonalSplitRule<pstp::MaxStretchDim<Point>,
+                                             pstp::SpatialMedian<Point>>>();
+      } else if ((split_type & (1 << 0)) && (split_type & (1 << 1))) {
+        // NOTE: 3 -> rotate + spatial_median
+        build_tree_type.template operator()<
+            Point, pstp::OrthogonalSplitRule<pstp::RotateDim<Point>,
+                                             pstp::SpatialMedian<Point>>>();
       }
     };
 

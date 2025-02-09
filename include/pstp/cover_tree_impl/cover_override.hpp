@@ -9,10 +9,10 @@
 #include "pstp/dependence/tree_node.h"
 
 namespace pstp {
-template <typename Point, typename SplitRule, uint_fast8_t kMD,
+template <typename Point, typename SplitRule,
           uint_fast8_t kSkHeight, uint_fast8_t kImbaRatio>
 template <typename Range>
-auto CoverTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::KNN(
+auto CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::KNN(
     Node* T, Point const& q, kBoundedQueue<Point, Range>& bq) {
   KNNLogger logger;
   // BT::template KNNMulti<Leaf, Interior>(T, q, DIM, bq, this->tree_box_,
@@ -26,17 +26,17 @@ auto CoverTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::KNN(
   return logger;
 }
 
-template <typename Point, typename SplitRule, uint_fast8_t kMD,
+template <typename Point, typename SplitRule,
           uint_fast8_t kSkHeight, uint_fast8_t kImbaRatio>
 template <typename Range>
-void CoverTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::Flatten(
+void CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::Flatten(
     Range&& Out) {
   BT::template FlattenRec<Leaf, Interior>(this->root_, parlay::make_slice(Out));
 }
 
-template <typename Point, typename SplitRule, uint_fast8_t kMD,
+template <typename Point, typename SplitRule,
           uint_fast8_t kSkHeight, uint_fast8_t kImbaRatio>
-auto CoverTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::RangeCount(
+auto CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::RangeCount(
     Box const& bx) {
   RangeQueryLogger logger;
   size_t s = BT::template RangeCountRectangle<Leaf, Interior>(
@@ -44,18 +44,18 @@ auto CoverTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::RangeCount(
   return std::make_pair(s, logger);
 }
 
-template <typename Point, typename SplitRule, uint_fast8_t kMD,
+template <typename Point, typename SplitRule,
           uint_fast8_t kSkHeight, uint_fast8_t kImbaRatio>
-auto CoverTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::RangeCount(
+auto CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::RangeCount(
     Circle const& cl) {
   return BT::template RangeCountRadius<Leaf, Interior>(this->root_, cl,
                                                        this->tree_box_);
 }
 
-template <typename Point, typename SplitRule, uint_fast8_t kMD,
+template <typename Point, typename SplitRule,
           uint_fast8_t kSkHeight, uint_fast8_t kImbaRatio>
 template <typename Range>
-auto CoverTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::RangeQuery(
+auto CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::RangeQuery(
     Box const& query_box, Range&& Out) {
   RangeQueryLogger logger;
   size_t s = 0;
@@ -65,10 +65,10 @@ auto CoverTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::RangeQuery(
   return std::make_pair(s, logger);
 }
 
-template <typename Point, typename SplitRule, uint_fast8_t kMD,
+template <typename Point, typename SplitRule,
           uint_fast8_t kSkHeight, uint_fast8_t kImbaRatio>
 constexpr void
-CoverTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::DeleteTree() {
+CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::DeleteTree() {
   BT::template DeleteTreeWrapper<Leaf, Interior>();
 }
 

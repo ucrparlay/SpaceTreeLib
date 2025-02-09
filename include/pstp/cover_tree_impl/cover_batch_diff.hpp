@@ -8,10 +8,10 @@
 namespace pstp {
 
 // NOTE: default batch delete
-template <typename Point, typename SplitRule, uint_fast8_t kMD,
+template <typename Point, typename SplitRule,
           uint_fast8_t kSkHeight, uint_fast8_t kImbaRatio>
 template <typename Range>
-void CoverTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::BatchDiff(
+void CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDiff(
     Range&& In) {
   static_assert(parlay::is_random_access_range_v<Range>);
   static_assert(
@@ -25,9 +25,9 @@ void CoverTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::BatchDiff(
 }
 
 // NOTE: assume points are partially covered in the tree
-template <typename Point, typename SplitRule, uint_fast8_t kMD,
+template <typename Point, typename SplitRule,
           uint_fast8_t kSkHeight, uint_fast8_t kImbaRatio>
-void CoverTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::BatchDiff_(
+void CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDiff_(
     Slice A) {
   // NOTE: diff points from the tree
   Points B = Points::uninitialized(A.size());
@@ -48,7 +48,7 @@ void CoverTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::BatchDiff_(
 }
 
 // NOTE: the cover does not need box since the box will never change
-template <typename Point, typename SplitRule, uint_fast8_t kMD,
+template <typename Point, typename SplitRule,
           uint_fast8_t kSkHeight, uint_fast8_t kImbaRatio>
 Node* CoverTree<Point, SplitRule, kMD, kSkHeight,
                kImbaRatio>::BatchDiffRecursive(Node* T, Slice In, Slice Out) {

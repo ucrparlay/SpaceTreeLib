@@ -7,31 +7,15 @@
 
 #include <algorithm>
 
-#include "pstp/dependence/tree_node.h"
 #include "pstp/cover_tree.h"
+#include "pstp/dependence/tree_node.h"
 
 namespace pstp {
-template <typename Point, typename SplitRule, uint_fast8_t kMD,
-          uint_fast8_t kSkHeight, uint_fast8_t kImbaRatio>
-template <typename Range, typename... Args>
-void CoverTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::Build(
-    Range&& In, Args&&... args) {
-  static_assert(parlay::is_random_access_range_v<Range>);
-  static_assert(
-      parlay::is_less_than_comparable_v<parlay::range_reference_type_t<Range>>);
-  static_assert(std::is_constructible_v<parlay::range_value_type_t<Range>,
-                                        parlay::range_reference_type_t<Range>>);
-  static_assert(BT::kBuildDepthOnce % kMD == 0);
-  assert(kMD == BT::kDim);
-
-  Slice A = parlay::make_slice(In);
-  Build_(A, std::forward<Args>(args)...);
-}
 
 // TODO: maybe we don't need this function, it can be directly computed by value
-template <typename Point, typename SplitRule, uint_fast8_t kMD,
-          uint_fast8_t kSkHeight, uint_fast8_t kImbaRatio>
-void CoverTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::DivideRotate(
+template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
+void CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::DivideRotate(
     HyperPlaneSeq& pivots, DimsType dim, BucketType idx, BoxSeq& box_seq,
     Box const& box) {
   if (idx > BT::kPivotNum) {
@@ -53,9 +37,9 @@ void CoverTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::DivideRotate(
   return;
 }
 
-template <typename Point, typename SplitRule, uint_fast8_t kMD,
-          uint_fast8_t kSkHeight, uint_fast8_t kImbaRatio>
-void CoverTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::SerialSplit(
+template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
+void CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::SerialSplit(
     Slice In, DimsType dim, DimsType idx, Box const& box,
     parlay::sequence<BallsType>& sums) {
   assert(dim <= BT::kDim);
@@ -72,12 +56,12 @@ void CoverTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::SerialSplit(
               box, sums);
 }
 
-template <typename Point, typename SplitRule, uint_fast8_t kMD,
-          uint_fast8_t kSkHeight, uint_fast8_t kImbaRatio>
+template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
 Node* CoverTree<Point, SplitRule, kMD, kSkHeight,
-               kImbaRatio>::SerialBuildRecursive(Slice In, Slice Out,
-                                                 Box const& box,
-                                                 bool checked_duplicate) {
+                kImbaRatio>::SerialBuildRecursive(Slice In, Slice Out,
+                                                  Box const& box,
+                                                  bool checked_duplicate) {
   assert(In.size() == 0 || BT::WithinBox(BT::GetBox(In), box));
   size_t n = In.size();
 
@@ -122,9 +106,9 @@ Node* CoverTree<Point, SplitRule, kMD, kSkHeight,
   return AllocInteriorNode<Interior>(tree_nodes, splitter, AugType());
 }
 
-template <typename Point, typename SplitRule, uint_fast8_t kMD,
-          uint_fast8_t kSkHeight, uint_fast8_t kImbaRatio>
-Node* CoverTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::BuildRecursive(
+template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
+Node* CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::BuildRecursive(
     Slice In, Slice Out, Box const& box) {
   // TODO: may ensure the bucket is corresponding the the splitter
   assert(In.size() == 0 || BT::WithinBox(BT::GetBox(In), box));
@@ -178,9 +162,9 @@ Node* CoverTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::BuildRecursive(
   return BT::template BuildInnerTree<Interior>(1, pivots, tree_nodes);
 }
 
-template <typename Point, typename SplitRule, uint_fast8_t kMD,
-          uint_fast8_t kSkHeight, uint_fast8_t kImbaRatio>
-void CoverTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::Build_(Slice A) {
+template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
+void CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::Build_(Slice A) {
   Points B = Points::uninitialized(A.size());
   this->tree_box_ = BT::GetBox(A);
   this->root_ = BuildRecursive(A, B.cut(0, A.size()), this->tree_box_);
@@ -190,21 +174,33 @@ void CoverTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::Build_(Slice A) {
   return;
 }
 
-template <typename Point, typename SplitRule, uint_fast8_t kMD,
-          uint_fast8_t kSkHeight, uint_fast8_t kImbaRatio>
-void CoverTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::Build_(
+template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
+void CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::Build_(
     Slice A, Box const& box) {
   assert(BT::WithinBox(BT::GetBox(A), box));
 
   Points B = Points::uninitialized(A.size());
   this->tree_box_ = box;
-  this->root_ = BuildRecursive(A, B.cut(0, A.size()), this->tree_box_);
-  // this->root_ = SerialBuildRecursive(A, B.cut(0, A.size()), BT::kDim,
-  //                                    this->tree_box_, false);
+  // this->root_ = BuildRecursive(A, B.cut(0, A.size()), this->tree_box_);
   assert(this->root_ != nullptr);
   return;
 }
 
+template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
+template <typename Range, typename... Args>
+void CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::Build(Range&& In,
+                                                               Args&&... args) {
+  static_assert(parlay::is_random_access_range_v<Range>);
+  static_assert(
+      parlay::is_less_than_comparable_v<parlay::range_reference_type_t<Range>>);
+  static_assert(std::is_constructible_v<parlay::range_value_type_t<Range>,
+                                        parlay::range_reference_type_t<Range>>);
+
+  Slice A = parlay::make_slice(In);
+  // Build_(A, std::forward<Args>(args)...);
+}
 }  // namespace pstp
 
 #endif  // PSTP_COVER_TREE_IMPL_COVER_BUILD_TREE_HPP_
