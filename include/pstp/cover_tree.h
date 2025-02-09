@@ -39,6 +39,7 @@ class CoverTree
   using SplitterSeq = parlay::sequence<Splitter>;
   using NodeTagSeq = BT::NodeTagSeq;
   using NodeBoxSeq = BT::NodeBoxSeq;
+  using NodeBoolean = BT::NodeBoolean;
   using NodeBox = BT::NodeBox;
   using AugType = std::optional<bool>;
 
@@ -68,7 +69,8 @@ class CoverTree
   template <typename Range>
   void BatchInsert(Range&& In);
 
-  Node* PointInsertRecursive(Node* T, Point const& p, DepthType deep);
+  NodeBoolean PointInsertRecursive(Node* T, Point const& center, Point const& p,
+                                   DepthType deep);
 
   constexpr void DeleteTree() override;
 
@@ -132,6 +134,7 @@ class CoverTree
   constexpr static char const* GetTreeName() { return "CoverTree"; }
 
   SplitRule split_rule_;
+  Point center_;
   size_t alloc_dummy_num_ = 0;
   size_t alloc_empty_num_ = 0;
   size_t alloc_normal_num_ = 0;

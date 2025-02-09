@@ -40,6 +40,7 @@ class BaseTree {
   using BoxSeq = parlay::sequence<Box>;
   using Circle = std::pair<Point, Coord>;
 
+  using NodeBoolean = std::pair<Node*, bool>;
   using NodeBox = std::pair<Node*, Box>;
   using NodeBoxSeq = parlay::sequence<NodeBox>;
   using NodeTag = std::pair<Node*, uint_fast8_t>;
