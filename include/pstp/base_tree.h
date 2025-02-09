@@ -24,6 +24,7 @@ class BaseTree {
       std::conditional_t<(kSkHeight > 7), uint_fast16_t, uint_fast8_t>;
   using BallsType = uint_fast32_t;
   using DimsType = uint_fast8_t;
+  using DepthType = uint_fast8_t;
   using BucketSeq = parlay::sequence<BucketType>;
   using BallSeq = parlay::sequence<BallsType>;
 
@@ -104,6 +105,7 @@ class BaseTree {
   template <typename Leaf, typename Interior>
   static Box GetBox(Node* T);
 
+  // NOTE: Circle operations
   static inline bool WithinCircle(Box const& bx, Circle const& cl);
   static inline bool WithinCircle(Point const& p, Circle const& cl);
   static inline bool CircleIntersectBox(Circle const& cl, Box const& bx);

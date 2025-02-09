@@ -20,6 +20,7 @@ class CoverTree
   using BucketType = BT::BucketType;
   using BallsType = BT::BallsType;
   using BucketSeq = BT::BucketSeq;
+  using DepthType = BT::DepthType;
   using BallSeq = BT::BallSeq;
   using DimsType = BT::DimsType;
   using Coord = typename Point::Coord;
@@ -66,6 +67,8 @@ class CoverTree
 
   template <typename Range>
   void BatchInsert(Range&& In);
+
+  Node* PointInsertRecursive(Node* T, Point const& p, DepthType deep);
 
   constexpr void DeleteTree() override;
 
@@ -139,7 +142,7 @@ class CoverTree
 
 // #include "cover_tree_impl/cover_batch_delete.hpp"
 // #include "cover_tree_impl/cover_batch_diff.hpp"
-// #include "cover_tree_impl/cover_batch_insert.hpp"
+#include "cover_tree_impl/cover_batch_insert.hpp"
 #include "cover_tree_impl/cover_build_tree.hpp"
 #include "cover_tree_impl/cover_inter_node.hpp"
 #include "cover_tree_impl/cover_override.hpp"

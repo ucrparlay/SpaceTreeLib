@@ -313,11 +313,12 @@ BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::GetBox(
   return std::move(box);
 }
 
+// NOTE: box within the circle
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 inline bool BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::WithinCircle(
     Box const& bx, Circle const& cl) {
-  //* the logical is same as p2b_max_distance <= radius
+  // NOTE: the logical is same as p2b_max_distance <= radius
   Coord r = 0;
   for (DimsType i = 0; i < kDim; ++i) {
     if (Num::Lt(cl.first.pnt[i], (bx.first.pnt[i] + bx.second.pnt[i]) / 2)) {
@@ -333,6 +334,7 @@ inline bool BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::WithinCircle(
   return true;
 }
 
+// NOTE: point within the circle
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 inline bool BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::WithinCircle(
