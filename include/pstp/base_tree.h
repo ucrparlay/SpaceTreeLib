@@ -39,6 +39,7 @@ class BaseTree {
   using Box = std::pair<Point, Point>;
   using BoxSeq = parlay::sequence<Box>;
   using Circle = std::pair<Point, Coord>;
+  using CoverCircle = std::pair<Point, DepthType>;
 
   using NodeBoolean = std::pair<Node*, bool>;
   using NodeBox = std::pair<Node*, Box>;
@@ -109,7 +110,10 @@ class BaseTree {
   // NOTE: Circle operations
   static inline bool WithinCircle(Box const& bx, Circle const& cl);
   static inline bool WithinCircle(Point const& p, Circle const& cl);
+  static inline bool WithinCircle(Point const& p, CoverCircle const& cl);
   static inline bool CircleIntersectBox(Circle const& cl, Box const& bx);
+  static inline bool CircleIntersectCircle(Circle const& a, Circle const& b);
+  static inline Circle GetCircle(Slice V);
 
   // NOTE: build tree
   static inline void SamplePoints(Slice In, Points& arr);

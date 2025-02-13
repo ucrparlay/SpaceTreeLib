@@ -270,6 +270,12 @@ struct DynamicNode : Node {
   using AT = AugType;
   using NodeArr = parlay::sequence<Node*>;
 
+  DynamicNode()
+      : Node{false, static_cast<size_t>(0)},
+        tree_nodes(NodeArr()),
+        split(ST()),
+        aug(AT()) {}
+
   DynamicNode(NodeArr const& _tree_nodes, const ST& _split, const AT& _aug)
       : Node{false,
              std::accumulate(
@@ -304,6 +310,13 @@ static Interior* AllocInteriorNode(typename Interior::NodeArr const& tree_nodes,
                                    typename Interior::AT const& aug) {
   Interior* o = parlay::type_allocator<Interior>::alloc();
   new (o) Interior(tree_nodes, split, aug);
+  return o;
+}
+
+template <typename Interior>
+static Interior* AllocInteriorNode() {
+  Interior* o = parlay::type_allocator<Interior>::alloc();
+  new (o) Interior();
   return o;
 }
 

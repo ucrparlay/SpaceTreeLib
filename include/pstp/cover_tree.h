@@ -35,7 +35,10 @@ class CoverTree
 
   using HyperPlane = BT::HyperPlane;
   using HyperPlaneSeq = BT::HyperPlaneSeq;
-  using Splitter = parlay::sequence<Circle>;
+  using Splitter =
+      parlay::sequence<Point>;  // every center of circle in one
+                                // level marks a region, the radius can be
+                                // passed during the traversal
   using SplitterSeq = parlay::sequence<Splitter>;
   using NodeTagSeq = BT::NodeTagSeq;
   using NodeBoxSeq = BT::NodeBoxSeq;
@@ -52,6 +55,7 @@ class CoverTree
   using CoverNodeArr = Interior::CoverNodeArr;
   using InnerTree = typename BT::template InnerTree<Leaf, Interior>;
   using BoxCut = typename BT::BoxCut;
+  using CoverCircle = BT::CoverCircle;
 
   template <typename Leaf, typename Interior, bool granularity,
             typename... Args>
@@ -71,6 +75,8 @@ class CoverTree
 
   NodeBoolean PointInsertRecursive(Node* T, Point const& center, Point const& p,
                                    DepthType deep);
+
+  void BuildUpwards(CoverCircle& root_cc, Point const& p);
 
   constexpr void DeleteTree() override;
 
@@ -134,7 +140,7 @@ class CoverTree
   constexpr static char const* GetTreeName() { return "CoverTree"; }
 
   SplitRule split_rule_;
-  Point center_;
+  CoverCircle root_cover_circle_;
   size_t alloc_dummy_num_ = 0;
   size_t alloc_empty_num_ = 0;
   size_t alloc_normal_num_ = 0;
