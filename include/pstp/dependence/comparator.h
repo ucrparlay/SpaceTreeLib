@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <cfloat>
+#include <cmath>
 #include <cstdio>
 #include <iostream>
 #include <limits>
@@ -45,6 +46,19 @@ class Num_Comparator {
   static inline T min(T const a, T const b) { return Lt(a, b) ? a : b; }
 
   static inline T max(T const a, T const b) { return Gt(a, b) ? a : b; }
+
+  static inline T integer_log2_upper(T const a) {
+    if constexpr (std::is_floating_point_v<T>) {
+      return static_cast<T>(std::ceil(std::log2(a)));
+    } else {
+      // a = 7 -> r = 2
+      // a = 8 -> r = 3
+      if (a == 0) return 0;
+      T r = 0, b = a;
+      while (b >>= 1) r++;
+      return r + static_cast<T>((1 << r) != a);
+    }
+  }
 
  private:
   static constexpr T eps = std::numeric_limits<T>::epsilon();

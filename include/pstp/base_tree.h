@@ -38,8 +38,6 @@ class BaseTree {
   using HyperPlaneSeq = parlay::sequence<HyperPlane>;
   using Box = std::pair<Point, Point>;
   using BoxSeq = parlay::sequence<Box>;
-  using Circle = std::pair<Point, Coord>;
-  using CoverCircle = std::pair<Point, DepthType>;
 
   using NodeBoolean = std::pair<Node*, bool>;
   using NodeBox = std::pair<Node*, Box>;
@@ -101,6 +99,7 @@ class BaseTree {
                                                      Box const& box,
                                                      DimsType d);
   static inline Box GetEmptyBox();
+  static inline Point GetBoxCenter(Box const& box);
   static Box GetBox(Box const& x, Box const& y);
   static Box GetBox(Slice V);
   static Box GetBox(BoxSeq const& box_seq);
@@ -108,12 +107,63 @@ class BaseTree {
   static Box GetBox(Node* T);
 
   // NOTE: Circle operations
-  static inline bool WithinCircle(Box const& bx, Circle const& cl);
-  static inline bool WithinCircle(Point const& p, Circle const& cl);
-  static inline bool WithinCircle(Point const& p, CoverCircle const& cl);
-  static inline bool CircleIntersectBox(Circle const& cl, Box const& bx);
-  static inline bool CircleIntersectCircle(Circle const& a, Circle const& b);
-  static inline Circle GetCircle(Slice V);
+  struct NormalCircle {
+    Point const& GetCenter() const { return center; }
+
+    Coord GetRadius() const { return radius; }
+
+    static Coord ComputeRadius(double const& r) {
+      return static_cast<Coord>(r);
+    }
+
+    Point center;
+    Coord radius;
+  };
+
+  struct CoverCircle {
+    Point const& GetCenter() const { return center; }
+
+    Coord GetRadius() const { return static_cast<Coord>(1 << level); }
+
+    static DepthType ComputeRadius(double const& r) {
+      return static_cast<DepthType>(std::ceil(std::log2(r)));
+    }
+
+    Point center;
+    DepthType level;
+  };
+
+  template <typename CircleType>
+  static bool LegalCircle(CircleType const& cl);
+
+  template <typename CircleType>
+  static inline bool WithinCircle(Point const& p, CircleType const& cl);
+
+  template <typename CircleType>
+  static inline bool WithinCircle(Box const& box, CircleType const& cl);
+
+  template <typename CircleType>
+  static inline bool CircleWithinCircle(CircleType const& a,
+                                        CircleType const& b);
+
+  template <typename CircleType>
+  static inline bool CircleIntersectBox(CircleType const& cl, Box const& box);
+
+  template <typename CircleType>
+  static inline bool CircleIntersectCircle(CircleType const& a,
+                                           CircleType const& b);
+
+  template <typename CircleType>
+  static inline CircleType GetCircle(Box const& box);
+
+  template <typename CircleType>
+  static inline CircleType GetCircle(Slice V);
+
+  template <typename CircleType>
+  static inline CircleType GetCircle(CircleType const& a, CircleType const& b);
+
+  template <typename CircleType>
+  static inline CircleType GetCircle(Point const& p, CircleType const& cl);
 
   // NOTE: build tree
   static inline void SamplePoints(Slice In, Points& arr);
@@ -270,9 +320,9 @@ class BaseTree {
                                     Box const& node_box, DimsType dim,
                                     BucketType idx, RangeQueryLogger& logger);
 
-  template <typename Leaf, IsBinaryNode Interior>
-  static size_t RangeCountRadius(Node* T, Circle const& cl,
-                                 Box const& node_box);
+  // template <typename Leaf, IsBinaryNode Interior>
+  // static size_t RangeCountRadius(Node* T, NormalCircle const& cl,
+  //                                Box const& node_box);
 
   // NOTE: range query stuffs
   template <typename Leaf, typename Range>
@@ -285,9 +335,9 @@ class BaseTree {
                                         Box const& node_box,
                                         RangeQueryLogger& logger);
 
-  template <typename Leaf, IsMultiNode Interior>
-  static size_t RangeCountRadius(Node* T, Circle const& cl,
-                                 Box const& node_box);
+  // template <typename Leaf, IsMultiNode Interior>
+  // static size_t RangeCountRadius(Node* T, NormalCircle const& cl,
+  //                                Box const& node_box);
 
   // NOTE: range query stuffs
   template <typename Leaf, IsMultiNode Interior, typename Range>
@@ -388,6 +438,7 @@ class BaseTree {
 
 #include "base_tree_impl/box_cut.hpp"
 #include "base_tree_impl/box_op.hpp"
+#include "base_tree_impl/circle_op.hpp"
 #include "base_tree_impl/delete_tree.hpp"
 #include "base_tree_impl/dimensinality.hpp"
 #include "base_tree_impl/inner_tree.hpp"

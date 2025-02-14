@@ -31,7 +31,6 @@ class CoverTree
   using PointsIter = BT::PointsIter;
   using Box = BT::Box;
   using BoxSeq = BT::BoxSeq;
-  using Circle = BT::Circle;
 
   using HyperPlane = BT::HyperPlane;
   using HyperPlaneSeq = BT::HyperPlaneSeq;
@@ -78,15 +77,15 @@ class CoverTree
   template <typename Range>
   void BatchInsert(Range&& In);
 
-  NodeBoolean PointInsertRecursive(Node* T, Point const& p, DepthType level);
+  NodeBoolean PointInsertRecursive(Node* T, Point const& p,
+                                   CoverCircle const& level_cover_circle);
 
   // increase the cover range of the root until it can cover the point p
   void ExtendCoverRangeUpwards(CoverCircle& root_cc, Point const& p);
 
   // decrease the cover range of one leaf until the points within can be
   // separated
-  Node* ShrinkCoverRangeDownwards(Node* T, CoverCircle const& cc,
-                                  DepthType level);
+  Node* ShrinkCoverRangeDownwards(Node* T, CoverCircle const& cc);
 
   constexpr void DeleteTree() override;
 
@@ -113,7 +112,7 @@ class CoverTree
 
   auto RangeCount(Box const& query_box);
 
-  auto RangeCount(Circle const& cl);
+  // auto RangeCount(Circle const& cl);
 
   template <typename Range>
   auto RangeQuery(Box const& query_box, Range&& Out);

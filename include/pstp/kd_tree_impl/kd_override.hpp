@@ -47,13 +47,13 @@ auto KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::RangeCount(
   return std::make_pair(size, logger);
 }
 
-template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
-auto KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::RangeCount(
-    Circle const& cl) {
-  return BT::template RangeCountRadius<Leaf, Interior>(this->root_, cl,
-                                                       this->tree_box_);
-}
+// template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
+//           uint_fast8_t kImbaRatio>
+// auto KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::RangeCount(
+//     Circle const& cl) {
+//   return BT::template RangeCountRadius<Leaf, Interior>(this->root_, cl,
+//                                                        this->tree_box_);
+// }
 
 template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>

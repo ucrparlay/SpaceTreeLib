@@ -32,7 +32,7 @@ class KdTree
   using PointsIter = typename BT::PointsIter;
   using Box = typename BT::Box;
   using BoxSeq = typename BT::BoxSeq;
-  using Circle = typename BT::Circle;
+  using Circle = typename BT::NormalCircle;
 
   using HyperPlane = typename BT::HyperPlane;
   using HyperPlaneSeq = typename BT::HyperPlaneSeq;

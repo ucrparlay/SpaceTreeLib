@@ -313,62 +313,25 @@ BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::GetBox(
   return std::move(box);
 }
 
-// NOTE: box within the circle
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
-inline bool BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::WithinCircle(
-    Box const& bx, Circle const& cl) {
-  // NOTE: the logical is same as p2b_max_distance <= radius
-  Coord r = 0;
-  for (DimsType i = 0; i < kDim; ++i) {
-    if (Num::Lt(cl.first.pnt[i], (bx.first.pnt[i] + bx.second.pnt[i]) / 2)) {
-      r += (bx.second.pnt[i] - cl.first.pnt[i]) *
-           (bx.second.pnt[i] - cl.first.pnt[i]);
-    } else {
-      r += (cl.first.pnt[i] - bx.first.pnt[i]) *
-           (cl.first.pnt[i] - bx.first.pnt[i]);
+Point BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::GetBoxCenter(
+    Box const& box) {
+  Point center;
+  if constexpr (kDim == 2) {
+    center.pnt[0] = (box.first.pnt[0] + box.second.pnt[0]) / 2;
+    center.pnt[1] = (box.first.pnt[1] + box.second.pnt[1]) / 2;
+  } else if constexpr (kDim == 3) {
+    center.pnt[0] = (box.first.pnt[0] + box.second.pnt[0]) / 2;
+    center.pnt[1] = (box.first.pnt[1] + box.second.pnt[1]) / 2;
+    center.pnt[2] = (box.first.pnt[2] + box.second.pnt[2]) / 2;
+  } else {
+    for (DimsType i = 0; i < kDim; ++i) {
+      center.pnt[i] = GetBoxMid(i, box);
     }
-    if (Num::Gt(r, cl.second * cl.second)) return false;
   }
-  assert(Num::Leq(r, cl.second * cl.second));
-  return true;
+  return center;
 }
-
-// NOTE: point within the circle
-template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
-inline bool BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::WithinCircle(
-    Point const& p, Circle const& cl) {
-  Coord r = 0;
-  for (DimsType i = 0; i < kDim; ++i) {
-    r += (p.pnt[i] - cl.first.pnt[i]) * (p.pnt[i] - cl.first.pnt[i]);
-    if (Num::Gt(r, cl.second * cl.second)) return false;
-  }
-  assert(Num::Leq(r, cl.second * cl.second));
-  return true;
-}
-
-template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
-inline bool BaseTree<Point, DerivedTree, kSkHeight,
-                     kImbaRatio>::CircleIntersectBox(Circle const& cl,
-                                                     Box const& bx) {
-  //* the logical is same as p2b_min_distance > radius
-  Coord r = 0;
-  for (DimsType i = 0; i < kDim; ++i) {
-    if (Num::Lt(cl.first.pnt[i], bx.first.pnt[i])) {
-      r += (bx.first.pnt[i] - cl.first.pnt[i]) *
-           (bx.first.pnt[i] - cl.first.pnt[i]);
-    } else if (Num::Gt(cl.first.pnt[i], bx.second.pnt[i])) {
-      r += (cl.first.pnt[i] - bx.second.pnt[i]) *
-           (cl.first.pnt[i] - bx.second.pnt[i]);
-    }
-    if (Num::Gt(r, cl.second * cl.second)) return false;  //* not intersect
-  }
-  assert(Num::Leq(r, cl.second * cl.second));
-  return true;
-}
-
 }  // namespace pstp
 
 #endif  // PSTP_BASE_TREE_IMPL_BOX_OP_HPP_

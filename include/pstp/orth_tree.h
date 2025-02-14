@@ -35,7 +35,7 @@ class OrthTree
   using PointsIter = BT::PointsIter;
   using Box = BT::Box;
   using BoxSeq = BT::BoxSeq;
-  using Circle = BT::Circle;
+  // using Circle = BT::Circle;
 
   using HyperPlane = BT::HyperPlane;
   using HyperPlaneSeq = BT::HyperPlaneSeq;
@@ -98,7 +98,7 @@ class OrthTree
 
   auto RangeCount(Box const& query_box);
 
-  auto RangeCount(Circle const& cl);
+  // auto RangeCount(Circle const& cl);
 
   template <typename Range>
   auto RangeQuery(Box const& query_box, Range&& Out);

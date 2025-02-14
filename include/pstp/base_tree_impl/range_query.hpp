@@ -120,45 +120,45 @@ size_t BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::RangeCountRectangle(
 }
 
 // TODO: as range_count_rectangle
-template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
-template <typename Leaf, IsBinaryNode Interior>
-size_t BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::RangeCountRadius(
-    Node* T, Circle const& cl, Box const& node_box) {
-  if (!circle_intersect_box(cl, node_box)) return 0;
-  if (within_circle(node_box, cl)) return T->size;
-
-  if (T->is_leaf) {
-    size_t cnt = 0;
-    Leaf* TL = static_cast<Leaf*>(T);
-    if (TL->is_dummy) {
-      if (within_circle(TL->pts[0], cl)) {
-        cnt += TL->size;
-      }
-    } else {
-      std::ranges::for_each(TL->pts.begin(), TL->pts.begin() + TL->size,
-                            [&](auto const& p) {
-                              if (within_circle(p, cl)) {
-                                cnt++;
-                              }
-                            });
-    }
-    return cnt;
-  }
-
-  Interior* TI = static_cast<Interior*>(T);
-  Box lbox(node_box), rbox(node_box);
-  lbox.second.pnt[TI->split.second] = TI->split.first;  //* loose
-  rbox.first.pnt[TI->split.second] = TI->split.first;
-
-  size_t l, r;
-  parlay::par_do_if(
-      TI->size >= kSerialBuildCutoff,
-      [&] { l = RangeCountRadius(TI->left, cl, lbox); },
-      [&] { r = RangeCountRadius(TI->right, cl, rbox); });
-
-  return l + r;
-};
+// template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
+//           uint_fast8_t kImbaRatio>
+// template <typename Leaf, IsBinaryNode Interior>
+// size_t BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::RangeCountRadius(
+//     Node* T, Circle const& cl, Box const& node_box) {
+//   if (!circle_intersect_box(cl, node_box)) return 0;
+//   if (within_circle(node_box, cl)) return T->size;
+//
+//   if (T->is_leaf) {
+//     size_t cnt = 0;
+//     Leaf* TL = static_cast<Leaf*>(T);
+//     if (TL->is_dummy) {
+//       if (within_circle(TL->pts[0], cl)) {
+//         cnt += TL->size;
+//       }
+//     } else {
+//       std::ranges::for_each(TL->pts.begin(), TL->pts.begin() + TL->size,
+//                             [&](auto const& p) {
+//                               if (within_circle(p, cl)) {
+//                                 cnt++;
+//                               }
+//                             });
+//     }
+//     return cnt;
+//   }
+//
+//   Interior* TI = static_cast<Interior*>(T);
+//   Box lbox(node_box), rbox(node_box);
+//   lbox.second.pnt[TI->split.second] = TI->split.first;  //* loose
+//   rbox.first.pnt[TI->split.second] = TI->split.first;
+//
+//   size_t l, r;
+//   parlay::par_do_if(
+//       TI->size >= kSerialBuildCutoff,
+//       [&] { l = RangeCountRadius(TI->left, cl, lbox); },
+//       [&] { r = RangeCountRadius(TI->right, cl, rbox); });
+//
+//   return l + r;
+// };
 
 // NOTE: orthogonal range query in leaf
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,

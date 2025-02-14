@@ -23,13 +23,13 @@ struct CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::CoverInteriorNode
   auto& GetParallelFlag() const { return this->aug.parallel_flag; }
 
   inline void SetParallelFlag(bool const flag) {
-    GetParallelFlag().emplace(flag);
+    this->GetParallelFlag().emplace(flag);
   }
 
-  inline void ResetParallelFlag() { GetParallelFlag().reset(); }
+  inline void ResetParallelFlag() { this->GetParallelFlag().reset(); }
 
   inline bool GetParallelFlagIniStatus() {
-    return GetParallelFlag().has_value();
+    return this->GetParallelFlag().has_value();
   }
 
   // NOTE: use a tri-state bool to indicate whether a subtree needs to be
@@ -37,8 +37,9 @@ struct CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::CoverInteriorNode
   // rebuild; otherwise, the value depends on the initial tree size before
   // rebuilding.
   bool ForceParallel() const {
-    return GetParallelFlag().has_value() ? GetParallelFlag().value()
-                                         : this->size > BT::kSerialBuildCutoff;
+    return this->GetParallelFlag().has_value()
+               ? this->GetParallelFlag().value()
+               : this->size > BT::kSerialBuildCutoff;
   }
 };
 
