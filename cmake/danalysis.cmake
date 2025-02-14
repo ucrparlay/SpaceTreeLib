@@ -7,9 +7,9 @@
 # -------------------------------------------------------------------
 
 # User options to enable static analysis tools
-option(PSTP_ENABLE_CPPCHECK     "Enable cppcheck static analysis"      ON)
-option(PSTP_ENABLE_CLANG_TIDY   "Enable clang-tidy static analysis"    ON)
-option(PSTP_ENABLE_IWYU         "Enable include-what-you-use analysis" OFF)
+option(PSPT_ENABLE_CPPCHECK     "Enable cppcheck static analysis"      ON)
+option(PSPT_ENABLE_CLANG_TIDY   "Enable clang-tidy static analysis"    ON)
+option(PSPT_ENABLE_IWYU         "Enable include-what-you-use analysis" OFF)
 
 function(CONFIGURE_DANALYSIS)
   set(options OPTIONAL "")
@@ -27,7 +27,7 @@ function(CONFIGURE_DANALYSIS)
 
   # ---------------------------- cppcheck -----------------------------
 
-  if(PSTP_ENABLE_CPPCHECK)
+  if(PSPT_ENABLE_CPPCHECK)
     # Find cppcheck installation
     find_program(
       CPPCHECK_EXE
@@ -69,26 +69,26 @@ function(CONFIGURE_DANALYSIS)
       endforeach()
 
       # Custom target to run cppcheck on all library files sequentially
-      add_custom_target(pstp_cppcheck)
-      add_dependencies(pstp_cppcheck ${CPPCHECK_TARGETS})
+      add_custom_target(pspt_cppcheck)
+      add_dependencies(pspt_cppcheck ${CPPCHECK_TARGETS})
 
       # Custom target to run cppcheck on all library files at once
       add_custom_target(
-        pstp_cppcheck_all
+        pspt_cppcheck_all
         COMMAND ${CPPCHECK_EXE} ${CPPCHECK_ARGS}
         ${CONFIGURE_DANALYSIS_FILES}
       )
 
-      set(STATIC_ANALYSIS_TARGETS ${STATIC_ANALYSIS_TARGETS} pstp_cppcheck_all)
+      set(STATIC_ANALYSIS_TARGETS ${STATIC_ANALYSIS_TARGETS} pspt_cppcheck_all)
 
     endif()
   else()
-    message(STATUS "cppcheck:                     Disabled (enable with -DPSTP_ENABLE_CPPCHECK=On)")
+    message(STATUS "cppcheck:                     Disabled (enable with -DPSPT_ENABLE_CPPCHECK=On)")
   endif()
 
   # --------------------------- clang-tidy ----------------------------
 
-  if(PSTP_ENABLE_CLANG_TIDY)
+  if(PSPT_ENABLE_CLANG_TIDY)
     # Find clang-tidy installation
     find_program(
       CLANG_TIDY_EXE
@@ -133,28 +133,28 @@ function(CONFIGURE_DANALYSIS)
       endforeach()
 
       # Custom target to run clang-tidy on all library files sequentially
-      add_custom_target(pstp_clang_tidy)
-      add_dependencies(pstp_clang_tidy ${CLANG_TIDY_TARGETS})
+      add_custom_target(pspt_clang_tidy)
+      add_dependencies(pspt_clang_tidy ${CLANG_TIDY_TARGETS})
 
-      # Custom target to run pstp_clang-tidy on all library files at once
+      # Custom target to run pspt_clang-tidy on all library files at once
       add_custom_target(
-        pstp_clang_tidy_all
+        pspt_clang_tidy_all
         COMMAND ${CLANG_TIDY_EXE} ${CLANG_TIDY_ARGS}
         ${CONFIGURE_DANALYSIS_FILES}
         --
         ${CLANG_TIDY_COMPILER_ARGS}
       )
 
-      set(STATIC_ANALYSIS_TARGETS ${STATIC_ANALYSIS_TARGETS} pstp_clang_tidy_all)
+      set(STATIC_ANALYSIS_TARGETS ${STATIC_ANALYSIS_TARGETS} pspt_clang_tidy_all)
 
     endif()
   else()
-    message(STATUS "clang-tidy:                   Disabled (enable with -DPSTP_ENABLE_CLANG_TIDY=On)")
+    message(STATUS "clang-tidy:                   Disabled (enable with -DPSPT_ENABLE_CLANG_TIDY=On)")
   endif()
 
   # ----------------------- include-what-you-use --------------------------
 
-  if(PSTP_ENABLE_IWYU)
+  if(PSPT_ENABLE_IWYU)
     # Find include-what-you-use executable
     find_program(
       IWYU_EXE
@@ -192,25 +192,25 @@ function(CONFIGURE_DANALYSIS)
       endforeach()
 
       # Custom target to run include-what-you-use on all library files sequentially
-      add_custom_target(pstp_iwyu)
-      add_dependencies(pstp_iwyu ${IWYU_TARGETS})
+      add_custom_target(pspt_iwyu)
+      add_dependencies(pspt_iwyu ${IWYU_TARGETS})
       
       # include-what-you-use doesn't support compiling multiple files at once
-      add_custom_target(pstp_iwyu_all)
-      add_dependencies(pstp_iwyu_all pstp_iwyu)
+      add_custom_target(pspt_iwyu_all)
+      add_dependencies(pspt_iwyu_all pspt_iwyu)
 
-      set(STATIC_ANALYSIS_TARGETS ${STATIC_ANALYSIS_TARGETS} pstp_iwyu_all)
+      set(STATIC_ANALYSIS_TARGETS ${STATIC_ANALYSIS_TARGETS} pspt_iwyu_all)
 
     endif()
   else()
-    message(STATUS "include-what-you-use:         Disabled (enable with -DPSTP_ENABLE_IWYU=On)")
+    message(STATUS "include-what-you-use:         Disabled (enable with -DPSPT_ENABLE_IWYU=On)")
   endif()
 
   # ---------------------------- all linters ------------------------------
 
   # Target to run all enabled linters
-  if(PSTP_ENABLE_CPPCHECK OR PSTP_ENABLE_CLANG_TIDY OR PSTP_ENABLE_IWYU)
-    add_custom_target(pstp_analysis_all)
-    add_dependencies(pstp_analysis_all ${STATIC_ANALYSIS_TARGETS})
+  if(PSPT_ENABLE_CPPCHECK OR PSPT_ENABLE_CLANG_TIDY OR PSPT_ENABLE_IWYU)
+    add_custom_target(pspt_analysis_all)
+    add_dependencies(pspt_analysis_all ${STATIC_ANALYSIS_TARGETS})
   endif()
 endfunction()

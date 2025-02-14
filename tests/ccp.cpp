@@ -13,9 +13,9 @@
 #include <iterator>
 #include <tuple>
 
-#include "pstp/dependence/splitter.h"
-#include "pstp/kd_tree.h"
-#include "pstp/orth_tree.h"
+#include "pspt/dependence/splitter.h"
+#include "pspt/kd_tree.h"
+#include "pspt/orth_tree.h"
 #include "test_framework.h"
 // using point = PointID<coord, 5>;
 // using point = PointType<Coord, 2>;

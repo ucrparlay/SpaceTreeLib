@@ -4,8 +4,8 @@
 #include <cstdlib>
 
 #include "parlay/primitives.h"
-#include "pstp/dependence/splitter.h"
-#include "pstp/kd_tree.h"
+#include "pspt/dependence/splitter.h"
+#include "pspt/kd_tree.h"
 #include "test_framework.h"
 
 template <class TreeDesc, typename Point>
