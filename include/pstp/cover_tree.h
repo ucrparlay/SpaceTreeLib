@@ -44,18 +44,23 @@ class CoverTree
   using NodeBoxSeq = BT::NodeBoxSeq;
   using NodeBoolean = BT::NodeBoolean;
   using NodeBox = BT::NodeBox;
-  using AugType = std::optional<bool>;
+  using CoverCircle = BT::CoverCircle;
 
   struct CoverInteriorNode;
 
-  using SplitRuleType = SplitRule;
   using Leaf =
       LeafNode<Point, Slice, BT::kLeaveWrap, parlay::move_assign_tag, false>;
+
+  using SplitRuleType = SplitRule;
+  struct AugType {
+    std::optional<bool> parallel_flag;
+    CoverCircle cover_circle;
+  };
   using Interior = CoverInteriorNode;
+
   using CoverNodeArr = Interior::CoverNodeArr;
   using InnerTree = typename BT::template InnerTree<Leaf, Interior>;
   using BoxCut = typename BT::BoxCut;
-  using CoverCircle = BT::CoverCircle;
 
   template <typename Leaf, typename Interior, bool granularity,
             typename... Args>
@@ -73,10 +78,15 @@ class CoverTree
   template <typename Range>
   void BatchInsert(Range&& In);
 
-  NodeBoolean PointInsertRecursive(Node* T, Point const& center, Point const& p,
-                                   DepthType deep);
+  NodeBoolean PointInsertRecursive(Node* T, Point const& p, DepthType level);
 
-  void BuildUpwards(CoverCircle& root_cc, Point const& p);
+  // increase the cover range of the root until it can cover the point p
+  void ExtendCoverRangeUpwards(CoverCircle& root_cc, Point const& p);
+
+  // decrease the cover range of one leaf until the points within can be
+  // separated
+  Node* ShrinkCoverRangeDownwards(Node* T, CoverCircle const& cc,
+                                  DepthType level);
 
   constexpr void DeleteTree() override;
 

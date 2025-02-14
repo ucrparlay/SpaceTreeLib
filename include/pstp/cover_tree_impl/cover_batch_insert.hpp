@@ -27,35 +27,34 @@ void CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchInsert_(Slice A) {
   if (this->root_ == nullptr) {
     this->root_ = AllocEmptyLeafNode<Slice, Leaf>();
   }
-  // TODO: we don't need the radius of the point in each level
+
   for (auto const& p : A) {
-    // BUG: need to check the depth
-    // BUG: need to compute the center
-    // NOTE: the center is the center for all circles in one level
+    if (!BT::WithinCircle(p, this->root_cover_circle_)) {
+      ExtendCoverRangeUpwards(this->root_cover_circle_, p);
+    }
+
+    assert(BT::WithinCircle(p, this->root_cover_circle_));
     bool flag = false;
     std::tie(this->root_, flag) =
-        PointInsertRecursive(this->root_, this->center_, p, 0);
-    if (flag == false) {
-      assert(!BT::WithinCircle(p, this->root_cover_circle_));
-      BuildUpwards(this->root_, p);
-      std::tie(this->root_, flag) =
-          PointInsertRecursive(this->root_, this->center_, p, 0);
-      assert(flag == true);
-    }
+        PointInsertRecursive(this->root_, p, this->root_cover_circle_.second);
+    assert(flag == true);
   }
-  assert(this->root_ != NULL);
+
+  assert(this->root_ != nullptr);
   return;
 }
 
 template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
-void CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::BuildUpwards(
-    CoverCircle& root_cc, Point const& p) {
+void CoverTree<Point, SplitRule, kSkHeight,
+               kImbaRatio>::ExtendCoverRangeUpwards(CoverCircle& root_cc,
+                                                    Point const& p) {
   assert(!BT::WithinCircle(p, root_cc));
   Coord dis = BT::P2PDistance(p, root_cc.first);
   while (Num::Lt(static_cast<Coord>(1 << root_cc.second), dis)) {
     this->root_ = AllocInteriorNode<Interior>(
-        CoverNodeArr(this->root_, 1), Splitter(root_cc.first, 1), AugType());
+        typename Interior::CoverNodeArr(1, this->root_),
+        typename Interior::ST(1, root_cc.first), typename Interior::AT());
     root_cc.second++;
   }
   return;
@@ -65,7 +64,30 @@ template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 typename CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::NodeBoolean
 CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::PointInsertRecursive(
-    Node* T, Point const& center, Point const& p, DepthType dep) {
+    Node* T, Point const& p, [[maybe_unused]] DepthType level) {
+  if (T->is_leaf) {
+    auto TL = static_cast<Leaf*>(T);
+    if (TL->CapacityFull()) {
+      auto cover_circle = BT::GetCircle(TL->pts.cut(0, TL->size));
+      if (!BT::WithinCircle(p, cover_circle)) {
+        return {T, false};  // cannot insert within
+      }
+      auto leaf_points = TL->pts;
+      auto split_node = ShrinkCoverRangeDownwards(T, cover_circle, level);
+      for (auto const& point : leaf_points) {
+        bool flag = false;
+        std::tie(split_node, flag) =
+            PointInsertRecursive(split_node, point, level);
+        assert(flag == true);
+      }
+      return NodeBoolean(split_node, true);
+    } else {
+      return {BT::template InsertPoints2Leaf<Leaf>(
+                  T, parlay::make_slice(Points{p})),
+              true};
+    }
+  }
+
   return {T, false};
 }
 

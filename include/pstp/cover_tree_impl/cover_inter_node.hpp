@@ -19,19 +19,26 @@ struct CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::CoverInteriorNode
                     const AT& _aug)
       : BaseNode(_tree_nodes, _split, _aug) {}
 
-  inline void SetParallelFlag(bool const flag) { this->aug.emplace(flag); }
+  auto& GetCoverCircle() const { return this->aug.cover_circle; }
+  auto& GetParallelFlag() const { return this->aug.parallel_flag; }
 
-  inline void ResetParallelFlag() { this->aug.reset(); }
+  inline void SetParallelFlag(bool const flag) {
+    GetParallelFlag().emplace(flag);
+  }
 
-  inline bool GetParallelFlagIniStatus() { return this->aug.has_value(); }
+  inline void ResetParallelFlag() { GetParallelFlag().reset(); }
+
+  inline bool GetParallelFlagIniStatus() {
+    return GetParallelFlag().has_value();
+  }
 
   // NOTE: use a tri-state bool to indicate whether a subtree needs to be
   // rebuilt. If aug is not INITIALIZED, then it means there is no need to
   // rebuild; otherwise, the value depends on the initial tree size before
   // rebuilding.
   bool ForceParallel() const {
-    return this->aug.has_value() ? this->aug.value()
-                                 : this->size > BT::kSerialBuildCutoff;
+    return GetParallelFlag().has_value() ? GetParallelFlag().value()
+                                         : this->size > BT::kSerialBuildCutoff;
   }
 };
 

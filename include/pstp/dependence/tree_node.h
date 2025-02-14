@@ -33,6 +33,7 @@ struct Node {
   size_t size;
 };
 
+// TODO: remove contain box, replace it with the aug
 template <typename Point, typename Range, uint_fast8_t kDefaultWrap,
           typename PointAssignTag = parlay::move_assign_tag,
           bool kContainBox = false>
@@ -102,6 +103,8 @@ struct LeafNode : Node {
       (void)split;
     }
   }
+
+  bool CapacityFull() const { return this->size == kDefaultWrap; }
 
   bool is_dummy;
   Points pts;
