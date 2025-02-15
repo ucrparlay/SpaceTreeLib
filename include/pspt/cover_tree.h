@@ -52,8 +52,8 @@ class CoverTree
 
   using SplitRuleType = SplitRule;
   struct AugType {
-    std::optional<bool> parallel_flag;
     CoverCircle cover_circle;
+    std::optional<bool> parallel_flag;
   };
   using Interior = CoverInteriorNode;
 

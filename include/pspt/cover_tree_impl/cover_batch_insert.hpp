@@ -53,12 +53,46 @@ void CoverTree<Point, SplitRule, kSkHeight,
   assert(!BT::WithinCircle(p, root_cc));
   Coord dis = BT::P2PDistance(p, root_cc.center);
   while (Num::Lt(static_cast<Coord>(1 << root_cc.level), dis)) {
+    root_cc.level++;
     this->root_ = AllocInteriorNode<Interior>(
         typename Interior::CoverNodeArr(1, this->root_),
-        typename Interior::ST(1, root_cc.center), typename Interior::AT());
-    root_cc.level++;
+        typename Interior::ST(1, root_cc.center),
+        typename Interior::AT{
+            .cover_circle = root_cc,
+            .parallel_flag = decltype(Interior::AT::parallel_flag)()});
   }
   return;
+}
+
+template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
+Node* CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::
+    ShrinkCoverRangeDownwards(Node* T, CoverCircle const& level_cover_circle) {
+  assert(T->is_leaf);
+  auto TL = static_cast<Leaf*>(T);
+  Coord max_dis = std::numeric_limits<Coord>::lowest();
+  for (size_t i = 0; i < TL->size; ++i) {
+    max_dis = std::max(max_dis,
+                       BT::P2PDistance(TL->pts[i], level_cover_circle.center));
+  }
+  assert(Num::Leq(max_dis, static_cast<Coord>(1 << level_cover_circle.level)));
+
+  auto cover_circle = level_cover_circle;
+  while (Num::Leq(max_dis, static_cast<Coord>(1 << cover_circle.level))) {
+    cover_circle.level--;
+  }
+  Node* node = AllocEmptyLeafNode<Slice, Leaf>();
+  while (cover_circle.level < level_cover_circle.level) {
+    node = AllocInteriorNode<Interior>(
+        typename Interior::CoverNodeArr(1, node),
+        typename Interior::ST(1, level_cover_circle.center),
+        typename Interior::AT{
+            .cover_circle = cover_circle,
+            .parallel_flag = decltype(Interior::AT::parallel_flag)()});
+    cover_circle.level++;
+  }
+  assert(cover_circle.level == level_cover_circle.level);
+  return node;
 }
 
 template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
