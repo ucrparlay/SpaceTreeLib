@@ -111,9 +111,12 @@ CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::PointInsertRecursive(
             PointInsertRecursive(split_node, pt, level_cover_circle);
         assert(flag == true);
       }
+      assert(split_node->size == TL->pts.size());
       FreeNode<Leaf>(T);
       std::tie(split_node, flag) =
           PointInsertRecursive(split_node, p, level_cover_circle);
+      assert(flag == true);
+      split_node->size++;
       return NodeBoolean(split_node, flag);
     } else {
       return {BT::template InsertPoints2Leaf<Leaf>(
@@ -126,8 +129,8 @@ CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::PointInsertRecursive(
   parlay::sequence<size_t> near_node_idx_seq(TI->tree_nodes.size());
   size_t near_node_cnt = 0;
   for (size_t i = 0; i < TI->tree_nodes.size(); i++) {
-    if (BT::P2PDistance(p, TI->split[i]) <=
-        static_cast<Coord>(1 << TI->GetCoverCircle().level)) {
+    if (Num::Leq(BT::P2PDistance(p, TI->split[i]),
+                 TI->GetCoverCircle().GetRadius())) {
       near_node_idx_seq[near_node_cnt++] = i;
     }
   }
@@ -142,6 +145,7 @@ CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::PointInsertRecursive(
         TI->tree_nodes[near_node_idx_seq[i]], p, TI->GetCoverCircle());
     if (flag) {
       TI->tree_nodes[near_node_idx_seq[i]] = new_node;
+      TI->size++;
       return {T, true};
     }
   }
@@ -149,8 +153,9 @@ CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::PointInsertRecursive(
   assert(flag == false);
   assert(BT::WithinCircle(p, TI->GetCoverCircle()));
   TI->tree_nodes.emplace_back(
-      AllocNormalLeafNode<Slice, Leaf>(parlay::make_slice(Points(1, p))));
+      AllocNormalLeafNode<Slice, Leaf>(parlay::make_slice(Points{p})));
   TI->split.emplace_back(p);
+  TI->size++;
 
   return {T, true};
 }
