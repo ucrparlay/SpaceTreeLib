@@ -71,6 +71,7 @@ Node* CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::
   assert(T->is_leaf);
   auto TL = static_cast<Leaf*>(T);
   Coord max_dis = std::numeric_limits<Coord>::lowest();
+  // TODO: can replace it with sorting to use the fix thin leave wrap
   for (size_t i = 0; i < TL->size; ++i) {
     max_dis = std::max(max_dis,
                        BT::P2PDistance(TL->pts[i], level_cover_circle.center));
@@ -121,7 +122,37 @@ CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::PointInsertRecursive(
     }
   }
 
-  return {T, false};
+  auto TI = static_cast<Interior*>(T);
+  parlay::sequence<size_t> near_node_idx_seq(TI->tree_nodes.size());
+  size_t near_node_cnt = 0;
+  for (size_t i = 0; i < TI->tree_nodes.size(); i++) {
+    if (BT::P2PDistance(p, TI->split[i]) <=
+        static_cast<Coord>(1 << TI->GetCoverCircle().level)) {
+      near_node_idx_seq[near_node_cnt++] = i;
+    }
+  }
+  if (near_node_cnt == 0) {
+    return {T, false};
+  }
+
+  bool flag = false;
+  for (size_t i = 0; i < near_node_cnt; i++) {
+    Node* new_node;
+    std::tie(new_node, flag) = PointInsertRecursive(
+        TI->tree_nodes[near_node_idx_seq[i]], p, TI->GetCoverCircle());
+    if (flag) {
+      TI->tree_nodes[near_node_idx_seq[i]] = new_node;
+      return {T, true};
+    }
+  }
+
+  assert(flag == false);
+  assert(BT::WithinCircle(p, TI->GetCoverCircle()));
+  TI->tree_nodes.emplace_back(
+      AllocNormalLeafNode<Slice, Leaf>(parlay::make_slice(Points(1, p))));
+  TI->split.emplace_back(p);
+
+  return {T, true};
 }
 
 }  // namespace pspt

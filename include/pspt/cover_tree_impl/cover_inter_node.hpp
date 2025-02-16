@@ -19,8 +19,8 @@ struct CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::CoverInteriorNode
                     const AT& _aug)
       : BaseNode(_tree_nodes, _split, _aug) {}
 
-  auto& GetCoverCircle() const { return this->aug.cover_circle; }
-  auto& GetParallelFlag() const { return this->aug.parallel_flag; }
+  auto const& GetCoverCircle() const { return this->aug.cover_circle; }
+  auto const& GetParallelFlag() const { return this->aug.parallel_flag; }
 
   inline void SetParallelFlag(bool const flag) {
     this->GetParallelFlag().emplace(flag);
