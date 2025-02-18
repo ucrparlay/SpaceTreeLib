@@ -51,8 +51,8 @@ class KdTree
   template <uint_fast8_t kMD>
   struct KdCompressionNode;
 
-  using Leaf =
-      LeafNode<Point, Slice, BT::kLeaveWrap, parlay::move_assign_tag, false>;
+  using Leaf = LeafNode<Point, Slice, BT::kLeaveWrap, std::monostate,
+                        parlay::move_assign_tag>;
   struct KdInteriorNode;
   using Interior = KdInteriorNode;
   using CompressInterior = KdCompressionNode<kMD>;
