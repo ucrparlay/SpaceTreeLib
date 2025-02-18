@@ -3,6 +3,7 @@
 
 #include <parlay/parallel.h>
 
+#include <concepts>
 #include <cwchar>
 
 #include "../base_tree.h"
@@ -18,9 +19,13 @@ BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::CheckBox(Node* T,
   if (T->is_leaf) {
     [[maybe_unused]] auto const* TL = static_cast<Leaf const*>(T);
     [[maybe_unused]] auto const node_box = GetBox<Leaf, Interior>(T);
-    assert((!TL->ContainBox() && WithinBox(node_box, box)) ||
-           (TL->ContainBox() && SameBox(node_box, box)));
-    return GetBox<Leaf, Interior>(T);
+    if constexpr (std::same_as<decltype(TL->GetSplit()),
+                               Box>) {  // whether storing a bounding box
+      SameBox(node_box, box);
+    } else {
+      WithinBox(node_box, box);
+    }
+    return node_box;
   }
   Interior* TI = static_cast<Interior*>(T);
   assert(!TI->GetParallelFlagIniStatus());  // NOTE: ensure that uninitialized
@@ -66,6 +71,43 @@ BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::CheckBox(Node* T,
   }
 }
 
+// NOTE: 1: whether the subtree is within the circle
+// 2: separation of nodes per level
+// 3: decrease level per level
+// 4: nesting
+template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
+template <typename Leaf, typename Interior>
+typename Interior::CircleType
+BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::CheckCover(
+    Node* T, typename Interior::CircleType const& circle) {
+  using CircleType = typename Interior::CircleType;
+
+  if (T->is_leaf) {
+    auto TL = static_cast<Leaf*>(T);
+    auto leaf_pnt_circle = GetCircle<CircleType>(TL->pts.cut(0, TL->size));
+    assert(CircleWithinCircle(leaf_pnt_circle, circle));
+    return leaf_pnt_circle;
+  }
+
+  auto TI = static_cast<Interior*>(T);
+  assert(circle == TI->GetCoverCircle());
+  parlay::sequence<CircleType> return_circle_seq(TI->split.size());
+  for (size_t i = 0; i < TI->tree_nodes.size(); i++) {
+    auto next_circle = CircleType{
+        TI->split[i], static_cast<DepthType>(
+                          static_cast<DepthType>(TI->GetCoverCircle().level) -
+                          static_cast<DepthType>(1))};
+    return_circle_seq[i] =
+        CheckCover<Leaf, Interior>(TI->tree_nodes[i], next_circle);
+    assert(CircleWithinCircle(return_circle_seq[i], next_circle));
+  }
+  auto const return_circle = GetCircle<CircleType>(return_circle_seq);
+  // static_assert(std::same_as<decltype(return_circle), decltype(circle)>);
+  assert(CircleWithinCircle(return_circle, circle));
+  return return_circle;
+}
+
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 template <typename Leaf, typename Interior>
@@ -84,7 +126,7 @@ size_t BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::CheckSize(Node* T) {
     assert(l + r == T->size);
     return T->size;
   } else {
-    assert(IsMultiNode<Interior>);
+    // assert(IsMultiNode<Interior>);
     Interior* TI = static_cast<Interior*>(T);
     assert(!TI->GetParallelFlagIniStatus());
     size_t sum = 0;
@@ -138,21 +180,43 @@ template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
 template <typename Leaf, typename Interior, typename SplitRule>
 void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::Validate() {
   std::cout << ">>> begin validate tree\n" << std::flush;
-  if (LegalBox(CheckBox<Leaf, Interior>(this->root_, this->tree_box_))) {
-    std::cout << "Correct bounding Box\n" << std::flush;
-  } else {
-    std::cout << "wrong bounding Box\n" << std::flush;
-    abort();
-  }
+  if constexpr (IsBinaryNode<Interior> || IsMultiNode<Interior>) {
+    if (LegalBox(CheckBox<Leaf, Interior>(this->root_, this->tree_box_))) {
+      std::cout << "Correct bounding Box\n" << std::flush;
+    } else {
+      std::cout << "wrong bounding Box\n" << std::flush;
+      abort();
+    }
 
-  // NOTE: used to check rotate dimension
-  // For kdtree binary node, the dummy node may break the rotation manner,
-  // since if current dimension is un-splitable, one has to switch to another
-  // dimension
-  if constexpr (IsRotateDimSplit<typename SplitRule::DimRuleType> &&
-                IsMultiNode<Interior>) {
-    CheckTreeSameSequential<Leaf, Interior>(this->root_, 0);
-    std::cout << "Correct rotate dimension\n" << std::flush;
+    // NOTE: used to check rotate dimension
+    // For kdtree binary node, the dummy node may break the rotation manner,
+    // since if current dimension is un-splitable, one has to switch to another
+    // dimension
+    if constexpr (IsRotateDimSplit<typename SplitRule::DimRuleType> &&
+                  IsMultiNode<Interior>) {
+      CheckTreeSameSequential<Leaf, Interior>(this->root_, 0);
+      std::cout << "Correct rotate dimension\n" << std::flush;
+    }
+  } else if constexpr (IsDynamicNode<Interior>) {
+    auto root_cover_circle =
+        this->root_->is_leaf
+            ? GetCircle<typename Interior::CircleType>(
+                  static_cast<Leaf*>(this->root_)
+                      ->pts.cut(0, this->root_->size))
+            : static_cast<Interior*>(this->root_)->GetCoverCircle();
+
+    static_assert(std::same_as<decltype(root_cover_circle),
+                               typename Interior::CircleType>);
+
+    if (LegalCircle(
+            CheckCover<Leaf, Interior>(this->root_, root_cover_circle))) {
+      std::cout << "Correct bounding Box\n" << std::flush;
+    } else {
+      std::cout << "wrong bounding Box\n" << std::flush;
+      abort();
+    }
+  } else {
+    assert(false);
   }
 
   if (CheckSize<Leaf, Interior>(this->root_) == this->root_->size) {

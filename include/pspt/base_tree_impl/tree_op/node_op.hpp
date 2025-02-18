@@ -13,7 +13,6 @@
 #include "../../base_tree.h"
 
 namespace pspt {
-// TODO: remove this function
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 template <typename Leaf, typename Interior>

@@ -129,6 +129,10 @@ class BaseTree {
       return static_cast<DepthType>(std::ceil(std::log2(r)));
     }
 
+    bool operator==(CoverCircle const& cl) const {
+      return center == cl.center && level == cl.level;
+    }
+
     Point center;
     DepthType level;
   };
@@ -164,6 +168,9 @@ class BaseTree {
 
   template <typename CircleType>
   static inline CircleType GetCircle(Point const& p, CircleType const& cl);
+
+  template <typename CircleType, typename CircleSeq>
+  static inline CircleType GetCircle(CircleSeq const& circle_seq);
 
   // NOTE: build tree
   static inline void SamplePoints(Slice In, Points& arr);
@@ -403,6 +410,10 @@ class BaseTree {
   // NOTE: validations
   template <typename Leaf, typename Interior>
   Box CheckBox(Node* T, Box const& box);
+
+  template <typename Leaf, typename Interior>
+  typename Interior::CircleType CheckCover(
+      Node* T, typename Interior::CircleType const& box);
 
   template <typename Leaf, typename Interior>
   static size_t CheckSize(Node* T);

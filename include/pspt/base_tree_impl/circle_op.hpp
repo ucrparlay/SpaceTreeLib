@@ -116,7 +116,19 @@ template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
 template <typename CircleType>
 inline CircleType
 BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::GetCircle(Slice V) {
-  return GetCircle(GetBox(V));
+  return GetCircle<CircleType>(GetBox(V));
+}
+
+template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
+template <typename CircleType, typename CircleSeq>
+inline CircleType BaseTree<Point, DerivedTree, kSkHeight,
+                           kImbaRatio>::GetCircle(CircleSeq const& circle_seq) {
+  CircleType circle = circle_seq[0];
+  for (size_t i = 1; i < circle_seq.size(); i++) {
+    circle = GetCircle(circle, circle_seq[i]);
+  }
+  return circle;
 }
 
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
