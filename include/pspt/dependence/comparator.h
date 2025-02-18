@@ -43,9 +43,9 @@ class Num_Comparator {
 
   static inline bool Leq(T const a, T const b) { return !Gt(a, b); }
 
-  static inline T min(T const a, T const b) { return Lt(a, b) ? a : b; }
+  static inline T Min(T const a, T const b) { return Lt(a, b) ? a : b; }
 
-  static inline T max(T const a, T const b) { return Gt(a, b) ? a : b; }
+  static inline T Max(T const a, T const b) { return Gt(a, b) ? a : b; }
 
   static inline T integer_log2_upper(T const a) {
     if constexpr (std::is_floating_point_v<T>) {

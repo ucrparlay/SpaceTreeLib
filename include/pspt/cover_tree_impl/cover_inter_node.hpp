@@ -14,13 +14,17 @@ struct CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::CoverInteriorNode
   using PT = Point;
   using ST = Splitter;
   using AT = AugType;
+  using CircleType = decltype(AT::cover_circle);
 
   CoverInteriorNode(CoverNodeArr const& _tree_nodes, const ST& _split,
                     const AT& _aug)
       : BaseNode(_tree_nodes, _split, _aug) {}
 
   auto const& GetCoverCircle() const { return this->aug.cover_circle; }
+
   auto const& GetParallelFlag() const { return this->aug.parallel_flag; }
+
+  auto GetSubTreeNum() const { return this->tree_nodes.size(); }
 
   inline void SetParallelFlag(bool const flag) {
     this->GetParallelFlag().emplace(flag);

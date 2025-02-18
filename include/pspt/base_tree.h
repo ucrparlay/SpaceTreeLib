@@ -266,6 +266,12 @@ class BaseTree {
 
   static inline Coord P2BMaxDistance(Point const& p, Box const& a);
 
+  static inline Coord P2CMinDistance(Point const& p, Point const& center,
+                                     Coord const r);
+
+  template <typename CircleType>
+  static inline Coord P2CMinDistance(Point const& p, CircleType const& cl);
+
   static inline Coord InterruptibleDistance(Point const& p, Point const& q,
                                             Coord up);
 
@@ -301,10 +307,17 @@ class BaseTree {
   static void KNNMulti(Node* T, Point const& q, kBoundedQueue<Point, Range>& bq,
                        Box const& node_box, KNNLogger& logger);
 
+  // NOTE: search knn in the mix of binary and multi node
   template <typename Leaf, IsBinaryNode BN, IsMultiNode MN, typename Range>
   static void KNNMix(Node* T, Point const& q, DimsType dim, BucketType idx,
                      kBoundedQueue<Point, Range>& bq, Box const& node_box,
                      KNNLogger& logger);
+
+  // NOTE: search knn in the cover node
+  // TODO: change type of interior
+  template <typename Leaf, IsDynamicNode Interior, typename Range>
+  static void KNNCover(Node* T, Point const& q, kBoundedQueue<Point, Range>& bq,
+                       KNNLogger& logger);
 
   // NOTE: range count stuffs
   template <typename Leaf>
@@ -353,9 +366,10 @@ class BaseTree {
             bool granularity = true>
   static void FlattenRec(Node* T, Range Out);
 
-  template <typename Leaf, IsMultiNode Interior, typename Range,
+  template <typename Leaf, typename Interior, typename Range,
             bool granularity = true>
-  static void FlattenRec(Node* T, Range Out);
+  static void FlattenRec(Node* T, Range Out)
+    requires(!IsBinaryNode<Interior>);
 
   template <typename Leaf, typename Range>
   static void ExtractPointsInLeaf(Node* T, Range Out);

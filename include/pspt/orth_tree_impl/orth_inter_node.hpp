@@ -19,11 +19,13 @@ struct OrthTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::OrthInteriorNode
                    const AT& _aug)
       : BaseNode(_tree_nodes, _split, _aug) {}
 
-  inline void SetParallelFlag(bool const flag) { this->aug.emplace(flag); }
+  constexpr auto GetSubTreeNum() const { return BaseNode::GetRegions(); }
 
-  inline void ResetParallelFlag() { this->aug.reset(); }
+  void SetParallelFlag(bool const flag) { this->aug.emplace(flag); }
 
-  inline bool GetParallelFlagIniStatus() { return this->aug.has_value(); }
+  void ResetParallelFlag() { this->aug.reset(); }
+
+  bool GetParallelFlagIniStatus() { return this->aug.has_value(); }
 
   // NOTE: use a tri-state bool to indicate whether a subtree needs to be
   // rebuilt. If aug is not INITIALIZED, then it means there is no need to

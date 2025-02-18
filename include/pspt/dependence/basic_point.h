@@ -43,15 +43,15 @@ struct PointType {
     PointType p;
 
     if constexpr (d == 2) {
-      p.pnt[0] = Num::min(this->pnt[0], b.pnt[0]);
-      p.pnt[1] = Num::min(this->pnt[1], b.pnt[1]);
+      p.pnt[0] = Num::Min(this->pnt[0], b.pnt[0]);
+      p.pnt[1] = Num::Min(this->pnt[1], b.pnt[1]);
     } else if constexpr (d == 3) {
-      p.pnt[0] = Num::min(this->pnt[0], b.pnt[0]);
-      p.pnt[1] = Num::min(this->pnt[1], b.pnt[1]);
-      p.pnt[2] = Num::min(this->pnt[2], b.pnt[2]);
+      p.pnt[0] = Num::Min(this->pnt[0], b.pnt[0]);
+      p.pnt[1] = Num::Min(this->pnt[1], b.pnt[1]);
+      p.pnt[2] = Num::Min(this->pnt[2], b.pnt[2]);
     } else {
       for (DimsType i = 0; i < d; ++i) {
-        p.pnt[i] = Num::min(this->pnt[i], b.pnt[i]);
+        p.pnt[i] = Num::Min(this->pnt[i], b.pnt[i]);
       }
     }
 
@@ -62,15 +62,15 @@ struct PointType {
     PointType p;
 
     if constexpr (d == 2) {
-      p.pnt[0] = Num::max(this->pnt[0], b.pnt[0]);
-      p.pnt[1] = Num::max(this->pnt[1], b.pnt[1]);
+      p.pnt[0] = Num::Max(this->pnt[0], b.pnt[0]);
+      p.pnt[1] = Num::Max(this->pnt[1], b.pnt[1]);
     } else if constexpr (d == 3) {
-      p.pnt[0] = Num::max(this->pnt[0], b.pnt[0]);
-      p.pnt[1] = Num::max(this->pnt[1], b.pnt[1]);
-      p.pnt[2] = Num::max(this->pnt[2], b.pnt[2]);
+      p.pnt[0] = Num::Max(this->pnt[0], b.pnt[0]);
+      p.pnt[1] = Num::Max(this->pnt[1], b.pnt[1]);
+      p.pnt[2] = Num::Max(this->pnt[2], b.pnt[2]);
     } else {
       for (DimsType i = 0; i < d; ++i) {
-        p.pnt[i] = Num::max(this->pnt[i], b.pnt[i]);
+        p.pnt[i] = Num::Max(this->pnt[i], b.pnt[i]);
       }
     }
 
@@ -139,7 +139,7 @@ struct PointID : PointType<T, d> {
   PointID const MinCoords(PointID const& b) const {
     Coords pts;
     for (int i = 0; i < d; i++) {
-      pts[i] = Num::min(this->pnt[i], b.pnt[i]);
+      pts[i] = Num::Min(this->pnt[i], b.pnt[i]);
     }
     return PointID(pts);
   }
@@ -147,7 +147,7 @@ struct PointID : PointType<T, d> {
   PointID const MaxCoords(PointID const& b) const {
     Coords pts;
     for (int i = 0; i < d; i++) {
-      pts[i] = Num::max(this->pnt[i], b.pnt[i]);
+      pts[i] = Num::Max(this->pnt[i], b.pnt[i]);
     }
     return PointID(pts);
   }

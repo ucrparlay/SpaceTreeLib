@@ -15,14 +15,7 @@ template <typename Range>
 auto CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::KNN(
     Node* T, Point const& q, kBoundedQueue<Point, Range>& bq) {
   KNNLogger logger;
-  // BT::template KNNMulti<Leaf, Interior>(T, q, DIM, bq, this->tree_box_,
-  //                                       vis_node_num, generate_box_num,
-  //                                       check_box_num);
-  // BT::template KNNBinary<Leaf, KdInteriorNode>(T, q, DIM, bq,
-  // this->tree_box_,
-  //                                              logger);
-  BT::template KNNMultiExpand<Leaf, Interior>(T, q, 0, 1, bq, this->tree_box_,
-                                              logger);
+  BT::template KNNCover<Leaf, Interior>(T, q, bq, logger);
   return logger;
 }
 

@@ -19,14 +19,12 @@ void TestSpacialTree([[maybe_unused]] int const& kDim,
                      [[maybe_unused]] int const& kQueryType,
                      [[maybe_unused]] int const kSummary) {
   using Tree = TreeDesc::TreeType;
-  // using Points = typename Tree::Points;
+  using Points = typename Tree::Points;
 
   Tree tree;
   constexpr bool kTestTime = true;
 
   BuildTree<Point, Tree, kTestTime, 2>(wp, kRounds, tree);
-
-  // Typename* kdknn = nullptr;
 
   // // NOTE: batch insert
   // if (kTag & (1 << 0)) {
@@ -75,26 +73,28 @@ void TestSpacialTree([[maybe_unused]] int const& kDim,
   // //   tree.Compress2Multi();
   // // }
   //
-  // if (kQueryType & (1 << 0)) {  // NOTE: KNN
-  //   auto run_batch_knn = [&](Points const& pts, int kth, size_t batchSize) {
-  //     Points newPts(batchSize);
-  //     parlay::copy(pts.cut(0, batchSize), newPts.cut(0, batchSize));
-  //     kdknn = new Typename[batchSize];
-  //     queryKNN<Point>(kDim, newPts, kRounds, tree, kdknn, kth, true);
-  //     delete[] kdknn;
-  //   };
-  //
-  //   size_t batchSize = static_cast<size_t>(wp.size() * kBatchQueryRatio);
-  //
-  //   if (kSummary == 0) {
-  //     int k[3] = {1, 10, 100};
-  //     for (int i = 0; i < 3; i++) {
-  //       run_batch_knn(wp, k[i], batchSize);
-  //     }
-  //   } else {  // test kSummary
-  //     run_batch_knn(wp, K, batchSize);
-  //   }
-  // }
+
+  Typename* kdknn = nullptr;
+  if (kQueryType & (1 << 0)) {  // NOTE: KNN
+    auto run_batch_knn = [&](Points const& pts, int kth, size_t batchSize) {
+      Points newPts(batchSize);
+      parlay::copy(pts.cut(0, batchSize), newPts.cut(0, batchSize));
+      kdknn = new Typename[batchSize];
+      queryKNN<Point>(kDim, newPts, kRounds, tree, kdknn, kth, true);
+      delete[] kdknn;
+    };
+
+    size_t batchSize = static_cast<size_t>(wp.size() * kBatchQueryRatio);
+
+    if (kSummary == 0) {
+      int k[3] = {1, 10, 100};
+      for (int i = 0; i < 3; i++) {
+        run_batch_knn(wp, k[i], batchSize);
+      }
+    } else {  // test kSummary
+      run_batch_knn(wp, K, batchSize);
+    }
+  }
   //
   // if (kQueryType & (1 << 1)) {  // NOTE: range count
   //   if (!kSummary) {

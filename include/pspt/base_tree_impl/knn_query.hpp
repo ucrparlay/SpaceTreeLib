@@ -5,6 +5,7 @@
 #include <utility>
 
 #include "../base_tree.h"
+#include "parlay/primitives.h"
 #include "pspt/dependence/tree_node.h"
 
 namespace pspt {
@@ -72,6 +73,22 @@ BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::P2BMaxDistance(
     }
   }
   return r;
+}
+template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
+inline typename BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::Coord
+BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::P2CMinDistance(
+    Point const& p, Point const& center, Coord const r) {
+  return Num::Max(0, P2PDistance(p, center) - r);
+}
+
+template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
+template <typename CircleType>
+inline typename BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::Coord
+BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::P2CMinDistance(
+    Point const& p, CircleType const& cl) {
+  return Num::Max(0, P2PDistance(p, cl.GetCenter()) - cl.GetRadius());
 }
 
 // NOTE: early return the partial distance between p and q if it is larger than
@@ -374,6 +391,47 @@ void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::KNNMix(
                        logger);
   return;
 }
+
+template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
+template <typename Leaf, IsDynamicNode Interior, typename Range>
+void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::KNNCover(
+    Node* T, Point const& q, kBoundedQueue<Point, Range>& bq,
+    KNNLogger& logger) {
+  logger.vis_node_num++;
+
+  if (T->size == 0) {
+    return;
+  }
+
+  if (T->is_leaf) {
+    KNNLeaf<Leaf>(T, q, bq);
+    return;
+  }
+
+  Interior* TI = static_cast<Interior*>(T);
+  auto sorted_idx = parlay::sort(
+      parlay::tabulate(TI->tree_nodes.size(), [&](auto i) { return i; }),
+      [&](auto const i1, auto const i2) {
+        return Num::Lt(P2PDistance(q, TI->split[i1]),
+                       P2PDistance(q, TI->split[i2]));
+      });
+
+  KNNCover<Leaf, Interior>(TI->tree_nodes[sorted_idx[0]], q, bq, logger);
+  for (size_t i = 1; i < TI->tree_nodes.size(); ++i) {
+    logger.check_box_num++;
+    if (Num::Gt(P2CMinDistance(q, TI->split[sorted_idx[i]],
+                               TI->GetCoverCircle().level - 1),
+                bq.top_value()) &&
+        bq.full()) {
+      logger.skip_box_num++;
+      continue;
+    }
+    KNNCover<Leaf, Interior>(TI->tree_nodes[sorted_idx[i]], q, bq, logger);
+  }
+  return;
+}
+
 }  // namespace pspt
 
 #endif  // PSPT_BASE_TREE_IMPL_KNN_QUERY_HPP

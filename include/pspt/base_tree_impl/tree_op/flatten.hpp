@@ -56,9 +56,11 @@ void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::FlattenRec(
 
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
-template <typename Leaf, IsMultiNode Interior, typename Range, bool granularity>
-void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::FlattenRec(
-    Node* T, Range Out) {
+template <typename Leaf, typename Interior, typename Range, bool granularity>
+void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::FlattenRec(Node* T,
+                                                                     Range Out)
+  requires(!IsBinaryNode<Interior>)
+{
   assert(T->size == Out.size());
 
   if (T->size == 0) return;
@@ -86,9 +88,8 @@ void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::FlattenRec(
         FlattenRec<Leaf, Interior, Range>(
             TI->tree_nodes[i], Out.cut(start, start + TI->tree_nodes[i]->size));
       },
-      ForceParallelRecursion<Interior, granularity>(TI)
-          ? 1
-          : Interior::GetRegions());
+      ForceParallelRecursion<Interior, granularity>(TI) ? 1
+                                                        : TI->GetSubTreeNum());
 
   return;
 }
