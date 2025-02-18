@@ -39,11 +39,14 @@ template <typename Point, typename Range, uint_fast8_t kDefaultWrap,
           typename PointAssignTag = parlay::move_assign_tag>
 struct LeafNode : Node {
   using Points = parlay::sequence<Point>;
-  using Box = std::pair<Point, Point>;  // TODO: use the version from Base tree
+  using AT = AugType;
 
   // NOTE: default allocator
   LeafNode()
       : Node{true, static_cast<size_t>(0)}, is_dummy(false), aug(AugType()) {}
+
+  LeafNode(AT const& _aug)
+      : Node{true, static_cast<size_t>(0)}, is_dummy(false), aug(_aug) {}
 
   // NOTE: alloc a leaf with default size
   LeafNode(Range In, AugType const& _aug, AllocNormalLeafTag)
@@ -83,6 +86,8 @@ struct LeafNode : Node {
 
   AugType const& GetAug() const { return aug; }
 
+  AugType const& GetSplit() const { return aug; }
+
   bool is_dummy;
   Points pts;
   AugType aug;
@@ -92,7 +97,7 @@ struct LeafNode : Node {
 template <typename Range, typename Leaf>
 static Leaf* AllocFixSizeLeafNode(
     Range In, size_t const alloc_size,
-    typename Leaf::AugType const& aug = AugType()) {
+    typename Leaf::AT const& aug = typename Leaf::AT()) {
   Leaf* o = parlay::type_allocator<Leaf>::alloc();
   new (o) Leaf(In, alloc_size, aug, AllocNormalLeafTag());
   assert(o->is_dummy == false);
@@ -101,7 +106,8 @@ static Leaf* AllocFixSizeLeafNode(
 
 // NOTE: Alloc a leaf
 template <typename Range, typename Leaf>
-static Leaf* AllocNormalLeafNode(Range In, AugType const& aug = AugType()) {
+static Leaf* AllocNormalLeafNode(
+    Range In, typename Leaf::AT const& aug = typename Leaf::AT()) {
   Leaf* o = parlay::type_allocator<Leaf>::alloc();
   new (o) Leaf(In, aug, AllocNormalLeafTag());
   assert(o->is_dummy == false);
@@ -116,9 +122,18 @@ static Leaf* AllocEmptyLeafNode() {
   return o;
 }
 
+// NOTE: Alloc a empty Leaf, but set the aug by hand
+template <typename Range, typename Leaf>
+static Leaf* AllocEmptyLeafNode(typename Leaf::AT const& aug) {
+  Leaf* o = parlay::type_allocator<Leaf>::alloc();
+  new (o) Leaf(aug);
+  return o;
+}
+
 // NOTE: Alloc a dummy leaf
 template <typename Range, typename Leaf>
-static Leaf* AllocDummyLeafNode(Range In, AugType const& aug = AugType()) {
+static Leaf* AllocDummyLeafNode(
+    Range In, typename Leaf::AT const& aug = typename Leaf::AT()) {
   Leaf* o = parlay::type_allocator<Leaf>::alloc();
   new (o) Leaf(In, aug, AllocDummyLeafTag());
   assert(o->is_dummy == true);
@@ -155,6 +170,8 @@ struct BinaryNode : Node {
     return TestDepth<Interior>(TI->left, cur_depth + 1, depth) &&
            TestDepth<Interior>(TI->right, cur_depth + 1, depth);
   }
+
+  ST const& GetSplit() const { return split; }
 
   Node* left;
   Node* right;
@@ -216,6 +233,8 @@ struct MultiNode : Node {
     }
   }
 
+  ST const& GetSplit() const { return split; }
+
   NodeArr tree_nodes;
   ST split;
   AT aug;
@@ -249,6 +268,8 @@ struct DynamicNode : Node {
   // Adding a virtual destructor makes Node polymorphic
   // TODO: check whether it is possible to remove it then KNN-mix
   virtual ~DynamicNode() override = default;
+
+  ST const& GetSplit() const { return split; }
 
   NodeArr tree_nodes;
   ST split;

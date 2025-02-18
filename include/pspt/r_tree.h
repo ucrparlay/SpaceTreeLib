@@ -49,7 +49,7 @@ class RTree
 
   using SplitRuleType = SplitRule;
   using Leaf =
-      LeafNode<Point, Slice, BT::kLeaveWrap, parlay::move_assign_tag, true>;
+      LeafNode<Point, Slice, BT::kLeaveWrap, Box, parlay::move_assign_tag>;
   using Interior = RInteriorNode;
   using InnerTree = typename BT::template InnerTree<Leaf, Interior>;
   using BoxCut = typename BT::BoxCut;

@@ -50,8 +50,8 @@ class OrthTree
   struct OrthInteriorNode;
 
   using SplitRuleType = SplitRule;
-  using Leaf =
-      LeafNode<Point, Slice, BT::kLeaveWrap, parlay::move_assign_tag, false>;
+  using Leaf = LeafNode<Point, Slice, BT::kLeaveWrap, std::monostate,
+                        parlay::move_assign_tag>;
   using Interior = OrthInteriorNode;
   using OrthNodeArr = Interior::OrthNodeArr;
   using InnerTree = typename BT::template InnerTree<Leaf, Interior>;

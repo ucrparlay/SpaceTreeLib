@@ -47,8 +47,8 @@ class CoverTree
 
   struct CoverInteriorNode;
 
-  using Leaf =
-      LeafNode<Point, Slice, BT::kLeaveWrap, parlay::move_assign_tag, false>;
+  using Leaf = LeafNode<Point, Slice, BT::kLeaveWrap, std::monostate,
+                        parlay::move_assign_tag>;
 
   using SplitRuleType = SplitRule;
   struct AugType {
