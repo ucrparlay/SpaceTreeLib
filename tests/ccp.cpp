@@ -294,8 +294,8 @@ int main(int argc, char* argv[]) {
       kdknn = new Coord[1];
       cgknn = new Coord[1];
     } else {
-      puts("wrong query type");
-      abort();
+      puts("Nothing to be queried");
+      // abort();
     }
 
     // NOTE: run the test

@@ -210,7 +210,7 @@ void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::Validate() {
 
     if (LegalCircle(
             CheckCover<Leaf, Interior>(this->root_, root_cover_circle))) {
-      std::cout << "Correct bounding Box\n" << std::flush;
+      std::cout << "Correct cover circle\n" << std::flush;
     } else {
       std::cout << "wrong bounding Box\n" << std::flush;
       abort();
