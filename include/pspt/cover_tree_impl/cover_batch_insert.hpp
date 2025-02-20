@@ -1,10 +1,12 @@
 #ifndef PSPT_COVER_BATCH_INSERT_HPP_
 #define PSPT_COVER_BATCH_INSERT_HPP_
 
+#include <algorithm>
 #include <utility>
 
 #include "../cover_tree.h"
 #include "dependence/tree_node.h"
+#include "parlay/slice.h"
 
 namespace pspt {
 
@@ -26,15 +28,24 @@ template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 void CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchInsert_(Slice A) {
   if (this->root_ == nullptr) {
-    this->root_ = AllocEmptyLeafNode<Slice, Leaf>();
+    this->root_ = AllocNormalLeafNode<Slice, Leaf>(
+        A.cut(0, std::max(A.size(), static_cast<size_t>(BT::kLeaveWrap))));
+    this->root_cover_circle_ = BT::template GetCircle<CoverCircle>(
+        parlay::make_slice(static_cast<Leaf*>(this->root_)->pts));
+    assert(std::ranges::all_of(A, [&](auto const& p) {
+      return BT::WithinCircle(p, this->root_cover_circle_);
+    }));
   }
 
-  for (auto const& p : A) {
+  int idx = 0;
+  for (auto const& p : A.cut(this->root_->size, A.size())) {
+    std::cout << "idx: " << idx++ << '\n';
     if (!BT::WithinCircle(p, this->root_cover_circle_)) {
       ExtendCoverRangeUpwards(
           this->root_cover_circle_,
           p);  // PERF: this will change the level of root_cover_circle as well
     }
+    std::cout << "finish extend cover range upwards" << '\n';
 
     assert(BT::WithinCircle(p, this->root_cover_circle_));
     bool flag = false;
@@ -82,21 +93,26 @@ Node* CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::
 
   // NOTE: first find the lowest level that separates the points
   // then build levels in a bottom-up fashion
-  auto cover_circle = level_cover_circle;
-  while (Num::Leq(max_dis, static_cast<Coord>(1 << cover_circle.level))) {
-    cover_circle.level--;
+  auto sep_cover_circle = level_cover_circle;
+  while (Num::Leq(max_dis, sep_cover_circle.GetRadius())) {
+    sep_cover_circle.level--;
   }
-  Node* node = AllocEmptyLeafNode<Slice, Leaf>();
-  while (cover_circle.level < level_cover_circle.level) {
+  assert(sep_cover_circle.center == level_cover_circle.center);
+  // Node* node = AllocEmptyLeafNode<Slice, Leaf>();
+  // TODO: change it to alloc use thin_leave_wrap
+  Node* node = AllocNormalLeafNode<Slice, Leaf>(
+      parlay::make_slice(Points{level_cover_circle.GetCenter()}));
+  while (sep_cover_circle.level < level_cover_circle.level) {
     node = AllocInteriorNode<Interior>(
         typename Interior::CoverNodeArr(1, node),
-        typename Interior::ST(1, level_cover_circle.center),
+        typename Interior::ST(
+            1, level_cover_circle.center),  // NOTE: ensure nesting
         typename Interior::AT{
-            .cover_circle = cover_circle,
+            .cover_circle = sep_cover_circle,
             .parallel_flag = decltype(Interior::AT::parallel_flag)()});
-    cover_circle.level++;
+    sep_cover_circle.level++;
   }
-  assert(cover_circle.level == level_cover_circle.level);
+  assert(sep_cover_circle.level == level_cover_circle.level);
   return node;
 }
 
@@ -113,7 +129,8 @@ CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::PointInsertRecursive(
     if (TL->CapacityFull()) {  // leaf is full
       bool flag = false;
       auto split_node = ShrinkCoverRangeDownwards(T, level_cover_circle);
-      for (auto const& pt : TL->pts) {
+      for (auto const& pt :
+           TL->pts) {  // WARN: can only be used when the leaf is full
         std::tie(split_node, flag) =
             PointInsertRecursive(split_node, pt, level_cover_circle);
         assert(flag == true);
@@ -133,6 +150,7 @@ CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::PointInsertRecursive(
   }
 
   auto TI = static_cast<Interior*>(T);
+  assert(std::ranges::count(TI->split, level_cover_circle.center) == 1);
 
   // find circles that covers the point
   parlay::sequence<size_t> near_node_idx_seq(
@@ -163,6 +181,9 @@ CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::PointInsertRecursive(
 
   // if fails, then insert into the node itself
   assert(flag == false);
+  assert(std::ranges::all_of(TI->split, [&](auto const& cc) {
+    return Num::Gt(BT::P2PDistance(p, cc), TI->GetCoverCircle().GetRadius());
+  }));
   TI->tree_nodes.emplace_back(
       AllocNormalLeafNode<Slice, Leaf>(parlay::make_slice(Points{p})));
   TI->split.emplace_back(p);

@@ -80,31 +80,46 @@ template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
 template <typename Leaf, typename Interior>
 typename Interior::CircleType
 BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::CheckCover(
-    Node* T, typename Interior::CircleType const& circle) {
+    Node* T, typename Interior::CircleType const& level_cover_circle) {
   using CircleType = typename Interior::CircleType;
 
   if (T->is_leaf) {
     auto TL = static_cast<Leaf*>(T);
     auto leaf_pnt_circle = GetCircle<CircleType>(TL->pts.cut(0, TL->size));
-    assert(CircleWithinCircle(leaf_pnt_circle, circle));
+    assert(CircleWithinCircle(leaf_pnt_circle, level_cover_circle));
     return leaf_pnt_circle;
   }
 
   auto TI = static_cast<Interior*>(T);
-  assert(circle == TI->GetCoverCircle());
+
+  // NOTE: nesting
+  assert(std::ranges::count(TI->split, level_cover_circle.center) == 1);
+
+  // NOTE: separation
+  assert(std::all_of(
+      TI->split.begin(), TI->split.end(), [&](auto const& center_i) {
+        auto i = &center_i - &TI->split[0];
+        return std::all_of(TI->split.begin() + i + 1, TI->split.end(),
+                           [&](auto const& center_j) {
+                             // PERF: should be Gt as a point in a boundary
+                             // should falls within that circle
+                             return Num::Gt(P2PDistance(center_i, center_j),
+                                            level_cover_circle.GetRadius());
+                           });
+      }));
+  assert(level_cover_circle == TI->GetCoverCircle());
+
+  // NOTE: covering
   parlay::sequence<CircleType> return_circle_seq(TI->split.size());
   for (size_t i = 0; i < TI->tree_nodes.size(); i++) {
     auto next_circle = CircleType{
-        TI->split[i], static_cast<DepthType>(
-                          static_cast<DepthType>(TI->GetCoverCircle().level) -
-                          static_cast<DepthType>(1))};
+        TI->split[i], static_cast<DepthType>(TI->GetCoverCircle().level - 1)};
     return_circle_seq[i] =
         CheckCover<Leaf, Interior>(TI->tree_nodes[i], next_circle);
     assert(CircleWithinCircle(return_circle_seq[i], next_circle));
   }
   auto const return_circle = GetCircle<CircleType>(return_circle_seq);
-  // static_assert(std::same_as<decltype(return_circle), decltype(circle)>);
-  assert(CircleWithinCircle(return_circle, circle));
+  assert(CircleWithinCircle(return_circle, level_cover_circle));
   return return_circle;
 }
 

@@ -169,8 +169,9 @@ class BaseTree {
   template <typename CircleType>
   static inline CircleType GetCircle(Point const& p, CircleType const& cl);
 
-  template <typename CircleType, typename CircleSeq>
-  static inline CircleType GetCircle(CircleSeq const& circle_seq);
+  template <typename CircleType>
+  static inline CircleType GetCircle(
+      parlay::sequence<CircleType> const& circle_seq);
 
   // NOTE: build tree
   static inline void SamplePoints(Slice In, Points& arr);
@@ -413,7 +414,7 @@ class BaseTree {
 
   template <typename Leaf, typename Interior>
   typename Interior::CircleType CheckCover(
-      Node* T, typename Interior::CircleType const& box);
+      Node* T, typename Interior::CircleType const& level_cover_circle);
 
   template <typename Leaf, typename Interior>
   static size_t CheckSize(Node* T);
