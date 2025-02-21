@@ -11,10 +11,11 @@
 namespace pspt {
 
 // NOTE: distance between two Points
+// TODO: change the name to P2PDistanceSquare to avoid ambiguous
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 inline typename BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::Coord
-BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::P2PDistance(
+BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::P2PDistanceSquare(
     Point const& p, Point const& q) {
   constexpr uint_fast8_t kDim = Point::GetDim();
   Coord r = 0;
@@ -79,7 +80,7 @@ template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
 inline typename BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::Coord
 BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::P2CMinDistance(
     Point const& p, Point const& center, Coord const r) {
-  return Num::Max(0, P2PDistance(p, center) - r);
+  return Num::Max(0, P2PDistanceSquare(p, center) - r);
 }
 
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
@@ -88,7 +89,7 @@ template <typename CircleType>
 inline typename BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::Coord
 BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::P2CMinDistance(
     Point const& p, CircleType const& cl) {
-  return Num::Max(0, P2PDistance(p, cl.GetCenter()) - cl.GetRadius());
+  return Num::Max(0, P2PDistanceSquare(p, cl.GetCenter()) - cl.GetRadius());
 }
 
 // NOTE: early return the partial distance between p and q if it is larger than
@@ -138,7 +139,7 @@ void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::KNNLeaf(
   size_t i = 0;
   while (!bq.full() && i < TL->size) {
     bq.insert(std::make_pair(std::ref(TL->pts[(!TL->is_dummy) * i]),
-                             P2PDistance(q, TL->pts[(!TL->is_dummy) * i])));
+                             P2PDistanceSquare(q, TL->pts[(!TL->is_dummy) * i])));
     i++;
   }
   while (i < TL->size) {
@@ -413,8 +414,8 @@ void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::KNNCover(
   auto sorted_idx = parlay::sort(
       parlay::tabulate(TI->tree_nodes.size(), [&](auto i) { return i; }),
       [&](auto const i1, auto const i2) {
-        return Num::Lt(P2PDistance(q, TI->split[i1]),
-                       P2PDistance(q, TI->split[i2]));
+        return Num::Lt(P2PDistanceSquare(q, TI->split[i1]),
+                       P2PDistanceSquare(q, TI->split[i2]));
       });
 
   KNNCover<Leaf, Interior>(TI->tree_nodes[sorted_idx[0]], q, bq, logger);

@@ -24,7 +24,8 @@ class BaseTree {
       std::conditional_t<(kSkHeight > 7), uint_fast16_t, uint_fast8_t>;
   using BallsType = uint_fast32_t;
   using DimsType = uint_fast8_t;
-  using DepthType = uint_fast8_t;
+  // using DepthType = uint_fast8_t;
+  using DepthType = int;
   using BucketSeq = parlay::sequence<BucketType>;
   using BallSeq = parlay::sequence<BallsType>;
 
@@ -112,6 +113,8 @@ class BaseTree {
 
     Coord GetRadius() const { return radius; }
 
+    Coord GetRadiusSquare() const { return radius * radius; }
+
     static Coord ComputeRadius(double const& r) {
       return static_cast<Coord>(r);
     }
@@ -124,6 +127,8 @@ class BaseTree {
     Point const& GetCenter() const { return center; }
 
     Coord GetRadius() const { return static_cast<Coord>(1 << level); }
+
+    Coord GetRadiusSquare() const { return GetRadius() * GetRadius(); }
 
     static DepthType ComputeRadius(double const& r) {
       return static_cast<DepthType>(std::ceil(std::log2(r)));
@@ -268,7 +273,7 @@ class BaseTree {
   static void DeleteTreeRecursive(Node* T);
 
   // NOTE: KNN query stuffs
-  static inline Coord P2PDistance(Point const& p, Point const& q);
+  static inline Coord P2PDistanceSquare(Point const& p, Point const& q);
 
   static inline Coord P2BMinDistance(Point const& p, Box const& a);
 

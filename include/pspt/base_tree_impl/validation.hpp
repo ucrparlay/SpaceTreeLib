@@ -103,7 +103,7 @@ BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::CheckCover(
                            [&](auto const& center_j) {
                              // PERF: should be Gt as a point in a boundary
                              // should falls within that circle
-                             return Num::Gt(P2PDistance(center_i, center_j),
+                             return Num::Gt(P2PDistanceSquare(center_i, center_j),
                                             level_cover_circle.GetRadius());
                            });
       }));

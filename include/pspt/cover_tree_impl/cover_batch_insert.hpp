@@ -29,23 +29,25 @@ template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
 void CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchInsert_(Slice A) {
   if (this->root_ == nullptr) {
     this->root_ = AllocNormalLeafNode<Slice, Leaf>(
-        A.cut(0, std::max(A.size(), static_cast<size_t>(BT::kLeaveWrap))));
+        A.cut(0, std::min(A.size(), static_cast<size_t>(BT::kLeaveWrap))));
     this->root_cover_circle_ = BT::template GetCircle<CoverCircle>(
         parlay::make_slice(static_cast<Leaf*>(this->root_)->pts));
-    assert(std::ranges::all_of(A, [&](auto const& p) {
-      return BT::WithinCircle(p, this->root_cover_circle_);
-    }));
+    assert(this->root_->size == BT::kLeaveWrap);
+    assert(std::ranges::all_of(
+        static_cast<Leaf*>(this->root_)->pts, [&](auto const& p) {
+          return BT::WithinCircle(p, this->root_cover_circle_);
+        }));
   }
 
   int idx = 0;
   for (auto const& p : A.cut(this->root_->size, A.size())) {
-    std::cout << "idx: " << idx++ << '\n';
+    std::cout << "idx: " << idx++ << p << '\n';
     if (!BT::WithinCircle(p, this->root_cover_circle_)) {
       ExtendCoverRangeUpwards(
           this->root_cover_circle_,
           p);  // PERF: this will change the level of root_cover_circle as well
+      std::cout << "finish extend cover range upwards" << '\n';
     }
-    std::cout << "finish extend cover range upwards" << '\n';
 
     assert(BT::WithinCircle(p, this->root_cover_circle_));
     bool flag = false;
@@ -64,8 +66,8 @@ void CoverTree<Point, SplitRule, kSkHeight,
                kImbaRatio>::ExtendCoverRangeUpwards(CoverCircle& root_cc,
                                                     Point const& p) {
   assert(!BT::WithinCircle(p, root_cc));
-  Coord dis = BT::P2PDistance(p, root_cc.center);
-  while (Num::Lt(root_cc.GetRadius(), dis)) {
+  Coord dis = BT::P2PDistanceSquare(p, root_cc.center);
+  while (Num::Lt(root_cc.GetRadiusSquare(), dis)) {
     root_cc.level++;
     this->root_ = AllocInteriorNode<Interior>(
         typename Interior::CoverNodeArr(1, this->root_),
@@ -87,14 +89,14 @@ Node* CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::
   // TODO: can replace it with sorting to use the fix thin leave wrap
   for (size_t i = 0; i < TL->size; ++i) {
     max_dis = std::max(max_dis,
-                       BT::P2PDistance(TL->pts[i], level_cover_circle.center));
+                       BT::P2PDistanceSquare(TL->pts[i], level_cover_circle.center));
   }
-  assert(Num::Leq(max_dis, static_cast<Coord>(1 << level_cover_circle.level)));
+  assert(Num::Leq(max_dis, level_cover_circle.GetRadiusSquare()));
 
   // NOTE: first find the lowest level that separates the points
   // then build levels in a bottom-up fashion
   auto sep_cover_circle = level_cover_circle;
-  while (Num::Leq(max_dis, sep_cover_circle.GetRadius())) {
+  while (Num::Leq(max_dis, sep_cover_circle.GetRadiusSquare())) {
     sep_cover_circle.level--;
   }
   assert(sep_cover_circle.center == level_cover_circle.center);
@@ -157,8 +159,8 @@ CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::PointInsertRecursive(
       TI->tree_nodes.size());  // TODO: maybe replace using std::views::filter
   size_t near_node_cnt = 0;
   for (size_t i = 0; i < TI->tree_nodes.size(); i++) {
-    if (Num::Leq(BT::P2PDistance(p, TI->split[i]),
-                 TI->GetCoverCircle().GetRadius())) {
+    if (Num::Leq(BT::P2PDistanceSquare(p, TI->split[i]),
+                 TI->GetCoverCircle().GetRadiusSquare())) {
       near_node_idx_seq[near_node_cnt++] = i;
     }
   }
@@ -182,7 +184,8 @@ CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::PointInsertRecursive(
   // if fails, then insert into the node itself
   assert(flag == false);
   assert(std::ranges::all_of(TI->split, [&](auto const& cc) {
-    return Num::Gt(BT::P2PDistance(p, cc), TI->GetCoverCircle().GetRadius());
+    return Num::Gt(BT::P2PDistanceSquare(p, cc),
+                   TI->GetCoverCircle().GetRadiusSquare());
   }));
   TI->tree_nodes.emplace_back(
       AllocNormalLeafNode<Slice, Leaf>(parlay::make_slice(Points{p})));

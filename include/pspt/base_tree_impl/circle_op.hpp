@@ -1,6 +1,8 @@
 #ifndef PSPT_BASE_TREE_IMPL_CIRCLE_OP_HPP_
 #define PSPT_BASE_TREE_IMPL_CIRCLE_OP_HPP_
 
+#include <cmath>
+
 #include "../base_tree.h"
 #include "pspt/dependence/concepts.h"
 
@@ -107,6 +109,8 @@ BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::GetCircle(Box const& box) {
     }
   }
 
+  std::cout << "r: " << std::sqrt(r) / 2.0 << '\n';
+
   return CircleType{GetBoxCenter(box),
                     CircleType::ComputeRadius(std::sqrt(r) / 2.0)};
 }
@@ -139,8 +143,9 @@ inline bool BaseTree<Point, DerivedTree, kSkHeight,
                      kImbaRatio>::CircleWithinCircle(CircleType const& a,
                                                      CircleType const& b) {
   return Num::Leq(a.GetRadius(), b.GetRadius()) &&
-         Num::Leq(P2PDistance(a.GetCenter(), b.GetCenter()),
-                  b.GetRadius() - a.GetRadius());
+         Num::Leq(
+             P2PDistanceSquare(a.GetCenter(), b.GetCenter()),
+             (b.GetRadius() - a.GetRadius()) * (b.GetRadius() - a.GetRadius()));
 }
 
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
@@ -159,8 +164,8 @@ inline CircleType BaseTree<Point, DerivedTree, kSkHeight,
   for (DimsType i = 0; i < kDim; ++i) {
     center.pnt[i] = (a.GetCenter().pnt[i] + b.GetCenter().pnt[i]) / 2;
   }
-  Coord radius = P2PDistance(a.GetCenter(), b.GetCenter()) +
-                 std::max(a.GetRadius(), b.GetRadius());
+  double radius = std::sqrt(P2PDistanceSquare(a.GetCenter(), b.GetCenter())) +
+                  std::max(a.GetRadius(), b.GetRadius());
 
   return CircleType{center, CircleType::ComputeRadius(radius)};
 }
@@ -174,8 +179,9 @@ inline CircleType BaseTree<Point, DerivedTree, kSkHeight,
   if (PointWithinCircle(p, cl)) {
     return cl;
   }
-  Coord radius = P2PDistance(p, cl.GetCenter());
-  return CircleType{cl.GetCenter(), CircleType::ComputeRadius(radius)};
+  Coord radius = P2PDistanceSquare(p, cl.GetCenter());
+  return CircleType{cl.GetCenter(),
+                    CircleType::ComputeRadius(std::sqrt(radius))};
 }
 
 }  // namespace pspt
