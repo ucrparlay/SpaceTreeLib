@@ -187,7 +187,8 @@ void BuildTree(parlay::sequence<Point> const& WP, int const& rounds,
   using Interior = typename Tree::Interior;
 
   double loopLate = rounds > 1 ? 1.0 : -0.1;
-  size_t n = WP.size();
+  // size_t n = WP.size();
+  size_t n = 100;
   Points wp = Points::uninitialized(n);
 
   if constexpr (kTestTime) {

@@ -55,8 +55,12 @@ class BaseTree {
   static constexpr BucketType const kBucketNum = 1 << kBuildDepthOnce;
 
   // NOTE: tree structure
-  static constexpr uint_fast8_t const kLeaveWrap = 32;
-  static constexpr uint_fast8_t const kThinLeaveWrap = 24;
+  // static constexpr uint_fast8_t const kLeaveWrap = 32;
+  // static constexpr uint_fast8_t const kThinLeaveWrap = 24;
+  // static constexpr uint_fast8_t const kSlimLeaveWrap = 8;
+  static constexpr uint_fast8_t const kLeaveWrap = 8;
+  static constexpr uint_fast8_t const kThinLeaveWrap = 4;
+  static constexpr uint_fast8_t const kSlimLeaveWrap = 2;
   static constexpr uint_fast16_t const kSerialBuildCutoff = 1 << 10;
 
   // NOTE: block param in Partition
@@ -136,6 +140,11 @@ class BaseTree {
 
     bool operator==(CoverCircle const& cl) const {
       return center == cl.center && level == cl.level;
+    }
+
+    friend std::ostream& operator<<(std::ostream& o, CoverCircle const& cl) {
+      o << "{ " << cl.center << ", " << cl.level << "}";
+      return o;
     }
 
     Point center;
