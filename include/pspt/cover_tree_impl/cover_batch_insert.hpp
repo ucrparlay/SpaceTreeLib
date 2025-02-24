@@ -2,6 +2,7 @@
 #define PSPT_COVER_BATCH_INSERT_HPP_
 
 #include <algorithm>
+#include <numeric>
 #include <utility>
 
 #include "../cover_tree.h"
@@ -28,15 +29,8 @@ template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 void CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchInsert_(Slice A) {
   if (this->root_ == nullptr) {
-    this->root_ = AllocNormalLeafNode<Slice, Leaf>(
-        A.cut(0, std::min(A.size(), static_cast<size_t>(BT::kLeaveWrap))));
-    this->root_cover_circle_ = BT::template GetCircle<CoverCircle>(
-        parlay::make_slice(static_cast<Leaf*>(this->root_)->pts));
-    assert(this->root_->size == BT::kLeaveWrap);
-    assert(std::ranges::all_of(
-        static_cast<Leaf*>(this->root_)->pts, [&](auto const& p) {
-          return BT::WithinCircle(p, this->root_cover_circle_);
-        }));
+    this->root_ = AllocNormalLeafNode<Slice, Leaf>(A.cut(0, 1));
+    this->root_cover_circle_ = CoverCircle{A[0], 0};
   }
 
   int idx = 0;
@@ -104,6 +98,7 @@ Node* CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::
   //       level_cover_circle.center));
   // }
   assert(std::cmp_less(BT::kSlimLeaveWrap, TL->size - 1));
+  // BUG: this should be kSlimLeaveWrap
   max_dis = BT::P2PDistanceSquare(TL->pts[BT::kSlimLeaveWrap + 1],
                                   level_cover_circle.center);
   assert(Num::Leq(max_dis, level_cover_circle.GetRadiusSquare()));
@@ -121,8 +116,9 @@ Node* CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::
             << sep_cover_circle.level << '\n';
 
   // TODO: change it to alloc use thin_leave_wrap
-  Node* node = AllocNormalLeafNode<Slice, Leaf>(
-      parlay::make_slice(Points{level_cover_circle.GetCenter()}));
+  // Node* node = AllocNormalLeafNode<Slice, Leaf>(
+  //     parlay::make_slice(Points{level_cover_circle.GetCenter()}));
+  Node* node = AllocNormalLeafNode<Slice, Leaf>(parlay::make_slice(Points()));
   while (sep_cover_circle.level <= level_cover_circle.level) {
     std::cout << "alloc interior node" << sep_cover_circle << '\n';
     node = AllocInteriorNode<Interior>(
@@ -149,6 +145,8 @@ CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::PointInsertRecursive(
 
   if (T->is_leaf) {
     auto TL = static_cast<Leaf*>(T);
+    assert(std::find(TL->pts.begin(), TL->pts.begin() + TL->size,
+                     level_cover_circle.center) != TL->pts.end());
     if (TL->CapacityFull()) {  // leaf is full
       bool flag = false;
       auto split_node = ShrinkCoverRangeDownwards(T, level_cover_circle);
@@ -162,12 +160,21 @@ CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::PointInsertRecursive(
         std::cout << "finish reinsert" << '\n';
         assert(flag == true);
       }
-      assert(split_node->size == TL->size + 1);
+      assert(split_node->size == TL->size);
       FreeNode<Leaf>(T);
       std::tie(split_node, flag) =
           PointInsertRecursive(split_node, p, level_cover_circle);
-      assert(flag == true);
-      split_node->size++;
+      // PERF: should not increment the size of the node here, since the point
+      // would be either inserted into an interior node or a leaf, in both
+      // cases, the size would be updated
+
+      auto TI = static_cast<Interior*>(split_node);
+      auto child_size = std::accumulate(
+          TI->tree_nodes.begin(), TI->tree_nodes.end(), 0,
+          [](auto const& acc, auto const& node) { return acc + node->size; });
+      assert(std::cmp_equal(child_size, TI->size));
+      assert(TI->size == BT::kLeaveWrap + 1);
+
       return NodeBoolean(split_node, flag);
     } else {
       return {BT::template InsertPoints2Leaf<Leaf>(
@@ -191,9 +198,6 @@ CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::PointInsertRecursive(
       near_node_idx_seq[near_node_cnt++] = i;
     }
   }
-  // if (near_node_cnt == 0) {
-  //   return {T, false};
-  // }
 
   // try to insert
   bool flag = false;
@@ -203,9 +207,14 @@ CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::PointInsertRecursive(
         PointInsertRecursive(TI->tree_nodes[near_node_idx_seq[i]], p,
                              CoverCircle{TI->split[near_node_idx_seq[i]],
                                          TI->GetCoverCircle().level - 1});
+    assert(flag == true);
     if (flag) {
       TI->tree_nodes[near_node_idx_seq[i]] = new_node;
       TI->size++;
+      auto child_size = std::accumulate(
+          TI->tree_nodes.begin(), TI->tree_nodes.end(), 0,
+          [](auto const& acc, auto const& node) { return acc + node->size; });
+      assert(std::cmp_equal(child_size, TI->size));
       return {T, true};
     }
   }
@@ -221,6 +230,10 @@ CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::PointInsertRecursive(
   TI->split.emplace_back(p);
   TI->size++;
 
+  auto child_size = std::accumulate(
+      TI->tree_nodes.begin(), TI->tree_nodes.end(), 0,
+      [](auto const& acc, auto const& node) { return acc + node->size; });
+  assert(std::cmp_equal(child_size, TI->size));
   return {T, true};
 }
 

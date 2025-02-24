@@ -103,13 +103,16 @@ BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::CheckCover(
                            [&](auto const& center_j) {
                              // PERF: should be Gt as a point in a boundary
                              // should falls within that circle
-                             return Num::Gt(P2PDistanceSquare(center_i, center_j),
-                                            level_cover_circle.GetRadius());
+                             return Num::Gt(
+                                 P2PDistanceSquare(center_i, center_j),
+                                 level_cover_circle.GetRadius());
                            });
       }));
   assert(level_cover_circle == TI->GetCoverCircle());
 
   // NOTE: covering
+  // the cover circle of all points within the subtree should within the cover
+  // circle of the node
   parlay::sequence<CircleType> return_circle_seq(TI->split.size());
   for (size_t i = 0; i < TI->tree_nodes.size(); i++) {
     auto next_circle = CircleType{
@@ -117,6 +120,7 @@ BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::CheckCover(
     return_circle_seq[i] =
         CheckCover<Leaf, Interior>(TI->tree_nodes[i], next_circle);
     assert(CircleWithinCircle(return_circle_seq[i], next_circle));
+    assert(CircleWithinCircle(return_circle_seq[i], level_cover_circle));
   }
   auto const return_circle = GetCircle<CircleType>(return_circle_seq);
   assert(CircleWithinCircle(return_circle, level_cover_circle));
@@ -195,6 +199,16 @@ template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
 template <typename Leaf, typename Interior, typename SplitRule>
 void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::Validate() {
   std::cout << ">>> begin validate tree\n" << std::flush;
+
+  // check size
+  if (CheckSize<Leaf, Interior>(this->root_) == this->root_->size) {
+    std::cout << "Correct size\n" << std::flush;
+  } else {
+    std::cout << "wrong tree size\n" << std::flush;
+    abort();
+  }
+
+  // tree property
   if constexpr (IsBinaryNode<Interior> || IsMultiNode<Interior>) {
     if (LegalBox(CheckBox<Leaf, Interior>(this->root_, this->tree_box_))) {
       std::cout << "Correct bounding Box\n" << std::flush;
@@ -234,12 +248,6 @@ void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::Validate() {
     assert(false);
   }
 
-  if (CheckSize<Leaf, Interior>(this->root_) == this->root_->size) {
-    std::cout << "Correct size\n" << std::flush;
-  } else {
-    std::cout << "wrong tree size\n" << std::flush;
-    abort();
-  }
   std::cout << "<<< end validate tree\n" << std::flush;
   return;
 }
