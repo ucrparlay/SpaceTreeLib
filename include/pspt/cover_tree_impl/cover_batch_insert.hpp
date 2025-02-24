@@ -162,7 +162,7 @@ CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::PointInsertRecursive(
         std::cout << "finish reinsert" << '\n';
         assert(flag == true);
       }
-      assert(split_node->size == TL->size);
+      assert(split_node->size == TL->size + 1);
       FreeNode<Leaf>(T);
       std::tie(split_node, flag) =
           PointInsertRecursive(split_node, p, level_cover_circle);
