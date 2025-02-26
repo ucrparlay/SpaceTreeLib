@@ -31,6 +31,7 @@ void CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchInsert_(Slice A) {
   if (this->root_ == nullptr) {
     this->root_ = AllocNormalLeafNode<Slice, Leaf>(A.cut(0, 1));
     this->root_cover_circle_ = CoverCircle{A[0], 0};
+    std::cout << "leaf " << A[0] << '\n';
   }
 
   int idx = 0;
@@ -49,6 +50,14 @@ void CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchInsert_(Slice A) {
         PointInsertRecursive(this->root_, p, this->root_cover_circle_);
     assert(flag == true);
   }
+
+  std::cout << "bb: " << BT::GetBox(A).first << " " << BT::GetBox(A).second
+            << '\n';
+  auto input_circle = BT::template GetCircle<typename BT::NormalCircle>(A);
+  std::cout << "reduced: " << input_circle << " "
+            << BT::CircleWithinCircle(input_circle, this->root_cover_circle_)
+            << '\n';
+  std::cout << "root_cover_circle_: " << this->root_cover_circle_ << '\n';
 
   assert(this->root_ != nullptr);
   return;
@@ -211,10 +220,12 @@ CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::PointInsertRecursive(
     if (flag) {
       TI->tree_nodes[near_node_idx_seq[i]] = new_node;
       TI->size++;
+
       auto child_size = std::accumulate(
           TI->tree_nodes.begin(), TI->tree_nodes.end(), 0,
           [](auto const& acc, auto const& node) { return acc + node->size; });
       assert(std::cmp_equal(child_size, TI->size));
+
       return {T, true};
     }
   }
@@ -229,6 +240,20 @@ CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::PointInsertRecursive(
       AllocNormalLeafNode<Slice, Leaf>(parlay::make_slice(Points{p})));
   TI->split.emplace_back(p);
   TI->size++;
+
+  assert(std::all_of(
+      TI->split.begin(), TI->split.end(), [&](auto const& center_i) {
+        auto i = &center_i - &TI->split[0];
+        auto tmp_circle = CoverCircle{center_i, level_cover_circle.level - 1};
+        return std::all_of(TI->split.begin() + i + 1, TI->split.end(),
+                           [&](auto const& center_j) {
+                             // PERF: should be Gt as a point in a boundary
+                             // should falls within that circle
+                             return Num::Gt(
+                                 BT::P2PDistanceSquare(center_i, center_j),
+                                 tmp_circle.GetRadiusSquare());
+                           });
+      }));
 
   auto child_size = std::accumulate(
       TI->tree_nodes.begin(), TI->tree_nodes.end(), 0,

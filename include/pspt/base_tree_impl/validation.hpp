@@ -7,6 +7,7 @@
 #include <cwchar>
 
 #include "../base_tree.h"
+#include "parlay/primitives.h"
 
 namespace pspt {
 
@@ -78,19 +79,20 @@ BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::CheckBox(Node* T,
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 template <typename Leaf, typename Interior>
-typename Interior::CircleType
+typename BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::Points
 BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::CheckCover(
     Node* T, typename Interior::CircleType const& level_cover_circle) {
-  using CircleType = typename Interior::CircleType;
+  using TreeCircle = typename Interior::CircleType;
 
   if (T->is_leaf) {
     auto TL = static_cast<Leaf*>(T);
-    auto leaf_pnt_circle = GetCircle<CircleType>(TL->pts.cut(0, TL->size));
+    auto leaf_pnt_circle = GetCircle<NormalCircle>(TL->pts.cut(0, TL->size));
     assert(CircleWithinCircle(leaf_pnt_circle, level_cover_circle));
-    return leaf_pnt_circle;
+    return TL->GetPoints();
   }
 
   auto TI = static_cast<Interior*>(T);
+  assert(level_cover_circle == TI->GetCoverCircle());
 
   // NOTE: nesting
   assert(std::ranges::count(TI->split, level_cover_circle.center) == 1);
@@ -99,32 +101,31 @@ BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::CheckCover(
   assert(std::all_of(
       TI->split.begin(), TI->split.end(), [&](auto const& center_i) {
         auto i = &center_i - &TI->split[0];
+        auto tmp_circle = CoverCircle{center_i, level_cover_circle.level - 1};
         return std::all_of(TI->split.begin() + i + 1, TI->split.end(),
                            [&](auto const& center_j) {
                              // PERF: should be Gt as a point in a boundary
                              // should falls within that circle
                              return Num::Gt(
                                  P2PDistanceSquare(center_i, center_j),
-                                 level_cover_circle.GetRadius());
+                                 tmp_circle.GetRadiusSquare());
                            });
       }));
-  assert(level_cover_circle == TI->GetCoverCircle());
 
   // NOTE: covering
   // the cover circle of all points within the subtree should within the cover
   // circle of the node
-  parlay::sequence<CircleType> return_circle_seq(TI->split.size());
+  parlay::sequence<Points> return_points_seq(TI->tree_nodes.size());
   for (size_t i = 0; i < TI->tree_nodes.size(); i++) {
-    auto next_circle = CircleType{
+    auto next_circle = TreeCircle{
         TI->split[i], static_cast<DepthType>(TI->GetCoverCircle().level - 1)};
-    return_circle_seq[i] =
+    return_points_seq[i] =
         CheckCover<Leaf, Interior>(TI->tree_nodes[i], next_circle);
-    assert(CircleWithinCircle(return_circle_seq[i], next_circle));
-    assert(CircleWithinCircle(return_circle_seq[i], level_cover_circle));
+    for (auto const& p : return_points_seq[i]) {
+      assert(WithinCircle(p, next_circle));
+    }
   }
-  auto const return_circle = GetCircle<CircleType>(return_circle_seq);
-  assert(CircleWithinCircle(return_circle, level_cover_circle));
-  return return_circle;
+  return parlay::flatten(return_points_seq);
 }
 
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
@@ -227,6 +228,8 @@ void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::Validate() {
       std::cout << "Correct rotate dimension\n" << std::flush;
     }
   } else if constexpr (IsDynamicNode<Interior>) {
+    // BUG: below is wrong, the leaf cover circle should centered at one node.
+    // Cannot compute it, but to retrive from the tree
     auto root_cover_circle =
         this->root_->is_leaf
             ? GetCircle<typename Interior::CircleType>(
@@ -237,8 +240,11 @@ void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::Validate() {
     static_assert(std::same_as<decltype(root_cover_circle),
                                typename Interior::CircleType>);
 
-    if (LegalCircle(
-            CheckCover<Leaf, Interior>(this->root_, root_cover_circle))) {
+    if (parlay::all_of(
+            CheckCover<Leaf, Interior>(this->root_, root_cover_circle),
+            [&](auto const& p) {
+              return WithinCircle(p, root_cover_circle);
+            })) {
       std::cout << "Correct cover circle\n" << std::flush;
     } else {
       std::cout << "wrong bounding Box\n" << std::flush;

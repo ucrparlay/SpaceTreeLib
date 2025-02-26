@@ -4,6 +4,7 @@
 #include <sys/types.h>
 
 #include <cstdint>
+#include <cstdio>
 #include <type_traits>
 
 #include "dependence/comparator.h"
@@ -25,6 +26,7 @@ class BaseTree {
   using BallsType = uint_fast32_t;
   using DimsType = uint_fast8_t;
   // using DepthType = uint_fast8_t;
+  // using DepthType = int_fast8_t;
   using DepthType = int;
   using BucketSeq = parlay::sequence<BucketType>;
   using BallSeq = parlay::sequence<BallsType>;
@@ -58,7 +60,7 @@ class BaseTree {
   // static constexpr uint_fast8_t const kLeaveWrap = 32;
   // static constexpr uint_fast8_t const kThinLeaveWrap = 24;
   // static constexpr uint_fast8_t const kSlimLeaveWrap = 8;
-  static constexpr uint_fast8_t const kLeaveWrap = 8;
+  static constexpr uint_fast8_t const kLeaveWrap = 4;
   static constexpr uint_fast8_t const kThinLeaveWrap = 4;
   static constexpr uint_fast8_t const kSlimLeaveWrap = 2;
   static constexpr uint_fast16_t const kSerialBuildCutoff = 1 << 10;
@@ -123,6 +125,11 @@ class BaseTree {
       return static_cast<Coord>(r);
     }
 
+    friend std::ostream& operator<<(std::ostream& o, NormalCircle const& cl) {
+      o << "{ " << cl.center << ", " << cl.radius << "}";
+      return o;
+    }
+
     Point center;
     Coord radius;
   };
@@ -134,8 +141,12 @@ class BaseTree {
 
     Coord GetRadiusSquare() const { return GetRadius() * GetRadius(); }
 
-    static DepthType ComputeRadius(double const& r) {
-      return static_cast<DepthType>(std::ceil(std::log2(r)));
+    static DepthType ComputeRadius(auto const& r) {
+      // TODO: hard to represent the radius with length 0
+      puts("here");
+      return Num_Comparator<decltype(r)>::IsZero(r)
+                 ? -1
+                 : static_cast<DepthType>(std::ceil(std::log2(r)));
     }
 
     bool operator==(CoverCircle const& cl) const {
@@ -160,9 +171,9 @@ class BaseTree {
   template <typename CircleType>
   static inline bool WithinCircle(Box const& box, CircleType const& cl);
 
-  template <typename CircleType>
-  static inline bool CircleWithinCircle(CircleType const& a,
-                                        CircleType const& b);
+  template <typename CircleType1, typename CircleType2>
+  static inline bool CircleWithinCircle(CircleType1 const& a,
+                                        CircleType2 const& b);
 
   template <typename CircleType>
   static inline bool CircleIntersectBox(CircleType const& cl, Box const& box);
@@ -427,8 +438,8 @@ class BaseTree {
   Box CheckBox(Node* T, Box const& box);
 
   template <typename Leaf, typename Interior>
-  typename Interior::CircleType CheckCover(
-      Node* T, typename Interior::CircleType const& level_cover_circle);
+  Points CheckCover(Node* T,
+                    typename Interior::CircleType const& level_cover_circle);
 
   template <typename Leaf, typename Interior>
   static size_t CheckSize(Node* T);

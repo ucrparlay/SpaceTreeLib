@@ -84,7 +84,7 @@ struct LeafNode : Node {
 
   bool CapacityFull() const { return this->size == kDefaultWrap; }
 
-  Points const& GetPoints() const { return pts; }
+  Points const GetPoints() const { return pts.substr(0, this->size); }
 
   AugType const& GetAug() const { return aug; }
 

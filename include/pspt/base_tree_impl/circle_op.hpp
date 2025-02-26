@@ -51,9 +51,9 @@ inline bool BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::WithinCircle(
       r += (cl.GetCenter().pnt[i] - box.first.pnt[i]) *
            (cl.GetCenter().pnt[i] - box.first.pnt[i]);
     }
-    if (Num::Gt(r, cl.GetRadius() * cl.GetRadius())) return false;
+    if (Num::Gt(r, cl.GetRadiusSquare())) return false;
   }
-  assert(Num::Leq(r, cl.GetRadius() * cl.GetRadius()));
+  assert(Num::Leq(r, cl.GetRadiusSquare()));
   return true;
 }
 
@@ -91,28 +91,31 @@ BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::GetCircle(Box const& box) {
 
   Coord r = 0;
   if constexpr (kDim == 2) {
-    r = (box.second.pnt[0] - box.first.pnt[0]) *
-            (box.second.pnt[0] - box.first.pnt[0]) +
-        (box.second.pnt[1] - box.first.pnt[1]) *
-            (box.second.pnt[1] - box.first.pnt[1]);
+    r = Num::DivideTwoCeil(box.second.pnt[0] - box.first.pnt[0]) *
+            Num::DivideTwoCeil(box.second.pnt[0] - box.first.pnt[0]) +
+        Num::DivideTwoCeil(box.second.pnt[1] - box.first.pnt[1]) *
+            Num::DivideTwoCeil(box.second.pnt[1] - box.first.pnt[1]);
   } else if constexpr (kDim == 3) {
-    r = (box.second.pnt[0] - box.first.pnt[0]) *
-            (box.second.pnt[0] - box.first.pnt[0]) +
-        (box.second.pnt[1] - box.first.pnt[1]) *
-            (box.second.pnt[1] - box.first.pnt[1]) +
-        (box.second.pnt[2] - box.first.pnt[2]) *
-            (box.second.pnt[2] - box.first.pnt[2]);
+    r = Num::DivideTwoCeil(box.second.pnt[0] - box.first.pnt[0]) *
+            Num::DivideTwoCeil(box.second.pnt[0] - box.first.pnt[0]) +
+        Num::DivideTwoCeil(box.second.pnt[1] - box.first.pnt[1]) *
+            Num::DivideTwoCeil(box.second.pnt[1] - box.first.pnt[1]) +
+        Num::DivideTwoCeil(box.second.pnt[2] - box.first.pnt[2]) *
+            Num::DivideTwoCeil(box.second.pnt[2] - box.first.pnt[2]);
   } else {
     for (DimsType i = 0; i < kDim; ++i) {
-      r += (box.second.pnt[i] - box.first.pnt[i]) *
-           (box.second.pnt[i] - box.first.pnt[i]);
+      r += Num::DivideTwoCeil(box.second.pnt[i] - box.first.pnt[i]) *
+           Num::DivideTwoCeil(box.second.pnt[i] - box.first.pnt[i]);
     }
   }
 
-  std::cout << "r: " << std::sqrt(r) / 2.0 << '\n';
+  std::cout << "r: " << std::sqrt(r) << '\n';
+  // assert(WithinCircle(
+  //     box,
+  //     CircleType{GetBoxCenter(box),
+  //     CircleType::ComputeRadius(std::sqrt(r))}));
 
-  return CircleType{GetBoxCenter(box),
-                    CircleType::ComputeRadius(std::sqrt(r) / 2.0)};
+  return CircleType{GetBoxCenter(box), CircleType::ComputeRadius(std::sqrt(r))};
 }
 
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
@@ -138,10 +141,11 @@ BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::GetCircle(
 
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
-template <typename CircleType>
+template <typename CircleType1, typename CircleType2>
 inline bool BaseTree<Point, DerivedTree, kSkHeight,
-                     kImbaRatio>::CircleWithinCircle(CircleType const& a,
-                                                     CircleType const& b) {
+                     kImbaRatio>::CircleWithinCircle(CircleType1 const& a,
+                                                     CircleType2 const& b) {
+  assert(LegalCircle(a) && LegalCircle(b));
   return Num::Leq(a.GetRadius(), b.GetRadius()) &&
          Num::Leq(
              P2PDistanceSquare(a.GetCenter(), b.GetCenter()),
@@ -164,8 +168,9 @@ inline CircleType BaseTree<Point, DerivedTree, kSkHeight,
   for (DimsType i = 0; i < kDim; ++i) {
     center.pnt[i] = (a.GetCenter().pnt[i] + b.GetCenter().pnt[i]) / 2;
   }
-  double radius = std::sqrt(P2PDistanceSquare(a.GetCenter(), b.GetCenter())) +
-                  std::max(a.GetRadius(), b.GetRadius());
+  double radius =
+      std::sqrt(P2PDistanceSquare(a.GetCenter(), b.GetCenter())) / 2.0 +
+      std::max(a.GetRadius(), b.GetRadius());
 
   return CircleType{center, CircleType::ComputeRadius(radius)};
 }

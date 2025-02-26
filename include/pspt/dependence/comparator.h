@@ -47,13 +47,21 @@ class Num_Comparator {
 
   static inline T Max(T const a, T const b) { return Gt(a, b) ? a : b; }
 
+  static inline bool IsZero(T const a) { return Eq(a, static_cast<T>(0)); }
+
+  static inline T DivideTwoCeil(T const a) {
+    if constexpr (std::is_floating_point_v<T>) {
+      return std::ceil(a / 2.0);
+    } else {
+      return (a + 1) / 2;
+    }
+  }
+
   static inline T integer_log2_upper(T const a) {
     if constexpr (std::is_floating_point_v<T>) {
       return static_cast<T>(std::ceil(std::log2(a)));
     } else {
-      // a = 7 -> r = 2
-      // a = 8 -> r = 3
-      if (a == 0) return 0;
+      if (a == 0) return 0;  // BUG: this is a bug, should return -1
       T r = 0, b = a;
       while (b >>= 1) r++;
       return r + static_cast<T>((1 << r) != a);

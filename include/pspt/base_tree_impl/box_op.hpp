@@ -11,6 +11,7 @@ template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
 inline typename BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::Coord
 BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::GetBoxMid(DimsType const d,
                                                                Box const& box) {
+  // TODO: change to Num::divide2ceil
   if constexpr (std::is_integral_v<Coord>) {
     // NOTE: since the points on the box line will be put in right, therefore
     // the box should always be rounded up as well.
