@@ -187,8 +187,8 @@ void BuildTree(parlay::sequence<Point> const& WP, int const& rounds,
   using Interior = typename Tree::Interior;
 
   double loopLate = rounds > 1 ? 1.0 : -0.1;
-  // size_t n = WP.size();
-  size_t n = 5;
+  size_t n = WP.size();
+  // size_t n = 100;
   Points wp = Points::uninitialized(n);
 
   if constexpr (kTestTime) {
@@ -219,6 +219,10 @@ void BuildTree(parlay::sequence<Point> const& WP, int const& rounds,
     pkd.DeleteTree();
     parlay::copy(WP.cut(0, n), wp.cut(0, n));
     pkd.Build(wp.cut(0, n));
+    pkd.Flatten(wp);
+    Points wp2 = WP;
+    assert(parlay::sort(wp) == parlay::sort(wp2));
+    std::cout << "same points" << "\n";
   }
 
   return;

@@ -109,7 +109,7 @@ BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::GetCircle(Box const& box) {
     }
   }
 
-  std::cout << "r: " << std::sqrt(r) << '\n';
+  // std::cout << "r: " << std::sqrt(r) << '\n';
   // assert(WithinCircle(
   //     box,
   //     CircleType{GetBoxCenter(box),

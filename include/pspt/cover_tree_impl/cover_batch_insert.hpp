@@ -22,6 +22,10 @@ void CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchInsert(
   static_assert(std::is_constructible_v<parlay::range_value_type_t<Range>,
                                         parlay::range_reference_type_t<Range>>);
   Slice A = parlay::make_slice(In);
+  Point p;
+  p.pnt[0] = 70818;
+  p.pnt[1] = 11051;
+  std::cout << std::ranges::count(A, p);
   BatchInsert_(A);
 }
 
@@ -34,14 +38,14 @@ void CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchInsert_(Slice A) {
     std::cout << "leaf " << A[0] << '\n';
   }
 
-  int idx = 0;
+  // int idx = 0;
   for (auto const& p : A.cut(this->root_->size, A.size())) {
-    std::cout << "idx: " << idx++ << p << '\n';
+    // std::cout << "idx: " << idx++ << p << '\n';
     if (!BT::WithinCircle(p, this->root_cover_circle_)) {
       ExtendCoverRangeUpwards(
           this->root_cover_circle_,
           p);  // PERF: this will change the level of root_cover_circle as well
-      std::cout << "finish extend cover range upwards" << '\n';
+      // std::cout << "finish extend cover range upwards" << '\n';
     }
 
     assert(BT::WithinCircle(p, this->root_cover_circle_));
@@ -87,31 +91,32 @@ template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
 Node* CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::
     ShrinkCoverRangeDownwards(Node* T, CoverCircle const& level_cover_circle) {
   assert(T->is_leaf);
+  assert(T->size == BT::kLeaveWrap);
+
   auto TL = static_cast<Leaf*>(T);
-  Coord max_dis = std::numeric_limits<Coord>::lowest();
+  auto max_dis = std::numeric_limits<Coord>::lowest();
   // TODO: can replace it with sorting to use the fix thin leave wrap
   parlay::sort_inplace(
       TL->pts.cut(0, TL->size), [&](auto const& p1, auto const& p2) {
         return BT::P2PDistanceSquare(p1, level_cover_circle.center) <
                BT::P2PDistanceSquare(p2, level_cover_circle.center);
       });
-  for (size_t i = 0; i < TL->size; ++i) {
-    std::cout << "idx: " << i << TL->pts[i] << ' '
-              << BT::P2PDistanceSquare(TL->pts[i], level_cover_circle.center)
-              << '\n';
-  }
-  std::cout << '\n';
+  // for (size_t i = 0; i < TL->size; ++i) {
+  //   std::cout << "idx: " << i << TL->pts[i] << ' '
+  //             << BT::P2PDistanceSquare(TL->pts[i], level_cover_circle.center)
+  //             << '\n';
+  // }
+  // std::cout << '\n';
   // for (size_t i = 0; i < TL->size; ++i) {
   //   max_dis = std::max(
   //       max_dis, BT::P2PDistanceSquare(TL->pts[i],
   //       level_cover_circle.center));
   // }
-  assert(std::cmp_less(BT::kSlimLeaveWrap, TL->size - 1));
-  // BUG: this should be kSlimLeaveWrap
-  max_dis = BT::P2PDistanceSquare(TL->pts[BT::kSlimLeaveWrap + 1],
+  max_dis = BT::P2PDistanceSquare(TL->pts[BT::kSlimLeaveWrap - 1],
                                   level_cover_circle.center);
   assert(Num::Leq(max_dis, level_cover_circle.GetRadiusSquare()));
-  std::cout << max_dis << " " << level_cover_circle.level << '\n';
+  assert(max_dis);  // TODO: handling the duplicates here
+  // std::cout << max_dis << " " << level_cover_circle.level << '\n';
 
   // NOTE: first find the lowest level that separates the points
   // then build levels in a bottom-up fashion
@@ -121,15 +126,15 @@ Node* CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::
   }
   assert(sep_cover_circle.center == level_cover_circle.center);
   assert(sep_cover_circle.level < level_cover_circle.level);
-  std::cout << sep_cover_circle.GetRadiusSquare() << " "
-            << sep_cover_circle.level << '\n';
+  // std::cout << sep_cover_circle.GetRadiusSquare() << " "
+  //           << sep_cover_circle.level << '\n';
 
   // TODO: change it to alloc use thin_leave_wrap
   // Node* node = AllocNormalLeafNode<Slice, Leaf>(
   //     parlay::make_slice(Points{level_cover_circle.GetCenter()}));
   Node* node = AllocNormalLeafNode<Slice, Leaf>(parlay::make_slice(Points()));
   while (sep_cover_circle.level <= level_cover_circle.level) {
-    std::cout << "alloc interior node" << sep_cover_circle << '\n';
+    // std::cout << "alloc interior node" << sep_cover_circle << '\n';
     node = AllocInteriorNode<Interior>(
         typename Interior::CoverNodeArr(1, node),
         typename Interior::ST(
@@ -161,12 +166,12 @@ CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::PointInsertRecursive(
       auto split_node = ShrinkCoverRangeDownwards(T, level_cover_circle);
       assert(static_cast<Interior*>(split_node)->GetCoverCircle() ==
              level_cover_circle);
-      std::cout << "finish shrink cover range downwards" << '\n';
+      // std::cout << "finish shrink cover range downwards" << '\n';
       for (size_t i = 0; i < TL->size; ++i) {
-        std::cout << "leaf_idx: " << i << TL->pts[i] << ' ';
+        // std::cout << "leaf_idx: " << i << TL->pts[i] << ' ';
         std::tie(split_node, flag) =
             PointInsertRecursive(split_node, TL->pts[i], level_cover_circle);
-        std::cout << "finish reinsert" << '\n';
+        // std::cout << "finish reinsert" << '\n';
         assert(flag == true);
       }
       assert(split_node->size == TL->size);

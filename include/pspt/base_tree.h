@@ -57,12 +57,12 @@ class BaseTree {
   static constexpr BucketType const kBucketNum = 1 << kBuildDepthOnce;
 
   // NOTE: tree structure
-  // static constexpr uint_fast8_t const kLeaveWrap = 32;
-  // static constexpr uint_fast8_t const kThinLeaveWrap = 24;
-  // static constexpr uint_fast8_t const kSlimLeaveWrap = 8;
-  static constexpr uint_fast8_t const kLeaveWrap = 4;
-  static constexpr uint_fast8_t const kThinLeaveWrap = 4;
-  static constexpr uint_fast8_t const kSlimLeaveWrap = 2;
+  static constexpr uint_fast8_t const kLeaveWrap = 32;
+  static constexpr uint_fast8_t const kThinLeaveWrap = 24;
+  static constexpr uint_fast8_t const kSlimLeaveWrap = 8;
+  // static constexpr uint_fast8_t const kLeaveWrap = 8;
+  // static constexpr uint_fast8_t const kThinLeaveWrap = 4;
+  // static constexpr uint_fast8_t const kSlimLeaveWrap = 4;
   static constexpr uint_fast16_t const kSerialBuildCutoff = 1 << 10;
 
   // NOTE: block param in Partition
@@ -295,15 +295,15 @@ class BaseTree {
   // NOTE: KNN query stuffs
   static inline Coord P2PDistanceSquare(Point const& p, Point const& q);
 
-  static inline Coord P2BMinDistance(Point const& p, Box const& a);
+  static inline Coord P2BMinDistanceSquare(Point const& p, Box const& a);
 
-  static inline Coord P2BMaxDistance(Point const& p, Box const& a);
+  static inline Coord P2BMaxDistanceSquare(Point const& p, Box const& a);
 
-  static inline Coord P2CMinDistance(Point const& p, Point const& center,
-                                     Coord const r);
+  static inline double P2CMinDistance(Point const& p, Point const& center,
+                                      Coord const r);
 
   template <typename CircleType>
-  static inline Coord P2CMinDistance(Point const& p, CircleType const& cl);
+  static inline double P2CMinDistance(Point const& p, CircleType const& cl);
 
   static inline Coord InterruptibleDistance(Point const& p, Point const& q,
                                             Coord up);

@@ -86,8 +86,9 @@ BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::CheckCover(
 
   if (T->is_leaf) {
     auto TL = static_cast<Leaf*>(T);
-    auto leaf_pnt_circle = GetCircle<NormalCircle>(TL->pts.cut(0, TL->size));
-    assert(CircleWithinCircle(leaf_pnt_circle, level_cover_circle));
+    for (auto const& p : TL->GetPoints()) {
+      assert(WithinCircle(p, level_cover_circle));
+    }
     return TL->GetPoints();
   }
 

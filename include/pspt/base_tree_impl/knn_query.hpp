@@ -42,7 +42,7 @@ BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::P2PDistanceSquare(
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 inline typename BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::Coord
-BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::P2BMinDistance(
+BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::P2BMinDistanceSquare(
     Point const& p,
     typename BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::Box const&
         a) {
@@ -61,7 +61,7 @@ BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::P2BMinDistance(
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 inline typename BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::Coord
-BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::P2BMaxDistance(
+BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::P2BMaxDistanceSquare(
     Point const& p,
     typename BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::Box const&
         a) {
@@ -77,19 +77,22 @@ BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::P2BMaxDistance(
 }
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
-inline typename BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::Coord
-BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::P2CMinDistance(
-    Point const& p, Point const& center, Coord const r) {
-  return Num::Max(0, P2PDistanceSquare(p, center) - r);
+inline double BaseTree<Point, DerivedTree, kSkHeight,
+                       kImbaRatio>::P2CMinDistance(Point const& p,
+                                                   Point const& center,
+                                                   Coord const r) {
+  // return Num_Comparator<double>::Max(
+  //     0.0, std::sqrt(P2PDistanceSquare(p, center)) - static_cast<double>(r));
+  return std::sqrt(P2PDistanceSquare(p, center)) - static_cast<double>(r);
 }
 
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 template <typename CircleType>
-inline typename BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::Coord
-BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::P2CMinDistance(
-    Point const& p, CircleType const& cl) {
-  return Num::Max(0, P2PDistanceSquare(p, cl.GetCenter()) - cl.GetRadius());
+inline double BaseTree<Point, DerivedTree, kSkHeight,
+                       kImbaRatio>::P2CMinDistance(Point const& p,
+                                                   CircleType const& cl) {
+  return P2CMinDistance(p, cl.GetCenter(), cl.GetRadius());
 }
 
 // NOTE: early return the partial distance between p and q if it is larger than
@@ -138,8 +141,9 @@ void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::KNNLeaf(
   Leaf* TL = static_cast<Leaf*>(T);
   size_t i = 0;
   while (!bq.full() && i < TL->size) {
-    bq.insert(std::make_pair(std::ref(TL->pts[(!TL->is_dummy) * i]),
-                             P2PDistanceSquare(q, TL->pts[(!TL->is_dummy) * i])));
+    bq.insert(
+        std::make_pair(std::ref(TL->pts[(!TL->is_dummy) * i]),
+                       P2PDistanceSquare(q, TL->pts[(!TL->is_dummy) * i])));
     i++;
   }
   while (i < TL->size) {
@@ -181,7 +185,8 @@ void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::KNNBinary(
                             box_cut.GetFirstBoxCut(), logger);
 
   logger.check_box_num++;
-  if (Num::Gt(P2BMinDistance(q, box_cut.GetSecondBoxCut()), bq.top_value()) &&
+  if (Num::Gt(P2BMinDistanceSquare(q, box_cut.GetSecondBoxCut()),
+              bq.top_value()) &&
       bq.full()) {
     logger.skip_box_num++;
     return;
@@ -208,8 +213,9 @@ void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::KNNBinary(
   }
 
   Interior* TI = static_cast<Interior*>(T);
-  Coord dist_left = P2BMinDistance(q, GetSplit<Leaf, Interior>(TI->left));
-  Coord dist_right = P2BMinDistance(q, GetSplit<Leaf, Interior>(TI->right));
+  Coord dist_left = P2BMinDistanceSquare(q, GetSplit<Leaf, Interior>(TI->left));
+  Coord dist_right =
+      P2BMinDistanceSquare(q, GetSplit<Leaf, Interior>(TI->right));
   bool go_left = Num::Leq(dist_left, dist_right);
 
   KNNBinary<Leaf, Interior>(go_left ? TI->left : TI->right, q, bq, logger);
@@ -266,7 +272,8 @@ void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::KNNMultiExpand(
 
   // NOTE: compute the other bounding box
   logger.check_box_num++;
-  if (Num::Gt(P2BMinDistance(q, box_cut.GetSecondBoxCut()), bq.top_value()) &&
+  if (Num::Gt(P2BMinDistanceSquare(q, box_cut.GetSecondBoxCut()),
+              bq.top_value()) &&
       bq.full()) {
     logger.skip_box_num++;
     return;
@@ -304,7 +311,7 @@ void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::KNNMulti(
   logger.generate_box_num += Interior::GetRegions() * 2 - 1;
 
   std::ranges::generate(dists, [i = 0, &q, &regions]() mutable {
-    auto r = std::make_pair(P2BMinDistance(q, regions[i]), i);
+    auto r = std::make_pair(P2BMinDistanceSquare(q, regions[i]), i);
     i++;
     return r;
   });
@@ -383,7 +390,8 @@ void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::KNNMix(
   KNNMix<Leaf, BN, MN>(first_node, q, dim, first_idx, bq,
                        box_cut.GetFirstBoxCut(), logger);
   logger.check_box_num++;
-  if (Num::Gt(P2BMinDistance(q, box_cut.GetSecondBoxCut()), bq.top_value()) &&
+  if (Num::Gt(P2BMinDistanceSquare(q, box_cut.GetSecondBoxCut()),
+              bq.top_value()) &&
       bq.full()) {
     logger.skip_box_num++;
     return;
@@ -399,6 +407,7 @@ template <typename Leaf, IsDynamicNode Interior, typename Range>
 void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::KNNCover(
     Node* T, Point const& q, kBoundedQueue<Point, Range>& bq,
     KNNLogger& logger) {
+  using CoverCircle = typename Interior::CircleType;
   logger.vis_node_num++;
 
   if (T->size == 0) {
@@ -421,11 +430,35 @@ void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::KNNCover(
   KNNCover<Leaf, Interior>(TI->tree_nodes[sorted_idx[0]], q, bq, logger);
   for (size_t i = 1; i < TI->tree_nodes.size(); ++i) {
     logger.check_box_num++;
-    if (Num::Gt(P2CMinDistance(q, TI->split[sorted_idx[i]],
-                               TI->GetCoverCircle().level - 1),
-                bq.top_value()) &&
-        bq.full()) {
+    auto p2cdis = P2CMinDistance(
+        q,
+        CoverCircle{TI->split[sorted_idx[i]], TI->GetCoverCircle().level - 1});
+    auto sqrtbqtop = std::sqrt(bq.top_value());
+    // if (Num_Comparator<double>::Gt(
+    //         P2CMinDistance(q, TI->split[sorted_idx[i]],
+    //                        TI->GetCoverCircle().level - 1),
+    //         std::sqrt(bq.top_value())) &&
+    if (Num_Comparator<double>::Gt(p2cdis, sqrtbqtop) && bq.full()) {
       logger.skip_box_num++;
+      auto next_node = TI->tree_nodes[sorted_idx[i]];
+      Points p_seq(next_node->size);
+      FlattenRec<Leaf, Interior>(TI->tree_nodes[sorted_idx[i]],
+                                 parlay::make_slice(p_seq));
+      for (auto const& p : p_seq) {
+        if (P2PDistanceSquare(p, q) <= bq.top_value()) {
+          std::cout << p << q
+                    << CoverCircle{TI->split[sorted_idx[i]],
+                                   TI->GetCoverCircle().level - 1}
+                    << " ";
+          std::cout << "p2cdis: " << p2cdis << " ";
+          std::cout << "sqrtbqtop: " << sqrtbqtop << " ";
+          std::cout << "p2pdis: " << std::sqrt(P2PDistanceSquare(p, q)) << " "
+                    << std::flush;
+          assert(WithinCircle(p, CoverCircle{TI->split[sorted_idx[i]],
+                                             TI->GetCoverCircle().level - 1}));
+          assert(false);
+        }
+      }
       continue;
     }
     KNNCover<Leaf, Interior>(TI->tree_nodes[sorted_idx[i]], q, bq, logger);
