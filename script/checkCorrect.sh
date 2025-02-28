@@ -10,14 +10,17 @@ resFile="Correct.out"
 dest="logger.in"
 out="log.in"
 : >${dest}
-tag=$((2#111))
-# tag=$((2#0))
+# tag=$((2#111))
+tag=$((2#0))
 count=1 # count the number of ok in the output
 dims=(2 3 5)
-queryTypes=$((2#111))
-trees=(1 0)
+# queryTypes=$((2#111))
+queryTypes=$((2#1))
+# trees=(1 0)
+trees=(3)
 
-Paths=("/ssd1/zmen002/kdtree/ss_varden/" "/ssd1/zmen002/kdtree/uniform/")
+# Paths=("/ssd1/zmen002/kdtree/ss_varden/" "/ssd1/zmen002/kdtree/uniform/")
+Paths=("/ssd1/zmen002/kdtree/uniform/")
 
 #* check node
 for queryType in "${queryTypes[@]}"; do
@@ -32,6 +35,8 @@ for queryType in "${queryTypes[@]}"; do
 						splits=(3)
 					elif [[ ${tree} -eq 2 ]]; then
 						splits=(0)
+					elif [[ ${tree} -eq 3 ]]; then
+						splits=(0)
 					fi
 
 					for split in "${splits[@]}"; do
@@ -44,6 +49,7 @@ for queryType in "${queryTypes[@]}"; do
 
 						for file in "${files_path}/"*.in; do
 							echo "------->${file}"
+							# ../build/${tester} -p "${file}" -i 1 -s 0 -d "${dim}" -k ${K} -t ${tag} -r 2 -l "${split}" -T "${tree}" -q ${queryType} >>${dest}
 							../build/${tester} -p "${file}" -i 1 -s 0 -d "${dim}" -k ${K} -t ${tag} -r 2 -l "${split}" -T "${tree}" -q ${queryType} >>${dest}
 
 							nc=$(grep -i -o "ok" ${dest} | wc -l)

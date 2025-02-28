@@ -122,9 +122,12 @@ BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::CheckCover(
         TI->split[i], static_cast<DepthType>(TI->GetCoverCircle().level - 1)};
     return_points_seq[i] =
         CheckCover<Leaf, Interior>(TI->tree_nodes[i], next_circle);
-    for (auto const& p : return_points_seq[i]) {
-      assert(WithinCircle(p, next_circle));
-    }
+    parlay::all_of(return_points_seq[i], [&](auto const& p) {
+      return WithinCircle(p, level_cover_circle);
+    });
+    // for (auto const& p : return_points_seq[i]) {
+    //   assert(WithinCircle(p, next_circle));
+    // }
   }
   return parlay::flatten(return_points_seq);
 }

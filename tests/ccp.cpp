@@ -38,8 +38,8 @@ typedef CGAL::Fuzzy_sphere<TreeTraits> Fuzzy_circle;
 
 size_t maxReduceSize = 0;
 int const kCCPQueryNum = 10000;
-// size_t const kCCPBatchQuerySize = 1000000;
-size_t const kCCPBatchQuerySize = 110;
+size_t const kCCPBatchQuerySize = 1000000;
+// size_t const kCCPBatchQuerySize = 110;
 double const batchInsertCheckRatio = 0.1;
 double const kCCPBatchDiffTotalRatio = 1.0;
 double const kCCPBatchDiffOverlapRatio = 0.5;
@@ -253,7 +253,7 @@ int main(int argc, char* argv[]) {
       std::cout << name << "\n";
       [[maybe_unused]] auto [n, d] = read_points<Point>(input_file_path, wp, K);
       N = n;
-      wp = wp.subseq(0, kCCPBatchQuerySize);
+      // wp = wp.subseq(0, kCCPBatchQuerySize);
       assert(d == kDim);
     }
 

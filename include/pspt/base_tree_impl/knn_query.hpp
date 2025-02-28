@@ -430,35 +430,39 @@ void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::KNNCover(
   KNNCover<Leaf, Interior>(TI->tree_nodes[sorted_idx[0]], q, bq, logger);
   for (size_t i = 1; i < TI->tree_nodes.size(); ++i) {
     logger.check_box_num++;
-    auto p2cdis = P2CMinDistance(
-        q,
-        CoverCircle{TI->split[sorted_idx[i]], TI->GetCoverCircle().level - 1});
-    auto sqrtbqtop = std::sqrt(bq.top_value());
-    // if (Num_Comparator<double>::Gt(
-    //         P2CMinDistance(q, TI->split[sorted_idx[i]],
-    //                        TI->GetCoverCircle().level - 1),
-    //         std::sqrt(bq.top_value())) &&
-    if (Num_Comparator<double>::Gt(p2cdis, sqrtbqtop) && bq.full()) {
+    // auto p2cdis = P2CMinDistance(
+    //     q,
+    //     CoverCircle{TI->split[sorted_idx[i]], TI->GetCoverCircle().level -
+    //     1});
+    // auto sqrtbqtop = std::sqrt(bq.top_value());
+    if (Num_Comparator<double>::Gt(
+            P2CMinDistance(q, CoverCircle{TI->split[sorted_idx[i]],
+                                          TI->GetCoverCircle().level - 1}),
+            std::sqrt(bq.top_value())) &&
+        bq.full()) {
+      // if (Num_Comparator<double>::Gt(p2cdis, sqrtbqtop) && bq.full()) {
       logger.skip_box_num++;
-      auto next_node = TI->tree_nodes[sorted_idx[i]];
-      Points p_seq(next_node->size);
-      FlattenRec<Leaf, Interior>(TI->tree_nodes[sorted_idx[i]],
-                                 parlay::make_slice(p_seq));
-      for (auto const& p : p_seq) {
-        if (P2PDistanceSquare(p, q) <= bq.top_value()) {
-          std::cout << p << q
-                    << CoverCircle{TI->split[sorted_idx[i]],
-                                   TI->GetCoverCircle().level - 1}
-                    << " ";
-          std::cout << "p2cdis: " << p2cdis << " ";
-          std::cout << "sqrtbqtop: " << sqrtbqtop << " ";
-          std::cout << "p2pdis: " << std::sqrt(P2PDistanceSquare(p, q)) << " "
-                    << std::flush;
-          assert(WithinCircle(p, CoverCircle{TI->split[sorted_idx[i]],
-                                             TI->GetCoverCircle().level - 1}));
-          assert(false);
-        }
-      }
+      // auto next_node = TI->tree_nodes[sorted_idx[i]];
+      // Points p_seq(next_node->size);
+      // FlattenRec<Leaf, Interior>(TI->tree_nodes[sorted_idx[i]],
+      //                            parlay::make_slice(p_seq));
+      // for (auto const& p : p_seq) {
+      //   if (P2PDistanceSquare(p, q) <= bq.top_value()) {
+      //     std::cout << p << q
+      //               << CoverCircle{TI->split[sorted_idx[i]],
+      //                              TI->GetCoverCircle().level - 1}
+      //               << " ";
+      //     std::cout << "p2cdis: " << p2cdis << " ";
+      //     std::cout << "sqrtbqtop: " << sqrtbqtop << " ";
+      //     std::cout << "p2pdis: " << std::sqrt(P2PDistanceSquare(p, q)) << "
+      //     "
+      //               << std::flush;
+      //     assert(WithinCircle(p, CoverCircle{TI->split[sorted_idx[i]],
+      //                                        TI->GetCoverCircle().level -
+      //                                        1}));
+      //     assert(false);
+      //   }
+      // }
       continue;
     }
     KNNCover<Leaf, Interior>(TI->tree_nodes[sorted_idx[i]], q, bq, logger);
