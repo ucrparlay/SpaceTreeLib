@@ -7,6 +7,7 @@
 #include "pspt/dependence/splitter.h"
 #include "pspt/kd_tree.h"
 #include "test_framework.h"
+#include "pspt/p_tree_impl/cpamtree.hpp"
 
 template <class TreeDesc, typename Point>
 void TestSpacialTree([[maybe_unused]] int const& kDim,
