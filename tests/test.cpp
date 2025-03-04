@@ -137,6 +137,38 @@ void TestSpacialTree([[maybe_unused]] int const& kDim,
   return;
 }
 
+template <class TreeDesc, typename Point>
+void TestCPAMBB([[maybe_unused]] int const& kDim,
+                     parlay::sequence<Point> const& wp,
+                     [[maybe_unused]] parlay::sequence<Point> const& wi,
+                     [[maybe_unused]] size_t const& N,
+                     [[maybe_unused]] int const& K, int const& kRounds,
+                     [[maybe_unused]] string const& kInsertFile,
+                     [[maybe_unused]] int const& kTag,
+                     [[maybe_unused]] int const& kQueryType,
+                     [[maybe_unused]] int const kSummary) {
+
+    auto P = parlay::sequence<geobase::Point>::uninitialized(wp.size());
+    parlay::parallel_for(0, wp.size(), [&](int i){
+      P[i].x = wp[i].pnt[0];
+      P[i].y = wp[i].pnt[1];
+      P[i].id = i;
+    });
+    auto tree = CPAMTree::map_init(P, true);
+    cout << tree.size() << endl;
+
+    auto P_insert = P.substr(0, 1234);
+    parlay::parallel_for(0, P_insert.size(), [&](int i){
+      P_insert[i].id += P.size();
+    });
+    auto tree2 = CPAMTree::map_insert(P_insert, tree, true);
+    cout << tree2.size() << endl;
+  
+    auto P_delete = P_insert.substr(0, 234);
+    auto tree3 = CPAMTree::map_delete(P_delete, tree2, true);
+    cout << tree3.size() << endl;
+}
+
 int main(int argc, char* argv[]) {
   commandLine P(argc, argv,
                 "[-k {1,...,100}] [-d {2,3,5,7,9,10}] [-n <node num>] [-t "
@@ -155,6 +187,8 @@ int main(int argc, char* argv[]) {
   int tree_type = P.getOptionIntValue("-T", 0);
   int split_type = P.getOptionIntValue("-l", 0);
 
+
+  
   auto run = [&]<typename TreeWrapper>() {
     using Point = typename TreeWrapper::Point;
     using Points = parlay::sequence<Point>;
@@ -186,8 +220,10 @@ int main(int argc, char* argv[]) {
       assert(d == kDim);
     }
 
-    TestSpacialTree<TreeWrapper, Point>(
-        kDim, wp, wi, N, K, rounds, insert_file_path, tag, query_type, summary);
+    TestCPAMBB<TreeWrapper, Point>(kDim, wp, wi, N, K, rounds, insert_file_path, tag, query_type, summary);
+
+    // TestSpacialTree<TreeWrapper, Point>(
+    //     kDim, wp, wi, N, K, rounds, insert_file_path, tag, query_type, summary);
   };
 
   Wrapper::Apply(tree_type, dims, split_type, run);

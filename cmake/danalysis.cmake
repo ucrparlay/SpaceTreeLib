@@ -7,8 +7,8 @@
 # -------------------------------------------------------------------
 
 # User options to enable static analysis tools
-option(PSPT_ENABLE_CPPCHECK     "Enable cppcheck static analysis"      ON)
-option(PSPT_ENABLE_CLANG_TIDY   "Enable clang-tidy static analysis"    ON)
+option(PSPT_ENABLE_CPPCHECK     "Enable cppcheck static analysis"      OFF)
+option(PSPT_ENABLE_CLANG_TIDY   "Enable clang-tidy static analysis"    OFF)
 option(PSPT_ENABLE_IWYU         "Enable include-what-you-use analysis" OFF)
 
 function(CONFIGURE_DANALYSIS)

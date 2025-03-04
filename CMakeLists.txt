@@ -13,13 +13,14 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON) # works
 # add_compile_options(-Wall -Wextra -Wshadow -Wconversion -Wunused -Wsign-conversion -Wfloat-equal -Wpedantic -Wuninitialized -Wformat -Wformat-security -Wmissing-braces -Wparentheses -Wsequence-point -Wswitch -Wswitch-enum -Wstrict-aliasing -Wdeprecated-declarations -Wreturn-type -Wunused-result)
 # add_compile_options(-Wall -Wextra -Werror)
+# set(CMAKE_C_COMPILER "usr/bin/gcc")
 
 option(DEBUG "" OFF)
 option(CILKPLUS "" OFF)
 option(OPENCILK "" OFF)
 option(SERIAL "" OFF)
 option(STDALLOC "" OFF)
-option(CGAL "" ON)
+option(CGAL "" OFF)
 option(MEMCHECK "" OFF)
 option(JEMA "" ON)
 option(CCP "" OFF)
@@ -78,8 +79,11 @@ install(TARGETS PSPT
 	LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
 	PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
-add_executable(test ${PROJECT_SOURCE_DIR}/tests/test.cpp)
-target_link_libraries(test PUBLIC PSPT)
+# add_library(hilbert_lib STATIC ${PROJECT_SOURCE_DIR}/include/pspt/p_tree_impl/hilbert.c)
+# set_target_properties(hilbert_lib PROPERTIES LINKER_LANGUAGE C)
+
+add_executable(test ${PROJECT_SOURCE_DIR}/tests/test.cpp ${PROJECT_SOURCE_DIR}/include/pspt/p_tree_impl/hilbert.c)
+# target_link_libraries(test PUBLIC PSPT hilbert_lib)
 target_include_directories(test PUBLIC ${PROJECT_SOURCE_DIR}/include)
 
 if(JEMA)
