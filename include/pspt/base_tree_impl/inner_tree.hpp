@@ -4,7 +4,7 @@
 #include <utility>
 
 #include "../base_tree.h"
-#include "dependence/concepts.h"
+#include "../dependence/concepts.h"
 
 namespace pspt {
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,

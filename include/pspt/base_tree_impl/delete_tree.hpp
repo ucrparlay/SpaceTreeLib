@@ -2,7 +2,7 @@
 #define PSPT_BASE_TREE_IMPL_DELETE_TREE_HPP_
 
 #include "../base_tree.h"
-#include "dependence/concepts.h"
+#include "../dependence/concepts.h"
 
 namespace pspt {
 

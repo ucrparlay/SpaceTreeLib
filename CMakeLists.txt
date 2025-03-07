@@ -5,7 +5,7 @@ project(
 	VERSION 0.1
 	DESCRIPTION "spatial partition tree"
 	HOMEPAGE_URL ""
-	LANGUAGES CXX
+	LANGUAGES C CXX
 )
 
 set(CMAKE_CXX_STANDARD 20)
@@ -34,6 +34,7 @@ elseif(SERIAL)
 	add_compile_options(-DPARLAY_SEQUENTIAL)
 else()
 	add_compile_options(-pthread)
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
 endif()
 
 if(DEBUG)
@@ -78,9 +79,13 @@ install(TARGETS PSPT
 
 # add_library(hilbert_lib STATIC ${PROJECT_SOURCE_DIR}/include/pspt/p_tree_impl/hilbert.c)
 # set_target_properties(hilbert_lib PROPERTIES LINKER_LANGUAGE C)
+add_library(hilbert STATIC ${PROJECT_SOURCE_DIR}/include/pspt/p_tree_impl/hilbert.c)
+set_target_properties(hilbert PROPERTIES LINKER_LANGUAGE C)
+add_executable(test ${PROJECT_SOURCE_DIR}/tests/test.cpp)
+target_link_libraries(test PUBLIC PSPT hilbert)
 
-add_executable(test ${PROJECT_SOURCE_DIR}/tests/test.cpp ${PROJECT_SOURCE_DIR}/include/pspt/p_tree_impl/hilbert.c)
-# target_link_libraries(test PUBLIC PSPT hilbert_lib)
+# add_executable(test ${PROJECT_SOURCE_DIR}/tests/test.cpp ${PROJECT_SOURCE_DIR}/include/pspt/p_tree_impl/hilbert.c)
+# target_include_directories(test PRIVATE ${CMAKE_SOURCE_DIR}/include/pspt/p_tree_impl)
 target_include_directories(test PUBLIC ${PROJECT_SOURCE_DIR}/include)
 
 if(JEMA)

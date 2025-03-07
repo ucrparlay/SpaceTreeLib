@@ -6,7 +6,7 @@
 #include <utility>
 
 #include "../cover_tree.h"
-#include "dependence/tree_node.h"
+#include "../dependence/tree_node.h"
 #include "parlay/slice.h"
 
 namespace pspt {

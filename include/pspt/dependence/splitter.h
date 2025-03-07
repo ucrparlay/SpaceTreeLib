@@ -2,8 +2,8 @@
 #define PSPT_DEPENDENCE_SPLITTER_H
 
 #include "../base_tree.h"
-#include "dependence/concepts.h"
-#include "dependence/tree_node.h"
+#include "concepts.h"
+#include "tree_node.h"
 
 namespace pspt {
 template <typename Point>
