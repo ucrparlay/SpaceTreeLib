@@ -59,9 +59,6 @@ message(STATUS "\n\n---------------------------- PARLAY ------------------------
 add_subdirectory(include/parlaylib)
 message(STATUS "---------------------------- END PARLAY -----------------------------\n\n")
 
-message(STATUS "\n\n---------------------------- CPAM -----------------------------")
-message(STATUS "---------------------------- END CPAM -----------------------------\n\n")
-
 # NOTE: clear CMAKE_MODULE_PATH to avoid finding parlay's cmake files
 list(REMOVE_ITEM CMAKE_MODULE_PATH "${PARLAY_SOURCE_DIR}/cmake")
 list(APPEND CMAKE_MODULE_PATH "${PSPT_SOURCE_DIR}/cmake")
