@@ -56,7 +56,10 @@ namespace CPAMTree{
 			// entries[i] = {P[i]->id, P[i]};
 		});
 		zmap m1(entries);
-		auto vals = zmap::values(m1);
+		// auto vals = zmap::values(m1);
+		// for (auto i = 0; i < 10; i++){
+		// 	cout << vals[i].x << " " << vals[i].y << endl;
+		// }
 		return m1;
 	}	
 
@@ -72,7 +75,7 @@ namespace CPAMTree{
 			insert_pts[i] = {{P[i].morton_id, P[i].id}, P[i]};
 			// insert_pts[i] = {P[i]->id, P[i]};
 		});
-		auto m2 = zmap::multi_insert(mmp, insert_pts);
+		auto m2 = zmap::multi_insert(move(mmp), insert_pts);
 
 		return m2;
 	}
@@ -91,7 +94,7 @@ namespace CPAMTree{
 			// delete_pts[i] = {P[i]->morton_id, P[i]->id};
 			// insert_pts[i] = {P[i]->id, P[i]};
 		});
-		auto m2 = zmap::multi_delete(mmp, delete_pts);
+		auto m2 = zmap::multi_delete(move(mmp), delete_pts);
 
 		return m2;
 	}

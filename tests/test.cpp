@@ -148,25 +148,75 @@ void TestCPAMBB([[maybe_unused]] int const& kDim,
                      [[maybe_unused]] int const& kQueryType,
                      [[maybe_unused]] int const kSummary) {
 
-    auto P = parlay::sequence<geobase::Point>::uninitialized(wp.size());
-    parlay::parallel_for(0, wp.size(), [&](int i){
-      P[i].x = wp[i].pnt[0];
-      P[i].y = wp[i].pnt[1];
-      P[i].id = i;
-    });
-    auto tree = CPAMTree::map_init(P, true);
-    cout << tree.size() << endl;
+  // auto P = parlay::sequence<geobase::Point>::uninitialized(wp.size());
+  // parlay::parallel_for(0, wp.size(), [&](int i){
+  //   P[i].x = wp[i].pnt[0];
+  //   P[i].y = wp[i].pnt[1];
+  //   P[i].id = i;
+  // });
+  // auto tree = CPAMTree::map_init(P, true);
+  // cout << tree.size() << endl;
+  auto ptree = BuildPTree(wp, kRounds);
 
-    auto P_insert = P.substr(0, 1234);
-    parlay::parallel_for(0, P_insert.size(), [&](int i){
-      P_insert[i].id += P.size();
-    });
-    auto tree2 = CPAMTree::map_insert(P_insert, tree, true);
-    cout << tree2.size() << endl;
+  // NOTE: batch insert
+  if (kTag & (1 << 0)) {
+    if (kSummary) {
+      parlay::sequence<double> const ratios = {0.0001, 0.001, 0.01, 0.1};
+      for (size_t i = 0; i < ratios.size(); i++) {
+        BatchInsertPTree(ptree, wp, wi, kRounds, ratios[i]);
+      }
+    } else {
+      BatchInsertPTree(ptree, wp, wi, kRounds, 0.1);
+    }
+  } 
+
+    // NOTE: batch delete
+  if (kTag & (1 << 1)) {
+    if (kSummary) {
+      parlay::sequence<double> const ratios = {0.0001, 0.001, 0.01, 0.1};
+      for (size_t i = 0; i < ratios.size(); i++) {
+        BatchDeletePTree(ptree, wp, wi, kRounds, ratios[i]);
+      }
+    } else {
+        BatchDeletePTree(ptree, wp, wi, kRounds, 1.0);
+    }
+  }
+
+  using Tree = TreeDesc::TreeType;
+  using Points = typename Tree::Points;
+  Typename* kdknn = nullptr;
+
+  // Tree kdtree;
+  // constexpr bool kTestTime = true;
+
+  // BuildTree<Point, Tree, kTestTime, 2>(wp, kRounds, kdtree);
+
+  cout << ptree.size() << endl;
   
-    auto P_delete = P_insert.substr(0, 234);
-    auto tree3 = CPAMTree::map_delete(P_delete, tree2, true);
-    cout << tree3.size() << endl;
+  if (kQueryType & (1 << 1)) {  // NOTE: range count
+    if (!kSummary) {
+      int recNum = kRangeQueryNum;
+      kdknn = new Typename[recNum];
+
+      // std::cout << std::endl;
+      for (int i = 0; i < 3; i++) {
+        rangeCountPtree<Point, Tree>(wp, ptree, kdknn, kRounds, i, recNum, kDim);
+      }
+
+      delete[] kdknn;
+    }
+  }
+
+    // auto P_insert = P.substr(0, 1234);
+    // parlay::parallel_for(0, P_insert.size(), [&](int i){
+    //   P_insert[i].id += P.size();
+    // });
+    // auto tree2 = CPAMTree::map_insert(P_insert, tree, true);
+    // cout << tree2.size() << endl;
+  
+    // auto P_delete = P_insert.substr(0, 234);
+    // auto tree3 = CPAMTree::map_delete(P_delete, tree2, true);
+    // cout << tree3.size() << endl;
 }
 
 int main(int argc, char* argv[]) {
