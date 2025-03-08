@@ -48,6 +48,9 @@ class BaseTree {
   using NodeTag = std::pair<Node*, uint_fast8_t>;
   using NodeTagSeq = parlay::sequence<NodeTag>;
 
+  using EncodedType = uint_fast64_t;
+  using IDType = uint_fast32_t;
+
   // NOTE: Const variables
   // NOTE: uint32t handle up to 4e9 at least
   // WARN: bucket num should smaller than 1<<8 to handle type overflow

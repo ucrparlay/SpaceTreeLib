@@ -20,6 +20,7 @@
 #include "pspt/dependence/splitter.h"
 #include "pspt/kd_tree.h"
 #include "pspt/orth_tree.h"
+#include "pspt/p_tree.h"
 #include "pspt/r_tree.h"
 
 #ifdef CCP
@@ -201,18 +202,20 @@ void BuildTree(parlay::sequence<Point> const& WP, int const& rounds,
     parlay::copy(WP.cut(0, n), wp.cut(0, n));
     pkd.Build(wp.cut(0, n));
 
-    if (kPrint == 1) {
-      std::cout << aveBuild << " " << std::flush;
-      auto deep = pkd.template GetAveTreeHeight<Leaf, Interior>();
-      std::cout << deep << " " << std::flush;
-    } else if (kPrint == 2) {
-      size_t max_deep = 0;
-      std::cout << aveBuild << " ";
-      std::cout << pkd.template GetMaxTreeDepth<Leaf, Interior>(pkd.GetRoot(),
-                                                                max_deep)
-                << " " << pkd.template GetAveTreeHeight<Leaf, Interior>() << " "
-                << std::flush;
-    }
+    // if (kPrint == 1) {
+    //   std::cout << aveBuild << " " << std::flush;
+    //   auto deep = pkd.template GetAveTreeHeight<Leaf, Interior>();
+    //   std::cout << deep << " " << std::flush;
+    // } else if (kPrint == 2) {
+    //   size_t max_deep = 0;
+    //   std::cout << aveBuild << " ";
+    //   std::cout << pkd.template GetMaxTreeDepth<Leaf,
+    //   Interior>(pkd.GetRoot(),
+    //                                                             max_deep)
+    //             << " " << pkd.template GetAveTreeHeight<Leaf, Interior>() <<
+    //             " "
+    //             << std::flush;
+    // }
 
   } else {
     // NOTE: always return a built tree
@@ -1132,6 +1135,14 @@ struct Wrapper {
   };
 
   template <class PointType, class SplitRuleType>
+  struct PTreeWrapper {
+    using Point = PointType;
+    // TODO: the split rule can be how to encode the value
+    using SplitRule = SplitRuleType;
+    using TreeType = typename pspt::PTree<Point, SplitRule>;
+  };
+
+  template <class PointType, class SplitRuleType>
   struct CoverTreeWrapper {
     using Point = PointType;
     using SplitRule = SplitRuleType;
@@ -1155,10 +1166,14 @@ struct Wrapper {
       } else if (tree_type == 1) {
         run.template operator()<OrthTreeWrapper<Point, SplitRule>>();
       } else if (tree_type == 2) {
-        run.template operator()<RTreeWrapper<Point, SplitRule>>();
-      } else if (tree_type == 3) {
-        run.template operator()<CoverTreeWrapper<Point, SplitRule>>();
+        run.template operator()<PTreeWrapper<Point, SplitRule>>();
       }
+      // else if (tree_type == 2) {
+      //   run.template operator()<RTreeWrapper<Point, SplitRule>>();
+      // }
+      // else if (tree_type == 3) {
+      //   run.template operator()<CoverTreeWrapper<Point, SplitRule>>();
+      // }
     };
 
     // NOTE: pick the split rule

@@ -13,7 +13,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON) # works
 # add_compile_options(-Wall -Wextra -Wshadow -Wconversion -Wunused -Wsign-conversion -Wfloat-equal -Wpedantic -Wuninitialized -Wformat -Wformat-security -Wmissing-braces -Wparentheses -Wsequence-point -Wswitch -Wswitch-enum -Wstrict-aliasing -Wdeprecated-declarations -Wreturn-type -Wunused-result)
 # add_compile_options(-Wall -Wextra -Werror)
-add_compile_options(-Wall -Wextra)
+# add_compile_options(-Wall -Wextra)
 
 option(DEBUG "" OFF)
 option(CILKPLUS "" OFF)

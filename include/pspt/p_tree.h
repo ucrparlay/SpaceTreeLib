@@ -45,40 +45,47 @@ class PTree
   using AugType = std::optional<bool>;
   using SplitRuleType = SplitRule;
 
-  static constexpr DimsType const kMD = 2;
-  using CompressNodeSplitter = std::array<HyperPlane, 1 << kMD>;
+  // NOTE: for the CPAM
+  using EncodedType = typename BT::EncodedType;
+  using IDType = typename BT::IDType;
+  using CpamKey = pair<EncodedType, IDType>;  // morton_id, id
+  using CpamVal = Point;
+  using CpamAug = pair<Box, size_t>;
 
-  template <uint_fast8_t kMD>
-  struct KdCompressionNode;
+  struct CpamEntry {
+    using key_t = CpamKey;
+    using val_t = CpamVal;
+    using aug_t = CpamAug;
 
-  using Leaf = LeafNode<Point, Slice, BT::kLeaveWrap, std::monostate,
-                        parlay::move_assign_tag>;
-  struct KdInteriorNode;
-  using Interior = KdInteriorNode;
-  using CompressInterior = KdCompressionNode<kMD>;
-  using InnerTree = typename BT::template InnerTree<Leaf, Interior>;
-  using BoxCut = typename BT::BoxCut;
+    static inline bool comp(key_t a, key_t b) { return a < b; }
+    static aug_t get_empty() { return make_pair(BT::GetEmptyBox(), 0); }
+    static aug_t from_entry([[maybe_unused]] key_t k, val_t v) {
+      return make_pair(Box(v, v), 1);
+    }
+    static aug_t combine(aug_t a, aug_t b) {
+      return make_pair(BT::GetBox(a.first, b.first), a.second + b.second);
+    }
+  };
 
-  template <typename Leaf, typename Interior, bool granularity,
-            typename... Args>
-  friend Node* BT::RebuildSingleTree(Node* T, Args&&... args);
+  using CpamAugMap = cpam::aug_map<CpamEntry, 32>;
+  using par = std::tuple<typename CpamEntry::key_t, typename CpamEntry::val_t>;
 
-  template <typename Leaf, typename Interior, typename... Args>
-  friend Node* BT::RebuildWithInsert(Node* T, Slice In, Args&&... args);
+  using Leaf = CpamAugMap::Tree::node;
+  using Interior = CpamAugMap::Tree::node;
 
+  // NOTE: general tree structure
   void PTreeTag();
-
-  // NOTE: functions
-  void Compress2Multi();
 
   template <typename Range>
   void Build(Range&& In);
+
+  void Build_(Slice In);
 
   constexpr void DeleteTree() override;
 
   void BatchInsert(Slice In);
 
-  Node* BatchInsertRecursive(Node* T, Slice In, Slice Out, DimsType d);
+  void BatchInsert_(Slice In);
 
   // NOTE: batch delete
   // NOTE: in default, all Points to be deleted are assumed in the tree, if that
@@ -88,20 +95,12 @@ class PTree
 
   void BatchDelete_(Slice In);
 
-  NodeBox BatchDeleteRecursive(Node* T, Box const& bx, Slice In, Slice Out,
-                               DimsType d, bool has_tomb);
-
   // NOTE: batch diff
   // NOTE: for the case that some Points to be deleted are not in the tree
   template <typename Range>
   void BatchDiff(Range&& In);
 
   void BatchDiff_(Slice In);
-
-  // TODO: add bounding Box for batch delete recursive as well
-  // WARN: fix the possible in partial deletion as well
-  NodeBox BatchDiffRecursive(Node* T, Box const& bx, Slice In, Slice Out,
-                             DimsType d);
 
   template <typename Range>
   void Flatten(Range&& Out);
@@ -111,26 +110,14 @@ class PTree
 
   auto RangeCount(Box const& query_box);
 
-  auto RangeCount(Circle const& cl);
-
   template <typename Range>
   auto RangeQuery(Box const& query_box, Range&& Out);
-
-  void DivideRotate(Slice In, SplitterSeq& pivots, DimsType dim, BucketType idx,
-                    BoxSeq& box_seq, Box const& bx);
-
-  void PickPivots(Slice In, size_t const& n, SplitterSeq& pivots,
-                  DimsType const dim, BoxSeq& box_seq, Box const& bx);
-
-  Node* BuildRecursive(Slice In, Slice Out, DimsType dim, Box const& bx);
-
-  Node* SerialBuildRecursive(Slice In, Slice Out, DimsType dim, Box const& bx);
-
-  void Build_(Slice In);
 
   constexpr static char const* GetTreeName() { return "PTree"; }
 
   SplitRule split_rule_;
+
+  CpamAugMap cpam_aug_map_;
 };
 
 }  // namespace pspt

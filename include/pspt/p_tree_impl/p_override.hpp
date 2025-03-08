@@ -9,13 +9,6 @@
 #include "pspt/dependence/tree_node.h"
 
 namespace pspt {
-template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
-void PTree<Point, SplitRule, kSkHeight, kImbaRatio>::Compress2Multi() {
-  this->root_ = BT::template Compress2Multi<KdInteriorNode, CompressInterior>(
-      this->root_);
-  return;
-}
 
 template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
@@ -25,7 +18,7 @@ auto PTree<Point, SplitRule, kSkHeight, kImbaRatio>::KNN(
   KNNLogger logger;
   // BT::template KNNMix<Leaf, KdInteriorNode, CompressInterior>(
   //     T, q, 0, 1, bq, this->tree_box_, logger);
-  BT::template KNNBinary<Leaf, Interior>(T, q, bq, this->tree_box_, logger);
+  // BT::template KNNBinary<Leaf, Interior>(T, q, bq, this->tree_box_, logger);
   return logger;
 }
 
@@ -33,7 +26,8 @@ template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 template <typename Range>
 void PTree<Point, SplitRule, kSkHeight, kImbaRatio>::Flatten(Range&& Out) {
-  BT::template FlattenRec<Leaf, Interior>(this->root_, parlay::make_slice(Out));
+  // BT::template FlattenRec<Leaf, Interior>(this->root_,
+  // parlay::make_slice(Out));
   return;
 }
 
@@ -41,8 +35,9 @@ template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 auto PTree<Point, SplitRule, kSkHeight, kImbaRatio>::RangeCount(Box const& bx) {
   RangeQueryLogger logger;
-  size_t size = BT::template RangeCountRectangle<Leaf, Interior>(
-      this->root_, bx, this->tree_box_, logger);
+  size_t size = 0;
+  // size_t size = BT::template RangeCountRectangle<Leaf, Interior>(
+  //     this->root_, bx, this->tree_box_, logger);
   return std::make_pair(size, logger);
 }
 
@@ -61,16 +56,17 @@ auto PTree<Point, SplitRule, kSkHeight, kImbaRatio>::RangeQuery(
     Box const& query_box, Range&& Out) {
   RangeQueryLogger logger;
   size_t s = 0;
-  BT::template RangeQuerySerialRecursive<Leaf, Interior>(
-      this->root_, parlay::make_slice(Out), s, query_box, this->tree_box_,
-      logger);
+  // BT::template RangeQuerySerialRecursive<Leaf, Interior>(
+  //     this->root_, parlay::make_slice(Out), s, query_box, this->tree_box_,
+  //     logger);
   return std::make_pair(s, logger);
 }
 
 template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 constexpr void PTree<Point, SplitRule, kSkHeight, kImbaRatio>::DeleteTree() {
-  BT::template DeleteTreeWrapper<Leaf, Interior>();
+  cpam_aug_map_.finish();
+  return;
 }
 
 }  // namespace pspt

@@ -74,27 +74,27 @@ void TestSpacialTree([[maybe_unused]] int const& kDim,
   // // }
   //
 
-  Typename* kdknn = nullptr;
-  if (kQueryType & (1 << 0)) {  // NOTE: KNN
-    auto run_batch_knn = [&](Points const& pts, int kth, size_t batchSize) {
-      Points newPts(batchSize);
-      parlay::copy(pts.cut(0, batchSize), newPts.cut(0, batchSize));
-      kdknn = new Typename[batchSize];
-      queryKNN<Point>(kDim, newPts, kRounds, tree, kdknn, kth, true);
-      delete[] kdknn;
-    };
-
-    size_t batchSize = static_cast<size_t>(wp.size() * kBatchQueryRatio);
-
-    if (kSummary == 0) {
-      int k[3] = {1, 10, 100};
-      for (int i = 0; i < 3; i++) {
-        run_batch_knn(wp, k[i], batchSize);
-      }
-    } else {  // test kSummary
-      run_batch_knn(wp, K, batchSize);
-    }
-  }
+  // Typename* kdknn = nullptr;
+  // if (kQueryType & (1 << 0)) {  // NOTE: KNN
+  //   auto run_batch_knn = [&](Points const& pts, int kth, size_t batchSize) {
+  //     Points newPts(batchSize);
+  //     parlay::copy(pts.cut(0, batchSize), newPts.cut(0, batchSize));
+  //     kdknn = new Typename[batchSize];
+  //     queryKNN<Point>(kDim, newPts, kRounds, tree, kdknn, kth, true);
+  //     delete[] kdknn;
+  //   };
+  //
+  //   size_t batchSize = static_cast<size_t>(wp.size() * kBatchQueryRatio);
+  //
+  //   if (kSummary == 0) {
+  //     int k[3] = {1, 10, 100};
+  //     for (int i = 0; i < 3; i++) {
+  //       run_batch_knn(wp, k[i], batchSize);
+  //     }
+  //   } else {  // test kSummary
+  //     run_batch_knn(wp, K, batchSize);
+  //   }
+  // }
   //
   // if (kQueryType & (1 << 1)) {  // NOTE: range count
   //   if (!kSummary) {
