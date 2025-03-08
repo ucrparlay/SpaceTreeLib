@@ -1,18 +1,18 @@
-#ifndef PSPT_KD_TREE_IMPL_KD_BUILD_TREE_HPP_
-#define PSPT_KD_TREE_IMPL_KD_BUILD_TREE_HPP_
+#ifndef PSPT_P_TREE_IMPL_P_BUILD_TREE_HPP_
+#define PSPT_P_TREE_IMPL_P_BUILD_TREE_HPP_
 
 #include <parlay/range.h>
 #include <parlay/slice.h>
 #include <parlay/type_traits.h>
 
-#include "../kd_tree.h"
+#include "../p_tree.h"
 #include "pspt/dependence/tree_node.h"
 
 namespace pspt {
 template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 template <typename Range>
-void KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::Build(Range&& In) {
+void PTree<Point, SplitRule, kSkHeight, kImbaRatio>::Build(Range&& In) {
   static_assert(parlay::is_random_access_range_v<Range>);
   static_assert(
       parlay::is_less_than_comparable_v<parlay::range_reference_type_t<Range>>);
@@ -25,7 +25,7 @@ void KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::Build(Range&& In) {
 
 template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
-void KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::DivideRotate(
+void PTree<Point, SplitRule, kSkHeight, kImbaRatio>::DivideRotate(
     Slice In, SplitterSeq& pivots, DimsType dim, BucketType idx,
     BoxSeq& box_seq, Box const& box) {
   if (idx > BT::kPivotNum) {
@@ -55,7 +55,7 @@ void KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::DivideRotate(
 // NOTE: starting at dimesion dim and pick pivots in a rotation manner
 template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
-void KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::PickPivots(
+void PTree<Point, SplitRule, kSkHeight, kImbaRatio>::PickPivots(
     Slice In, size_t const& n, SplitterSeq& pivots, DimsType const dim,
     BoxSeq& box_seq, Box const& bx) {
   size_t size = std::min(n, static_cast<size_t>(32 * BT::kBucketNum));
@@ -71,7 +71,7 @@ void KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::PickPivots(
 
 template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
-Node* KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::SerialBuildRecursive(
+Node* PTree<Point, SplitRule, kSkHeight, kImbaRatio>::SerialBuildRecursive(
     Slice In, Slice Out, DimsType dim, Box const& box) {
   size_t n = In.size();
 
@@ -115,7 +115,7 @@ Node* KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::SerialBuildRecursive(
 
 template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
-Node* KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BuildRecursive(
+Node* PTree<Point, SplitRule, kSkHeight, kImbaRatio>::BuildRecursive(
     Slice In, Slice Out, DimsType dim, Box const& bx) {
   assert(In.size() == 0 || BT::WithinBox(BT::GetBox(In), bx));
 
@@ -176,7 +176,7 @@ Node* KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BuildRecursive(
 
 template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
-void KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::Build_(Slice A) {
+void PTree<Point, SplitRule, kSkHeight, kImbaRatio>::Build_(Slice A) {
   Points B = Points::uninitialized(A.size());
   this->tree_box_ = BT::GetBox(A);
   this->root_ = BuildRecursive(A, B.cut(0, A.size()), 0, this->tree_box_);
@@ -186,4 +186,4 @@ void KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::Build_(Slice A) {
 
 }  // namespace pspt
 
-#endif  // PSPT_KD_TREE_IMPL_KD_BUILD_TREE_HPP_
+#endif  // PSPT_P_TREE_IMPL_P_BUILD_TREE_HPP_

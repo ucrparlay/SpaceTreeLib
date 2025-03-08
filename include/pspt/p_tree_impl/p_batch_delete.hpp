@@ -1,7 +1,7 @@
-#ifndef PSPT_KD_TREE_IMPL_KD_BATCH_DELETE_HPP
-#define PSPT_KD_TREE_IMPL_KD_BATCH_DELETE_HPP
+#ifndef PSPT_P_TREE_IMPL_P_BATCH_DELETE_HPP
+#define PSPT_P_TREE_IMPL_P_BATCH_DELETE_HPP
 
-#include "../kd_tree.h"
+#include "../p_tree.h"
 
 namespace pspt {
 
@@ -9,7 +9,7 @@ namespace pspt {
 template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 template <typename Range>
-void KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDelete(Range&& In) {
+void PTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDelete(Range&& In) {
   static_assert(parlay::is_random_access_range_v<Range>);
   static_assert(
       parlay::is_less_than_comparable_v<parlay::range_reference_type_t<Range>>);
@@ -24,7 +24,7 @@ void KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDelete(Range&& In) {
 // NOTE: assume all Points are fully covered in the tree
 template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
-void KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDelete_(Slice A) {
+void PTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDelete_(Slice A) {
   Points B = Points::uninitialized(A.size());
   Node* T = this->root_;
   Box bx = this->tree_box_;
@@ -39,10 +39,10 @@ void KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDelete_(Slice A) {
 // WARN: the param d can be only used when rotate cutting is applied
 template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
-typename KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::NodeBox
-KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDeleteRecursive(
+typename PTree<Point, SplitRule, kSkHeight, kImbaRatio>::NodeBox
+PTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDeleteRecursive(
     Node* T,
-    typename KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::Box const& bx,
+    typename PTree<Point, SplitRule, kSkHeight, kImbaRatio>::Box const& bx,
     Slice In, Slice Out, DimsType d, bool has_tomb) {
   size_t n = In.size();
 
@@ -214,4 +214,4 @@ KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDeleteRecursive(
 
 }  // namespace pspt
 
-#endif  // PSPT_KD_TREE_IMPL_KD_BATCH_DELETE_HPP
+#endif  // PSPT_P_TREE_IMPL_P_BATCH_DELETE_HPP

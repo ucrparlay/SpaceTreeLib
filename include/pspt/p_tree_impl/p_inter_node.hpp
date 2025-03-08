@@ -1,13 +1,13 @@
-#ifndef PSPT_KD_TREE_IMPL_KD_INTER_NODE_HPP_
-#define PSPT_KD_TREE_IMPL_KD_INTER_NODE_HPP_
+#ifndef PSPT_P_TREE_IMPL_P_INTER_NODE_HPP_
+#define PSPT_P_TREE_IMPL_P_INTER_NODE_HPP_
 
-#include "../kd_tree.h"
+#include "../p_tree.h"
 #include "pspt/dependence/tree_node.h"
 
 namespace pspt {
 template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
-struct KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::KdInteriorNode
+struct PTree<Point, SplitRule, kSkHeight, kImbaRatio>::KdInteriorNode
     : BinaryNode<Point, Splitter, AugType> {
   using PT = Point;
   using ST = Splitter;
@@ -38,7 +38,7 @@ struct KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::KdInteriorNode
 template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 template <uint_fast8_t kMD>
-struct KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::KdCompressionNode
+struct PTree<Point, SplitRule, kSkHeight, kImbaRatio>::KdCompressionNode
     : MultiNode<Point, kMD, CompressNodeSplitter, AugType> {
   using BaseNode = MultiNode<Point, kMD, CompressNodeSplitter, AugType>;
   using KdNodeArr = typename BaseNode::NodeArr;
@@ -71,4 +71,4 @@ struct KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::KdCompressionNode
 
 }  // namespace pspt
 
-#endif  // PSPT_KD_TREE_IMPL_KD_INTER_NODE_HPP_
+#endif  // PSPT_P_TREE_IMPL_P_INTER_NODE_HPP_

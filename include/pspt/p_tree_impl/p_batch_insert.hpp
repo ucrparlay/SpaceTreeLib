@@ -1,13 +1,13 @@
-#ifndef PSPT_KD_TREE_IMPL_KD_BATCH_INSERT_HPP_
-#define PSPT_KD_TREE_IMPL_KD_BATCH_INSERT_HPP_
+#ifndef PSPT_P_TREE_IMPL_P_BATCH_INSERT_HPP_
+#define PSPT_P_TREE_IMPL_P_BATCH_INSERT_HPP_
 
-#include "../kd_tree.h"
+#include "../p_tree.h"
 #include "parlay/slice.h"
 
 namespace pspt {
 template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
-void KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchInsert(Slice A) {
+void PTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchInsert(Slice A) {
   if (this->root_ == nullptr) {  // TODO: may check using explicity tag
     return Build_(A);
   }
@@ -24,7 +24,7 @@ void KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchInsert(Slice A) {
 // NOTE: return the updated Node
 template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
-Node* KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchInsertRecursive(
+Node* PTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchInsertRecursive(
     Node* T, Slice In, Slice Out, DimsType d) {
   size_t n = In.size();
 
@@ -125,4 +125,4 @@ Node* KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchInsertRecursive(
 
 }  // namespace pspt
 
-#endif  // PSPT_KD_TREE_IMPL_KD_BATCH_INSERT_HPP_
+#endif  // PSPT_P_TREE_IMPL_P_BATCH_INSERT_HPP_

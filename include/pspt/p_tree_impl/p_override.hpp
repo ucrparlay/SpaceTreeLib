@@ -1,17 +1,17 @@
-#ifndef PSPT_KD_TREE_IMPL_KD_OVERRIDE_HPP_
-#define PSPT_KD_TREE_IMPL_KD_OVERRIDE_HPP_
+#ifndef PSPT_P_TREE_IMPL_P_OVERRIDE_HPP_
+#define PSPT_P_TREE_IMPL_P_OVERRIDE_HPP_
 
 #include <type_traits>
 #include <utility>
 
-#include "../kd_tree.h"
+#include "../p_tree.h"
 #include "pspt/dependence/loggers.h"
 #include "pspt/dependence/tree_node.h"
 
 namespace pspt {
 template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
-void KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::Compress2Multi() {
+void PTree<Point, SplitRule, kSkHeight, kImbaRatio>::Compress2Multi() {
   this->root_ = BT::template Compress2Multi<KdInteriorNode, CompressInterior>(
       this->root_);
   return;
@@ -20,7 +20,7 @@ void KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::Compress2Multi() {
 template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 template <typename Range>
-auto KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::KNN(
+auto PTree<Point, SplitRule, kSkHeight, kImbaRatio>::KNN(
     Node* T, Point const& q, kBoundedQueue<Point, Range>& bq) {
   KNNLogger logger;
   // BT::template KNNMix<Leaf, KdInteriorNode, CompressInterior>(
@@ -32,15 +32,14 @@ auto KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::KNN(
 template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 template <typename Range>
-void KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::Flatten(Range&& Out) {
+void PTree<Point, SplitRule, kSkHeight, kImbaRatio>::Flatten(Range&& Out) {
   BT::template FlattenRec<Leaf, Interior>(this->root_, parlay::make_slice(Out));
   return;
 }
 
 template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
-auto KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::RangeCount(
-    Box const& bx) {
+auto PTree<Point, SplitRule, kSkHeight, kImbaRatio>::RangeCount(Box const& bx) {
   RangeQueryLogger logger;
   size_t size = BT::template RangeCountRectangle<Leaf, Interior>(
       this->root_, bx, this->tree_box_, logger);
@@ -49,7 +48,7 @@ auto KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::RangeCount(
 
 // template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
 //           uint_fast8_t kImbaRatio>
-// auto KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::RangeCount(
+// auto PTree<Point, SplitRule, kSkHeight, kImbaRatio>::RangeCount(
 //     Circle const& cl) {
 //   return BT::template RangeCountRadius<Leaf, Interior>(this->root_, cl,
 //                                                        this->tree_box_);
@@ -58,7 +57,7 @@ auto KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::RangeCount(
 template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 template <typename Range>
-auto KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::RangeQuery(
+auto PTree<Point, SplitRule, kSkHeight, kImbaRatio>::RangeQuery(
     Box const& query_box, Range&& Out) {
   RangeQueryLogger logger;
   size_t s = 0;
@@ -70,10 +69,10 @@ auto KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::RangeQuery(
 
 template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
-constexpr void KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::DeleteTree() {
+constexpr void PTree<Point, SplitRule, kSkHeight, kImbaRatio>::DeleteTree() {
   BT::template DeleteTreeWrapper<Leaf, Interior>();
 }
 
 }  // namespace pspt
 
-#endif  // PSPT_KD_TREE_IMPL_KD_OVERRIDE_HPP_
+#endif  // PSPT_P_TREE_IMPL_P_OVERRIDE_HPP_

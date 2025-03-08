@@ -1,5 +1,5 @@
-#ifndef PSPT_KD_TREE_H
-#define PSPT_KD_TREE_H
+#ifndef PSPT_P_TREE_H
+#define PSPT_P_TREE_H
 
 #include <array>
 #include <functional>
@@ -12,11 +12,11 @@ namespace pspt {
 
 template <typename Point, typename SplitRule, uint_fast8_t kSkHeight = 6,
           uint_fast8_t kImbaRatio = 30>
-class KdTree
-    : public BaseTree<Point, KdTree<Point, SplitRule, kSkHeight, kImbaRatio>,
+class PTree
+    : public BaseTree<Point, PTree<Point, SplitRule, kSkHeight, kImbaRatio>,
                       kSkHeight, kImbaRatio> {
  public:
-  using BT = BaseTree<Point, KdTree<Point, SplitRule, kSkHeight, kImbaRatio>,
+  using BT = BaseTree<Point, PTree<Point, SplitRule, kSkHeight, kImbaRatio>,
                       kSkHeight, kImbaRatio>;
 
   using BucketType = typename BT::BucketType;
@@ -66,7 +66,7 @@ class KdTree
   template <typename Leaf, typename Interior, typename... Args>
   friend Node* BT::RebuildWithInsert(Node* T, Slice In, Args&&... args);
 
-  void KdTreeTag();
+  void PTreeTag();
 
   // NOTE: functions
   void Compress2Multi();
@@ -128,18 +128,18 @@ class KdTree
 
   void Build_(Slice In);
 
-  constexpr static char const* GetTreeName() { return "KdTree"; }
+  constexpr static char const* GetTreeName() { return "PTree"; }
 
   SplitRule split_rule_;
 };
 
 }  // namespace pspt
 
-#include "kd_tree_impl/kd_batch_delete.hpp"
-#include "kd_tree_impl/kd_batch_diff.hpp"
-#include "kd_tree_impl/kd_batch_insert.hpp"
-#include "kd_tree_impl/kd_build_tree.hpp"
-#include "kd_tree_impl/kd_inter_node.hpp"
-#include "kd_tree_impl/kd_override.hpp"
+#include "p_tree_impl/p_batch_delete.hpp"
+#include "p_tree_impl/p_batch_diff.hpp"
+#include "p_tree_impl/p_batch_insert.hpp"
+#include "p_tree_impl/p_build_tree.hpp"
+#include "p_tree_impl/p_inter_node.hpp"
+#include "p_tree_impl/p_override.hpp"
 
-#endif  // PSPT_KD_TREE_H
+#endif  // PSPT_P_TREE_H
