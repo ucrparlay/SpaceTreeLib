@@ -186,31 +186,45 @@ struct augmented_ops : Map {
     }
   }
 
-  template<class Func>
-  static size_t range_count_filter(ptr b, const Func& f, size_t granularity=kNodeLimit) {
+  template<class F>
+  static size_t range_count_filter(ptr b, const F &f, size_t granularity=kNodeLimit) {
     if (b.empty()) return 0;
     // auto cur_par = Map::get_entry(b.unsafe_ptr());
     // Map::print_node_info(b.unsafe_ptr(), "cur");
     // std::cout << cur_val.first << "-" << cur_val.second << std::endl;
     // auto cur_pt = std::get<1>(Map::get_entry(b.unsafe_ptr()));
-    auto cur_pt = Entry::get_val(Map::get_entry(b.unsafe_ptr()));
     auto cur_aug = aug_val(b.unsafe_ptr());
-    // std::cout << cur_pt.x << ", " << cur_pt.y << std::endl;
-    auto flag = f(cur_aug.first, 0);
-  
-    if (flag < 0) return 0;
-    if (flag == 1) return cur_aug.second;
-
-    // check whether current point inside the query
-    auto pt_box = std::make_pair(cur_pt, cur_pt);
-    auto cur_pt_inside = f(pt_box, 1) ? 1 : 0;
-
-    size_t n = b.size();
     auto [lc, e, rc, root] = Map::expose(std::move(b));
 
-    auto [l, r] = utils::fork<size_t>(n >= granularity,
-      [&]() {return range_count_filter(std::move(lc), f, granularity);},
-      [&]() {return range_count_filter(std::move(rc), f, granularity);});
+    auto cur_pt = std::get<1>(e);
+    // std::cout << std::fixed << std::setprecision(6) << cur_pt.x << ", " << cur_pt.y << std::endl;
+
+    auto flag = f(cur_aug.first, 0);
+  
+    if (flag < 0) {
+      GC::decrement(root);
+      return 0;
+    }
+    if (flag == 1) {
+      GC::decrement(root);
+      // std::cout << "found " << cur_aug.second << " points" << std::endl;
+      return cur_aug.second;
+    }
+
+    auto pt_box = std::make_pair(cur_pt, cur_pt);
+    auto cur_pt_inside = f(pt_box, 0) > 0 ? 1 : 0;
+
+    // size_t n = b.size();
+    // auto [lc, e, rc, root] = Map::expose(std::move(b));
+
+    // auto [l, r] = utils::fork<size_t>(n >= granularity,
+    //   [&]() {return range_count_filter(std::move(lc), f, granularity);},
+    //   [&]() {return range_count_filter(std::move(rc), f, granularity);});
+
+    auto l = range_count_filter(std::move(lc), f, granularity); 
+    auto r = range_count_filter(std::move(rc), f, granularity); 
+
+    GC::decrement(root);
 
     return l + r + cur_pt_inside;
   }

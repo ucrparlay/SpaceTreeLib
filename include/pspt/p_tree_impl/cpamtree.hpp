@@ -56,10 +56,7 @@ namespace CPAMTree{
 			// entries[i] = {P[i]->id, P[i]};
 		});
 		zmap m1(entries);
-		// auto vals = zmap::values(m1);
-		// for (auto i = 0; i < 10; i++){
-		// 	cout << vals[i].x << " " << vals[i].y << endl;
-		// }
+		auto vals = zmap::values(m1);
 		return m1;
 	}	
 
@@ -75,7 +72,7 @@ namespace CPAMTree{
 			insert_pts[i] = {{P[i].morton_id, P[i].id}, P[i]};
 			// insert_pts[i] = {P[i]->id, P[i]};
 		});
-		auto m2 = zmap::multi_insert(move(mmp), insert_pts);
+		auto m2 = zmap::multi_insert(mmp, insert_pts);
 
 		return m2;
 	}
@@ -94,47 +91,50 @@ namespace CPAMTree{
 			// delete_pts[i] = {P[i]->morton_id, P[i]->id};
 			// insert_pts[i] = {P[i]->id, P[i]};
 		});
-		auto m2 = zmap::multi_delete(move(mmp), delete_pts);
+		auto m2 = zmap::multi_delete(mmp, delete_pts);
 
 		return m2;
 	}
 
 	template<class T, class MBR>
 	auto range_count(T &zCPAM, MBR query_mbr, bool use_hilbert = false){
-		// auto f2 = [&](auto cur, auto mbr_type){ 
-		// 	if (mbr_type == 1){
-		// 		print_mbr(cur);
-		// 	}
-		// 	return mbr_mbr_relation(cur, query_mbr);
-		// };
-		// auto res = zmap::range_count_filter(zCPAM, f2);
-		auto ret = 0;
-		auto f2 = [&](auto cur){ 
-			auto flag = mbr_mbr_relation(cur.first, query_mbr);
-			if (flag < 0) {
-				return false;
+		auto f = [&](auto cur, auto debug){ 
+			if (debug == 1){
+				cout << "cur mbr: "; print_mbr(cur);
+				cout << "query mbr: "; print_mbr(query_mbr);
 			}
-			else if (flag > 0) {
-				ret += cur.second;
-				return false;
-			}
-			else{
-				return true;
-			}
+			return mbr_mbr_relation(cur, query_mbr);
 		};
-		auto r2_map = zmap::aug_filter_mid(zCPAM, f2);
 
-		auto BL = query_mbr.first;
-		auto UR = query_mbr.second;
-		auto f3 = [&](auto cur){
-			if (BL.x <= get<1>(cur).x && get<1>(cur).x <= UR.x &&
-				BL.y <= get<1>(cur).y && get<1>(cur).y <= UR.y){
-				return true;
-			}
-			return false;
-		};
-		r2_map = zmap::filter(r2_map, f3);
-		return ret + r2_map.size();
+		auto res = zmap::range_count_filter(zCPAM, f);
+		return res;
+		// auto ret = 0;
+		// auto f2 = [&](auto cur){ 
+		// 	auto flag = mbr_mbr_relation(cur.first, query_mbr);
+		// 	if (flag < 0) {
+		// 		return false;
+		// 	}
+		// 	else if (flag > 0) {
+		// 		ret += cur.second;
+		// 		return false;
+		// 	}
+		// 	else{
+		// 		return true;
+		// 	}
+		// };
+		// auto r2_map = zmap::aug_filter_mid(zCPAM, f2);
+
+		// auto BL = query_mbr.first;
+		// auto UR = query_mbr.second;
+		// auto f3 = [&](auto cur){
+		// 	if (BL.x <= get<1>(cur).x && get<1>(cur).x <= UR.x &&
+		// 		BL.y <= get<1>(cur).y && get<1>(cur).y <= UR.y){
+		// 		return true;
+		// 	}
+		// 	return false;
+		// };
+		// r2_map = zmap::filter(r2_map, f3);
+		// return ret + r2_map.size();
 	}
 
 

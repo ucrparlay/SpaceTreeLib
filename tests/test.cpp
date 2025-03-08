@@ -191,8 +191,6 @@ void TestCPAMBB([[maybe_unused]] int const& kDim,
 
   // BuildTree<Point, Tree, kTestTime, 2>(wp, kRounds, kdtree);
 
-  cout << ptree.size() << endl;
-  
   if (kQueryType & (1 << 1)) {  // NOTE: range count
     if (!kSummary) {
       int recNum = kRangeQueryNum;
@@ -207,6 +205,19 @@ void TestCPAMBB([[maybe_unused]] int const& kDim,
     }
   }
 
+  if (kQueryType & (1 << 2)) {  // NOTE: range count
+    if (!kSummary) {
+      int recNum = kRangeQueryNum;
+      kdknn = new Typename[recNum];
+
+      // std::cout << std::endl;
+      for (int i = 0; i < 3; i++) {
+        rangeReportPtree<Point, Tree>(wp, ptree, kdknn, kRounds, i, recNum, kDim);
+      }
+
+      delete[] kdknn;
+    }
+  }
     // auto P_insert = P.substr(0, 1234);
     // parlay::parallel_for(0, P_insert.size(), [&](int i){
     //   P_insert[i].id += P.size();
