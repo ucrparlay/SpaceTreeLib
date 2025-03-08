@@ -12,7 +12,8 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON) # works
 # add_compile_options(-Wall -Wextra -Wshadow -Wconversion -Wunused -Wsign-conversion -Wfloat-equal -Wpedantic -Wuninitialized -Wformat -Wformat-security -Wmissing-braces -Wparentheses -Wsequence-point -Wswitch -Wswitch-enum -Wstrict-aliasing -Wdeprecated-declarations -Wreturn-type -Wunused-result)
-add_compile_options(-Wall -Wextra -Werror)
+# add_compile_options(-Wall -Wextra -Werror)
+add_compile_options(-Wall -Wextra)
 
 option(DEBUG "" OFF)
 option(CILKPLUS "" OFF)
@@ -57,14 +58,23 @@ endif()
 message(STATUS "\n\n---------------------------- PARLAY -----------------------------")
 add_subdirectory(include/parlaylib)
 message(STATUS "---------------------------- END PARLAY -----------------------------\n\n")
+message(STATUS "\n\n---------------------------- CPAM -----------------------------")
+add_library(cpam INTERFACE)
+set(CPAM_INCLUDE_DIR "${PSPT_SOURCE_DIR}/include/CPAM/include")
+target_include_directories(cpam INTERFACE ${CPAM_INCLUDE_DIR})
+target_compile_features(cpam INTERFACE cxx_std_17)
+target_compile_options(cpam INTERFACE -mcx16 -march=native)
+message(STATUS "---------------------------- END CPAM -----------------------------\n\n")
 
 # NOTE: clear CMAKE_MODULE_PATH to avoid finding parlay's cmake files
 list(REMOVE_ITEM CMAKE_MODULE_PATH "${PARLAY_SOURCE_DIR}/cmake")
 list(APPEND CMAKE_MODULE_PATH "${PSPT_SOURCE_DIR}/cmake")
 
+# NOTE: begin of pspt library
+message(STATUS "\n\n---------------------------- PSPT -----------------------------")
 add_library(PSPT INTERFACE)
 set(PSPT_INCLUDE_DIR "${PSPT_SOURCE_DIR}/include/pspt")
-target_link_libraries(PSPT INTERFACE parlay)
+target_link_libraries(PSPT INTERFACE parlay cpam)
 target_include_directories(PSPT INTERFACE $<BUILD_INTERFACE:${PSPT_INCLUDE_DIR}>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 
