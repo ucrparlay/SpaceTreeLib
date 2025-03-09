@@ -1,11 +1,58 @@
 #ifndef PSPT_DEPENDENCE_SPLITTER_H
 #define PSPT_DEPENDENCE_SPLITTER_H
 
+#include <concepts>
+
 #include "../base_tree.h"
 #include "dependence/concepts.h"
 #include "dependence/tree_node.h"
 
+// NOTE: for spacial filling curve
+#include "space_filling_curve/hilbert.h"
+
 namespace pspt {
+// NOTE: ---------------- Spacial Filling Curver ---------------
+template <typename Point>
+struct HilbertCurve {
+  using BT = BaseTree<Point, HilbertCurve<Point>>;
+  using Slice = BT::Slice;
+  using DimsType = BT::DimsType;
+  using Box = BT::Box;
+  using Num = BT::Num;
+  using Coord = BT::Coord;
+  using HyperPlane = BT::HyperPlane;
+
+  using CurveCode = hilbert::bitmask_t;
+
+  void HilbertTag() {}
+  static std::string GetName() { return "HilbertCurve"; }
+
+  auto Encode(Point const& p) {
+    assert(is_integral_v<Coord>);
+    auto ix = static_cast<CurveCode>(p.pnt[0]);
+    auto iy = static_cast<CurveCode>(p.pnt[1]);
+    CurveCode arr[] = {ix, iy};
+    return hilbert::hilbert_c2i(2, 32, arr);
+  }
+};
+
+template <typename Curve>
+struct SpacialFillingCurve {
+  using CurveCode = typename Curve::CurveCode;
+
+  template <typename... Args>
+  auto Encode(Args&&... args) {
+    return curve.Encode(std::forward<Args>(args)...);
+  }
+
+  template <typename... Args>
+  auto Decode(Args&&... args) {
+    return curve.Decode(std::forward<Args>(args)...);
+  }
+  Curve curve;
+};
+
+// NOTE: ---------------- Orthogonal Split Rule ----------------
 template <typename Point>
 struct BaseSplitDimRule {
   using BT = BaseTree<Point, BaseSplitDimRule<Point>>;

@@ -46,11 +46,11 @@ class PTree
   using SplitRuleType = SplitRule;
 
   // NOTE: for the CPAM
-  using EncodedType = typename BT::EncodedType;
+  using CurveCode = typename SplitRule::CurveCode;
   using IDType = typename BT::IDType;
-  using CpamKey = pair<EncodedType, IDType>;  // morton_id, id
+  using CpamKey = std::pair<CurveCode, IDType>;  // morton_id, id
   using CpamVal = Point;
-  using CpamAug = pair<Box, size_t>;
+  using CpamAug = std::pair<Box, size_t>;
 
   struct CpamEntry {
     using key_t = CpamKey;
@@ -115,7 +115,9 @@ class PTree
 
   constexpr static char const* GetTreeName() { return "PTree"; }
 
-  SplitRule split_rule_;
+  // TODO: need to hide the basetree assests, e.g., root_
+
+  SplitRule space_filling_curve_;
 
   CpamAugMap cpam_aug_map_;
 };

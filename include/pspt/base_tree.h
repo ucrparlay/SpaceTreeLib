@@ -48,7 +48,6 @@ class BaseTree {
   using NodeTag = std::pair<Node*, uint_fast8_t>;
   using NodeTagSeq = parlay::sequence<NodeTag>;
 
-  using EncodedType = uint_fast64_t;
   using IDType = uint_fast32_t;
 
   // NOTE: Const variables
@@ -146,7 +145,6 @@ class BaseTree {
 
     static DepthType ComputeRadius(auto const& r) {
       // TODO: hard to represent the radius with length 0
-      puts("here");
       return Num_Comparator<decltype(r)>::IsZero(r)
                  ? -1
                  : static_cast<DepthType>(std::ceil(std::log2(r)));

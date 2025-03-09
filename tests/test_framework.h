@@ -27,8 +27,8 @@
 using Coord = long;
 // using Coord = double;
 #else
-// using Coord = long;
-using Coord = double;
+using Coord = long;
+// using Coord = double;
 #endif  // CCP
 
 using Typename = Coord;
@@ -1165,9 +1165,10 @@ struct Wrapper {
         run.template operator()<KdTreeWrapper<Point, SplitRule>>();
       } else if (tree_type == 1) {
         run.template operator()<OrthTreeWrapper<Point, SplitRule>>();
-      } else if (tree_type == 2) {
-        run.template operator()<PTreeWrapper<Point, SplitRule>>();
       }
+      // else if (tree_type == 2) {
+      //   run.template operator()<PTreeWrapper<Point, SplitRule>>();
+      // }
       // else if (tree_type == 2) {
       //   run.template operator()<RTreeWrapper<Point, SplitRule>>();
       // }

@@ -26,6 +26,24 @@ void PTree<Point, SplitRule, kSkHeight, kImbaRatio>::Build(Range&& In) {
 template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 void PTree<Point, SplitRule, kSkHeight, kImbaRatio>::Build_(Slice A) {
+  size_t n = A.size();
+
+  // parlay::parallel_for(0, n, [&](size_t i) {
+  //   P[i].morton_id = uRse_hilbert ? P[i].overlap_bits() :
+  //   P[i].interleave_bits();
+  // });
+
+  parlay::sequence<par> entries(n);
+  parlay::parallel_for(0, n, [&](int i) {
+    // entries[i] = {{P[i].morton_id, P[i].id}, P[i]};
+    entries[i] = {{space_filling_curve_.Encode(A[i]), i}, A[i]};
+    // entries[i] = {P[i]->id, P[i]};
+  });
+  // zmap m1(entries);
+  // auto vals = zmap::values(m1);
+  this->cpam_aug_map_ = CpamAugMap(entries);
+  // return m1;
+
   return;
 }
 
