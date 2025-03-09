@@ -58,13 +58,7 @@ endif()
 message(STATUS "\n\n---------------------------- PARLAY -----------------------------")
 add_subdirectory(include/parlaylib)
 message(STATUS "---------------------------- END PARLAY -----------------------------\n\n")
-message(STATUS "\n\n---------------------------- CPAM -----------------------------")
-add_library(cpam INTERFACE)
-set(CPAM_INCLUDE_DIR "${PSPT_SOURCE_DIR}/include/CPAM/include")
-target_include_directories(cpam INTERFACE ${CPAM_INCLUDE_DIR})
-target_compile_features(cpam INTERFACE cxx_std_17)
-target_compile_options(cpam INTERFACE -mcx16 -march=native)
-message(STATUS "---------------------------- END CPAM -----------------------------\n\n")
+
 
 # NOTE: clear CMAKE_MODULE_PATH to avoid finding parlay's cmake files
 list(REMOVE_ITEM CMAKE_MODULE_PATH "${PARLAY_SOURCE_DIR}/cmake")
@@ -72,6 +66,14 @@ list(APPEND CMAKE_MODULE_PATH "${PSPT_SOURCE_DIR}/cmake")
 
 # NOTE: begin of pspt library
 message(STATUS "\n\n---------------------------- PSPT -----------------------------")
+# NOTE: CPAM
+add_library(cpam INTERFACE)
+set(CPAM_INCLUDE_DIR "${PSPT_SOURCE_DIR}/include/CPAM/include")
+target_include_directories(cpam INTERFACE ${CPAM_INCLUDE_DIR})
+target_compile_features(cpam INTERFACE cxx_std_17)
+target_compile_options(cpam INTERFACE -mcx16 -march=native)
+
+# NOTE: PSPT
 add_library(PSPT INTERFACE)
 set(PSPT_INCLUDE_DIR "${PSPT_SOURCE_DIR}/include/pspt")
 target_link_libraries(PSPT INTERFACE parlay cpam)
@@ -85,12 +87,17 @@ install(TARGETS PSPT
 	LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
 	PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
-add_executable(test ${PROJECT_SOURCE_DIR}/tests/test.cpp)
-target_link_libraries(test PUBLIC PSPT)
-target_include_directories(test PUBLIC ${PROJECT_SOURCE_DIR}/include)
+add_executable(kd_test ${PROJECT_SOURCE_DIR}/tests/kd_test.cpp)
+target_link_libraries(kd_test PUBLIC PSPT)
+target_include_directories(kd_test PUBLIC ${PROJECT_SOURCE_DIR}/include)
+
+add_executable(p_test ${PROJECT_SOURCE_DIR}/tests/p_test.cpp)
+target_link_libraries(p_test PUBLIC PSPT)
+target_include_directories(p_test PUBLIC ${PROJECT_SOURCE_DIR}/include)
 
 if(JEMA)
-	target_link_libraries(test PUBLIC libjemalloc.so)
+	target_link_libraries(kd_test PUBLIC libjemalloc.so)
+	target_link_libraries(p_test PUBLIC libjemalloc.so)
 endif()
 
 add_executable(data_generator ${PROJECT_SOURCE_DIR}/tests/data_generate.cpp)
@@ -98,9 +105,9 @@ target_link_libraries(data_generator PUBLIC PSPT)
 target_include_directories(data_generator PUBLIC ${PROJECT_SOURCE_DIR}/include)
 
 find_package(Boost REQUIRED)
-add_executable(rtree ${PROJECT_SOURCE_DIR}/tests/rtree.cpp)
-target_link_libraries(rtree PUBLIC PSPT ${Boost_LIBRARIES})
-target_include_directories(rtree PUBLIC ${PROJECT_SOURCE_DIR}/include ${Boost_INCLUDE_DIRS})
+add_executable(boost_rtree ${PROJECT_SOURCE_DIR}/tests/boost_rtree.cpp)
+target_link_libraries(boost_rtree PUBLIC PSPT ${Boost_LIBRARIES})
+target_include_directories(boost_rtree PUBLIC ${PROJECT_SOURCE_DIR}/include ${Boost_INCLUDE_DIRS})
 
 # CGAL
 if(CGAL)

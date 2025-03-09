@@ -8,6 +8,7 @@
 #include "dependence/tree_node.h"
 
 // NOTE: for spacial filling curve
+#include "space_filling_curve/hilbert.c"
 #include "space_filling_curve/hilbert.h"
 
 namespace pspt {
@@ -40,6 +41,8 @@ template <typename Curve>
 struct SpacialFillingCurve {
   using CurveCode = typename Curve::CurveCode;
 
+  static std::string GetSplitName() { return Curve::GetName(); }
+
   template <typename... Args>
   auto Encode(Args&&... args) {
     return curve.Encode(std::forward<Args>(args)...);
@@ -49,6 +52,7 @@ struct SpacialFillingCurve {
   auto Decode(Args&&... args) {
     return curve.Decode(std::forward<Args>(args)...);
   }
+
   Curve curve;
 };
 

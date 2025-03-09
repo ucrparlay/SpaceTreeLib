@@ -1102,7 +1102,8 @@ void PrintTreeParam() {
   return;
 }
 
-struct Wrapper {
+class Wrapper {
+ public:
   // NOTE: determine the build depth once for the orth tree
   static consteval uint8_t OrthGetBuildDepthOnce(uint8_t const dim) {
     if (dim == 2 || dim == 3) {
@@ -1137,7 +1138,6 @@ struct Wrapper {
   template <class PointType, class SplitRuleType>
   struct PTreeWrapper {
     using Point = PointType;
-    // TODO: the split rule can be how to encode the value
     using SplitRule = SplitRuleType;
     using TreeType = typename pspt::PTree<Point, SplitRule>;
   };
@@ -1156,25 +1156,66 @@ struct Wrapper {
     using TreeType = typename pspt::RTree<Point, SplitRule>;
   };
 
+  // NOTE: driven functions
+  template <typename TreeWrapper, typename RunFunc>
+  static void Run(commandLine& P, RunFunc test_func) {
+    char* input_file_path = P.getOptionValue("-p");
+    int K = P.getOptionIntValue("-k", 100);
+    int dims = P.getOptionIntValue("-d", 3);
+    size_t N = P.getOptionLongValue("-n", -1);
+    int tag = P.getOptionIntValue("-t", 1);
+    int rounds = P.getOptionIntValue("-r", 3);
+    int query_type = P.getOptionIntValue("-q", 0);
+    int read_insert_file = P.getOptionIntValue("-i", 1);
+    int summary = P.getOptionIntValue("-s", 0);
+    int tree_type = P.getOptionIntValue("-T", 0);
+    int split_type = P.getOptionIntValue("-l", 0);
+
+    using Point = typename TreeWrapper::Point;
+    using Points = parlay::sequence<Point>;
+    constexpr auto kDim = Point::GetDim();
+
+    PrintTreeParam<TreeWrapper>();
+
+    std::string name, insert_file_path = "";
+    Points wp, wi;
+
+    if (input_file_path != NULL) {  // NOTE: read main Points
+      name = std::string(input_file_path);
+      name = name.substr(name.rfind('/') + 1);
+      std::cout << name << " ";
+      auto [n, d] = read_points<Point>(input_file_path, wp, K);
+      N = n;
+      assert(d == kDim);
+    }
+
+    if (read_insert_file == 1) {  // NOTE: read Points to be inserted
+      int id = std::stoi(name.substr(0, name.find_first_of('.')));
+      id = (id + 1) % 3;  // WARN: MOD graph number used to test
+      if (!id) id++;
+      auto pos = std::string(input_file_path).rfind('/') + 1;
+      insert_file_path = std::string(input_file_path).substr(0, pos) +
+                         std::to_string(id) + ".in";
+      [[maybe_unused]] auto [n, d] =
+          read_points<Point>(insert_file_path.c_str(), wi, K);
+      assert(d == kDim);
+    }
+
+    test_func.template operator()<TreeWrapper, Point>(
+        kDim, wp, wi, N, K, rounds, insert_file_path, tag, query_type, summary);
+  };
+
   // NOTE: Apply the dim and split rule
   template <typename RunFunc>
-  static void Apply(int const tree_type, int const dim, int const split_type,
-                    RunFunc run) {
+  static void ApplyOrthogonal(int const tree_type, int const dim,
+                              int const split_type, commandLine& params,
+                              RunFunc test_func) {
     auto build_tree_type = [&]<typename Point, typename SplitRule>() {
       if (tree_type == 0) {
-        run.template operator()<KdTreeWrapper<Point, SplitRule>>();
+        Run<KdTreeWrapper<Point, SplitRule>>(params, test_func);
       } else if (tree_type == 1) {
-        run.template operator()<OrthTreeWrapper<Point, SplitRule>>();
+        Run<OrthTreeWrapper<Point, SplitRule>>(params, test_func);
       }
-      // else if (tree_type == 2) {
-      //   run.template operator()<PTreeWrapper<Point, SplitRule>>();
-      // }
-      // else if (tree_type == 2) {
-      //   run.template operator()<RTreeWrapper<Point, SplitRule>>();
-      // }
-      // else if (tree_type == 3) {
-      //   run.template operator()<CoverTreeWrapper<Point, SplitRule>>();
-      // }
     };
 
     // NOTE: pick the split rule
@@ -1204,14 +1245,13 @@ struct Wrapper {
 
     if (dim == 2) {
       run_with_split_type.template operator()<PointType<Coord, 2>>();
+    } else if (dim == 3) {
+      run_with_split_type.template operator()<PointType<Coord, 3>>();
+    } else if (dim == 5) {
+      run_with_split_type.template operator()<PointType<Coord, 5>>();
+    } else if (dim == 7) {
+      run_with_split_type.template operator()<PointType<Coord, 7>>();
     }
-    // else if (dim == 3) {
-    //   run_with_split_type.template operator()<PointType<Coord, 3>>();
-    // } else if (dim == 5) {
-    //   run_with_split_type.template operator()<PointType<Coord, 5>>();
-    // } else if (dim == 7) {
-    //   run_with_split_type.template operator()<PointType<Coord, 7>>();
-    // }
     // else if (dim == 9) {
     //   run_with_split_type(std::integral_constant<int, 9>{});
     // } else if (dim == 10) {
@@ -1220,5 +1260,30 @@ struct Wrapper {
     //   std::cerr << "Unsupported dimension: " << dim << std::endl;
     //   abort();
     // }
+  }
+
+  template <typename RunFunc>
+  static void ApplySpacialFillingCurve(int const tree_type, int const dim,
+                                       int const split_type,
+                                       commandLine& params, RunFunc test_func) {
+    auto build_tree_type = [&]<typename Point, typename SplitRule>() {
+      if (tree_type == 0) {
+        // run.template operator()<KdTreeWrapper<Point, SplitRule>>();
+      } else if (tree_type == 1) {
+        // run.template operator()<OrthTreeWrapper<Point, SplitRule>>();
+      } else if (tree_type == 2) {
+        Run<PTreeWrapper<Point, SplitRule>>(params, test_func);
+      }
+    };
+
+    // NOTE: pick the split rule
+    auto run_with_split_type = [&]<typename Point>() {
+      build_tree_type.template
+      operator()<Point, pspt::SpacialFillingCurve<HilbertCurve<Point>>>();
+    };
+
+    if (dim == 2) {
+      run_with_split_type.template operator()<PointType<Coord, 2>>();
+    }
   }
 };
