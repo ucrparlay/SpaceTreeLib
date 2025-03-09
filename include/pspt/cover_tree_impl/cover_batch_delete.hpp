@@ -6,8 +6,8 @@
 namespace pspt {
 
 // NOTE: default batch delete
-template <typename Point, typename SplitRule,
-          uint_fast8_t kSkHeight, uint_fast8_t kImbaRatio>
+template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
 template <typename Range>
 void CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDelete(
     Range&& In) {
@@ -23,10 +23,9 @@ void CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDelete(
 }
 
 // NOTE: assume all Points are fully covered in the tree
-template <typename Point, typename SplitRule,
-          uint_fast8_t kSkHeight, uint_fast8_t kImbaRatio>
-void CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDelete_(
-    Slice A) {
+template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
+void CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDelete_(Slice A) {
   Points B = Points::uninitialized(A.size());
   this->root_ = BatchDeleteRecursive(this->root_, A, parlay::make_slice(B),
                                      this->tree_box_, 1);
@@ -35,12 +34,12 @@ void CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDelete_(
 
 // NOTE: delete with rebuild, with the assumption that all Points are in the
 // tree
-template <typename Point, typename SplitRule,
-          uint_fast8_t kSkHeight, uint_fast8_t kImbaRatio>
+template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
 Node* CoverTree<Point, SplitRule, kMD, kSkHeight,
-               kImbaRatio>::BatchDeleteRecursive(Node* T, Slice In, Slice Out,
-                                                 Box const& box,
-                                                 bool has_tomb) {
+                kImbaRatio>::BatchDeleteRecursive(Node* T, Slice In, Slice Out,
+                                                  Box const& box,
+                                                  bool has_tomb) {
   size_t n = In.size();
 
   if (n == 0) {

@@ -142,7 +142,7 @@ if(CGAL)
 	target_include_directories(ccp PUBLIC ${PROJECT_SOURCE_DIR}/include)
 endif()
 
-set(all_files
+file(GLOB_RECURSE all_files
   ${PROJECT_SOURCE_DIR}/include/pspt/*
 )
 

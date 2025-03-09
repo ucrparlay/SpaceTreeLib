@@ -1079,7 +1079,7 @@ int main() {
 #include <stdio.h>
 #include <stdlib.h>
 
-int cmp(const void* xv, const void* yv) {
+int cmp(void const* xv, void const* yv) {
   double const* x = xv;
   double const* y = yv;
   /* return hilbert_cmp(2, 8, 64, x, y); */

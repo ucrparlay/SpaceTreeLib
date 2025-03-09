@@ -1,7 +1,8 @@
 #pragma once
-#include "hilbert.h"
 #include <bits/stdc++.h>
 #include <parlay/internal/binary_search.h>
+
+#include "hilbert.h"
 
 namespace geobase {
 using namespace std;
@@ -26,9 +27,8 @@ struct break_down {
   }
 };
 
-inline int dcmp(const FT &x) {
-  if (fabs(x) < FT_EPS)
-    return 0;
+inline int dcmp(const FT& x) {
+  if (fabs(x) < FT_EPS) return 0;
   return x < 0 ? -1 : 1;
 }
 
@@ -45,11 +45,11 @@ struct Point {
     // morton_id = interleave_bits();
   }
 
-  bool operator==(const Point &p) const {
+  bool operator==(Point const& p) const {
     return !(id - p.id) && !dcmp(x - p.x) && !dcmp(y - p.y);
   }
 
-  friend std::ostream &operator<<(std::ostream &os, const Point &p) {
+  friend std::ostream& operator<<(std::ostream& os, Point const& p) {
     os << p.id << ": (" << p.x << ", " << p.y << ")";
     // os << "(" << p.x << ", " << p.y << ")";
     return os;
@@ -98,8 +98,8 @@ struct Point {
 
     // Smear their sign bits into these for twiddling below.
     //
-    const auto ixs = static_cast<int>(ix) >> 31;
-    const auto iys = static_cast<int>(iy) >> 31;
+    auto const ixs = static_cast<int>(ix) >> 31;
+    auto const iys = static_cast<int>(iy) >> 31;
 
     // This is a combination of a fast absolute value and a bias.
     //
@@ -139,7 +139,8 @@ struct Point {
 
 typedef pair<Point, Point> Bounding_Box;
 
-template <class T> auto read_pts(T &P, ifstream &fin, bool real_data = false) {
+template <class T>
+auto read_pts(T& P, ifstream& fin, bool real_data = false) {
   if (!real_data) {
     size_t n, d;
     fin >> n >> d;
@@ -185,23 +186,27 @@ template <class T> auto read_pts(T &P, ifstream &fin, bool real_data = false) {
   }
 }
 
-template <class T> void print_binary(T x) {
+template <class T>
+void print_binary(T x) {
   cout << bitset<sizeof(x) * 8>(x) << endl;
 }
 
-template <class MBR> void print_mbr(MBR &mbr) {
+template <class MBR>
+void print_mbr(MBR& mbr) {
   cout << fixed << setprecision(6) << "[(" << mbr.first.x << ", " << mbr.first.y
        << "), (" << mbr.second.x << ", " << mbr.second.y << ")" << "]" << endl;
 }
 
-template <class MBR> bool is_same_mbr(MBR &lhs, MBR &rhs) {
+template <class MBR>
+bool is_same_mbr(MBR& lhs, MBR& rhs) {
   // cout << "[(" << mbr.first.x << ", " << mbr.first.y << "), (" <<
   // mbr.second.x << ", " << mbr.second.y << ")" << "]" << endl;
   return lhs.first.x == rhs.first.x && lhs.first.y == rhs.first.y &&
          lhs.second.x == rhs.second.x && lhs.second.y == rhs.second.y;
 }
 
-template <class T> size_t split_by_bit(T &P, size_t l, size_t r, size_t b) {
+template <class T>
+size_t split_by_bit(T& P, size_t l, size_t r, size_t b) {
   // size_t split_value = (1ull << (b - 1));
   unsigned int splitter = (1u << ((b - 1) / 2));
   auto less = [&](auto pt) {
@@ -227,20 +232,23 @@ template <class T> size_t split_by_bit(T &P, size_t l, size_t r, size_t b) {
 }
 
 // merge two bounding boxes, please make sure *both bounding boxes are valid*.
-template <class MBR> MBR merge_mbr(MBR a, MBR b) {
+template <class MBR>
+MBR merge_mbr(MBR a, MBR b) {
   return {Point(min(a.first.x, b.first.x), min(a.first.y, b.first.y)),
           Point(max(a.second.x, b.second.x), max(a.second.y, b.second.y))};
 }
 
 // check whether a given point inside a mbr (boundary included).
-template <class MBR> bool point_in_mbr(Point p, MBR mbr) {
+template <class MBR>
+bool point_in_mbr(Point p, MBR mbr) {
   return mbr.first.x <= p.x && p.x <= mbr.second.x && mbr.first.y <= p.y &&
          p.y <= mbr.second.y;
 }
 
 // check whether a given mbr inside a mbr, e,g., check whether small_mbr in
 // large_mbr (boundary included).
-template <class MBR> bool mbr_in_mbr(MBR &small_mbr, MBR &large_mbr) {
+template <class MBR>
+bool mbr_in_mbr(MBR& small_mbr, MBR& large_mbr) {
   return small_mbr.first.x >= large_mbr.first.x &&
          small_mbr.second.x <= large_mbr.second.x &&
          small_mbr.first.y >= large_mbr.first.y &&
@@ -248,7 +256,8 @@ template <class MBR> bool mbr_in_mbr(MBR &small_mbr, MBR &large_mbr) {
 }
 
 // check whether two given mbrs exclude each other (do not check boundaries).
-template <class MBR> bool mbr_exclude_mbr(MBR &small_mbr, MBR &large_mbr) {
+template <class MBR>
+bool mbr_exclude_mbr(MBR& small_mbr, MBR& large_mbr) {
   return (small_mbr.first.x > large_mbr.second.x ||
           small_mbr.second.x < large_mbr.first.x) ||
          (small_mbr.first.y > large_mbr.second.y ||
@@ -257,7 +266,8 @@ template <class MBR> bool mbr_exclude_mbr(MBR &small_mbr, MBR &large_mbr) {
 
 // relations between two mbrs: -1: excluded; 0: intersected; 1: the smaller one
 // is contained by the larger one;
-template <class MBR> int mbr_mbr_relation(MBR &small_mbr, MBR &large_mbr) {
+template <class MBR>
+int mbr_mbr_relation(MBR& small_mbr, MBR& large_mbr) {
   auto minc_x = max(small_mbr.first.x, large_mbr.first.x);
   auto minc_y = max(small_mbr.first.y, large_mbr.first.y);
   auto maxc_x = min(small_mbr.second.x, large_mbr.second.x);
@@ -271,10 +281,11 @@ template <class MBR> int mbr_mbr_relation(MBR &small_mbr, MBR &large_mbr) {
   return -1;
 }
 
-template <class Records> auto get_mbr(Records &P) {
+template <class Records>
+auto get_mbr(Records& P) {
   FT x_min = FT_INF_MAX, x_max = FT_INF_MIN, y_min = FT_INF_MAX,
      y_max = FT_INF_MIN;
-  for (auto &p : P) {
+  for (auto& p : P) {
     x_min = min(x_min, p.x);
     x_max = max(x_max, p.x);
     y_min = min(y_min, p.y);
@@ -284,7 +295,8 @@ template <class Records> auto get_mbr(Records &P) {
 }
 
 // return the sqr distance between a point and a mbr
-template <class MBR> auto point_mbr_sqrdis(Point p, MBR &mbr) {
+template <class MBR>
+auto point_mbr_sqrdis(Point p, MBR& mbr) {
   FT dx =
       max(max(mbr.first.x - p.x, (FT)0.0), max(p.x - mbr.second.x, (FT)0.0));
   FT dy =
@@ -293,20 +305,20 @@ template <class MBR> auto point_mbr_sqrdis(Point p, MBR &mbr) {
 }
 
 // return the sqr distance between two points
-auto point_point_sqrdis(Point &lhs, Point &rhs) {
+auto point_point_sqrdis(Point& lhs, Point& rhs) {
   return (lhs.x - rhs.x) * (lhs.x - rhs.x) + (lhs.y - rhs.y) * (lhs.y - rhs.y);
 }
 
 // check whether two given MBRs are intersected.
-template <class MBR> bool mbr_intersects_mbr(MBR a, MBR b) {
-  if (a.first.x > b.second.x || a.second.x < b.first.x)
-    return false;
-  if (a.first.y > b.second.y || a.second.y < b.first.y)
-    return false;
+template <class MBR>
+bool mbr_intersects_mbr(MBR a, MBR b) {
+  if (a.first.x > b.second.x || a.second.x < b.first.x) return false;
+  if (a.first.y > b.second.y || a.second.y < b.first.y) return false;
   return true;
 }
 
-template <class T> auto generate_range_query(T &P, size_t n) {
+template <class T>
+auto generate_range_query(T& P, size_t n) {
   auto id1 = rand() % n;
   auto id2 = rand() % n;
   FT xmin = min(P[id1].x, P[id2].x), xmax = max(P[id1].x, P[id2].x),
@@ -314,7 +326,8 @@ template <class T> auto generate_range_query(T &P, size_t n) {
   return make_pair(Point(xmin, ymin), Point(xmax, ymax));
 }
 
-template <class In> auto read_range_query(In qry_in) {
+template <class In>
+auto read_range_query(In qry_in) {
   ifstream fin(qry_in);
   size_t n, d;
   fin >> n >> d;
@@ -327,9 +340,9 @@ template <class In> auto read_range_query(In qry_in) {
 }
 
 template <class In>
-auto read_range_query(In qry_in, size_t q_type, size_t &maxSize) {
+auto read_range_query(In qry_in, size_t q_type, size_t& maxSize) {
   ifstream fin(qry_in);
-  if (q_type == 8) { // range report, need maxSize
+  if (q_type == 8) {  // range report, need maxSize
     fin >> maxSize;
   }
   size_t n, d;
@@ -346,13 +359,14 @@ auto read_range_query(In qry_in, size_t q_type, size_t &maxSize) {
 typedef pair<Point, FT> nn_pair;
 
 struct nn_pair_cmp {
-  bool operator()(nn_pair &lhs, nn_pair &rhs) {
+  bool operator()(nn_pair& lhs, nn_pair& rhs) {
     return lhs.second < rhs.second ||
            (lhs.second == rhs.second && lhs.first.id > rhs.first.id);
   }
 };
 
-template <class Pset> FT knn_bf(size_t &k, Point q, Pset &P) {
+template <class Pset>
+FT knn_bf(size_t& k, Point q, Pset& P) {
   vector<FT> q_sqrdis = {};
   for (size_t i = 0; i < P.size(); i++) {
     auto cur_sqrdis = point_point_sqrdis(q, P[i]);
@@ -362,29 +376,32 @@ template <class Pset> FT knn_bf(size_t &k, Point q, Pset &P) {
   return q_sqrdis[k - 1];
 }
 
-template <class Pset> void morton_sort(Pset &P) {
+template <class Pset>
+void morton_sort(Pset& P) {
   sort(P.begin(), P.end(), [&](auto lhs, auto rhs) {
     auto msd = 0;
-    if (geobase::less_msb(static_cast<unsigned int>(lhs.x) ^
-                              static_cast<unsigned int>(rhs.x),
-                          static_cast<unsigned int>(lhs.y) ^
-                              static_cast<unsigned int>(rhs.y)))
+    if (geobase::less_msb(
+            static_cast<unsigned int>(lhs.x) ^ static_cast<unsigned int>(rhs.x),
+            static_cast<unsigned int>(lhs.y) ^
+                static_cast<unsigned int>(rhs.y)))
       msd = 1;
     return !msd ? lhs.x < rhs.x : lhs.y < rhs.y;
   });
 }
 
-template <class P> bool morton_less(const P &lhs, const P &rhs) {
+template <class P>
+bool morton_less(P const& lhs, P const& rhs) {
   auto msd = 0;
-  if (geobase::less_msb(static_cast<unsigned int>(lhs->x) ^
-                            static_cast<unsigned int>(rhs->x),
-                        static_cast<unsigned int>(lhs->y) ^
-                            static_cast<unsigned int>(rhs->y)))
+  if (geobase::less_msb(
+          static_cast<unsigned int>(lhs->x) ^ static_cast<unsigned int>(rhs->x),
+          static_cast<unsigned int>(lhs->y) ^
+              static_cast<unsigned int>(rhs->y)))
     msd = 1;
   return !msd ? lhs->x < rhs->x : lhs->y < rhs->y;
 }
 
-template <typename Pset> auto morton_merge(Pset &lhs, Pset &rhs) {
+template <typename Pset>
+auto morton_merge(Pset& lhs, Pset& rhs) {
   size_t i = 0, j = 0, k = 0, n = lhs.size(), m = rhs.size();
   Pset ret;
   ret.resize(n + m);
@@ -395,15 +412,14 @@ template <typename Pset> auto morton_merge(Pset &lhs, Pset &rhs) {
       ret[k++] = rhs[j++];
     }
   }
-  while (i < n)
-    ret[k++] = lhs[i++];
-  while (j < m)
-    ret[k++] = rhs[j++];
+  while (i < n) ret[k++] = lhs[i++];
+  while (j < m) ret[k++] = rhs[j++];
   return ret;
 }
 
 // generate n random points within the largest bounding box
-template <typename Pset> auto random_sample(size_t n, Pset P) {
+template <typename Pset>
+auto random_sample(size_t n, Pset P) {
   unsigned seed = 233666;
   default_random_engine e(seed);
   vector<size_t> sampled_ids(P.size());
@@ -417,7 +433,8 @@ template <typename Pset> auto random_sample(size_t n, Pset P) {
 }
 
 //  return a set of sorted points
-template <typename PT> auto get_sorted_points(PT &P, bool use_hilbert = false) {
+template <typename PT>
+auto get_sorted_points(PT& P, bool use_hilbert = false) {
   auto n = P.size();
   parlay::parallel_for(0, n, [&](int i) {
     P[i].morton_id = use_hilbert ? P[i].overlap_bits() : P[i].interleave_bits();
@@ -432,14 +449,14 @@ template <typename PT> auto get_sorted_points(PT &P, bool use_hilbert = false) {
   // 	    auto msd = 0;
   // 	    if (geobase::less_msb(static_cast<unsigned int>(lhs.x) ^
   // static_cast<unsigned int>(rhs.x), static_cast<unsigned int>(lhs.y) ^
-  // static_cast<unsigned int>(rhs.y))) 		    msd = 1; 	    return !msd ? lhs.x < rhs.x :
-  // lhs.y < rhs.y;
+  // static_cast<unsigned int>(rhs.y))) 		    msd = 1;
+  // return !msd ? lhs.x < rhs.x : lhs.y < rhs.y;
   //     });
   // }
 }
 
 template <typename PT>
-auto get_sorted_points_hilbert(PT &P, bool use_hilbert = true) {
+auto get_sorted_points_hilbert(PT& P, bool use_hilbert = true) {
   auto n = P.size();
   parlay::parallel_for(0, n, [&](int i) {
     P[i].morton_id = use_hilbert ? P[i].overlap_bits() : P[i].interleave_bits();
@@ -458,8 +475,9 @@ auto get_sorted_points_hilbert(PT &P, bool use_hilbert = true) {
 }
 
 //	return a set of sorted address, do not modify the input;
-template <typename PT> auto get_sorted_address(PT &P) {
-  parlay::sequence<geobase::Point *> P_set(P.size());
+template <typename PT>
+auto get_sorted_address(PT& P) {
+  parlay::sequence<geobase::Point*> P_set(P.size());
   parlay::parallel_for(0, P.size(), [&](int i) { P_set[i] = &P[i]; });
   P_set = parlay::sort(P_set, [&](auto lhs, auto rhs) {
     auto msd = 0;
@@ -473,20 +491,22 @@ template <typename PT> auto get_sorted_address(PT &P) {
   return P_set;
 }
 
-template <typename PT> auto get_unsorted_address(PT &P) {
-  parlay::sequence<Point *> P_set(P.size());
+template <typename PT>
+auto get_unsorted_address(PT& P) {
+  parlay::sequence<Point*> P_set(P.size());
   parlay::parallel_for(0, P.size(), [&](int i) { P_set[i] = &P[i]; });
   return P_set;
 }
 
-template <typename PT> auto record_check(PT &P) {
+template <typename PT>
+auto record_check(PT& P) {
   map<int, int> mmp = {};
   auto cnt = 0;
   auto num = 0;
   for (size_t i = 0; i < P.size(); i++) {
     mmp[P[i]->id]++;
   }
-  for (auto &key_val : mmp) {
+  for (auto& key_val : mmp) {
     if (key_val.second > 1) {
       num++;
       cnt += key_val.second;
@@ -497,7 +517,8 @@ template <typename PT> auto record_check(PT &P) {
 }
 
 // return a set contains all ids in a sequence of point pointer
-template <typename PT> auto get_point_id(PT &P) {
+template <typename PT>
+auto get_point_id(PT& P) {
   set<int> ret = {};
   for (auto pt : P) {
     ret.insert(pt->id);
@@ -505,13 +526,14 @@ template <typename PT> auto get_point_id(PT &P) {
   return ret;
 }
 
-template <typename PT> auto count_duplicate_zvalues(PT &P) {
+template <typename PT>
+auto count_duplicate_zvalues(PT& P) {
   unordered_map<unsigned long long, int> zvalue_map = {};
-  for (auto &pt : P) {
+  for (auto& pt : P) {
     zvalue_map[pt.morton_id]++;
   }
   auto cnt = 0, total_cnt = 0;
-  for (const auto &pair : zvalue_map) {
+  for (auto const& pair : zvalue_map) {
     if (pair.second > 1) {
       // cout << "Number " << pair.first << " appears " << pair.second << "
       // times." << endl;
@@ -525,23 +547,24 @@ template <typename PT> auto count_duplicate_zvalues(PT &P) {
 
 //  merge to sequence by id, return two sequences. The first one has no
 //  conflict, the second one has conflict
-template <typename PT> auto merge_by_id_with_conflict(PT &a, PT &b) {
+template <typename PT>
+auto merge_by_id_with_conflict(PT& a, PT& b) {
   size_t i = 0, j = 0;
   auto id_cmp = [&](auto lhs, auto rhs) { return lhs.id < rhs.id; };
   auto sorted_a = parlay::sort(a, id_cmp);
   auto sorted_b = parlay::sort(b, id_cmp);
   PT ret_noconflict = {}, ret_conflict = {};
   while (i < sorted_a.size() && j < sorted_b.size()) {
-    if (sorted_a[i].id == sorted_b[j].id) { //  two points have the same id
+    if (sorted_a[i].id == sorted_b[j].id) {  //  two points have the same id
       if (!(sorted_a[i] ==
-            sorted_b[j])) { //  coordinate does not match, conflict
+            sorted_b[j])) {  //  coordinate does not match, conflict
         ret_conflict.emplace_back(sorted_a[i++]);
         ret_conflict.emplace_back(sorted_b[j++]);
-      } else { //  no conflict
+      } else {  //  no conflict
         ret_noconflict.emplace_back(sorted_a[i++]);
         j++;
       }
-    } else { //  no conflict, store the one with smaller id
+    } else {  //  no conflict, store the one with smaller id
       if (sorted_a[i].id < sorted_b[j].id) {
         ret_noconflict.emplace_back(sorted_a[i++]);
       } else {
@@ -549,10 +572,8 @@ template <typename PT> auto merge_by_id_with_conflict(PT &a, PT &b) {
       }
     }
   }
-  while (i < sorted_a.size())
-    ret_noconflict.emplace_back(sorted_a[i++]);
-  while (j < sorted_b.size())
-    ret_noconflict.emplace_back(sorted_b[j++]);
+  while (i < sorted_a.size()) ret_noconflict.emplace_back(sorted_a[i++]);
+  while (j < sorted_b.size()) ret_noconflict.emplace_back(sorted_b[j++]);
   return make_tuple(ret_noconflict, ret_conflict);
 }
-} // namespace geobase
+}  // namespace geobase
