@@ -6,8 +6,8 @@
 #include "parlay/primitives.h"
 #include "pspt/dependence/splitter.h"
 #include "pspt/kd_tree.h"
-#include "test_framework.h"
 #include "pspt/p_tree_impl/cpamtree.hpp"
+#include "test_framework.h"
 
 template <class TreeDesc, typename Point>
 void TestSpacialTree([[maybe_unused]] int const& kDim,
@@ -139,15 +139,13 @@ void TestSpacialTree([[maybe_unused]] int const& kDim,
 
 template <class TreeDesc, typename Point>
 void TestCPAMBB([[maybe_unused]] int const& kDim,
-                     parlay::sequence<Point> const& wp,
-                     [[maybe_unused]] parlay::sequence<Point> const& wi,
-                     [[maybe_unused]] size_t const& N,
-                     [[maybe_unused]] int const& K, int const& kRounds,
-                     [[maybe_unused]] string const& kInsertFile,
-                     [[maybe_unused]] int const& kTag,
-                     [[maybe_unused]] int const& kQueryType,
-                     [[maybe_unused]] int const kSummary) {
-
+                parlay::sequence<Point> const& wp,
+                [[maybe_unused]] parlay::sequence<Point> const& wi,
+                [[maybe_unused]] size_t const& N, [[maybe_unused]] int const& K,
+                int const& kRounds, [[maybe_unused]] string const& kInsertFile,
+                [[maybe_unused]] int const& kTag,
+                [[maybe_unused]] int const& kQueryType,
+                [[maybe_unused]] int const kSummary) {
   // auto P = parlay::sequence<geobase::Point>::uninitialized(wp.size());
   // parlay::parallel_for(0, wp.size(), [&](int i){
   //   P[i].x = wp[i].pnt[0];
@@ -168,9 +166,9 @@ void TestCPAMBB([[maybe_unused]] int const& kDim,
     } else {
       BatchInsertPTree(ptree, wp, wi, kRounds, 0.1);
     }
-  } 
+  }
 
-    // NOTE: batch delete
+  // NOTE: batch delete
   if (kTag & (1 << 1)) {
     if (kSummary) {
       parlay::sequence<double> const ratios = {0.0001, 0.001, 0.01, 0.1};
@@ -178,7 +176,7 @@ void TestCPAMBB([[maybe_unused]] int const& kDim,
         BatchDeletePTree(ptree, wp, wi, kRounds, ratios[i]);
       }
     } else {
-        BatchDeletePTree(ptree, wp, wi, kRounds, 1.0);
+      BatchDeletePTree(ptree, wp, wi, kRounds, 1.0);
     }
   }
 
@@ -190,6 +188,27 @@ void TestCPAMBB([[maybe_unused]] int const& kDim,
   // constexpr bool kTestTime = true;
 
   // BuildTree<Point, Tree, kTestTime, 2>(wp, kRounds, kdtree);
+  if (kQueryType & (1 << 0)) {  // NOTE: KNN
+    auto run_batch_knn = [&](Points const& pts, int kth, size_t batchSize) {
+      std::cout << "-1 -1 -1 -1 -1 " << std::flush;
+      // Points newPts(batchSize);
+      // parlay::copy(pts.cut(0, batchSize), newPts.cut(0, batchSize));
+      // kdknn = new Typename[batchSize];
+      // queryKNN<Point>(kDim, newPts, kRounds, tree, kdknn, kth, true);
+      // delete[] kdknn;
+    };
+
+    size_t batchSize = static_cast<size_t>(wp.size() * kBatchQueryRatio);
+
+    if (kSummary == 0) {
+      int k[3] = {1, 10, 100};
+      for (int i = 0; i < 3; i++) {
+        run_batch_knn(wp, k[i], batchSize);
+      }
+    } else {  // test kSummary
+      run_batch_knn(wp, K, batchSize);
+    }
+  }
 
   if (kQueryType & (1 << 1)) {  // NOTE: range count
     if (!kSummary) {
@@ -198,36 +217,61 @@ void TestCPAMBB([[maybe_unused]] int const& kDim,
 
       // std::cout << std::endl;
       for (int i = 0; i < 3; i++) {
-        rangeCountPtree<Point, Tree>(wp, ptree, kdknn, kRounds, i, recNum, kDim);
+        rangeCountPtree<Point, Tree>(wp, ptree, kdknn, kRounds, i, recNum,
+                                     kDim);
       }
 
       delete[] kdknn;
     }
   }
 
-  if (kQueryType & (1 << 2)) {  // NOTE: range count
-    if (!kSummary) {
+  if (kQueryType & (1 << 2)) {  // NOTE: range query
+    if (kSummary == 0) {
       int recNum = kRangeQueryNum;
       kdknn = new Typename[recNum];
 
-      // std::cout << std::endl;
       for (int i = 0; i < 3; i++) {
-        rangeReportPtree<Point, Tree>(wp, ptree, kdknn, kRounds, i, recNum, kDim);
+        Points Out;
+        // rangeQueryFix<Point>(wp, tree, kdknn, kRounds, Out, i, recNum, kDim);
+        rangeReportPtree<Point, Tree>(wp, ptree, kdknn, kRounds, i, recNum,
+                                      kDim);
       }
-
+      delete[] kdknn;
+    } else if (kSummary == 1) {  // NOTE: for kSummary
+      kdknn = new Typename[kSummaryRangeQueryNum];
+      Points Out;
+      // rangeQueryFix<Point>(wp, tree, kdknn, kRounds, Out, 2,
+      //                      kSummaryRangeQueryNum, kDim);
+      rangeReportPtree<Point, Tree>(wp, ptree, kdknn, kRounds, 2,
+                                    kSummaryRangeQueryNum, kDim);
       delete[] kdknn;
     }
   }
-    // auto P_insert = P.substr(0, 1234);
-    // parlay::parallel_for(0, P_insert.size(), [&](int i){
-    //   P_insert[i].id += P.size();
-    // });
-    // auto tree2 = CPAMTree::map_insert(P_insert, tree, true);
-    // cout << tree2.size() << endl;
-  
-    // auto P_delete = P_insert.substr(0, 234);
-    // auto tree3 = CPAMTree::map_delete(P_delete, tree2, true);
-    // cout << tree3.size() << endl;
+
+  // if (kQueryType & (1 << 2)) {  // NOTE: range count
+  //   if (!kSummary) {
+  //     int recNum = kRangeQueryNum;
+  //     kdknn = new Typename[recNum];
+  //
+  //     // std::cout << std::endl;
+  //     for (int i = 0; i < 3; i++) {
+  //       rangeReportPtree<Point, Tree>(wp, ptree, kdknn, kRounds, i, recNum,
+  //                                     kDim);
+  //     }
+  //
+  //     delete[] kdknn;
+  //   }
+  // }
+  // auto P_insert = P.substr(0, 1234);
+  // parlay::parallel_for(0, P_insert.size(), [&](int i){
+  //   P_insert[i].id += P.size();
+  // });
+  // auto tree2 = CPAMTree::map_insert(P_insert, tree, true);
+  // cout << tree2.size() << endl;
+
+  // auto P_delete = P_insert.substr(0, 234);
+  // auto tree3 = CPAMTree::map_delete(P_delete, tree2, true);
+  // cout << tree3.size() << endl;
 }
 
 int main(int argc, char* argv[]) {
@@ -248,8 +292,6 @@ int main(int argc, char* argv[]) {
   int tree_type = P.getOptionIntValue("-T", 0);
   int split_type = P.getOptionIntValue("-l", 0);
 
-
-  
   auto run = [&]<typename TreeWrapper>() {
     using Point = typename TreeWrapper::Point;
     using Points = parlay::sequence<Point>;
@@ -281,10 +323,12 @@ int main(int argc, char* argv[]) {
       assert(d == kDim);
     }
 
-    TestCPAMBB<TreeWrapper, Point>(kDim, wp, wi, N, K, rounds, insert_file_path, tag, query_type, summary);
+    TestCPAMBB<TreeWrapper, Point>(kDim, wp, wi, N, K, rounds, insert_file_path,
+                                   tag, query_type, summary);
 
     // TestSpacialTree<TreeWrapper, Point>(
-    //     kDim, wp, wi, N, K, rounds, insert_file_path, tag, query_type, summary);
+    //     kDim, wp, wi, N, K, rounds, insert_file_path, tag, query_type,
+    //     summary);
   };
 
   Wrapper::Apply(tree_type, dims, split_type, run);

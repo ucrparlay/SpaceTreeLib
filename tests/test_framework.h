@@ -20,15 +20,15 @@
 #include "pspt/dependence/splitter.h"
 #include "pspt/kd_tree.h"
 #include "pspt/orth_tree.h"
-#include "pspt/r_tree.h"
 #include "pspt/p_tree_impl/cpamtree.hpp"
+#include "pspt/r_tree.h"
 
 #ifdef CCP
 using Coord = long;
 // using Coord = double;
 #else
-// using Coord = long;
-using Coord = double;
+using Coord = long;
+// using Coord = double;
 #endif  // CCP
 
 using Typename = Coord;
@@ -178,12 +178,12 @@ auto gen_rectangles(int rec_num, int const type,
   }
   // std::cout << "finish generate " << std::endl;
   return std::make_pair(box_seq, max_size);
-} 
+}
 
-template<typename Point>
-auto BuildPTree(parlay::sequence<Point> const& WP, int const& rounds){
+template <typename Point>
+auto BuildPTree(parlay::sequence<Point> const& WP, int const& rounds) {
   auto P = parlay::sequence<geobase::Point>::uninitialized(WP.size());
-  parlay::parallel_for(0, WP.size(), [&](int i){
+  parlay::parallel_for(0, WP.size(), [&](int i) {
     P[i].x = WP[i].pnt[0];
     P[i].y = WP[i].pnt[1];
     P[i].id = i;
@@ -191,80 +191,78 @@ auto BuildPTree(parlay::sequence<Point> const& WP, int const& rounds){
   CPAMTree::zmap tree;
 
   double loopLate = rounds > 1 ? 1.0 : -0.1;
-  double aveBuild = time_loop(rounds, loopLate, 
-      [&]() {},
-      // [&]() { tree = CPAMTree::map_init(P, false); }, 
-      [&]() { tree = CPAMTree::map_init(P, true); }, 
-      [&]() {}
-    );
+  double aveBuild = time_loop(
+      rounds, loopLate, [&]() {},
+      // [&]() { tree = CPAMTree::map_init(P, false); },
+      [&]() { tree = CPAMTree::map_init(P, true); }, [&]() {});
 
-  std::cout << fixed << setprecision(6) << "[Ptree] Build Time: " << aveBuild << std::endl << std::flush;
+  std::cout << fixed << setprecision(6) << aveBuild << " -1 -1 " << std::flush;
   return tree;
 }
 
-template<typename Point, typename PTree>
-auto BatchInsertPTree(PTree &tree, parlay::sequence<Point> const& WP, parlay::sequence<Point> const& WI, int const& rounds, double ratio = 1.0){
-
+template <typename Point, typename PTree>
+auto BatchInsertPTree(PTree& tree, parlay::sequence<Point> const& WP,
+                      parlay::sequence<Point> const& WI, int const& rounds,
+                      double ratio = 1.0) {
   auto P = parlay::sequence<geobase::Point>::uninitialized(WI.size());
-  parlay::parallel_for(0, WI.size(), [&](int i){
+  parlay::parallel_for(0, WI.size(), [&](int i) {
     P[i].x = WI[i].pnt[0];
     P[i].y = WI[i].pnt[1];
     P[i].id = i + tree.size();
   });
   P = P.substr(0, static_cast<size_t>(WI.size() * ratio));
 
-  double aveInsert = time_loop(rounds, 1.0, 
-    [&]() {},
-    [&]() {
-      tree = CPAMTree::map_insert(P, tree, true);
-      // cout << "P.size() = " << P.size() << endl;
-      // cout << tree.size() << endl;
-    },
-    [&]() { tree = CPAMTree::map_delete(P, tree, true); }
-  );
+  double aveInsert = time_loop(
+      rounds, 1.0, [&]() {},
+      [&]() {
+        tree = CPAMTree::map_insert(P, tree, true);
+        // cout << "P.size() = " << P.size() << endl;
+        // cout << tree.size() << endl;
+      },
+      [&]() { tree = CPAMTree::map_delete(P, tree, true); });
   // cout << tree.size() << endl;
-  std::cout << fixed << setprecision(6) << "[Ptree] Batch-Insert Time: " << aveInsert << std::endl << std::flush;
+  std::cout << fixed << setprecision(6) << aveInsert << " " << std::flush;
 }
 
-template<typename Point, typename PTree>
-auto BatchDeletePTree(PTree &tree, parlay::sequence<Point> const& WP, parlay::sequence<Point> const& WI, int const& rounds, double ratio = 1.0){
-
+template <typename Point, typename PTree>
+auto BatchDeletePTree(PTree& tree, parlay::sequence<Point> const& WP,
+                      parlay::sequence<Point> const& WI, int const& rounds,
+                      double ratio = 1.0) {
   auto P = parlay::sequence<geobase::Point>::uninitialized(WP.size());
-  parlay::parallel_for(0, WP.size(), [&](int i){
+  parlay::parallel_for(0, WP.size(), [&](int i) {
     P[i].x = WP[i].pnt[0];
     P[i].y = WP[i].pnt[1];
     P[i].id = i;
   });
   P = P.substr(0, static_cast<size_t>(WP.size() * ratio));
 
-  double aveDelete = time_loop(rounds, 1.0, 
-    [&]() {},
-    [&]() {
-      tree = CPAMTree::map_delete(P, tree, true);
-      // cout << "P.size() = " << P.size() << endl;
-      // cout << tree.size() << endl;
-    },
-    [&]() { tree = CPAMTree::map_insert(P, tree, true); }
-  );
+  double aveDelete = time_loop(
+      rounds, 1.0, [&]() {},
+      [&]() {
+        tree = CPAMTree::map_delete(P, tree, true);
+        // cout << "P.size() = " << P.size() << endl;
+        // cout << tree.size() << endl;
+      },
+      [&]() { tree = CPAMTree::map_insert(P, tree, true); });
   // cout << tree.size() << endl;
-  std::cout << fixed << setprecision(6) << "[Ptree] Batch-Delete Time: " << aveDelete << std::endl << std::flush;
+  std::cout << fixed << setprecision(6) << aveDelete << " " << std::flush;
 }
 
 //* test range count for fix rectangle
 template <typename Point, typename Tree>
-void rangeCountPtree(parlay::sequence<Point> const& WP, CPAMTree::zmap &tree,
-                   Typename* kdknn, int const& rounds, int rec_type,
-                   int rec_num, int DIM) {
+void rangeCountPtree(parlay::sequence<Point> const& WP, CPAMTree::zmap& tree,
+                     Typename* kdknn, int const& rounds, int rec_type,
+                     int rec_num, int DIM) {
   auto [query_box_seq, max_size] =
       gen_rectangles<Point, Tree, false>(rec_num, rec_type, WP, DIM);
   auto region = parlay::sequence<geobase::Bounding_Box>::uninitialized(rec_num);
-  parlay::parallel_for(0, rec_num, [&](int i){
+  parlay::parallel_for(0, rec_num, [&](int i) {
     region[i].first.x = query_box_seq[i].first.first.pnt[0];
     region[i].first.y = query_box_seq[i].first.first.pnt[1];
     region[i].second.x = query_box_seq[i].first.second.pnt[0];
     region[i].second.y = query_box_seq[i].first.second.pnt[1];
   });
-  
+
   // auto res = CPAMTree::range_count(tree, region[0], true);
   double aveCount = time_loop(
       rounds, 1.0, [&]() {},
@@ -276,25 +274,26 @@ void rangeCountPtree(parlay::sequence<Point> const& WP, CPAMTree::zmap &tree,
       },
       [&]() {});
   // cout << kdknn[0] << endl;
-  std::cout << fixed << setprecision(6) << "[Ptree] Range Count Time: " << aveCount << std::endl << std::flush;
+  std::cout << fixed << setprecision(6) << aveCount << " -1 -1 -1 -1 "
+            << std::flush;
   return;
 }
 
 //* test range count for fix rectangle
 template <typename Point, typename Tree>
-void rangeReportPtree(parlay::sequence<Point> const& WP, CPAMTree::zmap &tree,
-                   Typename* kdknn, int const& rounds, int rec_type,
-                   int rec_num, int DIM) {
+void rangeReportPtree(parlay::sequence<Point> const& WP, CPAMTree::zmap& tree,
+                      Typename* kdknn, int const& rounds, int rec_type,
+                      int rec_num, int DIM) {
   auto [query_box_seq, max_size] =
       gen_rectangles<Point, Tree, false>(rec_num, rec_type, WP, DIM);
   auto region = parlay::sequence<geobase::Bounding_Box>::uninitialized(rec_num);
-  parlay::parallel_for(0, rec_num, [&](int i){
+  parlay::parallel_for(0, rec_num, [&](int i) {
     region[i].first.x = query_box_seq[i].first.first.pnt[0];
     region[i].first.y = query_box_seq[i].first.first.pnt[1];
     region[i].second.x = query_box_seq[i].first.second.pnt[0];
     region[i].second.y = query_box_seq[i].first.second.pnt[1];
   });
-  
+
   // auto res = CPAMTree::range_count(tree, region[0], true);
   double aveCount = time_loop(
       rounds, 1.0, [&]() {},
@@ -306,10 +305,10 @@ void rangeReportPtree(parlay::sequence<Point> const& WP, CPAMTree::zmap &tree,
       },
       [&]() {});
   // cout << kdknn[0] << endl;
-  std::cout << fixed << setprecision(6) << "[Ptree] Range Report Time: " << aveCount << std::endl << std::flush;
+  std::cout << fixed << setprecision(6) << aveCount << " -1 -1 -1 -1 "
+            << std::flush;
   return;
 }
-
 
 template <typename Point, typename Tree, bool kTestTime = true, int kPrint = 1>
 void BuildTree(parlay::sequence<Point> const& WP, int const& rounds,
@@ -354,7 +353,8 @@ void BuildTree(parlay::sequence<Point> const& WP, int const& rounds,
     pkd.Flatten(wp);
     Points wp2 = WP;
     assert(parlay::sort(wp) == parlay::sort(wp2));
-    std::cout << "same points" << "\n";
+    std::cout << "same points"
+              << "\n";
   }
 
   return;
@@ -1223,9 +1223,11 @@ void PrintTreeParam() {
             << "Inba: " << TreeWrapper::TreeType::GetImbalanceRatio() << "; ";
 
   if constexpr (std::is_integral_v<typename TreeWrapper::Point::Coord>) {
-    std::cout << "Coord: integer" << "; ";
+    std::cout << "Coord: integer"
+              << "; ";
   } else if (std::is_floating_point_v<typename TreeWrapper::Point::Coord>) {
-    std::cout << "Coord: float" << "; ";
+    std::cout << "Coord: float"
+              << "; ";
   }
   std::cout << "\n" << std::flush;
   return;
