@@ -4,9 +4,9 @@ set -o xtrace
 Solvers=("test")
 # Solvers=("rtree")
 Node=(1000000000)
-# Tree=(1)
-Tree=(0 1)
-Dim=(2 3)
+Tree=(3)
+# Tree=(0 1)
+Dim=(2)
 declare -A datas
 # datas["/data/legacy/data3/zmen002/kdtree/ss_varden/"]="../benchmark/ss_varden/"
 # datas["/data/legacy/data3/zmen002/kdtree/uniform/"]="../benchmark/uniform/"
@@ -33,6 +33,8 @@ for solver in "${Solvers[@]}"; do
             splits=(3)
         elif [[ ${tree} -eq 2 ]]; then
             splits=(0)
+        elif [[ ${tree} -eq 3 ]]; then
+            splits=(0)
         fi
 
         for split in "${splits[@]}"; do
@@ -42,6 +44,7 @@ for solver in "${Solvers[@]}"; do
             elif [[ ${solver} == "test" ]]; then
                 resFile="res_${tree}_${type}_${split}.out"
             fi
+
             for dim in "${Dim[@]}"; do
                 for dataPath in "${!datas[@]}"; do
                     for node in "${Node[@]}"; do

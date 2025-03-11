@@ -180,6 +180,19 @@ void TestCPAMBB([[maybe_unused]] int const& kDim,
     }
   }
 
+  if (kTag & (1 << 2)) {
+    if (kSummary) {
+      parlay::sequence<double> const ratios = {0.0001, 0.001, 0.01, 0.1};
+      for (size_t i = 0; i < ratios.size(); i++) {
+        std::cout << "-1 " << std::flush;
+        // BatchDeletePTree(ptree, wp, wi, kRounds, ratios[i]);
+      }
+    } else {
+      std::cout << "-1 " << std::flush;
+      // BatchDeletePTree(ptree, wp, wi, kRounds, 1.0);
+    }
+  }
+
   using Tree = TreeDesc::TreeType;
   using Points = typename Tree::Points;
   Typename* kdknn = nullptr;

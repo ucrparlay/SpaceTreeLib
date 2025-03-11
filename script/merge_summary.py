@@ -9,13 +9,15 @@ path = "../benchmark"
 benchmarks = ["uniform_bigint", "ss_varden_bigint"]
 store_prefix = "data/"
 Nodes = [1000000000]
-Dims = [2, 3]
+# Dims = [2, 3]
+Dims = [2]
 
-solver_name = ["kd", "orth"]
+solver_name = ["kd", "orth", "p"]
 res_map = {
     "kd": "res_0_",
     "orth": "res_1_",
     "r": "res_2_",
+    "p": "res_3_",
 }
 split_name = {"0", "1", "2", "3"}
 split_map = {

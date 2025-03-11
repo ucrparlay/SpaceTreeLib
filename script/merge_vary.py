@@ -9,7 +9,8 @@ path = "../benchmark"
 benchmarks = ["uniform_bigint", "ss_varden_bigint"]
 storePrefix = "data/"
 Nodes = [1000000000]
-Dims = [2, 3]
+# Dims = [2, 3]
+Dims = [2]
 
 # type = "batch_update"
 # type = "batch_knn_query"
@@ -28,7 +29,7 @@ if type == "batch_update":
     Dims = [3]
 elif type == "query":
     # solverName = ["kdtree", "orth", "r"]
-    solver_name = ["kdtree", "orth"]
+    solver_name = ["kdtree", "orth", "p"]
     files = ["build", "knn_3", "count_3", "rquery_3"]
     # files = ["build", "knn_3"]
     Dims = [2, 3]
@@ -51,6 +52,7 @@ res_map = {
     "kdtree": "res_0_",
     "orth": "res_1_",
     "r": "res_2_",
+    "p": "res_3_",
 }
 
 split_name = {"0", "1", "2", "3"}
