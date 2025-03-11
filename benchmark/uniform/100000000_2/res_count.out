@@ -1,2 +1,4 @@
-1.in 0.249246 22.1708 0.000593333 0.00872833 0.0150287 
-2.in 0.247314 22.1562 0.000619333 0.00705367 0.0124267 
+Tree: KdTree; Split: MaxStretchDim-ObjectMedian; BDO: 6; Inba: 30; Coord: float; 
+1.in Unable to open file: /data3/zmen002/kdtree/uniform/100000000_2/1.in
+Tree: KdTree; Split: MaxStretchDim-ObjectMedian; BDO: 6; Inba: 30; Coord: float; 
+2.in Unable to open file: /data3/zmen002/kdtree/uniform/100000000_2/2.in

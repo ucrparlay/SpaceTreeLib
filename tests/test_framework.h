@@ -267,15 +267,22 @@ void rangeCountPtree(parlay::sequence<Point> const& WP, CPAMTree::zmap& tree,
   double aveCount = time_loop(
       rounds, 1.0, [&]() {},
       [&]() {
-        kdknn[0] = CPAMTree::range_count(tree, region[0], true);
-        // parlay::parallel_for(0, rec_num, [&](size_t i) {
-        //   kdknn[i] = CPAMTree::range_count(tree, region[i], true);
-        // });
+        // kdknn[0] = CPAMTree::range_count(tree, region[0], true);
+        parlay::parallel_for(0, rec_num, [&](size_t i) {
+          kdknn[i] = CPAMTree::range_count(tree, region[i], true);
+        });
       },
       [&]() {});
   // cout << kdknn[0] << endl;
+
   std::cout << fixed << setprecision(6) << aveCount << " -1 -1 -1 -1 "
             << std::flush;
+
+  bool ok = true;
+  parlay::parallel_for(0, rec_num, [&](size_t i){
+    if (kdknn[i] != query_box_seq[i].second) ok = false;
+  });
+  if (!ok) std::cout << "[ERROR] Incorrect." << std::endl;
   return;
 }
 
