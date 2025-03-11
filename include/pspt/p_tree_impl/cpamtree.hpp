@@ -46,17 +46,27 @@ namespace CPAMTree{
 	auto map_init(PT &P, bool use_hilbert = false){
 		size_t n = P.size();
 		
+		parlay::internal::timer t("SFC time", true);
 		parlay::parallel_for(0, n, [&](int i){
 			P[i].morton_id = use_hilbert ? P[i].overlap_bits() : P[i].interleave_bits();
 		});
+		// t.stop();
+		t.total();
+		// auto SFC_time = t.total_time();
 
+		parlay::internal::timer t1("Create entry time", true);
 		parlay::sequence<par> entries(n);
 		parlay::parallel_for(0, n, [&](int i){
 			entries[i] = {{P[i].morton_id, P[i].id}, P[i]};
 			// entries[i] = {P[i]->id, P[i]};
 		});
+		t1.total();
+
+		parlay::internal::timer t2("CPAM build from entry", true);
 		zmap m1(entries);
-		auto vals = zmap::values(m1);
+		t2.total();
+		// auto vals = zmap::values(m1);
+		// return std::make_tuple(m1, SFC_time);
 		return m1;
 	}	
 

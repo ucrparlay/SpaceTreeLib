@@ -222,13 +222,12 @@ void TestCPAMBB([[maybe_unused]] int const& kDim,
       run_batch_knn(wp, K, batchSize);
     }
   }
-
+  
   if (kQueryType & (1 << 1)) {  // NOTE: range count
     if (!kSummary) {
       int recNum = kRangeQueryNum;
       kdknn = new Typename[recNum];
 
-      // std::cout << std::endl;
       for (int i = 0; i < 3; i++) {
         rangeCountPtree<Point, Tree>(wp, ptree, kdknn, kRounds, i, recNum,
                                      kDim);

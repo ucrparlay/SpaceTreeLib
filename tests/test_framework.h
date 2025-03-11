@@ -191,10 +191,14 @@ auto BuildPTree(parlay::sequence<Point> const& WP, int const& rounds) {
   CPAMTree::zmap tree;
 
   double loopLate = rounds > 1 ? 1.0 : -0.1;
+  double sfc_time = 0.0;
   double aveBuild = time_loop(
       rounds, loopLate, [&]() {},
       // [&]() { tree = CPAMTree::map_init(P, false); },
-      [&]() { tree = CPAMTree::map_init(P, true); }, [&]() {});
+      [&]() { 
+        // auto [tree, SFC_time] = CPAMTree::map_init(P, true); 
+        tree = CPAMTree::map_init(P, true); 
+      }, [&]() {});
 
   std::cout << fixed << setprecision(6) << aveBuild << " -1 -1 " << std::flush;
   return tree;
@@ -264,6 +268,7 @@ void rangeCountPtree(parlay::sequence<Point> const& WP, CPAMTree::zmap& tree,
   });
 
   // auto res = CPAMTree::range_count(tree, region[0], true);
+  // cout << tree.size() << endl;
   double aveCount = time_loop(
       rounds, 1.0, [&]() {},
       [&]() {
@@ -274,15 +279,22 @@ void rangeCountPtree(parlay::sequence<Point> const& WP, CPAMTree::zmap& tree,
       },
       [&]() {});
   // cout << kdknn[0] << endl;
+  
+  std::cout << fixed << setprecision(6) << aveCount << " -1 -1 -1 -1 " << std::flush;
 
-  std::cout << fixed << setprecision(6) << aveCount << " -1 -1 -1 -1 "
-            << std::flush;
-
+  std::cout << std::endl;
   bool ok = true;
-  parlay::parallel_for(0, rec_num, [&](size_t i){
-    if (kdknn[i] != query_box_seq[i].second) ok = false;
-  });
-  if (!ok) std::cout << "[ERROR] Incorrect." << std::endl;
+  for (auto i = 0; i < rec_num; i++){
+    if (kdknn[i] != query_box_seq[i].second){
+      ok = false;
+      std::cout << "[ERROR]: " << i << " " << kdknn[i] << ", " << query_box_seq[i].second << std::endl;
+      break;
+    }
+  }
+  // parlay::parallel_for(0, rec_num, [&](size_t i){
+  //   if (kdknn[i] != query_box_seq[i].second) ok = false;
+  // });
+  if (!ok) std::cout << std::endl << "[ERROR] Incorrect." << std::endl;
   return;
 }
 
