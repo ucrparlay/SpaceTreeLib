@@ -57,12 +57,12 @@ class PTree
     using val_t = CpamVal;
     using aug_t = CpamAug;
 
-    static inline bool comp(key_t a, key_t b) { return a < b; }
+    static inline bool comp(key_t const& a, key_t const& b) { return a < b; }
     static aug_t get_empty() { return make_pair(BT::GetEmptyBox(), 0); }
-    static aug_t from_entry([[maybe_unused]] key_t k, val_t v) {
+    static aug_t from_entry([[maybe_unused]] key_t const& k, val_t const& v) {
       return make_pair(Box(v, v), 1);
     }
-    static aug_t combine(aug_t a, aug_t b) {
+    static aug_t combine(aug_t const& a, aug_t const& b) {
       return make_pair(BT::GetBox(a.first, b.first), a.second + b.second);
     }
   };

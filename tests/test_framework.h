@@ -202,6 +202,7 @@ void BuildTree(parlay::sequence<Point> const& WP, int const& rounds,
     parlay::copy(WP.cut(0, n), wp.cut(0, n));
     pkd.Build(wp.cut(0, n));
 
+    std::cout << aveBuild << " ";
     // if (kPrint == 1) {
     //   std::cout << aveBuild << " " << std::flush;
     //   auto deep = pkd.template GetAveTreeHeight<Leaf, Interior>();
@@ -225,7 +226,8 @@ void BuildTree(parlay::sequence<Point> const& WP, int const& rounds,
     pkd.Flatten(wp);
     Points wp2 = WP;
     assert(parlay::sort(wp) == parlay::sort(wp2));
-    std::cout << "same points" << "\n";
+    std::cout << "same points"
+              << "\n";
   }
 
   return;
@@ -1094,9 +1096,11 @@ void PrintTreeParam() {
             << "Inba: " << TreeWrapper::TreeType::GetImbalanceRatio() << "; ";
 
   if constexpr (std::is_integral_v<typename TreeWrapper::Point::Coord>) {
-    std::cout << "Coord: integer" << "; ";
+    std::cout << "Coord: integer"
+              << "; ";
   } else if (std::is_floating_point_v<typename TreeWrapper::Point::Coord>) {
-    std::cout << "Coord: float" << "; ";
+    std::cout << "Coord: float"
+              << "; ";
   }
   std::cout << "\n" << std::flush;
   return;
@@ -1219,6 +1223,7 @@ class Wrapper {
     };
 
     // NOTE: pick the split rule
+    // The lsb is the dim rule and the msb is the divide rule
     auto run_with_split_type = [&]<typename Point>() {
       if (!(split_type & (1 << 0)) && !(split_type & (1 << 1))) {
         // NOTE: 0 -> max_stretch + object_mid
@@ -1278,8 +1283,13 @@ class Wrapper {
 
     // NOTE: pick the split rule
     auto run_with_split_type = [&]<typename Point>() {
-      build_tree_type.template
-      operator()<Point, pspt::SpacialFillingCurve<HilbertCurve<Point>>>();
+      if (split_type & (1 << 0)) {
+        build_tree_type.template
+        operator()<Point, pspt::SpacialFillingCurve<HilbertCurve<Point>>>();
+      } else if (split_type & (1 << 1)) {
+        build_tree_type.template
+        operator()<Point, pspt::SpacialFillingCurve<MortonCurve<Point>>>();
+      }
     };
 
     if (dim == 2) {

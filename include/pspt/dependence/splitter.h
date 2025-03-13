@@ -14,6 +14,35 @@
 namespace pspt {
 // NOTE: ---------------- Spacial Filling Curver ---------------
 template <typename Point>
+struct MortonCurve {
+  using BT = BaseTree<Point, MortonCurve<Point>>;
+  using Slice = BT::Slice;
+  using DimsType = BT::DimsType;
+  using Box = BT::Box;
+  using Num = BT::Num;
+  using Coord = BT::Coord;
+  using HyperPlane = BT::HyperPlane;
+
+  // using CurveCode = hilbert::bitmask_t;
+  using CurveCode = uint_fast64_t;
+
+  void ZTag() {}
+  static std::string GetName() { return "MortonCurve"; }
+
+  auto Encode(Point const& p) {
+    assert(is_integral_v<Coord>);
+    uint_fast8_t loc = 0;
+    CurveCode id = 0;
+    for (DimsType i = 0; i < 64 / Point::GetDim(); i++) {
+      for (DimsType d = 0; d < Point::GetDim(); d++) {
+        id = id | (((p.pnt[d] >> i) & static_cast<CurveCode>(1)) << (loc++));
+      }
+    }
+    return id;
+  }
+};
+
+template <typename Point>
 struct HilbertCurve {
   using BT = BaseTree<Point, HilbertCurve<Point>>;
   using Slice = BT::Slice;
