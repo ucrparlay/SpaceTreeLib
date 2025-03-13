@@ -15,8 +15,8 @@
 
 namespace pspt {
 
-template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight = 6,
-          uint_fast8_t kImbaRatio = 30>
+template <typename Point, typename DerivedTree = void,
+          uint_fast8_t kSkHeight = 6, uint_fast8_t kImbaRatio = 30>
 class BaseTree {
  public:
   // NOTE: when kSkHeight >= 8, the # bucket is 255, total skeleton nodes >=
