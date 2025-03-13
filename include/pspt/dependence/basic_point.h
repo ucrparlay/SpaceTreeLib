@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <tuple>
+#include <variant>
 
 #include "comparator.h"
 #include "cpam/cpam.h"
@@ -15,33 +16,33 @@
 namespace pspt {
 
 template <typename T, uint_fast8_t d>
-struct PointType {
+struct BasicPoint {
   using Coord = T;
   using Coords = std::array<T, d>;
   using Num = Num_Comparator<Coord>;
   using DimsType = uint_fast8_t;
 
-  PointType() {}
+  BasicPoint() {}
 
-  explicit PointType(T const val) { this->pnt.fill(val); }
+  explicit BasicPoint(T const val) { this->pnt.fill(val); }
 
-  explicit PointType(Coords const& _pnt) : pnt(_pnt) {}
+  explicit BasicPoint(Coords const& _pnt) : pnt(_pnt) {}
 
-  explicit PointType(parlay::slice<T*, T*> x) {
+  explicit BasicPoint(parlay::slice<T*, T*> x) {
     assert(x.size() == d);
     for (DimsType i = 0; i < d; ++i) {
       this->pnt[i] = x[i];
     }
   }
 
-  explicit PointType(T const* x) {
+  explicit BasicPoint(T const* x) {
     for (DimsType i = 0; i < d; ++i) {
       this->pnt[i] = x[i];
     }
   }
 
-  PointType const MinCoords(PointType const& b) const {
-    PointType p;
+  BasicPoint const MinCoords(BasicPoint const& b) const {
+    BasicPoint p;
 
     if constexpr (d == 2) {
       p.pnt[0] = Num::Min(this->pnt[0], b.pnt[0]);
@@ -59,8 +60,8 @@ struct PointType {
     return p;
   }
 
-  PointType const MaxCoords(PointType const& b) const {
-    PointType p;
+  BasicPoint const MaxCoords(BasicPoint const& b) const {
+    BasicPoint p;
 
     if constexpr (d == 2) {
       p.pnt[0] = Num::Max(this->pnt[0], b.pnt[0]);
@@ -80,16 +81,16 @@ struct PointType {
 
   static consteval auto GetDim() { return d; }
 
-  bool SameDimension(PointType const& b) const { return *this == b; }
+  bool SameDimension(BasicPoint const& b) const { return *this == b; }
 
-  bool operator==(PointType const& x) const {
+  bool operator==(BasicPoint const& x) const {
     for (DimsType i = 0; i < d; ++i) {
       if (!Num::Eq(this->pnt[i], x.pnt[i])) return false;
     }
     return true;
   }
 
-  bool operator<(PointType const& x) const {
+  bool operator<(BasicPoint const& x) const {
     for (DimsType i = 0; i < d; ++i) {
       if (Num::Lt(this->pnt[i], x.pnt[i]))
         return true;
@@ -105,7 +106,7 @@ struct PointType {
 
   Coord const& operator[](DimsType i) const { return pnt[i]; }
 
-  friend std::ostream& operator<<(std::ostream& o, PointType const& a) {
+  friend std::ostream& operator<<(std::ostream& o, BasicPoint const& a) {
     o << "(";
     for (DimsType i = 0; i < d; ++i) {
       o << a.pnt[i] << (i == d - 1 ? "" : ", ");
@@ -117,78 +118,52 @@ struct PointType {
   Coords pnt;
 };
 
-// NOTE: sample usage of point with id associated
-template <typename T, uint_fast8_t d, typename IDtype = uint_fast64_t>
-struct PointID : PointType<T, d> {
-  using Coord = T;
-  using Coords = std::array<T, d>;
-  using Num = Num_Comparator<Coord>;
-  using ID = IDtype;
+template <typename T, uint_fast8_t d, class AugType = std::monostate>
+  requires std::totally_ordered<AugType>
+struct AugPoint : BasicPoint<T, d> {
+  using BT = BasicPoint<T, d>;
+  using DimsType = BT::DimsType;
 
-  PointID() {}
+  AugPoint() {}
 
-  explicit PointID(T const val) : id(0) { this->pnt.fill(val); }
+  explicit AugPoint(T const val) : BasicPoint<T, d>(val) {}
 
-  explicit PointID(Coords const& _pnt) : PointType<T, d>(_pnt), id(0) {}
+  explicit AugPoint(typename BasicPoint<T, d>::Coords const& _pnt)
+      : BasicPoint<T, d>(_pnt) {}
 
-  PointID(Coords const& _pnt, ID _id) : PointType<T, d>(_pnt), id(_id) {}
+  explicit AugPoint(parlay::slice<T*, T*> x) : BasicPoint<T, d>(x) {}
 
-  PointID(parlay::slice<T*, T*> x, ID _id) : PointType<T, d>(x), id(_id) {}
+  explicit AugPoint(T const* x) : BasicPoint<T, d>(x) {}
 
-  PointID(T const* x, ID _id) : PointType<T, d>(x), id(_id) {}
+  AugPoint(typename BasicPoint<T, d>::Coords const& _pnt, AugType const& aug)
+      : BasicPoint<T, d>(_pnt), aug(aug) {}
 
-  PointID const MinCoords(PointID const& b) const {
-    Coords pts;
-    for (int i = 0; i < d; i++) {
-      pts[i] = Num::Min(this->pnt[i], b.pnt[i]);
-    }
-    return PointID(pts);
+  AugPoint(parlay::slice<T*, T*> x, AugType const& aug)
+      : BasicPoint<T, d>(x), aug(aug) {}
+
+  AugPoint(T const* x, AugType const& aug) : BasicPoint<T, d>(x), aug(aug) {}
+
+  AugPoint(AugPoint const& p) : BasicPoint<T, d>(p), aug(p.aug) {}
+
+  AugPoint(AugPoint&& p)
+      : BasicPoint<T, d>(std::move(p)), aug(std::move(p.aug)) {}
+
+  bool operator==(AugPoint const& x) const {
+    return BasicPoint<T, d>::operator==(x) && aug == x.aug;
   }
 
-  PointID const MaxCoords(PointID const& b) const {
-    Coords pts;
-    for (int i = 0; i < d; i++) {
-      pts[i] = Num::Max(this->pnt[i], b.pnt[i]);
-    }
-    return PointID(pts);
+  bool operator<(AugPoint const& x) const {
+    return BasicPoint<T, d>::operator<(x)
+               ? true
+               : (BasicPoint<T, d>::operator==(x) ? aug < x.aug : false);
   }
 
-  bool operator==(PointID const& x) const {
-    for (int i = 0; i < d; i++) {
-      if (!Num::Eq(this->pnt[i], x.pnt[i])) return false;
-    }
-    return this->id == x.id;
-  }
-
-  bool operator<(PointID const& x) const {
-    if (this->id == x.id) {
-      for (int i = 0; i < d; i++) {
-        if (Num::Lt(this->pnt[i], x.pnt[i]))
-          return true;
-        else if (Num::Gt(this->pnt[i], x.pnt[i]))
-          return false;
-        else
-          continue;
-      }
-      return false;
-    } else {
-      return this->id < x.id;
-    }
-  }
-
-  friend std::ostream& operator<<(std::ostream& o, PointID const& a) {
-    o << a.id << "-";
-    o << "(";
-    for (int i = 0; i < d; i++) {
-      o << a.pnt[i] << ", ";
-    }
-    o << ") " << std::flush;
+  friend std::ostream& operator<<(std::ostream& o, AugPoint const& a) {
+    o << "[" << BT::operator<<(o, a) << "-" << a.aug << "] " << std::flush;
     return o;
   }
 
-  ID get_id() { return id; }
-
-  ID id;
+  AugType aug;
 };
 
 }  // namespace pspt
