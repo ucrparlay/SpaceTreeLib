@@ -67,17 +67,18 @@ list(APPEND CMAKE_MODULE_PATH "${PSPT_SOURCE_DIR}/cmake")
 
 # NOTE: begin of pspt library
 message(STATUS "\n\n---------------------------- PSPT -----------------------------")
-# NOTE: CPAM
-add_library(cpam INTERFACE)
-set(CPAM_INCLUDE_DIR "${PSPT_SOURCE_DIR}/include/CPAM/include")
-target_include_directories(cpam INTERFACE ${CPAM_INCLUDE_DIR})
-target_compile_features(cpam INTERFACE cxx_std_17)
-target_compile_options(cpam INTERFACE -mcx16 -march=native)
+# # NOTE: CPAM
+# add_library(cpam INTERFACE)
+# set(CPAM_INCLUDE_DIR "${PSPT_SOURCE_DIR}/include/CPAM/include")
+# target_include_directories(cpam INTERFACE ${CPAM_INCLUDE_DIR})
+# target_compile_features(cpam INTERFACE cxx_std_17)
+# target_compile_options(cpam INTERFACE -mcx16 -march=native)
 
 # NOTE: PSPT
 add_library(PSPT INTERFACE)
 set(PSPT_INCLUDE_DIR "${PSPT_SOURCE_DIR}/include/pspt")
-target_link_libraries(PSPT INTERFACE parlay cpam)
+# target_link_libraries(PSPT INTERFACE parlay cpam)
+target_link_libraries(PSPT INTERFACE parlay)
 target_include_directories(PSPT INTERFACE $<BUILD_INTERFACE:${PSPT_INCLUDE_DIR}>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 
