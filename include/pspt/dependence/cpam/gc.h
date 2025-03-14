@@ -7,6 +7,7 @@
 // *******************************************
 
 namespace cpam {
+using namespace std;
 
 template <class Node>
 struct gc {

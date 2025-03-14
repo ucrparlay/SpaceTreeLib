@@ -1,12 +1,16 @@
 #pragma once
 
-using namespace std;
+#include "build.h"
+#include "map_ops.h"
+#include "sequence_ops.h"
+#include "weight_balanced_tree.h"
 
 // *******************************************
 //   MAPS
 // *******************************************
 
 namespace cpam {
+using namespace std;
 
 template <class _Entry, class Join_Tree>
 class map_ {

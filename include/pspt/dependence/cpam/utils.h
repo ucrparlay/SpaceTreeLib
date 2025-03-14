@@ -4,6 +4,7 @@
 #include <optional>
 
 #include "parlay/internal/binary_search.h"
+#include "parlay/primitives.h"
 
 // *******************************************
 //   Utils
@@ -12,6 +13,7 @@
 // bool start_logging = false;
 
 namespace cpam {
+using namespace std;
 namespace utils {
 
 // #define LOG(x) (std::cout << x << std::endl)

@@ -1,5 +1,5 @@
 #pragma once
-#pragma GCC diagnostic ignored "-Wsubobject-linkage"
+// #pragma GCC diagnostic ignored "-Wsubobject-linkage"
 #include "augmented_map.h"
 #include "augmented_node.h"
 #include "augmented_ops.h"

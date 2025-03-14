@@ -1,12 +1,14 @@
 #pragma once
 
-using namespace std;
-
 // *******************************************
 //   AUG MAPS
 // *******************************************
+#include "augmented_node.h"
+#include "augmented_ops.h"
+#include "map.h"
 
 namespace cpam {
+using namespace std;
 
 template <class _Entry, class Join_Tree>
 struct aug_map_ : private map_<_Entry, Join_Tree> {
