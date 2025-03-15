@@ -59,6 +59,7 @@ struct HilbertCurve {
 
   auto Encode(Point const& p) {
     assert(is_integral_v<Coord>);
+    // TODO: optimize the encode
     auto ix = static_cast<CurveCode>(p.pnt[0]);
     auto iy = static_cast<CurveCode>(p.pnt[1]);
     CurveCode arr[] = {ix, iy};

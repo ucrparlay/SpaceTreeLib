@@ -145,7 +145,7 @@ struct AugPoint : BasicPoint<T, d> {
 
   AugPoint(AugPoint const& p) : BasicPoint<T, d>(p), aug(p.aug) {}
 
-  AugPoint(AugPoint&& p)
+  AugPoint(AugPoint&& p) noexcept
       : BasicPoint<T, d>(std::move(p)), aug(std::move(p.aug)) {}
 
   bool operator==(AugPoint const& x) const {

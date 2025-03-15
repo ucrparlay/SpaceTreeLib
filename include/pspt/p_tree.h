@@ -48,6 +48,7 @@ class PTree
   // NOTE: for the CPAM
   using CurveCode = typename SplitRule::CurveCode;
   using IDType = typename BT::IDType;
+  // using CpamKey = std::pair<CurveCode, IDType>;  // morton_id, id
   using CpamKey = std::pair<CurveCode, IDType>;  // morton_id, id
   using CpamVal = Point;
   using CpamAug = std::pair<Box, size_t>;
@@ -58,17 +59,18 @@ class PTree
     using aug_t = CpamAug;
 
     static inline bool comp(key_t const& a, key_t const& b) { return a < b; }
-    static aug_t get_empty() { return make_pair(BT::GetEmptyBox(), 0); }
-    static aug_t from_entry([[maybe_unused]] key_t const& k, val_t const& v) {
-      return make_pair(Box(v, v), 1);
+    static aug_t get_empty() { return CpamAug(BT::GetEmptyBox(), 0); }
+    static aug_t from_entry(key_t const& k, val_t const& v) {
+      return CpamAug(Box(v, v), 1);
     }
     static aug_t combine(aug_t const& a, aug_t const& b) {
-      return make_pair(BT::GetBox(a.first, b.first), a.second + b.second);
+      return CpamAug(BT::GetBox(a.first, b.first), a.second + b.second);
     }
   };
 
-  using CpamAugMap = cpam::aug_map<CpamEntry, 32>;
-  using par = std::tuple<typename CpamEntry::key_t, typename CpamEntry::val_t>;
+  using CpamAugMap = cpam::aug_map<CpamEntry, BT::kLeaveWrap>;
+  using CpamPair =
+      std::tuple<typename CpamEntry::key_t, typename CpamEntry::val_t>;
 
   using Leaf = CpamAugMap::Tree::node;
   using Interior = CpamAugMap::Tree::node;
