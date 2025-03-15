@@ -1,7 +1,3 @@
 [submodule "include/parlaylib"]
 	path = include/parlaylib
 	url = https://github.com/cmuparlay/parlaylib
-
-[submodule "include/CPAM"]
-	path = include/CPAM
-	url = https://github.com/ParAlg/CPAM
