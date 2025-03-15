@@ -33,7 +33,7 @@ void PTree<Point, SplitRule, kSkHeight, kImbaRatio>::Build_(Slice A) {
   //   P[i].interleave_bits();
   // });
 
-  parlay::sequence<par> entries(n);
+  parlay::sequence<CpamPair> entries(n);
   parlay::parallel_for(0, n, [&](int i) {
     // entries[i] = {{P[i].morton_id, P[i].id}, P[i]};
     entries[i] = {{space_filling_curve_.Encode(A[i]), i}, A[i]};

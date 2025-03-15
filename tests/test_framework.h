@@ -1,7 +1,6 @@
 #pragma once
 
 #include <algorithm>
-#include <boost/config/detail/suffix.hpp>
 #include <cstddef>
 #include <cstdint>
 #include <iomanip>
@@ -227,8 +226,7 @@ void BuildTree(parlay::sequence<Point> const& WP, int const& rounds,
     pkd.Flatten(wp);
     Points wp2 = WP;
     assert(parlay::sort(wp) == parlay::sort(wp2));
-    std::cout << "same points"
-              << "\n";
+    std::cout << "same points" << "\n";
   }
 
   return;
@@ -1097,11 +1095,9 @@ void PrintTreeParam() {
             << "Inba: " << TreeWrapper::TreeType::GetImbalanceRatio() << "; ";
 
   if constexpr (std::is_integral_v<typename TreeWrapper::Point::Coord>) {
-    std::cout << "Coord: integer"
-              << "; ";
+    std::cout << "Coord: integer" << "; ";
   } else if (std::is_floating_point_v<typename TreeWrapper::Point::Coord>) {
-    std::cout << "Coord: float"
-              << "; ";
+    std::cout << "Coord: float" << "; ";
   }
   std::cout << "\n" << std::flush;
   return;
