@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include <boost/config/detail/suffix.hpp>
 #include <cstddef>
 #include <cstdint>
 #include <iomanip>
@@ -1057,7 +1058,7 @@ std::pair<size_t, int> read_points(char const* iFile,
                                    [[maybe_unused]] bool withID = false) {
   using Coord = typename Point::Coord;
   using Coords = typename Point::Coords;
-  static Coords samplePoint;
+  static Coords a_sample_point;
   parlay::sequence<char> S = readStringFromFile(iFile);
   parlay::sequence<char*> W = stringToWords(S);
   size_t N = std::stoul(W[0], nullptr, 10);
@@ -1078,10 +1079,10 @@ std::pair<size_t, int> read_points(char const* iFile,
     for (int j = 0; j < Dim; j++) {
       wp[i].pnt[j] = a[i * Dim + j];
       if constexpr (std::is_same_v<Point,
-                                   PointType<Coord, samplePoint.size()>>) {
+                                   BasicPoint<Coord, a_sample_point.size()>>) {
         ;
       } else {
-        wp[i].id = i;
+        wp[i].aug.id = i;
       }
     }
   });
@@ -1210,6 +1211,16 @@ class Wrapper {
   };
 
   // NOTE: Apply the dim and split rule
+  struct AugId {
+    int id;
+    bool operator<(AugId const& rhs) const { return id < rhs.id; }
+    bool operator==(AugId const& rhs) const { return id == rhs.id; }
+    friend std::ostream& operator<<(std::ostream& os, AugId const& rhs) {
+      os << rhs.id;
+      return os;
+    }
+  };
+
   template <typename RunFunc>
   static void ApplyOrthogonal(int const tree_type, int const dim,
                               int const split_type, commandLine& params,
@@ -1249,14 +1260,16 @@ class Wrapper {
     };
 
     if (dim == 2) {
-      run_with_split_type.template operator()<PointType<Coord, 2>>();
-    } else if (dim == 3) {
-      run_with_split_type.template operator()<PointType<Coord, 3>>();
-    } else if (dim == 5) {
-      run_with_split_type.template operator()<PointType<Coord, 5>>();
-    } else if (dim == 7) {
-      run_with_split_type.template operator()<PointType<Coord, 7>>();
+      // run_with_split_type.template operator()<BasicPoint<Coord, 2>>();
+      run_with_split_type.template operator()<AugPoint<Coord, 2, AugId>>();
     }
+    // else if (dim == 3) {
+    //   run_with_split_type.template operator()<BasicPoint<Coord, 3>>();
+    // } else if (dim == 5) {
+    //   run_with_split_type.template operator()<BasicPoint<Coord, 5>>();
+    // } else if (dim == 7) {
+    //   run_with_split_type.template operator()<BasicPoint<Coord, 7>>();
+    // }
     // else if (dim == 9) {
     //   run_with_split_type(std::integral_constant<int, 9>{});
     // } else if (dim == 10) {
@@ -1293,7 +1306,8 @@ class Wrapper {
     };
 
     if (dim == 2) {
-      run_with_split_type.template operator()<PointType<Coord, 2>>();
+      // TODO: change
+      run_with_split_type.template operator()<BasicPoint<Coord, 2>>();
     }
   }
 };

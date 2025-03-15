@@ -11,6 +11,7 @@
 #include "parlay/delayed.h"
 #include "parlay/primitives.h"
 #include "parlay/sequence.h"
+#include "parlay/type_traits.h"
 #include "parlay/utilities.h"
 
 namespace pspt {
@@ -21,6 +22,7 @@ struct BasicPoint {
   using Coords = std::array<T, d>;
   using Num = Num_Comparator<Coord>;
   using DimsType = uint_fast8_t;
+  using BP = BasicPoint<T, d>;
 
   BasicPoint() {}
 
@@ -119,10 +121,10 @@ struct BasicPoint {
 };
 
 template <typename T, uint_fast8_t d, class AugType = std::monostate>
-  requires std::totally_ordered<AugType>
+  requires parlay::is_less_than_comparable_v<AugType>
 struct AugPoint : BasicPoint<T, d> {
-  using BT = BasicPoint<T, d>;
-  using DimsType = BT::DimsType;
+  using BP = BasicPoint<T, d>;
+  using DimsType = BP::DimsType;
 
   AugPoint() {}
 
@@ -148,6 +150,18 @@ struct AugPoint : BasicPoint<T, d> {
   AugPoint(AugPoint&& p) noexcept
       : BasicPoint<T, d>(std::move(p)), aug(std::move(p.aug)) {}
 
+  AugPoint& operator=(AugPoint const& p) {
+    BasicPoint<T, d>::operator=(p);
+    aug = p.aug;
+    return *this;
+  }
+
+  AugPoint& operator=(AugPoint&& p) noexcept {
+    BasicPoint<T, d>::operator=(std::move(p));
+    aug = std::move(p.aug);
+    return *this;
+  }
+
   bool operator==(AugPoint const& x) const {
     return BasicPoint<T, d>::operator==(x) && aug == x.aug;
   }
@@ -159,8 +173,16 @@ struct AugPoint : BasicPoint<T, d> {
   }
 
   friend std::ostream& operator<<(std::ostream& o, AugPoint const& a) {
-    o << "[" << BT::operator<<(o, a) << "-" << a.aug << "] " << std::flush;
+    o << "[" << BP::operator<<(o, a) << "-" << a.aug << "] " << std::flush;
     return o;
+  }
+
+  BP MinCoords(AugPoint const& b) const {
+    return static_cast<BP const&>(*this).MinCoords(static_cast<BP const&>(b));
+  }
+
+  BP MaxCoords(AugPoint const& b) const {
+    return static_cast<BP const&>(*this).MaxCoords(static_cast<BP const&>(b));
   }
 
   AugType aug;

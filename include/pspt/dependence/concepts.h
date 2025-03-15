@@ -31,8 +31,9 @@ concept IsPair = requires {
 
 template <typename T, typename Point>
 concept IsBox = requires {
-  requires IsPair<T> && std::same_as<typename T::first_type, Point> &&
-               std::same_as<typename T::second_type, Point>;
+  requires IsPair<T> &&
+               std::same_as<typename T::first_type, typename Point::BP> &&
+               std::same_as<typename T::second_type, typename Point::BP>;
 };
 
 template <typename T, typename Point>

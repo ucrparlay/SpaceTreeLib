@@ -21,6 +21,9 @@ class BaseTree {
  public:
   // NOTE: when kSkHeight >= 8, the # bucket is 255, total skeleton nodes >=
   // 255*2
+
+  using BasicPoint = Point::BP;
+
   using BucketType =
       std::conditional_t<(kSkHeight > 7), uint_fast16_t, uint_fast8_t>;
   using BallsType = uint_fast32_t;
@@ -39,7 +42,7 @@ class BaseTree {
   using PointsIter = typename parlay::sequence<Point>::iterator;
   using HyperPlane = std::pair<Coord, DimsType>;
   using HyperPlaneSeq = parlay::sequence<HyperPlane>;
-  using Box = std::pair<Point, Point>;
+  using Box = std::pair<BasicPoint, BasicPoint>;
   using BoxSeq = parlay::sequence<Box>;
 
   using NodeBoolean = std::pair<Node*, bool>;
