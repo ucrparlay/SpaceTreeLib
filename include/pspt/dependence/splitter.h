@@ -30,7 +30,7 @@ struct MortonCurve {
   static std::string GetName() { return "MortonCurve"; }
 
   auto Encode(Point const& p) {
-    assert(is_integral_v<Coord>);
+    assert(std::is_integral_v<Coord>);
     uint_fast8_t loc = 0;
     CurveCode id = 0;
     for (DimsType i = 0; i < 64 / Point::GetDim(); i++) {
@@ -58,7 +58,7 @@ struct HilbertCurve {
   static std::string GetName() { return "HilbertCurve"; }
 
   auto Encode(Point const& p) {
-    assert(is_integral_v<Coord>);
+    assert(std::is_integral_v<Coord>);
     // TODO: optimize the encode
     auto ix = static_cast<CurveCode>(p.pnt[0]);
     auto iy = static_cast<CurveCode>(p.pnt[1]);

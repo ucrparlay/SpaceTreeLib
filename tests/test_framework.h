@@ -1196,7 +1196,11 @@ class Wrapper {
 
     if (read_insert_file == 1) {  // NOTE: read Points to be inserted
       int id = std::stoi(name.substr(0, name.find_first_of('.')));
-      id = (id + 1) % 3;  // WARN: MOD graph number used to test
+#ifdef CCP
+      id = (id + 1) % 10;  // WARN: MOD graph number used to test
+#else
+      id = (id + 1) % 3;
+#endif  // CCP
       if (!id) id++;
       auto pos = std::string(input_file_path).rfind('/') + 1;
       insert_file_path = std::string(input_file_path).substr(0, pos) +
