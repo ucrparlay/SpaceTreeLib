@@ -247,6 +247,9 @@ class VardenGenerator {
     parlay::parallel_for(0, cluster_seq.size(), [&](size_t i) {
       for (DimsType j = 0; j < Point::GetDim(); j++) {
         cluster_seq[i][j] += bb.first[j];
+        if (cluster_seq[i][j] < 0) {
+          std::cout << "cluster_seq[i][j]: " << cluster_seq[i][j] << std::endl;
+        }
       }
     });
 
@@ -297,19 +300,19 @@ int main(int argc, char* argv[]) {
     std::string newpath = path + toString(i + 1) + ".in";
     std::cout << newpath << std::endl;
     if (pts_dim == 2) {
-      generate.operator()<PointType<Coord, 2>>(newpath);
-      // } else if (pts_dim == 3) {
-      //   generate.operator()<PointType<Coord, 3>>(newpath);
-      // } else if (pts_dim == 5) {
-      //   generate.operator()<PointType<Coord, 5>>(newpath);
-      // } else if (pts_dim == 7) {
-      //   generate.operator()<PointType<Coord, 7>>(newpath);
-      // } else if (pts_dim == 9) {
-      //   generate.operator()<PointType<Coord, 9>>(newpath);
-      // } else if (pts_dim == 12) {
-      //   generate.operator()<PointType<Coord, 12>>(newpath);
-      // } else if (pts_dim == 16) {
-      //   generate.operator()<PointType<Coord, 16>>(newpath);
+      generate.operator()<BasicPoint<Coord, 2>>(newpath);
+    } else if (pts_dim == 3) {
+      generate.operator()<BasicPoint<Coord, 3>>(newpath);
+    } else if (pts_dim == 5) {
+      generate.operator()<BasicPoint<Coord, 5>>(newpath);
+    } else if (pts_dim == 7) {
+      generate.operator()<BasicPoint<Coord, 7>>(newpath);
+    } else if (pts_dim == 9) {
+      generate.operator()<BasicPoint<Coord, 9>>(newpath);
+    } else if (pts_dim == 12) {
+      generate.operator()<BasicPoint<Coord, 12>>(newpath);
+    } else if (pts_dim == 16) {
+      generate.operator()<BasicPoint<Coord, 16>>(newpath);
     } else {
       throw std::runtime_error("Invalid dimension");
     }
