@@ -203,30 +203,28 @@ void BuildTree(parlay::sequence<Point> const& WP, int const& rounds,
     pkd.Build(wp.cut(0, n));
 
     std::cout << aveBuild << " ";
-    // if (kPrint == 1) {
-    //   std::cout << aveBuild << " " << std::flush;
-    //   auto deep = pkd.template GetAveTreeHeight<Leaf, Interior>();
-    //   std::cout << deep << " " << std::flush;
-    // } else if (kPrint == 2) {
-    //   size_t max_deep = 0;
-    //   std::cout << aveBuild << " ";
-    //   std::cout << pkd.template GetMaxTreeDepth<Leaf,
-    //   Interior>(pkd.GetRoot(),
-    //                                                             max_deep)
-    //             << " " << pkd.template GetAveTreeHeight<Leaf, Interior>() <<
-    //             " "
-    //             << std::flush;
-    // }
+    if (kPrint == 1) {
+      std::cout << aveBuild << " " << std::flush;
+      auto deep = pkd.template GetAveTreeHeight<Leaf, Interior>();
+      std::cout << deep << " " << std::flush;
+    } else if (kPrint == 2) {
+      size_t max_deep = 0;
+      std::cout << aveBuild << " ";
+      std::cout << pkd.template GetMaxTreeDepth<Leaf, Interior>(pkd.GetRoot(),
+                                                                max_deep)
+                << " " << pkd.template GetAveTreeHeight<Leaf, Interior>() << " "
+                << std::flush;
+    }
 
   } else {
     // NOTE: always return a built tree
     pkd.DeleteTree();
     parlay::copy(WP.cut(0, n), wp.cut(0, n));
     pkd.Build(wp.cut(0, n));
-    pkd.Flatten(wp);
-    Points wp2 = WP;
-    assert(parlay::sort(wp) == parlay::sort(wp2));
-    std::cout << "same points" << "\n";
+    // pkd.Flatten(wp);
+    // Points wp2 = WP;
+    // assert(parlay::sort(wp) == parlay::sort(wp2));
+    // std::cout << "same points" << "\n";
   }
 
   return;
@@ -589,7 +587,15 @@ void RangeQuery(parlay::sequence<Point> const& wp, Tree& pkd, int const& rounds,
     parlay::sort_inplace(Out.cut(offset[i], offset[i + 1]));
     parlay::sort_inplace(query_box_seq[i].second);
     for (size_t j = 0; j < query_box_seq[i].second.size(); j++) {
+      // assert(Out[offset[i] + j] == query_box_seq[i].second.at(j));
+      if (Out[offset[i] + j] != query_box_seq[i].second.at(j)) {
+        std::cout << "wrong" << query_box_seq[i].first.first
+                  << query_box_seq[i].first.second << std::endl;
+        std::cout << Out[offset[i] + j] << " " << query_box_seq[i].second.at(j)
+                  << std::endl;
+      }
       assert(Out[offset[i] + j] == query_box_seq[i].second.at(j));
+
       // if (Out[i * step + j] != query_box_seq[i].second.at(j)) std::cout <<
       // "wrong
       // "; std::cout << Out[j] << " " << query_box_seq[i].second.at(j) <<

@@ -14,13 +14,13 @@ out="log.in"
 tag=$((2#0))
 count=1 # count the number of ok in the output
 dims=(2 3 5)
-# queryTypes=$((2#111))
-queryTypes=$((2#1))
-# trees=(1 0)
-trees=(3)
+queryTypes=$((2#111))
+# queryTypes=$((2#1))
+trees=(0 1)
+# trees=(3)
 
-# Paths=("/ssd1/zmen002/kdtree/ss_varden/" "/ssd1/zmen002/kdtree/uniform/")
-Paths=("/ssd1/zmen002/kdtree/uniform/")
+Paths=("/ssd1/zmen002/kdtree/ss_varden/" "/ssd1/zmen002/kdtree/uniform/")
+# Paths=("/ssd1/zmen002/kdtree/uniform/")
 
 #* check node
 for queryType in "${queryTypes[@]}"; do
@@ -29,12 +29,11 @@ for queryType in "${queryTypes[@]}"; do
 			for dim in "${dims[@]}"; do
 				for tree in "${trees[@]}"; do
 					if [[ ${tree} -eq 0 ]]; then
-						# splits=(0 3)
-						splits=(3)
+						splits=(0 3)
 					elif [[ ${tree} -eq 1 ]]; then
 						splits=(3)
 					elif [[ ${tree} -eq 2 ]]; then
-						splits=(0)
+						splits=(1 2)
 					elif [[ ${tree} -eq 3 ]]; then
 						splits=(0)
 					fi
