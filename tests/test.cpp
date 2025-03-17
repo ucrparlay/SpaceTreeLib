@@ -155,6 +155,8 @@ void TestCPAMBB([[maybe_unused]] int const& kDim,
   // auto tree = CPAMTree::map_init(P, true);
   // cout << tree.size() << endl;
   auto ptree = BuildPTree(wp, kRounds);
+  // test sort time
+  return;
 
   // NOTE: batch insert
   if (kTag & (1 << 0)) {

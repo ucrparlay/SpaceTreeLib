@@ -186,8 +186,8 @@ struct augmented_ops : Map {
     }
   }
 
-  template<class F>
-  static size_t range_count_filter(ptr b, const F &f, size_t granularity=kNodeLimit) {
+  template<class F, typename F2>
+  static size_t range_count_filter(ptr b, const F &f, const F2 &f2, size_t granularity=kNodeLimit) {
     if (b.empty()) return 0;
     // auto cur_par = Map::get_entry(b.unsafe_ptr());
     // Map::print_node_info(b.unsafe_ptr(), "cur");
@@ -199,7 +199,7 @@ struct augmented_ops : Map {
     auto cur_pt = std::get<1>(e);
     // std::cout << std::fixed << std::setprecision(6) << cur_pt.x << ", " << cur_pt.y << std::endl;
 
-    auto flag = f(cur_aug.first, 0);
+    auto flag = f(cur_aug.first);
   
     if (flag < 0) {
       GC::decrement(root);
@@ -211,8 +211,9 @@ struct augmented_ops : Map {
       return cur_aug.second;
     }
 
-    auto pt_box = std::make_pair(cur_pt, cur_pt);
-    auto cur_pt_inside = f(pt_box, 0) > 0 ? 1 : 0;
+    // auto pt_box = std::make_pair(cur_pt, cur_pt);
+    // auto cur_pt_inside = f(pt_box, 0) > 0 ? 1 : 0;
+    auto cur_pt_inside = f2(cur_pt) > 0 ? 1 : 0;
 
     // size_t n = b.size();
     // auto [lc, e, rc, root] = Map::expose(std::move(b));
@@ -221,8 +222,8 @@ struct augmented_ops : Map {
     //   [&]() {return range_count_filter(std::move(lc), f, granularity);},
     //   [&]() {return range_count_filter(std::move(rc), f, granularity);});
 
-    auto l = range_count_filter(std::move(lc), f, granularity); 
-    auto r = range_count_filter(std::move(rc), f, granularity); 
+    auto l = range_count_filter(std::move(lc), f, f2, granularity); 
+    auto r = range_count_filter(std::move(rc), f, f2, granularity); 
 
     GC::decrement(root);
 

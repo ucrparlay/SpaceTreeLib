@@ -53,14 +53,27 @@ namespace CPAMTree{
 		// t.stop();
 		t.total();
 		// auto SFC_time = t.total_time();
-
+		auto h_values = parlay::sequence<unsigned long long>::uninitialized(n);
+		auto h_values2 =parlay::sequence<unsigned long long>::uninitialized(n); 
 		parlay::internal::timer t1("Create entry time", true);
 		parlay::sequence<par> entries(n);
 		parlay::parallel_for(0, n, [&](int i){
 			entries[i] = {{P[i].morton_id, P[i].id}, P[i]};
 			// entries[i] = {P[i]->id, P[i]};
+			h_values[i] = P[i].morton_id;
+			h_values2[i] = P[i].morton_id;
 		});
 		t1.total();
+		
+		parlay::internal::timer t_integer_sort("integer_sort", true);
+		auto ret = parlay::integer_sort(h_values);
+		t_integer_sort.total();
+		auto less = [&](int a, int b){
+			return a < b;
+		};
+		parlay::internal::timer t_sample_sort("sample_sort", true);
+		auto ret2 = parlay::internal::sample_sort(parlay::make_slice(h_values2.begin(), h_values2.end()), less);
+		t_sample_sort.total();
 
 		parlay::internal::timer t2("CPAM build from entry", true);
 		zmap m1(entries);
@@ -76,7 +89,9 @@ namespace CPAMTree{
 
 		parlay::parallel_for(0, n, [&](int i){
 			P[i].morton_id = use_hilbert ? P[i].overlap_bits() : P[i].interleave_bits();
+
 		});
+		
 		parlay::sequence<par> insert_pts(n);
 		parlay::parallel_for(0, n, [&](int i){
 			insert_pts[i] = {{P[i].morton_id, P[i].id}, P[i]};
@@ -108,15 +123,15 @@ namespace CPAMTree{
 
 	template<class T, class MBR>
 	auto range_count(T &zCPAM, MBR query_mbr, bool use_hilbert = false){
-		auto f = [&](auto cur, auto debug){ 
-			if (debug == 1){
-				cout << "cur mbr: "; print_mbr(cur);
-				cout << "query mbr: "; print_mbr(query_mbr);
-			}
+		auto f = [&](auto cur){ 
 			return mbr_mbr_relation(cur, query_mbr);
 		};
 
-		auto res = zmap::range_count_filter(zCPAM, f);
+		auto f2 = [&](auto cur){ 
+			return point_in_mbr(cur, query_mbr);
+		};
+
+		auto res = zmap::range_count_filter(zCPAM, f, f2);
 		return res;
 		// auto ret = 0;
 		// auto f2 = [&](auto cur){ 

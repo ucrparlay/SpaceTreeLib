@@ -35,9 +35,9 @@ public:
   static M aug_filter_mid(M m, const F& f) {
     return M(Tree::aug_filter_mid(m.get_root(), f)); }
 
-  template<class F>
-  static size_t range_count_filter(M m, const F& f) {
-    return Tree::range_count_filter(m.get_root(), f); }
+  template<class F, typename F2>
+  static size_t range_count_filter(M m, const F& f, const F2& f2) {
+    return Tree::range_count_filter(m.get_root(), f, f2); }
 
   // extract the augmented values
   A aug_val() const { return Tree::aug_val(Map::root); }

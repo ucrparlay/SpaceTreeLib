@@ -28,7 +28,8 @@ using Coord = long;
 // using Coord = double;
 #else
 // using Coord = long;
-using Coord = double;
+// using Coord = double;
+using Coord = int64_t;
 #endif  // CCP
 
 using Typename = Coord;

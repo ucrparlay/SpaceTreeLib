@@ -18,6 +18,7 @@ struct build {
   static parlay::sequence<ET> sort_remove_duplicates(Seq const &A) { // ?? const
     if (A.size() == 0) return parlay::sequence<ET>(0);
     auto B = parlay::internal::sample_sort(parlay::make_slice(A.begin(),A.end()), less);
+    // auto B = parlay::integer_sort(parlay::make_slice(A.begin(),A.end()));
 
     auto Fl = parlay::delayed_seq<bool>(B.size(), [&] (size_t i) {
 	return (i==0) || less(B[i-1], B[i]); });
