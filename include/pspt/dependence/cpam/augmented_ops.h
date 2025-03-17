@@ -1,6 +1,6 @@
 #pragma once
-#include "map_ops.h"
 #include "utils.h"
+#include "map_ops.h"
 
 // *******************************************
 //   AUGMENTED MAP OPERATIONS
@@ -8,7 +8,7 @@
 
 namespace cpam {
 
-template <class Map>
+template<class Map>
 struct augmented_ops : Map {
   using Entry = typename Map::Entry;
   using node = typename Map::node;
@@ -22,7 +22,9 @@ struct augmented_ops : Map {
   using Map::kBaseCaseSize;
   using Map::kNodeLimit;
 
-  static inline aug_t aug_val(node* b) { return Seq::aug_val(b); }
+  static inline aug_t aug_val(node* b) {
+    return Seq::aug_val(b);
+  }
 
   struct aug_sum_t {
     aug_t result;
@@ -30,15 +32,17 @@ struct augmented_ops : Map {
     void add_entry(ET e) {
       result = Entry::combine(result, Entry::from_entry(e));
     }
-    void add_aug_val(aug_t av) { result = Entry::combine(result, av); }
+    void add_aug_val(aug_t av) {
+      result = Entry::combine(result, av);
+    }
   };
 
   // the sum left of or at key
-  template <class aug>
-  static void aug_sum_left(node* b, K const& key, aug& a) {
+  template<class aug>
+  static void aug_sum_left(node* b, const K& key, aug& a) {
     while (b) {
       if (Map::is_compressed(b)) {
-        auto fn = [&](auto const& et) {
+        auto fn = [&] (const auto& et) {
           if (Map::comp(Entry::get_key(et), key)) {
             a.add_entry(et);
             return true;
@@ -60,11 +64,11 @@ struct augmented_ops : Map {
   }
 
   // the sum right of or at key
-  template <class aug>
-  static void aug_sum_right(node* b, K const& key, aug& a) {
+  template<class aug>
+  static void aug_sum_right(node* b, const K& key, aug& a) {
     while (b) {
       if (Map::is_compressed(b)) {
-        auto fn = [&](auto const& et) {
+        auto fn = [&] (const auto& et) {
           if (!Map::comp(Entry::get_key(et), key)) {
             a.add_entry(et);
           }
@@ -74,21 +78,19 @@ struct augmented_ops : Map {
       }
       auto rb = Map::cast_to_regular(b);
       if (!Map::comp(Map::get_key(rb), key)) {
-        a.add_entry(Map::get_entry(rb));
-        if (rb->rc) a.add_aug_val(Map::aug_val(rb->rc));
-        b = rb->lc;
-      } else
-        b = rb->rc;
+	a.add_entry(Map::get_entry(rb));
+	if (rb->rc) a.add_aug_val(Map::aug_val(rb->rc));
+	b = rb->lc;
+      } else b = rb->rc;
     }
   }
 
-  template <class aug>
-  static void aug_sum_range(node* b, K const& key_left, K const& key_right,
-                            aug& a) {
+  template<class aug>
+  static void aug_sum_range(node* b, const K& key_left, const K& key_right, aug& a) {
     node* r = Map::range_root_2(b, key_left, key_right);
     if (r) {
       if (Map::is_compressed(r)) {
-        auto fn = [&](auto const& et) {
+        auto fn = [&] (const auto& et) {
           if (Map::comp(key_left, Entry::get_key(et)) &&
               Map::comp(Entry::get_key(et), key_right)) {
             a.add_entry(et);
@@ -107,12 +109,12 @@ struct augmented_ops : Map {
     }
   }
 
-  template <typename Func>
-  static std::optional<ET> aug_select(node* b, Func const& f) {
+  template<typename Func>
+  static std::optional<ET> aug_select(node* b, const Func& f) {
     if (!b) return {};
     if (Map::is_compressed(b)) {
       std::optional<ET> ret;
-      auto fn = [&](auto const& et) {
+      auto fn = [&] (const auto& et) {
         if (!f(Entry::from_entry(et))) {
           ret = et;
           return false;  // stop
@@ -133,14 +135,14 @@ struct augmented_ops : Map {
   }
 
   template <class Func>
-  static node* aug_filter_bc(ptr b1, Func const& f) {
+  static node* aug_filter_bc(ptr b1, const Func& f) {
     assert(b1.size() > 0);
     ET stack[kBaseCaseSize + 1];
 
     auto b1_node = b1.node_ptr();
     size_t offset = 0;
     aug_t cur = Entry::get_empty();
-    auto copy_f = [&](ET a) {  // has to be a copy since we move
+    auto copy_f = [&] (ET a) {  // has to be a copy since we move
       cur = Entry::combine(cur, Entry::from_entry(a));
       if (f(cur)) {
         parlay::move_uninitialized(stack[offset++], a);
@@ -159,8 +161,99 @@ struct augmented_ops : Map {
   }
 
   template <class Func>
-  static node* aug_filter(ptr b, Func const& f,
-                          size_t granularity = kNodeLimit) {
+  static node* aug_filter_bc_mid(ptr b1, const Func& f) {
+    assert(b1.size() > 0);
+    ET stack[kBaseCaseSize + 1];
+
+    auto b1_node = b1.node_ptr();
+    size_t offset = 0;
+    aug_t cur = Entry::get_empty();
+    auto copy_f = [&] (ET a) {  // has to be a copy since we move
+      cur = Entry::combine(cur, Entry::from_entry(a));
+      if (f(cur)) {
+        parlay::move_uninitialized(stack[offset++], a);
+      }
+    };
+    Map::iterate_seq_mid(b1_node, copy_f);
+    assert(offset <= kBaseCaseSize);
+
+    Map::decrement_recursive(b1_node);
+
+    if (offset < B) {
+      return Map::to_tree_impl((ET*)stack, offset);
+    } else {
+      return Map::make_compressed(stack, offset);
+    }
+  }
+
+  template<class F>
+  static size_t range_count_filter(ptr b, const F &f, size_t granularity=kNodeLimit) {
+    if (b.empty()) return 0;
+    // auto cur_par = Map::get_entry(b.unsafe_ptr());
+    // Map::print_node_info(b.unsafe_ptr(), "cur");
+    // std::cout << cur_val.first << "-" << cur_val.second << std::endl;
+    // auto cur_pt = std::get<1>(Map::get_entry(b.unsafe_ptr()));
+    auto cur_aug = aug_val(b.unsafe_ptr());
+    auto [lc, e, rc, root] = Map::expose(std::move(b));
+
+    auto cur_pt = std::get<1>(e);
+    // std::cout << std::fixed << std::setprecision(6) << cur_pt.x << ", " << cur_pt.y << std::endl;
+
+    auto flag = f(cur_aug.first, 0);
+  
+    if (flag < 0) return 0;
+    if (flag == 1) {
+      // std::cout << "found " << cur_aug.second << " points" << std::endl;
+      return cur_aug.second;
+    }
+
+    auto pt_box = std::make_pair(cur_pt, cur_pt);
+    auto cur_pt_inside = f(pt_box, 0) > 0 ? 1 : 0;
+
+    size_t n = b.size();
+    // auto [lc, e, rc, root] = Map::expose(std::move(b));
+
+    auto [l, r] = utils::fork<size_t>(n >= granularity,
+      [&]() {return range_count_filter(std::move(lc), f, granularity);},
+      [&]() {return range_count_filter(std::move(rc), f, granularity);});
+
+    return l + r + cur_pt_inside;
+  }
+
+  template<class Func>
+  static node* aug_filter_mid(ptr b, const Func& f, size_t granularity=kNodeLimit) {
+    if (b.empty()) return NULL;
+    // if (b.size() <= kBaseCaseSize) {
+    //   return aug_filter_bc_mid(std::move(b), f);
+    // }
+    // TODO: better functionality for getting aug_val from b
+    // std::cout << "My aug_val = " << aug_val(b.unsafe_ptr()) << std::endl;
+    if (!f(aug_val(b.unsafe_ptr()))) return NULL;
+
+    // size_t n = b.size();
+    auto [lc, e, rc, root] = Map::expose(std::move(b));
+    std::cout << "cur key: " << std::get<0>(e).first << std::endl;
+    if (b.size() == 0){
+      std::cout << "0 B" << std::endl;
+    }
+
+    // auto [l, r] = utils::fork<node*>(n >= granularity,
+    //   [&]() {return aug_filter_mid(std::move(lc), f, granularity);},
+    //   [&]() {return aug_filter_mid(std::move(rc), f, granularity);});
+    
+    auto l = aug_filter_mid(std::move(lc), f, granularity);
+    auto r = aug_filter_mid(std::move(rc), f, granularity);
+
+    if (f(Entry::from_entry(e))) {
+      return Map::join(l, e, r, root);
+    } else {
+      GC::decrement(root);
+      return Map::join2(l, r);
+    }
+  }
+
+  template<class Func>
+  static node* aug_filter(ptr b, const Func& f, size_t granularity=kNodeLimit) {
     if (b.empty()) return NULL;
     if (b.size() <= kBaseCaseSize) {
       return aug_filter_bc(std::move(b), f);
@@ -172,10 +265,9 @@ struct augmented_ops : Map {
     size_t n = b.size();
     auto [lc, e, rc, root] = Map::expose(std::move(b));
 
-    auto [l, r] = utils::fork<node*>(
-        n >= granularity,
-        [&]() { return aug_filter(std::move(lc), f, granularity); },
-        [&]() { return aug_filter(std::move(rc), f, granularity); });
+    auto [l, r] = utils::fork<node*>(n >= granularity,
+      [&]() {return aug_filter(std::move(lc), f, granularity);},
+      [&]() {return aug_filter(std::move(rc), f, granularity);});
 
     if (f(Entry::from_entry(e))) {
       return Map::join(l, e, r, root);
@@ -186,24 +278,22 @@ struct augmented_ops : Map {
   }
 
   template <class Func>
-  static node* insert_lazy(node* b, const ET& e, Func const& f) {
+  static node* insert_lazy(node* b, const ET& e, const Func& f) {
     aug_t av = Entry::from_entry(e);
-    auto g = [&](aug_t const& a) { return Entry::combine(av, a); };
+    auto g = [&] (const aug_t& a) { return Entry::combine(av,a);};
 
-    auto lazy_join = [&](node* l, node* r, node* _m) -> node* {
+    auto lazy_join = [&] (node* l, node* r, node* _m) -> node* {
       auto m = Map::cast_to_regular(_m);
-      m->rc = r;
-      m->lc = l;
+      m->rc = r; m->lc = l;
       if (Map::is_balanced(m)) {
-        Map::lazy_update(m, g);
-        return m;
-      } else
-        return Map::node_join(l, r, m);
+	Map::lazy_update(m,g);
+	return m;
+      } else return Map::node_join(l,r,m);
     };
 
-    return Map::template insert_tmpl<Func, decltype(lazy_join), false>(
-        b, e, f, lazy_join);
+    return Map::template insert_tmpl<Func, decltype(lazy_join), false>(b, e, f, lazy_join);
   }
+
 };
 
 }  // namespace cpam
