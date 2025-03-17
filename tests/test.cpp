@@ -162,6 +162,20 @@ void TestCPAMBB([[maybe_unused]] int const& kDim,
   using Tree = TreeDesc::TreeType;
   using Points = typename Tree::Points;
 
+  if (kQueryType & (1 << 1)) {  // NOTE: range count
+    if (!kSummary) {
+      int recNum = kRangeQueryNum;
+      kdknn = new Typename[recNum];
+
+      for (int i = 0; i < 3; i++) {
+        rangeCountPtree<Point, Tree>(wp, ptree, kdknn, kRounds, i, recNum,
+                                     kDim);
+      }
+
+      delete[] kdknn;
+    }
+  }
+
   if (kQueryType & (1 << 2)) {  // NOTE: range query
     if (kSummary == 0) {
       int recNum = kRangeQueryNum;

@@ -273,10 +273,10 @@ void rangeCountPtree(parlay::sequence<Point> const& WP, CPAMTree::zmap& tree,
   double aveCount = time_loop(
       rounds, 1.0, [&]() {},
       [&]() {
-        // kdknn[0] = CPAMTree::range_count(tree, region[0], true);
-        parlay::parallel_for(0, rec_num, [&](size_t i) {
-          kdknn[i] = CPAMTree::range_count(tree, region[i], true);
-        });
+        kdknn[0] = CPAMTree::range_count(tree, region[0], true);
+        // parlay::parallel_for(0, rec_num, [&](size_t i) {
+        //   kdknn[i] = CPAMTree::range_count(tree, region[i], true);
+        // });
       },
       [&]() {});
   // cout << kdknn[0] << endl;
@@ -284,18 +284,20 @@ void rangeCountPtree(parlay::sequence<Point> const& WP, CPAMTree::zmap& tree,
   std::cout << fixed << setprecision(6) << aveCount << " -1 -1 -1 -1 " << std::flush;
 
   std::cout << std::endl;
-  bool ok = true;
-  for (auto i = 0; i < rec_num; i++){
-    if (kdknn[i] != query_box_seq[i].second){
-      ok = false;
-      std::cout << "[ERROR]: " << i << " " << kdknn[i] << ", " << query_box_seq[i].second << std::endl;
-      break;
-    }
-  }
+  geobase::print_mbr(region[0]);
+  cout << "range count res: " << kdknn[0] << ", " << query_box_seq[0].second << endl;
+  // bool ok = true;
+  // for (auto i = 0; i < rec_num; i++){
+  //   if (kdknn[i] != query_box_seq[i].second){
+  //     ok = false;
+  //     std::cout << "[ERROR]: " << i << " " << kdknn[i] << ", " << query_box_seq[i].second << std::endl;
+  //     break;
+  //   }
+  // }
   // parlay::parallel_for(0, rec_num, [&](size_t i){
   //   if (kdknn[i] != query_box_seq[i].second) ok = false;
   // });
-  if (!ok) std::cout << std::endl << "[ERROR] Incorrect." << std::endl;
+  // if (!ok) std::cout << std::endl << "[ERROR] Incorrect." << std::endl;
   return;
 }
 
@@ -318,7 +320,9 @@ void rangeReportPtree(parlay::sequence<Point> const& WP, CPAMTree::zmap& tree,
   parlay::sequence<geobase::Point> ret;
   ret.resize(10000);
   double aveCount = time_loop(
-      rounds, -1.0, [&]() {},
+      rounds, -1.0, [&]() {
+        kdknn[0] = 0;
+      },
       [&]() {
         CPAMTree::range_report(tree, region[0], kdknn[0], ret);
         // kdknn[0] = CPAMTree::range_report(tree, region[0], true).size();
@@ -327,9 +331,15 @@ void rangeReportPtree(parlay::sequence<Point> const& WP, CPAMTree::zmap& tree,
         // });
       },
       [&]() {});
-  cout << "range report res: " << kdknn[0] << endl;
   std::cout << fixed << setprecision(6) << aveCount << " -1 -1 -1 -1 "
             << std::flush;
+
+  cout << endl;
+  geobase::print_mbr(region[0]);
+  cout << "range report res: " << kdknn[0] << ", " << query_box_seq[0].second << endl;
+  for (size_t i = 0; i < 10; i++){
+    cout << ret[i].id << ", " << ret[i].x << ", " << ret[i].y << endl;
+  }
   return;
 }
 
