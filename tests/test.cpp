@@ -155,7 +155,34 @@ void TestCPAMBB([[maybe_unused]] int const& kDim,
   // auto tree = CPAMTree::map_init(P, true);
   // cout << tree.size() << endl;
   auto ptree = BuildPTree(wp, kRounds);
-  // test sort time
+
+  Typename* kdknn = nullptr;
+  // size_t* kdknn = nullptr;  //  just for range report test. will be updated later
+
+  using Tree = TreeDesc::TreeType;
+  using Points = typename Tree::Points;
+
+  if (kQueryType & (1 << 2)) {  // NOTE: range query
+    if (kSummary == 0) {
+      int recNum = kRangeQueryNum;
+      kdknn = new Typename[recNum];
+      // kdknn = new size_t[recNum];
+
+      for (int i = 0; i < 3; i++) {
+        Points Out;
+        rangeReportPtree<Point, Tree>(wp, ptree, kdknn, kRounds, i, recNum,
+                                      kDim);
+      }
+      delete[] kdknn;
+    } else if (kSummary == 1) {  // NOTE: for kSummary
+      kdknn = new Typename[kSummaryRangeQueryNum];
+      // kdknn = new size_t[kSummaryRangeQueryNum];
+      Points Out;
+      rangeReportPtree<Point, Tree>(wp, ptree, kdknn, kRounds, 2,
+                                    kSummaryRangeQueryNum, kDim);
+      delete[] kdknn;
+    }
+  }
   return;
 
   // NOTE: batch insert
@@ -195,9 +222,7 @@ void TestCPAMBB([[maybe_unused]] int const& kDim,
     }
   }
 
-  using Tree = TreeDesc::TreeType;
-  using Points = typename Tree::Points;
-  Typename* kdknn = nullptr;
+
 
   // Tree kdtree;
   // constexpr bool kTestTime = true;

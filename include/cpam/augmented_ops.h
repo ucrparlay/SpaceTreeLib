@@ -230,6 +230,52 @@ struct augmented_ops : Map {
     return l + r + cur_pt_inside;
   }
 
+  template<class F, typename Out>
+  static void range_report_filter(ptr b, const F &f, int64_t &cnt, Out &out, size_t granularity=kNodeLimit) {
+    if (b.empty()) return;
+    auto b_ptr = b.node_ptr();
+
+    if (Map::is_compressed(b_ptr)){ //  touch leaf node
+      std::cout << "touch a leaf" << std::endl;
+      auto cur_aug = aug_val(b.unsafe_ptr());
+      auto flag = f(cur_aug.first);
+      if (flag < 0) return; //  exclude
+      if (flag == 1){ //  fully covered
+        auto f_collect = [&](const auto& et){ out[cnt++] = std::get<1>(et); };
+        Map::iterate_seq(b_ptr, f_collect);
+      }
+      else{ //  partially overlapped
+        auto f_filter = [&](const auto& et){
+          auto cur_pt = std::get<1>(et);
+          auto cur_box = std::make_pair(cur_pt, cur_pt);
+          if (f(cur_box) == 1){ out[cnt++] = cur_pt; }
+        };
+        Map::iterate_seq(b_ptr, f_filter);
+      }
+      return;
+    }
+
+    std::cout << "touch an interior" << std::endl;
+    auto cur_aug = aug_val(b.unsafe_ptr());
+    auto flag = f(cur_aug.first);
+    if (flag < 0) return; //  exclude
+
+    size_t n = b.size();
+    auto [lc, e, rc, root] = Map::expose(std::move(b));
+
+    auto cur_pt = std::get<1>(e);
+    auto pt_box = std::make_pair(cur_pt, cur_pt);
+    auto cur_pt_inside = f(pt_box) > 0 ? 1 : 0;
+
+    range_report_filter(std::move(lc), f, cnt, out);
+    if (cur_pt_inside) {
+      out[cnt++] = cur_pt;
+    }
+    range_report_filter(std::move(rc), f, cnt, out);
+    return;
+  }
+  
+
   template<class Func>
   static node* aug_filter_mid(ptr b, const Func& f, size_t granularity=kNodeLimit) {
     if (b.empty()) return NULL;

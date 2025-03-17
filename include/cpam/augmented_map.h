@@ -39,6 +39,12 @@ public:
   static size_t range_count_filter(M m, const F& f, const F2& f2) {
     return Tree::range_count_filter(m.get_root(), f, f2); }
 
+  template<typename F, typename Out>
+  static void range_report_filter(M m, const F& f, int64_t &cnt, Out &out) {
+    Tree::range_report_filter(m.get_root(), f, cnt, out); 
+    return;
+  }
+
   // extract the augmented values
   A aug_val() const { return Tree::aug_val(Map::root); }
 

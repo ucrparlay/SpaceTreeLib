@@ -51,7 +51,7 @@ namespace CPAMTree{
 			P[i].morton_id = use_hilbert ? P[i].overlap_bits() : P[i].interleave_bits();
 		});
 		// t.stop();
-		t.total();
+		// t.total();
 		// auto SFC_time = t.total_time();
 		auto h_values = parlay::sequence<unsigned long long>::uninitialized(n);
 		auto h_values2 =parlay::sequence<unsigned long long>::uninitialized(n); 
@@ -63,21 +63,21 @@ namespace CPAMTree{
 			h_values[i] = P[i].morton_id;
 			h_values2[i] = P[i].morton_id;
 		});
-		t1.total();
+		// t1.total();
 		
 		parlay::internal::timer t_integer_sort("integer_sort", true);
 		auto ret = parlay::integer_sort(h_values);
-		t_integer_sort.total();
+		// t_integer_sort.total();
 		auto less = [&](int a, int b){
 			return a < b;
 		};
 		parlay::internal::timer t_sample_sort("sample_sort", true);
 		auto ret2 = parlay::internal::sample_sort(parlay::make_slice(h_values2.begin(), h_values2.end()), less);
-		t_sample_sort.total();
+		// t_sample_sort.total();
 
 		parlay::internal::timer t2("CPAM build from entry", true);
 		zmap m1(entries);
-		t2.total();
+		// t2.total();
 		// auto vals = zmap::values(m1);
 		// return std::make_tuple(m1, SFC_time);
 		return m1;
@@ -160,6 +160,14 @@ namespace CPAMTree{
 		// };
 		// r2_map = zmap::filter(r2_map, f3);
 		// return ret + r2_map.size();
+	}
+	
+	template<typename TREE, typename MBR, typename Out>
+	void range_report(TREE &ptree, MBR &query_mbr, int64_t &cnt, Out &out, bool use_hilbert = false){
+		auto f = [&](auto &cur_mbr){
+			return mbr_mbr_relation(cur_mbr, query_mbr);
+		};
+		zmap::range_report_filter(ptree, f, cnt, out);
 	}
 
 

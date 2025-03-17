@@ -302,7 +302,7 @@ void rangeCountPtree(parlay::sequence<Point> const& WP, CPAMTree::zmap& tree,
 //* test range count for fix rectangle
 template <typename Point, typename Tree>
 void rangeReportPtree(parlay::sequence<Point> const& WP, CPAMTree::zmap& tree,
-                      Typename* kdknn, int const& rounds, int rec_type,
+                      Typename* kdknn, int const& rounds, int rec_type, //  Note, kdknn should be Typename for consistency. Size_t just for debug range report
                       int rec_num, int DIM) {
   auto [query_box_seq, max_size] =
       gen_rectangles<Point, Tree, false>(rec_num, rec_type, WP, DIM);
@@ -315,16 +315,19 @@ void rangeReportPtree(parlay::sequence<Point> const& WP, CPAMTree::zmap& tree,
   });
 
   // auto res = CPAMTree::range_count(tree, region[0], true);
+  parlay::sequence<geobase::Point> ret;
+  ret.resize(10000);
   double aveCount = time_loop(
-      rounds, 1.0, [&]() {},
+      rounds, -1.0, [&]() {},
       [&]() {
+        CPAMTree::range_report(tree, region[0], kdknn[0], ret);
         // kdknn[0] = CPAMTree::range_report(tree, region[0], true).size();
-        parlay::parallel_for(0, rec_num, [&](size_t i) {
-          kdknn[i] = CPAMTree::range_report(tree, region[i], true).size();
-        });
+        // parlay::parallel_for(0, rec_num, [&](size_t i) {
+        //   kdknn[i] = CPAMTree::range_report(tree, region[i], true).size();
+        // });
       },
       [&]() {});
-  // cout << kdknn[0] << endl;
+  cout << "range report res: " << kdknn[0] << endl;
   std::cout << fixed << setprecision(6) << aveCount << " -1 -1 -1 -1 "
             << std::flush;
   return;
