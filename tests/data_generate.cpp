@@ -12,8 +12,8 @@
 ///**********************************START*********************************///
 
 using Coord = int64_t;
-Coord const kValueUB = 1'000'000'000;
-// Coord const kValueUB = 1'000'000;
+// Coord const kValueUB = 1'000'000'000;
+Coord const kValueUB = 1'000'000;
 
 inline std::string toString(auto const& a) { return std::to_string(a); }
 

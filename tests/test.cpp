@@ -9,6 +9,8 @@
 #include "pspt/p_tree_impl/cpamtree.hpp"
 #include "test_framework.h"
 
+int gen_query_flag = 0;
+
 template <class TreeDesc, typename Point>
 void TestSpacialTree([[maybe_unused]] int const& kDim,
                      parlay::sequence<Point> const& wp,
@@ -331,7 +333,7 @@ int main(int argc, char* argv[]) {
   commandLine P(argc, argv,
                 "[-k {1,...,100}] [-d {2,3,5,7,9,10}] [-n <node num>] [-t "
                 "<parallelTag>] [-p <inFile>] [-r {1,...,5}] [-q {0,1}] [-i "
-                "<_insertFile>] [-s <kSummary>]");
+                "<_insertFile>] [-s <kSummary>] [-x <generate query>]");
 
   char* input_file_path = P.getOptionValue("-p");
   int K = P.getOptionIntValue("-k", 100);
@@ -344,6 +346,8 @@ int main(int argc, char* argv[]) {
   int summary = P.getOptionIntValue("-s", 0);
   int tree_type = P.getOptionIntValue("-T", 0);
   int split_type = P.getOptionIntValue("-l", 0);
+
+  gen_query_flag = P.getOptionIntValue("-x", 0);
 
   auto run = [&]<typename TreeWrapper>() {
     using Point = typename TreeWrapper::Point;

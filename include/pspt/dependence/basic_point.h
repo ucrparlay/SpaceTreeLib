@@ -105,11 +105,16 @@ struct PointType {
   Coord const& operator[](DimsType i) const { return pnt[i]; }
 
   friend std::ostream& operator<<(std::ostream& o, PointType const& a) {
-    o << "(";
-    for (DimsType i = 0; i < d; ++i) {
-      o << a.pnt[i] << (i == d - 1 ? "" : ", ");
+    // o << "(";
+    // for (DimsType i = 0; i < d; ++i) {
+    //   o << a.pnt[i] << (i == d - 1 ? "" : ", ");
+    // }
+    // o << ") " << std::flush;
+    o << "";
+    for (DimsType i = 0; i < d; i++){
+      o << a.pnt[i] << " ";
     }
-    o << ") " << std::flush;
+    o << "" << std::flush;
     return o;
   }
 

@@ -122,7 +122,7 @@ namespace CPAMTree{
 	}
 
 	template<class T, class MBR>
-	auto range_count(T &zCPAM, MBR query_mbr, bool use_hilbert = false){
+	auto range_count(T &zCPAM, MBR &query_mbr, bool use_hilbert = false){
 		auto f = [&](auto &cur){ 
 			return mbr_mbr_relation(cur, query_mbr);
 		};

@@ -35,6 +35,8 @@ using Coord = int64_t;
 using Typename = Coord;
 using namespace pspt;
 
+extern int gen_query_flag;
+
 // NOTE: KNN size
 static constexpr double kBatchQueryRatio = 0.01;
 static constexpr size_t kBatchQueryOsmSize = 10000000;
@@ -260,6 +262,19 @@ void rangeCountPtree(parlay::sequence<Point> const& WP, CPAMTree::zmap& tree,
                      int rec_num, int DIM) {
   auto [query_box_seq, max_size] =
       gen_rectangles<Point, Tree, false>(rec_num, rec_type, WP, DIM);
+  
+  // save rectangles if generate query flag was set 
+  if (gen_query_flag){
+    ofstream qryOut("range_count.qry");
+    qryOut << max_size << endl;
+    qryOut << rec_num << " " << 2 << endl;
+    for (auto i = 0; i < rec_num; i++){
+      auto _box = query_box_seq[i].first;
+      auto _size = query_box_seq[i].second;
+      qryOut << _size << " " << _box.first << " " << _box.second << endl;
+    }
+  }
+
   auto region = parlay::sequence<geobase::Bounding_Box>::uninitialized(rec_num);
   parlay::parallel_for(0, rec_num, [&](int i) {
     region[i].first.x = query_box_seq[i].first.first.pnt[0];
@@ -270,22 +285,26 @@ void rangeCountPtree(parlay::sequence<Point> const& WP, CPAMTree::zmap& tree,
 
   // auto res = CPAMTree::range_count(tree, region[0], true);
   // cout << tree.size() << endl;
+  auto tmp_t = parlay::sequence<double>::uninitialized(rec_num);
   double aveCount = time_loop(
       rounds, 1.0, [&]() {},
       [&]() {
-        kdknn[0] = CPAMTree::range_count(tree, region[0], true);
+        // kdknn[0] = CPAMTree::range_count(tree, region[0], true);
         // parlay::parallel_for(0, rec_num, [&](size_t i) {
         //   kdknn[i] = CPAMTree::range_count(tree, region[i], true);
         // });
+        for (auto i = 0; i < rec_num; i++){
+          kdknn[i] = CPAMTree::range_count(tree, region[i], true);
+        }
       },
       [&]() {});
   // cout << kdknn[0] << endl;
   
   std::cout << fixed << setprecision(6) << aveCount << " -1 -1 -1 -1 " << std::flush;
 
-  std::cout << std::endl;
-  geobase::print_mbr(region[0]);
-  cout << "range count res: " << kdknn[0] << ", " << query_box_seq[0].second << endl;
+  // std::cout << std::endl;
+  // geobase::print_mbr(region[0]);
+  // cout << "range count res: " << kdknn[0] << ", " << query_box_seq[0].second << endl;
   // bool ok = true;
   // for (auto i = 0; i < rec_num; i++){
   //   if (kdknn[i] != query_box_seq[i].second){

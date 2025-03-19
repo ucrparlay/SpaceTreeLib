@@ -195,6 +195,7 @@ struct augmented_ops : Map {
     // auto cur_pt = std::get<1>(Map::get_entry(b.unsafe_ptr()));
     auto cur_aug = aug_val(b.unsafe_ptr());
     auto [lc, e, rc, root] = Map::expose(std::move(b));
+    // auto [lc2, e, rc, root] = Map::expose(std::move(b));
 
     auto cur_pt = std::get<1>(e);
     // std::cout << std::fixed << std::setprecision(6) << cur_pt.x << ", " << cur_pt.y << std::endl;
