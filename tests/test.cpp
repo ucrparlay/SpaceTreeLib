@@ -200,7 +200,7 @@ void TestCPAMBB([[maybe_unused]] int const& kDim,
     }
   }
   return;
-
+  
   // NOTE: batch insert
   if (kTag & (1 << 0)) {
     if (kSummary) {

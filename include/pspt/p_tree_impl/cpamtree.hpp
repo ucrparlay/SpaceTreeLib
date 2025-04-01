@@ -161,66 +161,24 @@ namespace CPAMTree{
 		// r2_map = zmap::filter(r2_map, f3);
 		// return ret + r2_map.size();
 	}
-	
-	template<typename TREE, typename MBR, typename Out>
-	void range_report(TREE &ptree, MBR &query_mbr, int64_t &cnt, Out &out, bool use_hilbert = false){
-		auto f = [&](auto &cur_mbr){
-			return mbr_mbr_relation(cur_mbr, query_mbr);
-		};
-		zmap::range_report_filter(ptree, f, cnt, out);
-	}
-
 
 	template<class T, class MBR>
-	auto range_report(T &zCPAM, MBR query_mbr, bool use_hilbert = false){
-		auto BL = query_mbr.first;
-		auto UR = query_mbr.second;
-		// unsigned long long Z_min = 0, Z_max = 0;
-		// if (!use_hilbert){
-		// 	auto BR = geobase::Point(UR.x, BL.y), UL = geobase::Point(BL.x, UR.y);
-		// 	Z_min = std::min(BL.interleave_bits(), std::min(std::min(UR.interleave_bits(), UL.interleave_bits()), BR.interleave_bits()));
-		// 	Z_max = std::max(BL.interleave_bits(), std::max(std::max(UR.interleave_bits(), UL.interleave_bits()), BR.interleave_bits()));
-		// }
-		// else{
-		// 	unsigned long long p1[] = {static_cast<unsigned long long>(BL.x), static_cast<unsigned long long>(BL.y)};	//	BL
-		// 	unsigned long long p2[] = {static_cast<unsigned long long>(UR.x), static_cast<unsigned long long>(UR.y)};	//	UR
-		// 	unsigned long long pointlo[] = {p1[0], p1[1]};
-		// 	unsigned long long work[] = {p2[0], p2[1]};
-  		// 	hilbert_box_pt(2, sizeof(unsigned long long), 8 * sizeof(unsigned long long), 1, pointlo, work);
-		// 	Z_min = hilbert_c2i(2, 32, pointlo);
-		// 	unsigned long long pointhi[] = {p2[0], p2[1]};
-		// 	work[0] = p1[0], work[1] = p1[1];
-  		// 	hilbert_box_pt(2, sizeof(unsigned long long), 8 * sizeof(unsigned long long), 0, work, pointhi);
-		// 	Z_max = hilbert_c2i(2, 32, pointhi);
-		// }
-		// entry::key_t small(Z_min, 0);
-		// entry::key_t large(Z_max, numeric_limits<unsigned long long>::max());
-		// T r2_map = zmap::range(zCPAM, Z_min, Z_max);
-		// T r2_map = zmap::range(zCPAM, small, large);
-		// cout << r2_map.size() << endl;
-		auto f2 = [&](auto cur){ 
-			// print_mbr(cur);
-			return !mbr_exclude_mbr(query_mbr, cur.first);
-			// return !(UR.x < get<1>(cur).x || get<1>(cur).x < BL.x ||
-			// 	UR.y < get<1>(cur).y || get<1>(cur).y < BL.y);
-		};
-		auto r2_map = zmap::aug_filter(zCPAM, f2);
-		// r2_map = zmap::aug_filter(zCPAM, f2);
-		// r2_map = zmap::aug_filter(r2_map, f2);
-
-		auto f3 = [&](par cur){ 
-			if (BL.x <= get<1>(cur).x && get<1>(cur).x <= UR.x &&
-				BL.y <= get<1>(cur).y && get<1>(cur).y <= UR.y){
-				// cout << get<1>(cur).x << ", " << get<1>(cur).y << endl;
-				return true;
-			}
-			return false;
+	auto range_report(T &tree, MBR query_mbr, parlay::sequence<Point> &out, bool use_hilbert = false){
+		// auto ret = zmap::values(filter_range(tree, query_mbr, use_hilbert));
+		auto f = [&](auto cur){ 
+			return mbr_mbr_relation(cur, query_mbr);
 		};
 
-		r2_map = zmap::filter(r2_map, f3);
-
-		auto ret = zmap::values(r2_map); 
+		int64_t ret = 0;
+		zmap::range_report_filter(tree, f, ret, out);
 		return ret;
 	}
 
+	//	return size of interior nodes and sizeof leaf nodes size, respectively
+	auto size_in_bytes(){
+		size_t inte_used = zmap::GC::used_node();
+		size_t internal_nodes_space = sizeof(typename zmap::GC::regular_node) * inte_used;
+		auto [used, unused] = parlay::internal::get_default_allocator().stats();
+		return make_tuple(internal_nodes_space, used);
+	}
 }

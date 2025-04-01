@@ -265,10 +265,12 @@ void rangeCountPtree(parlay::sequence<Point> const& WP, CPAMTree::zmap& tree,
   
   // save rectangles if generate query flag was set 
   if (gen_query_flag){
-    ofstream qryOut("range_count.qry");
+    cout << "generate finished." << endl;
+    string qryOutName = "1.in-" + to_string(rec_type) + ".qry";
+    ofstream qryOut(qryOutName);
     qryOut << max_size << endl;
-    qryOut << rec_num << " " << 2 << endl;
-    for (auto i = 0; i < rec_num; i++){
+    qryOut << query_box_seq.size() << " " << 2 << endl;
+    for (auto i = 0; i < query_box_seq.size(); i++){
       auto _box = query_box_seq[i].first;
       auto _size = query_box_seq[i].second;
       qryOut << _size << " " << _box.first << " " << _box.second << endl;
@@ -290,33 +292,23 @@ void rangeCountPtree(parlay::sequence<Point> const& WP, CPAMTree::zmap& tree,
       rounds, 1.0, [&]() {},
       [&]() {
         // kdknn[0] = CPAMTree::range_count(tree, region[0], true);
-        // parlay::parallel_for(0, rec_num, [&](size_t i) {
-        //   kdknn[i] = CPAMTree::range_count(tree, region[i], true);
-        // });
-        for (auto i = 0; i < rec_num; i++){
+        parlay::parallel_for(0, rec_num, [&](size_t i) {
           kdknn[i] = CPAMTree::range_count(tree, region[i], true);
-        }
+        });
+        // for (auto i = 0; i < rec_num; i++){
+        //   kdknn[i] = CPAMTree::range_count(tree, region[i], true);
+        // }
       },
       [&]() {});
   // cout << kdknn[0] << endl;
   
   std::cout << fixed << setprecision(6) << aveCount << " -1 -1 -1 -1 " << std::flush;
 
-  // std::cout << std::endl;
-  // geobase::print_mbr(region[0]);
-  // cout << "range count res: " << kdknn[0] << ", " << query_box_seq[0].second << endl;
-  // bool ok = true;
-  // for (auto i = 0; i < rec_num; i++){
-  //   if (kdknn[i] != query_box_seq[i].second){
-  //     ok = false;
-  //     std::cout << "[ERROR]: " << i << " " << kdknn[i] << ", " << query_box_seq[i].second << std::endl;
-  //     break;
-  //   }
-  // }
-  // parlay::parallel_for(0, rec_num, [&](size_t i){
-  //   if (kdknn[i] != query_box_seq[i].second) ok = false;
-  // });
-  // if (!ok) std::cout << std::endl << "[ERROR] Incorrect." << std::endl;
+  bool ok = true;
+  parlay::parallel_for(0, rec_num, [&](size_t i){
+    if (kdknn[i] != query_box_seq[i].second) ok = false;
+  });
+  if (!ok) std::cout << std::endl << "[ERROR] Incorrect Results." << std::endl;
   return;
 }
 
@@ -336,29 +328,32 @@ void rangeReportPtree(parlay::sequence<Point> const& WP, CPAMTree::zmap& tree,
   });
 
   // auto res = CPAMTree::range_count(tree, region[0], true);
-  parlay::sequence<geobase::Point> ret;
-  ret.resize(10000);
+  parlay::sequence<parlay::sequence<geobase::Point> > ret(region.size());
+  parlay::parallel_for(0, region.size(), [&](size_t i){
+    ret[i].resize(query_box_seq[i].second);
+  });
   double aveCount = time_loop(
       rounds, -1.0, [&]() {
-        kdknn[0] = 0;
       },
       [&]() {
-        CPAMTree::range_report(tree, region[0], kdknn[0], ret);
+        // CPAMTree::range_report(tree, region[0], kdknn[0], ret[0]);
         // kdknn[0] = CPAMTree::range_report(tree, region[0], true).size();
-        // parlay::parallel_for(0, rec_num, [&](size_t i) {
-        //   kdknn[i] = CPAMTree::range_report(tree, region[i], true).size();
-        // });
+        parlay::parallel_for(0, rec_num, [&](size_t i) {
+          kdknn[i] = CPAMTree::range_report(tree, region[i], ret[i], true);
+        });
       },
       [&]() {});
   std::cout << fixed << setprecision(6) << aveCount << " -1 -1 -1 -1 "
             << std::flush;
 
-  cout << endl;
-  geobase::print_mbr(region[0]);
-  cout << "range report res: " << kdknn[0] << ", " << query_box_seq[0].second << endl;
-  for (size_t i = 0; i < 10; i++){
-    cout << ret[i].id << ", " << ret[i].x << ", " << ret[i].y << endl;
-  }
+  // cout << endl;
+  // geobase::print_mbr(region[0]);
+  // cout << "range report res: " << kdknn[0] << ", " << query_box_seq[0].second << endl;
+  bool ok = true;
+  parlay::parallel_for(0, rec_num, [&](size_t i){
+    if (kdknn[i] != query_box_seq[i].second) ok = false;
+  });
+  if (!ok) std::cout << std::endl << "[ERROR] Incorrect Results." << std::endl;
   return;
 }
 

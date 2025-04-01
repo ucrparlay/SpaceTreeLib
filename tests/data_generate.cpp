@@ -148,11 +148,28 @@ class VardenGenerator {
   }
 
   size_t ShiftDistance([[maybe_unused]] size_t const prev_restart) noexcept {
-    if constexpr (kSameDensity) {
-      return 50 * Point::GetDim();
-    } else {
-      return RadisuByVincinity(prev_restart) * Point::GetDim() / 2;
+    auto ret = 0;
+
+    std::random_device rd;      // a seed source for the random number engine
+    std::mt19937 gen_mt(rd());  // mersenne_twister_engine seeded with rd()
+    std::uniform_int_distribution<int> distrib(1, 233666);
+
+    parlay::random_generator gen(distrib(gen_mt));
+    std::uniform_int_distribution<int> dis(1, 123);
+
+    if constexpr (kSameDensity){
+      ret = 50 * Point::GetDim();
     }
+    else{
+      ret = dis(gen) * RadisuByVincinity(prev_restart) * Point::GetDim() / 2;
+    }
+    
+    return ret;
+    // if constexpr (kSameDensity) {
+    //   return 50 * Point::GetDim();
+    // } else {
+    //   return RadisuByVincinity(prev_restart) * Point::GetDim() / 2;
+    // }
   }
 
   Points GenerateCluster(size_t const gen_num, size_t const cur_restart_idx) {
