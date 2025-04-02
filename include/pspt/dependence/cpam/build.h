@@ -1,6 +1,7 @@
 #pragma once
 #include <parlay/internal/get_time.h>
 
+#include "cpam_sample_sort.h"
 #include "get_time.h"
 #include "parlay/internal/integer_sort.h"
 #include "parlay/primitives.h"
@@ -24,19 +25,21 @@ struct build {
     if (A.size() == 0) return parlay::sequence<ET>(0);
 
     parlay::internal::timer t("");
-    auto B = parlay::internal::sample_sort(
+    auto B = parlay::internal::cpam::cpam_sample_sort(
         parlay::make_slice(A.begin(), A.end()), less);
     // auto B = parlay::internal::integer_sort(
     //     parlay::make_slice(A.begin(), A.end()),
     //     [](auto const& k) { return Entry::get_key(k).first; });
     t.next("sort");
 
-    auto Fl = parlay::delayed_seq<bool>(
-        B.size(), [&](size_t i) { return (i == 0) || less(B[i - 1], B[i]); });
-
-    auto o = parlay::pack(B, Fl);
-    t.next("pack");
-    return o;
+    // auto Fl = parlay::delayed_seq<bool>(
+    //     B.size(), [&](size_t i) { return (i == 0) || less(B[i - 1], B[i]);
+    //     });
+    //
+    // auto o = parlay::pack(B, Fl);
+    // t.next("pack");
+    // return o;
+    return B;
   }
 
   template <class Seq, class Reduce>
