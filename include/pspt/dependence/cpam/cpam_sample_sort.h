@@ -34,44 +34,6 @@ namespace cpam {
 constexpr size_t const QUICKSORT_THRESHOLD = 16384;
 constexpr size_t const OVER_SAMPLE = 8;
 
-// generates counts in Sc for the number of keys in Sa between consecutive
-// values of Sb. Sa and Sb must be sorted
-template <typename InIterator, typename PivotIterator, typename CountIterator,
-          typename Compare>
-void get_bucket_counts(slice<InIterator, InIterator> sA,
-                       slice<PivotIterator, PivotIterator> sB,
-                       slice<CountIterator, CountIterator> sC, Compare f) {
-  using s_size_t = typename std::iterator_traits<CountIterator>::value_type;
-
-  if (sA.size() == 0 || sB.size() == 0) return;
-  for (auto& c : sC) c = 0;
-  auto itA = sA.begin();
-  auto itB = sB.begin();
-  auto itC = sC.begin();
-  while (true) {
-    while (f(*itA, *itB)) {
-      assert(itC != sC.end());
-      (*itC)++;
-      if (++itA == sA.end()) return;
-    }
-    itB++;
-    itC++;
-    if (itB == sB.end()) break;
-    if (!(f(*(itB - 1), *itB))) {
-      while (!f(*itB, *itA)) {
-        assert(itC != sC.end());
-        (*itC)++;
-        if (++itA == sA.end()) return;
-      }
-      itB++;
-      itC++;
-      if (itB == sB.end()) break;
-    }
-  }
-  assert(itC != sC.end());
-  *itC = static_cast<s_size_t>(sA.end() - itA);
-}
-
 template <typename filling_curve_t, typename assignment_tag,
           typename InIterator, typename OutIterator, typename Compare>
 void seq_sort_(slice<InIterator, InIterator> In,
@@ -145,13 +107,13 @@ void sample_sort_(slice<InIterator, InIterator> In,
           make_slice(counts).cut(i * num_buckets, (i + 1) * num_buckets), less);
     });
 
-    assert(std::ranges::all_of(
-        Tmp, [&](auto const& p) { return std::get<0>(p).first != 0; }));
-
     // move data from blocks to buckets
     auto bucket_offsets = transpose_buckets<uninitialized_relocate_tag>(
         Tmp.begin(), Out.begin(), counts, n, block_size, num_blocks,
         num_buckets);
+
+    assert(
+        all_of(Out, [&](auto const& p) { return std::get<0>(p).first != 0; }));
 
     // sort within each bucket
     parallel_for(
