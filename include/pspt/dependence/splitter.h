@@ -29,7 +29,7 @@ struct MortonCurve {
   void ZTag() {}
   static std::string GetName() { return "MortonCurve"; }
 
-  auto Encode(Point const& p) {
+  static auto Encode(Point const& p) {
     assert(std::is_integral_v<Coord>);
     uint_fast8_t loc = 0;
     CurveCode id = 0;
@@ -57,7 +57,7 @@ struct HilbertCurve {
   void HilbertTag() {}
   static std::string GetName() { return "HilbertCurve"; }
 
-  auto Encode(Point const& p) {
+  static auto Encode(Point const& p) {
     assert(std::is_integral_v<Coord>);
     // TODO: optimize the encode
     auto ix = static_cast<CurveCode>(p.pnt[0]);
@@ -74,16 +74,14 @@ struct SpacialFillingCurve {
   static std::string GetSplitName() { return Curve::GetName(); }
 
   template <typename... Args>
-  auto Encode(Args&&... args) {
-    return curve.Encode(std::forward<Args>(args)...);
+  static auto Encode(Args&&... args) {
+    return Curve::Encode(std::forward<Args>(args)...);
   }
 
   template <typename... Args>
   auto Decode(Args&&... args) {
-    return curve.Decode(std::forward<Args>(args)...);
+    return Curve::Decode(std::forward<Args>(args)...);
   }
-
-  Curve curve;
 };
 
 // NOTE: ---------------- Orthogonal Split Rule ----------------

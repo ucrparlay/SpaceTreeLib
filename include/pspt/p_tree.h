@@ -48,15 +48,16 @@ class PTree
   // NOTE: for the CPAM
   using CurveCode = typename SplitRule::CurveCode;
   using IDType = typename BT::IDType;
-  // using CpamKey = std::pair<CurveCode, IDType>;  // morton_id, id
   using CpamKey = std::pair<CurveCode, IDType>;  // morton_id, id
   using CpamVal = Point;
+  // using CpamVal = std::reference_wrapper<Point>;
   using CpamAug = std::pair<Box, size_t>;
 
   struct CpamEntry {
     using key_t = CpamKey;
     using val_t = CpamVal;
     using aug_t = CpamAug;
+    using filling_curve_t = SplitRule;
 
     static inline bool comp(key_t const& a, key_t const& b) { return a < b; }
     static aug_t get_empty() { return CpamAug(BT::GetEmptyBox(), 0); }

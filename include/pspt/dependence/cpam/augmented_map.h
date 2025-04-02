@@ -3,6 +3,8 @@
 // *******************************************
 //   AUG MAPS
 // *******************************************
+#include <functional>
+
 #include "augmented_node.h"
 #include "augmented_ops.h"
 #include "map.h"
@@ -258,6 +260,8 @@ struct aug_map_full_entry : entry {
   using key_t = typename entry::key_t;
   using aug_t = typename entry::aug_t;
   using entry_t = std::tuple<key_t, val_t>;
+  using entry_t_ref_v = std::tuple<key_t, std::reference_wrapper<val_t>>;
+  using filling_curve_t = typename entry::filling_curve_t;
   static inline key_t get_key(entry_t const& e) { return std::get<0>(e); }
   static inline val_t get_val(entry_t const& e) { return std::get<1>(e); }
   static inline void set_val(entry_t& e, val_t const& v) { std::get<1>(e) = v; }

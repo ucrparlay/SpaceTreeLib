@@ -6,6 +6,7 @@
 #include <parlay/type_traits.h>
 
 #include "../p_tree.h"
+#include "parlay/utilities.h"
 #include "pspt/dependence/tree_node.h"
 
 namespace pspt {
@@ -32,13 +33,34 @@ void PTree<Point, SplitRule, kSkHeight, kImbaRatio>::Build_(Slice A) {
   //   P[i].morton_id = uRse_hilbert ? P[i].overlap_bits() :
   //   P[i].interleave_bits();
   // });
+  // std::cout << sizeof(A[0]) << "\n" << sizeof(std::ref(A[0])) << "\n";
+  // std::cout << A[0] << std::endl;
+  // auto o = parlay::sequence<Point>::uninitialized(1);
+  // parlay::assign_uninitialized(o[0], std::cref(A[0]));
+  // std::cout << o[0] << std::endl;
 
-  parlay::sequence<CpamPair> entries(n);
-  parlay::parallel_for(0, n, [&](int i) {
-    // entries[i] = {{P[i].morton_id, P[i].id}, P[i]};
-    entries[i] = {{space_filling_curve_.Encode(A[i]), i}, A[i]};
-    // entries[i] = {P[i]->id, P[i]};
+  // parlay::sequence<CpamPair> entries(n);
+  // parlay::parallel_for(0, n, [&](int i) {
+  //   // entries[i] = {{P[i].morton_id, P[i].id}, P[i]};
+  //   entries[i] = {{space_filling_curve_.Encode(A[i]), i}, std::ref(A[i])};
+  //   // entries[i] = {{space_filling_curve_.Encode(A[i]), i}, A[i]};
+  //   // entries[i] = {P[i]->id, P[i]};
+  // });
+  // CpamPair a = {{space_filling_curve_.Encode(A[0]), 0}, A[0]};
+  // std::tuple<typename CpamEntry::key_t,
+  //            std::reference_wrapper<typename CpamEntry::val_t>>
+  //     b = {{space_filling_curve_.Encode(A[0]), 0}, std::ref(A[0])};
+  // std::cout << sizeof(a) << " " << sizeof(b) << std::endl;
+  auto entries = parlay::tabulate(n, [&](size_t i) -> CpamPair {
+    // return {{space_filling_curve_.Encode(A[i]), i}, std::ref(A[i])};
+    // return {{space_filling_curve_.Encode(A[i]), i}, A[i]};
+    // A[i]);
+    return std::make_tuple(std::make_pair(0, i), A[i]);
+    // return std::make_tuple(std::make_pair(space_filling_curve_.Encode(A[i]),
+    // i),
+    //                        std::ref(A[i]));
   });
+  // std::cout << sizeof(entries[0]) << std::endl;
   // zmap m1(entries);
   // auto vals = zmap::values(m1);
   this->cpam_aug_map_ = CpamAugMap(entries);
