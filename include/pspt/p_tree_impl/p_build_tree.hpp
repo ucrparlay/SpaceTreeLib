@@ -59,7 +59,7 @@ void PTree<Point, SplitRule, kSkHeight, kImbaRatio>::Build_(Slice A) {
     return std::make_tuple(std::make_pair(SplitRule::Encode(A[i]), i),
                            std::ref(A[i]));
   });
-  t.next("tabulate");
+  // t.next("tabulate");
   // std::cout << sizeof(entries[0]) << std::endl;
   // zmap m1(entries);
   // auto vals = zmap::values(m1);

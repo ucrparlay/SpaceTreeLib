@@ -1091,9 +1091,9 @@ struct map_ops : Seq {
   // op) {
   template <class BinaryOp, typename T>
   static node* multi_insert_sorted(ptr b, T* A, size_t n, BinaryOp const& op) {
-    std::cout << "multi_insert_sorted" << std::endl;
+    // std::cout << "multi_insert_sorted" << std::endl;
     if (b.empty()) {
-      std::cout << "b is empty" << "\n";
+      // std::cout << "b is empty" << "\n";
       node* x = Seq::from_array(A, n);
       return x;
     }

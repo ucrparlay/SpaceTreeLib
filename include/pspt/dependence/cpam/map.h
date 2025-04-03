@@ -110,16 +110,16 @@ class map_ {
   // due to overloading cannot use the generic version on range
   map_(parlay::sequence<E> const& S) {
     M empty = M();
-    std::cout << "entry to the build : " << std::endl;
-    std::cout << sizeof(S[0]) << std::endl;
+    // std::cout << "entry to the build : " << std::endl;
+    // std::cout << sizeof(S[0]) << std::endl;
     root =
         Tree::finalize(multi_insert(empty, parlay::make_slice(S)).get_root());
   }
 
   map_(parlay::sequence<E_Ref_V> const& S) {
     M empty = M();
-    std::cout << "entry to the build : " << std::endl;
-    std::cout << sizeof(S[0]) << std::endl;
+    // std::cout << "entry to the build : " << std::endl;
+    // std::cout << sizeof(S[0]) << std::endl;
     root =
         Tree::finalize(multi_insert(empty, parlay::make_slice(S)).get_root());
   }

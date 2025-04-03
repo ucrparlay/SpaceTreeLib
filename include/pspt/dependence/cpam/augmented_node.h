@@ -212,12 +212,12 @@ struct aug_node
 
   static node* finalize(node* root) {
     auto sz = basic::size(root);
-    std::cout << "finalzie in aug node" << std::endl;
-    std::cout << "sz " << sz << ", B " << B << std::endl;
+    // std::cout << "finalzie in aug node" << std::endl;
+    // std::cout << "sz " << sz << ", B " << B << std::endl;
     assert(sz > 0);
     if (sz < B) {
       auto ret = make_compressed_node(root);
-      std::cout << "finalize: " << sz << " " << B << std::endl;
+      // std::cout << "finalize: " << sz << " " << B << std::endl;
       decrement_recursive(root);
       return ret;
     }
