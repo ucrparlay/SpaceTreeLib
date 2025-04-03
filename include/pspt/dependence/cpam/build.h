@@ -30,6 +30,11 @@ struct build {
     // assert(parlay::all_of(
     //     A, [&](auto const& p) { return std::get<0>(p).first == 0; }));
     // auto B = parlay::internal::cpam::cpam_sample_sort<filling_curve_t>(
+    //     parlay::make_slice(A.begin(), A.end()),
+    //     [](auto const& a, auto const& b) {
+    //       return std::get<0>(a).first < std::get<0>(b).first;
+    //     });
+    // auto B = parlay::internal::cpam::cpam_sample_sort<filling_curve_t>(
     //     parlay::make_slice(A.begin(), A.end()), less);
     auto B = parlay::internal::integer_sort(
         parlay::make_slice(A.begin(), A.end()),

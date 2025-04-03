@@ -56,7 +56,7 @@ template <typename filling_curve_t, typename s_size_t = size_t,
 void sample_sort_(slice<InIterator, InIterator> In,
                   slice<OutIterator, OutIterator> Out, Compare const& less,
                   bool stable = false) {
-  std::cout << "this sample_sort_" << std::endl;
+  // std::cout << "this sample_sort_" << std::endl;
   using value_type = typename slice<InIterator, InIterator>::value_type;
   size_t n = In.size();
 

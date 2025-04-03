@@ -51,19 +51,21 @@ void PTree<Point, SplitRule, kSkHeight, kImbaRatio>::Build_(Slice A) {
   //            std::reference_wrapper<typename CpamEntry::val_t>>
   //     b = {{space_filling_curve_.Encode(A[0]), 0}, std::ref(A[0])};
   // std::cout << sizeof(a) << " " << sizeof(b) << std::endl;
-  parlay::internal::timer t;
+  parlay::internal::timer t("");
   auto entries = parlay::tabulate(n, [&](size_t i) -> CpamInnerEntryType {
-    // return {{space_filling_curve_.Encode(A[i]), i}, std::ref(A[i])};
-    // return {{0, i}, A[i]};
+    return {{space_filling_curve_.Encode(A[i]), i}, std::ref(A[i])};
+    // return {{0, i}, std::ref(A[i])};
     // return std::make_tuple(std::make_pair(0, i), &A[i]);
-    return std::make_tuple(std::make_pair(SplitRule::Encode(A[i]), i),
-                           std::ref(A[i]));
+    // return std::make_tuple(std::make_pair(SplitRule::Encode(A[i]), i),
+    //                        std::ref(A[i]));
   });
-  // t.next("tabulate");
+  t.next("tabulate");
   // std::cout << sizeof(entries[0]) << std::endl;
   // zmap m1(entries);
   // auto vals = zmap::values(m1);
   this->cpam_aug_map_ = CpamAugMap(entries);
+  t.next("build_cpam_aug_map");
+  puts("--------------------");
   // return m1;
 
   return;
