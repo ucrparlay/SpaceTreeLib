@@ -131,7 +131,8 @@ namespace CPAMTree{
 			return point_in_mbr(cur, query_mbr);
 		};
 
-		auto res = zmap::range_count_filter(zCPAM, f, f2);
+		// auto res = zmap::range_count_filter(zCPAM, f, f2);
+		auto res = zmap::range_count_filter2(zCPAM, f, f2);
 		return res;
 		// auto ret = 0;
 		// auto f2 = [&](auto cur){ 
@@ -170,7 +171,8 @@ namespace CPAMTree{
 		};
 
 		int64_t ret = 0;
-		zmap::range_report_filter(tree, f, ret, out);
+		// zmap::range_report_filter(tree, f, ret, out);
+		zmap::range_report_filter2(tree, f, ret, out);
 		return ret;
 	}
 

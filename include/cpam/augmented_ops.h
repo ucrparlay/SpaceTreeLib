@@ -186,6 +186,37 @@ struct augmented_ops : Map {
     }
   }
 
+  // F for box check, F2 for point check
+  template<typename F, typename F2> 
+  static size_t range_count_filter2(node* b, const F &f, const F2 &f2, size_t granularity=kNodeLimit){
+    if (!b) return 0;
+    auto cur_aug = aug_val(b);
+    auto flag = f(cur_aug.first);
+    if (flag < 0) return 0; //exclude
+    if (flag == 1){
+      return cur_aug.second;  // fully contained
+    }
+
+    if (Map::is_compressed(b)){ // leaf node
+      auto ret = 0;
+      auto f_filter = [&](const auto& et){
+        auto cur_pt = std::get<1>(et);
+        if (f2(cur_pt) == 1){ ret++; }
+      };
+      Map::iterate_seq(b, f_filter);
+      return ret;
+    }
+
+    auto rb = Map::cast_to_regular(b);
+    auto cur_pt = Map::get_val(rb);
+    auto flag2 = f2(cur_pt) == 1 ? 1 : 0;
+
+    auto l = range_count_filter2(rb->lc, f, f2, granularity); 
+    auto r = range_count_filter2(rb->rc, f, f2, granularity); 
+    
+    return l + r + flag2;
+  }
+
   template<class F, typename F2>
   static size_t range_count_filter(ptr b, const F &f, const F2 &f2, size_t granularity=kNodeLimit) {
     if (b.empty()) return 0;
@@ -229,6 +260,41 @@ struct augmented_ops : Map {
     GC::decrement(root);
 
     return l + r + cur_pt_inside;
+  }
+
+  template<class F, typename Out>
+  static void range_report_filter2(node* b, const F &f, int64_t &cnt, Out &out, size_t granularity=kNodeLimit) {
+    if (!b) return;
+    auto cur_aug = aug_val(b);
+    auto flag = f(cur_aug.first);
+    if (flag < 0) return; //exclude
+
+    if (Map::is_compressed(b)){ // leaf node
+      if (flag == 1){
+        auto f_filter = [&](const auto &et){
+          out[cnt++] = std::get<1>(et);
+        };
+        Map::iterate_seq(b, f_filter);
+        return;  // fully contained
+      }
+
+      auto f_filter = [&](const auto& et){
+        auto cur_pt = std::get<1>(et);
+        auto pt_box = std::make_pair(cur_pt, cur_pt);
+        if (f(pt_box) == 1){ out[cnt++] = cur_pt; }
+      };
+      Map::iterate_seq(b, f_filter);
+      return;
+    }
+
+    auto rb = Map::cast_to_regular(b);
+    auto cur_pt = Map::get_val(rb);
+    auto pt_box = std::make_pair(cur_pt, cur_pt);
+    auto flag2 = f(pt_box) == 1 ? 1 : 0;
+    if (flag2) out[cnt++] = cur_pt;
+
+    range_report_filter2(rb->lc, f, cnt, out, granularity); 
+    range_report_filter2(rb->rc, f, cnt, out, granularity); 
   }
 
   template<class F, typename Out>
