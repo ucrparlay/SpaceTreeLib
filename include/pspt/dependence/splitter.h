@@ -57,13 +57,14 @@ struct HilbertCurve {
   void HilbertTag() {}
   static std::string GetName() { return "HilbertCurve"; }
 
+  // TODO: optimize the encode
   static auto Encode(Point const& p) {
     assert(std::is_integral_v<Coord>);
-    // TODO: optimize the encode
-    auto ix = static_cast<CurveCode>(p.pnt[0]);
-    auto iy = static_cast<CurveCode>(p.pnt[1]);
-    CurveCode arr[] = {ix, iy};
-    return hilbert::hilbert_c2i(2, 32, arr);
+    // auto ix = static_cast<CurveCode>(p.pnt[0]);
+    // auto iy = static_cast<CurveCode>(p.pnt[1]);
+    // CurveCode arr[] = {ix, iy};
+    // return hilbert::hilbert_c2i(2, 32, arr);
+    return hilbert::hilbert_c2i(2, 32, p.pnt.data());
   }
 };
 
