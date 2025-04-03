@@ -148,7 +148,9 @@ struct aug_node
     }
   }
 
-  static regular_node* make_regular_node(ET e) {
+  template <typename T>
+  // static regular_node* make_regular_node(ET e) {
+  static regular_node* make_regular_node(T e) {
     std::pair<ET, AT> ea;
     ea.first = e;
     return basic::make_regular_node(ea);
@@ -210,6 +212,8 @@ struct aug_node
 
   static node* finalize(node* root) {
     auto sz = basic::size(root);
+    std::cout << "finalzie in aug node" << std::endl;
+    std::cout << "sz " << sz << ", B " << B << std::endl;
     assert(sz > 0);
     if (sz < B) {
       auto ret = make_compressed_node(root);
@@ -228,10 +232,14 @@ struct aug_node
 
   // takes a pointer to an array of ETs, and a length of the number of ETs to
   // construct, and returns a compressed node.
-  static compressed_node* make_single_compressed_node(ET* e, size_t s) {
+  template <typename T>
+  // static compressed_node* make_single_compressed_node(ET* e, size_t s) {
+  static compressed_node* make_single_compressed_node(T* e, size_t s) {
     assert(s <= 2 * B);
 
-    size_t encoded_size = AugEntryEncoder::encoded_size(e, s);
+    // size_t encoded_size = AugEntryEncoder::encoded_size(e, s);
+    ET* arr;
+    size_t encoded_size = AugEntryEncoder::encoded_size(arr, s);
     size_t node_size = sizeof(aug_compressed_node) + encoded_size;
     aug_compressed_node* c_node =
         (aug_compressed_node*)utils::new_array_no_init<uint8_t>(node_size);
@@ -260,7 +268,9 @@ struct aug_node
     return basic_node_helpers::make_compressed<aug>(l, r, e, B);
   }
 
-  static node* make_compressed(ET* stack, size_t tot) {
+  template <typename T>
+  // static node* make_compressed(ET* stack, size_t tot) {
+  static node* make_compressed(T* stack, size_t tot) {
     return basic_node_helpers::make_compressed<aug>(stack, tot, B);
   }
 

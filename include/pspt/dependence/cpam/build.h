@@ -21,18 +21,19 @@ struct build {
   // sorts a sequence, then removes all but first element with equal keys
   // the sort is not necessarily stable, so any element could be kept
   template <class Seq>
-  static parlay::sequence<ET> sort_remove_duplicates(
-      Seq const& A) {  // ?? const
-    if (A.size() == 0) return parlay::sequence<ET>(0);
+  // static parlay::sequence<ET> sort_remove_duplicates(
+  static auto sort_remove_duplicates(Seq const& A) {  // ?? const
+    // BUG: should add the handling of the empty sequence
+    // if (A.size() == 0) return parlay::sequence<ET>(0);
 
     parlay::internal::timer t("");
-    assert(parlay::all_of(
-        A, [&](auto const& p) { return std::get<0>(p).first == 0; }));
-    auto B = parlay::internal::cpam::cpam_sample_sort<filling_curve_t>(
-        parlay::make_slice(A.begin(), A.end()), less);
-    // auto B = parlay::internal::integer_sort(
-    //     parlay::make_slice(A.begin(), A.end()),
-    //     [](auto const& k) { return Entry::get_key(k).first; });
+    // assert(parlay::all_of(
+    //     A, [&](auto const& p) { return std::get<0>(p).first == 0; }));
+    // auto B = parlay::internal::cpam::cpam_sample_sort<filling_curve_t>(
+    //     parlay::make_slice(A.begin(), A.end()), less);
+    auto B = parlay::internal::integer_sort(
+        parlay::make_slice(A.begin(), A.end()),
+        [](auto const& k) { return Entry::get_key(k).first; });
     t.next("sort");
 
     // auto Fl = parlay::delayed_seq<bool>(

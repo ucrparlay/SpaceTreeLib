@@ -713,7 +713,9 @@ struct sequence_ops : Tree {
   //  }
 
   // Assumes the input is sorted and there are no duplicate keys
-  static node* from_array(ET* A, size_t n) {
+  template <typename T>
+  // static node* from_array(ET* A, size_t n) {
+  static node* from_array(T* A, size_t n) {
     if (n <= 0) return Tree::empty();
     if (n == 1) return Tree::single(A[0]);
     if (n >= B && n <= 2 * B) {

@@ -7,18 +7,23 @@
 namespace cpam {
 namespace basic_node_helpers {
 
-template <class Node>
-static typename Node::node* single_compressed_node(typename Node::ET* stack,
-                                                   size_t tot) {
+// template <class Node>
+// static typename Node::node* single_compressed_node(typename Node::ET* stack,
+//                                                    size_t tot) {
+template <class Node, typename T>
+static typename Node::node* single_compressed_node(T* stack, size_t tot) {
   auto c = Node::make_single_compressed_node(stack, tot);
   Node::check_compressed_node(c);
   return c;
 }
 
-template <class Node>
+// template <class Node>
+// static typename Node::node* two_compressed_nodes(
+//     typename Node::ET* stack, size_t tot, size_t B,
+//     typename Node::regular_node* e = nullptr) {
+template <class Node, typename T>
 static typename Node::node* two_compressed_nodes(
-    typename Node::ET* stack, size_t tot, size_t B,
-    typename Node::regular_node* e = nullptr) {
+    T* stack, size_t tot, size_t B, typename Node::regular_node* e = nullptr) {
   assert(tot >= (2 * B + 1));
   size_t left_size = tot / 2, right_size = tot / 2 - (!(tot & 1));
   if (e == nullptr) e = Node::single(stack[left_size]);
@@ -34,13 +39,17 @@ static typename Node::node* two_compressed_nodes(
   return e;
 }
 
-template <class Node>
+// template <class Node>
+// static typename Node::node* four_compressed_nodes(
+//     typename Node::ET* stack, size_t tot, size_t B,
+//     typename Node::regular_node* e = nullptr) {
+template <class Node, typename T>
 static typename Node::node* four_compressed_nodes(
-    typename Node::ET* stack, size_t tot, size_t B,
-    typename Node::regular_node* e = nullptr) {
+    T* stack, size_t tot, size_t B, typename Node::regular_node* e = nullptr) {
   using ET = typename Node::ET;
   using node = typename Node::node;
-  auto make_two_nodes = [&](ET* start, size_t tot) -> node* {
+  // auto make_two_nodes = [&](ET* start, size_t tot) -> node* {
+  auto make_two_nodes = [&](auto* start, size_t tot) -> node* {
     assert(tot >= 2 * B);
     if (tot == 2 * B) {
       return Node::make_single_compressed_node(start, tot);
@@ -80,16 +89,19 @@ static typename Node::node* four_compressed_nodes(
       / \
     2B   2B
 */
-template <class Node>
-static typename Node::node* make_compressed(typename Node::ET* stack,
-                                            size_t tot, size_t B) {
+// template <class Node>
+// static typename Node::node* make_compressed(typename Node::ET* stack,
+//                                             size_t tot, size_t B) {
+template <class Node, typename T>
+static typename Node::node* make_compressed(T* stack, size_t tot, size_t B) {
   assert(tot >= B);
   assert(tot <= 8 * B + 2);
   using ET = typename Node::ET;
 
   typename Node::node* ret = nullptr;
   if (tot <= 2 * B) {
-    ret = single_compressed_node<Node>((ET*)stack, tot);
+    // ret = single_compressed_node<Node>((ET*)stack, tot);
+    ret = single_compressed_node<Node>(stack, tot);
   } else if (tot <= 4 * B + 1) {
     ret = two_compressed_nodes<Node>(stack, tot, B);
   } else {

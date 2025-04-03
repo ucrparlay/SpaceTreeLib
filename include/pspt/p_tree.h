@@ -51,6 +51,7 @@ class PTree
   using CpamKey = std::pair<CurveCode, IDType>;  // morton_id, id
   using CpamVal = Point;
   // using CpamVal = std::reference_wrapper<Point>;
+  // using CpamVal = Point*;
   using CpamAug = std::pair<Box, size_t>;
 
   struct CpamEntry {
@@ -70,8 +71,9 @@ class PTree
   };
 
   using CpamAugMap = cpam::aug_map<CpamEntry, BT::kLeaveWrap>;
-  using CpamPair =
-      std::tuple<typename CpamEntry::key_t, typename CpamEntry::val_t>;
+  using CpamInnerEntryType =
+      std::tuple<typename CpamEntry::key_t,
+                 std::reference_wrapper<typename CpamEntry::val_t>>;
 
   using Leaf = CpamAugMap::Tree::node;
   using Interior = CpamAugMap::Tree::node;

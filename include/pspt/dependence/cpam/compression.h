@@ -204,18 +204,22 @@ struct default_entry_encoder {
       return sizeof(ET) * size;
     }
 
-    static inline auto encode(ET* data, size_t size, uint8_t* bytes) {
+    template <typename T>
+    // static inline auto encode(ET* data, size_t size, uint8_t* bytes) {
+    static inline auto encode(T* data, size_t size, uint8_t* bytes) {
       if constexpr (is_aug) {
         using AT = typename Entry::aug_t;
         ET* ets = (ET*)bytes;
-        parlay::move_uninitialized(ets[0], data[0]);
+        // parlay::move_uninitialized(ets[0], data[0]);
+        parlay::assign_uninitialized(ets[0], data[0]);
 
         AT av = Entry::from_entry(ets[0]);
         // assert(av.ref_cnt() == 1);
         // size_t total_size = 0;
         // total_size += std::get<1>(ets[0]).size();
         for (size_t i = 1; i < size; i++) {
-          parlay::move_uninitialized(ets[i], data[i]);
+          // parlay::move_uninitialized(ets[i], data[i]);
+          parlay::assign_uninitialized(ets[i], data[i]);
           auto next_av = Entry::from_entry(ets[i]);
           // assert(next_av.ref_cnt() == 1);
           auto new_av = Entry::combine(std::move(av), std::move(next_av));
@@ -230,7 +234,8 @@ struct default_entry_encoder {
       } else {
         ET* ets = (ET*)bytes;
         for (size_t i = 0; i < size; i++) {
-          parlay::move_uninitialized(ets[i], data[i]);
+          // parlay::move_uninitialized(ets[i], data[i]);
+          parlay::assign_uninitialized(ets[i], data[i]);
         }
       }
     }

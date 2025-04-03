@@ -84,7 +84,9 @@ struct basic_node {
     a->s = size(a->lc) + size(a->rc) + 1;
   }
 
-  static regular_node* make_regular_node(const ET& e) {
+  template <typename T>
+  // static regular_node* make_regular_node(const ET& e) {
+  static regular_node* make_regular_node(T const& e) {
     regular_node* o = allocator::alloc();
     o->r = 1;
     o->r |= kTopBit;
@@ -187,6 +189,7 @@ struct basic_node {
 
   static node* finalize(node* root) {
     auto sz = size(root);
+    std::cout << "finalzie in basic_node" << std::endl;
     assert(sz > 0 || root == nullptr);
     if (sz < B && sz > 0) {
       auto ret = make_compressed_node(root);

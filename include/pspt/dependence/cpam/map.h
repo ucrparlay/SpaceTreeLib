@@ -20,6 +20,7 @@ class map_ {
   using Tree = map_ops<Seq_Tree, Entry>;
   using node = typename Tree::node;
   using E = typename Entry::entry_t;
+  using E_Ref_V = typename Entry::entry_t_ref_v;
   using K = typename Entry::key_t;
   using V = typename Entry::val_t;
   using M = map_;
@@ -109,7 +110,16 @@ class map_ {
   // due to overloading cannot use the generic version on range
   map_(parlay::sequence<E> const& S) {
     M empty = M();
-    // std::cout << "empty: " << std::endl;
+    std::cout << "entry to the build : " << std::endl;
+    std::cout << sizeof(S[0]) << std::endl;
+    root =
+        Tree::finalize(multi_insert(empty, parlay::make_slice(S)).get_root());
+  }
+
+  map_(parlay::sequence<E_Ref_V> const& S) {
+    M empty = M();
+    std::cout << "entry to the build : " << std::endl;
+    std::cout << sizeof(S[0]) << std::endl;
     root =
         Tree::finalize(multi_insert(empty, parlay::make_slice(S)).get_root());
   }
@@ -337,8 +347,9 @@ class map_ {
   static M multi_insert(M m, Seq const& SS) {
     auto replace = [](V const& a, V const& b) { return b; };
     timer t("");
-    parlay::sequence<E> A = Build::sort_remove_duplicates(SS);
-    t.next("(total) sort + pack");
+    // parlay::sequence<E> A = Build::sort_remove_duplicates(SS);
+    auto A = Build::sort_remove_duplicates(SS);
+    t.next("(total) sort");
     //    M A_m = Seq_Tree::from_array(A.begin(), A.size());
     //    //M A_m = Tree::multi_insert_sorted(nullptr, A.data(), A.size(),
     //    replace); t.next("multi-insert time"); auto x =

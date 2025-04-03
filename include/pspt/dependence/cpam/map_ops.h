@@ -1086,40 +1086,46 @@ struct map_ops : Seq {
   }
 
   // assumes array A is of length n and is sorted with no duplicates
-  template <class BinaryOp>
-  static node* multi_insert_sorted(ptr b, ET* A, size_t n, BinaryOp const& op) {
+  // template <class BinaryOp>
+  // static node* multi_insert_sorted(ptr b, ET* A, size_t n, BinaryOp const&
+  // op) {
+  template <class BinaryOp, typename T>
+  static node* multi_insert_sorted(ptr b, T* A, size_t n, BinaryOp const& op) {
+    std::cout << "multi_insert_sorted" << std::endl;
     if (b.empty()) {
+      std::cout << "b is empty" << "\n";
       node* x = Seq::from_array(A, n);
       return x;
     }
-    if (n == 0) return b.node_ptr();
-
-    size_t tot = b.size() + n;
-    if (tot <= kBaseCaseSize) {
-      return multiinsert_bc(std::move(b), A, n, op);
-    }
-
-    auto [lc, e, rc, root] = Seq::expose(std::move(b));
-    if (!root) root = Seq::single(e);
-
-    K bk = Entry::get_key(e);
-    auto less_val = [&](ET& a) -> bool {
-      return Entry::comp(Entry::get_key(a), bk);
-    };
-
-    size_t mid = utils::PAM_binary_search(A, n, less_val);
-    bool dup = (mid < n) && (!Entry::comp(bk, Entry::get_key(A[mid])));
-
-    auto P = utils::fork<node*>(
-        true,  // Seq::do_parallel(b.size(), n),
-        [&]() { return multi_insert_sorted(std::move(lc), A, mid, op); },
-        [&]() {
-          return multi_insert_sorted(std::move(rc), A + mid + dup,
-                                     n - mid - dup, op);
-        });
-
-    if (dup) combine_values(root, A[mid], false, op);
-    return Seq::node_join(P.first, P.second, root);
+    // BUG: uncomment below when necessary
+    // if (n == 0) return b.node_ptr();
+    //
+    // size_t tot = b.size() + n;
+    // if (tot <= kBaseCaseSize) {
+    //   return multiinsert_bc(std::move(b), A, n, op);
+    // }
+    //
+    // auto [lc, e, rc, root] = Seq::expose(std::move(b));
+    // if (!root) root = Seq::single(e);
+    //
+    // K bk = Entry::get_key(e);
+    // auto less_val = [&](ET& a) -> bool {
+    //   return Entry::comp(Entry::get_key(a), bk);
+    // };
+    //
+    // size_t mid = utils::PAM_binary_search(A, n, less_val);
+    // bool dup = (mid < n) && (!Entry::comp(bk, Entry::get_key(A[mid])));
+    //
+    // auto P = utils::fork<node*>(
+    //     true,  // Seq::do_parallel(b.size(), n),
+    //     [&]() { return multi_insert_sorted(std::move(lc), A, mid, op); },
+    //     [&]() {
+    //       return multi_insert_sorted(std::move(rc), A + mid + dup,
+    //                                  n - mid - dup, op);
+    //     });
+    //
+    // if (dup) combine_values(root, A[mid], false, op);
+    // return Seq::node_join(P.first, P.second, root);
   }
 
   template <class VE, class CombineOp, class MapOp>
