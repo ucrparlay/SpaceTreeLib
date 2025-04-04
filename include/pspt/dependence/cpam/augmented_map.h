@@ -261,7 +261,9 @@ struct aug_map_full_entry : entry {
   using aug_t = typename entry::aug_t;
   // using entry_t = std::tuple<key_t, std::reference_wrapper<val_t>>;
   using entry_t = std::tuple<key_t, val_t>;
-  using entry_t_ref_v = std::tuple<key_t, std::reference_wrapper<val_t>>;
+  using entry_t_ref_v = std::tuple<key_t, val_t&>;
+  using entry_t_ref_wrapper_v =
+      std::tuple<key_t, std::reference_wrapper<val_t>>;
   using filling_curve_t = typename entry::filling_curve_t;
   static inline key_t get_key(entry_t const& e) { return std::get<0>(e); }
   static inline val_t get_val(entry_t const& e) { return std::get<1>(e); }

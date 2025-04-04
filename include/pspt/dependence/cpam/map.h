@@ -21,6 +21,7 @@ class map_ {
   using node = typename Tree::node;
   using E = typename Entry::entry_t;
   using E_Ref_V = typename Entry::entry_t_ref_v;
+  using E_Ref_Wrap_V = typename Entry::entry_t_ref_wrapper_v;
   using K = typename Entry::key_t;
   using V = typename Entry::val_t;
   using M = map_;
@@ -117,6 +118,14 @@ class map_ {
   }
 
   map_(parlay::sequence<E_Ref_V> const& S) {
+    M empty = M();
+    // std::cout << "entry to the build : " << std::endl;
+    // std::cout << sizeof(S[0]) << "\n";
+    root =
+        Tree::finalize(multi_insert(empty, parlay::make_slice(S)).get_root());
+  }
+
+  map_(parlay::sequence<E_Ref_Wrap_V> const& S) {
     M empty = M();
     // std::cout << "entry to the build : " << std::endl;
     // std::cout << sizeof(S[0]) << std::endl;
