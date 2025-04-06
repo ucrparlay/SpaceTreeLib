@@ -53,7 +53,7 @@ void PTree<Point, SplitRule, kSkHeight, kImbaRatio>::Build_(Slice A) {
   // std::cout << sizeof(a) << " " << sizeof(b) << std::endl;
   // auto a = std::ref(A[0]);
   parlay::internal::timer t("");
-  auto entries = parlay::tabulate(n, [&](size_t i) {
+  auto entries = parlay::tabulate(n, [&](IDType i) {
     // return {{space_filling_curve_.Encode(A[i]), i}, std::ref(A[i])};
     // return {{0, i}, std::ref(A[i])};
     // return std::make_tuple(std::make_pair(0, i), A[i]);
