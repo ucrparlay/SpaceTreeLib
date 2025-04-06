@@ -168,7 +168,7 @@ void runKDParallel(auto const& wp, auto const& wi, Typename* kdknn,
     std::cout << "check NN\n" << std::flush;
     size_t S = kCCPBatchQuerySize;
     for (size_t i = 0; i < S; i++) {
-      if (std::abs(cgknn[i] - kdknn[i]) > 1e-4) {
+      if (std::abs(static_cast<double>(cgknn[i] - kdknn[i])) > 1e-4) {
         puts("");
         puts("wrong");
         std::cout << i << " " << cgknn[i] << " " << kdknn[i] << "\n"
@@ -235,37 +235,6 @@ int main(int argc, char* argv[]) {
                  int const& K, int const& kRounds, string const& kInsertFile,
                  int const& kTag, int const& kQueryType,
                  int const kSummary) -> void {
-    // using Point = typename TreeWrapper::Point;
-    // using Points = parlay::sequence<Point>;
-    // constexpr auto kDim = Point::GetDim();
-    //
-    // PrintTreeParam<TreeWrapper>();
-    //
-    // std::string name, insert_file_path = "";
-    // Points wp, wi;
-    //
-    // if (input_file_path != NULL) {  // NOTE: read main Points
-    //   name = std::string(input_file_path);
-    //   name = name.substr(name.rfind('/') + 1);
-    //   std::cout << name << "\n";
-    //   [[maybe_unused]] auto [n, d] = read_points<Point>(input_file_path, wp,
-    //   K); N = n;
-    //   // wp = wp.subseq(0, kCCPBatchQuerySize);
-    //   assert(d == kDim);
-    // }
-    //
-    // if (read_insert_file == 1) {  // NOTE: read Points to be inserted
-    //   int id = std::stoi(name.substr(0, name.find_first_of('.')));
-    //   id = (id + 1) % 10;  // WARN: MOD graph number used to test
-    //   if (!id) id++;
-    //   auto pos = std::string(input_file_path).rfind('/') + 1;
-    //   insert_file_path = std::string(input_file_path).substr(0, pos) +
-    //                      std::to_string(id) + ".in";
-    //   [[maybe_unused]] auto [n, d] =
-    //       read_points<Point>(insert_file_path.c_str(), wi, K);
-    //   assert(N == n && d == kDim);
-    // }
-
     // NOTE: begin the test
     // NOTE: alloc the memory
     Coord* cgknn;
@@ -305,12 +274,7 @@ int main(int argc, char* argv[]) {
     delete[] kdknn;
   };
 
-  if (tree_type == 0 || tree_type == 1) {
-    Wrapper::ApplyOrthogonal(tree_type, dim, split_type, params, run);
-  } else if (tree_type == 2) {
-    // Wrapper::ApplySpacialFillingCurve(tree_type, dim, split_type, params,
-    // run);
-  }
+  Wrapper::ApplyOrthogonal(tree_type, dim, split_type, params, run);
 
   puts("\nok");
   return 0;

@@ -39,14 +39,20 @@ endif()
 
 if(DEBUG)
 	set(CMAKE_BUILD_TYPE "Debug")
-	add_compile_options(-g -mcx16 -march=native)
+	add_compile_options(-g -march=native)
+	if(NOT APPLE)
+		add_compile_options(-mcx16)
+	endif()
 	if(CCP)
 		message("CCP=ON")
 		add_compile_options(-DCCP)
 	endif()
 else()
 	set(CMAKE_BUILD_TYPE "Release")
-	add_compile_options(-O3 -mcx16 -march=native)
+	add_compile_options(-O3 -march=native)
+	if(NOT APPLE)
+		add_compile_options(-mcx16)
+	endif()
 endif()
 
 if(STDALLOC)
@@ -67,17 +73,10 @@ list(APPEND CMAKE_MODULE_PATH "${PSPT_SOURCE_DIR}/cmake")
 
 # NOTE: begin of pspt library
 message(STATUS "\n\n---------------------------- PSPT -----------------------------")
-# # NOTE: CPAM
-# add_library(cpam INTERFACE)
-# set(CPAM_INCLUDE_DIR "${PSPT_SOURCE_DIR}/include/CPAM/include")
-# target_include_directories(cpam INTERFACE ${CPAM_INCLUDE_DIR})
-# target_compile_features(cpam INTERFACE cxx_std_17)
-# target_compile_options(cpam INTERFACE -mcx16 -march=native)
 
 # NOTE: PSPT
 add_library(PSPT INTERFACE)
 set(PSPT_INCLUDE_DIR "${PSPT_SOURCE_DIR}/include/pspt")
-# target_link_libraries(PSPT INTERFACE parlay cpam)
 target_link_libraries(PSPT INTERFACE parlay)
 target_include_directories(PSPT INTERFACE $<BUILD_INTERFACE:${PSPT_INCLUDE_DIR}>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
@@ -106,10 +105,6 @@ add_executable(data_generator ${PROJECT_SOURCE_DIR}/tests/data_generate.cpp)
 target_link_libraries(data_generator PUBLIC PSPT)
 target_include_directories(data_generator PUBLIC ${PROJECT_SOURCE_DIR}/include)
 
-find_package(Boost REQUIRED)
-add_executable(boost_rtree ${PROJECT_SOURCE_DIR}/tests/boost_rtree.cpp)
-target_link_libraries(boost_rtree PUBLIC PSPT ${Boost_LIBRARIES})
-target_include_directories(boost_rtree PUBLIC ${PROJECT_SOURCE_DIR}/include ${Boost_INCLUDE_DIRS})
 
 # CGAL
 if(CGAL)
@@ -139,9 +134,19 @@ if(CGAL)
 	# target_link_libraries(cgal PUBLIC PSPT CGAL::CGAL CGAL::TBB_support)
 	# target_include_directories(cgal PUBLIC ${PROJECT_SOURCE_DIR}/include )
 
-	add_executable(ccp ${PROJECT_SOURCE_DIR}/tests/ccp.cpp)
-	target_link_libraries(ccp PUBLIC PSPT CGAL::CGAL CGAL::TBB_support)
-	target_include_directories(ccp PUBLIC ${PROJECT_SOURCE_DIR}/include)
+
+	add_executable(kd_ccp ${PROJECT_SOURCE_DIR}/tests/kd_ccp.cpp)
+	target_link_libraries(kd_ccp PUBLIC PSPT CGAL::CGAL CGAL::TBB_support)
+	target_include_directories(kd_ccp PUBLIC ${PROJECT_SOURCE_DIR}/include)
+
+	add_executable(p_ccp ${PROJECT_SOURCE_DIR}/tests/p_ccp.cpp)
+	target_link_libraries(p_ccp PUBLIC PSPT CGAL::CGAL CGAL::TBB_support)
+	target_include_directories(p_ccp PUBLIC ${PROJECT_SOURCE_DIR}/include)
+
+	find_package(Boost REQUIRED)
+	add_executable(boost_rtree ${PROJECT_SOURCE_DIR}/tests/boost_rtree.cpp)
+	target_link_libraries(boost_rtree PUBLIC PSPT ${Boost_LIBRARIES})
+	target_include_directories(boost_rtree PUBLIC ${PROJECT_SOURCE_DIR}/include ${Boost_INCLUDE_DIRS})
 endif()
 
 file(GLOB_RECURSE all_files
