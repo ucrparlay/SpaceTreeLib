@@ -5,14 +5,17 @@
 
 #include "common/IO.h"
 #include "common/geometryIO.h"
+#include "common/parse_command_line.h"
 #include "parlay/parallel.h"
 #include "parlay/primitives.h"
 #include "parlay/sequence.h"
-#include "test_framework.h"
+#include "pspt/base_tree.h"
+#include "pspt/dependence/basic_point.h"
+#include "pspt/dependence/comparator.h"
 ///**********************************START*********************************///
 
-using Coord = int64_t;
-Coord const kValueUB = 1'000'000'000;
+using Axis = int64_t;
+Axis const kValueUB = 1'000'000'000;
 // Coord const kValueUB = 1'000'000;
 
 inline std::string toString(auto const& a) { return std::to_string(a); }
@@ -119,7 +122,7 @@ class VardenGenerator {
  public:
   using Points = parlay::sequence<Point>;
   using DimsType = Point::DimsType;
-  using Num = Num_Comparator<Coord>;
+  using Num = pspt::Num_Comparator<Axis>;
 
   constexpr static double GetRhoNoice() { return 1.0 / 10000; }
 
@@ -239,9 +242,9 @@ class VardenGenerator {
         }));
 
     // move the points to the first region of the space
-    auto bb = BaseTree<Point>::GetBox(parlay::make_slice(cluster_seq));
+    auto bb = pspt::BaseTree<Point>::GetBox(parlay::make_slice(cluster_seq));
     for (DimsType j = 0; j < Point::GetDim(); j++) {
-      bb.first[j] = Num::Min(bb.first[j], static_cast<Coord>(0));
+      bb.first[j] = Num::Min(bb.first[j], static_cast<Axis>(0));
       bb.first[j] = Num::Abs(bb.first[j]);
     }
     parlay::parallel_for(0, cluster_seq.size(), [&](size_t i) {
@@ -300,19 +303,19 @@ int main(int argc, char* argv[]) {
     std::string newpath = path + toString(i + 1) + ".in";
     std::cout << newpath << std::endl;
     if (pts_dim == 2) {
-      generate.operator()<BasicPoint<Coord, 2>>(newpath);
+      generate.operator()<pspt::BasicPoint<Axis, 2>>(newpath);
     } else if (pts_dim == 3) {
-      generate.operator()<BasicPoint<Coord, 3>>(newpath);
+      generate.operator()<pspt::BasicPoint<Axis, 3>>(newpath);
     } else if (pts_dim == 5) {
-      generate.operator()<BasicPoint<Coord, 5>>(newpath);
+      generate.operator()<pspt::BasicPoint<Axis, 5>>(newpath);
     } else if (pts_dim == 7) {
-      generate.operator()<BasicPoint<Coord, 7>>(newpath);
+      generate.operator()<pspt::BasicPoint<Axis, 7>>(newpath);
     } else if (pts_dim == 9) {
-      generate.operator()<BasicPoint<Coord, 9>>(newpath);
+      generate.operator()<pspt::BasicPoint<Axis, 9>>(newpath);
     } else if (pts_dim == 12) {
-      generate.operator()<BasicPoint<Coord, 12>>(newpath);
+      generate.operator()<pspt::BasicPoint<Axis, 12>>(newpath);
     } else if (pts_dim == 16) {
-      generate.operator()<BasicPoint<Coord, 16>>(newpath);
+      generate.operator()<pspt::BasicPoint<Axis, 16>>(newpath);
     } else {
       throw std::runtime_error("Invalid dimension");
     }
