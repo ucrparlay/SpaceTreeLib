@@ -259,33 +259,25 @@ struct aug_map_full_entry : entry {
   using val_t = typename entry::val_t;
   using key_t = typename entry::key_t;
   using aug_t = typename entry::aug_t;
-  // using entry_t = std::tuple<key_t, std::reference_wrapper<val_t>>;
-  using entry_t = std::tuple<key_t, val_t>;
-  using entry_t_ref_v = std::tuple<key_t, val_t&>;
-  using entry_t_ref_wrapper_v =
-      std::tuple<key_t, std::reference_wrapper<val_t>>;
+  using entry_t = typename entry::entry_t;
+  // using entry_t_ref_v = typename entry::entry_t_ref_v;
+  using entry_t_ref_wrapper_v = typename entry::entry_t_ref_wrapper_v;
+
+  // using entry_t = std::tuple<key_t, val_t>;
+  // using entry_t_ref_v = std::tuple<key_t, val_t&>;
+  // using entry_t_ref_wrapper_v =
+  //     std::tuple<key_t, std::reference_wrapper<val_t>>;
   using filling_curve_t = typename entry::filling_curve_t;
-  static inline key_t get_key(entry_t const& e) { return std::get<0>(e); }
-  static inline val_t get_val(entry_t const& e) { return std::get<1>(e); }
-  static inline void set_val(entry_t& e, val_t const& v) { std::get<1>(e) = v; }
+
+  static inline key_t get_key(entry_t const& e) { return entry::get_key(e); }
+  static inline val_t get_val(entry_t const& e) { return entry::get_val(e); }
+  static inline void set_val(entry_t& e, val_t const& v) { entry::set_val(e); }
   static inline entry_t to_entry(key_t const& k, val_t const& v) {
-    return std::make_tuple(k, v);
+    return entry::to_entry(k, v);
   };
   static inline aug_t from_entry(entry_t const& e) {
-    return entry::from_entry(std::get<0>(e), std::get<1>(e));
+    return entry::from_entry(e);
   }
-  // using entry_t = std::tuple<key_t, val_t>;
-  // using entry_t_ref_v = std::tuple<key_t, std::reference_wrapper<val_t>>;
-  // using filling_curve_t = typename entry::filling_curve_t;
-  // static inline key_t get_key(entry_t const& e) { return std::get<0>(e); }
-  // static inline val_t get_val(entry_t const& e) { return std::get<1>(e); }
-  // static inline void set_val(entry_t& e, val_t const& v) { std::get<1>(e) =
-  // v; } static inline entry_t to_entry(key_t const& k, val_t const& v) {
-  //   return std::make_tuple(k, v);
-  // };
-  // static inline aug_t from_entry(entry_t const& e) {
-  //   return entry::from_entry(std::get<0>(e), std::get<1>(e));
-  // }
 };
 
 template <class _Entry, size_t BlockSize = 128,

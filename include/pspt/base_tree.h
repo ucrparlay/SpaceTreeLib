@@ -51,6 +51,7 @@ class BaseTree {
   using NodeTag = std::pair<Node*, uint_fast8_t>;
   using NodeTagSeq = parlay::sequence<NodeTag>;
 
+  // TODO: use the one provided in aug
   using IDType = uint_fast32_t;
 
   // NOTE: Const variables

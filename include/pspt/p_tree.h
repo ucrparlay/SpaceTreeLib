@@ -42,14 +42,15 @@ class PTree
   using NodeBoxSeq = typename BT::NodeBoxSeq;
   using Splitter = HyperPlane;
   using SplitterSeq = HyperPlaneSeq;
-  using AugType = std::optional<bool>;
+  // using AugType = std::optional<bool>;
   using SplitRuleType = SplitRule;
 
   // NOTE: for the CPAM
-  using CurveCode = typename SplitRule::CurveCode;
-  using IDType = typename BT::IDType;
-  using CpamKey = std::pair<CurveCode, IDType>;  // morton_id, id
-  using CpamVal = Point;
+  using CurveCode = typename Point::AT::CurveCode;
+  using IdType = typename Point::AT::IdType;
+
+  using CpamKey = typename Point::AT;  // morton_id, id
+  using CpamVal = Coords;
   // using CpamVal = std::reference_wrapper<Point>;
   // using CpamVal = Point*;
   using CpamAug = std::pair<Box, size_t>;
@@ -60,17 +61,39 @@ class PTree
     using aug_t = CpamAug;
     using filling_curve_t = SplitRule;
 
+    using entry_t = Point;
+    // using entry_t_ref_v = Point*;
+    using entry_t_ref_wrapper_v = std::reference_wrapper<Point>;
+
+    static inline key_t get_key(entry_t const& e) { return e.GetAug(); }
+    static inline val_t get_val(entry_t const& e) { return e.GetCoords(); }
+    static inline void set_val(entry_t& e, val_t const& v) {
+      e.GetCoords() = v;
+    }
+    static inline entry_t to_entry(key_t const& k, val_t const& v) {
+      return entry_t(v, k);
+      // return std::make_tuple(k, v);
+    };
+    static inline aug_t from_entry(entry_t const& e) {
+      return from_entry(get_key(e), get_val(e));
+    }
+
+    // old
     static inline bool comp(key_t const& a, key_t const& b) { return a < b; }
+
     static aug_t get_empty() { return CpamAug(BT::GetEmptyBox(), 0); }
+
     static aug_t from_entry(key_t const& k, val_t const& v) {
       return CpamAug(Box(v, v), 1);
     }
+
     static aug_t combine(aug_t const& a, aug_t const& b) {
       return CpamAug(BT::GetBox(a.first, b.first), a.second + b.second);
     }
   };
 
   using CpamAugMap = cpam::aug_map<CpamEntry, BT::kLeaveWrap>;
+
   using CpamInnerEntryType =
       std::tuple<typename CpamEntry::key_t,
                  std::reference_wrapper<typename CpamEntry::val_t>>;

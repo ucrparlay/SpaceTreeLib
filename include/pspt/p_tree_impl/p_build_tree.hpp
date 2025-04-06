@@ -52,23 +52,26 @@ void PTree<Point, SplitRule, kSkHeight, kImbaRatio>::Build_(Slice A) {
   //     b = {{space_filling_curve_.Encode(A[0]), 0}, std::ref(A[0])};
   // std::cout << sizeof(a) << " " << sizeof(b) << std::endl;
   // auto a = std::ref(A[0]);
+
   parlay::internal::timer t("");
-  auto entries = parlay::tabulate(n, [&](IDType i) {
-    // return {{space_filling_curve_.Encode(A[i]), i}, std::ref(A[i])};
-    // return {{0, i}, std::ref(A[i])};
-    // return std::make_tuple(std::make_pair(0, i), A[i]);
-    // return std::make_tuple(std::make_pair(SplitRule::Encode(A[i]), i), A[i]);
-    return std::make_tuple(std::make_pair(SplitRule::Encode(A[i]), i),
-                           std::ref(A[i]));
-  });
-  t.next("tabulate");
+  // auto entries = parlay::tabulate(n, [&](size_t i) {
+  //   // return {{space_filling_curve_.Encode(A[i]), i}, std::ref(A[i])};
+  //   // return {{0, i}, std::ref(A[i])};
+  //   // return std::make_tuple(std::make_pair(0, i), A[i]);
+  //   // return std::make_tuple(std::make_pair(SplitRule::Encode(A[i]), i),
+  //   A[i]); return std::make_tuple(
+  //       std::make_pair(SplitRule::Encode(A[i]), static_cast<IdType>(i)),
+  //       std::ref(A[i]));
+  // });
+  // t.next("make_entries");
+
   // std::cout << sizeof(entries[0]) << std::endl;
   // static_assert(std::is_same<std::reference_wrapper<Point>,
   //                            typename decltype(entries)::value_type>::value);
   // std::cout << sizeof(entries[0]) << std::endl;
   // zmap m1(entries);
   // auto vals = zmap::values(m1);
-  this->cpam_aug_map_ = CpamAugMap(entries);
+  this->cpam_aug_map_ = CpamAugMap(A);
   t.next("build_cpam_aug_map");
   puts("--------------------");
   // return m1;

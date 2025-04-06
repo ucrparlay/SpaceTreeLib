@@ -23,8 +23,7 @@ struct MortonCurve {
   using Coord = BT::Coord;
   using HyperPlane = BT::HyperPlane;
 
-  // using CurveCode = hilbert::bitmask_t;
-  using CurveCode = uint_fast64_t;
+  using CurveCode = typename Point::AT::CurveCode;
 
   void ZTag() {}
   static std::string GetName() { return "MortonCurve"; }
@@ -52,7 +51,7 @@ struct HilbertCurve {
   using Coord = BT::Coord;
   using HyperPlane = BT::HyperPlane;
 
-  using CurveCode = hilbert::bitmask_t;
+  using CurveCode = typename Point::AT::CurveCode;
 
   void HilbertTag() {}
   static std::string GetName() { return "HilbertCurve"; }

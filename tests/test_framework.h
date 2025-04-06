@@ -1220,7 +1220,9 @@ class Wrapper {
 
   // NOTE: Apply the dim and split rule
   struct AugId {
-    int id;
+    using IdType = int;
+    IdType id;
+
     bool operator<(AugId const& rhs) const { return id < rhs.id; }
     bool operator==(AugId const& rhs) const { return id == rhs.id; }
     friend std::ostream& operator<<(std::ostream& os, AugId const& rhs) {
@@ -1288,6 +1290,41 @@ class Wrapper {
     // }
   }
 
+  struct AugIdCode {
+    using IdType = uint_fast32_t;
+    using CurveCode = hilbert::bitmask_t;
+
+    CurveCode code;
+    IdType id;
+
+    bool operator<(AugIdCode const& rhs) const {
+      return code == rhs.code ? id < rhs.id : code < rhs.code;
+    }
+
+    bool operator==(AugIdCode const& rhs) const {
+      return code == rhs.code && id == rhs.id;
+    }
+
+    friend std::ostream& operator<<(std::ostream& os, AugIdCode const& rhs) {
+      os << rhs.code << " " << rhs.id;
+      return os;
+    }
+
+    // std::pair<CurveCode, IdType> code_id;
+    //
+    // bool operator<(AugIdCode const& rhs) const { return code_id <
+    // rhs.code_id; }
+    //
+    // bool operator==(AugIdCode const& rhs) const {
+    //   return code_id == rhs.code_id;
+    // }
+    //
+    // friend std::ostream& operator<<(std::ostream& os, AugIdCode const& rhs) {
+    //   os << rhs.code_id.first << " " << rhs.code_id.second;
+    //   return os;
+    // }
+  };
+
   template <typename RunFunc>
   static void ApplySpacialFillingCurve(int const tree_type, int const dim,
                                        int const split_type,
@@ -1315,7 +1352,8 @@ class Wrapper {
 
     if (dim == 2) {
       // TODO: change
-      run_with_split_type.template operator()<BasicPoint<Coord, 2>>();
+      // run_with_split_type.template operator()<BasicPoint<Coord, 2>>();
+      run_with_split_type.template operator()<AugPoint<Coord, 2, AugIdCode>>();
     }
   }
 };

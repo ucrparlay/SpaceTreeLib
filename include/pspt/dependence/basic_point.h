@@ -83,6 +83,9 @@ struct BasicPoint {
 
   static consteval auto GetDim() { return d; }
 
+  Coords& GetCoords() { return pnt; }
+  Coords const& GetCoords() const { return pnt; }
+
   bool SameDimension(BasicPoint const& b) const { return *this == b; }
 
   bool operator==(BasicPoint const& x) const {
@@ -125,6 +128,7 @@ template <typename T, uint_fast8_t d, class AugType = std::monostate>
 struct AugPoint : BasicPoint<T, d> {
   using BP = BasicPoint<T, d>;
   using DimsType = BP::DimsType;
+  using AT = AugType;
 
   AugPoint() {}
 
@@ -185,6 +189,9 @@ struct AugPoint : BasicPoint<T, d> {
   BP MaxCoords(AugPoint const& b) const {
     return static_cast<BP const&>(*this).MaxCoords(static_cast<BP const&>(b));
   }
+
+  AugType& GetAug() { return aug; }
+  AugType const& GetAug() const { return aug; }
 
   AugType aug;
 };

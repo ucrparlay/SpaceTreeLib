@@ -38,7 +38,7 @@ struct build {
     //     parlay::make_slice(A.begin(), A.end()), less);
     auto B = parlay::internal::integer_sort(
         parlay::make_slice(A.begin(), A.end()),
-        [](auto const& k) { return Entry::get_key(k).first; });
+        [](auto const& k) { return Entry::get_key(k).code; });
     t.next("sort");
 
     // auto Fl = parlay::delayed_seq<bool>(
