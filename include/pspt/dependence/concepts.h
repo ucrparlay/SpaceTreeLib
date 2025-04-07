@@ -134,6 +134,11 @@ concept IsCoverTree = requires(T t) {
 };
 
 template <typename T>
+concept IsPTree = requires(T t) {
+  { t.PTreeTag() } -> std::same_as<void>;
+};
+
+template <typename T>
 concept SupportsForceParallel = requires(T t) {
   { t.ForceParallel() } -> std::same_as<bool>;
 };

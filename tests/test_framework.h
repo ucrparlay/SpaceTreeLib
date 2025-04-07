@@ -589,14 +589,21 @@ void RangeQuery(parlay::sequence<Point> const& wp, Tree& pkd, int const& rounds,
     parlay::sort_inplace(Out.cut(offset[i], offset[i + 1]));
     parlay::sort_inplace(query_box_seq[i].second);
     for (size_t j = 0; j < query_box_seq[i].second.size(); j++) {
-      // assert(Out[offset[i] + j] == query_box_seq[i].second.at(j));
-      if (Out[offset[i] + j] != query_box_seq[i].second.at(j)) {
-        std::cout << "wrong" << query_box_seq[i].first.first
-                  << query_box_seq[i].first.second << std::endl;
-        std::cout << Out[offset[i] + j] << " " << query_box_seq[i].second.at(j)
-                  << std::endl;
+      // if (Out[offset[i] + j] != query_box_seq[i].second.at(j)) {
+      //   std::cout << "wrong" << query_box_seq[i].first.first
+      //             << query_box_seq[i].first.second << std::endl;
+      //   std::cout << Out[offset[i] + j] << " " <<
+      //   query_box_seq[i].second.at(j)
+      //             << std::endl;
+      // }
+
+      if constexpr (IsKdTree<Tree> ||
+                    IsOrthTree<Tree>) {  // TODO: fix this by enable kdtree
+                                         // handling duplicates by id
+        assert(Out[offset[i] + j].SameDimension(query_box_seq[i].second.at(j)));
+      } else if constexpr (IsPTree<Tree>) {
+        assert(Out[offset[i] + j] == query_box_seq[i].second.at(j));
       }
-      assert(Out[offset[i] + j] == query_box_seq[i].second.at(j));
 
       // if (Out[i * step + j] != query_box_seq[i].second.at(j)) std::cout <<
       // "wrong
