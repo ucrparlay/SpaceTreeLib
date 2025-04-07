@@ -41,7 +41,10 @@ public:
 
   template<class F, typename F2>
   static size_t range_count_filter2(M m, const F& f, const F2& f2) {
-    return Tree::range_count_filter2(m.get_root(), f, f2); }
+    // auto ret = Tree::range_count_filter2(m.get_root(), f, f2);
+    auto ret = Tree::range_count_filter2(m.root, f, f2);
+    return ret; 
+  }
 
   template<typename F, typename Out>
   static void range_report_filter(M m, const F& f, int64_t &cnt, Out &out) {
@@ -51,7 +54,7 @@ public:
 
   template<typename F, typename Out>
   static void range_report_filter2(M m, const F& f, int64_t &cnt, Out &out) {
-    Tree::range_report_filter2(m.get_root(), f, cnt, out); 
+    Tree::range_report_filter2(m.root, f, cnt, out); 
     return;
   }
 

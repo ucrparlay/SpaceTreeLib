@@ -199,8 +199,8 @@ auto BuildPTree(parlay::sequence<Point> const& WP, int const& rounds) {
       rounds, loopLate, [&]() {},
       // [&]() { tree = CPAMTree::map_init(P, false); },
       [&]() { 
-        // auto [tree, SFC_time] = CPAMTree::map_init(P, true); 
-        tree = CPAMTree::map_init(P, true); 
+        // tree = CPAMTree::map_init(P, true); 
+        tree = CPAMTree::map_init(P); 
       }, [&]() {});
 
   std::cout << fixed << setprecision(6) << aveBuild << " -1 -1 " << std::flush;
@@ -222,11 +222,13 @@ auto BatchInsertPTree(PTree& tree, parlay::sequence<Point> const& WP,
   double aveInsert = time_loop(
       rounds, 1.0, [&]() {},
       [&]() {
-        tree = CPAMTree::map_insert(P, tree, true);
-        // cout << "P.size() = " << P.size() << endl;
-        // cout << tree.size() << endl;
+        // tree = CPAMTree::map_insert(P, tree, true);
+        tree = CPAMTree::map_insert(P, tree);
       },
-      [&]() { tree = CPAMTree::map_delete(P, tree, true); });
+      [&]() { 
+        // tree = CPAMTree::map_delete(P, tree, true); 
+        tree = CPAMTree::map_delete(P, tree); 
+      });
   // cout << tree.size() << endl;
   std::cout << fixed << setprecision(6) << aveInsert << " " << std::flush;
 }
@@ -246,11 +248,10 @@ auto BatchDeletePTree(PTree& tree, parlay::sequence<Point> const& WP,
   double aveDelete = time_loop(
       rounds, 1.0, [&]() {},
       [&]() {
-        tree = CPAMTree::map_delete(P, tree, true);
-        // cout << "P.size() = " << P.size() << endl;
-        // cout << tree.size() << endl;
+        // tree = CPAMTree::map_delete(P, tree, true);
+        tree = CPAMTree::map_delete(P, tree);
       },
-      [&]() { tree = CPAMTree::map_insert(P, tree, true); });
+      [&]() { tree = CPAMTree::map_insert(P, tree); });
   // cout << tree.size() << endl;
   std::cout << fixed << setprecision(6) << aveDelete << " " << std::flush;
 }
@@ -293,7 +294,8 @@ void rangeCountPtree(parlay::sequence<Point> const& WP, CPAMTree::zmap& tree,
       [&]() {
         // kdknn[0] = CPAMTree::range_count(tree, region[0], true);
         parlay::parallel_for(0, rec_num, [&](size_t i) {
-          kdknn[i] = CPAMTree::range_count(tree, region[i], true);
+          kdknn[i] = CPAMTree::range_count(tree, region[i]);
+          // kdknn[i] = CPAMTree::range_count(tree, region[i], true);
         });
         // for (auto i = 0; i < rec_num; i++){
         //   kdknn[i] = CPAMTree::range_count(tree, region[i], true);
@@ -336,10 +338,9 @@ void rangeReportPtree(parlay::sequence<Point> const& WP, CPAMTree::zmap& tree,
       rounds, -1.0, [&]() {
       },
       [&]() {
-        // CPAMTree::range_report(tree, region[0], kdknn[0], ret[0]);
-        // kdknn[0] = CPAMTree::range_report(tree, region[0], true).size();
         parlay::parallel_for(0, rec_num, [&](size_t i) {
-          kdknn[i] = CPAMTree::range_report(tree, region[i], ret[i], true);
+          // kdknn[i] = CPAMTree::range_report(tree, region[i], ret[i], true);
+          kdknn[i] = CPAMTree::range_report(tree, region[i], ret[i]);
         });
       },
       [&]() {});

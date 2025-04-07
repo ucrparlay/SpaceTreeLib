@@ -198,6 +198,7 @@ struct augmented_ops : Map {
     }
 
     if (Map::is_compressed(b)){ // leaf node
+      // return 0;
       auto ret = 0;
       auto f_filter = [&](const auto& et){
         auto cur_pt = std::get<1>(et);
@@ -210,10 +211,9 @@ struct augmented_ops : Map {
     auto rb = Map::cast_to_regular(b);
     auto cur_pt = Map::get_val(rb);
     auto flag2 = f2(cur_pt) == 1 ? 1 : 0;
-
     auto l = range_count_filter2(rb->lc, f, f2, granularity); 
     auto r = range_count_filter2(rb->rc, f, f2, granularity); 
-    
+
     return l + r + flag2;
   }
 
@@ -295,6 +295,7 @@ struct augmented_ops : Map {
 
     range_report_filter2(rb->lc, f, cnt, out, granularity); 
     range_report_filter2(rb->rc, f, cnt, out, granularity); 
+
   }
 
   template<class F, typename Out>
