@@ -162,7 +162,6 @@ void runPTreeParallel(auto const& wp, auto const& wi, Typename* kdknn,
   //   std::cout << "---------------finish diff------------------\n" <<
   //   std::flush;
   // }
-
   // NOTE: query phase
   // if (query_type & (1 << 0)) {  // NOTE: NN query
   //   Points new_wp(kCCPBatchQuerySize);
@@ -278,8 +277,8 @@ int main(int argc, char* argv[]) {
     // NOTE: run the test
     runPTreeParallel<Point, TreeWrapper>(wp, wi, kdknn, cgknn, kCCPQueryNum,
                                          query_type, K, tag, kRounds);
-    delete[] cgknn;
-    delete[] kdknn;
+    if (cgknn) delete[] cgknn;
+    if (kdknn) delete[] kdknn;
   };
 
   Wrapper::ApplySpacialFillingCurve(tree_type, dim, split_type, params, run);
