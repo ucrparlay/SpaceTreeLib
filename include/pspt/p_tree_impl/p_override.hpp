@@ -33,21 +33,18 @@ void PTree<Point, SplitRule, kSkHeight, kImbaRatio>::Flatten(Range&& Out) {
 
 template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
-auto PTree<Point, SplitRule, kSkHeight, kImbaRatio>::RangeCount(Box const& bx) {
+auto PTree<Point, SplitRule, kSkHeight, kImbaRatio>::RangeCount(
+    Box const& query_box) {
   RangeQueryLogger logger;
-  size_t size = 0;
-  // size_t size = BT::template RangeCountRectangle<Leaf, Interior>(
-  //     this->root_, bx, this->tree_box_, logger);
+
+  // auto f = [&](auto const& cur) { return mbr_mbr_relation(cur, query_mbr); };
+  // auto f2 = [&](auto const& cur) { return point_in_mbr(cur, query_mbr); };
+  // auto res = CpamAugMap::range_count_filter2<BaseTree>(zCPAM, f, f2);
+  auto size = CpamAugMap::template range_count_filter2<BT>(this->cpam_aug_map_,
+                                                           query_box, logger);
+
   return std::make_pair(size, logger);
 }
-
-// template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
-//           uint_fast8_t kImbaRatio>
-// auto PTree<Point, SplitRule, kSkHeight, kImbaRatio>::RangeCount(
-//     Circle const& cl) {
-//   return BT::template RangeCountRadius<Leaf, Interior>(this->root_, cl,
-//                                                        this->tree_box_);
-// }
 
 template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
@@ -55,11 +52,10 @@ template <typename Range>
 auto PTree<Point, SplitRule, kSkHeight, kImbaRatio>::RangeQuery(
     Box const& query_box, Range&& Out) {
   RangeQueryLogger logger;
-  size_t s = 0;
-  // BT::template RangeQuerySerialRecursive<Leaf, Interior>(
-  //     this->root_, parlay::make_slice(Out), s, query_box, this->tree_box_,
-  //     logger);
-  return std::make_pair(s, logger);
+  size_t cnt = 0;
+  CpamAugMap::template range_report_filter2<BT>(
+      this->cpam_aug_map_, query_box, cnt, parlay::make_slice(Out), logger);
+  return std::make_pair(cnt, logger);
 }
 
 template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,

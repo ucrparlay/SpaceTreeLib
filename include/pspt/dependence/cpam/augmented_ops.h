@@ -204,6 +204,260 @@ struct augmented_ops : Map {
     return Map::template insert_tmpl<Func, decltype(lazy_join), false>(
         b, e, f, lazy_join);
   }
+
+  // F for box check, F2 for point check
+  // template <typename F, typename F2>
+  // static size_t range_count_filter2(node* b, F const& f, const F2& f2,
+  //                                   size_t granularity = kNodeLimit) {
+  //   if (!b) return 0;
+  //   auto cur_aug = aug_val(b);
+  //   auto flag = f(cur_aug.first);
+  //   if (flag < 0) return 0;  // exclude
+  //   if (flag == 1) {
+  //     return cur_aug.second;  // fully contained
+  //   }
+  //
+  //   if (Map::is_compressed(b)) {  // leaf node
+  //     auto ret = 0;
+  //     auto f_filter = [&](auto const& et) {
+  //       auto cur_pt = std::get<1>(et);
+  //       if (f2(cur_pt) == 1) {
+  //         ret++;
+  //       }
+  //     };
+  //     Map::iterate_seq(b, f_filter);
+  //     return ret;
+  //   }
+  //
+  //   auto rb = Map::cast_to_regular(b);
+  //   auto cur_pt = Map::get_val(rb);
+  //   auto flag2 = f2(cur_pt) == 1 ? 1 : 0;
+  //
+  //   auto l = range_count_filter2(rb->lc, f, f2, granularity);
+  //   auto r = range_count_filter2(rb->rc, f, f2, granularity);
+  //
+  //   return l + r + flag2;
+  // }
+
+  template <class BaseTree, typename Box, typename Logger>
+  static size_t range_count_filter2(node* b, Box const& query_box,
+                                    Logger& logger) {
+    using BT = BaseTree;
+    logger.vis_node_num++;
+
+    if (!b) return 0;
+    auto cur_aug = aug_val(b);
+
+    // auto flag = f(cur_aug.first);
+    // if (flag < 0) return 0;  // exclude
+    // if (flag == 1) {
+    //   return cur_aug.second;  // fully contained
+    // }
+
+    if (!BT::BoxIntersectBox(cur_aug.first, query_box)) {
+      logger.skip_box_num++;
+      return 0;
+    } else if (BT::WithinBox(cur_aug.first, query_box)) {
+      logger.full_box_num++;
+      return cur_aug.second;
+    }
+
+    if (Map::is_compressed(b)) {  // leaf node
+      auto ret = 0;
+      auto f_filter = [&](auto const& et) {
+        // auto cur_pt = std::get<1>(et);
+        // if (f2(cur_pt) == 1) {
+        //   ret++;
+        // }
+
+        if (BT::WithinBox(et, query_box)) {
+          ret++;
+        }
+      };
+      Map::iterate_seq(b, f_filter);
+      return ret;
+    }
+
+    auto rb = Map::cast_to_regular(b);
+    // auto cur_pt = Map::get_val(rb);
+    auto cur_pt = Map::get_entry(rb);
+    // auto flag2 = f2(cur_pt) == 1 ? 1 : 0;
+    auto flag2 = BT::WithinBox(cur_pt, query_box) ? 1 : 0;
+
+    auto l = range_count_filter2<BaseTree>(rb->lc, query_box, logger);
+    auto r = range_count_filter2<BaseTree>(rb->rc, query_box, logger);
+
+    return l + r + flag2;
+  }
+
+  template <class F, typename F2>
+  static size_t range_count_filter(ptr b, F const& f, const F2& f2,
+                                   size_t granularity = kNodeLimit) {
+    if (b.empty()) return 0;
+    // auto cur_par = Map::get_entry(b.unsafe_ptr());
+    // Map::print_node_info(b.unsafe_ptr(), "cur");
+    // std::cout << cur_val.first << "-" << cur_val.second << std::endl;
+    // auto cur_pt = std::get<1>(Map::get_entry(b.unsafe_ptr()));
+    auto cur_aug = aug_val(b.unsafe_ptr());
+    auto [lc, e, rc, root] = Map::expose(std::move(b));
+    // auto [lc2, e, rc, root] = Map::expose(std::move(b));
+
+    auto cur_pt = std::get<1>(e);
+    // std::cout << std::fixed << std::setprecision(6) << cur_pt.x << ", " <<
+    // cur_pt.y << std::endl;
+
+    auto flag = f(cur_aug.first);
+
+    if (flag < 0) {
+      GC::decrement(root);
+      return 0;
+    }
+    if (flag == 1) {
+      GC::decrement(root);
+      // std::cout << "found " << cur_aug.second << " points" << std::endl;
+      return cur_aug.second;
+    }
+
+    // auto pt_box = std::make_pair(cur_pt, cur_pt);
+    // auto cur_pt_inside = f(pt_box, 0) > 0 ? 1 : 0;
+    auto cur_pt_inside = f2(cur_pt) > 0 ? 1 : 0;
+
+    // size_t n = b.size();
+    // auto [lc, e, rc, root] = Map::expose(std::move(b));
+
+    // auto [l, r] = utils::fork<size_t>(n >= granularity,
+    //   [&]() {return range_count_filter(std::move(lc), f, granularity);},
+    //   [&]() {return range_count_filter(std::move(rc), f, granularity);});
+
+    auto l = range_count_filter(std::move(lc), f, f2, granularity);
+    auto r = range_count_filter(std::move(rc), f, f2, granularity);
+
+    GC::decrement(root);
+
+    return l + r + cur_pt_inside;
+  }
+
+  // template <class F, typename Out>
+  // static void range_report_filter2(node* b, F const& f, int64_t& cnt, Out&
+  // out,
+  //                                  size_t granularity = kNodeLimit) {
+  //   if (!b) return;
+  //
+  //   auto cur_aug = aug_val(b);
+  //   auto flag = f(cur_aug.first);
+  //   if (flag < 0) return;  // exclude
+  //
+  //   if (Map::is_compressed(b)) {  // leaf node
+  //     if (flag == 1) {
+  //       auto f_filter = [&](auto const& et) { out[cnt++] = std::get<1>(et);
+  //       }; Map::iterate_seq(b, f_filter); return;  // fully contained
+  //     }
+  //
+  //     auto f_filter = [&](auto const& et) {
+  //       auto cur_pt = std::get<1>(et);
+  //       auto pt_box = std::make_pair(cur_pt, cur_pt);
+  //       if (f(pt_box) == 1) {
+  //         out[cnt++] = cur_pt;
+  //       }
+  //     };
+  //     Map::iterate_seq(b, f_filter);
+  //     return;
+  //   }
+  //
+  //   auto rb = Map::cast_to_regular(b);
+  //   auto cur_pt = Map::get_val(rb);
+  //   auto pt_box = std::make_pair(cur_pt, cur_pt);
+  //   auto flag2 = f(pt_box) == 1 ? 1 : 0;
+  //   if (flag2) out[cnt++] = cur_pt;
+  //
+  //   range_report_filter2(rb->lc, f, cnt, out, granularity);
+  //   range_report_filter2(rb->rc, f, cnt, out, granularity);
+  // }
+
+  template <class BaseTree, typename Box, typename Logger, typename Out>
+  static void range_report_filter2(node* b, Box const& query_box, size_t& cnt,
+                                   Out out, Logger& logger) {
+    using BT = BaseTree;
+    logger.vis_node_num++;
+
+    if (!b) return;
+    auto cur_aug = aug_val(b);
+    // auto flag = f(cur_aug.first);
+    // if (flag < 0) return;  // exclude
+
+    if (!BT::BoxIntersectBox(cur_aug.first, query_box)) {
+      return;
+    }
+    // TODO: try add flatten when box fallen within
+
+    if (Map::is_compressed(b)) {  // leaf node
+      // if (flag == 1) {
+      //   auto f_filter = [&](auto const& et) { out[cnt++] = std::get<1>(et);
+      //   }; Map::iterate_seq(b, f_filter); return;  // fully contained
+      // }
+
+      if (BT::WithinBox(cur_aug.first, query_box)) {
+        auto f_filter = [&](auto const& et) { out[cnt++] = et; };
+        Map::iterate_seq(b, f_filter);
+        return;  // fully contained
+      }
+
+      auto f_filter = [&](auto const& et) {
+        // auto cur_pt = std::get<1>(et);
+        // auto pt_box = std::make_pair(cur_pt, cur_pt);
+        // if (f(pt_box) == 1) {
+        //   out[cnt++] = cur_pt;
+        // }
+        if (BT::WithinBox(et, query_box)) {
+          out[cnt++] = et;
+        }
+      };
+      Map::iterate_seq(b, f_filter);
+      return;
+    }
+
+    auto rb = Map::cast_to_regular(b);
+    // auto cur_pt = Map::get_val(rb);
+    auto cur_pt = Map::get_entry(rb);
+    // auto pt_box = std::make_pair(cur_pt, cur_pt);
+    // auto flag2 = f(pt_box) == 1 ? 1 : 0;
+    // if (flag2) out[cnt++] = cur_pt;
+    if (BT::WithinBox(cur_pt, query_box)) {
+      out[cnt++] = cur_pt;
+    }
+
+    range_report_filter2<BaseTree>(rb->lc, query_box, cnt, out, logger);
+    range_report_filter2<BaseTree>(rb->rc, query_box, cnt, out, logger);
+  }
+
+  template <class F, typename Out>
+  static void range_report_filter(ptr b, F const& f, int64_t& cnt, Out& out,
+                                  size_t granularity = kNodeLimit) {
+    if (b.empty()) return;
+    auto cur_aug = aug_val(b.unsafe_ptr());
+
+    auto [lc, e, rc, root] = Map::expose(std::move(b));
+
+    auto flag = f(cur_aug.first);
+
+    if (flag < 0) {
+      GC::decrement(root);
+      return;  //  exclude
+    }
+
+    auto cur_pt = std::get<1>(e);
+    auto pt_box = std::make_pair(cur_pt, cur_pt);
+    auto cur_pt_inside = f(pt_box) > 0 ? 1 : 0;
+
+    range_report_filter(std::move(lc), f, cnt, out);
+    if (cur_pt_inside) {
+      out[cnt++] = cur_pt;
+    }
+    range_report_filter(std::move(rc), f, cnt, out);
+
+    GC::decrement(root);
+    return;
+  }
 };
 
 }  // namespace cpam
