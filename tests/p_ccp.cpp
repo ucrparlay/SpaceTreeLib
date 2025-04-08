@@ -277,6 +277,7 @@ int main(int argc, char* argv[]) {
     // NOTE: run the test
     runPTreeParallel<Point, TreeWrapper>(wp, wi, kdknn, cgknn, kCCPQueryNum,
                                          query_type, K, tag, kRounds);
+
     if (cgknn) delete[] cgknn;
     if (kdknn) delete[] kdknn;
   };

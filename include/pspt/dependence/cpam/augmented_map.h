@@ -50,14 +50,16 @@ struct aug_map_ : private map_<_Entry, Join_Tree> {
   template <class BaseTree, typename Box, typename Logger>
   static size_t range_count_filter2(M m, Box const& query_box, Logger& logger) {
     return Tree::template range_count_filter2<BaseTree, Box, Logger>(
-        m.get_root(), query_box, logger);
+        // m.get_root(), query_box, logger);
+        m.root, query_box, logger);
   }
 
   template <class BaseTree, typename Box, typename Logger, typename Out>
   static void range_report_filter2(M m, Box const& query_box, size_t& cnt,
                                    Out&& out, Logger& logger) {
     Tree::template range_report_filter2<BaseTree>(
-        m.get_root(), query_box, cnt, std::forward<Out>(out), logger);
+        // m.get_root(), query_box, cnt, std::forward<Out>(out), logger);
+        m.root, query_box, cnt, std::forward<Out>(out), logger);
     return;
   }
 
