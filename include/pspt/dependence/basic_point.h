@@ -195,7 +195,13 @@ struct AugPoint : BasicPoint<T, d> {
   }
 
   AugType& GetAug() { return aug; }
+
   AugType const& GetAug() const { return aug; }
+
+  template <typename... Args>
+  void SetAugMember(Args&&... args) {
+    return aug.SetMember(std::forward<Args>(args)...);
+  }
 
   AugType aug;
 };

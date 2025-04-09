@@ -34,6 +34,57 @@ namespace cpam {
 constexpr size_t const QUICKSORT_THRESHOLD = 16384;
 constexpr size_t const OVER_SAMPLE = 8;
 
+// generates counts in Sc for the number of keys in Sa between consecutive
+// values of Sb. Sa and Sb must be sorted
+template <typename InIterator, typename PivotIterator, typename CountIterator,
+          typename Compare>
+void get_bucket_counts(slice<InIterator, InIterator> sA,
+                       slice<PivotIterator, PivotIterator> sB,
+                       slice<CountIterator, CountIterator> sC, Compare f) {
+  using s_size_t = typename std::iterator_traits<CountIterator>::value_type;
+
+  if (sA.size() == 0 || sB.size() == 0) return;
+  for (auto& c : sC) c = 0;
+  auto itA = sA.begin();
+  auto itB = sB.begin();
+  auto itC = sC.begin();
+  while (true) {
+    while (f(*itA, *itB)) {
+      assert(itC != sC.end());
+      (*itC)++;
+      if (++itA == sA.end()) return;
+    }
+    itB++;
+    itC++;
+    if (itB == sB.end()) break;
+    if (!(f(*(itB - 1), *itB))) {
+      while (!f(*itB, *itA)) {
+        assert(itC != sC.end());
+        (*itC)++;
+        if (++itA == sA.end()) return;
+      }
+      itB++;
+      itC++;
+      if (itB == sB.end()) break;
+    }
+  }
+  assert(itC != sC.end());
+  *itC = static_cast<s_size_t>(sA.end() - itA);
+}
+
+template <typename Iterator, typename Compare>
+void seq_sort_inplace(slice<Iterator, Iterator> A, Compare const& less,
+                      bool stable) {
+  using value_type = typename slice<Iterator, Iterator>::value_type;
+  if (((sizeof(value_type) > 8) || std::is_pointer<value_type>::value))
+    if (!stable)
+      quicksort(A.begin(), A.size(), less);
+    else
+      bucket_sort(A, less, true);  // merge_sort_inplace(A, less);
+  else
+    bucket_sort(A, less, stable);
+}
+
 template <typename filling_curve_t, typename assignment_tag,
           typename InIterator, typename OutIterator, typename Compare>
 void seq_sort_(slice<InIterator, InIterator> In,
@@ -42,7 +93,7 @@ void seq_sort_(slice<InIterator, InIterator> In,
   size_t l = In.size();
   for (size_t j = 0; j < l; j++) {
     assign_dispatch(Out[j], In[j], assignment_tag());
-    std::get<0>(Out[j]).first = filling_curve_t::Encode(std::get<1>(Out[j]));
+    Out[j].SetAugMember(filling_curve_t::Encode(In[j]));
   }
   seq_sort_inplace(Out, less, stable);
 }
@@ -82,11 +133,14 @@ void sample_sort_(slice<InIterator, InIterator> In,
     size_t m = num_blocks * num_buckets;
 
     // generate "random" samples with oversampling
-    auto sample_set = sequence<value_type>::from_function(
-        sample_set_size, [&](size_t i) { return In[hash64(i) % n]; });
-    for (auto& s : sample_set) {
-      std::get<0>(s).first = filling_curve_t::Encode(std::get<1>(s));
-    }
+    // auto sample_set = sequence<value_type>::from_function(
+    //     sample_set_size, [&](size_t i) { return In[hash64(i) % n]; });
+    auto sample_set =
+        sequence<value_type>::from_function(sample_set_size, [&](size_t i) {
+          auto pt = &In[hash64(i) % n];
+          pt->SetAugMember(filling_curve_t::Encode(*pt));
+          return *pt;
+        });
     // sort the samples
     quicksort(sample_set.begin(), sample_set_size, less);
 
@@ -111,9 +165,6 @@ void sample_sort_(slice<InIterator, InIterator> In,
     auto bucket_offsets = transpose_buckets<uninitialized_relocate_tag>(
         Tmp.begin(), Out.begin(), counts, n, block_size, num_blocks,
         num_buckets);
-
-    assert(
-        all_of(Out, [&](auto const& p) { return std::get<0>(p).first != 0; }));
 
     // sort within each bucket
     parallel_for(

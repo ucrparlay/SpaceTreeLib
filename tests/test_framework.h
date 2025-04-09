@@ -1305,13 +1305,15 @@ class Wrapper {
     CurveCode code;
     IdType id;
 
+    void SetMember(CurveCode const& val) { code = val; }
+
     bool operator<(AugIdCode const& rhs) const {
       return code == rhs.code ? id < rhs.id : code < rhs.code;
     }
 
     bool operator==(AugIdCode const& rhs) const {
       // return code == rhs.code && id == rhs.id;
-      // NOTE: code is not important, we only need to ensure the id
+      // WARN: code is not important, we only need to ensure the id
       return id == rhs.id;
     }
 
@@ -1319,20 +1321,6 @@ class Wrapper {
       os << rhs.code << " " << rhs.id;
       return os;
     }
-
-    // std::pair<CurveCode, IdType> code_id;
-    //
-    // bool operator<(AugIdCode const& rhs) const { return code_id <
-    // rhs.code_id; }
-    //
-    // bool operator==(AugIdCode const& rhs) const {
-    //   return code_id == rhs.code_id;
-    // }
-    //
-    // friend std::ostream& operator<<(std::ostream& os, AugIdCode const& rhs) {
-    //   os << rhs.code_id.first << " " << rhs.code_id.second;
-    //   return os;
-    // }
   };
 
   template <typename RunFunc>
