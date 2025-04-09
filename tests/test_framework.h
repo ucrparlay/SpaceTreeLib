@@ -601,7 +601,9 @@ void RangeQuery(parlay::sequence<Point> const& wp, Tree& pkd, int const& rounds,
       if constexpr (IsKdTree<Tree> ||
                     IsOrthTree<Tree>) {  // TODO: fix this by enable kdtree
                                          // handling duplicates by id
-        assert(Out[offset[i] + j].SameDimension(query_box_seq[i].second.at(j)));
+        // assert(Out[offset[i] +
+        // j].SameDimension(query_box_seq[i].second.at(j)));
+        assert(Out[offset[i] + j] == query_box_seq[i].second.at(j));
       } else if constexpr (IsPTree<Tree>) {
         assert(Out[offset[i] + j] == query_box_seq[i].second.at(j));
       }
