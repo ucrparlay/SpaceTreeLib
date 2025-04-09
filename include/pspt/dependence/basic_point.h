@@ -130,6 +130,10 @@ struct AugPoint : BasicPoint<T, d> {
   using DimsType = BP::DimsType;
   using AT = AugType;
 
+  static consteval bool IsNonTrivialAugmentation() {
+    return !std::is_same_v<AugType, std::monostate>;
+  }
+
   AugPoint() {}
 
   explicit AugPoint(T const val) : BasicPoint<T, d>(val) {}

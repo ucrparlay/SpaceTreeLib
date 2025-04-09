@@ -1279,22 +1279,20 @@ class Wrapper {
     if (dim == 2) {
       // run_with_split_type.template operator()<BasicPoint<Coord, 2>>();
       run_with_split_type.template operator()<AugPoint<Coord, 2, AugId>>();
+    } else if (dim == 3) {
+      run_with_split_type.template operator()<AugPoint<Coord, 3, AugId>>();
+    } else if (dim == 5) {
+      run_with_split_type.template operator()<AugPoint<Coord, 5, AugId>>();
+    } else if (dim == 7) {
+      run_with_split_type.template operator()<AugPoint<Coord, 7, AugId>>();
+    } else if (dim == 9) {
+      run_with_split_type.template operator()<AugPoint<Coord, 9, AugId>>();
+    } else if (dim == 10) {
+      run_with_split_type.template operator()<AugPoint<Coord, 10, AugId>>();
+    } else {
+      std::cerr << "Unsupported dimension: " << dim << std::endl;
+      abort();
     }
-    // else if (dim == 3) {
-    //   run_with_split_type.template operator()<BasicPoint<Coord, 3>>();
-    // } else if (dim == 5) {
-    //   run_with_split_type.template operator()<BasicPoint<Coord, 5>>();
-    // } else if (dim == 7) {
-    //   run_with_split_type.template operator()<BasicPoint<Coord, 7>>();
-    // }
-    // else if (dim == 9) {
-    //   run_with_split_type(std::integral_constant<int, 9>{});
-    // } else if (dim == 10) {
-    //   run_with_split_type(std::integral_constant<int, 10>{});
-    // } else {
-    //   std::cerr << "Unsupported dimension: " << dim << std::endl;
-    //   abort();
-    // }
   }
 
   struct AugIdCode {

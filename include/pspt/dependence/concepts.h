@@ -102,12 +102,18 @@ concept IsMultiNodeHelper =
 
 // NOTE: define the what is a multi-way node
 template <typename T>
-concept IsMultiNode = IsMultiNodeHelper<T, 2, 3, 4, 5, 6, 7, 8>;
+concept IsMultiNode = IsMultiNodeHelper<T, 2, 3, 4, 5, 6, 7, 8, 9, 10>;
 
 // NOTE: define the what is a binary node
 template <typename T>
 concept IsDynamicNode = std::is_base_of_v<
     DynamicNode<typename T::PT, typename T::ST, typename T::AT>, T>;
+
+// NOTE: tag aug point
+template <typename T>
+concept IsAugPoint = requires(T t) {
+  { t.AugPoint() } -> std::same_as<void>;
+};
 
 // NOTE: tag a orth tree
 template <typename T>
