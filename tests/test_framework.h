@@ -1308,7 +1308,9 @@ class Wrapper {
     }
 
     bool operator==(AugIdCode const& rhs) const {
-      return code == rhs.code && id == rhs.id;
+      // return code == rhs.code && id == rhs.id;
+      // NOTE: code is not important, we only need to ensure the id
+      return id == rhs.id;
     }
 
     friend std::ostream& operator<<(std::ostream& os, AugIdCode const& rhs) {
