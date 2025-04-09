@@ -71,6 +71,8 @@ void PTree<Point, SplitRule, kSkHeight, kImbaRatio>::Build_(Slice A) {
   // std::cout << sizeof(entries[0]) << std::endl;
   // zmap m1(entries);
   // auto vals = zmap::values(m1);
+  parlay::parallel_for(
+      0, n, [&](size_t i) { A[i].GetAug().code = SplitRule::Encode(A[i]); });
   this->cpam_aug_map_ = CpamAugMap(A);
   t.next("build_cpam_aug_map");
   puts("--------------------");

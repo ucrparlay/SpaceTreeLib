@@ -24,7 +24,8 @@
 #include "pspt/r_tree.h"
 
 #ifdef CCP
-using Coord = long;
+// using Coord = long;
+using Coord = unsigned long long;
 // using Coord = double;
 #else
 using Coord = unsigned long long;
