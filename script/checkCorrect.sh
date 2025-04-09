@@ -4,20 +4,33 @@ set -o xtrace
 Nodes=(1000000 5000000 8000000 10000000 50000000)
 # Nodes=(50000000)
 
+# NOTE: parameters
+# tester="p_ccp"
+tester="kd_ccp"
+
+if [[ ${tester} == "p_ccp" ]]; then
+	tag=$((2#0))
+	read_file=0
+	dims=(2)
+	queryTypes=$((2#111))
+	trees=(2)
+elif [[ ${tester} == "kd_ccp" ]]; then
+	tag=$((2#111))
+	read_file=1
+	dims=(2 3 5)
+	queryTypes=$((2#110))
+	trees=(0 1)
+fi
 K=100
-tester="ccp"
+count=1 # count the number of ok in the output
+# queryTypes=$((2#110))
+# trees=(2)
+
+# NOTE: log path
 resFile="Correct.out"
 dest="logger.in"
 out="log.in"
 : >${dest}
-# tag=$((2#111))
-tag=$((2#0))
-count=1 # count the number of ok in the output
-dims=(2 3 5)
-queryTypes=$((2#111))
-# queryTypes=$((2#1))
-trees=(0 1)
-# trees=(3)
 
 Paths=("/ssd1/zmen002/kdtree/ss_varden/" "/ssd1/zmen002/kdtree/uniform/")
 # Paths=("/ssd1/zmen002/kdtree/uniform/")
@@ -33,7 +46,8 @@ for queryType in "${queryTypes[@]}"; do
 					elif [[ ${tree} -eq 1 ]]; then
 						splits=(3)
 					elif [[ ${tree} -eq 2 ]]; then
-						splits=(1 2)
+						# splits=(1 2)
+						splits=(1)
 					elif [[ ${tree} -eq 3 ]]; then
 						splits=(0)
 					fi
@@ -49,7 +63,7 @@ for queryType in "${queryTypes[@]}"; do
 						for file in "${files_path}/"*.in; do
 							echo "------->${file}"
 							# ../build/${tester} -p "${file}" -i 1 -s 0 -d "${dim}" -k ${K} -t ${tag} -r 2 -l "${split}" -T "${tree}" -q ${queryType} >>${dest}
-							../build/${tester} -p "${file}" -i 1 -s 0 -d "${dim}" -k ${K} -t ${tag} -r 2 -l "${split}" -T "${tree}" -q ${queryType} >>${dest}
+							../build/${tester} -p "${file}" -i "${read_file}" -s 0 -d "${dim}" -k ${K} -t ${tag} -r 2 -l "${split}" -T "${tree}" -q ${queryType} >>${dest}
 
 							nc=$(grep -i -o "ok" ${dest} | wc -l)
 							if [[ ${nc} -ne ${count} ]]; then
