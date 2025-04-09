@@ -6,7 +6,9 @@
 #include <parlay/type_traits.h>
 
 #include "../p_tree.h"
+#include "parlay/primitives.h"
 #include "parlay/utilities.h"
+#include "pspt/dependence/cpam/devotail_integer_sort.h"
 #include "pspt/dependence/tree_node.h"
 
 namespace pspt {
@@ -73,6 +75,24 @@ void PTree<Point, SplitRule, kSkHeight, kImbaRatio>::Build_(Slice A) {
   // auto vals = zmap::values(m1);
   parlay::parallel_for(
       0, n, [&](size_t i) { A[i].GetAug().code = SplitRule::Encode(A[i]); });
+  // auto in = parlay::tabulate(n, [&](size_t i) { return A[i].GetAug().code;
+  // });
+  auto in = parlay::tabulate(n, [&](size_t i) { return i; });
+  // auto b = parlay::random_shuffle(A);
+  auto b = parlay::random_shuffle(in);
+  t.next_time();
+  auto c =
+      // parlay::integer_sort(b, [&](auto const& p) { return p.GetAug().code;
+      // });
+      parlay::integer_sort(b, [&](auto const& p) { return p; });
+  t.next("sort integer");
+  b = parlay::random_shuffle(in);
+  t.next_time();
+  auto d = parlay::cpam::integer_sort2(
+      // b.cut(0, n), [&](auto const& p) { return p.GetAug().code; });
+      b.cut(0, n), [&](auto const& p) { return p; });
+  t.next("sort integer 2");
+
   this->cpam_aug_map_ = CpamAugMap(A);
   t.next("build_cpam_aug_map");
   puts("--------------------");

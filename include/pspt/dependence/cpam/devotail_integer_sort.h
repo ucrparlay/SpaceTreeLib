@@ -4,6 +4,7 @@
 
 #include "dovetail_internal/dovetail_counting_sort.h"
 #include "dovetail_internal/dovetail_internal_integer_sort.h"
+#include "parlay/internal/integer_sort.h"
 #include "parlay/internal/sample_sort.h"
 #include "parlay/internal/uninitialized_sequence.h"
 #include "parlay/sequence.h"
@@ -218,8 +219,8 @@ void integer_sort2_(slice<InIterator, InIterator> In,
   }
 
   if (n < INTEGER_SORT_BASE_CASE_SIZE || parallelism < .0001) {
-    internal::cpam::seq_radix_sort<inplace_tag, assignment_tag>(In, Out, Tmp, g,
-                                                                key_bits);
+    internal::seq_radix_sort<inplace_tag, assignment_tag>(In, Out, Tmp, g,
+                                                          key_bits);
     return;
   }
 
