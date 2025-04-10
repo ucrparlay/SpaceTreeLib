@@ -203,21 +203,29 @@ void BuildTree(parlay::sequence<Point> const& WP, int const& rounds,
     parlay::copy(WP.cut(0, n), wp.cut(0, n));
     pkd.Build(wp.cut(0, n));
 
-    std::cout << aveBuild << " " << std::flush;
-    // if (kPrint == 1) {
-    //   std::cout << aveBuild << " " << std::flush;
-    //   auto deep = pkd.template GetAveTreeHeight<Leaf, Interior>();
-    //   std::cout << deep << " " << std::flush;
-    // } else if (kPrint == 2) {
-    //   size_t max_deep = 0;
-    //   std::cout << aveBuild << " ";
-    //   std::cout << pkd.template GetMaxTreeDepth<Leaf,
-    //   Interior>(pkd.GetRoot(),
-    //                                                             max_deep)
-    //             << " " << pkd.template GetAveTreeHeight<Leaf, Interior>() <<
-    //             " "
-    //             << std::flush;
-    // }
+    // std::cout << aveBuild << " " << std::flush;
+    if (kPrint == 1) {
+      std::cout << aveBuild << " " << std::flush;
+      if constexpr (IsKdTree<Tree> || IsOrthTree<Tree>) {
+        auto deep = pkd.template GetAveTreeHeight<Leaf, Interior>();
+        std::cout << deep << " " << std::flush;
+      } else {
+        std::cout << "-1"
+                  << " " << std::flush;
+      }
+    } else if (kPrint == 2) {
+      size_t max_deep = 0;
+      std::cout << aveBuild << " ";
+      if constexpr (IsKdTree<Tree> || IsOrthTree<Tree>) {
+        std::cout << pkd.template GetMaxTreeDepth<Leaf, Interior>(pkd.GetRoot(),
+                                                                  max_deep)
+                  << " " << pkd.template GetAveTreeHeight<Leaf, Interior>()
+                  << " " << std::flush;
+      } else {
+        std::cout << "-1 -1"
+                  << " " << std::flush;
+      }
+    }
 
   } else {
     // NOTE: always return a built tree

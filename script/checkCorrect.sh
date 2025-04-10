@@ -12,13 +12,13 @@ if [[ ${tester} == "p_ccp" ]]; then
 	tag=$((2#0))
 	read_file=0
 	dims=(2)
-	queryTypes=$((2#111))
+	queryTypes=$((2#110))
 	trees=(2)
 elif [[ ${tester} == "kd_ccp" ]]; then
 	tag=$((2#111))
 	read_file=1
 	dims=(2 3 5)
-	queryTypes=$((2#110))
+	queryTypes=$((2#111))
 	trees=(0 1)
 fi
 K=100

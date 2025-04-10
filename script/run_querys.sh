@@ -1,12 +1,11 @@
 #!/bin/bash
 set -o xtrace
 
-# Solvers=("rtree")
-Solvers=("test")
+Solvers=("kd_test" "p_test")
 Node=(1000000000)
 # Tree=(2)
-Tree=(0 1)
-Dim=(2 3)
+Tree=(0 1 2)
+Dim=(2)
 declare -A datas
 # datas["/data/legacy/data3/zmen002/kdtree/ss_varden/"]="../benchmark/ss_varden/"
 # datas["/data/legacy/data3/zmen002/kdtree/uniform/"]="../benchmark/uniform/"
@@ -18,10 +17,10 @@ k=10
 insNum=2
 summary=0
 read_file=0
-queryType=$((2#111)) # 1110000
+queryType=$((2#110)) # 1110000
 # queryType=$((2#1)) # 1110000
 type="query"
-round=3
+round=4
 resFile=""
 
 for solver in "${Solvers[@]}"; do
@@ -34,7 +33,7 @@ for solver in "${Solvers[@]}"; do
         elif [[ ${tree} -eq 1 ]]; then
             splits=(3)
         elif [[ ${tree} -eq 2 ]]; then
-            splits=(0)
+            splits=(1)
         fi
 
         for split in "${splits[@]}"; do
@@ -43,6 +42,7 @@ for solver in "${Solvers[@]}"; do
             elif [[ ${solver} == "test" ]]; then
                 resFile="res_${tree}_${type}_${split}.out"
             fi
+
             for dim in "${Dim[@]}"; do
                 for dataPath in "${!datas[@]}"; do
                     for node in "${Node[@]}"; do
