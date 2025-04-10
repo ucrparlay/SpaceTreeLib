@@ -25,7 +25,6 @@
 
 #ifdef CCP
 using Coord = long;
-// using Coord = unsigned long long;
 // using Coord = double;
 #else
 using Coord = unsigned long long;
@@ -568,6 +567,8 @@ void RangeQuery(parlay::sequence<Point> const& wp, Tree& pkd, int const& rounds,
   offset.push_back(tot_size);
   Points Out(tot_size);
   parlay::sequence<size_t> kdknn(rec_num, 0);
+  parlay::sequence<size_t> vis_nodes(rec_num), gen_box(rec_num),
+      full_box(rec_num), skip_box(rec_num);
 
   double aveQuery = time_loop(
       rounds, 1.0, [&]() {},
@@ -576,6 +577,10 @@ void RangeQuery(parlay::sequence<Point> const& wp, Tree& pkd, int const& rounds,
           auto [size, logger] = pkd.RangeQuery(
               query_box_seq[i].first, Out.cut(offset[i], offset[i + 1]));
           kdknn[i] = size;
+          vis_nodes[i] = logger.vis_node_num;
+          gen_box[i] = logger.generate_box_num;
+          full_box[i] = logger.full_box_num;
+          skip_box[i] = logger.skip_box_num;
         });
       },
       [&]() {});
@@ -583,6 +588,13 @@ void RangeQuery(parlay::sequence<Point> const& wp, Tree& pkd, int const& rounds,
   std::cout << "check range query: " << rec_num << " " << rec_type << " "
             << max_size << std::endl;
   for (int i = 0; i < rec_num; i++) {
+    if (kdknn[i] != query_box_seq[i].second.size()) {
+      std::cout << kdknn[i] << " " << query_box_seq[i].second.size() << " "
+                << query_box_seq[i].first.first << query_box_seq[i].first.second
+                << std::endl;
+      std::cout << vis_nodes[i] << " " << gen_box[i] << " " << full_box[i]
+                << " " << skip_box[i] << std::endl;
+    }
     assert(std::cmp_equal(kdknn[i], query_box_seq[i].second.size()));
     // std::cout << kdknn[i] << " " << query_box_seq[i].second.size() << " "
     //     << query_box_seq[i].first.first << query_box_seq[i].first.second

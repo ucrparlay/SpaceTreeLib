@@ -24,6 +24,10 @@ struct augmented_ops : Map {
 
   static inline aug_t aug_val(node* b) { return Seq::aug_val(b); }
 
+  static inline aug_t const& aug_val_ref(node* b) {
+    return Seq::aug_val_ref(b);
+  }
+
   struct aug_sum_t {
     aug_t result;
     aug_sum_t() : result(Entry::get_empty()) {}
@@ -246,30 +250,10 @@ struct augmented_ops : Map {
     logger.vis_node_num++;
 
     if (!b) return 0;
-    auto cur_aug = aug_val(b);
-
-    // auto flag = f(cur_aug.first);
-    // if (flag < 0) return 0;  // exclude
-    // if (flag == 1) {
-    //   return cur_aug.second;  // fully contained
-    // }
-
-    if (!BT::BoxIntersectBox(cur_aug.first, query_box)) {
-      logger.skip_box_num++;
-      return 0;
-    } else if (BT::WithinBox(cur_aug.first, query_box)) {
-      logger.full_box_num++;
-      return cur_aug.second;
-    }
 
     if (Map::is_compressed(b)) {  // leaf node
-      auto ret = 0;
+      size_t ret = 0;
       auto f_filter = [&](auto const& et) {
-        // auto cur_pt = std::get<1>(et);
-        // if (f2(cur_pt) == 1) {
-        //   ret++;
-        // }
-
         if (BT::WithinBox(et, query_box)) {
           ret++;
         }
@@ -279,15 +263,22 @@ struct augmented_ops : Map {
     }
 
     auto rb = Map::cast_to_regular(b);
-    // auto cur_pt = Map::get_val(rb);
-    auto cur_pt = Map::get_entry(rb);
-    // auto flag2 = f2(cur_pt) == 1 ? 1 : 0;
-    auto flag2 = BT::WithinBox(cur_pt, query_box) ? 1 : 0;
+    auto const& node_box = rb->entry.second;
+
+    if (!BT::BoxIntersectBox(node_box, query_box)) {
+      logger.skip_box_num++;
+      return 0;
+    } else if (BT::WithinBox(node_box, query_box)) {
+      logger.full_box_num++;
+      return rb->s;
+    }
 
     auto l = range_count_filter2<BaseTree>(rb->lc, query_box, logger);
     auto r = range_count_filter2<BaseTree>(rb->rc, query_box, logger);
 
-    return l + r + flag2;
+    return l + r +
+           static_cast<size_t>(BT::WithinBox(rb->entry.first, query_box) ? 1
+                                                                         : 0);
   }
 
   template <class F, typename F2>
@@ -374,6 +365,27 @@ struct augmented_ops : Map {
   //   range_report_filter2(rb->rc, f, cnt, out, granularity);
   // }
 
+  template <typename R>
+  static size_t flatten(node* b, R out) {
+    if (!b) return 0;
+    if (Map::is_compressed(b)) {
+      size_t sz = 0;
+      Map::iterate_seq(b, [&](auto const& et) { out[sz++] = et; });
+      return sz;
+    }
+    auto rb = Map::cast_to_regular(b);
+    auto ls = Map::size(rb->lc);
+    assert(out.size() == rb->s);
+    assert(rb->s == Map::size(rb->lc) + Map::size(rb->rc) + 1);
+
+    utils::fork_no_result(
+        rb->s >= 1024, [&]() { flatten(rb->lc, out.cut(0, ls)); },
+        [&]() { flatten(rb->rc, out.cut(ls + 1, out.size())); });
+    out[ls] = rb->entry.first;
+
+    return rb->s;
+  }
+
   template <class BaseTree, typename Box, typename Logger, typename Out>
   static void range_report_filter2(node* b, Box const& query_box, size_t& cnt,
                                    Out out, Logger& logger) {
@@ -381,33 +393,8 @@ struct augmented_ops : Map {
     logger.vis_node_num++;
 
     if (!b) return;
-    auto cur_aug = aug_val(b);
-    // auto flag = f(cur_aug.first);
-    // if (flag < 0) return;  // exclude
-
-    if (!BT::BoxIntersectBox(cur_aug.first, query_box)) {
-      return;
-    }
-    // TODO: try add flatten when box fallen within
-
     if (Map::is_compressed(b)) {  // leaf node
-      // if (flag == 1) {
-      //   auto f_filter = [&](auto const& et) { out[cnt++] = std::get<1>(et);
-      //   }; Map::iterate_seq(b, f_filter); return;  // fully contained
-      // }
-
-      if (BT::WithinBox(cur_aug.first, query_box)) {
-        auto f_filter = [&](auto const& et) { out[cnt++] = et; };
-        Map::iterate_seq(b, f_filter);
-        return;  // fully contained
-      }
-
       auto f_filter = [&](auto const& et) {
-        // auto cur_pt = std::get<1>(et);
-        // auto pt_box = std::make_pair(cur_pt, cur_pt);
-        // if (f(pt_box) == 1) {
-        //   out[cnt++] = cur_pt;
-        // }
         if (BT::WithinBox(et, query_box)) {
           out[cnt++] = et;
         }
@@ -417,13 +404,18 @@ struct augmented_ops : Map {
     }
 
     auto rb = Map::cast_to_regular(b);
-    // auto cur_pt = Map::get_val(rb);
-    auto cur_pt = Map::get_entry(rb);
-    // auto pt_box = std::make_pair(cur_pt, cur_pt);
-    // auto flag2 = f(pt_box) == 1 ? 1 : 0;
-    // if (flag2) out[cnt++] = cur_pt;
-    if (BT::WithinBox(cur_pt, query_box)) {
-      out[cnt++] = cur_pt;
+    auto const& node_box = rb->entry.second;
+    if (!BT::BoxIntersectBox(node_box, query_box)) {
+      logger.skip_box_num++;
+      return;
+    } else if (BT::WithinBox(node_box, query_box)) {
+      logger.full_box_num++;
+      cnt += flatten(b, out.cut(cnt, cnt + rb->s));
+      return;
+    }
+
+    if (BT::WithinBox(rb->entry.first, query_box)) {
+      out[cnt++] = rb->entry.first;
     }
 
     range_report_filter2<BaseTree>(rb->lc, query_box, cnt, out, logger);

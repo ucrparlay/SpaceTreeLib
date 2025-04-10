@@ -63,7 +63,9 @@ struct HilbertCurve {
     // auto iy = static_cast<CurveCode>(p.pnt[1]);
     // CurveCode arr[] = {ix, iy};
     // return hilbert::hilbert_c2i(2, 32, arr);
-    return hilbert::hilbert_c2i(2, 32, p.GetCoords().data());
+    return hilbert::hilbert_c2i(
+        2, 32, reinterpret_cast<CurveCode const*>(p.GetCoords().data()));
+    // return hilbert::hilbert_c2i(2, 32, p.GetCoords().data());
   }
 };
 

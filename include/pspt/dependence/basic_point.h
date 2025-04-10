@@ -183,8 +183,8 @@ struct AugPoint : BasicPoint<T, d> {
   }
 
   friend std::ostream& operator<<(std::ostream& o, AugPoint const& a) {
-    o << "[" << static_cast<BasicPoint<T, d> const&>(a) << "-" << a.aug << "] "
-      << std::flush;
+    o << "[" << static_cast<BasicPoint<T, d> const&>(a) << " -> " << a.aug
+      << "] " << std::flush;
     return o;
   }
 

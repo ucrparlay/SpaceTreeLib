@@ -51,9 +51,8 @@ class PTree
 
   using CpamKey = typename Point::AT;  // morton_id, id
   using CpamVal = Coords;
-  // using CpamVal = std::reference_wrapper<Point>;
-  // using CpamVal = Point*;
-  using CpamAug = std::pair<Box, size_t>;
+  // using CpamAug = std::pair<Box, size_t>;
+  using CpamAug = Box;
 
   struct CpamEntry {
     using key_t = CpamKey;
@@ -78,17 +77,20 @@ class PTree
       return from_entry(get_key(e), get_val(e));
     }
 
-    // old
+    // how to compare key
     static inline bool comp(key_t const& a, key_t const& b) { return a < b; }
 
-    static aug_t get_empty() { return CpamAug(BT::GetEmptyBox(), 0); }
+    // get an empty aug
+    static aug_t get_empty() { return BT::GetEmptyBox(); }
 
+    // WARN: this invoke implicity conversion from Coords to BasicPoint
     static aug_t from_entry(key_t const& k, val_t const& v) {
-      return CpamAug(Box(v, v), 1);
+      return Box(v, v);
     }
 
+    // combine two aug val to get a new aug
     static aug_t combine(aug_t const& a, aug_t const& b) {
-      return CpamAug(BT::GetBox(a.first, b.first), a.second + b.second);
+      return BT::GetBox(a, b);
     }
   };
 
