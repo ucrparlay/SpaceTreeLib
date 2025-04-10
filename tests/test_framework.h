@@ -27,7 +27,7 @@
 using Coord = long;
 // using Coord = double;
 #else
-using Coord = unsigned long long;
+using Coord = long;
 // using Coord = double;
 #endif  // CCP
 
@@ -89,7 +89,8 @@ size_t recurse_box(parlay::slice<Point*, Point*> In, auto& box_seq, int DIM,
     // if ((type == 0 && n < 40 * range.first) ||
     //     (type == 1 && n < 10 * range.first) ||
     //     (type == 2 && n < 2 * range.first) ||
-    if (parlay::all_of(In, [&](Point const& p) { return p == In[0]; })) {
+    if (parlay::all_of(
+            In, [&](Point const& p) { return p.SameDimension(In[0]); })) {
       // NOTE: handle the cose that all Points are the same which is
       // undivideable
       return In.size();
@@ -202,7 +203,7 @@ void BuildTree(parlay::sequence<Point> const& WP, int const& rounds,
     parlay::copy(WP.cut(0, n), wp.cut(0, n));
     pkd.Build(wp.cut(0, n));
 
-    std::cout << aveBuild << " ";
+    std::cout << aveBuild << " " << std::flush;
     // if (kPrint == 1) {
     //   std::cout << aveBuild << " " << std::flush;
     //   auto deep = pkd.template GetAveTreeHeight<Leaf, Interior>();
@@ -1128,9 +1129,11 @@ void PrintTreeParam() {
             << "Inba: " << TreeWrapper::TreeType::GetImbalanceRatio() << "; ";
 
   if constexpr (std::is_integral_v<typename TreeWrapper::Point::Coord>) {
-    std::cout << "Coord: integer" << "; ";
+    std::cout << "Coord: integer"
+              << "; ";
   } else if (std::is_floating_point_v<typename TreeWrapper::Point::Coord>) {
-    std::cout << "Coord: float" << "; ";
+    std::cout << "Coord: float"
+              << "; ";
   }
   std::cout << "\n" << std::flush;
   return;
