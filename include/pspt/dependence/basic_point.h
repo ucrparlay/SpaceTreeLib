@@ -134,6 +134,8 @@ struct AugPoint : BasicPoint<T, d> {
     return !std::is_same_v<AugType, std::monostate>;
   }
 
+  void AugPointTag() {}
+
   AugPoint() {}
 
   explicit AugPoint(T const val) : BasicPoint<T, d>(val) {}

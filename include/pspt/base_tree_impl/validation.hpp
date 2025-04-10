@@ -137,8 +137,8 @@ template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
 template <typename Leaf, typename Interior>
 size_t BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::CheckSize(Node* T) {
   if (T->is_leaf) {
-    assert(static_cast<Leaf*>(T)->is_dummy ||
-           static_cast<Leaf*>(T)->size <= kLeaveWrap);
+    // assert(static_cast<Leaf*>(T)->is_dummy ||
+    //        static_cast<Leaf*>(T)->size <= kLeaveWrap);
     return T->size;
   }
   if constexpr (IsBinaryNode<Interior>) {

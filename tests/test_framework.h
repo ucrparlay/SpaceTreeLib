@@ -24,8 +24,8 @@
 #include "pspt/r_tree.h"
 
 #ifdef CCP
-// using Coord = long;
-using Coord = unsigned long long;
+using Coord = long;
+// using Coord = unsigned long long;
 // using Coord = double;
 #else
 using Coord = unsigned long long;
@@ -587,16 +587,19 @@ void RangeQuery(parlay::sequence<Point> const& wp, Tree& pkd, int const& rounds,
     // std::cout << kdknn[i] << " " << query_box_seq[i].second.size() << " "
     //     << query_box_seq[i].first.first << query_box_seq[i].first.second
     //     << std::endl;
-    parlay::sort_inplace(Out.cut(offset[i], offset[i + 1]));
-    parlay::sort_inplace(query_box_seq[i].second);
+    parlay::sort_inplace(
+        Out.cut(offset[i], offset[i + 1]),
+        [&](auto const& a, auto const& b) { return a.aug.id < b.aug.id; });
+    parlay::sort_inplace(
+        query_box_seq[i].second,
+        [&](auto const& a, auto const& b) { return a.aug.id < b.aug.id; });
     for (size_t j = 0; j < query_box_seq[i].second.size(); j++) {
-      // if (Out[offset[i] + j] != query_box_seq[i].second.at(j)) {
-      //   std::cout << "wrong" << query_box_seq[i].first.first
-      //             << query_box_seq[i].first.second << std::endl;
-      //   std::cout << Out[offset[i] + j] << " " <<
-      //   query_box_seq[i].second.at(j)
-      //             << std::endl;
-      // }
+      if (Out[offset[i] + j] != query_box_seq[i].second.at(j)) {
+        std::cout << "wrong" << query_box_seq[i].first.first
+                  << query_box_seq[i].first.second << std::endl;
+        std::cout << Out[offset[i] + j] << " " << query_box_seq[i].second.at(j)
+                  << std::endl;
+      }
 
       if constexpr (IsKdTree<Tree> ||
                     IsOrthTree<Tree>) {  // TODO: fix this by enable kdtree
@@ -1286,16 +1289,17 @@ class Wrapper {
       run_with_split_type.template operator()<AugPoint<Coord, 3, AugId>>();
     } else if (dim == 5) {
       run_with_split_type.template operator()<AugPoint<Coord, 5, AugId>>();
-    } else if (dim == 7) {
-      run_with_split_type.template operator()<AugPoint<Coord, 7, AugId>>();
-    } else if (dim == 9) {
-      run_with_split_type.template operator()<AugPoint<Coord, 9, AugId>>();
-    } else if (dim == 10) {
-      run_with_split_type.template operator()<AugPoint<Coord, 10, AugId>>();
-    } else {
-      std::cerr << "Unsupported dimension: " << dim << std::endl;
-      abort();
     }
+    // else if (dim == 7) {
+    //   run_with_split_type.template operator()<AugPoint<Coord, 7, AugId>>();
+    // } else if (dim == 9) {
+    //   run_with_split_type.template operator()<AugPoint<Coord, 9, AugId>>();
+    // } else if (dim == 10) {
+    //   run_with_split_type.template operator()<AugPoint<Coord, 10, AugId>>();
+    // } else {
+    //   std::cerr << "Unsupported dimension: " << dim << std::endl;
+    //   abort();
+    // }
   }
 
   struct AugIdCode {

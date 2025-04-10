@@ -112,7 +112,7 @@ concept IsDynamicNode = std::is_base_of_v<
 // NOTE: tag aug point
 template <typename T>
 concept IsAugPoint = requires(T t) {
-  { t.AugPoint() } -> std::same_as<void>;
+  { t.AugPointTag() } -> std::same_as<void>;
 };
 
 // NOTE: tag a orth tree
