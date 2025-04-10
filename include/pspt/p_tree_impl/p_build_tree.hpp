@@ -53,7 +53,7 @@ void PTree<Point, SplitRule, kSkHeight, kImbaRatio>::Build_(Slice A) {
   // std::cout << sizeof(a) << " " << sizeof(b) << std::endl;
   // auto a = std::ref(A[0]);
 
-  parlay::internal::timer t("");
+  // parlay::internal::timer t("");
   // auto entries = parlay::tabulate(n, [&](size_t i) {
   //   // return {{space_filling_curve_.Encode(A[i]), i}, std::ref(A[i])};
   //   // return {{0, i}, std::ref(A[i])};
@@ -71,11 +71,11 @@ void PTree<Point, SplitRule, kSkHeight, kImbaRatio>::Build_(Slice A) {
   // std::cout << sizeof(entries[0]) << std::endl;
   // zmap m1(entries);
   // auto vals = zmap::values(m1);
-  parlay::parallel_for(
-      0, n, [&](size_t i) { A[i].GetAug().code = SplitRule::Encode(A[i]); });
+  // parlay::parallel_for(
+  //     0, n, [&](size_t i) { A[i].GetAug().code = SplitRule::Encode(A[i]); });
   this->cpam_aug_map_ = CpamAugMap(A);
-  t.next("build_cpam_aug_map");
-  puts("--------------------");
+  // t.next("build_cpam_aug_map");
+  // puts("--------------------");
   // return m1;
 
   return;

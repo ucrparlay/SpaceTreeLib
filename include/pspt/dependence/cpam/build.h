@@ -15,7 +15,7 @@ struct build {
   using V = typename Entry::val_t;
   using ET = typename Entry::entry_t;
   using filling_curve_t = typename Entry::filling_curve_t;
-  constexpr static auto less = [](ET a, ET b) {
+  constexpr static auto less = [](const ET& a, const ET& b) {
     return Entry::comp(Entry::get_key(a), Entry::get_key(b));
   };
 
@@ -27,7 +27,7 @@ struct build {
     // BUG: should add the handling of the empty sequence
     // if (A.size() == 0) return parlay::sequence<ET>(0);
 
-    parlay::internal::timer t("");
+    // parlay::internal::timer t("");
     // assert(parlay::all_of(
     //     A, [&](auto const& p) { return std::get<0>(p).first == 0; }));
     // auto B = parlay::internal::cpam::cpam_sample_sort<filling_curve_t>(
@@ -36,14 +36,17 @@ struct build {
     //       return std::get<0>(a).first < std::get<0>(b).first;
     //     });
     auto B = parlay::internal::cpam::cpam_sample_sort<filling_curve_t>(
-        parlay::make_slice(A.begin(), A.end()), less);
+        parlay::make_slice(A.begin(), A.end()),
+        [&](const ET& a, const ET& b) { return a.aug.code < b.aug.code; });
+    // auto B = parlay::internal::cpam::cpam_sample_sort<filling_curve_t>(
+    //     parlay::make_slice(A.begin(), A.end()), less);
     // auto B = parlay::internal::integer_sort(
     //     parlay::make_slice(A.begin(), A.end()),
     //     [](auto const& k) { return Entry::get_key(k).code; });
     // auto B = parlay::cpam::integer_sort2(
     //     parlay::make_slice(A.begin(), A.end()),
     //     [](auto const& k) { return Entry::get_key(k).code; });
-    t.next("sort");
+    // t.next("sort");
 
     // auto Fl = parlay::delayed_seq<bool>(
     //     B.size(), [&](size_t i) { return (i == 0) || less(B[i - 1], B[i]);

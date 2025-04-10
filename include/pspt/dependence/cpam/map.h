@@ -358,7 +358,7 @@ class map_ {
     auto replace = [](V const& a, V const& b) { return b; };
     // parlay::sequence<E> A = Build::sort_remove_duplicates(SS);
     auto A = Build::sort_remove_duplicates(SS);
-    timer t("");
+    // timer t("");
     // t.next("(total) sort");
     //    M A_m = Seq_Tree::from_array(A.begin(), A.size());
     //    //M A_m = Tree::multi_insert_sorted(nullptr, A.data(), A.size(),
@@ -367,7 +367,7 @@ class map_ {
     //    time");
     auto x =
         M(Tree::multi_insert_sorted(m.get_root(), A.data(), A.size(), replace));
-    t.next("insert to tree");
+    // t.next("insert to tree");
     return x;
   }
 
