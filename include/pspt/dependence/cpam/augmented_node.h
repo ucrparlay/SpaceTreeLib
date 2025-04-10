@@ -78,6 +78,13 @@ struct aug_node
     return c->aug_val;
   }
 
+  static AT const& aug_val_ref(node* a) {
+    if (a == NULL) return Entry::get_empty();
+    if (basic::is_regular(a)) return (basic::cast_to_regular(a)->entry).second;
+    auto c = (aug_compressed_node*)a;
+    return c->aug_val;
+  }
+
   // updates augmented value using f, instead of recomputing
   template <class F>
   static void lazy_update(node* ov, F f) {

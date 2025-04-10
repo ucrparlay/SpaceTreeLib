@@ -142,6 +142,9 @@ template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 inline bool BaseTree<Point, DerivedTree, kSkHeight,
                      kImbaRatio>::BoxIntersectBox(Box const& a, Box const& b) {
+  if (!LegalBox(a)) {
+    std::cout << a.first << " " << a.second << std::endl;
+  }
   assert(LegalBox(a) && LegalBox(b));
 
   if constexpr (kDim == 2) {
