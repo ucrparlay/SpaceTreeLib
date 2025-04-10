@@ -263,7 +263,7 @@ struct augmented_ops : Map {
     }
 
     auto rb = Map::cast_to_regular(b);
-    auto const& node_box = rb->entry.second.first;
+    auto const& node_box = rb->entry.second;
 
     if (!BT::BoxIntersectBox(node_box, query_box)) {
       logger.skip_box_num++;
@@ -404,7 +404,7 @@ struct augmented_ops : Map {
     }
 
     auto rb = Map::cast_to_regular(b);
-    auto const& node_box = rb->entry.second.first;
+    auto const& node_box = rb->entry.second;
     if (!BT::BoxIntersectBox(node_box, query_box)) {
       logger.skip_box_num++;
       return;
