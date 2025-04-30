@@ -7,6 +7,24 @@
 namespace cpam {
 namespace basic_node_helpers {
 
+template <typename ET, typename T>
+static inline ET get_entry_indentity(T* arr, size_t pos) {
+  if constexpr (std::same_as<T, ET>) {
+    return arr[pos];
+  } else {
+    return *arr[pos].second;
+  }
+}
+
+template <typename ET, typename T>
+static inline ET get_entry_indentity(T const& val) {
+  if constexpr (std::same_as<T, ET>) {
+    return val;
+  } else {
+    return *val.second;
+  }
+}
+
 // template <class Node>
 // static typename Node::node* single_compressed_node(typename Node::ET* stack,
 //                                                    size_t tot) {
@@ -24,12 +42,15 @@ static typename Node::node* single_compressed_node(T* stack, size_t tot) {
 template <class Node, typename T>
 static typename Node::node* two_compressed_nodes(
     T* stack, size_t tot, size_t B, typename Node::regular_node* e = nullptr) {
+  using ET = typename Node::ET;
   assert(tot >= (2 * B + 1));
   size_t left_size = tot / 2, right_size = tot / 2 - (!(tot & 1));
-  if (e == nullptr) e = Node::single(stack[left_size]);
+  // if (e == nullptr) e = Node::single(stack[left_size]);
+  if (e == nullptr) e = Node::single(get_entry_indentity<ET>(stack, left_size));
 
   auto c_l = Node::make_single_compressed_node(stack, left_size);
-  Node::set_entry(e, stack[left_size]);
+  // Node::set_entry(e, stack[left_size]);
+  Node::set_entry(e, get_entry_indentity<ET>(stack, left_size));
   auto c_r =
       Node::make_single_compressed_node(stack + left_size + 1, right_size);
 
@@ -60,6 +81,7 @@ static typename Node::node* four_compressed_nodes(
       auto c_l = Node::make_single_compressed_node(start, lc_size);
       auto c_r =
           Node::make_single_compressed_node(start + lc_size + 1, rc_size);
+
       auto e = Node::make_regular_node(start[lc_size]);
       e->lc = c_l;
       e->rc = c_r;
@@ -74,7 +96,9 @@ static typename Node::node* four_compressed_nodes(
   node* rc = make_two_nodes(stack + lc_size + 1, rc_size);
 
   if (!e) e = Node::make_regular_node(stack[lc_size]);
-  Node::set_entry(e, stack[lc_size]);  // double set?
+
+  // Node::set_entry(e, stack[lc_size]);  // double set?
+  Node::set_entry(e, get_entry_indentity<ET>(stack[lc_size]));  // double set?
 
   e->lc = lc;
   e->rc = rc;

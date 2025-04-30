@@ -52,15 +52,17 @@ class PTree
   using CpamKey = typename Point::AT;  // morton_id, id
   using CpamVal = Coords;
   // using CpamAug = std::pair<Box, size_t>;
+  // PERF: aug value can remove the size, because the tree has this info
   using CpamAug = Box;
 
   struct CpamEntry {
     using key_t = CpamKey;
     using val_t = CpamVal;
     using aug_t = CpamAug;
-    using filling_curve_t = SplitRule;
-
     using entry_t = Point;
+
+    using filling_curve_t = SplitRule;
+    using sort_output_value_t = std::pair<CurveCode, entry_t*>;
     // using entry_t_ref_v = Point*;
     using entry_t_ref_wrapper_v = std::reference_wrapper<Point>;
 

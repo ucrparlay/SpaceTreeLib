@@ -15,6 +15,8 @@ struct build {
   using V = typename Entry::val_t;
   using ET = typename Entry::entry_t;
   using filling_curve_t = typename Entry::filling_curve_t;
+  using sort_output_value_t = typename Entry::sort_output_value_t;
+
   constexpr static auto less = [](const ET& a, const ET& b) {
     return Entry::comp(Entry::get_key(a), Entry::get_key(b));
   };
@@ -35,9 +37,10 @@ struct build {
     //     [](auto const& a, auto const& b) {
     //       return std::get<0>(a).first < std::get<0>(b).first;
     //     });
-    auto B = parlay::internal::cpam::cpam_sample_sort<filling_curve_t>(
+    auto B = parlay::internal::cpam::cpam_sample_sort<filling_curve_t,
+                                                      sort_output_value_t>(
         parlay::make_slice(A.begin(), A.end()),
-        [&](const ET& a, const ET& b) { return a.aug.code < b.aug.code; });
+        [&](auto const& a, auto const& b) { return a.first < b.first; });
     // auto B = parlay::internal::cpam::cpam_sample_sort<filling_curve_t>(
     //     parlay::make_slice(A.begin(), A.end()), less);
     // auto B = parlay::internal::integer_sort(

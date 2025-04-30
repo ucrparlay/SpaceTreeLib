@@ -5,6 +5,7 @@
 #include <tuple>
 #include <type_traits>
 
+#include "basic_node_helpers.h"
 #include "parlay/primitives.h"
 
 namespace cpam {
@@ -211,7 +212,8 @@ struct default_entry_encoder {
         using AT = typename Entry::aug_t;
         ET* ets = (ET*)bytes;
         // parlay::move_uninitialized(ets[0], data[0]);
-        parlay::assign_uninitialized(ets[0], data[0]);
+        parlay::assign_uninitialized(
+            ets[0], basic_node_helpers::get_entry_indentity<ET>(data[0]));
 
         AT av = Entry::from_entry(ets[0]);
         // assert(av.ref_cnt() == 1);
@@ -219,7 +221,9 @@ struct default_entry_encoder {
         // total_size += std::get<1>(ets[0]).size();
         for (size_t i = 1; i < size; i++) {
           // parlay::move_uninitialized(ets[i], data[i]);
-          parlay::assign_uninitialized(ets[i], data[i]);
+          // parlay::assign_uninitialized(ets[i], data[i]);
+          parlay::assign_uninitialized(
+              ets[i], basic_node_helpers::get_entry_indentity<ET>(data[i]));
           auto next_av = Entry::from_entry(ets[i]);
           // assert(next_av.ref_cnt() == 1);
           auto new_av = Entry::combine(std::move(av), std::move(next_av));
@@ -235,7 +239,9 @@ struct default_entry_encoder {
         ET* ets = (ET*)bytes;
         for (size_t i = 0; i < size; i++) {
           // parlay::move_uninitialized(ets[i], data[i]);
-          parlay::assign_uninitialized(ets[i], data[i]);
+          // parlay::assign_uninitialized(ets[i], data[i]);
+          parlay::assign_uninitialized(
+              ets[i], basic_node_helpers::get_entry_indentity<ET>(data[i]));
         }
       }
     }

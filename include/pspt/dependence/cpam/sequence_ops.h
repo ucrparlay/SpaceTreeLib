@@ -717,7 +717,13 @@ struct sequence_ops : Tree {
   // static node* from_array(ET* A, size_t n) {
   static node* from_array(T* A, size_t n) {
     if (n <= 0) return Tree::empty();
-    if (n == 1) return Tree::single(A[0]);
+    if (n == 1) {
+      if constexpr (!std::same_as<T, ET>) {  // WARN: this may incur wrong copy
+        return Tree::single(*A[0].second);
+      } else {
+        return Tree::single(A[0]);
+      }
+    }
     if (n >= B && n <= 2 * B) {
       return Tree::make_compressed(A, n);
     }

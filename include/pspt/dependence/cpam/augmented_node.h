@@ -159,7 +159,8 @@ struct aug_node
   // static regular_node* make_regular_node(ET e) {
   static regular_node* make_regular_node(T e) {
     std::pair<ET, AT> ea;
-    ea.first = e;
+    // ea.first = e;
+    ea.first = basic_node_helpers::get_entry_indentity<ET>(e);
     return basic::make_regular_node(ea);
   }
 
@@ -167,6 +168,11 @@ struct aug_node
     AT av = Entry::from_entry(e);
     return basic::single(std::make_pair(e, av));
   }
+
+  // static regular_node* single(const ET& e) {
+  //   AT av = Entry::from_entry(e);
+  //   return basic::single(std::make_pair(e, av));
+  // }
 
   template <typename F>
   static void inplace_update(node* a, F const& f) {
