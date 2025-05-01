@@ -749,6 +749,7 @@ void rangeQueryFix(parlay::sequence<Point> const& WP, Tree& pkd,
   // tot_size
   //           << std::endl;
   Out.resize(tot_size);
+  parlay::sequence<std::pair<double, int>> t(rec_num);
 
   // int n = WP.size();
   // size_t step = Out.size() / rec_num;
@@ -758,32 +759,67 @@ void rangeQueryFix(parlay::sequence<Point> const& WP, Tree& pkd,
   double aveQuery = time_loop(
       rounds, 1.0, [&]() {},
       [&]() {
+        // for (size_t i = 0; i < rec_num; i++) {
         parlay::parallel_for(0, rec_num, [&](size_t i) {
+          parlay::internal::timer tm;
+          tm.reset();
+          tm.start();
           auto [size, logger] = pkd.RangeQuery(
               query_box_seq[i].first, Out.cut(offset[i], offset[i + 1]));
+          tm.stop();
+          t[i].first = tm.total_time();
+          t[i].second = i;
 
           kdknn[i] = size;
           vis_nodes[i] = logger.vis_node_num;
           gen_box[i] = logger.generate_box_num;
           full_box[i] = logger.full_box_num;
           skip_box[i] = logger.skip_box_num;
+          // }
         });
+        // parlay::parallel_for(0, rec_num, [&](size_t i) {
+        //   auto [size, logger] = pkd.RangeQuery(
+        //       query_box_seq[i].first, Out.cut(offset[i], offset[i + 1]));
+        //
+        //   kdknn[i] = size;
+        //   vis_nodes[i] = logger.vis_node_num;
+        //   gen_box[i] = logger.generate_box_num;
+        //   full_box[i] = logger.full_box_num;
+        //   skip_box[i] = logger.skip_box_num;
+        // });
       },
       [&]() {});
 
+  parlay::sort_inplace(
+      t, [&](auto const& a, auto const& b) { return a.first > b.first; });
   std::cout << aveQuery << " " << std::flush;
-  std::cout << static_cast<double>(parlay::reduce(vis_nodes.cut(0, rec_num))) /
-                   static_cast<double>(rec_num)
-            << " " << std::flush;
-  std::cout << static_cast<double>(parlay::reduce(gen_box.cut(0, rec_num))) /
-                   static_cast<double>(rec_num)
-            << " " << std::flush;
-  std::cout << static_cast<double>(parlay::reduce(full_box.cut(0, rec_num))) /
-                   static_cast<double>(rec_num)
-            << " " << std::flush;
-  std::cout << static_cast<double>(parlay::reduce(skip_box.cut(0, rec_num))) /
-                   static_cast<double>(rec_num)
-            << " " << std::flush;
+  // std::cout << static_cast<double>(parlay::reduce(t.cut(0, rec_num))) /
+  //                  static_cast<double>(rec_num)
+  std::cout << " " << t[rec_num / 2].first << " " << t[0].first << std::endl;
+  // << query_box_seq[t[0].second].first.first
+  // << query_box_seq[t[0].second].first.second << std::endl;
+  std::ofstream outfile(std::to_string(rec_type) + "_output.txt");
+  for (auto i : t) {
+    int id = i.second;
+    outfile << i.first << " " << kdknn[id] << " " << vis_nodes[id] << " "
+            << gen_box[id] << " " << full_box[id] << " " << skip_box[id]
+            << std::endl;
+  }
+  // std::cout << static_cast<double>(parlay::reduce(vis_nodes.cut(0, rec_num)))
+  // /
+  //                  static_cast<double>(rec_num)
+  //           << " " << std::flush;
+  // std::cout << static_cast<double>(parlay::reduce(gen_box.cut(0, rec_num))) /
+  //                  static_cast<double>(rec_num)
+  //           << " " << std::flush;
+  // std::cout << static_cast<double>(parlay::reduce(full_box.cut(0, rec_num)))
+  // /
+  //                  static_cast<double>(rec_num)
+  //           << " " << std::flush;
+  // std::cout << static_cast<double>(parlay::reduce(skip_box.cut(0, rec_num)))
+  // /
+  //                  static_cast<double>(rec_num)
+  //           << " " << std::flush;
   return;
 }
 //

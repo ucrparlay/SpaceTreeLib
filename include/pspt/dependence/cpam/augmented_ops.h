@@ -380,6 +380,7 @@ struct augmented_ops : Map {
 
     utils::fork_no_result(
         rb->s >= 1024, [&]() { flatten(rb->lc, out.cut(0, ls)); },
+        // 0, [&]() { flatten(rb->lc, out.cut(0, ls)); },
         [&]() { flatten(rb->rc, out.cut(ls + 1, out.size())); });
     out[ls] = rb->entry.first;
 
