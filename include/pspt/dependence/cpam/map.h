@@ -357,8 +357,8 @@ class map_ {
   static M multi_insert(M m, Seq const& SS) {
     auto replace = [](V const& a, V const& b) { return b; };
     // parlay::sequence<E> A = Build::sort_remove_duplicates(SS);
-    auto A = Build::sort_remove_duplicates(SS);
     // timer t("");
+    auto A = Build::sort_remove_duplicates(SS);
     // t.next("(total) sort");
     //    M A_m = Seq_Tree::from_array(A.begin(), A.size());
     //    //M A_m = Tree::multi_insert_sorted(nullptr, A.data(), A.size(),

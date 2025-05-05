@@ -32,15 +32,12 @@ struct build {
     // parlay::internal::timer t("");
     // assert(parlay::all_of(
     //     A, [&](auto const& p) { return std::get<0>(p).first == 0; }));
-    // auto B = parlay::internal::cpam::cpam_sample_sort<filling_curve_t>(
+    auto B = parlay::internal::sample_sort(
+        parlay::make_slice(A.begin(), A.end()), less);
+    // auto B = parlay::internal::cpam::cpam_sample_sort<filling_curve_t,
+    //                                                   sort_output_value_t>(
     //     parlay::make_slice(A.begin(), A.end()),
-    //     [](auto const& a, auto const& b) {
-    //       return std::get<0>(a).first < std::get<0>(b).first;
-    //     });
-    auto B = parlay::internal::cpam::cpam_sample_sort<filling_curve_t,
-                                                      sort_output_value_t>(
-        parlay::make_slice(A.begin(), A.end()),
-        [&](auto const& a, auto const& b) { return a.first < b.first; });
+    //     [&](auto const& a, auto const& b) { return a.first < b.first; });
     // auto B = parlay::internal::cpam::cpam_sample_sort<filling_curve_t>(
     //     parlay::make_slice(A.begin(), A.end()), less);
     // auto B = parlay::internal::integer_sort(

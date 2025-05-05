@@ -286,6 +286,7 @@ void BatchInsert(Tree& pkd, parlay::sequence<Point> const& WP,
     build_tree_by_type();
     parlay::copy(WI, wi);
     pkd.BatchInsert(wi.cut(0, static_cast<size_t>(wi.size() * ratio)));
+    std::cout << "finish" << std::endl;
   }
 
   return;
