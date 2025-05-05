@@ -1095,8 +1095,7 @@ void generate_random_points(parlay::sequence<Point>& wp, Coord _box_size,
 template <typename Point>
 std::pair<size_t, int> read_points(char const* iFile,
                                    parlay::sequence<Point>& wp,
-                                   [[maybe_unused]] int K,
-                                   [[maybe_unused]] bool withID = false) {
+                                   [[maybe_unused]] int id_offset = 0) {
   using Coord = typename Point::Coord;
   using Coords = typename Point::Coords;
   static Coords a_sample_point;
@@ -1123,7 +1122,7 @@ std::pair<size_t, int> read_points(char const* iFile,
                                    BasicPoint<Coord, a_sample_point.size()>>) {
         ;
       } else {
-        wp[i].aug.id = i;
+        wp[i].aug.id = i + id_offset;
       }
     }
   });
@@ -1230,7 +1229,7 @@ class Wrapper {
       name = std::string(input_file_path);
       name = name.substr(name.rfind('/') + 1);
       std::cout << name << " ";
-      auto [n, d] = read_points<Point>(input_file_path, wp, K);
+      auto [n, d] = read_points<Point>(input_file_path, wp, 0);
       N = n;
       assert(d == kDim);
     }
@@ -1246,8 +1245,7 @@ class Wrapper {
       auto pos = std::string(input_file_path).rfind('/') + 1;
       insert_file_path = std::string(input_file_path).substr(0, pos) +
                          std::to_string(id) + ".in";
-      [[maybe_unused]] auto [n, d] =
-          read_points<Point>(insert_file_path.c_str(), wi, K);
+      auto [n, d] = read_points<Point>(insert_file_path.c_str(), wi, N);
       assert(d == kDim);
     }
 
