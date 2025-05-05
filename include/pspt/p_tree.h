@@ -66,8 +66,10 @@ class PTree
     // using entry_t_ref_v = Point*;
     using entry_t_ref_wrapper_v = std::reference_wrapper<Point>;
 
-    static inline key_t get_key(entry_t const& e) { return e.GetAug(); }
-    static inline val_t get_val(entry_t const& e) { return e.GetCoords(); }
+    static inline key_t const& get_key(entry_t const& e) { return e.GetAug(); }
+    static inline val_t const& get_val(entry_t const& e) {
+      return e.GetCoords();
+    }
     static inline void set_val(entry_t& e, val_t const& v) {
       e.GetCoords() = v;
     }

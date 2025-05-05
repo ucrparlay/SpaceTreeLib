@@ -46,7 +46,7 @@ struct aug_node
   static ET* get_entry_p(node* a) {
     return &basic::cast_to_regular(a)->entry.first;
   }
-  static void set_entry(node* a, ET e) {
+  static void set_entry(node* a, const ET& e) {
     basic::cast_to_regular(a)->entry.first = e;
   }
 
@@ -157,14 +157,14 @@ struct aug_node
 
   template <typename T>
   // static regular_node* make_regular_node(ET e) {
-  static regular_node* make_regular_node(T e) {
+  static regular_node* make_regular_node(T const& e) {
     std::pair<ET, AT> ea;
     // ea.first = e;
     ea.first = basic_node_helpers::get_entry_indentity<ET>(e);
     return basic::make_regular_node(ea);
   }
 
-  static regular_node* single(ET e) {
+  static regular_node* single(ET const& e) {
     AT av = Entry::from_entry(e);
     return basic::single(std::make_pair(e, av));
   }

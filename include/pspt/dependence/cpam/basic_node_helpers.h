@@ -8,7 +8,7 @@ namespace cpam {
 namespace basic_node_helpers {
 
 template <typename ET, typename T>
-static inline ET get_entry_indentity(T* arr, size_t pos) {
+static inline const ET& get_entry_indentity(T* arr, size_t pos) {
   if constexpr (std::same_as<T, ET>) {
     return arr[pos];
   } else {
@@ -18,7 +18,7 @@ static inline ET get_entry_indentity(T* arr, size_t pos) {
 }
 
 template <typename ET, typename T>
-static inline ET get_entry_indentity(T const& val) {
+static inline const ET& get_entry_indentity(T const& val) {
   if constexpr (std::same_as<T, ET>) {
     return val;
   } else {

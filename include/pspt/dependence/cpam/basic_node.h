@@ -107,7 +107,7 @@ struct basic_node {
   inline static ET* get_entry_p(node* a) {
     return &(cast_to_regular(a)->entry);
   }
-  static void set_entry(node* a, ET e) { cast_to_regular(a)->entry = e; }
+  static void set_entry(node* a, ET const& e) { cast_to_regular(a)->entry = e; }
 
   static constexpr node_size_t kTopBit = ((node_size_t)1)
                                          << (sizeof(node_size_t) * 8 - 1);

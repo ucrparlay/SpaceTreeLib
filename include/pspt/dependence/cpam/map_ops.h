@@ -1113,7 +1113,7 @@ struct map_ops : Seq {
     //   return Entry::comp(Entry::get_key(a), bk);
     // };
     auto less_val = [&](auto const& a) -> bool {
-      ET et = basic_node_helpers::get_entry_indentity<ET>(a);
+      auto et = basic_node_helpers::get_entry_indentity<ET>(a);
       return Entry::comp(Entry::get_key(et), bk);
     };
 
@@ -1137,7 +1137,7 @@ struct map_ops : Seq {
 
     // if (dup) combine_values(root, A[mid], false, op);
     if (dup) {
-      ET mid_et = basic_node_helpers::get_entry_indentity<ET>(A, mid);
+      auto mid_et = basic_node_helpers::get_entry_indentity<ET>(A, mid);
       combine_values(root, mid_et, false, op);
     }
     return Seq::node_join(P.first, P.second, root);
@@ -1415,7 +1415,9 @@ struct map_ops : Seq {
 
     ET stack[kBaseCaseSize + 1];
     size_t offset = 0;
-    auto copy_f = [&](ET a) { parlay::move_uninitialized(stack[offset++], a); };
+    auto copy_f = [&](ET& a) {
+      parlay::move_uninitialized(stack[offset++], a);
+    };
     Seq::iterate_seq(n_b1, copy_f);
     Seq::decrement_recursive(n_b1);
 
@@ -1428,21 +1430,21 @@ struct map_ops : Seq {
     while (i < nA && j < nB) {
       auto const& k_a = Entry::get_key(stack[i]);
       // auto const& k_b = Entry::get_key(A[j]);
-      ET et = basic_node_helpers::get_entry_indentity<ET>(A, j);
+      auto et = basic_node_helpers::get_entry_indentity<ET>(A, j);
       auto const& k_b = Entry::get_key(et);
       if (comp(k_a, k_b)) {
         parlay::move_uninitialized(output[out_off++], stack[i]);
         i++;
       } else if (comp(k_b, k_a)) {
         // parlay::move_uninitialized(output[out_off++], A[j]);
-        ET et = basic_node_helpers::get_entry_indentity<ET>(A, j);
+        auto et = basic_node_helpers::get_entry_indentity<ET>(A, j);
         parlay::move_uninitialized(output[out_off++], et);
         j++;
       } else {
         parlay::move_uninitialized(output[out_off], stack[i]);
         ET& re = output[out_off];
         // Entry::set_val(re, op(Entry::get_val(re), Entry::get_val(A[j])));
-        ET et = basic_node_helpers::get_entry_indentity<ET>(A, j);
+        auto et = basic_node_helpers::get_entry_indentity<ET>(A, j);
         Entry::set_val(re, op(Entry::get_val(re), Entry::get_val(et)));
         out_off++;
         i++;
@@ -1455,7 +1457,7 @@ struct map_ops : Seq {
     }
     while (j < nB) {
       // parlay::move_uninitialized(output[out_off++], A[j]);
-      ET et = basic_node_helpers::get_entry_indentity<ET>(A, j);
+      auto et = basic_node_helpers::get_entry_indentity<ET>(A, j);
       parlay::move_uninitialized(output[out_off++], et);
       j++;
     }
