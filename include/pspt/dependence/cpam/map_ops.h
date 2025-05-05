@@ -1118,12 +1118,17 @@ struct map_ops : Seq {
     };
 
     size_t mid = utils::PAM_binary_search(A, n, less_val);
+    // std::cout << e << " " << mid << " " << n << std::endl;
     // bool dup = (mid < n) && (!Entry::comp(bk, Entry::get_key(A[mid])));
-    ET mid_et = basic_node_helpers::get_entry_indentity<ET>(A, mid);
-    bool dup = (mid < n) && (!Entry::comp(bk, Entry::get_key(mid_et)));
+    bool dup =
+        (mid < n) &&
+        (!Entry::comp(
+            bk, Entry::get_key(
+                    basic_node_helpers::get_entry_indentity<ET>(A, mid))));
 
     auto P = utils::fork<node*>(
-        true,  // Seq::do_parallel(b.size(), n),
+        // true,  // Seq::do_parallel(b.size(), n),
+        Seq::do_parallel(b.size(), n),
         [&]() { return multi_insert_sorted(std::move(lc), A, mid, op); },
         [&]() {
           return multi_insert_sorted(std::move(rc), A + mid + dup,
@@ -1131,7 +1136,10 @@ struct map_ops : Seq {
         });
 
     // if (dup) combine_values(root, A[mid], false, op);
-    if (dup) combine_values(root, mid_et, false, op);
+    if (dup) {
+      ET mid_et = basic_node_helpers::get_entry_indentity<ET>(A, mid);
+      combine_values(root, mid_et, false, op);
+    }
     return Seq::node_join(P.first, P.second, root);
   }
 

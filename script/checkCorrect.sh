@@ -8,9 +8,11 @@ Nodes=(1000000 5000000 8000000 10000000 50000000)
 # tester="p_ccp"
 tester="kd_ccp"
 
+make -C ../build ${tester}
+
 if [[ ${tester} == "p_ccp" ]]; then
-	tag=$((2#0))
-	read_file=0
+	tag=$((2#1))
+	read_file=1
 	dims=(2)
 	queryTypes=$((2#110))
 	trees=(2)

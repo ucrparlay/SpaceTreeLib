@@ -1328,8 +1328,7 @@ class Wrapper {
     using IdType = uint_fast32_t;
     using CurveCode = hilbert::bitmask_t;
 
-    CurveCode code;
-    IdType id;
+    AugIdCode() : code(0), id(0) {}
 
     void SetMember(CurveCode const& val) { code = val; }
 
@@ -1347,6 +1346,9 @@ class Wrapper {
       os << rhs.code << " " << rhs.id;
       return os;
     }
+
+    CurveCode code;
+    IdType id;
   };
 
   template <typename RunFunc>

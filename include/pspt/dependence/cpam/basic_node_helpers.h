@@ -12,6 +12,7 @@ static inline ET get_entry_indentity(T* arr, size_t pos) {
   if constexpr (std::same_as<T, ET>) {
     return arr[pos];
   } else {
+    assert((*arr[pos].second).aug.code != 0);
     return *arr[pos].second;
   }
 }
@@ -21,6 +22,7 @@ static inline ET get_entry_indentity(T const& val) {
   if constexpr (std::same_as<T, ET>) {
     return val;
   } else {
+    assert((*val.second).aug.code != 0);
     return *val.second;
   }
 }

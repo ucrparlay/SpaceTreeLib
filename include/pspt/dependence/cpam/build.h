@@ -5,6 +5,7 @@
 #include "devotail_integer_sort.h"
 #include "get_time.h"
 #include "parlay/internal/integer_sort.h"
+#include "parlay/parallel.h"
 #include "parlay/primitives.h"
 
 namespace cpam {
@@ -32,12 +33,15 @@ struct build {
     // parlay::internal::timer t("");
     // assert(parlay::all_of(
     //     A, [&](auto const& p) { return std::get<0>(p).first == 0; }));
-    auto B = parlay::internal::sample_sort(
-        parlay::make_slice(A.begin(), A.end()), less);
-    // auto B = parlay::internal::cpam::cpam_sample_sort<filling_curve_t,
-    //                                                   sort_output_value_t>(
-    //     parlay::make_slice(A.begin(), A.end()),
-    //     [&](auto const& a, auto const& b) { return a.first < b.first; });
+    // parlay::parallel_for(0, A.size(), [&](size_t i) {
+    //   A[i].aug.code = filling_curve_t::Encode(A[i]);
+    // });
+    // auto B = parlay::internal::sample_sort(
+    //     parlay::make_slice(A.begin(), A.end()), less);
+    auto B = parlay::internal::cpam::cpam_sample_sort<filling_curve_t,
+                                                      sort_output_value_t>(
+        parlay::make_slice(A.begin(), A.end()),
+        [&](auto const& a, auto const& b) { return a.first < b.first; });
     // auto B = parlay::internal::cpam::cpam_sample_sort<filling_curve_t>(
     //     parlay::make_slice(A.begin(), A.end()), less);
     // auto B = parlay::internal::integer_sort(

@@ -365,6 +365,7 @@ class map_ {
     //    replace); t.next("multi-insert time"); auto x =
     //    M(Tree::uniont(m.get_root(), A_m.get_root(), replace)); t.next("union
     //    time");
+    // std::cout << A.size() << std::endl;
     auto x =
         M(Tree::multi_insert_sorted(m.get_root(), A.data(), A.size(), replace));
     // t.next("insert to tree");
