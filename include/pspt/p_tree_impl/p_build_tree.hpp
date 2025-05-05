@@ -5,6 +5,8 @@
 #include <parlay/slice.h>
 #include <parlay/type_traits.h>
 
+#include <ostream>
+
 #include "../p_tree.h"
 #include "parlay/utilities.h"
 #include "pspt/dependence/tree_node.h"
@@ -73,6 +75,11 @@ void PTree<Point, SplitRule, kSkHeight, kImbaRatio>::Build_(Slice A) {
   // auto vals = zmap::values(m1);
   // parlay::parallel_for(
   //     0, n, [&](size_t i) { A[i].GetAug().code = SplitRule::Encode(A[i]); });
+  //
+  // std::ofstream outfile("/data/zmen002/kdtree/real_world/morton_code.in");
+  // for (auto& p : A) {
+  //   outfile << p.GetAug().code << " " << p.GetAug().code << std::endl;
+  // }
   this->cpam_aug_map_ = CpamAugMap(A);
   // t.next("build_cpam_aug_map");
   // puts("--------------------");

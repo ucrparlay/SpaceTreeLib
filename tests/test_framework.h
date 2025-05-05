@@ -760,23 +760,26 @@ void rangeQueryFix(parlay::sequence<Point> const& WP, Tree& pkd,
       rounds, 1.0, [&]() {},
       [&]() {
         // for (size_t i = 0; i < rec_num; i++) {
-        parlay::parallel_for(0, rec_num, [&](size_t i) {
-          parlay::internal::timer tm;
-          tm.reset();
-          tm.start();
-          auto [size, logger] = pkd.RangeQuery(
-              query_box_seq[i].first, Out.cut(offset[i], offset[i + 1]));
-          tm.stop();
-          t[i].first = tm.total_time();
-          t[i].second = i;
+        parlay::parallel_for(
+            0, rec_num,
+            [&](size_t i) {
+              parlay::internal::timer tm;
+              tm.reset();
+              tm.start();
+              auto [size, logger] = pkd.RangeQuery(
+                  query_box_seq[i].first, Out.cut(offset[i], offset[i + 1]));
+              tm.stop();
+              t[i].first = tm.total_time();
+              t[i].second = i;
 
-          kdknn[i] = size;
-          vis_nodes[i] = logger.vis_node_num;
-          gen_box[i] = logger.generate_box_num;
-          full_box[i] = logger.full_box_num;
-          skip_box[i] = logger.skip_box_num;
-          // }
-        });
+              kdknn[i] = size;
+              vis_nodes[i] = logger.vis_node_num;
+              gen_box[i] = logger.generate_box_num;
+              full_box[i] = logger.full_box_num;
+              skip_box[i] = logger.skip_box_num;
+              // }
+            },
+            10000);
         // parlay::parallel_for(0, rec_num, [&](size_t i) {
         //   auto [size, logger] = pkd.RangeQuery(
         //       query_box_seq[i].first, Out.cut(offset[i], offset[i + 1]));
