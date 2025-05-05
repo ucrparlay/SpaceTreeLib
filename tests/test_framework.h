@@ -253,7 +253,7 @@ void BatchInsert(Tree& pkd, parlay::sequence<Point> const& WP,
 
   // NOTE: build the tree by type
   auto build_tree_by_type = [&]() {
-    if constexpr (pspt::IsKdTree<Tree>) {
+    if constexpr (pspt::IsKdTree<Tree> || pspt::IsPTree<Tree>) {
       parlay::copy(WP, wp), parlay::copy(WI, wi);
       pkd.Build(parlay::make_slice(wp));
     } else if constexpr (pspt::IsOrthTree<Tree>) {

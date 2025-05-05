@@ -128,6 +128,10 @@ struct aug_map_ : private map_<_Entry, Join_Tree> {
   static M multi_insert(M m, parlay::sequence<E> const& SS) {
     return to_aug(Map::multi_insert(std::move(m), SS));
   }
+  template <typename Slice>
+  static M multi_insert(M m, Slice const& SS) {
+    return to_aug(Map::multi_insert(std::move(m), SS));
+  }
   template <class Seq, class BinOp>
   static M multi_insert_sorted(M m, Seq const& SS, BinOp f) {
     return to_aug(Map::multi_insert_sorted(std::move(m), SS, f));
@@ -300,7 +304,9 @@ struct aug_map_full_entry : entry {
 
   static inline key_t get_key(entry_t const& e) { return entry::get_key(e); }
   static inline val_t get_val(entry_t const& e) { return entry::get_val(e); }
-  static inline void set_val(entry_t& e, val_t const& v) { entry::set_val(e); }
+  static inline void set_val(entry_t& e, val_t const& v) {
+    entry::set_val(e, v);
+  }
   static inline entry_t to_entry(key_t const& k, val_t const& v) {
     return entry::to_entry(k, v);
   };

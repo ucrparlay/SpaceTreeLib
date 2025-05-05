@@ -33,19 +33,18 @@ int main(int argc, char* argv[]) {
 
     BuildTree<Point, Tree, kTestTime, 2>(wp, kRounds, tree);
 
-    // // NOTE: batch insert
-    // if (kTag & (1 << 0)) {
-    //   if (kSummary) {
-    //     parlay::sequence<double> const ratios = {0.0001, 0.001, 0.01, 0.1};
-    //     for (size_t i = 0; i < ratios.size(); i++) {
-    //       BatchInsert<Point, Tree, kTestTime>(tree, wp, wi, kRounds,
-    //       ratios[i]);
-    //     }
-    //   } else {
-    //     BatchInsert<Point, Tree, kTestTime>(tree, wp, wi, kRounds, 0.1);
-    //   }
-    // }
-    //
+    // NOTE: batch insert
+    if (kTag & (1 << 0)) {
+      if (kSummary) {
+        parlay::sequence<double> const ratios = {0.0001, 0.001, 0.01, 0.1};
+        for (size_t i = 0; i < ratios.size(); i++) {
+          BatchInsert<Point, Tree, kTestTime>(tree, wp, wi, kRounds, ratios[i]);
+        }
+      } else {
+        BatchInsert<Point, Tree, kTestTime>(tree, wp, wi, kRounds, 0.1);
+      }
+    }
+
     // // NOTE: batch delete
     // if (kTag & (1 << 1)) {
     //   if (kSummary) {

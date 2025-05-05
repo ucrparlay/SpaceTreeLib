@@ -97,6 +97,7 @@ class PTree
   };
 
   using CpamAugMap = cpam::aug_map<CpamEntry, BT::kLeaveWrap>;
+  using CpamMap = CpamAugMap::Map;
 
   using CpamInnerEntryType =
       std::tuple<typename CpamEntry::key_t,

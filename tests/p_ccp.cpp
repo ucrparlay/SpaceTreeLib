@@ -130,15 +130,13 @@ void runPTreeParallel(auto const& wp, auto const& wi, Typename* kdknn,
 
   puts("---------------finish build tree---------------");
 
-  // if (tag & (1 << 0)) {
-  //   BatchInsert<Point, Tree, kTestTime>(tree, wp, wi, 2,
-  //   batchInsertCheckRatio); tree.template Validate<typename Tree::Leaf,
-  //   typename Tree::Interior,
-  //                          typename Tree::SplitRuleType>();
-  //   std::cout << "---------------finish insert----------------\n" <<
-  //   std::flush;
-  // }
-  //
+  if (tag & (1 << 0)) {
+    BatchInsert<Point, Tree, kTestTime>(tree, wp, wi, 2, batchInsertCheckRatio);
+    // tree.template Validate<typename Tree::Leaf, typename Tree::Interior,
+    //                        typename Tree::SplitRuleType>();
+    std::cout << "---------------finish insert----------------\n" << std::flush;
+  }
+
   // if (tag &
   //     (1 << 1)) {  // NOTE: without tag & (1<<0), this will remove no points
   //   BatchDelete<Point, Tree, kTestTime>(tree, wp, wi, 2,

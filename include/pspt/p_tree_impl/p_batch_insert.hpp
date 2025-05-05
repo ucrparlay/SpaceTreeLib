@@ -8,6 +8,11 @@ namespace pspt {
 template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 void PTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchInsert(Slice A) {
+  if (!this->cpam_aug_map_.root ||
+      !CpamAugMap::size(this->cpam_aug_map_.root)) {
+    return Build(std::forward<Slice>(A));
+  }
+  this->cpam_aug_map_ = CpamAugMap::multi_insert(this->cpam_aug_map_, A);
   return;
 }
 
