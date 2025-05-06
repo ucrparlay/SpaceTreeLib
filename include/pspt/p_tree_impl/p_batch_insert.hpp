@@ -12,7 +12,8 @@ void PTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchInsert(Slice A) {
       !CpamAugMap::size(this->cpam_aug_map_.root)) {
     return Build(std::forward<Slice>(A));
   }
-  this->cpam_aug_map_ = CpamAugMap::multi_insert(this->cpam_aug_map_, A);
+  this->cpam_aug_map_ =
+      CpamAugMap::multi_insert(std::move(this->cpam_aug_map_), A);
   return;
 }
 

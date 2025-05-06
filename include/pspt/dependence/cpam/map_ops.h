@@ -1127,8 +1127,9 @@ struct map_ops : Seq {
                     basic_node_helpers::get_entry_indentity<ET>(A, mid))));
 
     auto P = utils::fork<node*>(
-        // true,  // Seq::do_parallel(b.size(), n),
-        Seq::do_parallel(b.size(), n),
+        true,  // Seq::do_parallel(b.size(), n),
+        // n >= 512,
+        // Seq::do_parallel(b.size(), n),
         [&]() { return multi_insert_sorted(std::move(lc), A, mid, op); },
         [&]() {
           return multi_insert_sorted(std::move(rc), A + mid + dup,

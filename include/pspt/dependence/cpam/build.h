@@ -27,7 +27,7 @@ struct build {
   template <class Seq>
   // static parlay::sequence<ET> sort_remove_duplicates(
   static auto sort_remove_duplicates(Seq const& A) {  // ?? const
-    if (A.size() == 0) return parlay::sequence<sort_output_value_t>(0);
+    // if (A.size() == 0) return parlay::sequence<sort_output_value_t>(0);
 
     // parlay::internal::timer t("");
     // assert(parlay::all_of(
