@@ -1102,6 +1102,7 @@ struct map_ops : Seq {
 
     size_t tot = b.size() + n;
     if (tot <= kBaseCaseSize) {
+      // return nullptr;
       return multiinsert_bc(std::move(b), A, n, op);
     }
 
@@ -1127,7 +1128,8 @@ struct map_ops : Seq {
                     basic_node_helpers::get_entry_indentity<ET>(A, mid))));
 
     auto P = utils::fork<node*>(
-        true,  // Seq::do_parallel(b.size(), n),
+        // true,  // Seq::do_parallel(b.size(), n),
+        !(mid == 0 || mid == n),
         // n >= 512,
         // Seq::do_parallel(b.size(), n),
         [&]() { return multi_insert_sorted(std::move(lc), A, mid, op); },
@@ -1423,6 +1425,7 @@ struct map_ops : Seq {
     Seq::decrement_recursive(n_b1);
 
     ET output[kBaseCaseSize + 1];
+    // size_t out_off = offset;
 
     // merge
     size_t nA = offset;
