@@ -490,10 +490,10 @@ struct OrthogonalSplitRule {
         return DivideSpace(tree, In, Out, box, Tree::GetBox(In),
                            std::forward<Args>(args)...);
       } else {  // define the behavior of other dim rule
-        static_assert(false);
+        // static_assert(false);
       }
     } else {  // define the behavior of other partition rule
-      static_assert(false);
+      // static_assert(false);
     }
   }
 
