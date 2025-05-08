@@ -12,8 +12,17 @@ void PTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchInsert(Slice A) {
       !CpamAugMap::size(this->cpam_aug_map_.root)) {
     return Build(std::forward<Slice>(A));
   }
+
+  parlay::internal::timer t("BatchInsert");
+  // auto insert_map = CpamAugMap(A);
+  // t.next("build insert map");
+  // this->cpam_aug_map_ =
+  //     CpamAugMap::map_union(std::move(this->cpam_aug_map_),
+  //                           std::move(insert_map));
   this->cpam_aug_map_ =
       CpamAugMap::multi_insert(std::move(this->cpam_aug_map_), A);
+  t.next("insert map union");
+  puts(">>>>>>>>>>>>>>>>>>>");
   return;
 }
 

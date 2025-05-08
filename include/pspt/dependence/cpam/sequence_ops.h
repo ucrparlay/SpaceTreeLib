@@ -67,6 +67,7 @@ struct sequence_ops : Tree {
     bool copy = extra || other_real_refs;
     bool is_regular = Tree::is_regular(p);
     if (is_regular) {
+      // std::cout << "expose regular" << std::endl;
       regular_node* ret = nullptr;
       regular_node* rp = (regular_node*)p;
       if (!copy) {
@@ -77,6 +78,7 @@ struct sequence_ops : Tree {
                                   ptr(rp->rc, copy), ret);
       return ret_tup;
     } else {
+      // std::cout << "expose compress" << std::endl;
       // convert to tree
       // if (print) {
       //  std::cout << "Hit a compressed node, converting to tree. Size = " <<

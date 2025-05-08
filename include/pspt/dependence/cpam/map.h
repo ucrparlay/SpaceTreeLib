@@ -357,18 +357,29 @@ class map_ {
   static M multi_insert(M m, Seq const& SS) {
     auto replace = [](V const& a, V const& b) { return b; };
     // parlay::sequence<E> A = Build::sort_remove_duplicates(SS);
-    // timer t("");
+    timer t("");
     auto A = Build::sort_remove_duplicates(SS);
-    // t.next("(total) sort");
+    t.next("(total) sort");
     //    M A_m = Seq_Tree::from_array(A.begin(), A.size());
     //    //M A_m = Tree::multi_insert_sorted(nullptr, A.data(), A.size(),
     //    replace); t.next("multi-insert time"); auto x =
     //    M(Tree::uniont(m.get_root(), A_m.get_root(), replace)); t.next("union
     //    time");
     // std::cout << A.size() << std::endl;
+
+    // auto sz = Tree::count_size(m.get_root());
+    // std::cout << sz << std::endl;
+    // t.next("count size");
+
+    // size_t nsz = 0;
+    // auto x = M(Tree::multi_insert_sorted(m.get_root(), A.data(), A.size(),
+    //                                      replace, nsz));
+    // t.next("insert to tree");
+    // std::cout << nsz << std::endl;
+
     auto x =
         M(Tree::multi_insert_sorted(m.get_root(), A.data(), A.size(), replace));
-    // t.next("insert to tree");
+    t.next("insert to tree");
     return x;
   }
 
