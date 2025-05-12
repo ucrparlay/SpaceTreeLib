@@ -131,6 +131,7 @@ class KdTree
   constexpr static char const* GetTreeName() { return "KdTree"; }
 
   SplitRule split_rule_;
+  size_t vis_nodes = 0;
 };
 
 }  // namespace pspt

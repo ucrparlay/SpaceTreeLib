@@ -12,12 +12,14 @@ void KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchInsert(Slice A) {
     return Build_(A);
   }
 
+  this->vis_nodes = 0;
   Points B = Points::uninitialized(A.size());
   Node* T = this->root_;
   this->tree_box_ = BT::GetBox(this->tree_box_, BT::GetBox(A));
   DimsType d = T->is_leaf ? 0 : static_cast<Interior*>(T)->split.second;
   this->root_ = BatchInsertRecursive(T, A, B.cut(0, A.size()), d);
   assert(this->root_ != NULL);
+  std::cout << "BatchInsert: " << this->vis_nodes << " nodes visited\n";
   return;
 }
 
@@ -27,6 +29,7 @@ template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
 Node* KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchInsertRecursive(
     Node* T, Slice In, Slice Out, DimsType d) {
   size_t n = In.size();
+  this->vis_nodes++;
 
   if (n == 0) return T;
 
@@ -42,7 +45,8 @@ Node* KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchInsertRecursive(
     }
   }
 
-  if (n <= BT::kSerialBuildCutoff) {
+  // if (n <= BT::kSerialBuildCutoff) {
+  if (n) {
     Interior* TI = static_cast<Interior*>(T);
     std::ranges::subrange _2ndGroup =
         std::ranges::partition(In, [&](Point const& p) {

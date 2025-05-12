@@ -1308,11 +1308,12 @@ class Wrapper {
     if (dim == 2) {
       // run_with_split_type.template operator()<BasicPoint<Coord, 2>>();
       run_with_split_type.template operator()<AugPoint<Coord, 2, AugId>>();
-    } else if (dim == 3) {
-      run_with_split_type.template operator()<AugPoint<Coord, 3, AugId>>();
-    } else if (dim == 5) {
-      run_with_split_type.template operator()<AugPoint<Coord, 5, AugId>>();
     }
+    // else if (dim == 3) {
+    //   run_with_split_type.template operator()<AugPoint<Coord, 3, AugId>>();
+    // } else if (dim == 5) {
+    //   run_with_split_type.template operator()<AugPoint<Coord, 5, AugId>>();
+    // }
     // else if (dim == 7) {
     //   run_with_split_type.template operator()<AugPoint<Coord, 7, AugId>>();
     // } else if (dim == 9) {

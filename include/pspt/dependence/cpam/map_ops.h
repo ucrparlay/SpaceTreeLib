@@ -1098,10 +1098,11 @@ struct map_ops : Seq {
     }
     auto [lc, e, rc, root] = Seq::expose(std::move(b));
     size_t l, r;
-    parlay::par_do([&]() { l = count_size(std::move(lc)); },
-                   [&]() { r = count_size(std::move(rc)); });
-    // size_t l = count_size(std::move(lc));
-    // size_t r = count_size(std::move(rc));
+    parlay::par_do_if(
+        root->s >= 100000, [&]() { l = count_size(std::move(lc)); },
+        [&]() { r = count_size(std::move(rc)); });
+    // l = count_size(std::move(lc));
+    // r = count_size(std::move(rc));
     return l + r + 1;
   }
 
@@ -1146,8 +1147,8 @@ struct map_ops : Seq {
 
     auto P = utils::fork<node*>(
         // true,  // Seq::do_parallel(b.size(), n),
-        !(mid == 0 || mid == n),
-        // 0,
+        // !(mid == 0 || mid == n),
+        0,
         // n >= 512,
         // Seq::do_parallel(b.size(), n),
         [&]() { return multi_insert_sorted(std::move(lc), A, mid, op); },
