@@ -1091,18 +1091,49 @@ struct map_ops : Seq {
   // template <class BinaryOp>
   // static node* multi_insert_sorted(ptr b, ET* A, size_t n, BinaryOp const&
   // op) {
-  static size_t count_size(ptr b) {
+  // static size_t count_size(ptr b) {
+  //   if (b.empty()) return 0;
+  //   if (b.is_compressed()) {
+  //     return 1;
+  //   }
+  //   auto [lc, e, rc, root] = Seq::expose(std::move(b));
+  //   size_t l, r;
+  //   parlay::par_do_if(
+  //       root->s >= 100000, [&]() { l = count_size(std::move(lc)); },
+  //       [&]() { r = count_size(std::move(rc)); });
+  //   // l = count_size(std::move(lc));
+  //   // r = count_size(std::move(rc));
+  //   return l + r + 1;
+  // }
+  static size_t count_size(node* b) {
+    if (!b) return 0;
+    if (Seq::is_compressed(b)) {
+      return 1;
+    }
+    // auto [lc, e, rc, root] = Seq::expose(std::move(b));
+    // auto [lc, e, rc] = Seq::expose_simple(b);
+    auto rb = Seq::cast_to_regular(b);
+    size_t l, r;
+    parlay::par_do_if(
+        rb->s >= 1000, [&]() { l = count_size(rb->lc); },
+        [&]() { r = count_size(rb->rc); });
+    // l = count_size(rb->lc);
+    // r = count_size(rb->rc);
+    return l + r + 1;
+  }
+  static size_t count_size_ptr(ptr b) {
     if (b.empty()) return 0;
     if (b.is_compressed()) {
       return 1;
     }
     auto [lc, e, rc, root] = Seq::expose(std::move(b));
+    // auto [lc, e, rc] = Seq::expose_simple(b);
+    // auto rb = Seq::cast_to_regular(b);
     size_t l, r;
-    parlay::par_do_if(
-        root->s >= 100000, [&]() { l = count_size(std::move(lc)); },
-        [&]() { r = count_size(std::move(rc)); });
-    // l = count_size(std::move(lc));
-    // r = count_size(std::move(rc));
+    parlay::par_do([&]() { l = count_size_ptr(std::move(lc)); },
+                   [&]() { r = count_size_ptr(std::move(rc)); });
+    // l = count_size(rb->lc);
+    // r = count_size(rb->rc);
     return l + r + 1;
   }
 
@@ -1147,8 +1178,8 @@ struct map_ops : Seq {
 
     auto P = utils::fork<node*>(
         // true,  // Seq::do_parallel(b.size(), n),
-        // !(mid == 0 || mid == n),
-        0,
+        !(mid == 0 || mid == n),
+        // 0,
         // n >= 512,
         // Seq::do_parallel(b.size(), n),
         [&]() { return multi_insert_sorted(std::move(lc), A, mid, op); },
@@ -1168,15 +1199,15 @@ struct map_ops : Seq {
   template <class BinaryOp, typename T>
   static node* multi_insert_sorted_count(ptr b, T* A, size_t n,
                                          BinaryOp const& op, size_t& sz) {
-    sz++;
     // std::cout << "multi_insert_sorted" << std::endl;
+
+    if (n == 0) return b.node_ptr();
+    sz++;
     if (b.empty()) {
       std::cout << "empty " << n << std::endl;
       node* x = Seq::from_array(A, n);
       return x;
     }
-
-    if (n == 0) return b.node_ptr();
 
     size_t tot = b.size() + n;
     if (tot <= kBaseCaseSize) {

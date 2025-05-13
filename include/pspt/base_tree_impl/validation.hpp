@@ -139,16 +139,20 @@ size_t BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::CheckSize(Node* T) {
   if (T->is_leaf) {
     // assert(static_cast<Leaf*>(T)->is_dummy ||
     //        static_cast<Leaf*>(T)->size <= kLeaveWrap);
-    return T->size;
+    // return T->size;
+    return 1;
   }
   if constexpr (IsBinaryNode<Interior>) {
     Interior* TI = static_cast<Interior*>(T);
     assert(!TI->GetParallelFlagIniStatus());
     size_t l, r;
-    parlay::par_do([&l, &TI] { l = CheckSize<Leaf, Interior>(TI->left); },
-                   [&r, &TI] { r = CheckSize<Leaf, Interior>(TI->right); });
+    // parlay::par_do([&l, &TI] { l = CheckSize<Leaf, Interior>(TI->left); },
+    //                [&r, &TI] { r = CheckSize<Leaf, Interior>(TI->right); });
+    l = CheckSize<Leaf, Interior>(TI->left);
+    r = CheckSize<Leaf, Interior>(TI->right);
     assert(l + r == T->size);
-    return T->size;
+    // return T->size;
+    return l + r + 1;
   } else {
     // assert(IsMultiNode<Interior>);
     Interior* TI = static_cast<Interior*>(T);

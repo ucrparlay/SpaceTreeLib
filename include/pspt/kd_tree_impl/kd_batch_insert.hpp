@@ -12,6 +12,11 @@ void KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchInsert(Slice A) {
     return Build_(A);
   }
 
+  parlay::internal::timer t;
+  auto sz = BT::template CheckSize<Leaf, Interior>(this->root_);
+  std::cout << "tree size " << sz << std::endl;
+  t.next("check size");
+
   this->vis_nodes = 0;
   Points B = Points::uninitialized(A.size());
   Node* T = this->root_;
@@ -29,9 +34,14 @@ template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
 Node* KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchInsertRecursive(
     Node* T, Slice In, Slice Out, DimsType d) {
   size_t n = In.size();
-  this->vis_nodes++;
 
   if (n == 0) return T;
+
+  this->vis_nodes++;
+
+  if (n <= 8 * BT::kLeaveWrap + 2) {
+    return T;
+  }
 
   if (T->is_leaf) {
     Leaf* TL = static_cast<Leaf*>(T);
