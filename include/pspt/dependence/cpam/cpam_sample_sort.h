@@ -94,7 +94,7 @@ void seq_sort_(slice<InIterator, InIterator> In,
   for (size_t j = 0; j < l; j++) {
     // assign_dispatch(Out[j], In[j], assignment_tag());
     In[j].SetAugMember(filling_curve_t::Encode(In[j]));
-    Out[j] = std::make_pair(In[j].aug.code, &In[j]);
+    Out[j] = std::make_pair(In[j].aug, &In[j]);
   }
   seq_sort_inplace(Out, less, stable);
 }
@@ -144,7 +144,7 @@ void sample_sort_(slice<InIterator, InIterator> In,
           auto pt = &In[hash64(i) % n];
           pt->SetAugMember(filling_curve_t::Encode(*pt));
           // return *pt;
-          return std::make_pair(pt->aug.code, pt);
+          return std::make_pair(pt->aug, pt);
         });
     // sort the samples
     quicksort(sample_set.begin(), sample_set_size, less);
