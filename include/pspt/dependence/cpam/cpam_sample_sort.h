@@ -9,6 +9,7 @@
 #define CPAM_SAMPLE_SORT_H
 
 #include <cassert>
+#include <concepts>
 #include <cstdio>
 #include <iterator>
 #include <limits>
@@ -90,11 +91,23 @@ template <typename filling_curve_t, typename assignment_tag,
 void seq_sort_(slice<InIterator, InIterator> In,
                slice<OutIterator, OutIterator> Out, Compare const& less,
                bool stable = false) {
+  using InputType = typename slice<InIterator, InIterator>::value_type;
+  using OutputType = typename slice<OutIterator, OutIterator>::value_type;
+
   size_t l = In.size();
   for (size_t j = 0; j < l; j++) {
     // assign_dispatch(Out[j], In[j], assignment_tag());
     In[j].SetAugMember(filling_curve_t::Encode(In[j]));
-    Out[j] = std::make_pair(In[j].aug, &In[j]);
+
+    if constexpr (std::same_as<OutputType, typename InputType::AT>) {
+      Out[j] = In[j].aug;
+    } else if constexpr (std::same_as<typename OutputType::first_type,
+                                      typename InputType::AT>) {
+      // NOTE: this assumes the output is a pair
+      Out[j] = std::make_pair(In[j].aug, &In[j]);
+    } else {
+      static_assert(false, "Unsupported output type");
+    }
   }
   seq_sort_inplace(Out, less, stable);
 }
@@ -139,13 +152,21 @@ void sample_sort_(slice<InIterator, InIterator> In,
     // generate "random" samples with oversampling
     // auto sample_set = sequence<value_type>::from_function(
     //     sample_set_size, [&](size_t i) { return In[hash64(i) % n]; });
-    auto sample_set = sequence<output_value_type>::from_function(
-        sample_set_size, [&](size_t i) {
-          auto pt = &In[hash64(i) % n];
-          pt->SetAugMember(filling_curve_t::Encode(*pt));
-          // return *pt;
-          return std::make_pair(pt->aug, pt);
-        });
+    auto sample_set = sequence<
+        output_value_type>::from_function(sample_set_size, [&](size_t i) {
+      auto pt = &In[hash64(i) % n];
+      pt->SetAugMember(filling_curve_t::Encode(*pt));
+
+      if constexpr (std::same_as<output_value_type, typename value_type::AT>) {
+        return pt->aug;
+      } else if constexpr (std::same_as<typename output_value_type::first_type,
+                                        typename value_type::AT>) {
+        // NOTE: this assumes the output is a pair
+        return std::make_pair(pt->aug, pt);
+      } else {
+        static_assert(false, "Unsupported output type");
+      }
+    });
     // sort the samples
     quicksort(sample_set.begin(), sample_set_size, less);
 

@@ -390,10 +390,10 @@ class map_ {
   template <class Seq>
   static M multi_delete(M m, Seq const& SS) {
     // timer t("");
-    auto A = Build::sort_remove_duplicates(SS);
+    auto A = Build::template sort_remove_duplicates<Seq, K>(SS);
 
-    auto keys =
-        parlay::tabulate(A.size(), [&](size_t i) { return A[i].first; });
+    // auto keys =
+    //     parlay::tabulate(A.size(), [&](size_t i) { return A[i].first; });
     // t.next("(total) sort");
     //    M A_m = Seq_Tree::from_array(A.begin(), A.size());
     //    //M A_m = Tree::multi_insert_sorted(nullptr, A.data(), A.size(),
@@ -403,8 +403,7 @@ class map_ {
     // std::cout << A.size() << std::endl;
     // auto old_size = m.size();
     // std::cout << m.size() << " " << keys.size() << std::endl;
-    auto x =
-        M(Tree::multi_delete_sorted(m.get_root(), keys.data(), keys.size()));
+    auto x = M(Tree::multi_delete_sorted(m.get_root(), A.data(), A.size()));
     // t.next("insert to tree");
     // std::cout << "new size = " << x.size() << std::endl;
     // assert(x.size() == old_size - SS.size());
