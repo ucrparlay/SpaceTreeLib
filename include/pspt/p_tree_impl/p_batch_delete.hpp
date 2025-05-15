@@ -25,6 +25,12 @@ void PTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDelete(Range&& In) {
 template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 void PTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDelete_(Slice A) {
+  if (!this->cpam_aug_map_.root ||
+      !CpamAugMap::size(this->cpam_aug_map_.root)) {
+    return;
+  }
+  this->cpam_aug_map_ =
+      CpamAugMap::multi_delete(std::move(this->cpam_aug_map_), A);
   return;
 }
 

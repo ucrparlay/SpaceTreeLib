@@ -137,16 +137,19 @@ void runPTreeParallel(auto const& wp, auto const& wi, Typename* kdknn,
     std::cout << "---------------finish insert----------------\n" << std::flush;
   }
 
-  // if (tag &
-  //     (1 << 1)) {  // NOTE: without tag & (1<<0), this will remove no points
-  //   BatchDelete<Point, Tree, kTestTime>(tree, wp, wi, 2,
-  //   batchInsertCheckRatio); tree.template Validate<typename Tree::Leaf,
-  //   typename Tree::Interior,
-  //                          typename Tree::SplitRuleType>();
-  //   std::cout << "---------------finish delete----------------\n" <<
-  //   std::flush;
-  // }
-  //
+  if (tag & (1 << 1)) {
+    if (tag == (1 << 1)) {
+      BatchDelete<Point, Tree, kTestTime>(tree, wp, wp, 2,
+                                          batchInsertCheckRatio);
+    } else {
+      BatchDelete<Point, Tree, kTestTime>(tree, wp, wi, 2,
+                                          batchInsertCheckRatio);
+    }
+    // tree.template Validate<typename Tree::Leaf, typename Tree::Interior,
+    //                        typename Tree::SplitRuleType>();
+    std::cout << "---------------finish delete----------------\n" << std::flush;
+  }
+
   // if (tag & (1 << 2)) {
   //   BatchDiff<Point, Tree, kTestTime>(tree, wp, 2, kCCPBatchDiffTotalRatio,
   //                                     kCCPBatchDiffOverlapRatio);
@@ -184,10 +187,13 @@ void runPTreeParallel(auto const& wp, auto const& wi, Typename* kdknn,
   // }
 
   Points new_wp;
-  if (tag & (1 << 0)) {
+  if (tag == (1 << 0)) {
     new_wp = wp;
     new_wp.append(
         wi.cut(0, static_cast<size_t>(wi.size() * batchInsertCheckRatio)));
+  } else if (tag == (1 << 1)) {
+    new_wp = wp.subseq(static_cast<size_t>(wi.size() * batchInsertCheckRatio),
+                       wp.size());
   } else {
     new_wp = wp;
   }
