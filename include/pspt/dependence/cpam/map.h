@@ -380,11 +380,8 @@ class map_ {
     // timer t("");
     auto A = Build::sort_remove_duplicates(SS);
 
-    auto keys = parlay::tabulate(A.size(), [&](size_t i) {
-      auto aug = (*A[i].second).aug;
-      assert(aug.code != 0);
-      return aug;
-    });
+    auto keys =
+        parlay::tabulate(A.size(), [&](size_t i) { return A[i].first; });
     // t.next("(total) sort");
     //    M A_m = Seq_Tree::from_array(A.begin(), A.size());
     //    //M A_m = Tree::multi_insert_sorted(nullptr, A.data(), A.size(),
@@ -392,13 +389,13 @@ class map_ {
     //    M(Tree::uniont(m.get_root(), A_m.get_root(), replace));
     //    t.next("union time");
     // std::cout << A.size() << std::endl;
-    auto old_size = m.size();
-    std::cout << m.size() << " " << keys.size() << std::endl;
+    // auto old_size = m.size();
+    // std::cout << m.size() << " " << keys.size() << std::endl;
     auto x =
         M(Tree::multi_delete_sorted(m.get_root(), keys.data(), keys.size()));
     // t.next("insert to tree");
-    std::cout << "new size = " << x.size() << std::endl;
-    assert(x.size() == old_size - SS.size());
+    // std::cout << "new size = " << x.size() << std::endl;
+    // assert(x.size() == old_size - SS.size());
     return x;
   }
 

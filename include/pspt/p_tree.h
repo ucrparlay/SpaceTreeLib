@@ -62,7 +62,7 @@ class PTree
     using entry_t = Point;
 
     using filling_curve_t = SplitRule;
-    using sort_output_value_t = std::pair<CurveCode, entry_t*>;
+    using sort_output_value_t = std::pair<typename Point::AT, entry_t*>;
     // using entry_t_ref_v = Point*;
     using entry_t_ref_wrapper_v = std::reference_wrapper<Point>;
 

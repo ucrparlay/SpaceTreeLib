@@ -939,18 +939,18 @@ struct map_ops : Seq {
     while (i < nA && j < nB) {
       auto const& k_a = Entry::get_key(stack[i]);
       auto const& k_b = A[j];
-      std::cout << stack[i] << " " << k_b << std::endl;
+      // std::cout << stack[i] << " " << k_b << std::endl;
       if (comp(k_a, k_b)) {
         parlay::move_uninitialized(output[out_off++], stack[i]);
         i++;
       } else if (comp(k_b, k_a)) {
-        puts("xxxxxxxxxxxxxxxxxxxxxxxxx");
+        // puts("xxxxxxxxxxxxxxxxxxxxxxxxx");
         j++;
       } else {  // equals, delete element.
         assert(k_a.id == k_b.id);
         assert(k_a.code == k_b.code);
-        std::cout << "delete " << k_a << "=" << k_b << std::endl;
-        puts("-------------------------");
+        // std::cout << "delete " << k_a << "=" << k_b << std::endl;
+        // puts("-------------------------");
         stack[i].~ET();
         i++;
         j++;
@@ -977,7 +977,7 @@ struct map_ops : Seq {
 
     // size_t tot = b.size() + n;
     if (b.size() <= kBaseCaseSize) {
-      std::cout << "kBaseCaseSize" << std::endl;
+      // std::cout << "kBaseCaseSize" << std::endl;
       return multidelete_bc(std::move(b), A, n);
     }
 
