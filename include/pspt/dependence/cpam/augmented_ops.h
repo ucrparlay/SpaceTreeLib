@@ -1,4 +1,5 @@
 #pragma once
+
 #include "map_ops.h"
 #include "utils.h"
 
@@ -279,6 +280,76 @@ struct augmented_ops : Map {
     return l + r +
            static_cast<size_t>(BT::WithinBox(rb->entry.first, query_box) ? 1
                                                                          : 0);
+  }
+
+  template <class BaseTree, typename Logger, typename kBoundedQueue>
+  static void knn(node* b, ET const& q, kBoundedQueue& bq, Logger& logger) {
+    using BT = BaseTree;
+    using Coord = typename ET::Coord;
+
+    logger.vis_node_num++;
+
+    if (!b) return;
+
+    if (Map::is_compressed(b)) {  // leaf node
+      auto f_filter = [&](ET& et) {
+        if (!bq.full()) {
+          bq.insert(std::make_pair(std::ref(et), BT::P2PDistanceSquare(q, et)));
+          return;
+        }
+        auto r = BT::InterruptibleDistance(q, et, bq.top_value());
+        if (r < bq.top_value()) {
+          bq.insert(std::make_pair(std::ref(et), r));
+        }
+        return;
+      };
+      Map::iterate_seq(b, f_filter);
+      return;
+    }
+
+    auto rb = Map::cast_to_regular(b);
+    // bool lc_leaf = Map::is_compressed(rb->lc),
+    //      rc_leaf = Map::is_compressed(rb->rc);
+    // Coord d_lc = lc_leaf ? std::numeric_limits<Coord>::lowest()
+    //                      : BT::P2BMinDistanceSquare(q,
+    //                      Map::get_entry(rb->lc));
+    // Coord d_rc = rc_leaf ? std::numeric_limits<Coord>::lowest()
+    //                      : BT::P2BMinDistanceSquare(q,
+    //                      Map::get_entry(rb->rc));
+    // bool go_left = (lc_leaf && rc_leaf) ? true : (d_lc < d_rc);
+    Coord d_lc = BT::P2BMinDistanceSquare(q, Map::aug_val_ref(rb->lc));
+    Coord d_rc = BT::P2BMinDistanceSquare(q, Map::aug_val_ref(rb->rc));
+    bool go_left = d_lc < d_rc;
+
+    knn<BT>(go_left ? rb->lc : rb->rc, q, bq, logger);
+    logger.check_box_num++;
+    if (((go_left ? d_rc : d_lc) > bq.top_value()) && bq.full()) {
+      logger.skip_box_num++;
+      return;
+    }
+    knn<BT>(go_left ? rb->rc : rb->lc, q, bq, logger);
+
+    auto r = BT::InterruptibleDistance(q, rb->entry.first, bq.top_value());
+    if (r < bq.top_value()) {
+      bq.insert(std::make_pair(std::ref(rb->entry.first), r));
+    }
+
+    return;
+    // if (!BT::BoxIntersectBox(node_box, query_box)) {
+    //   logger.skip_box_num++;
+    //   return 0;
+    // } else if (BT::WithinBox(node_box, query_box)) {
+    //   logger.full_box_num++;
+    //   return rb->s;
+    // }
+    //
+    // auto l = range_count_filter2<BaseTree>(rb->lc, query_box, logger);
+    // auto r = range_count_filter2<BaseTree>(rb->rc, query_box, logger);
+    //
+    // return l + r +
+    //        static_cast<size_t>(BT::WithinBox(rb->entry.first, query_box) ? 1
+    //                                                                      :
+    //                                                                      0);
   }
 
   template <class F, typename F2>
