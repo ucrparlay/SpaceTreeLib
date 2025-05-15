@@ -54,6 +54,16 @@ struct aug_map_ : private map_<_Entry, Join_Tree> {
         m.root, query_box, logger);
   }
 
+  template <typename Range>
+  static size_t flatten(M m, Range out) {
+    return Tree::template flatten<Range>(m.root, out);
+  }
+
+  template <class BaseTree, typename Logger, typename kBoundedQueue>
+  static void knn(M m, E const& q, kBoundedQueue& bq, Logger& logger) {
+    return Tree::template knn<BaseTree>(m.root, q, bq, logger);
+  }
+
   template <class BaseTree, typename Box, typename Logger, typename Out>
   static void range_report_filter2(M m, Box const& query_box, size_t& cnt,
                                    Out&& out, Logger& logger) {

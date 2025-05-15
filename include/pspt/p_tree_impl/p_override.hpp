@@ -16,9 +16,7 @@ template <typename Range>
 auto PTree<Point, SplitRule, kSkHeight, kImbaRatio>::KNN(
     Node* T, Point const& q, kBoundedQueue<Point, Range>& bq) {
   KNNLogger logger;
-  // BT::template KNNMix<Leaf, KdInteriorNode, CompressInterior>(
-  //     T, q, 0, 1, bq, this->tree_box_, logger);
-  // BT::template KNNBinary<Leaf, Interior>(T, q, bq, this->tree_box_, logger);
+  CpamAugMap::template knn<BT>(this->cpam_aug_map_, q, bq, logger);
   return logger;
 }
 
@@ -26,8 +24,7 @@ template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 template <typename Range>
 void PTree<Point, SplitRule, kSkHeight, kImbaRatio>::Flatten(Range&& Out) {
-  // BT::template FlattenRec<Leaf, Interior>(this->root_,
-  // parlay::make_slice(Out));
+  CpamAugMap::entries(parlay::make_slice(Out));
   return;
 }
 
@@ -37,9 +34,6 @@ auto PTree<Point, SplitRule, kSkHeight, kImbaRatio>::RangeCount(
     Box const& query_box) {
   RangeQueryLogger logger;
 
-  // auto f = [&](auto const& cur) { return mbr_mbr_relation(cur, query_mbr); };
-  // auto f2 = [&](auto const& cur) { return point_in_mbr(cur, query_mbr); };
-  // auto res = CpamAugMap::range_count_filter2<BaseTree>(zCPAM, f, f2);
   auto size = CpamAugMap::template range_count_filter2<BT>(this->cpam_aug_map_,
                                                            query_box, logger);
 

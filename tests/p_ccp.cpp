@@ -164,27 +164,27 @@ void runPTreeParallel(auto const& wp, auto const& wi, Typename* kdknn,
   //   std::flush;
   // }
   // NOTE: query phase
-  // if (query_type & (1 << 0)) {  // NOTE: NN query
-  //   Points new_wp(kCCPBatchQuerySize);
-  //   parlay::copy(wp.cut(0, kCCPBatchQuerySize),
-  //                new_wp.cut(0, kCCPBatchQuerySize));
-  //   queryKNN<Point>(kDim, new_wp, rounds, tree, kdknn, K, true);
-  //   std::cout << "run cgal\n" << std::flush;
-  //   runCGAL<Point>(wp, wi, cgknn, query_num, tag, query_type, K);
-  //   std::cout << "check NN\n" << std::flush;
-  //   size_t S = kCCPBatchQuerySize;
-  //   for (size_t i = 0; i < S; i++) {
-  //     if (std::abs(static_cast<double>(cgknn[i] - kdknn[i])) > 1e-4) {
-  //       puts("");
-  //       puts("wrong");
-  //       std::cout << i << " " << cgknn[i] << " " << kdknn[i] << "\n"
-  //                 << std::flush;
-  //       abort();
-  //     }
-  //   }
-  //   std::cout << "--------------finish NN query------------------\n"
-  //             << std::flush;
-  // }
+  if (query_type & (1 << 0)) {  // NOTE: NN query
+    Points new_wp(kCCPBatchQuerySize);
+    parlay::copy(wp.cut(0, kCCPBatchQuerySize),
+                 new_wp.cut(0, kCCPBatchQuerySize));
+    queryKNN<Point>(kDim, new_wp, rounds, tree, kdknn, K, true);
+    std::cout << "run cgal\n" << std::flush;
+    runCGAL<Point>(wp, wi, cgknn, query_num, tag, query_type, K);
+    std::cout << "check NN\n" << std::flush;
+    size_t S = kCCPBatchQuerySize;
+    for (size_t i = 0; i < S; i++) {
+      if (std::abs(static_cast<double>(cgknn[i] - kdknn[i])) > 1e-4) {
+        puts("");
+        puts("wrong");
+        std::cout << i << " " << cgknn[i] << " " << kdknn[i] << "\n"
+                  << std::flush;
+        abort();
+      }
+    }
+    std::cout << "--------------finish NN query------------------\n"
+              << std::flush;
+  }
 
   Points new_wp;
   if (tag == (1 << 0)) {
