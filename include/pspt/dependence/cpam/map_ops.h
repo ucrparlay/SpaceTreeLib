@@ -992,7 +992,8 @@ struct map_ops : Seq {
 
     auto P = utils::fork<node*>(
         // true,  // Seq::do_parallel(b.size(), n),
-        false,  // Seq::do_parallel(b.size(), n),
+        !(mid == 0 || mid == n),
+        // false,  // Seq::do_parallel(b.size(), n),
         [&]() { return multi_delete_sorted(std::move(lc), A, mid); },
         [&]() {
           return multi_delete_sorted(std::move(rc), A + mid + dup,
