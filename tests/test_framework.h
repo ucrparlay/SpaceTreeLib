@@ -313,7 +313,8 @@ void BatchDelete(Tree& pkd, parlay::sequence<Point> const& WP,
         },
         [&]() { pkd.BatchDelete(wi.cut(0, batchSize)); },
         [&]() { pkd.DeleteTree(); });
-    std::cout << aveDelete << " " << std::flush;
+    // std::cout << aveDelete << " " << std::flush;
+    std::cout << "=>" << aveDelete << " " << std::flush;
     BuildTree<Point, Tree, false>(WP, rounds, pkd);
   } else {
     parlay::copy(WI, wi);

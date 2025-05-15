@@ -28,9 +28,11 @@ void KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDelete_(Slice A) {
   Points B = Points::uninitialized(A.size());
   Node* T = this->root_;
   Box bx = this->tree_box_;
+  this->vis_nodes = 0;
   DimsType d = T->is_leaf ? 0 : static_cast<Interior*>(T)->split.second;
   std::tie(this->root_, this->tree_box_) =
       BatchDeleteRecursive(T, bx, A, parlay::make_slice(B), d, 1);
+  std::cout << "->" << this->vis_nodes << " " << std::flush;
   return;
 }
 
@@ -48,6 +50,12 @@ KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDeleteRecursive(
 
   if (n == 0) {
     assert(BT::WithinBox(BT::template GetBox<Leaf, Interior>(T), bx));
+    return NodeBox(T, bx);
+  }
+  vis_nodes++;
+
+  if (T->size <= 8 * BT::kLeaveWrap + 2) {
+    this->leaf_nodes++;
     return NodeBox(T, bx);
   }
 
@@ -71,8 +79,8 @@ KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDeleteRecursive(
     return BT::template DeletePoints4Leaf<Leaf, NodeBox>(T, In);
   }
 
-  // if (1) {
-  if (In.size() <= BT::kSerialBuildCutoff) {
+  if (1) {
+    // if (In.size() <= BT::kSerialBuildCutoff) {
     Interior* TI = static_cast<Interior*>(T);
     PointsIter split_iter =
         std::ranges::partition(In, [&](Point const& p) {

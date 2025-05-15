@@ -971,6 +971,45 @@ struct map_ops : Seq {
     }
   }
 
+  static node* multi_delete_sorted_size(ptr b, K* A, size_t n, size_t& sz) {
+    if (n == 0) return b.node_ptr();
+    sz++;
+    if (b.empty()) return nullptr;
+
+    // size_t tot = b.size() + n;
+    if (b.size() <= kBaseCaseSize) {
+      return nullptr;
+      // std::cout << "kBaseCaseSize" << std::endl;
+      // return multidelete_bc(std::move(b), A, n);
+    }
+
+    auto [lc, e, rc, root] = Seq::expose(std::move(b));
+
+    K bk = Entry::get_key(e);
+    auto less_val = [&](K& a) -> bool { return Entry::comp(a, bk); };
+
+    size_t mid = utils::PAM_binary_search(A, n, less_val);
+    bool dup = (mid < n) && (!Entry::comp(bk, A[mid]));
+
+    auto P = utils::fork<node*>(
+        // true,  // Seq::do_parallel(b.size(), n),
+        // !(mid == 0 || mid == n),
+        false,  // Seq::do_parallel(b.size(), n),
+        [&]() { return multi_delete_sorted_size(std::move(lc), A, mid, sz); },
+        [&]() {
+          return multi_delete_sorted_size(std::move(rc), A + mid + dup,
+                                          n - mid - dup, sz);
+        });
+
+    if (!dup) {
+      if (!root) root = Seq::single(e);
+      return Seq::node_join(P.first, P.second, root);
+    } else {
+      GC::decrement(root);
+      return Seq::join2(P.first, P.second);
+    }
+  }
+
   // assumes array A is of length n and is sorted with no duplicates
   static node* multi_delete_sorted(ptr b, K* A, size_t n) {
     if (b.empty()) return nullptr;
