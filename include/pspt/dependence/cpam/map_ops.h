@@ -1178,8 +1178,8 @@ struct map_ops : Seq {
 
     auto P = utils::fork<node*>(
         // true,  // Seq::do_parallel(b.size(), n),
-        !(mid == 0 || mid == n),
-        // 0,
+        // !(mid == 0 || mid == n),
+        0,
         // n >= 512,
         // Seq::do_parallel(b.size(), n),
         [&]() { return multi_insert_sorted(std::move(lc), A, mid, op); },
@@ -1245,8 +1245,8 @@ struct map_ops : Seq {
 
     auto P = utils::fork<node*>(
         // true,  // Seq::do_parallel(b.size(), n),
-        !(mid == 0 || mid == n),
-        // 0,
+        // !(mid == 0 || mid == n),
+        0,
         // n >= 512,
         // Seq::do_parallel(b.size(), n),
         [&]() {
@@ -1263,6 +1263,132 @@ struct map_ops : Seq {
       combine_values(root, mid_et, false, op);
     }
     return Seq::node_join(P.first, P.second, root);
+  }
+
+  template <class BinaryOp, typename T>
+  static node* multiinsert_bc_simple(node* b1, T* A, size_t n,
+                                     BinaryOp const& op) {
+    ET stack[Seq::size(b1) + 1];
+    size_t offset = 0;
+    auto copy_f = [&](ET& a) {
+      parlay::move_uninitialized(stack[offset++], a);
+    };
+    Seq::iterate_seq(b1, copy_f);
+    // Seq::decrement_recursive(n_b1);
+
+    ET output[n + Seq::size(b1) + 1];
+
+    // merge
+    size_t nA = offset;
+    size_t nB = n;
+    size_t i = 0, j = 0, out_off = 0;
+    while (i < nA && j < nB) {
+      auto const& k_a = Entry::get_key(stack[i]);
+      // auto const& k_b = Entry::get_key(A[j]);
+      auto et = basic_node_helpers::get_entry_indentity<ET>(A, j);
+      auto const& k_b = Entry::get_key(et);
+      if (comp(k_a, k_b)) {
+        parlay::move_uninitialized(output[out_off++], stack[i]);
+        i++;
+      } else if (comp(k_b, k_a)) {
+        // parlay::move_uninitialized(output[out_off++], A[j]);
+        auto et = basic_node_helpers::get_entry_indentity<ET>(A, j);
+        parlay::move_uninitialized(output[out_off++], et);
+        j++;
+      } else {
+        parlay::move_uninitialized(output[out_off], stack[i]);
+        ET& re = output[out_off];
+        // Entry::set_val(re, op(Entry::get_val(re), Entry::get_val(A[j])));
+        auto et = basic_node_helpers::get_entry_indentity<ET>(A, j);
+        Entry::set_val(re, op(Entry::get_val(re), Entry::get_val(et)));
+        out_off++;
+        i++;
+        j++;
+      }
+    }
+    while (i < nA) {
+      parlay::move_uninitialized(output[out_off++], stack[i]);
+      i++;
+    }
+    while (j < nB) {
+      // parlay::move_uninitialized(output[out_off++], A[j]);
+      auto et = basic_node_helpers::get_entry_indentity<ET>(A, j);
+      parlay::move_uninitialized(output[out_off++], et);
+      j++;
+    }
+
+    assert(out_off == n + Seq::size(b1));
+
+    // build returned tree
+    if (out_off < B) {
+      return Seq::to_tree_impl((ET*)output, out_off);
+    } else {
+      return Seq::make_compressed(output, out_off);
+    }
+  }
+
+  template <class BinaryOp, typename T>
+  static node* multi_insert_sorted_simple(node* b, T* A, size_t n,
+                                          BinaryOp const& op, size_t& sz) {
+    if (n == 0) return b;
+    sz++;
+
+    if (Seq::size(b) == 0) {
+      node* x = Seq::from_array(A, n);
+      return x;
+    }
+
+    size_t tot = Seq::size(b) + n;
+    if (tot <= kBaseCaseSize) {
+      return nullptr;
+      // return multiinsert_bc_simple(b, A, n, op);
+    }
+
+    // if (Seq::is_compressed(b)) {
+    //   std::cout << Seq::size(b) << std::endl;
+    // }
+    // assert(!Seq::is_compressed(b));
+    // auto [lc, e, rc, root] = Seq::expose(std::move(b));
+    auto rt = Seq::is_regular(b) ? Seq::cast_to_regular(b)
+                                 : Seq::to_tree((compressed_node*)b);
+    // if (!rt) rt = Seq::single(e);
+    assert(rt != nullptr);
+
+    K bk = Entry::get_key(Seq::get_entry(rt));
+    // auto less_val = [&](ET& a) -> bool {
+    //   return Entry::comp(Entry::get_key(a), bk);
+    // };
+    auto less_val = [&](auto const& a) -> bool {
+      auto et = basic_node_helpers::get_entry_indentity<ET>(a);
+      return Entry::comp(Entry::get_key(et), bk);
+    };
+
+    size_t mid = utils::PAM_binary_search(A, n, less_val);
+    // std::cout << e << " " << mid << " " << n << std::endl;
+    // bool dup = (mid < n) && (!Entry::comp(bk, Entry::get_key(A[mid])));
+    bool dup =
+        (mid < n) &&
+        (!Entry::comp(
+            bk, Entry::get_key(
+                    basic_node_helpers::get_entry_indentity<ET>(A, mid))));
+
+    auto P = utils::fork<node*>(
+        // true,  // Seq::do_parallel(b.size(), n),
+        // !(mid == 0 || mid == n),
+        false,
+        // Seq::do_parallel(b.size(), n),
+        [&]() { return multi_insert_sorted_simple(rt->lc, A, mid, op, sz); },
+        [&]() {
+          return multi_insert_sorted_simple(rt->rc, A + mid + dup,
+                                            n - mid - dup, op, sz);
+        });
+
+    // if (dup) combine_values(root, A[mid], false, op);
+    if (dup) {
+      auto mid_et = basic_node_helpers::get_entry_indentity<ET>(A, mid);
+      combine_values(rt, mid_et, false, op);
+    }
+    return Seq::node_join(P.first, P.second, rt);
   }
 
   template <class VE, class CombineOp, class MapOp>

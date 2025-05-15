@@ -18,13 +18,15 @@ void KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchInsert(Slice A) {
   t.next("check size");
 
   this->vis_nodes = 0;
+  this->leaf_nodes = 0;
   Points B = Points::uninitialized(A.size());
   Node* T = this->root_;
   this->tree_box_ = BT::GetBox(this->tree_box_, BT::GetBox(A));
   DimsType d = T->is_leaf ? 0 : static_cast<Interior*>(T)->split.second;
   this->root_ = BatchInsertRecursive(T, A, B.cut(0, A.size()), d);
   assert(this->root_ != NULL);
-  std::cout << "BatchInsert: " << this->vis_nodes << " nodes visited\n";
+  std::cout << "BatchInsert: " << this->vis_nodes << " " << this->leaf_nodes
+            << " nodes visited\n";
   return;
 }
 
@@ -40,6 +42,7 @@ Node* KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchInsertRecursive(
   this->vis_nodes++;
 
   if (n <= 8 * BT::kLeaveWrap + 2) {
+    this->leaf_nodes++;
     return T;
   }
 

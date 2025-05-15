@@ -367,11 +367,13 @@ class map_ {
     //    time");
     // std::cout << A.size() << std::endl;
 
-    auto sz = Tree::count_size_ptr(m.get_root());
-    std::cout << sz << std::endl;
-    t.next("count size");
+    // auto sz = Tree::count_size_ptr(m.get_root());
+    // std::cout << sz << std::endl;
+    // t.next("count size");
 
     // size_t nsz = 0;
+    // auto x = M(Tree::multi_insert_sorted_simple(m.get_root(), A.data(),
+    //                                             A.size(), replace, nsz));
     // auto x = M(Tree::multi_insert_sorted_count(m.get_root(), A.data(),
     // A.size(),
     //                                            replace, nsz));
