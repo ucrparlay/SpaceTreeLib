@@ -146,6 +146,10 @@ struct aug_map_ : private map_<_Entry, Join_Tree> {
   static M multi_delete_sorted_map(M m, Seq& SS, CombineOp combine_op) {
     return to_aug(Map::multi_delete_sorted_map(std::move(m), SS, combine_op));
   }
+  template <typename Seq>
+  static M multi_delete(M m, Seq const& SS) {
+    return to_aug(Map::multi_delete(std::move(m), SS));
+  }
   // delete multiple keys from an array
   template <class Seq>
   static M multi_delete_sorted(M m, Seq const& SS) {

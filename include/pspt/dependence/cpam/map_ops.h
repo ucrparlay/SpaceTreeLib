@@ -919,10 +919,15 @@ struct map_ops : Seq {
 
     ET stack[kBaseCaseSize + 1];
     size_t offset = 0;
-    auto copy_f = [&](ET a) {  // TODO: copy or ref?
-      parlay::move_uninitialized(stack[offset++], a);
-    };
+    auto copy_f = [&](ET a) { parlay::move_uninitialized(stack[offset++], a); };
     Seq::iterate_seq(n_b1, copy_f);
+
+    // parlay::sort_inplace(
+    //     parlay::make_slice(stack, stack + offset),
+    //     [&](const ET& a, const ET& b) { return comp(a.aug, b.aug); });
+    // parlay::sort_inplace(parlay::make_slice(A, A + n),
+    //                      [&](K const& a, K const& b) { return comp(a, b); });
+
     Seq::decrement_recursive(n_b1);
 
     ET output[kBaseCaseSize + 1];
@@ -934,12 +939,18 @@ struct map_ops : Seq {
     while (i < nA && j < nB) {
       auto const& k_a = Entry::get_key(stack[i]);
       auto const& k_b = A[j];
+      std::cout << stack[i] << " " << k_b << std::endl;
       if (comp(k_a, k_b)) {
         parlay::move_uninitialized(output[out_off++], stack[i]);
         i++;
       } else if (comp(k_b, k_a)) {
+        puts("xxxxxxxxxxxxxxxxxxxxxxxxx");
         j++;
       } else {  // equals, delete element.
+        assert(k_a.id == k_b.id);
+        assert(k_a.code == k_b.code);
+        std::cout << "delete " << k_a << "=" << k_b << std::endl;
+        puts("-------------------------");
         stack[i].~ET();
         i++;
         j++;
@@ -965,8 +976,8 @@ struct map_ops : Seq {
     if (n == 0) return b.node_ptr();
 
     // size_t tot = b.size() + n;
-    // TODO: add a flag to control base-case granularity?
     if (b.size() <= kBaseCaseSize) {
+      std::cout << "kBaseCaseSize" << std::endl;
       return multidelete_bc(std::move(b), A, n);
     }
 
@@ -979,7 +990,8 @@ struct map_ops : Seq {
     bool dup = (mid < n) && (!Entry::comp(bk, A[mid]));
 
     auto P = utils::fork<node*>(
-        true,  // Seq::do_parallel(b.size(), n),
+        // true,  // Seq::do_parallel(b.size(), n),
+        false,  // Seq::do_parallel(b.size(), n),
         [&]() { return multi_delete_sorted(std::move(lc), A, mid); },
         [&]() {
           return multi_delete_sorted(std::move(rc), A + mid + dup,
@@ -1093,12 +1105,12 @@ struct map_ops : Seq {
   template <class BinaryOp, typename T>
   static node* multi_insert_sorted(ptr b, T* A, size_t n, BinaryOp const& op) {
     // std::cout << "multi_insert_sorted" << std::endl;
+    if (n == 0) return b.node_ptr();
+
     if (b.empty()) {
       node* x = Seq::from_array(A, n);
       return x;
     }
-
-    if (n == 0) return b.node_ptr();
 
     size_t tot = b.size() + n;
     if (tot <= kBaseCaseSize) {
