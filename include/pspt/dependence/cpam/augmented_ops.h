@@ -308,31 +308,23 @@ struct augmented_ops : Map {
     }
 
     auto rb = Map::cast_to_regular(b);
-    // bool lc_leaf = Map::is_compressed(rb->lc),
-    //      rc_leaf = Map::is_compressed(rb->rc);
-    // Coord d_lc = lc_leaf ? std::numeric_limits<Coord>::lowest()
-    //                      : BT::P2BMinDistanceSquare(q,
-    //                      Map::get_entry(rb->lc));
-    // Coord d_rc = rc_leaf ? std::numeric_limits<Coord>::lowest()
-    //                      : BT::P2BMinDistanceSquare(q,
-    //                      Map::get_entry(rb->rc));
-    // bool go_left = (lc_leaf && rc_leaf) ? true : (d_lc < d_rc);
     Coord d_lc = BT::P2BMinDistanceSquare(q, Map::aug_val_ref(rb->lc));
     Coord d_rc = BT::P2BMinDistanceSquare(q, Map::aug_val_ref(rb->rc));
     bool go_left = d_lc < d_rc;
 
     knn<BT>(go_left ? rb->lc : rb->rc, q, bq, logger);
+
+    auto r = BT::InterruptibleDistance(q, rb->entry.first, bq.top_value());
+    if (r < bq.top_value()) {
+      bq.insert(std::make_pair(std::ref(rb->entry.first), r));
+    }
+
     logger.check_box_num++;
     if (((go_left ? d_rc : d_lc) > bq.top_value()) && bq.full()) {
       logger.skip_box_num++;
       return;
     }
     knn<BT>(go_left ? rb->rc : rb->lc, q, bq, logger);
-
-    auto r = BT::InterruptibleDistance(q, rb->entry.first, bq.top_value());
-    if (r < bq.top_value()) {
-      bq.insert(std::make_pair(std::ref(rb->entry.first), r));
-    }
 
     return;
     // if (!BT::BoxIntersectBox(node_box, query_box)) {
