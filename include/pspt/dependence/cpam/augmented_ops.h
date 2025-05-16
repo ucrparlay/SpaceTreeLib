@@ -315,7 +315,7 @@ struct augmented_ops : Map {
     knn<BT>(go_left ? rb->lc : rb->rc, q, bq, logger);
 
     auto r = BT::InterruptibleDistance(q, rb->entry.first, bq.top_value());
-    if (r < bq.top_value()) {
+    if (!bq.full() || r < bq.top_value()) {
       bq.insert(std::make_pair(std::ref(rb->entry.first), r));
     }
 
