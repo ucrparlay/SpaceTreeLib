@@ -1114,9 +1114,11 @@ struct map_ops : Seq {
     }
 
     size_t tot = b.size() + n;
-    if (tot <= kBaseCaseSize) {
+    // if (tot <= kBaseCaseSize) {
+    if (b.is_compressed()) {
       // return nullptr;
       return multiinsert_bc(std::move(b), A, n, op);
+      // return multiinsert_compress(std::move(b), A, n, op);
     }
 
     auto [lc, e, rc, root] = Seq::expose(std::move(b));
@@ -1540,6 +1542,74 @@ struct map_ops : Seq {
       parlay::move_uninitialized(output[out_off++], et);
       j++;
     }
+
+    // build returned tree
+    if (out_off < B) {
+      return Seq::to_tree_impl((ET*)output, out_off);
+    } else {
+      return Seq::make_compressed(output, out_off);
+    }
+  }
+
+  template <class BinaryOp, typename T>
+  static node* multiinsert_compress(ptr b1, T* A, size_t n,
+                                    BinaryOp const& op) {
+    // ET stack[kBaseCaseSize + 1];
+    // size_t offset = 0;
+    // auto copy_f = [&](ET& a) {
+    //   parlay::move_uninitialized(stack[offset++], a);
+    // };
+    // Seq::iterate_seq(n_b1, copy_f);
+    // Seq::decrement_recursive(n_b1);
+    auto n_b1 = b1.node_ptr();
+    size_t offset = b1.size();
+    auto c = Seq::cast_to_compressed(n_b1);
+    uint8_t* data_start =
+        (((uint8_t*)c) + sizeof(typename Seq::aug_compressed_node));
+    ET* stack = (ET*)data_start;
+
+    ET output[offset + n + 1];
+
+    // merge
+    size_t nA = offset;
+    size_t nB = n;
+    size_t i = 0, j = 0, out_off = 0;
+    while (i < nA && j < nB) {
+      auto const& k_a = Entry::get_key(stack[i]);
+      // auto const& k_b = Entry::get_key(A[j]);
+      auto et = basic_node_helpers::get_entry_indentity<ET>(A, j);
+      auto const& k_b = Entry::get_key(et);
+      if (comp(k_a, k_b)) {
+        parlay::move_uninitialized(output[out_off++], stack[i]);
+        i++;
+      } else if (comp(k_b, k_a)) {
+        // parlay::move_uninitialized(output[out_off++], A[j]);
+        auto et = basic_node_helpers::get_entry_indentity<ET>(A, j);
+        parlay::move_uninitialized(output[out_off++], et);
+        j++;
+      } else {
+        parlay::move_uninitialized(output[out_off], stack[i]);
+        ET& re = output[out_off];
+        // Entry::set_val(re, op(Entry::get_val(re), Entry::get_val(A[j])));
+        auto et = basic_node_helpers::get_entry_indentity<ET>(A, j);
+        Entry::set_val(re, op(Entry::get_val(re), Entry::get_val(et)));
+        out_off++;
+        i++;
+        j++;
+      }
+    }
+    while (i < nA) {
+      parlay::move_uninitialized(output[out_off++], stack[i]);
+      i++;
+    }
+    while (j < nB) {
+      // parlay::move_uninitialized(output[out_off++], A[j]);
+      auto et = basic_node_helpers::get_entry_indentity<ET>(A, j);
+      parlay::move_uninitialized(output[out_off++], et);
+      j++;
+    }
+
+    Seq::decrement_recursive(n_b1);
 
     // build returned tree
     if (out_off < B) {
