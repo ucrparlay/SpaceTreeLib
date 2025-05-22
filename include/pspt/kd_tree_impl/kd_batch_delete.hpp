@@ -82,10 +82,11 @@ KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDeleteRecursive(
     // NOTE: put the tomb if the remaining points number are below
     // kThinLeaveWrap or inbalance
     bool putTomb =
-        BT::SparcyNode(In.size(), TI->size) ||
-        (split_rule_.AllowRebuild() && has_tomb &&
-         BT::ImbalanceNode(TI->left->size - (split_iter - In.begin()),
-                           TI->size - In.size()));
+        has_tomb &&
+        (BT::SparcyNode(In.size(), TI->size) ||
+         (split_rule_.AllowRebuild() &&
+          BT::ImbalanceNode(TI->left->size - (split_iter - In.begin()),
+                            TI->size - In.size())));
     has_tomb = putTomb ? false : has_tomb;
     assert(putTomb ? (!has_tomb) : true);
 
@@ -137,15 +138,14 @@ KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDeleteRecursive(
   auto box_seq = parlay::sequence<Box>::uninitialized(IT.tags_num);
 
   // enable the force parallel flag in batch deletion
-  [[maybe_unused]] auto [re_num, tot_re_size] =
-      IT.template TagInbalanceNodeDeletion<true>(
-          box_seq, bx, has_tomb, [&](BucketType idx) -> bool {
-            Interior* TI = static_cast<Interior*>(IT.tags[idx].first);
-            return BT::SparcyNode(IT.sums_tree[idx], TI->size) ||
-                   (split_rule_.AllowRebuild() &&
-                    BT::ImbalanceNode(TI->left->size - IT.sums_tree[idx << 1],
-                                      TI->size - IT.sums_tree[idx]));
-          });
+  auto [re_num, tot_re_size] = IT.template TagInbalanceNodeDeletion<true>(
+      box_seq, bx, has_tomb, [&](BucketType idx) -> bool {
+        Interior* TI = static_cast<Interior*>(IT.tags[idx].first);
+        return BT::SparcyNode(IT.sums_tree[idx], TI->size) ||
+               (split_rule_.AllowRebuild() &&
+                BT::ImbalanceNode(TI->left->size - IT.sums_tree[idx << 1],
+                                  TI->size - IT.sums_tree[idx]));
+      });
 
   assert(re_num <= IT.tags_num);
 
