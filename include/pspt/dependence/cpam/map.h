@@ -403,11 +403,12 @@ class map_ {
     // std::cout << A.size() << std::endl;
     // auto old_size = m.size();
     // std::cout << m.size() << " " << keys.size() << std::endl;
-    // auto x = M(Tree::multi_delete_sorted(m.get_root(), A.data(), A.size()));
-    size_t nsz = 0;
-    auto x = M(
-        Tree::multi_delete_sorted_size(m.get_root(), A.data(), A.size(), nsz));
-    std::cout << "vis nodes: " << nsz << std::endl;
+    auto x = M(Tree::multi_delete_sorted(m.get_root(), A.data(), A.size()));
+    // size_t nsz = 0;
+    // auto x = M(
+    //     Tree::multi_delete_sorted_size(m.get_root(), A.data(), A.size(),
+    //     nsz));
+    // std::cout << "vis nodes: " << nsz << std::endl;
     t.next("insert to tree");
     // std::cout << "new size = " << x.size() << std::endl;
     // assert(x.size() == old_size - SS.size());

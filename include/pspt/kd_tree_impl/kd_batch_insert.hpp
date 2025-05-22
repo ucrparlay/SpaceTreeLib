@@ -19,14 +19,18 @@ void KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchInsert(Slice A) {
 
   this->vis_nodes = 0;
   this->leaf_nodes = 0;
+  this->rebuild_nodes = 0;
+  this->rebuild_size = 0;
   Points B = Points::uninitialized(A.size());
   Node* T = this->root_;
   this->tree_box_ = BT::GetBox(this->tree_box_, BT::GetBox(A));
   DimsType d = T->is_leaf ? 0 : static_cast<Interior*>(T)->split.second;
   this->root_ = BatchInsertRecursive(T, A, B.cut(0, A.size()), d);
   assert(this->root_ != NULL);
-  std::cout << "BatchInsert: " << this->vis_nodes << " " << this->leaf_nodes
-            << " nodes visited\n";
+  std::cout << "VisNodes: " << this->vis_nodes
+            << " RebuildNodes: " << this->rebuild_nodes
+            << " RebuildSize: " << this->rebuild_size << std::endl;
+  ;
   return;
 }
 
@@ -41,10 +45,10 @@ Node* KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchInsertRecursive(
 
   this->vis_nodes++;
 
-  if (n <= 8 * BT::kLeaveWrap + 2) {
-    this->leaf_nodes++;
-    return T;
-  }
+  // if (n <= 8 * BT::kLeaveWrap + 2) {
+  //   this->leaf_nodes++;
+  //   return T;
+  // }
 
   if (T->is_leaf) {
     Leaf* TL = static_cast<Leaf*>(T);
@@ -71,6 +75,8 @@ Node* KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchInsertRecursive(
     // NOTE: rebuild
     if (split_rule_.AllowRebuild() &&
         BT::ImbalanceNode(TI->left->size + split_pos, TI->size + n)) {
+      this->rebuild_nodes++;
+      this->rebuild_size += n;
       return BT::template RebuildWithInsert<Leaf, Interior>(T, In, d);
     }
 

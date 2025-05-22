@@ -133,6 +133,8 @@ class KdTree
   SplitRule split_rule_;
   size_t vis_nodes = 0;
   size_t leaf_nodes = 0;
+  size_t rebuild_nodes = 0;
+  size_t rebuild_size = 0;
 };
 
 }  // namespace pspt

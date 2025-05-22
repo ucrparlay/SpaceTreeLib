@@ -29,10 +29,16 @@ void KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDelete_(Slice A) {
   Node* T = this->root_;
   Box bx = this->tree_box_;
   this->vis_nodes = 0;
+  this->rebuild_nodes = 0;
+  this->rebuild_size = 0;
+  std::cout << A.size() << std::endl;
   DimsType d = T->is_leaf ? 0 : static_cast<Interior*>(T)->split.second;
   std::tie(this->root_, this->tree_box_) =
       BatchDeleteRecursive(T, bx, A, parlay::make_slice(B), d, 1);
-  std::cout << "->" << this->vis_nodes << " " << std::flush;
+  std::cout << "VisNodes: " << this->vis_nodes
+            << " RebuildNodes: " << this->rebuild_nodes
+            << " RebuildSize: " << this->rebuild_size << std::flush;
+  puts(">>>>>>>>>>>>>");
   return;
 }
 
@@ -46,7 +52,7 @@ KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDeleteRecursive(
     Node* T,
     typename KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::Box const& bx,
     Slice In, Slice Out, DimsType d, bool has_tomb) {
-  size_t n = In.size();
+  size_t const n = In.size();
 
   if (n == 0) {
     assert(BT::WithinBox(BT::template GetBox<Leaf, Interior>(T), bx));
@@ -54,10 +60,10 @@ KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDeleteRecursive(
   }
   vis_nodes++;
 
-  if (T->size <= 8 * BT::kLeaveWrap + 2) {
-    this->leaf_nodes++;
-    return NodeBox(T, bx);
-  }
+  // if (T->size <= 8 * BT::kLeaveWrap + 2) {
+  //   this->leaf_nodes++;
+  //   return NodeBox(T, bx);
+  // }
 
   // INFO: it can be used to accelerate the whole deletion process
   if (n == T->size) {
@@ -90,8 +96,8 @@ KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDeleteRecursive(
     // NOTE: put the tomb if the remaining points number are below
     // kThinLeaveWrap or inbalance
     bool putTomb =
-        BT::SparcyNode(In.size(), TI->size) ||
-        (split_rule_.AllowRebuild() && has_tomb &&
+        split_rule_.AllowRebuild() && has_tomb &&
+        (BT::SparcyNode(In.size(), TI->size) ||
          BT::ImbalanceNode(TI->left->size - (split_iter - In.begin()),
                            TI->size - In.size()));
     has_tomb = putTomb ? false : has_tomb;
@@ -122,6 +128,8 @@ KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDeleteRecursive(
 
     // NOTE: rebuild
     if (putTomb) {
+      this->rebuild_nodes++;
+      this->rebuild_size += n;
       assert(BT::SparcyNode(0, TI->size) ||
              (split_rule_.AllowRebuild() &&
               BT::ImbalanceNode(TI->left->size, TI->size)));

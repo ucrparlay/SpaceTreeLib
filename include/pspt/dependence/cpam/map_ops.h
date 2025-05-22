@@ -978,6 +978,8 @@ struct map_ops : Seq {
 
     // size_t tot = b.size() + n;
     if (b.size() <= kBaseCaseSize) {
+      sz += count_size_ptr(std::move(b));
+      sz--;
       return nullptr;
       // std::cout << "kBaseCaseSize" << std::endl;
       // return multidelete_bc(std::move(b), A, n);
@@ -1173,6 +1175,7 @@ struct map_ops : Seq {
     // r = count_size(rb->rc);
     return l + r + 1;
   }
+
   static size_t count_size_ptr(ptr b) {
     if (b.empty()) return 0;
     if (b.is_compressed()) {
@@ -1182,10 +1185,10 @@ struct map_ops : Seq {
     // auto [lc, e, rc] = Seq::expose_simple(b);
     // auto rb = Seq::cast_to_regular(b);
     size_t l, r;
-    parlay::par_do([&]() { l = count_size_ptr(std::move(lc)); },
-                   [&]() { r = count_size_ptr(std::move(rc)); });
-    // l = count_size(rb->lc);
-    // r = count_size(rb->rc);
+    // parlay::par_do([&]() { l = count_size_ptr(std::move(lc)); },
+    //                [&]() { r = count_size_ptr(std::move(rc)); });
+    l = count_size_ptr(std::move(lc));
+    r = count_size_ptr(std::move(rc));
     return l + r + 1;
   }
 
@@ -1230,8 +1233,8 @@ struct map_ops : Seq {
 
     auto P = utils::fork<node*>(
         // true,  // Seq::do_parallel(b.size(), n),
-        // !(mid == 0 || mid == n),
-        0,
+        !(mid == 0 || mid == n),
+        // 0,
         // n >= 512,
         // Seq::do_parallel(b.size(), n),
         [&]() { return multi_insert_sorted(std::move(lc), A, mid, op); },
@@ -1263,6 +1266,8 @@ struct map_ops : Seq {
 
     size_t tot = b.size() + n;
     if (tot <= kBaseCaseSize) {
+      sz += count_size_ptr(std::move(b));
+      sz--;
       return nullptr;
       // return multiinsert_bc(std::move(b), A, n, op);
     }
@@ -1383,7 +1388,7 @@ struct map_ops : Seq {
   static node* multi_insert_sorted_simple(node* b, T* A, size_t n,
                                           BinaryOp const& op, size_t& sz) {
     if (n == 0) return b;
-    sz++;
+    // sz++;
 
     if (Seq::size(b) == 0) {
       node* x = Seq::from_array(A, n);
@@ -1392,8 +1397,8 @@ struct map_ops : Seq {
 
     size_t tot = Seq::size(b) + n;
     if (tot <= kBaseCaseSize) {
-      return nullptr;
-      // return multiinsert_bc_simple(b, A, n, op);
+      // return nullptr;
+      return multiinsert_bc_simple(b, A, n, op);
     }
 
     // if (Seq::is_compressed(b)) {
@@ -1426,8 +1431,8 @@ struct map_ops : Seq {
 
     auto P = utils::fork<node*>(
         // true,  // Seq::do_parallel(b.size(), n),
-        // !(mid == 0 || mid == n),
-        false,
+        !(mid == 0 || mid == n),
+        // false,
         // Seq::do_parallel(b.size(), n),
         [&]() { return multi_insert_sorted_simple(rt->lc, A, mid, op, sz); },
         [&]() {
