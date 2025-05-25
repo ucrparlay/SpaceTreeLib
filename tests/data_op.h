@@ -69,13 +69,12 @@ class DataLaundry {
   using InputPoints = parlay::sequence<InputPoint>;
   using OutputPoints = parlay::sequence<OutputPoint>;
 
-  static OutputPoints RoundDown(auto const& wp) {
+  static OutputPoints RoundDown(auto const& wp, int const multiply_offset) {
     return parlay::tabulate(wp.size(), [&](size_t i) -> OutputPoint {
       OutputPoint p;
-      constexpr auto dim = OutputPoint::GetDim();
-      for (int j = 0; j < dim; j++) {
-        p.pnt[j] =
-            static_cast<typename OutputPoint::Coord>(std::floor(wp[i].pnt[j]));
+      for (int j = 0; j < OutputPoint::GetDim(); j++) {
+        p.pnt[j] = static_cast<typename OutputPoint::Coord>(
+            std::floor(wp[i].pnt[j] * multiply_offset));
       }
       return p;
     });
@@ -83,6 +82,24 @@ class DataLaundry {
 
   static OutputPoints RemoveDuplicates(auto const& wp) {
     return parlay::unique(parlay::sort(wp));
+  }
+
+  static OutputPoints ShiftToFirstRegion(auto& wp) {
+    auto bb = pspt::BaseTree<OutputPoint>::GetBox(parlay::make_slice(wp));
+    return parlay::tabulate(wp.size(), [&](size_t i) {
+      OutputPoint p;
+      for (int j = 0; j < OutputPoint::GetDim(); j++) {
+        p[j] = static_cast<typename OutputPoint::Coord>(wp[i][j] - bb.first[j]);
+      }
+      return p;
+    });
+  }
+
+  static bool CheckCoordWithinRange(auto& wp) {
+    return parlay::all_of(wp, [&](auto const& p) {
+      return std::ranges::all_of(
+          p.pnt, [](auto const& c) { return c >= 0 && c <= INT32_MAX; });
+    });
   }
 };
 

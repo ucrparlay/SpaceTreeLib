@@ -7,11 +7,12 @@ int main(int argc, char* argv[]) {
                 "<parallelTag>] [-p <inFile>] [-r {1,...,5}] [-q {0,1}] [-i "
                 "<_insertFile>] [-s <kSummary>]");
   std::string input_path, output_suffix, output_path;
-  int pts_dim, file_num, varden;
+  int pts_dim, multiply_offset;
 
   input_path = P.getOptionValue("-p");
   output_suffix = P.getOptionValue("-s", ".out");
   pts_dim = P.getOptionIntValue("-d", 2);
+  multiply_offset = P.getOptionIntValue("-k", 1);
 
   std::cout << input_path << std::endl;
   std::cout << output_suffix << std::endl;
@@ -26,11 +27,20 @@ int main(int argc, char* argv[]) {
 
     parlay::sequence<InputPoint> wp;
     read_points<InputPoint>(input_path.c_str(), wp, 0);
-    PrintPoints(wp);
-    auto new_wp = Laundy::RoundDown(wp);
-    PrintPoints(new_wp);
+    auto bb = pspt::BaseTree<InputPoint>::GetBox(parlay::make_slice(wp));
+    std::cout << bb.first << " " << bb.second << std::endl;
+
+    // PrintPoints(wp);
+    auto new_wp = Laundy::RoundDown(wp, multiply_offset);
+    // PrintPoints(new_wp);
     new_wp = Laundy::RemoveDuplicates(new_wp);
-    PrintPoints(new_wp);
+    // PrintPoints(new_wp);
+    new_wp = Laundy::ShiftToFirstRegion(new_wp);
+    // PrintPoints(new_wp);
+    if (!Laundy::CheckCoordWithinRange(new_wp)) {
+      throw std::runtime_error("ShiftToFirstRegion failed");
+      exit(1);
+    }
 
     std::cout << "Writing... " << std::endl;
     PrintToFile(output_path, new_wp);
