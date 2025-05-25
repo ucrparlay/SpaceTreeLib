@@ -33,19 +33,30 @@ git submodule update --init
 File structure:
 
 ```bash
-.
 ├── benchmark
 ├── include
-├── parlaylib
+│   ├── parlaylib
+│   └── pspt
+│       ├── base_tree_impl
+│       │   └── tree_op
+│       ├── cover_tree_impl
+│       ├── dependence
+│       │   ├── cpam
+│       │   └── space_filling_curve
+│       ├── kd_tree_impl
+│       ├── orth_tree_impl
+│       ├── p_tree_impl
+│       └── r_tree_impl
 ├── script
+├── static_analysis
 └── tests
 ```
 
 |    Name     |          Usage          |
 | :---------: | :---------------------: |
 | `benchmark` | Stores sample benchmark |
-|  `include`  |  Source of `PSPT`   |
-| `parlaylib` |   Provide parallelism   |
+|  `include/pspt`  |  Source of `PSPT`   |
+| `include/parlaylib` |   Provide parallelism   |
 |  `scipts`   | Scripts for experiments |
 |   `tests`   |   Helpers for testing   |
 
@@ -54,13 +65,6 @@ File structure:
 ```bash
 mkdir build && cd build
 cmake -DDEBUG=OFF ..
-make
-```
-
-For better performance, please use `clang++` for compilation, i.e.,
-
-```{bash}
-cmake -DDEBUG=OFF -DCMAKE_CXX_COMPILER=/usr/bin/clang++ ..
 make
 ```
 
@@ -120,6 +124,18 @@ In default, the PSPTs stores all coordinates of points in 64-bit integer (`long`
 
 Implemented in `tests/test_framework.h`.
 
+## Graph Generator
+PSPT provides two types of parallel data generator: `Uniform` and `Varden`.
+
+Usage:
+```{bash}
+# In the folder build
+make data_generator
+./data_generator -p [output_path] -d [dimension] -n [points_num] -f [files_num] -t [0:uniform, 1:varden] 
+```
+It will create folders named as `uniform_bigint/` or `ss_varden_bigint/` under the directory specified by `output_path/`. The output file is numbered from `1.in` to `files_num`.
+
+The data file begins with two integer, namely `points_num` and the `dimension`, follows by `points_num` number of lines, each line contains the coordinates for each point, separated by space.
 
 
 
