@@ -106,6 +106,10 @@ target_link_libraries(data_generator PUBLIC PSPT)
 target_include_directories(data_generator PUBLIC ${PROJECT_SOURCE_DIR}/include)
 
 
+add_executable(data_washer ${PROJECT_SOURCE_DIR}/tests/data_wash.cpp)
+target_link_libraries(data_washer PUBLIC PSPT)
+target_include_directories(data_washer PUBLIC ${PROJECT_SOURCE_DIR}/include)
+
 # CGAL
 if(CGAL)
 	find_package(CGAL REQUIRED)
