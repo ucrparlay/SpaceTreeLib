@@ -18,7 +18,7 @@ int main(int argc, char* argv[]) {
   std::cout << output_suffix << std::endl;
 
   auto generate = [&]<typename InputPoint>() {
-    using OutputPoint = BasicPoint<int64_t, InputPoint::GetDim()>;
+    using OutputPoint = AugPoint<int64_t, InputPoint::GetDim(), Wrapper::AugId>;
     using Laundy = DataLaundry<InputPoint, OutputPoint>;
 
     std::cout << "Input: " << input_path << std::endl;
@@ -34,7 +34,7 @@ int main(int argc, char* argv[]) {
     auto new_wp = Laundy::RoundDown(wp, multiply_offset);
     // PrintPoints(new_wp);
     new_wp = Laundy::RemoveDuplicates(new_wp);
-    // PrintPoints(new_wp);
+    PrintPoints(new_wp);
     new_wp = Laundy::ShiftToFirstRegion(new_wp);
     // PrintPoints(new_wp);
     if (!Laundy::CheckCoordWithinRange(new_wp)) {
@@ -42,24 +42,28 @@ int main(int argc, char* argv[]) {
       exit(1);
     }
 
+    auto new_bb =
+        pspt::BaseTree<OutputPoint>::GetBox(parlay::make_slice(new_wp));
+    std::cout << new_bb.first << " " << new_bb.second << std::endl;
+
     std::cout << "Writing... " << std::endl;
     PrintToFile(output_path, new_wp);
   };
 
   if (pts_dim == 2) {
-    generate.operator()<pspt::BasicPoint<double, 2>>();
+    generate.operator()<pspt::AugPoint<double, 2, Wrapper::AugId>>();
   } else if (pts_dim == 3) {
-    generate.operator()<pspt::BasicPoint<double, 3>>();
+    generate.operator()<pspt::AugPoint<double, 3, Wrapper::AugId>>();
   } else if (pts_dim == 5) {
-    generate.operator()<pspt::BasicPoint<double, 5>>();
+    generate.operator()<pspt::AugPoint<double, 5, Wrapper::AugId>>();
   } else if (pts_dim == 7) {
-    generate.operator()<pspt::BasicPoint<double, 7>>();
+    generate.operator()<pspt::AugPoint<double, 7, Wrapper::AugId>>();
   } else if (pts_dim == 9) {
-    generate.operator()<pspt::BasicPoint<double, 9>>();
+    generate.operator()<pspt::AugPoint<double, 9, Wrapper::AugId>>();
   } else if (pts_dim == 12) {
-    generate.operator()<pspt::BasicPoint<double, 12>>();
+    generate.operator()<pspt::AugPoint<double, 12, Wrapper::AugId>>();
   } else if (pts_dim == 16) {
-    generate.operator()<pspt::BasicPoint<double, 16>>();
+    generate.operator()<pspt::AugPoint<double, 16, Wrapper::AugId>>();
   } else {
     throw std::runtime_error("Invalid dimension");
   }

@@ -76,12 +76,26 @@ class DataLaundry {
         p.pnt[j] = static_cast<typename OutputPoint::Coord>(
             std::floor(wp[i].pnt[j] * multiply_offset));
       }
+      p.aug = wp[i].aug;
       return p;
     });
   }
 
   static OutputPoints RemoveDuplicates(auto const& wp) {
-    return parlay::unique(parlay::sort(wp));
+    using BP = typename OutputPoint::BP;
+    auto new_pts = parlay::unique(
+        parlay::sort(wp,
+                     [&](auto const& a, auto const& b) {
+                       return static_cast<BP const&>(a) <
+                              static_cast<BP const&>(b);
+                     }),
+        [&](auto const& a, auto const& b) {
+          return static_cast<BP const&>(a) == static_cast<BP const&>(b);
+        });
+    // return new_pts;
+    return parlay::sort(new_pts, [&](auto const& a, auto const& b) {
+      return a.aug.id < b.aug.id;
+    });
   }
 
   static OutputPoints ShiftToFirstRegion(auto& wp) {
