@@ -2,6 +2,7 @@
 #include "basic_node_helpers.h"
 #include "parlay/internal/binary_search.h"
 #include "parlay/primitives.h"
+#include "parlay/utilities.h"
 #include "utils.h"
 
 // *******************************************
@@ -1115,10 +1116,10 @@ struct map_ops : Seq {
 
     size_t tot = b.size() + n;
     // if (tot <= kBaseCaseSize) {
-    if (b.is_compressed()) {
+    if (b.is_compressed() && n <= b.size() * 2) {
       // return nullptr;
-      return multiinsert_bc(std::move(b), A, n, op);
-      // return multiinsert_compress(std::move(b), A, n, op);
+      // return multiinsert_bc(std::move(b), A, n, op);
+      return multiinsert_compress(std::move(b), A, n, op);
     }
 
     auto [lc, e, rc, root] = Seq::expose(std::move(b));
@@ -1554,6 +1555,7 @@ struct map_ops : Seq {
   template <class BinaryOp, typename T>
   static node* multiinsert_compress(ptr b1, T* A, size_t n,
                                     BinaryOp const& op) {
+    auto n_b1 = b1.node_ptr();
     // ET stack[kBaseCaseSize + 1];
     // size_t offset = 0;
     // auto copy_f = [&](ET& a) {
@@ -1561,14 +1563,14 @@ struct map_ops : Seq {
     // };
     // Seq::iterate_seq(n_b1, copy_f);
     // Seq::decrement_recursive(n_b1);
-    auto n_b1 = b1.node_ptr();
-    size_t offset = b1.size();
+    size_t offset = Seq::size(n_b1);
     auto c = Seq::cast_to_compressed(n_b1);
     uint8_t* data_start =
         (((uint8_t*)c) + sizeof(typename Seq::aug_compressed_node));
     ET* stack = (ET*)data_start;
 
-    ET output[offset + n + 1];
+    // ET output[offset + n + 1];
+    auto output = parlay::sequence<ET>::uninitialized(n + offset + 1);
 
     // merge
     size_t nA = offset;
@@ -1580,42 +1582,60 @@ struct map_ops : Seq {
       auto et = basic_node_helpers::get_entry_indentity<ET>(A, j);
       auto const& k_b = Entry::get_key(et);
       if (comp(k_a, k_b)) {
-        parlay::move_uninitialized(output[out_off++], stack[i]);
+        // parlay::move_uninitialized(output[out_off++], stack[i]);
+        // parlay::assign_uninitialized(output[out_off++], stack[i]);
+        output[out_off++] = stack[i];
         i++;
-      } else if (comp(k_b, k_a)) {
-        // parlay::move_uninitialized(output[out_off++], A[j]);
-        auto et = basic_node_helpers::get_entry_indentity<ET>(A, j);
-        parlay::move_uninitialized(output[out_off++], et);
-        j++;
       } else {
-        parlay::move_uninitialized(output[out_off], stack[i]);
-        ET& re = output[out_off];
-        // Entry::set_val(re, op(Entry::get_val(re), Entry::get_val(A[j])));
+        // WARN: this assumes there is no duplicates
+        // WARN: if is, the duplicates will be replaced automatically
         auto et = basic_node_helpers::get_entry_indentity<ET>(A, j);
-        Entry::set_val(re, op(Entry::get_val(re), Entry::get_val(et)));
-        out_off++;
-        i++;
+        output[out_off++] = et;
         j++;
       }
+      // if (comp(k_b, k_a)) {
+      //   // parlay::move_uninitialized(output[out_off++], A[j]);
+      //   auto et = basic_node_helpers::get_entry_indentity<ET>(A, j);
+      //   // parlay::move_uninitialized(output[out_off++], et);
+      //   output[out_off++] = et;
+      //   j++;
+      // } else {
+      //   // parlay::move_uninitialized(output[out_off], stack[i]);
+      //   // parlay::assign_uninitialized(output[out_off], stack[i]);
+      //   output[out_off] = stack[i];
+      //   ET& re = output[out_off];
+      //   // Entry::set_val(re, op(Entry::get_val(re), Entry::get_val(A[j])));
+      //   auto et = basic_node_helpers::get_entry_indentity<ET>(A, j);
+      //   Entry::set_val(re, op(Entry::get_val(re), Entry::get_val(et)));
+      //   out_off++;
+      //   i++;
+      //   j++;
+      // }
     }
     while (i < nA) {
-      parlay::move_uninitialized(output[out_off++], stack[i]);
+      // parlay::move_uninitialized(output[out_off++], stack[i]);
+      // parlay::assign_uninitialized(output[out_off++], stack[i]);
+      output[out_off++] = stack[i];
       i++;
     }
     while (j < nB) {
       // parlay::move_uninitialized(output[out_off++], A[j]);
       auto et = basic_node_helpers::get_entry_indentity<ET>(A, j);
-      parlay::move_uninitialized(output[out_off++], et);
+      // parlay::move_uninitialized(output[out_off++], et);
+      output[out_off++] = et;
       j++;
     }
 
+    // NOTE: the new returned tree replace the n_b1, decrease the counter
     Seq::decrement_recursive(n_b1);
 
     // build returned tree
     if (out_off < B) {
-      return Seq::to_tree_impl((ET*)output, out_off);
+      // return Seq::to_tree_impl((ET*)output, out_off);
+      return Seq::to_tree_impl(output.data(), out_off);
     } else {
-      return Seq::make_compressed(output, out_off);
+      // return Seq::make_compressed(output, out_off);
+      return Seq::from_array(output.data(), out_off);
     }
   }
 
