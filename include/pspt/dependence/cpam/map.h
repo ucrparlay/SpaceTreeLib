@@ -372,9 +372,9 @@ class map_ {
     // std::cout << sz << std::endl;
     // t.next("count size");
 
-    // size_t nsz = 0;
     // auto x = M(Tree::multi_insert_sorted_simple(m.get_root(), A.data(),
     //                                             A.size(), replace, nsz));
+    // size_t nsz = 0;
     // auto x = M(Tree::multi_insert_sorted_count(m.get_root(), A.data(),
     // A.size(),
     //                                            replace, nsz));
