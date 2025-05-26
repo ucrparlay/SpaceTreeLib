@@ -98,7 +98,7 @@ class PTree
     }
   };
 
-  using CpamAugMap = cpam::aug_map<CpamEntry, BT::kLeaveWrap>;
+  using CpamAugMap = cpam::aug_map<CpamEntry, 16>;
   using CpamMap = CpamAugMap::Map;
 
   using CpamInnerEntryType =
