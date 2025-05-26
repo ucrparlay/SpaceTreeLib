@@ -16,7 +16,7 @@ struct build {
   using V = typename Entry::val_t;
   using ET = typename Entry::entry_t;
   using filling_curve_t = typename Entry::filling_curve_t;
-  using sort_output_value_t = typename Entry::sort_output_value_t;
+  using key_entry_pointer = typename Entry::key_entry_pointer;
 
   constexpr static auto less = [](const ET& a, const ET& b) {
     return Entry::comp(Entry::get_key(a), Entry::get_key(b));
@@ -24,10 +24,10 @@ struct build {
 
   // sorts a sequence, then removes all but first element with equal keys
   // the sort is not necessarily stable, so any element could be kept
-  template <class Seq, typename output_type = sort_output_value_t>
+  template <class Seq, typename output_type = key_entry_pointer>
   // static parlay::sequence<ET> sort_remove_duplicates(
   static auto sort_remove_duplicates(Seq const& A) {  // ?? const
-    // if (A.size() == 0) return parlay::sequence<sort_output_value_t>(0);
+    // if (A.size() == 0) return parlay::sequence<key_entry_pointer>(0);
 
     // parlay::internal::timer t("");
     // assert(parlay::all_of(
@@ -41,11 +41,13 @@ struct build {
         parlay::internal::cpam::cpam_sample_sort<filling_curve_t, output_type>(
             parlay::make_slice(A.begin(), A.end()),
             [&](auto const& a, auto const& b) {
-              if constexpr (std::same_as<output_type, sort_output_value_t>) {
+              if constexpr (std::same_as<output_type, std::pair<K, ET*>>) {
                 // NOTE: using pair when build or insert
                 return a.first < b.first;
               } else if constexpr (std::same_as<output_type, K>) {
                 return a < b;
+              } else if constexpr (std::same_as<output_type, ET>) {
+                return less(a, b);
               } else {
                 static_assert(false, "non_support_type");
               }

@@ -314,7 +314,7 @@ struct aug_map_full_entry : entry {
   // using entry_t_ref_wrapper_v =
   //     std::tuple<key_t, std::reference_wrapper<val_t>>;
   using filling_curve_t = typename entry::filling_curve_t;
-  using sort_output_value_t = typename entry::sort_output_value_t;
+  using key_entry_pointer = typename entry::key_entry_pointer;
 
   static inline auto get_key(entry_t const& e) { return entry::get_key(e); }
   static inline auto get_val(entry_t const& e) { return entry::get_val(e); }

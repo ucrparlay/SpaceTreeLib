@@ -99,7 +99,11 @@ void seq_sort_(slice<InIterator, InIterator> In,
     // assign_dispatch(Out[j], In[j], assignment_tag());
     In[j].SetAugMember(filling_curve_t::Encode(In[j]));
 
-    if constexpr (std::same_as<OutputType, typename InputType::AT>) {
+    if constexpr (std::same_as<OutputType, InputType>) {
+      // NOTE: output is same as input
+      Out[j] = In[j];
+    } else if constexpr (std::same_as<OutputType, typename InputType::AT>) {
+      // NOTE: output is same as augtype(Key)
       Out[j] = In[j].aug;
     } else if constexpr (std::same_as<typename OutputType::first_type,
                                       typename InputType::AT>) {
@@ -157,7 +161,10 @@ void sample_sort_(slice<InIterator, InIterator> In,
       auto pt = &In[hash64(i) % n];
       pt->SetAugMember(filling_curve_t::Encode(*pt));
 
-      if constexpr (std::same_as<output_value_type, typename value_type::AT>) {
+      if constexpr (std::same_as<output_value_type, value_type>) {
+        return *pt;
+      } else if constexpr (std::same_as<output_value_type,
+                                        typename value_type::AT>) {
         return pt->aug;
       } else if constexpr (std::same_as<typename output_value_type::first_type,
                                         typename value_type::AT>) {
@@ -212,15 +219,15 @@ void sample_sort_(slice<InIterator, InIterator> In,
   }
 }
 
-template <typename filling_curve_t, typename sort_output_value_t,
+template <typename filling_curve_t, typename key_entry_pointer,
           typename InputIterator, typename Compare>
 auto cpam_sample_sort(slice<InputIterator, InputIterator> A,
                       Compare const& less, bool stable = false) {
   using input_value_type =
       typename slice<InputIterator, InputIterator>::value_type;
 
-  sequence<sort_output_value_t> R =
-      sequence<sort_output_value_t>::uninitialized(A.size());
+  sequence<key_entry_pointer> R =
+      sequence<key_entry_pointer>::uninitialized(A.size());
   if (A.size() < (std::numeric_limits<unsigned int>::max)()) {
     sample_sort_<filling_curve_t, unsigned int>(A, make_slice(R), less, stable);
   } else {
