@@ -6,7 +6,6 @@
 #include <variant>
 
 #include "comparator.h"
-#include "cpam/cpam.h"
 #include "parlay/alloc.h"
 #include "parlay/delayed.h"
 #include "parlay/primitives.h"

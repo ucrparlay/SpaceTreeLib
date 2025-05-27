@@ -36,7 +36,7 @@ Base BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::BuildInnerTree(
         L, R, GetBox(GetSplit<Leaf, Interior>(L), GetSplit<Leaf, Interior>(R)),
         typename Interior::AT());
   } else {
-    static_assert(0);
+    // static_assert(0);
   }
 }
 

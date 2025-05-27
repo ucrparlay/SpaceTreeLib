@@ -7,6 +7,7 @@
 #include <utility>
 
 #include "base_tree.h"
+#include "dependence/cpam/cpam.h"
 
 namespace pspt {
 

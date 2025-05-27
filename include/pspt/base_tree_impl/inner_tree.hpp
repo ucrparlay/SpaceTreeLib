@@ -353,7 +353,7 @@ struct BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::InnerTree {
                            : under_rebuild_tree;
           });
     } else {
-      static_assert(0);
+      // static_assert(0);
     }
   }
 
@@ -421,7 +421,7 @@ struct BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::InnerTree {
         return NodeBox(nullptr, Box());
       }
     } else {
-      static_assert(0);
+      // static_assert(0);
     }
   }
 
@@ -476,7 +476,7 @@ struct BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::InnerTree {
         return nullptr;
       }
     } else {
-      static_assert(false);
+      // static_assert(false);
     }
   }
 
