@@ -1348,7 +1348,8 @@ struct map_ops : Seq {
 
   template <class BinaryOp, typename T>
   static node* multi_insert_sorted_count(ptr b, T* A, size_t n,
-                                         BinaryOp const& op, size_t& sz) {
+                                         BinaryOp const& op, size_t& sz,
+                                         size_t& append_sz, size_t& fetch_sz) {
     // std::cout << "multi_insert_sorted" << std::endl;
 
     if (n == 0) return b.node_ptr();
@@ -1362,11 +1363,16 @@ struct map_ops : Seq {
     size_t tot = b.size() + n;
     // if (tot <= kBaseCaseSize) {
     if (b.is_compressed()) {
-      // sz += count_size_ptr(std::move(b));
-      // sz--;
-      // sz++;
-      return nullptr;
-      // return multiinsert_bc(std::move(b), A, n, op);
+      if (tot <= 2 * B) {  // can put in one leaf directly
+        append_sz += n;
+        return multiinsert_bc_append(std::move(b), A, n, op);
+      } else if (n <= 4 * B) {
+        // return multiinsert_bc(std::move(b), A, n, op);
+        fetch_sz += n;
+        return multiinsert_compress(std::move(b), A, n, op);
+      } else {  // the merge overhead may be large, should expose compress
+        ;
+      }
     }
 
     auto [lc, e, rc, root] = Seq::expose(std::move(b));
@@ -1404,11 +1410,13 @@ struct map_ops : Seq {
         // n >= 512,
         // Seq::do_parallel(b.size(), n),
         [&]() {
-          return multi_insert_sorted_count(std::move(lc), A, mid, op, sz);
+          return multi_insert_sorted_count(std::move(lc), A, mid, op, sz,
+                                           append_sz, fetch_sz);
         },
         [&]() {
           return multi_insert_sorted_count(std::move(rc), A + mid + dup,
-                                           n - mid - dup, op, sz);
+                                           n - mid - dup, op, sz, append_sz,
+                                           fetch_sz);
         });
 
     // if (dup) combine_values(root, A[mid], false, op);

@@ -374,12 +374,12 @@ class map_ {
 
     // auto x = M(Tree::multi_insert_sorted_simple(m.get_root(), A.data(),
     //                                             A.size(), replace, nsz));
-    // size_t nsz = 0;
+    // size_t nsz = 0, apz = 0, fez = 0;
     // auto x = M(Tree::multi_insert_sorted_count(m.get_root(), A.data(),
     // A.size(),
-    //                                            replace, nsz));
+    //                                            replace, nsz, apz, fez));
     // t.next("insert to tree");
-    // std::cout << nsz << std::endl;
+    // std::cout << nsz << " " << apz << " " << fez << std::endl;
 
     auto x =
         M(Tree::multi_insert_sorted(m.get_root(), A.data(), A.size(), replace));
