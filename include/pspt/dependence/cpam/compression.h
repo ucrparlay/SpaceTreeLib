@@ -261,6 +261,17 @@ struct default_entry_encoder {
     }
 
     template <class F>
+    static inline void append(uint8_t* append_bytes, uint8_t* cur_bytes,
+                              size_t append_size, size_t cur_size) {
+      ET* append_ets = (ET*)append_bytes;
+      ET* cur_ets = (ET*)cur_bytes;
+      for (size_t i = 0; i < append_size; i++) {
+        cur_ets[cur_size + i] = append_ets[i];
+      }
+      return;
+    }
+
+    template <class F>
     static inline bool decode_cond(uint8_t* bytes, size_t size, F const& f) {
       ET* ets = (ET*)bytes;
       for (size_t i = 0; i < size; i++) {
