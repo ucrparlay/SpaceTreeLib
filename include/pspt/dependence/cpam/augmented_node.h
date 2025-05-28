@@ -252,7 +252,8 @@ struct aug_node
 
     // size_t encoded_size = AugEntryEncoder::encoded_size(e, s);
     ET* arr;
-    size_t encoded_size = AugEntryEncoder::encoded_size(arr, s);
+    // size_t encoded_size = AugEntryEncoder::encoded_size(arr, s);
+    size_t encoded_size = AugEntryEncoder::encoded_size(arr, 2 * B);
     size_t node_size = sizeof(aug_compressed_node) + encoded_size;
     aug_compressed_node* c_node =
         (aug_compressed_node*)utils::new_array_no_init<uint8_t>(node_size);
@@ -264,15 +265,6 @@ struct aug_node
     uint8_t* encoded_data = (((uint8_t*)c_node) + sizeof(aug_compressed_node));
     parlay::assign_uninitialized(c_node->aug_val,
                                  AugEntryEncoder::encode(e, s, encoded_data));
-
-    //    if (print) {
-    //      std::cout << "Found 0's block = " << c_node << std::endl;
-    //      auto f = [&] (const ET& et) {
-    //        std::cout << "refct = " << std::get<1>(et).root->ref_cnt <<
-    //        std::endl;
-    //      };
-    //      AugEntryEncoder::decode(encoded_data, s, f);
-    //    }
 
     return (compressed_node*)c_node;
   }
