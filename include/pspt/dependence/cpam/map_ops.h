@@ -1286,7 +1286,7 @@ struct map_ops : Seq {
     if (n == 0) return b.node_ptr();
 
     if (b.empty()) {
-      std::cout << "empty " << n << std::endl;
+      // std::cout << "empty " << n << std::endl;
       node* x = Seq::from_array(A, n);
       return x;
     }
@@ -1327,8 +1327,8 @@ struct map_ops : Seq {
                     basic_node_helpers::get_entry_indentity<ET>(A, mid))));
 
     auto P = utils::fork<node*>(
-        // true,  // Seq::do_parallel(b.size(), n),
-        n >= 1024 && !(mid == 0 || mid == n),
+        true,  // Seq::do_parallel(b.size(), n),
+        // n >= 1024 && !(mid == 0 || mid == n),
         // 0,
         // n >= 512,
         // Seq::do_parallel(b.size(), n),
