@@ -58,6 +58,8 @@ Node* KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchInsertRecursive(
       return BT::template InsertPoints2Leaf<Leaf>(T, In);
     } else {  // PERF: if a nomarl leaf TL cannot handle more duplicates,
               // leave them here
+      rebuild_size += In.size();
+      rebuild_nodes++;
       return BT::template RebuildWithInsert<Leaf, Interior>(T, In, d);
     }
   }

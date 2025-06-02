@@ -127,17 +127,20 @@ class map_ {
   //       parlay::make_slice(S)).get_root());
   // }
 
-  map_(parlay::sequence<E_Ref_Wrap_V> const& S) {
-    M empty = M();
-    // std::cout << "entry to the build : " << std::endl;
-    // std::cout << sizeof(S[0]) << std::endl;
-    root =
-        Tree::finalize(multi_insert(empty, parlay::make_slice(S)).get_root());
-  }
+  // map_(parlay::sequence<E_Ref_Wrap_V> const& S) {
+  //   M empty = M();
+  //   // std::cout << "entry to the build : " << std::endl;
+  //   // std::cout << sizeof(S[0]) << std::endl;
+  //   root =
+  //       Tree::finalize(multi_insert(empty,
+  //       parlay::make_slice(S)).get_root());
+  // }
 
   map_(parlay::slice<E*, E*> R) {
     M empty = M();
+    parlay::internal::timer t("map_ build");
     root = Tree::finalize(multi_insert(empty, R).get_root());
+    t.next("finish map_ build");
   }
 
   // construct from sequence, combining the values corresponding to equal keys
