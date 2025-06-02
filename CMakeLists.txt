@@ -19,7 +19,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON) # works
 # add_compile_options(-Wall -Wextra -Werror)
 # set(CMAKE_C_COMPILER "usr/bin/gcc")
 
-option(DEBUG "" ON)
+option(DEBUG "" OFF)
 option(CILKPLUS "" OFF)
 option(OPENCILK "" OFF)
 option(SERIAL "" OFF)

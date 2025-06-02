@@ -41,7 +41,7 @@ extern int gen_query_flag;
 static constexpr double kBatchQueryRatio = 0.01;
 static constexpr size_t kBatchQueryOsmSize = 10000000;
 // NOTE: rectangle numbers
-static constexpr int kRangeQueryNum = 50000;
+static constexpr int kRangeQueryNum = 1000000;
 static constexpr int singleQueryLogRepeatNum = 100;
 
 // NOTE: rectangle numbers for inba ratio
@@ -199,8 +199,8 @@ auto BuildPTree(parlay::sequence<Point> const& WP, int const& rounds) {
       rounds, loopLate, [&]() {},
       // [&]() { tree = CPAMTree::map_init(P, false); },
       [&]() { 
-        // tree = CPAMTree::map_init(P, true); 
-        tree = CPAMTree::map_init(P); 
+        tree = CPAMTree::map_init(P, true); 
+        // tree = CPAMTree::map_init(P); 
       }, [&]() {});
 
   std::cout << fixed << setprecision(6) << aveBuild << " -1 -1 " << std::flush;
