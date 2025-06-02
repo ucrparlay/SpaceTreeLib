@@ -55,7 +55,7 @@ auto PTree<Point, SplitRule, kSkHeight, kImbaRatio>::RangeQuery(
 template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 constexpr void PTree<Point, SplitRule, kSkHeight, kImbaRatio>::DeleteTree() {
-  cpam_aug_map_.finish();
+  cpam_aug_map_.clear();
   return;
 }
 
