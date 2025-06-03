@@ -77,6 +77,10 @@ struct diffencoded_entry_encoder {
       }
     }
 
+    static inline void reorder(uint8_t* bytes, size_t size) {
+      throw("errror: reorder not implemented for diffencoded_entry_encoder");
+    }
+
     template <class F>
     static inline void decode(uint8_t* bytes, size_t size, F const& f) {
       V* vals = (V*)bytes;
@@ -178,6 +182,10 @@ struct null_encoder {
     assert(false);
     exit(-1);
   }
+  static inline void reorder(uint8_t* bytes, size_t size) {
+    assert(false);
+    exit(-1);
+  }
   template <class ET, class F, class Comp, class K>
   static inline std::optional<ET> find(uint8_t* bytes, size_t size, F const& f,
                                        Comp const& comp, K const& k) {
@@ -252,6 +260,13 @@ struct default_entry_encoder {
       for (size_t i = 0; i < size; i++) {
         f(ets[i]);
       }
+    }
+
+    static inline void reorder(uint8_t* bytes, size_t size) {
+      ET* ets = (ET*)bytes;
+      std::sort(ets, ets + size, [](const ET& a, const ET& b) {
+        return Entry::get_key(a) < Entry::get_key(b);
+      });
     }
 
     template <class F>

@@ -55,6 +55,7 @@ struct aug_node
     node_size_t s;  // number of entries used (size)
     node_size_t size_in_bytes;
     AT aug_val;
+    bool is_sorted = true;
   };
 
   static bool is_regular(node* a) {
@@ -182,6 +183,13 @@ struct aug_node
     AugEntryEncoder::inplace_update(data_start, c->s, f);
   }
 
+  static void reorder(compressed_node* c, uint8_t* data_start) {
+    if (!c->is_sorted) {
+      AugEntryEncoder::reorder(data_start, c->s);
+      c->is_sorted = true;
+    }
+  }
+
   template <typename F>
   static void iterate_seq(node* a, F const& f) {
     if (!a) return;
@@ -193,6 +201,7 @@ struct aug_node
     } else {
       auto c = basic::cast_to_compressed(a);
       uint8_t* data_start = (((uint8_t*)c) + sizeof(aug_compressed_node));
+      reorder(c, data_start);
       AugEntryEncoder::decode(data_start, c->s, f);
     }
   }
@@ -211,6 +220,7 @@ struct aug_node
     } else {
       auto c = cast_to_compressed(a);
       uint8_t* data_start = ((uint8_t*)c) + sizeof(aug_compressed_node);
+      reorder(c, data_start);
       return AugEntryEncoder::decode_cond(data_start, c->s, f);
     }
   }
@@ -261,6 +271,7 @@ struct aug_node
     c_node->r = 1;
     c_node->s = s;
     c_node->size_in_bytes = node_size;
+    c_node->is_sorted = true;
 
     uint8_t* encoded_data = (((uint8_t*)c_node) + sizeof(aug_compressed_node));
     parlay::assign_uninitialized(c_node->aug_val,

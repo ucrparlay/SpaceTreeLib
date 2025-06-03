@@ -43,12 +43,27 @@ struct basic_node {
     node_size_t r;              // reference count, top-bit is always "0"
     node_size_t s;              // number of entries used (size)
     node_size_t size_in_bytes;  // space allocated in bytes.
+    bool is_sorted = true;
   };
+
   // Complex nodes have between B and 2B elements.
   struct complex_bytes {
     uint8_t arr[kBlockSizeUpperBound];
   };
   using complex_allocator = parlay::type_allocator<complex_bytes>;
+
+  static void reorder(ET* stack, size_t s) {
+    return std::sort(stack, stack + s, [](const ET& a, const ET& b) {
+      return ET::get_key(a) < ET::get_key(b);
+    });
+  }
+
+  static void reorder(compressed_node* c, uint8_t* data_start) {
+    if (!c->is_sorted) {
+      EntryEncoder::reorder(data_start, c->s);
+      c->is_sorted = true;
+    }
+  }
 
   static bool is_complex(node* a) {
     assert(is_regular(a));
@@ -133,6 +148,7 @@ struct basic_node {
     } else {
       auto c = cast_to_compressed(a);
       uint8_t* data_start = (((uint8_t*)c) + 3 * sizeof(node_size_t));
+      reorder(c, data_start);
       EntryEncoder::decode(data_start, c->s, f);
     }
   }
@@ -151,6 +167,7 @@ struct basic_node {
     } else {
       auto c = cast_to_compressed(a);
       uint8_t* data_start = (((uint8_t*)c) + 3 * sizeof(node_size_t));
+      reorder(c, data_start);
       return EntryEncoder::decode_cond(data_start, c->s, f);
     }
   }
@@ -213,6 +230,7 @@ struct basic_node {
     c_node->r = 1;
     c_node->s = s;
     c_node->size_in_bytes = node_size;
+    c_node->is_sorted = true;
 
     uint8_t* encoded_data = (((uint8_t*)c_node) + 3 * sizeof(node_size_t));
     EntryEncoder::encode(e, s, encoded_data);
@@ -242,6 +260,7 @@ struct basic_node {
     auto f = [&](const ET& et) {
       parlay::assign_uninitialized(tmp_arr[i++], et);
     };
+    reorder(c, data_start);
     EntryEncoder::decode(data_start, c->s, f);
     return tmp_arr;
   }

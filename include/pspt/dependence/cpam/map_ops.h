@@ -1122,7 +1122,7 @@ struct map_ops : Seq {
       } else if (n <= 4 * B) {
         // return multiinsert_bc(std::move(b), A, n, op);
         return multiinsert_compress(std::move(b), A, n, op);
-      } else {  // the merge overhead may be large, should expose compress
+      } else {  // the merge overhead may be large, should expose compress below
         ;
       }
     }
@@ -1510,6 +1510,7 @@ struct map_ops : Seq {
       c->aug_val = Entry::combine(c->aug_val, Entry::from_entry(et));
     }
     c->s = offset + n;
+    c->is_sorted = false;
     return c;
   }
 
@@ -1653,6 +1654,7 @@ struct map_ops : Seq {
     auto c = Seq::cast_to_compressed(n_b1);
     uint8_t* data_start =
         (((uint8_t*)c) + sizeof(typename Seq::aug_compressed_node));
+    Seq::reorder(c, data_start);
     ET* stack = (ET*)data_start;
 
     ET output[offset + n + 1];
@@ -1711,6 +1713,7 @@ struct map_ops : Seq {
     // build returned tree
     if (out_off < B) {
       // return Seq::to_tree_impl((ET*)output, out_off);
+      // NOTE: no need to resort
       return Seq::to_tree_impl(output, out_off);
     } else {
       // return Seq::make_compressed(output, out_off);
