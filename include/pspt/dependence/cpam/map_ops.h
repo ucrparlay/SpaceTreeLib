@@ -1150,7 +1150,8 @@ struct map_ops : Seq {
 
     auto P = utils::fork<node*>(
         // true,  // Seq::do_parallel(b.size(), n),
-        n >= 512 && !(mid == 0 || mid == n),
+        // n >= 1024 && !(mid == 0 || mid == n),
+        !(mid == 0 || mid == n),
         // n >= 512,
         // Seq::do_parallel(b.size(), n),
         [&]() { return multi_insert_sorted(std::move(lc), A, mid, op); },
