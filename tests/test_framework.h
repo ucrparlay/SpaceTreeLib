@@ -210,7 +210,8 @@ void BuildTree(parlay::sequence<Point> const& WP, int const& rounds,
         auto deep = pkd.template GetAveTreeHeight<Leaf, Interior>();
         std::cout << deep << " " << std::flush;
       } else {
-        std::cout << "-1" << " " << std::flush;
+        std::cout << "-1"
+                  << " " << std::flush;
       }
     } else if (kPrint == 2) {
       size_t max_deep = 0;
@@ -221,7 +222,8 @@ void BuildTree(parlay::sequence<Point> const& WP, int const& rounds,
                   << " " << pkd.template GetAveTreeHeight<Leaf, Interior>()
                   << " " << std::flush;
       } else {
-        std::cout << "-1 -1" << " " << std::flush;
+        std::cout << "-1 -1"
+                  << " " << std::flush;
       }
     }
 
@@ -386,6 +388,11 @@ void BatchUpdateByStep(Tree& pkd, parlay::sequence<Point> const& WP,
   parlay::sequence<parlay::sequence<double>> time_table(
       rounds + 2, parlay::sequence<double>(slice_num, 0.0));
   parlay::sequence<StepUpdateLogger> log_time(slice_num);
+  int id_cnt = 0;
+  for (auto& i : log_time) {
+    i = {id_cnt++, 0.0};
+  }
+  size_t round_cnt = 0;
 
   pkd.DeleteTree();
 
@@ -405,30 +412,25 @@ void BatchUpdateByStep(Tree& pkd, parlay::sequence<Point> const& WP,
     }
   };
 
-  int id_cnt = 0;
-  for (auto& i : log_time) {
-    i = {id_cnt++, 0.0};
-  }
-  size_t round_cnt = 0;
+  auto incre_build = [&]() {
+    parlay::internal::timer t;
+    size_t l = 0, r = 0;
+    size_t cnt = 0;
+    while (l < n) {
+      r = std::min(l + step, n);
+      if constexpr (kInsert) {
+        pkd.BatchInsert(parlay::make_slice(wi.begin() + l, wi.begin() + r));
+      } else {
+        pkd.BatchDelete(parlay::make_slice(wi.begin() + l, wi.begin() + r));
+      }
+      l = r;
+      time_table[round_cnt][cnt++] += t.next_time();
+    }
+    round_cnt++;
+  };
 
   double ave_time = time_loop(
-      rounds, 0.01, [&]() { build_tree_by_type(); },
-      [&]() {
-        parlay::internal::timer t;
-        size_t l = 0, r = 0;
-        size_t cnt = 0;
-        while (l < n) {
-          r = std::min(l + step, n);
-          if constexpr (kInsert) {
-            pkd.BatchInsert(parlay::make_slice(wi.begin() + l, wi.begin() + r));
-          } else {
-            pkd.BatchDelete(parlay::make_slice(wi.begin() + l, wi.begin() + r));
-          }
-          l = r;
-          time_table[round_cnt][cnt++] += t.next_time();
-        }
-        round_cnt++;
-      },
+      rounds, 0.01, [&]() { build_tree_by_type(); }, [&]() { incre_build(); },
       [&]() { pkd.DeleteTree(); });
 
   if (round_cnt - 1 != rounds) {
@@ -454,23 +456,9 @@ void BatchUpdateByStep(Tree& pkd, parlay::sequence<Point> const& WP,
             << "-> max: " << *log_time.rbegin() << "-> tot: " << ave_time
             << std::endl;
 
-  // WARN: not reset status
-
-  // parlay::copy(WP, wp), parlay::copy(WI, wi);
-  // pkd.build(parlay::make_slice(wp), DIM);
-  // size_t l = 0, r = 0;
-  // size_t step = wi.size() * ratio;
-  // while (l < n) {
-  //     r = std::min(l + step, n);
-  //     if (insert) {
-  //         pkd.BatchInsert(parlay::make_slice(wi.begin() + l,
-  //         wi.begin() + r), DIM);
-  //     } else {
-  //         pkd.batchDelete(parlay::make_slice(wi.begin() + l,
-  //         wi.begin() + r), DIM);
-  //     }
-  //     l = r;
-  // }
+  // WARN: restore status
+  build_tree_by_type();
+  incre_build();
 
   return;
 }
@@ -1186,9 +1174,11 @@ void PrintTreeParam() {
             << "Inba: " << TreeWrapper::TreeType::GetImbalanceRatio() << "; ";
 
   if constexpr (std::is_integral_v<typename TreeWrapper::Point::Coord>) {
-    std::cout << "Coord: integer" << "; ";
+    std::cout << "Coord: integer"
+              << "; ";
   } else if (std::is_floating_point_v<typename TreeWrapper::Point::Coord>) {
-    std::cout << "Coord: float" << "; ";
+    std::cout << "Coord: float"
+              << "; ";
   }
   std::cout << "\n" << std::flush;
   return;
@@ -1285,6 +1275,7 @@ class Wrapper {
     if (read_insert_file == 1) {           // NOTE: read points to be inserted
       if (insert_file_path_cml != NULL) {  // given in commadnline
         insert_file_path = std::string(insert_file_path_cml);
+        // std::cout << insert_file_path << std::endl;
       } else {  // determine the name otherwise
         int id = std::stoi(name.substr(0, name.find_first_of('.')));
 #ifdef CCP
@@ -1296,9 +1287,9 @@ class Wrapper {
         auto pos = std::string(input_file_path).rfind('/') + 1;
         insert_file_path = std::string(input_file_path).substr(0, pos) +
                            std::to_string(id) + ".in";
-        auto [n, d] = read_points<Point>(insert_file_path.c_str(), wi, N);
-        assert(d == kDim);
       }
+      auto [n, d] = read_points<Point>(insert_file_path.c_str(), wi, N);
+      assert(d == kDim);
     }
 
     test_func.template operator()<TreeWrapper, Point>(
