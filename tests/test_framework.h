@@ -210,8 +210,7 @@ void BuildTree(parlay::sequence<Point> const& WP, int const& rounds,
         auto deep = pkd.template GetAveTreeHeight<Leaf, Interior>();
         std::cout << deep << " " << std::flush;
       } else {
-        std::cout << "-1"
-                  << " " << std::flush;
+        std::cout << "-1" << " " << std::flush;
       }
     } else if (kPrint == 2) {
       size_t max_deep = 0;
@@ -222,8 +221,7 @@ void BuildTree(parlay::sequence<Point> const& WP, int const& rounds,
                   << " " << pkd.template GetAveTreeHeight<Leaf, Interior>()
                   << " " << std::flush;
       } else {
-        std::cout << "-1 -1"
-                  << " " << std::flush;
+        std::cout << "-1 -1" << " " << std::flush;
       }
     }
 
@@ -1137,11 +1135,9 @@ void PrintTreeParam() {
             << "Inba: " << TreeWrapper::TreeType::GetImbalanceRatio() << "; ";
 
   if constexpr (std::is_integral_v<typename TreeWrapper::Point::Coord>) {
-    std::cout << "Coord: integer"
-              << "; ";
+    std::cout << "Coord: integer" << "; ";
   } else if (std::is_floating_point_v<typename TreeWrapper::Point::Coord>) {
-    std::cout << "Coord: float"
-              << "; ";
+    std::cout << "Coord: float" << "; ";
   }
   std::cout << "\n" << std::flush;
   return;
@@ -1212,6 +1208,7 @@ class Wrapper {
     int rounds = P.getOptionIntValue("-r", 3);
     int query_type = P.getOptionIntValue("-q", 0);
     int read_insert_file = P.getOptionIntValue("-i", 1);
+    char* insert_file_path_cml = P.getOptionValue("-I");
     int summary = P.getOptionIntValue("-s", 0);
     int tree_type = P.getOptionIntValue("-T", 0);
     int split_type = P.getOptionIntValue("-l", 0);
@@ -1234,19 +1231,23 @@ class Wrapper {
       assert(d == kDim);
     }
 
-    if (read_insert_file == 1) {  // NOTE: read Points to be inserted
-      int id = std::stoi(name.substr(0, name.find_first_of('.')));
+    if (read_insert_file == 1) {           // NOTE: read points to be inserted
+      if (insert_file_path_cml != NULL) {  // given in commadnline
+        insert_file_path = std::string(insert_file_path_cml);
+      } else {  // determine the name otherwise
+        int id = std::stoi(name.substr(0, name.find_first_of('.')));
 #ifdef CCP
-      id = (id + 1) % 10;  // WARN: MOD graph number used to test
+        id = (id + 1) % 10;  // WARN: MOD graph number used to test
 #else
-      id = (id + 1) % 3;
+        id = (id + 1) % 3;
 #endif  // CCP
-      if (!id) id++;
-      auto pos = std::string(input_file_path).rfind('/') + 1;
-      insert_file_path = std::string(input_file_path).substr(0, pos) +
-                         std::to_string(id) + ".in";
-      auto [n, d] = read_points<Point>(insert_file_path.c_str(), wi, N);
-      assert(d == kDim);
+        if (!id) id++;
+        auto pos = std::string(input_file_path).rfind('/') + 1;
+        insert_file_path = std::string(input_file_path).substr(0, pos) +
+                           std::to_string(id) + ".in";
+        auto [n, d] = read_points<Point>(insert_file_path.c_str(), wi, N);
+        assert(d == kDim);
+      }
     }
 
     test_func.template operator()<TreeWrapper, Point>(
