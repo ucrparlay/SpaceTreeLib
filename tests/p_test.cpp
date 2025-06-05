@@ -77,6 +77,14 @@ int main(int argc, char* argv[]) {
     // //   tree.Compress2Multi();
     // // }
     //
+
+    if (kTag & (1 << 3)) {
+      parlay::sequence<double> const ratios = {0.1, 0.01, 0.001};
+      for (auto rat : ratios) {
+        BatchUpdateByStep<Point, Tree, true>(tree, wp, wi, kRounds, rat);
+      }
+    }
+
     Typename* kdknn = nullptr;
     if (kQueryType & (1 << 0)) {  // NOTE: KNN
       auto run_batch_knn = [&](Points const& pts, int kth, size_t batchSize) {

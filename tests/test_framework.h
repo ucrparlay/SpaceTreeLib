@@ -362,68 +362,119 @@ void BatchDiff(Tree& pkd, parlay::sequence<Point> const& WP, int const& rounds,
   return;
 }
 
-// template<typename Point, bool insert>
-// void batchUpdateByStep(BaseTree<Point>& pkd, const parlay::sequence<Point>&
-// WP, const parlay::sequence<Point>& WI,
-//                        const uint_fast8_t& DIM, const int& rounds, double
-//                        ratio = 1.0, double max_ratio = 1e-2) {
-//     using Tree = BaseTree<Point>;
-//     using Points = typename Tree::Points;
-//     using node = typename Tree::node;
-//     Points wp = Points::uninitialized(WP.size());
-//     Points wi = Points::uninitialized(WI.size());
-//     size_t n = static_cast<size_t>(max_ratio * wi.size());
-//
-//     pkd.delete_tree();
-//
-//     double aveInsert = time_loop(
-//         rounds, 1.0,
-//         [&]() {
-//             parlay::copy(WP, wp), parlay::copy(WI, wi);
-//             pkd.build(parlay::make_slice(wp), DIM);
-//         },
-//         [&]() {
-//             size_t l = 0, r = 0;
-//             size_t step = static_cast<size_t>(wi.size() * ratio);
-//             while (l < n) {
-//                 r = std::min(l + step, n);
-//                 // std::cout << l << ' ' << r << std::endl;
-//                 if (insert) {
-//                     pkd.BatchInsert(parlay::make_slice(wi.begin() + l,
-//                     wi.begin() + r), DIM);
-//                 } else {
-//                     pkd.batchDelete(parlay::make_slice(wi.begin() + l,
-//                     wi.begin() + r), DIM);
-//                 }
-//                 l = r;
-//             }
-//             // std::cout << l << std::endl;
-//         },
-//         [&]() { pkd.delete_tree(); });
-//
-//     // WARN: not reset status
-//
-//     // parlay::copy(WP, wp), parlay::copy(WI, wi);
-//     // pkd.build(parlay::make_slice(wp), DIM);
-//     // size_t l = 0, r = 0;
-//     // size_t step = wi.size() * ratio;
-//     // while (l < n) {
-//     //     r = std::min(l + step, n);
-//     //     if (insert) {
-//     //         pkd.BatchInsert(parlay::make_slice(wi.begin() + l, wi.begin()
-//     + r), DIM);
-//     //     } else {
-//     //         pkd.batchDelete(parlay::make_slice(wi.begin() + l, wi.begin()
-//     + r), DIM);
-//     //     }
-//     //     l = r;
-//     // }
-//
-//     std::cout << aveInsert << " " << std::flush;
-//
-//     return;
-// }
-//
+struct StepUpdateLogger {
+  int id;
+  double t;
+
+  friend std::ostream& operator<<(std::ostream& os,
+                                  StepUpdateLogger const& log) {
+    os << "(" << log.id << ", " << log.t << ")";
+    return os;
+  }
+};
+template <typename Point, typename Tree, bool kInsert>
+void BatchUpdateByStep(Tree& pkd, parlay::sequence<Point> const& WP,
+                       parlay::sequence<Point> const& WI, int const rounds,
+                       double const insert_ratio, double const max_ratio = 1) {
+  using Points = typename Tree::Points;
+  using Box = typename Tree::Box;
+  Points wp = Points::uninitialized(WP.size());
+  Points wi = Points::uninitialized(WI.size());
+  size_t n = static_cast<size_t>(max_ratio * wi.size());
+  size_t step = static_cast<size_t>(insert_ratio * n);
+  size_t slice_num = n / step;
+  parlay::sequence<parlay::sequence<double>> time_table(
+      rounds + 2, parlay::sequence<double>(slice_num, 0.0));
+  parlay::sequence<StepUpdateLogger> log_time(slice_num);
+
+  pkd.DeleteTree();
+
+  // NOTE: build the tree by type
+  auto build_tree_by_type = [&]() {
+    if constexpr (pspt::IsKdTree<Tree> || pspt::IsPTree<Tree>) {
+      parlay::copy(WP, wp), parlay::copy(WI, wi);
+      pkd.Build(parlay::make_slice(wp));
+    } else if constexpr (pspt::IsOrthTree<Tree>) {
+      parlay::copy(WP, wp), parlay::copy(WI, wi);
+      auto box1 = Tree::GetBox(parlay::make_slice(wp));
+      auto box2 = Tree::GetBox(wi.cut(0, n));
+      Box box = Tree::GetBox(box1, box2);
+      pkd.Build(parlay::make_slice(wp), box);
+    } else {
+      std::cout << "Not supported Tree type\n" << std::flush;
+    }
+  };
+
+  int id_cnt = 0;
+  for (auto& i : log_time) {
+    i = {id_cnt++, 0.0};
+  }
+  size_t round_cnt = 0;
+
+  double ave_time = time_loop(
+      rounds, 0.01, [&]() { build_tree_by_type(); },
+      [&]() {
+        parlay::internal::timer t;
+        size_t l = 0, r = 0;
+        size_t cnt = 0;
+        while (l < n) {
+          r = std::min(l + step, n);
+          if constexpr (kInsert) {
+            pkd.BatchInsert(parlay::make_slice(wi.begin() + l, wi.begin() + r));
+          } else {
+            pkd.BatchDelete(parlay::make_slice(wi.begin() + l, wi.begin() + r));
+          }
+          l = r;
+          time_table[round_cnt][cnt++] += t.next_time();
+        }
+        round_cnt++;
+      },
+      [&]() { pkd.DeleteTree(); });
+
+  if (round_cnt - 1 != rounds) {
+    throw std::runtime_error("rounds not match!");
+  }
+  for (int i = 1; i <= rounds; i++) {
+    for (int j = 0; j < slice_num; j++) {
+      log_time[j].t += time_table[i][j];
+    }
+  }
+  for (int j = 0; j < slice_num; j++) {
+    log_time[j].t /= rounds;
+  }
+
+  puts("--------------------------");
+  std::cout << insert_ratio << std::endl;
+  // puts("");
+  // std::cout << ave_time << " " << std::flush;
+  std::sort(log_time.begin(), log_time.end(),
+            [](auto const& a, auto const& b) { return a.t < b.t; });
+  std::cout << "median: " << log_time[slice_num / 2]
+            << "-> min: " << *log_time.begin()
+            << "-> max: " << *log_time.rbegin() << "-> tot: " << ave_time
+            << std::endl;
+
+  // WARN: not reset status
+
+  // parlay::copy(WP, wp), parlay::copy(WI, wi);
+  // pkd.build(parlay::make_slice(wp), DIM);
+  // size_t l = 0, r = 0;
+  // size_t step = wi.size() * ratio;
+  // while (l < n) {
+  //     r = std::min(l + step, n);
+  //     if (insert) {
+  //         pkd.BatchInsert(parlay::make_slice(wi.begin() + l,
+  //         wi.begin() + r), DIM);
+  //     } else {
+  //         pkd.batchDelete(parlay::make_slice(wi.begin() + l,
+  //         wi.begin() + r), DIM);
+  //     }
+  //     l = r;
+  // }
+
+  return;
+}
+
 template <typename Point, typename Tree, bool printHeight = 0,
           bool printVisNode = 1>
 void queryKNN([[maybe_unused]] uint_fast8_t const& Dim,

@@ -72,6 +72,13 @@ int main(int argc, char* argv[]) {
       }
     }
 
+    if (kTag & (1 << 3)) {
+      parlay::sequence<double> const ratios = {0.1, 0.01, 0.001};
+      for (auto rat : ratios) {
+        BatchUpdateByStep<Point, Tree, true>(tree, wp, wi, kRounds, rat);
+      }
+    }
+
     // WARN: compress the kdnode to MultiNode, should remove except for
     // exp if constexpr (IsKdTree<Tree>) {
     //   tree.Compress2Multi();
