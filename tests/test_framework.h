@@ -210,8 +210,7 @@ void BuildTree(parlay::sequence<Point> const& WP, int const& rounds,
         auto deep = pkd.template GetAveTreeHeight<Leaf, Interior>();
         std::cout << deep << " " << std::flush;
       } else {
-        std::cout << "-1"
-                  << " " << std::flush;
+        std::cout << "-1" << " " << std::flush;
       }
     } else if (kPrint == 2) {
       size_t max_deep = 0;
@@ -222,8 +221,7 @@ void BuildTree(parlay::sequence<Point> const& WP, int const& rounds,
                   << " " << pkd.template GetAveTreeHeight<Leaf, Interior>()
                   << " " << std::flush;
       } else {
-        std::cout << "-1 -1"
-                  << " " << std::flush;
+        std::cout << "-1 -1" << " " << std::flush;
       }
     }
 
@@ -459,6 +457,8 @@ void BatchUpdateByStep(Tree& pkd, parlay::sequence<Point> const& WP,
   // WARN: restore status
   build_tree_by_type();
   incre_build();
+  // auto root = pkd.cpam_aug_map_;
+  // std::cout << "root size: " << root.size() << std::endl;
 
   return;
 }
@@ -560,6 +560,11 @@ void RangeCount(parlay::sequence<Point> const& wp, Tree& pkd, int const& rounds,
   // NOTE: verify the solutions
   std::cout << "check range count: " << rec_num << " " << rec_type << std::endl;
   for (int i = 0; i < rec_num; i++) {
+    if (kdknn[i] != query_box_seq[i].second) {
+      std::cout << kdknn[i] << " " << query_box_seq[i].second << " "
+                << query_box_seq[i].first.first << " "
+                << query_box_seq[i].first.second << std::endl;
+    }
     assert(std::cmp_equal(kdknn[i], query_box_seq[i].second));
   }
 
@@ -1174,11 +1179,9 @@ void PrintTreeParam() {
             << "Inba: " << TreeWrapper::TreeType::GetImbalanceRatio() << "; ";
 
   if constexpr (std::is_integral_v<typename TreeWrapper::Point::Coord>) {
-    std::cout << "Coord: integer"
-              << "; ";
+    std::cout << "Coord: integer" << "; ";
   } else if (std::is_floating_point_v<typename TreeWrapper::Point::Coord>) {
-    std::cout << "Coord: float"
-              << "; ";
+    std::cout << "Coord: float" << "; ";
   }
   std::cout << "\n" << std::flush;
   return;

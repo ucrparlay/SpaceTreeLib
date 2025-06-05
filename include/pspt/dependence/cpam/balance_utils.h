@@ -299,6 +299,12 @@ struct balance_utils {
       assert(false);
     }
 #endif
+    auto go_reorder = [&](node* p) {
+      auto c = Node::cast_to_compressed(p);
+      uint8_t* data_start =
+          (((uint8_t*)c) + sizeof(typename Node::aug_compressed_node));
+      Node::reorder(c, data_start);
+    };
 
     if (t1_reg && t2_reg) {
       auto ret =
@@ -312,6 +318,7 @@ struct balance_utils {
 #endif
       return validate((node*)ret);
     } else if (t1_reg) {  // t2 compressed
+      go_reorder(t2);
       if (Node::is_left_heavy(t1, t2)) {
         auto ret = right_join(Node::cast_to_regular(t1), t2, k);
         return validate(ret);
@@ -325,6 +332,7 @@ struct balance_utils {
         }
       }
     } else if (t2_reg) {  // t1 compressed
+      go_reorder(t1);
       if (Node::is_left_heavy(t2, t1)) {
         auto ret = left_join(t1, Node::cast_to_regular(t2), k);
         return validate(ret);
@@ -339,6 +347,8 @@ struct balance_utils {
       }
     }
     // both compressed
+    go_reorder(t1);
+    go_reorder(t2);
     bool balanced =
         !(Node::is_left_heavy(t1, t2) || Node::is_left_heavy(t2, t1));
     if (balanced || !Node::could_single_rotate(t1, t2)) {

@@ -275,11 +275,11 @@ int main(int argc, char* argv[]) {
         abort();
       }
     } else if (query_type & (1 << 1)) {  //* range Count
-      kdknn = new Coord[1];
-      cgknn = new Coord[1];
+      kdknn = new Coord[wp.size()];
+      cgknn = new Coord[wp.size()];
     } else if (query_type & (1 << 2)) {
-      kdknn = new Coord[1];
-      cgknn = new Coord[1];
+      kdknn = new Coord[wp.size()];
+      cgknn = new Coord[wp.size()];
     } else {
       puts("Nothing to be queried");
       // abort();
