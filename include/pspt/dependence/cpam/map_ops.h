@@ -1658,7 +1658,7 @@ struct map_ops : Seq {
     auto c = Seq::cast_to_compressed(n_b1);
     uint8_t* data_start =
         (((uint8_t*)c) + sizeof(typename Seq::aug_compressed_node));
-    Seq::reorder(c, data_start);
+    Seq::reorder(c);
     ET* stack = (ET*)data_start;
 
     ET output[offset + n + 1];

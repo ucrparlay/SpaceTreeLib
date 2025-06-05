@@ -100,9 +100,7 @@ struct sequence_ops : Tree {
     }
   }
 
-  static void reorder(node* c, uint8_t* data_start) {
-    Tree::reorder(c, data_start);
-  }
+  static void reorder(node* c) { Tree::reorder(c); }
 
   static node* join(node* l, ET e, node* r, regular_node* root) {
     if (root == nullptr) {

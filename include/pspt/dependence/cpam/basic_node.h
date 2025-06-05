@@ -58,8 +58,9 @@ struct basic_node {
     });
   }
 
-  static void reorder(node* p, uint8_t* data_start) {
+  static void reorder(node* p) {
     auto c = cast_to_compressed(p);
+    uint8_t* data_start = (((uint8_t*)c) + sizeof(compressed_node));
     if (!c->is_sorted) {
       EntryEncoder::reorder(data_start, c->s);
       c->is_sorted = true;
@@ -148,8 +149,8 @@ struct basic_node {
       iterate_seq(r->rc, f);
     } else {
       auto c = cast_to_compressed(a);
-      uint8_t* data_start = (((uint8_t*)c) + 3 * sizeof(node_size_t));
-      reorder(c, data_start);
+      uint8_t* data_start = (((uint8_t*)c) + sizeof(compressed_node));
+      reorder(c);
       EntryEncoder::decode(data_start, c->s, f);
     }
   }
@@ -167,8 +168,8 @@ struct basic_node {
       return ret;
     } else {
       auto c = cast_to_compressed(a);
-      uint8_t* data_start = (((uint8_t*)c) + 3 * sizeof(node_size_t));
-      reorder(c, data_start);
+      uint8_t* data_start = (((uint8_t*)c) + sizeof(compressed_node));
+      reorder(c);
       return EntryEncoder::decode_cond(data_start, c->s, f);
     }
   }
@@ -261,7 +262,7 @@ struct basic_node {
     auto f = [&](const ET& et) {
       parlay::assign_uninitialized(tmp_arr[i++], et);
     };
-    reorder(c, data_start);
+    reorder(c);
     EntryEncoder::decode(data_start, c->s, f);
     return tmp_arr;
   }

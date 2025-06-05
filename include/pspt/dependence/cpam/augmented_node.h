@@ -183,8 +183,9 @@ struct aug_node
     AugEntryEncoder::inplace_update(data_start, c->s, f);
   }
 
-  static void reorder(node* p, uint8_t* data_start) {
+  static void reorder(node* p) {
     auto c = cast_to_compressed(p);
+    uint8_t* data_start = (((uint8_t*)c) + sizeof(aug_compressed_node));
     if (!c->is_sorted) {
       AugEntryEncoder::reorder(data_start, c->s);
       c->is_sorted = true;
@@ -202,7 +203,7 @@ struct aug_node
     } else {
       auto c = cast_to_compressed(a);
       uint8_t* data_start = (((uint8_t*)c) + sizeof(aug_compressed_node));
-      reorder(c, data_start);
+      reorder(c);
       AugEntryEncoder::decode(data_start, c->s, f);
     }
   }
@@ -221,7 +222,7 @@ struct aug_node
     } else {
       auto c = cast_to_compressed(a);
       uint8_t* data_start = ((uint8_t*)c) + sizeof(aug_compressed_node);
-      reorder(c, data_start);
+      reorder(c);
       return AugEntryEncoder::decode_cond(data_start, c->s, f);
     }
   }
