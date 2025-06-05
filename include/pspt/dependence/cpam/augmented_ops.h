@@ -259,7 +259,7 @@ struct augmented_ops : Map {
           ret++;
         }
       };
-      Map::iterate_seq(b, f_filter);
+      Map::template iterate_seq<decltype(f_filter), false>(b, f_filter);
       return ret;
     }
 
@@ -303,7 +303,7 @@ struct augmented_ops : Map {
         }
         return;
       };
-      Map::iterate_seq(b, f_filter);
+      Map::template iterate_seq<decltype(f_filter), false>(b, f_filter);
       return;
     }
 
@@ -428,12 +428,14 @@ struct augmented_ops : Map {
   //   range_report_filter2(rb->rc, f, cnt, out, granularity);
   // }
 
+  // WARN: the output is not necessary sorted
   template <typename R>
   static size_t flatten(node* b, R out) {
     if (!b) return 0;
     if (Map::is_compressed(b)) {
       size_t sz = 0;
-      Map::iterate_seq(b, [&](auto const& et) { out[sz++] = et; });
+      auto copy_f = [&](auto const& et) { out[sz++] = et; };
+      Map::template iterate_seq<decltype(copy_f), false>(b, copy_f);
       return sz;
     }
     auto rb = Map::cast_to_regular(b);
@@ -462,7 +464,7 @@ struct augmented_ops : Map {
           out[cnt++] = et;
         }
       };
-      Map::iterate_seq(b, f_filter);
+      Map::template iterate_seq<decltype(f_filter), false>(b, f_filter);
       return;
     }
 

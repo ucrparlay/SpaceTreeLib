@@ -139,7 +139,7 @@ struct basic_node {
     EntryEncoder::inplace_update(data_start, c->s, f);
   }
 
-  template <typename F>
+  template <typename F, bool kReorderCompress = true>
   static void iterate_seq(node* a, F const& f) {
     if (!a) return;
     if (is_regular(a)) {
@@ -150,12 +150,14 @@ struct basic_node {
     } else {
       auto c = cast_to_compressed(a);
       uint8_t* data_start = (((uint8_t*)c) + sizeof(compressed_node));
-      reorder(c);
+      if constexpr (kReorderCompress) {
+        reorder(c);
+      }
       EntryEncoder::decode(data_start, c->s, f);
     }
   }
 
-  template <typename F>
+  template <typename F, bool kReorderCompress = true>
   static bool iterate_cond(node* a, F const& f) {
     if (!a) return true;
     if (is_regular(a)) {
@@ -169,7 +171,9 @@ struct basic_node {
     } else {
       auto c = cast_to_compressed(a);
       uint8_t* data_start = (((uint8_t*)c) + sizeof(compressed_node));
-      reorder(c);
+      if constexpr (kReorderCompress) {
+        reorder(c);
+      }
       return EntryEncoder::decode_cond(data_start, c->s, f);
     }
   }
