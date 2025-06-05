@@ -157,6 +157,17 @@ void runKDParallel(auto const& wp, auto const& wi, Typename* kdknn,
     std::cout << "---------------finish diff------------------\n" << std::flush;
   }
 
+  if (tag & (1 << 3)) {
+    parlay::sequence<double> const ratios = {0.001};
+    for (auto rat : ratios) {
+      BatchUpdateByStep<Point, Tree, true>(tree, wp, wi, rounds, rat);
+    }
+    tree.template Validate<typename Tree::Leaf, typename Tree::Interior,
+                           typename Tree::SplitRuleType>();
+    std::cout << "---------------finish incre build------------------\n"
+              << std::flush;
+  }
+
   // NOTE: query phase
   if (query_type & (1 << 0)) {  // NOTE: NN query
     Points new_wp(kCCPBatchQuerySize);
@@ -182,14 +193,10 @@ void runKDParallel(auto const& wp, auto const& wi, Typename* kdknn,
 
   if (query_type & (1 << 1)) {  // NOTE: range count
     for (auto range_query_type : {0, 1, 2}) {
-      if (tag & (1 << 2)) {
-        Points new_wp(tree.GetRoot()->size);
-        tree.Flatten(new_wp);
-        RangeCount<Point>(new_wp, tree, rounds, query_num, range_query_type,
-                          kDim);
-      } else {
-        RangeCount<Point>(wp, tree, rounds, query_num, range_query_type, kDim);
-      }
+      Points new_wp(tree.GetRoot()->size);
+      tree.Flatten(new_wp);
+      RangeCount<Point>(new_wp, tree, rounds, query_num, range_query_type,
+                        kDim);
     }
     std::cout << "--------------finish range count------------------\n"
               << std::flush;
@@ -197,15 +204,10 @@ void runKDParallel(auto const& wp, auto const& wi, Typename* kdknn,
 
   if (query_type & (1 << 2)) {  // NOTE: range query
     for (auto range_query_type : {0, 1, 2}) {
-      if (tag & (1 << 2)) {
-        Points new_wp(tree.GetRoot()->size);
-        tree.Flatten(new_wp);
-        RangeQuery<Point>(new_wp, tree, rounds, kCCPQueryNum, range_query_type,
-                          kDim);
-      } else {
-        RangeQuery<Point>(wp, tree, rounds, kCCPQueryNum, range_query_type,
-                          kDim);
-      }
+      Points new_wp(tree.GetRoot()->size);
+      tree.Flatten(new_wp);
+      RangeQuery<Point>(new_wp, tree, rounds, kCCPQueryNum, range_query_type,
+                        kDim);
     }
     std::cout << "--------------finish range query------------------\n"
               << std::flush;

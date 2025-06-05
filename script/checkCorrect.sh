@@ -11,16 +11,16 @@ tester="p_ccp"
 make -C ../build ${tester}
 
 if [[ ${tester} == "p_ccp" ]]; then
-	tag=$((2#1))
+	tag=$((2#1000))
 	read_file=1
 	dims=(2)
 	queryTypes=$((2#110))
 	trees=(2)
 elif [[ ${tester} == "kd_ccp" ]]; then
-	tag=$((2#111))
+	tag=$((2#1000))
 	read_file=1
 	dims=(2 3 5)
-	queryTypes=$((2#111))
+	queryTypes=$((2#110))
 	trees=(0 1)
 fi
 K=100
