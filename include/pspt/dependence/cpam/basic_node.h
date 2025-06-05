@@ -58,7 +58,8 @@ struct basic_node {
     });
   }
 
-  static void reorder(compressed_node* c, uint8_t* data_start) {
+  static void reorder(node* p, uint8_t* data_start) {
+    auto c = cast_to_compressed(p);
     if (!c->is_sorted) {
       EntryEncoder::reorder(data_start, c->s);
       c->is_sorted = true;
@@ -222,7 +223,7 @@ struct basic_node {
     assert(s <= 2 * B);
 
     size_t encoded_size = EntryEncoder::encoded_size(e, s);
-    size_t node_size = 3 * sizeof(node_size_t) + encoded_size;
+    size_t node_size = sizeof(compressed_node) + encoded_size;
     compressed_node* c_node =
         (compressed_node*)utils::new_array_no_init<uint8_t>(node_size);
     // compressed_node* c_node = (compressed_node*)complex_allocator::alloc();
@@ -232,7 +233,7 @@ struct basic_node {
     c_node->size_in_bytes = node_size;
     c_node->is_sorted = true;
 
-    uint8_t* encoded_data = (((uint8_t*)c_node) + 3 * sizeof(node_size_t));
+    uint8_t* encoded_data = (((uint8_t*)c_node) + sizeof(compressed_node));
     EntryEncoder::encode(e, s, encoded_data);
 
     check_compressed_node(c_node);

@@ -101,7 +101,7 @@ struct sequence_ops : Tree {
   }
 
   static void reorder(node* c, uint8_t* data_start) {
-    Tree::reorder((compressed_node*)c, data_start);
+    Tree::reorder(c, data_start);
   }
 
   static node* join(node* l, ET e, node* r, regular_node* root) {
