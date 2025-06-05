@@ -267,6 +267,9 @@ int main(int argc, char* argv[]) {
       } else if (tag & (1 << 2)) {
         cgknn = new Coord[wp.size()];
         kdknn = new Coord[wp.size()];
+      } else if (tag & (1 << 3)) {
+        cgknn = new Coord[wp.size() + wi.size()];
+        kdknn = new Coord[wp.size() + wi.size()];
       } else {
         puts("wrong tag");
         abort();

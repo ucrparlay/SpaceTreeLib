@@ -5,8 +5,8 @@ Nodes=(1000000 5000000 8000000 10000000 50000000)
 # Nodes=(50000000)
 
 # NOTE: parameters
-# tester="p_ccp"
-tester="kd_ccp"
+tester="p_ccp"
+# tester="kd_ccp"
 
 make -C ../build ${tester}
 
