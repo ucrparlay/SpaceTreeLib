@@ -210,7 +210,8 @@ void BuildTree(parlay::sequence<Point> const& WP, int const& rounds,
         auto deep = pkd.template GetAveTreeHeight<Leaf, Interior>();
         std::cout << deep << " " << std::flush;
       } else {
-        std::cout << "-1" << " " << std::flush;
+        std::cout << "-1"
+                  << " " << std::flush;
       }
     } else if (kPrint == 2) {
       size_t max_deep = 0;
@@ -221,7 +222,8 @@ void BuildTree(parlay::sequence<Point> const& WP, int const& rounds,
                   << " " << pkd.template GetAveTreeHeight<Leaf, Interior>()
                   << " " << std::flush;
       } else {
-        std::cout << "-1 -1" << " " << std::flush;
+        std::cout << "-1 -1"
+                  << " " << std::flush;
       }
     }
 
@@ -447,10 +449,17 @@ void BatchUpdateByStep(Tree& pkd, parlay::sequence<Point> const& WP,
   // std::cout << ave_time << " " << std::flush;
   std::sort(log_time.begin(), log_time.end(),
             [](auto const& a, auto const& b) { return a.t < b.t; });
+  // Calculate average time from log_time
+  double total_time = 0.0;
+  for (auto const& log : log_time) {
+    total_time += log.t;
+  }
+  double average_time = total_time / log_time.size();
+
   std::cout << "median: " << log_time[slice_num / 2]
             << "-> min: " << *log_time.begin()
             << "-> max: " << *log_time.rbegin() << "-> tot: " << ave_time
-            << std::endl;
+            << "-> avg: " << average_time << std::endl;
 
   // WARN: restore status
   build_tree_by_type();
@@ -1177,9 +1186,11 @@ void PrintTreeParam() {
             << "Inba: " << TreeWrapper::TreeType::GetImbalanceRatio() << "; ";
 
   if constexpr (std::is_integral_v<typename TreeWrapper::Point::Coord>) {
-    std::cout << "Coord: integer" << "; ";
+    std::cout << "Coord: integer"
+              << "; ";
   } else if (std::is_floating_point_v<typename TreeWrapper::Point::Coord>) {
-    std::cout << "Coord: float" << "; ";
+    std::cout << "Coord: float"
+              << "; ";
   }
   std::cout << "\n" << std::flush;
   return;

@@ -144,7 +144,7 @@ struct map_ops : Seq {
     std::optional<ET> mid;
     node* r;
     split_info(node* l, std::optional<ET> mid, node* r)
-        : l(l), mid(mid), r(r){};
+        : l(l), mid(mid), r(r) {};
   };
 
   static split_info split(ptr a, K const& k) {
@@ -1117,12 +1117,9 @@ struct map_ops : Seq {
     size_t tot = b.size() + n;
     // if (tot <= kBaseCaseSize) {
     if (b.is_compressed()) {
-      // return multiinsert_compress(std::move(b), A, n, op);
       if (tot <= 2 * B) {  // can put in one leaf directly
-        // return multiinsert_compress(std::move(b), A, n, op);
         return multiinsert_bc_append(std::move(b), A, n, op);
       } else if (n <= 4 * B) {
-        // return multiinsert_bc(std::move(b), A, n, op);
         return multiinsert_compress(std::move(b), A, n, op);
       } else {
         ;
