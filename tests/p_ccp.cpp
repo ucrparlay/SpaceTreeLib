@@ -202,8 +202,8 @@ void runPTreeParallel(auto const& wp, auto const& wi, Typename* kdknn,
     new_wp = wp.subseq(static_cast<size_t>(wi.size() * batchInsertCheckRatio),
                        wp.size());
   } else if (tag == (1 << 3)) {
-    new_wp = wp;
-    new_wp.append(wi);
+    new_wp = wi;
+    // new_wp.append(wi);
   } else {
     new_wp = wp;
   }
