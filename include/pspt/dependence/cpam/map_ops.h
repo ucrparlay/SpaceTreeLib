@@ -1012,15 +1012,41 @@ struct map_ops : Seq {
     }
   }
 
+  // NOTE: used in batch delete rather than batch diff
+  static node* multidelete_swap(ptr b1, K* A, size_t n) {
+    assert(Seq::is_compressed(b1));
+
+    auto n_b1 = b1.node_ptr();
+    size_t offset = Seq::size(n_b1);
+    auto c = Seq::cast_to_compressed(n_b1);
+    uint8_t* data_start =
+        (((uint8_t*)c) + sizeof(typename Seq::aug_compressed_node));
+    ET* stack = (ET*)data_start;
+
+    auto it = stack, end = stack + offset;
+    for (size_t i = 0; i < n; i++) {
+      it = std::ranges::find_if(stack, end, [&](auto const& et) {
+        return Entry::get_key(et) == A[i];
+      });
+      assert(it != end);
+      std::ranges::iter_swap(it, --end);
+    }
+
+    c->s = offset - n;
+    c->is_sorted = false;
+    return c;
+  }
+
   // assumes array A is of length n and is sorted with no duplicates
   static node* multi_delete_sorted(ptr b, K* A, size_t n) {
     if (b.empty()) return nullptr;
     if (n == 0) return b.node_ptr();
 
     // size_t tot = b.size() + n;
-    if (b.size() <= kBaseCaseSize) {
+    // if (b.size() <= kBaseCaseSize) {
+    if (b.is_compressed()) {
       // std::cout << "kBaseCaseSize" << std::endl;
-      return multidelete_bc(std::move(b), A, n);
+      return multidelete_swap(std::move(b), A, n);
     }
 
     auto [lc, e, rc, root] = Seq::expose(std::move(b));
@@ -1041,10 +1067,10 @@ struct map_ops : Seq {
                                      n - mid - dup);
         });
 
-    if (!dup) {
+    if (!dup) {  // the root is survival
       if (!root) root = Seq::single(e);
       return Seq::node_join(P.first, P.second, root);
-    } else {
+    } else {  // the root has been deleted
       GC::decrement(root);
       return Seq::join2(P.first, P.second);
     }
