@@ -86,13 +86,13 @@ Node* KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::SerialBuildRecursive(
     if (In.end() == std::ranges::find_if_not(In, [&](Point const& p) {
           return p.SameDimension(In[0]);
         })) {  // NOTE: check whether all elements are identical
-      if constexpr (IsAugPoint<Point> && Point::IsNonTrivialAugmentation()) {
-        // WARN: this assumes the In.size is larger than the leaf wrap node;
-        // otherwise, a leaf with size LEAVE_WRAP should be allocated
-        // WARN: this makes the points with same dimension stored explicitly and
-        // cannot utilize dummy leaf check
-        // TODO: handle above
-        return AllocFixSizeLeafNode<Slice, Leaf>(In, In.size());
+      if constexpr (IsAugPoint<Point>) {
+        if constexpr (Point::IsNonTrivialAugmentation()) {
+          return AllocFixSizeLeafNode<Slice, Leaf>(
+              In, std::max(In.size(), static_cast<size_t>(BT::kLeaveWrap)));
+        } else {
+          return AllocDummyLeafNode<Slice, Leaf>(In);
+        }
       } else {
         return AllocDummyLeafNode<Slice, Leaf>(In);
       }

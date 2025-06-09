@@ -101,10 +101,13 @@ Node* OrthTree<Point, SplitRule, kMD, kSkHeight,
     if (std::ranges::find_if_not(In, [&](Point const& p) {  // early return
           return p.SameDimension(In[0]);
         }) == In.end()) {
-      if constexpr (IsAugPoint<Point> && Point::IsNonTrivialAugmentation()) {
-        // WARN: this assumes the In.size is larger than the leaf wrap node;
-        // otherwise, a leaf with size LEAVE_WRAP should be allocated
-        return AllocFixSizeLeafNode<Slice, Leaf>(In, In.size());
+      if constexpr (IsAugPoint<Point>) {
+        if constexpr (Point::IsNonTrivialAugmentation()) {
+          return AllocFixSizeLeafNode<Slice, Leaf>(
+              In, std::max(In.size(), static_cast<size_t>(BT::kLeaveWrap)));
+        } else {
+          return AllocDummyLeafNode<Slice, Leaf>(In);
+        }
       } else {
         // WARN: Need to pass full range, since it needs to compute the size
         return AllocDummyLeafNode<Slice, Leaf>(In);
