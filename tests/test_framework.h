@@ -210,8 +210,7 @@ void BuildTree(parlay::sequence<Point> const& WP, int const& rounds,
         auto deep = pkd.template GetAveTreeHeight<Leaf, Interior>();
         std::cout << deep << " " << std::flush;
       } else {
-        std::cout << "-1"
-                  << " " << std::flush;
+        std::cout << "-1" << " " << std::flush;
       }
     } else if (kPrint == 2) {
       size_t max_deep = 0;
@@ -222,8 +221,7 @@ void BuildTree(parlay::sequence<Point> const& WP, int const& rounds,
                   << " " << pkd.template GetAveTreeHeight<Leaf, Interior>()
                   << " " << std::flush;
       } else {
-        std::cout << "-1 -1"
-                  << " " << std::flush;
+        std::cout << "-1 -1" << " " << std::flush;
       }
     }
 
@@ -1139,11 +1137,9 @@ void PrintTreeParam() {
             << "Inba: " << TreeWrapper::TreeType::GetImbalanceRatio() << "; ";
 
   if constexpr (std::is_integral_v<typename TreeWrapper::Point::Coord>) {
-    std::cout << "Coord: integer"
-              << "; ";
+    std::cout << "Coord: integer" << "; ";
   } else if (std::is_floating_point_v<typename TreeWrapper::Point::Coord>) {
-    std::cout << "Coord: float"
-              << "; ";
+    std::cout << "Coord: float" << "; ";
   }
   std::cout << "\n" << std::flush;
   return;

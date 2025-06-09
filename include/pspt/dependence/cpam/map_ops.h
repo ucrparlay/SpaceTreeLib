@@ -144,7 +144,7 @@ struct map_ops : Seq {
     std::optional<ET> mid;
     node* r;
     split_info(node* l, std::optional<ET> mid, node* r)
-        : l(l), mid(mid), r(r) {};
+        : l(l), mid(mid), r(r){};
   };
 
   static split_info split(ptr a, K const& k) {
@@ -1014,9 +1014,8 @@ struct map_ops : Seq {
 
   // NOTE: used in batch delete rather than batch diff
   static node* multidelete_swap(ptr b1, K* A, size_t n) {
-    assert(Seq::is_compressed(b1));
-
     auto n_b1 = b1.node_ptr();
+    assert(Seq::is_compressed(n_b1));
     size_t offset = Seq::size(n_b1);
     auto c = Seq::cast_to_compressed(n_b1);
     uint8_t* data_start =
@@ -1025,16 +1024,21 @@ struct map_ops : Seq {
 
     auto it = stack, end = stack + offset;
     for (size_t i = 0; i < n; i++) {
-      it = std::ranges::find_if(stack, end, [&](auto const& et) {
-        return Entry::get_key(et) == A[i];
-      });
+      it = std::ranges::find_if(
+          stack, end, [&](ET const& et) { return Entry::get_key(et) == A[i]; });
       assert(it != end);
       std::ranges::iter_swap(it, --end);
     }
 
     c->s = offset - n;
     c->is_sorted = false;
-    return c;
+    if (c->s < B) {  // if the size is less than B, convert to a tree.
+      auto o = Seq::to_tree_impl((ET*)stack, c->s);
+      Seq::decrement_recursive(n_b1);
+      return o;
+    } else {
+      return c;
+    }
   }
 
   // assumes array A is of length n and is sorted with no duplicates
@@ -1047,6 +1051,7 @@ struct map_ops : Seq {
     if (b.is_compressed()) {
       // std::cout << "kBaseCaseSize" << std::endl;
       return multidelete_swap(std::move(b), A, n);
+      // return multidelete_bc(std::move(b), A, n);
     }
 
     auto [lc, e, rc, root] = Seq::expose(std::move(b));
