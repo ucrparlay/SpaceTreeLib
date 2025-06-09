@@ -412,7 +412,7 @@ class map_ {
     //     Tree::multi_delete_sorted_size(m.get_root(), A.data(), A.size(),
     //     nsz));
     // std::cout << "vis nodes: " << nsz << std::endl;
-    t.next("insert to tree");
+    t.next("delete tree");
     // std::cout << "new size = " << x.size() << std::endl;
     // assert(x.size() == old_size - SS.size());
     return x;

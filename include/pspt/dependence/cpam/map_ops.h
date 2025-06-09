@@ -144,7 +144,7 @@ struct map_ops : Seq {
     std::optional<ET> mid;
     node* r;
     split_info(node* l, std::optional<ET> mid, node* r)
-        : l(l), mid(mid), r(r){};
+        : l(l), mid(mid), r(r) {};
   };
 
   static split_info split(ptr a, K const& k) {
@@ -977,10 +977,12 @@ struct map_ops : Seq {
     if (b.empty()) return nullptr;
 
     // size_t tot = b.size() + n;
-    if (b.size() <= kBaseCaseSize) {
-      sz += count_size_ptr(std::move(b));
-      sz--;
-      return nullptr;
+    // if (b.size() <= kBaseCaseSize) {
+    if (b.is_compressed()) {
+      // sz += count_size_ptr(std::move(b));
+      // sz--;
+      return b.node_ptr();
+      // return multidelete_swap(std::move(b), A, n);
       // std::cout << "kBaseCaseSize" << std::endl;
       // return multidelete_bc(std::move(b), A, n);
     }
