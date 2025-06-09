@@ -144,7 +144,7 @@ struct map_ops : Seq {
     std::optional<ET> mid;
     node* r;
     split_info(node* l, std::optional<ET> mid, node* r)
-        : l(l), mid(mid), r(r){};
+        : l(l), mid(mid), r(r) {};
   };
 
   static split_info split(ptr a, K const& k) {
@@ -988,10 +988,11 @@ struct map_ops : Seq {
       assert(it != end);
       std::ranges::iter_swap(it, --end);
     }
-
+    c->is_sorted = false;  // mark as unsorted
     c->s = offset - n;
-    c->is_sorted = false;
+
     if (c->s < B) {  // if the size is less than B, convert to a tree.
+      Seq::reorder(c);
       auto o = Seq::to_tree_impl((ET*)stack, c->s);
       Seq::decrement_recursive(n_b1);
       return o;
@@ -1004,6 +1005,10 @@ struct map_ops : Seq {
   static node* multi_delete_sorted(ptr b, K* A, size_t n) {
     if (b.empty()) return nullptr;
     if (n == 0) return b.node_ptr();
+    if (b.size() == n) {
+      GC::decrement_recursive(b.node_ptr());
+      return (regular_node*)Seq::empty();
+    }
 
     // size_t tot = b.size() + n;
     // if (b.size() <= kBaseCaseSize) {
@@ -1023,7 +1028,8 @@ struct map_ops : Seq {
 
     auto P = utils::fork<node*>(
         // true,  // Seq::do_parallel(b.size(), n),
-        !(mid == 0 || mid == n),
+        n >= 100 && !(mid == 0 || mid == n),
+        // !(mid == 0 || mid == n),
         // false,  // Seq::do_parallel(b.size(), n),
         [&]() { return multi_delete_sorted(std::move(lc), A, mid); },
         [&]() {
