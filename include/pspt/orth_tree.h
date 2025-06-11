@@ -130,11 +130,17 @@ class OrthTree
 
   void BatchDiff_(Slice In);
 
+  void SetBoundingBox(Box const& box) {
+    this->tree_box_ = box;
+    fixed_box = true;
+  }
+
   Node* BatchDiffRecursive(Node* T, Slice In, Slice Out);
 
   constexpr static char const* GetTreeName() { return "OrthTree"; }
 
   SplitRule split_rule_;
+  bool fixed_box = false;
   size_t alloc_dummy_num_ = 0;
   size_t alloc_empty_num_ = 0;
   size_t alloc_normal_num_ = 0;

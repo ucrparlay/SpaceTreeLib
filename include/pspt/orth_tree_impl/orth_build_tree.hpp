@@ -191,10 +191,11 @@ template <typename Point, typename SplitRule, uint_fast8_t kMD,
           uint_fast8_t kSkHeight, uint_fast8_t kImbaRatio>
 void OrthTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::Build_(Slice A) {
   Points B = Points::uninitialized(A.size());
-  this->tree_box_ = BT::GetBox(A);
+  if (!fixed_box) {
+    this->tree_box_ = BT::GetBox(A);
+    fixed_box = true;
+  }
   this->root_ = BuildRecursive(A, B.cut(0, A.size()), this->tree_box_);
-  // this->root_ = SerialBuildRecursive(A, B.cut(0, A.size()), BT::kDim,
-  //                                    this->tree_box_, false);
   assert(this->root_ != nullptr);
   return;
 }
@@ -206,10 +207,11 @@ void OrthTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::Build_(
   assert(BT::WithinBox(BT::GetBox(A), box));
 
   Points B = Points::uninitialized(A.size());
-  this->tree_box_ = box;
+  if (!fixed_box) {
+    this->tree_box_ = box;
+    fixed_box = true;
+  }
   this->root_ = BuildRecursive(A, B.cut(0, A.size()), this->tree_box_);
-  // this->root_ = SerialBuildRecursive(A, B.cut(0, A.size()), BT::kDim,
-  //                                    this->tree_box_, false);
   assert(this->root_ != nullptr);
   return;
 }

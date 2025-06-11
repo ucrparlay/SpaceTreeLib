@@ -70,6 +70,7 @@ template <typename Point, typename SplitRule, uint_fast8_t kMD,
 constexpr void
 OrthTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::DeleteTree() {
   BT::template DeleteTreeWrapper<Leaf, Interior>();
+  this->fixed_box = false;
 }
 
 }  // namespace pspt

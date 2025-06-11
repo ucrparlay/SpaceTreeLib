@@ -403,8 +403,7 @@ void BatchUpdateByStep(Tree& pkd, parlay::sequence<Point> const& WP,
     } else if constexpr (pspt::IsOrthTree<Tree>) {
       parlay::copy(WI, wi);
       auto box = Tree::GetBox(wi.cut(0, n));
-      Points tmp(0);
-      pkd.Build(parlay::make_slice(tmp), box);
+      pkd.SetBoundingBox(box);
     } else {
       std::cout << "Not supported Tree type\n" << std::flush;
     }
