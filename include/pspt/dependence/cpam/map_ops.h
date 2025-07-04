@@ -1002,6 +1002,7 @@ struct map_ops : Seq {
   }
 
   // assumes array A is of length n and is sorted with no duplicates
+  // TODO: did you consider this case?
   static node* multi_delete_sorted(ptr b, K* A, size_t n) {
     if (b.empty()) return nullptr;
     if (n == 0) return b.node_ptr();
@@ -1046,6 +1047,105 @@ struct map_ops : Seq {
     }
   }
 
+  static node* multidiff_bc(ptr b1, K* A, size_t n) {
+    auto n_b1 = b1.node_ptr();
+    assert(Seq::is_compressed(n_b1));
+    size_t offset = Seq::size(n_b1);
+    auto c = Seq::cast_to_compressed(n_b1);
+    if (!c->is_sorted) {  // reorder first before fetch the datas
+      Seq::reorder(c);
+    }
+    uint8_t* data_start =
+        (((uint8_t*)c) + sizeof(typename Seq::aug_compressed_node));
+    ET* stack = (ET*)data_start;
+
+    // TODO: merge two sorted lists
+    size_t nA = offset;
+    size_t nB = n;
+    size_t i = 0, j = 0, out_off = 0;
+    while (i < nA && j < nB) {
+      auto const& k_a = Entry::get_key(stack[i]);
+      auto const& k_b = A[j];
+      if (comp(k_a, k_b)) {
+        // parlay::move_uninitialized(output[out_off++], stack[i]);
+        assert(i >= out_off);
+        if (i != out_off) {
+          stack[out_off] = stack[i];
+        }
+        i++;
+        out_off++;
+      } else if (comp(k_b, k_a)) {
+        j++;
+      } else {  // equals, delete element.
+        assert(k_a.id == k_b.id);
+        assert(k_a.code == k_b.code);
+        // std::cout << "delete " << k_a << "=" << k_b << std::endl;
+        // puts("-------------------------");
+        stack[i].~ET();
+        i++;
+        j++;
+      }
+    }
+    while (i < nA) {
+      // parlay::move_uninitialized(output[out_off++], stack[i]);
+      if (i != out_off) {
+        stack[out_off] = stack[i];
+      }
+      i++;
+      out_off++;
+    }
+    c->s = out_off;
+    c->is_sorted = true;
+
+    if (c->s < B) {  // if the size is less than B, convert to a tree.
+      auto o = Seq::to_tree_impl((ET*)stack, c->s);
+      Seq::decrement_recursive(n_b1);
+      return o;
+    } else {
+      return c;
+    }
+  }
+
+  // diff points from the tree
+  static node* multi_diff_sorted(ptr b, K* A, size_t n) {
+    if (b.empty()) return nullptr;
+    if (n == 0) return b.node_ptr();
+
+    // size_t tot = b.size() + n;
+    // if (b.size() <= kBaseCaseSize) {
+    if (b.is_compressed()) {
+      // std::cout << "kBaseCaseSize" << std::endl;
+      return multidiff_bc(std::move(b), A, n);
+      // return multidelete_bc(std::move(b), A, n);
+    }
+
+    auto [lc, e, rc, root] = Seq::expose(std::move(b));
+
+    K bk = Entry::get_key(e);
+    auto less_val = [&](K& a) -> bool { return Entry::comp(a, bk); };
+
+    size_t mid = utils::PAM_binary_search(A, n, less_val);
+    bool dup = (mid < n) && (!Entry::comp(bk, A[mid]));
+
+    auto P = utils::fork<node*>(
+        // true,  // Seq::do_parallel(b.size(), n),
+        // n >= 100 && !(mid == 0 || mid == n),
+        !(mid == 0 || mid == n),
+        // false,  // Seq::do_parallel(b.size(), n),
+        [&]() { return multi_delete_sorted(std::move(lc), A, mid); },
+        [&]() {
+          return multi_delete_sorted(std::move(rc), A + mid + dup,
+                                     n - mid - dup);
+        });
+
+    if (!dup) {  // the root is survival
+      if (!root) root = Seq::single(e);
+      return Seq::node_join(P.first, P.second, root);
+    } else {  // the root has been deleted
+      GC::decrement(root);
+      return Seq::join2(P.first, P.second);
+    }
+  }
   // TODO(laxman): This is more like a multi-update?
   template <class VE, class CombineOp>
   static node* multidelete_sorted_map_bc(ptr b1, std::pair<K, VE>* A, size_t n,

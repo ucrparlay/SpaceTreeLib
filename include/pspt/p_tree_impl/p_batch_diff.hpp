@@ -23,6 +23,11 @@ void PTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDiff(Range&& In) {
 template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 void PTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDiff_(Slice A) {
+  if (!this->cpam_aug_map_.root) {
+    return;
+  }
+  this->cpam_aug_map_ =
+      CpamAugMap::multi_diff(std::move(this->cpam_aug_map_), A);
   return;
 }
 

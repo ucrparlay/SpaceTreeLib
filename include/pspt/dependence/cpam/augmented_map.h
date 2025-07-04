@@ -166,6 +166,14 @@ struct aug_map_ : private map_<_Entry, Join_Tree> {
     return to_aug(Map::multi_delete_sorted(std::move(m), SS));
   }
 
+  template <typename Seq>
+  static M multi_diff(M m, Seq const& SS) {
+    return to_aug(Map::multi_diff(std::move(m), SS));
+  }
+  template <class Seq>
+  static M multi_diff_sorted(M m, Seq const& SS) {
+    return to_aug(Map::multi_diff_sorted(std::move(m), SS));
+  }
   // update multiple entries from a sorted array
   template <class Seq, class Bin_Op>
   static bool multi_update_sorted_inplace(M& m, Seq& SS, Bin_Op f) {

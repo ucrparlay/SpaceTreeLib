@@ -398,6 +398,28 @@ class map_ {
     return x;
   }
 
+  template <class Seq>
+  static M multi_diff(M m, Seq const& SS) {
+    // timer t("");
+    auto A = Build::template sort_remove_duplicates<Seq, K>(SS);
+
+    // auto keys =
+    //     parlay::tabulate(A.size(), [&](size_t i) { return A[i].first; });
+    // t.next("(total) sort");
+    //    M A_m = Seq_Tree::from_array(A.begin(), A.size());
+    //    //M A_m = Tree::multi_insert_sorted(nullptr, A.data(), A.size(),
+    //    replace); t.next("multi-insert time"); auto x =
+    //    M(Tree::uniont(m.get_root(), A_m.get_root(), replace));
+    //    t.next("union time");
+    // std::cout << A.size() << std::endl;
+    // auto old_size = m.size();
+    // std::cout << m.size() << " " << keys.size() << std::endl;
+    auto x = M(Tree::multi_diff_sorted(m.get_root(), A.data(), A.size()));
+    // t.next("insert to tree");
+    // std::cout << "new size = " << x.size() << std::endl;
+    // assert(x.size() == old_size - SS.size());
+    return x;
+  }
   // insert multiple keys from a sequence, destroying the sequence
   // ?? pass by rvalue reference instead ??
   // template<class Seq>

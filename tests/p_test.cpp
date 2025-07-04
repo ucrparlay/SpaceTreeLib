@@ -57,27 +57,22 @@ int main(int argc, char* argv[]) {
                                             kBatchInsertRatio);
       }
     }
-    //
-    // // NOTE: batch diff
-    // if (kTag & (1 << 2)) {
-    //   if (kSummary) {
-    //     parlay::sequence<double> const overlap_ratios = {0.1, 0.2, 0.5, 1};
-    //     for (size_t i = 0; i < overlap_ratios.size(); i++) {
-    //       BatchDiff<Point, Tree, kTestTime>(
-    //           tree, wp, kRounds, kBatchDiffTotalRatio, overlap_ratios[i]);
-    //     }
-    //   } else {
-    //     BatchDiff<Point, Tree, kTestTime>(
-    //         tree, wp, kRounds, kBatchDiffTotalRatio, kBatchDiffOverlapRatio);
-    //   }
-    // }
-    //
-    // // WARN: compress the kdnode to MultiNode, should remove except for
-    // // exp if constexpr (IsKdTree<Tree>) {
-    // //   tree.Compress2Multi();
-    // // }
-    //
 
+    // NOTE: batch diff
+    if (kTag & (1 << 2)) {
+      if (kSummary) {
+        parlay::sequence<double> const overlap_ratios = {0.1, 0.2, 0.5, 1};
+        for (size_t i = 0; i < overlap_ratios.size(); i++) {
+          BatchDiff<Point, Tree, kTestTime>(
+              tree, wp, kRounds, kBatchDiffTotalRatio, overlap_ratios[i]);
+        }
+      } else {
+        BatchDiff<Point, Tree, kTestTime>(
+            tree, wp, kRounds, kBatchDiffTotalRatio, kBatchDiffOverlapRatio);
+      }
+    }
+
+    // NOTE: batch update by step
     if (kTag & (1 << 3)) {
       parlay::sequence<double> const ratios = {1, 0.1, 0.01, 0.001, 0.0001};
       for (auto rat : ratios) {
