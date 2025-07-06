@@ -72,10 +72,19 @@ int main(int argc, char* argv[]) {
       }
     }
 
+    // NOTE: batch insert by step
     if (kTag & (1 << 3)) {
       parlay::sequence<double> const ratios = {1, 0.1, 0.01, 0.001, 0.0001};
       for (auto rat : ratios) {
-        BatchUpdateByStep<Point, Tree, true>(tree, wp, wi, kRounds, rat);
+        BatchInsertByStep<Point, Tree, true>(tree, wp, wi, kRounds, rat);
+      }
+    }
+
+    // NOTE: batch delete by step
+    if (kTag & (1 << 3)) {
+      parlay::sequence<double> const ratios = {1, 0.1, 0.01, 0.001, 0.0001};
+      for (auto rat : ratios) {
+        BatchDeleteByStep<Point, Tree, true>(tree, wp, wi, kRounds, rat);
       }
     }
 
