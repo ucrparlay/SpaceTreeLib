@@ -1,0 +1,54 @@
+#!/bin/bash
+set -o xtrace
+
+Node=(1000000000)
+Tree=(0 1 2)
+Dim=(2)
+declare -A datas
+datas["/data/zmen002/kdtree/ss_varden_bigint/"]="../benchmark/ss_varden_bigint/"
+# datas["/data/zmen002/kdtree/uniform_bigint/"]="../benchmark/uniform_bigint/"
+
+tag=$((2#10000)) # 1110000
+k=10
+insNum=1
+summary=0
+read_file=0
+queryType=$((2#0)) # 1110000
+round=3
+resFile=""
+
+dest="incre_delete.log"
+# : >"${dest}"
+echo ">>>${dest}"
+for tree in "${Tree[@]}"; do
+    if [[ ${tree} -eq 0 ]]; then
+        solver="kd_test"
+        splits=(0)
+    elif [[ ${tree} -eq 1 ]]; then
+        solver="kd_test"
+        splits=(3)
+    elif [[ ${tree} -eq 2 ]]; then
+        solver="p_test"
+        splits=(1)
+    fi
+    exe="../build/${solver}"
+
+    for node in "${Node[@]}"; do
+        for dim in "${Dim[@]}"; do
+            for split in "${splits[@]}"; do
+                for dataPath in "${!datas[@]}"; do
+                    if [[ ${dataPath} = *"ss_varden_bigint"* ]]; then
+                        files_path="${dataPath}${node}_${dim}/1.in"
+                    else
+                        files_path="${dataPath}${node}_${dim}/2_sort_by_0.in"
+                    fi
+
+                    numactl -i all ${exe} -p "${files_path}" -r ${round} -k ${k} -i ${read_file} -s ${summary} -t ${tag} -d ${dim} -q ${queryType} -T ${tree} -l ${split} 2>&1 | tee -a "${dest}"
+                done
+            done
+        done
+    done
+done
+
+current_date_time="$(date "+%d %H:%M:%S")"
+echo $current_date_time

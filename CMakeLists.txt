@@ -147,10 +147,10 @@ if(CGAL)
 	target_link_libraries(p_ccp PUBLIC PSPT CGAL::CGAL CGAL::TBB_support)
 	target_include_directories(p_ccp PUBLIC ${PROJECT_SOURCE_DIR}/include)
 
-	find_package(Boost REQUIRED)
-	add_executable(boost_rtree ${PROJECT_SOURCE_DIR}/tests/boost_rtree.cpp)
-	target_link_libraries(boost_rtree PUBLIC PSPT ${Boost_LIBRARIES})
-	target_include_directories(boost_rtree PUBLIC ${PROJECT_SOURCE_DIR}/include ${Boost_INCLUDE_DIRS})
+	# find_package(Boost REQUIRED)
+	# add_executable(boost_rtree ${PROJECT_SOURCE_DIR}/tests/boost_rtree.cpp)
+	# target_link_libraries(boost_rtree PUBLIC PSPT ${Boost_LIBRARIES})
+	# target_include_directories(boost_rtree PUBLIC ${PROJECT_SOURCE_DIR}/include ${Boost_INCLUDE_DIRS})
 endif()
 
 file(GLOB_RECURSE all_files

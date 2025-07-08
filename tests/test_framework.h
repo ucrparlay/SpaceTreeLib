@@ -472,8 +472,7 @@ void BatchDeleteByStep(Tree& pkd, parlay::sequence<Point> const& WP,
   using Points = typename Tree::Points;
   using Box = typename Tree::Box;
   Points wp = Points::uninitialized(WP.size());
-  Points wi = Points::uninitialized(WI.size());
-  size_t n = static_cast<size_t>(max_ratio * wi.size());
+  size_t n = static_cast<size_t>(max_ratio * wp.size());
   size_t step = static_cast<size_t>(insert_ratio * n);
   size_t slice_num = n / step;
   parlay::sequence<parlay::sequence<double>> time_table(
@@ -489,16 +488,18 @@ void BatchDeleteByStep(Tree& pkd, parlay::sequence<Point> const& WP,
 
   // NOTE: build the tree by type
   auto build_tree_by_type = [&]() {
+    parlay::copy(WP, wp);
+
     if constexpr (pspt::IsKdTree<Tree> || pspt::IsPTree<Tree>) {
-      parlay::copy(WP, wp);
       pkd.Build(parlay::make_slice(wp));
     } else if constexpr (pspt::IsOrthTree<Tree>) {
-      parlay::copy(WP, wp);
       auto box = Tree::GetBox(wp.cut(0, n));
       pkd.Build(parlay::make_slice(wp), box);
     } else {
       std::cout << "Not supported Tree type\n" << std::flush;
     }
+
+    parlay::copy(WP, wp);
   };
 
   auto incre_delete = [&]() {
