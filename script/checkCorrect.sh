@@ -11,7 +11,7 @@ tester="p_ccp"
 make -C ../build ${tester}
 
 if [[ ${tester} == "p_ccp" ]]; then
-	tag=$((2#1000))
+	tag=$((2#0010))
 	read_file=1
 	dims=(2)
 	queryTypes=$((2#110))

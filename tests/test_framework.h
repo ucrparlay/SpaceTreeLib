@@ -10,6 +10,7 @@
 #include "common/geometryIO.h"
 #include "common/parse_command_line.h"
 #include "common/time_loop.h"
+#include "dependence/concepts.h"
 #include "parlay/internal/group_by.h"
 #include "parlay/monoid.h"
 #include "parlay/parallel.h"
@@ -210,8 +211,7 @@ void BuildTree(parlay::sequence<Point> const& WP, int const& rounds,
         auto deep = pkd.template GetAveTreeHeight<Leaf, Interior>();
         std::cout << deep << " " << std::flush;
       } else {
-        std::cout << "-1"
-                  << " " << std::flush;
+        std::cout << "-1" << " " << std::flush;
       }
     } else if (kPrint == 2) {
       size_t max_deep = 0;
@@ -222,8 +222,7 @@ void BuildTree(parlay::sequence<Point> const& WP, int const& rounds,
                   << " " << pkd.template GetAveTreeHeight<Leaf, Interior>()
                   << " " << std::flush;
       } else {
-        std::cout << "-1 -1"
-                  << " " << std::flush;
+        std::cout << "-1 -1" << " " << std::flush;
       }
     }
 
@@ -335,8 +334,12 @@ void BatchDiff(Tree& pkd, parlay::sequence<Point> const& WP, int const& rounds,
       return WP[i];
     } else {
       Point p = WP[i];
-      std::transform(p.pnt.begin(), p.pnt.end(), p.pnt.begin(),
-                     std::negate<Coord>());
+      if constexpr (IsAugPoint<Point>) {
+        p.aug.id = -1 * p.aug.id - 1;
+      } else {
+        std::transform(p.pnt.begin(), p.pnt.end(), p.pnt.begin(),
+                       std::negate<Coord>());
+      }
       return p;
     }
   });
@@ -1272,11 +1275,9 @@ void PrintTreeParam() {
             << "Inba: " << TreeWrapper::TreeType::GetImbalanceRatio() << "; ";
 
   if constexpr (std::is_integral_v<typename TreeWrapper::Point::Coord>) {
-    std::cout << "Coord: integer"
-              << "; ";
+    std::cout << "Coord: integer" << "; ";
   } else if (std::is_floating_point_v<typename TreeWrapper::Point::Coord>) {
-    std::cout << "Coord: float"
-              << "; ";
+    std::cout << "Coord: float" << "; ";
   }
   std::cout << "\n" << std::flush;
   return;
@@ -1467,7 +1468,7 @@ class Wrapper {
   }
 
   struct AugIdCode {
-    using IdType = uint_fast32_t;
+    using IdType = int_fast32_t;
     using CurveCode = hilbert::bitmask_t;
 
     AugIdCode() : code(0), id(0) {}

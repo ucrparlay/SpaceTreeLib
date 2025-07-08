@@ -476,6 +476,8 @@ class BaseTree {
 
   Node* GetRoot() { return this->root_; }
 
+  size_t GetSize() { return this->root_ ? this->root_->size : 0; }
+
   Box GetRootBox() { return this->tree_box_; }
 
   consteval static auto GetBuildDepthOnce() {

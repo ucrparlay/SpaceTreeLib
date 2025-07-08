@@ -150,6 +150,8 @@ class PTree
   template <typename Range>
   auto RangeQuery(Box const& query_box, Range&& Out);
 
+  size_t GetSize() const { return cpam_aug_map_.size(); }
+
   constexpr static char const* GetTreeName() { return "PTree"; }
 
   // TODO: need to hide the basetree assests, e.g., root_

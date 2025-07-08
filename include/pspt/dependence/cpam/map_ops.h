@@ -144,7 +144,7 @@ struct map_ops : Seq {
     std::optional<ET> mid;
     node* r;
     split_info(node* l, std::optional<ET> mid, node* r)
-        : l(l), mid(mid), r(r) {};
+        : l(l), mid(mid), r(r){};
   };
 
   static split_info split(ptr a, K const& k) {
@@ -1059,7 +1059,6 @@ struct map_ops : Seq {
         (((uint8_t*)c) + sizeof(typename Seq::aug_compressed_node));
     ET* stack = (ET*)data_start;
 
-    // TODO: merge two sorted lists
     size_t nA = offset;
     size_t nB = n;
     size_t i = 0, j = 0, out_off = 0;
@@ -1132,10 +1131,9 @@ struct map_ops : Seq {
         // n >= 100 && !(mid == 0 || mid == n),
         !(mid == 0 || mid == n),
         // false,  // Seq::do_parallel(b.size(), n),
-        [&]() { return multi_delete_sorted(std::move(lc), A, mid); },
+        [&]() { return multi_diff_sorted(std::move(lc), A, mid); },
         [&]() {
-          return multi_delete_sorted(std::move(rc), A + mid + dup,
-                                     n - mid - dup);
+          return multi_diff_sorted(std::move(rc), A + mid + dup, n - mid - dup);
         });
 
     if (!dup) {  // the root is survival

@@ -150,19 +150,18 @@ void runPTreeParallel(auto const& wp, auto const& wi, Typename* kdknn,
     std::cout << "---------------finish delete----------------\n" << std::flush;
   }
 
-  // if (tag & (1 << 2)) {
-  //   BatchDiff<Point, Tree, kTestTime>(tree, wp, 2, kCCPBatchDiffTotalRatio,
-  //                                     kCCPBatchDiffOverlapRatio);
-  //   // BatchDiff<Point, Tree, kTestTime>(tree, wp, 2, 0.5, 1.0);
-  //   tree.template Validate<typename Tree::Leaf, typename Tree::Interior,
-  //                          typename Tree::SplitRuleType>();
-  //   assert(tree.GetRoot()->size ==
-  //          wp.size() - static_cast<size_t>(wp.size() *
-  //          kCCPBatchDiffTotalRatio *
-  //                                          kCCPBatchDiffOverlapRatio));
-  //   std::cout << "---------------finish diff------------------\n" <<
-  //   std::flush;
-  // }
+  if (tag & (1 << 2)) {
+    BatchDiff<Point, Tree, kTestTime>(tree, wp, 2, kCCPBatchDiffTotalRatio,
+                                      kCCPBatchDiffOverlapRatio);
+    // BatchDiff<Point, Tree, kTestTime>(tree, wp, 2, 0.5, 1.0);
+    // tree.template Validate<typename Tree::Leaf, typename Tree::Interior,
+    //                        typename Tree::SplitRuleType>();
+    assert(tree.GetSize() ==
+           wp.size() - static_cast<size_t>(wp.size() * kCCPBatchDiffTotalRatio *
+                                           kCCPBatchDiffOverlapRatio));
+    std::cout << "---------------finish diff------------------\n" << std::flush;
+  }
+
   if (tag & (1 << 3)) {
     parlay::sequence<double> const ratios = {0.001};
     for (auto rat : ratios) {
@@ -201,6 +200,12 @@ void runPTreeParallel(auto const& wp, auto const& wi, Typename* kdknn,
   } else if (tag == (1 << 1)) {
     new_wp = wp.subseq(static_cast<size_t>(wi.size() * batchInsertCheckRatio),
                        wp.size());
+  } else if (tag == (1 << 2)) {
+    size_t total_batch_size =
+        static_cast<size_t>(wp.size() * kCCPBatchDiffTotalRatio);
+    size_t overlap_size =
+        static_cast<size_t>(total_batch_size * kCCPBatchDiffOverlapRatio);
+    new_wp = wp.subseq(overlap_size, wp.size());
   } else if (tag == (1 << 3)) {
     new_wp = wi;
     // new_wp.append(wi);
