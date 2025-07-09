@@ -335,6 +335,9 @@ struct aug_map_full_entry : entry {
   static inline aug_t from_entry(entry_t const& e) {
     return entry::from_entry(e);
   }
+  static inline aug_t from_entry_array(entry_t* et, size_t sz) {
+    return entry::from_entry_array(et, sz);
+  }
 };
 
 template <class _Entry, size_t BlockSize = 128,

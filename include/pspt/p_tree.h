@@ -93,6 +93,10 @@ class PTree
       return Box(v, v);
     }
 
+    static aug_t from_entry_array(entry_t* et, size_t sz) {
+      return BT::GetBox(parlay::slice(et, et + sz));
+    }
+
     // combine two aug val to get a new aug
     static aug_t combine(aug_t const& a, aug_t const& b) {
       return BT::GetBox(a, b);

@@ -144,7 +144,7 @@ struct map_ops : Seq {
     std::optional<ET> mid;
     node* r;
     split_info(node* l, std::optional<ET> mid, node* r)
-        : l(l), mid(mid), r(r){};
+        : l(l), mid(mid), r(r) {};
   };
 
   static split_info split(ptr a, K const& k) {
@@ -992,11 +992,13 @@ struct map_ops : Seq {
     c->s = offset - n;
 
     if (c->s < B) {  // if the size is less than B, convert to a tree.
+      // this will handle the aug_val update
       Seq::reorder(c);
       auto o = Seq::to_tree_impl((ET*)stack, c->s);
       Seq::decrement_recursive(n_b1);
       return o;
-    } else {
+    } else {  // needs to udpate the aug_val explicitly
+      c->aug_val = Entry::from_entry_array((ET*)stack, c->s);
       return c;
     }
   }
@@ -1093,6 +1095,8 @@ struct map_ops : Seq {
       i++;
       out_off++;
     }
+    assert(out_off <= c->s);
+    auto old_size = c->s;
     c->s = out_off;
     c->is_sorted = true;
 
@@ -1100,7 +1104,10 @@ struct map_ops : Seq {
       auto o = Seq::to_tree_impl((ET*)stack, c->s);
       Seq::decrement_recursive(n_b1);
       return o;
-    } else {
+    } else {  // update the aug_val
+      if (old_size != c->s) {
+        c->aug_val = Entry::from_entry_array((ET*)stack, c->s);
+      }
       return c;
     }
   }
