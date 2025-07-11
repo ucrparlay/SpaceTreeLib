@@ -72,11 +72,29 @@ int main(int argc, char* argv[]) {
       }
     }
 
+    Typename* kdknn = nullptr;
+    auto run_batch_knn = [&](Points const& pts, int kth, size_t batchSize) {
+      Points newPts(batchSize);
+      parlay::copy(pts.cut(0, batchSize), newPts.cut(0, batchSize));
+      kdknn = new Typename[batchSize];
+      queryKNN<Point>(kDim, newPts, kRounds, tree, kdknn, kth, true);
+      delete[] kdknn;
+    };
+
     // NOTE: batch insert by step
     if (kTag & (1 << 3)) {
       parlay::sequence<double> const ratios = {1, 0.1, 0.01, 0.001, 0.0001};
       for (auto rat : ratios) {
         BatchInsertByStep<Point, Tree, true>(tree, wp, wi, kRounds, rat);
+
+        // test knn
+        std::cout << "knn time: ";
+        size_t batchSize = static_cast<size_t>(wi.size() * kBatchQueryRatio);
+        int k[3] = {1, 10, 100};
+        for (int i = 0; i < 3; i++) {
+          run_batch_knn(wi, k[i], batchSize);
+        }
+        puts("");
       }
     }
 
@@ -93,16 +111,7 @@ int main(int argc, char* argv[]) {
     //   tree.Compress2Multi();
     // }
 
-    Typename* kdknn = nullptr;
     if (kQueryType & (1 << 0)) {  // NOTE: KNN
-      auto run_batch_knn = [&](Points const& pts, int kth, size_t batchSize) {
-        Points newPts(batchSize);
-        parlay::copy(pts.cut(0, batchSize), newPts.cut(0, batchSize));
-        kdknn = new Typename[batchSize];
-        queryKNN<Point>(kDim, newPts, kRounds, tree, kdknn, kth, true);
-        delete[] kdknn;
-      };
-
       size_t batchSize = static_cast<size_t>(wp.size() * kBatchQueryRatio);
 
       if (kSummary == 0) {

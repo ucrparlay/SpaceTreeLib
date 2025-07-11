@@ -400,7 +400,7 @@ void BatchInsertByStep(Tree& pkd, parlay::sequence<Point> const& WP,
   pkd.DeleteTree();
 
   // NOTE: build the tree by type
-  auto build_tree_by_type = [&]() {
+  auto prepare_build = [&]() {
     if constexpr (pspt::IsKdTree<Tree> || pspt::IsPTree<Tree>) {
       parlay::copy(WI, wi);
     } else if constexpr (pspt::IsOrthTree<Tree>) {
@@ -426,7 +426,7 @@ void BatchInsertByStep(Tree& pkd, parlay::sequence<Point> const& WP,
   };
 
   double ave_time = time_loop(
-      rounds, 0.01, [&]() { build_tree_by_type(); }, [&]() { incre_build(); },
+      rounds, 0.01, [&]() { prepare_build(); }, [&]() { incre_build(); },
       [&]() { pkd.DeleteTree(); });
 
   if (round_cnt - 1 != rounds) {
@@ -460,7 +460,7 @@ void BatchInsertByStep(Tree& pkd, parlay::sequence<Point> const& WP,
             << "-> avg: " << average_time << std::endl;
 
   // WARN: restore status
-  build_tree_by_type();
+  prepare_build();
   incre_build();
   // auto root = pkd.cpam_aug_map_;
   // std::cout << "root size: " << root.size() << std::endl;
