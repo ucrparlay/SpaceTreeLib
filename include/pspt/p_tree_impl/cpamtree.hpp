@@ -36,13 +36,13 @@ namespace CPAMTree{
 	using par = std::tuple<entry::key_t, entry::val_t>;
 
 	template<typename T>
-	auto knn(T &tree, geobase::Point &query_point, size_t &k){
+	auto knn(T &tree, geobase::Point &query_point, size_t &k, size_t &vis_leaf){
 		auto f = [&](auto cur_pt){ return point_point_sqrdis(cur_pt, query_point); };
 
 		auto f2 = [&](auto cur_mbr){ return point_mbr_sqrdis(query_point, cur_mbr); };
 
 		priority_queue<nn_pair, vector<nn_pair>, nn_pair_cmp> nn_res;
-		zmap::knn_filter(tree, f, f2, k, nn_res);
+		zmap::knn_filter(tree, f, f2, k, nn_res, vis_leaf);
 		return nn_res.top().second;
 	}
 

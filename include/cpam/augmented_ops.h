@@ -264,8 +264,9 @@ struct augmented_ops : Map {
 
       //  F is point-point dis, F2 is point-mbr dis
   template<typename F, typename F2, typename Out>
-  static void knn_filter(node* b, const F &f, const F2 &f2, size_t &k, Out &out) {
+  static void knn_filter(node* b, const F &f, const F2 &f2, size_t &k, Out &out, size_t &vis_leaf) {
     if (!b) return;
+    vis_leaf++;
 
     auto pt_check = [&](const auto &cur_pt){
       auto cur_dis = f(cur_pt);
@@ -276,7 +277,7 @@ struct augmented_ops : Map {
       }
     };
 
-    if (Map::is_compressed(b)){ // leaf node
+    if (Map::is_compressed(b)){ // leaf node·      
       auto f_filter = [&](const auto &et){
         auto cur_pt = std::get<1>(et);
         pt_check(cur_pt);
@@ -301,12 +302,12 @@ struct augmented_ops : Map {
     }
     auto go_left = [&](){
       if (out.size() < k || l_dis < out.top().second){
-        knn_filter(rb->lc, f, f2, k, out);
+        knn_filter(rb->lc, f, f2, k, out, vis_leaf);
       }
     };
     auto go_right = [&](){
       if (out.size() < k || r_dis < out.top().second){
-        knn_filter(rb->rc, f, f2, k, out);
+        knn_filter(rb->rc, f, f2, k, out, vis_leaf);
       }
     };
 

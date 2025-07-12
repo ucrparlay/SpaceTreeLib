@@ -59,8 +59,8 @@ public:
   }
 
   template<typename F, typename F2, typename Out>
-  static void knn_filter(M m, const F &f, const F2 &f2, size_t &k, Out &out) {
-    Tree::knn_filter(m.get_root(), f, f2, k, out);
+  static void knn_filter(M m, const F &f, const F2 &f2, size_t &k, Out &out, size_t &vis_leaf) {
+    Tree::knn_filter(m.get_root(), f, f2, k, out, vis_leaf);
     return;
   }
 

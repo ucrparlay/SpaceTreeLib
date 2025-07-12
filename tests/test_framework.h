@@ -364,12 +364,15 @@ void knnPtree(parlay::sequence<Point> const& WP, CPAMTree::zmap& tree,
                       Typename* kdknn, int const& rounds, int rec_type, //  Note, kdknn should be Typename for consistency. Size_t just for debug range report
                       int rec_num, int DIM, size_t k = 1) {
 
-    auto P = parlay::sequence<geobase::Point>::uninitialized(WP.size());
-    parlay::parallel_for(0, WP.size(), [&](int i) {
-      P[i].x = WP[i].pnt[0];
-      P[i].y = WP[i].pnt[1];
-      P[i].id = i;
-    });
+  auto P = parlay::sequence<geobase::Point>::uninitialized(WP.size());
+  parlay::parallel_for(0, WP.size(), [&](int i) {
+    P[i].x = WP[i].pnt[0];
+    P[i].y = WP[i].pnt[1];
+    P[i].id = i;
+  });
+
+  parlay::sequence<size_t> vis_leaf(10000000);
+  // cout << "vis leaf = " << vis_leaf.size() << ", " << vis_leaf[0] << endl;
 
   // auto res = CPAMTree::range_count(tree, region[0], true);
   double aveKnn = time_loop(
@@ -377,11 +380,17 @@ void knnPtree(parlay::sequence<Point> const& WP, CPAMTree::zmap& tree,
       },
       [&]() {
         parlay::parallel_for(0, 10000000, [&](size_t i) {
-          kdknn[i] = CPAMTree::knn(tree, P[i], k);
+          vis_leaf[i] = 0;
+          kdknn[i] = CPAMTree::knn(tree, P[i], k, vis_leaf[i]);
         });
       },
       [&]() {});
-      std::cout << fixed << setprecision(6) << "[knn time]:" << aveKnn << " -1 -1 -1 -1 "
+      double tot_vis_leaf = 0.0;
+      for (auto &val: vis_leaf){
+        tot_vis_leaf += 1.0 * val;
+      }
+      tot_vis_leaf /= 10000000.0;
+      std::cout << fixed << setprecision(6) << "[knn time]:" << aveKnn << ", [avg. vis leaf]: " << tot_vis_leaf
             << std::flush;
 
   // cout << endl;
