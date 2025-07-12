@@ -358,6 +358,38 @@ void rangeReportPtree(parlay::sequence<Point> const& WP, CPAMTree::zmap& tree,
   return;
 }
 
+//* test range count for fix rectangle
+template <typename Point, typename Tree>
+void knnPtree(parlay::sequence<Point> const& WP, CPAMTree::zmap& tree,
+                      Typename* kdknn, int const& rounds, int rec_type, //  Note, kdknn should be Typename for consistency. Size_t just for debug range report
+                      int rec_num, int DIM, size_t k = 1) {
+
+    auto P = parlay::sequence<geobase::Point>::uninitialized(WP.size());
+    parlay::parallel_for(0, WP.size(), [&](int i) {
+      P[i].x = WP[i].pnt[0];
+      P[i].y = WP[i].pnt[1];
+      P[i].id = i;
+    });
+
+  // auto res = CPAMTree::range_count(tree, region[0], true);
+  double aveKnn = time_loop(
+      rounds, 1.0, [&]() {
+      },
+      [&]() {
+        parlay::parallel_for(0, 10000000, [&](size_t i) {
+          kdknn[i] = CPAMTree::knn(tree, P[i], k);
+        });
+      },
+      [&]() {});
+      std::cout << fixed << setprecision(6) << "[knn time]:" << aveKnn << " -1 -1 -1 -1 "
+            << std::flush;
+
+  // cout << endl;
+  // geobase::print_mbr(region[0]);
+  // cout << "range report res: " << kdknn[0] << ", " << query_box_seq[0].second << endl;
+  return;
+}
+
 template <typename Point, typename Tree, bool kTestTime = true, int kPrint = 1>
 void BuildTree(parlay::sequence<Point> const& WP, int const& rounds,
                Tree& pkd) {

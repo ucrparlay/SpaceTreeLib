@@ -199,6 +199,33 @@ void TestCPAMBB([[maybe_unused]] int const& kDim,
       delete[] kdknn;
     }
   }
+
+  if (kQueryType & (1 << 3)){ // knn query
+      int recNum = kRangeQueryNum;
+      kdknn = new Typename[recNum];
+
+      cout << endl << "k=1" << endl;
+      for (int i = 0; i < 3; i++) { // k=1
+        Points Out;
+        knnPtree<Point, Tree>(wp, ptree, kdknn, kRounds, i, recNum,
+                                      kDim, 1);
+      }
+
+      cout << endl << "k=10" << endl;
+      for (int i = 0; i < 3; i++) { //  k=10
+        Points Out;
+        knnPtree<Point, Tree>(wp, ptree, kdknn, kRounds, i, recNum,
+                                      kDim, 10);
+      }
+
+      cout << endl << "k=100" << endl;
+      for (int i = 0; i < 3; i++) { //  k=100
+        Points Out;
+        knnPtree<Point, Tree>(wp, ptree, kdknn, kRounds, i, recNum,
+                                      kDim, 100);
+      }
+      delete[] kdknn;
+  }
   return;
   
   // NOTE: batch insert

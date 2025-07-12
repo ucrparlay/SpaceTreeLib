@@ -262,6 +262,64 @@ struct augmented_ops : Map {
     return l + r + cur_pt_inside;
   }
 
+      //  F is point-point dis, F2 is point-mbr dis
+  template<typename F, typename F2, typename Out>
+  static void knn_filter(node* b, const F &f, const F2 &f2, size_t &k, Out &out) {
+    if (!b) return;
+
+    auto pt_check = [&](const auto &cur_pt){
+      auto cur_dis = f(cur_pt);
+      if (out.size() < k) out.push(std::make_pair(cur_pt, cur_dis));
+      else if (cur_dis < out.top().second){
+        out.pop();
+        out.push(std::make_pair(cur_pt, cur_dis));
+      }
+    };
+
+    if (Map::is_compressed(b)){ // leaf node
+      auto f_filter = [&](const auto &et){
+        auto cur_pt = std::get<1>(et);
+        pt_check(cur_pt);
+      };
+      Map::iterate_seq(b, f_filter);
+      return; 
+    }
+
+    auto rb = Map::cast_to_regular(b);
+    auto cur_pt = Map::get_val(rb);
+    pt_check(cur_pt);
+
+    auto l_dis = std::numeric_limits<double>::max();
+    auto r_dis = std::numeric_limits<double>::max();
+    if (rb->lc){
+      auto cur_aug = aug_val(rb->lc);
+      l_dis = f2(cur_aug.first);
+    }
+    if (rb->rc){
+      auto cur_aug = aug_val(rb->rc);
+      r_dis = f2(cur_aug.first);
+    }
+    auto go_left = [&](){
+      if (out.size() < k || l_dis < out.top().second){
+        knn_filter(rb->lc, f, f2, k, out);
+      }
+    };
+    auto go_right = [&](){
+      if (out.size() < k || r_dis < out.top().second){
+        knn_filter(rb->rc, f, f2, k, out);
+      }
+    };
+
+    if (l_dis <= r_dis){  //  go left first
+      go_left();
+      go_right();
+    }
+    else{
+      go_right();
+      go_left();
+    }
+  }
+
   template<class F, typename Out>
   static void range_report_filter2(node* b, const F &f, int64_t &cnt, Out &out, size_t granularity=kNodeLimit) {
     if (!b) return;

@@ -58,6 +58,12 @@ public:
     return;
   }
 
+  template<typename F, typename F2, typename Out>
+  static void knn_filter(M m, const F &f, const F2 &f2, size_t &k, Out &out) {
+    Tree::knn_filter(m.get_root(), f, f2, k, out);
+    return;
+  }
+
   // extract the augmented values
   A aug_val() const { return Tree::aug_val(Map::root); }
 
