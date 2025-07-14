@@ -47,7 +47,8 @@ auto PTree<Point, SplitRule, kSkHeight, kImbaRatio>::KNN(
   };
 
   std::priority_queue<nn_pair, std::vector<nn_pair>, nn_pair_cmp> nn_res;
-  CpamAugMap::knn_filter(this->cpam_aug_map_, f, f2, 10, nn_res, logger);
+  CpamAugMap::template knn_filter<BT>(this->cpam_aug_map_, f, f2, 10, bq,
+                                      logger);
   // return nn_res.top().second;
 
   // CpamAugMap::template knn<BT>(this->cpam_aug_map_, q, bq, logger);

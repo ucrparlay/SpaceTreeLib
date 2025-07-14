@@ -283,27 +283,27 @@ struct augmented_ops : Map {
   }
 
   //  F is point-point dis, F2 is point-mbr dis
-  template <typename F, typename F2, typename Out, typename Logger>
+  template <class BaseTree, typename F, typename F2, typename Out,
+            typename Logger>
   static void knn_filter(node* b, F const& f, const F2& f2, size_t& k, Out& out,
                          Logger& logger) {
+    using BT = BaseTree;
     if (!b) return;
     logger.vis_node_num++;
 
-    auto pt_check = [&](auto const& cur_pt) {
+    auto pt_check = [&](auto& cur_pt) {
       auto cur_dis = f(cur_pt);
-      if (out.size() < k)
-        out.push(std::make_pair(cur_pt, cur_dis));
-      else if (cur_dis < out.top().second) {
-        out.pop();
-        out.push(std::make_pair(cur_pt, cur_dis));
+      // if (out.size() < k)
+      if (!out.full())
+        out.insert(std::make_pair(std::ref(cur_pt), cur_dis));
+      else if (cur_dis < out.top_value()) {
+        // out.pop();
+        out.insert(std::make_pair(std::ref(cur_pt), cur_dis));
       }
     };
 
     if (Map::is_compressed(b)) {  // leaf node·
-      auto f_filter = [&](ET& et) {
-        auto cur_pt = et;
-        pt_check(cur_pt);
-      };
+      auto f_filter = [&](ET& et) { pt_check(et); };
       Map::iterate_seq(b, f_filter);
       return;
     }
@@ -324,13 +324,13 @@ struct augmented_ops : Map {
       r_dis = f2(cur_aug);
     }
     auto go_left = [&]() {
-      if (out.size() < k || l_dis < out.top().second) {
-        knn_filter(rb->lc, f, f2, k, out, logger);
+      if (!out.full() || l_dis < out.top().second) {
+        knn_filter<BT>(rb->lc, f, f2, k, out, logger);
       }
     };
     auto go_right = [&]() {
-      if (out.size() < k || r_dis < out.top().second) {
-        knn_filter(rb->rc, f, f2, k, out, logger);
+      if (!out.full() || r_dis < out.top().second) {
+        knn_filter<BT>(rb->rc, f, f2, k, out, logger);
       }
     };
 
