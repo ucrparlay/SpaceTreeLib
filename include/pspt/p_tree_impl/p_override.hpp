@@ -34,21 +34,22 @@ template <typename Range>
 auto PTree<Point, SplitRule, kSkHeight, kImbaRatio>::KNN(
     Node* T, Point const& q, kBoundedQueue<Point, Range>& bq) {
   KNNLogger logger;
-  auto f = [&](auto const cur_pt) { return point_point_sqrdis(cur_pt, q); };
+  auto f = [&](auto const cur_pt) { return BT::P2PDistanceSquare(cur_pt, q); };
 
-  auto f2 = [&](Box cur_mbr) { return point_mbr_sqrdis(q, cur_mbr); };
-
-  using nn_pair = std::pair<Point, FT>;
-  struct nn_pair_cmp {
-    bool operator()(nn_pair& lhs, nn_pair& rhs) {
-      return lhs.second < rhs.second ||
-             (lhs.second == rhs.second && lhs.first < rhs.first);
-    }
+  auto f2 = [&](Box const cur_mbr) {
+    return BT::P2BMinDistanceSquare(q, cur_mbr);
   };
 
-  std::priority_queue<nn_pair, std::vector<nn_pair>, nn_pair_cmp> nn_res;
-  CpamAugMap::template knn_filter<BT>(this->cpam_aug_map_, f, f2, 10, bq,
-                                      logger);
+  // using nn_pair = std::pair<Point, FT>;
+  // struct nn_pair_cmp {
+  //   bool operator()(nn_pair& lhs, nn_pair& rhs) {
+  //     return lhs.second < rhs.second ||
+  //            (lhs.second == rhs.second && lhs.first < rhs.first);
+  //   }
+  // };
+  //
+  // std::priority_queue<nn_pair, std::vector<nn_pair>, nn_pair_cmp> nn_res;
+  CpamAugMap::template knn_filter<BT>(this->cpam_aug_map_, q, bq, logger);
   // return nn_res.top().second;
 
   // CpamAugMap::template knn<BT>(this->cpam_aug_map_, q, bq, logger);

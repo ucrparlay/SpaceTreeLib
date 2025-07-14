@@ -283,22 +283,20 @@ struct augmented_ops : Map {
   }
 
   //  F is point-point dis, F2 is point-mbr dis
-  template <class BaseTree, typename F, typename F2, typename Out,
-            typename Logger>
-  static void knn_filter(node* b, F const& f, const F2& f2, size_t& k, Out& out,
+  template <class BaseTree, typename kBoundedQueue, typename Logger>
+  static void knn_filter(node* b, ET const q, kBoundedQueue& bq,
                          Logger& logger) {
     using BT = BaseTree;
+
     if (!b) return;
     logger.vis_node_num++;
 
     auto pt_check = [&](auto& cur_pt) {
-      auto cur_dis = f(cur_pt);
-      // if (out.size() < k)
-      if (!out.full())
-        out.insert(std::make_pair(std::ref(cur_pt), cur_dis));
-      else if (cur_dis < out.top_value()) {
-        // out.pop();
-        out.insert(std::make_pair(std::ref(cur_pt), cur_dis));
+      auto cur_dis = BT::P2PDistanceSquare(q, cur_pt);
+      if (!bq.full())
+        bq.insert(std::make_pair(std::ref(cur_pt), cur_dis));
+      else if (cur_dis < bq.top_value()) {
+        bq.insert(std::make_pair(std::ref(cur_pt), cur_dis));
       }
     };
 
@@ -317,20 +315,20 @@ struct augmented_ops : Map {
     auto r_dis = std::numeric_limits<long>::max();
     if (rb->lc) {
       auto cur_aug = aug_val(rb->lc);
-      l_dis = f2(cur_aug);
+      l_dis = BT::P2BMinDistanceSquare(q, cur_aug);
     }
     if (rb->rc) {
       auto cur_aug = aug_val(rb->rc);
-      r_dis = f2(cur_aug);
+      r_dis = BT::P2BMinDistanceSquare(q, cur_aug);
     }
     auto go_left = [&]() {
-      if (!out.full() || l_dis < out.top().second) {
-        knn_filter<BT>(rb->lc, f, f2, k, out, logger);
+      if (!bq.full() || l_dis < bq.top().second) {
+        knn_filter<BT>(rb->lc, q, bq, logger);
       }
     };
     auto go_right = [&]() {
-      if (!out.full() || r_dis < out.top().second) {
-        knn_filter<BT>(rb->rc, f, f2, k, out, logger);
+      if (!bq.full() || r_dis < bq.top().second) {
+        knn_filter<BT>(rb->rc, q, bq, logger);
       }
     };
 
