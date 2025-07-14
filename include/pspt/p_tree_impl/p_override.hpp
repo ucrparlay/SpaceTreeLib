@@ -9,6 +9,24 @@
 #include "pspt/dependence/tree_node.h"
 
 namespace pspt {
+#define FT long
+
+// return the sqr distance between a point and a mbr
+template <class Point, class MBR>
+auto point_mbr_sqrdis(Point p, MBR& mbr) {
+  FT dx = max(max(mbr.first[0] - p[0], (FT)0.0),
+              max(p[0] - mbr.second[0], (FT)0.0));
+  FT dy = max(max(mbr.first[1] - p[1], (FT)0.0),
+              max(p[1] - mbr.second[1], (FT)0.0));
+  return dx * dx + dy * dy;
+}
+
+// return the sqr distance between two points
+template <class Point>
+auto point_point_sqrdis(Point const& lhs, Point const& rhs) {
+  return (lhs.pnt[0] - rhs.pnt[0]) * (lhs.pnt[0] - rhs.pnt[0]) +
+         (lhs.pnt[1] - rhs.pnt[1]) * (lhs.pnt[1] - rhs.pnt[1]);
+}
 
 template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
@@ -16,7 +34,23 @@ template <typename Range>
 auto PTree<Point, SplitRule, kSkHeight, kImbaRatio>::KNN(
     Node* T, Point const& q, kBoundedQueue<Point, Range>& bq) {
   KNNLogger logger;
-  CpamAugMap::template knn<BT>(this->cpam_aug_map_, q, bq, logger);
+  auto f = [&](auto const cur_pt) { return point_point_sqrdis(cur_pt, q); };
+
+  auto f2 = [&](Box cur_mbr) { return point_mbr_sqrdis(q, cur_mbr); };
+
+  using nn_pair = std::pair<Point, FT>;
+  struct nn_pair_cmp {
+    bool operator()(nn_pair& lhs, nn_pair& rhs) {
+      return lhs.second < rhs.second ||
+             (lhs.second == rhs.second && lhs.first < rhs.first);
+    }
+  };
+
+  std::priority_queue<nn_pair, std::vector<nn_pair>, nn_pair_cmp> nn_res;
+  CpamAugMap::knn_filter(this->cpam_aug_map_, f, f2, 10, nn_res, logger);
+  // return nn_res.top().second;
+
+  // CpamAugMap::template knn<BT>(this->cpam_aug_map_, q, bq, logger);
   return logger;
 }
 

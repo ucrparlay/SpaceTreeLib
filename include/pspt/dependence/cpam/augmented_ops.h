@@ -282,6 +282,67 @@ struct augmented_ops : Map {
                                                                          : 0);
   }
 
+  //  F is point-point dis, F2 is point-mbr dis
+  template <typename F, typename F2, typename Out, typename Logger>
+  static void knn_filter(node* b, F const& f, const F2& f2, size_t& k, Out& out,
+                         Logger& logger) {
+    if (!b) return;
+    logger.vis_node_num++;
+
+    auto pt_check = [&](auto const& cur_pt) {
+      auto cur_dis = f(cur_pt);
+      if (out.size() < k)
+        out.push(std::make_pair(cur_pt, cur_dis));
+      else if (cur_dis < out.top().second) {
+        out.pop();
+        out.push(std::make_pair(cur_pt, cur_dis));
+      }
+    };
+
+    if (Map::is_compressed(b)) {  // leaf node·
+      auto f_filter = [&](ET& et) {
+        auto cur_pt = et;
+        pt_check(cur_pt);
+      };
+      Map::iterate_seq(b, f_filter);
+      return;
+    }
+
+    auto rb = Map::cast_to_regular(b);
+    // auto cur_pt = Map::get_val(rb);
+    auto cur_pt = rb->entry.first;
+    pt_check(cur_pt);
+
+    auto l_dis = std::numeric_limits<long>::max();
+    auto r_dis = std::numeric_limits<long>::max();
+    if (rb->lc) {
+      auto cur_aug = aug_val(rb->lc);
+      l_dis = f2(cur_aug);
+    }
+    if (rb->rc) {
+      auto cur_aug = aug_val(rb->rc);
+      r_dis = f2(cur_aug);
+    }
+    auto go_left = [&]() {
+      if (out.size() < k || l_dis < out.top().second) {
+        knn_filter(rb->lc, f, f2, k, out, logger);
+      }
+    };
+    auto go_right = [&]() {
+      if (out.size() < k || r_dis < out.top().second) {
+        knn_filter(rb->rc, f, f2, k, out, logger);
+      }
+    };
+
+    if (l_dis <= r_dis) {  //  go left first
+      go_left();
+      go_right();
+    } else {
+      go_right();
+      go_left();
+    }
+  }
+
   template <class BaseTree, typename Logger, typename kBoundedQueue>
   static void knn(node* b, ET const& q, kBoundedQueue& bq, Logger& logger) {
     using BT = BaseTree;
@@ -311,11 +372,14 @@ struct augmented_ops : Map {
     }
 
     auto rb = Map::cast_to_regular(b);
-    Coord d_lc = BT::P2BMinDistanceSquare(q, Map::aug_val_ref(rb->lc));
-    Coord d_rc = BT::P2BMinDistanceSquare(q, Map::aug_val_ref(rb->rc));
+    Coord d_lc = rb->lc ? BT::P2BMinDistanceSquare(q, Map::aug_val_ref(rb->lc))
+                        : std::numeric_limits<Coord>::max();
+    Coord d_rc = rb->rc ? BT::P2BMinDistanceSquare(q, Map::aug_val_ref(rb->rc))
+                        : std::numeric_limits<Coord>::max();
     bool go_left = d_lc <= d_rc;
 
     // check current entry
+    // the rb->entry is a <point, aug> pair
     auto r = BT::InterruptibleDistance(q, rb->entry.first, bq.top_value());
     if (!bq.full() || r < bq.top_value()) {
       bq.insert(std::make_pair(std::ref(rb->entry.first), r));

@@ -64,6 +64,13 @@ struct aug_map_ : private map_<_Entry, Join_Tree> {
     return Tree::template knn<BaseTree>(m.root, q, bq, logger);
   }
 
+  template <typename F, typename F2, typename Out, typename Logger>
+  static void knn_filter(M m, F const& f, const F2& f2, size_t k, Out& out,
+                         Logger& logger) {
+    Tree::knn_filter(m.get_root(), f, f2, k, out, logger);
+    return;
+  }
+
   template <class BaseTree, typename Box, typename Logger, typename Out>
   static void range_report_filter2(M m, Box const& query_box, size_t& cnt,
                                    Out&& out, Logger& logger) {
