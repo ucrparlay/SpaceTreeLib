@@ -160,7 +160,7 @@ void runKDParallel(auto const& wp, auto const& wi, Typename* kdknn,
   if (tag & (1 << 3)) {
     parlay::sequence<double> const ratios = {0.001};
     for (auto rat : ratios) {
-      BatchInsertByStep<Point, Tree, true>(tree, wp, wi, rounds, rat);
+      BatchInsertByStep<Point, Tree, true>(tree, wp, rounds, rat);
     }
     tree.template Validate<typename Tree::Leaf, typename Tree::Interior,
                            typename Tree::SplitRuleType>();

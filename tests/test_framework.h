@@ -211,7 +211,8 @@ void BuildTree(parlay::sequence<Point> const& WP, int const& rounds,
         auto deep = pkd.template GetAveTreeHeight<Leaf, Interior>();
         std::cout << deep << " " << std::flush;
       } else {
-        std::cout << "-1" << " " << std::flush;
+        std::cout << "-1"
+                  << " " << std::flush;
       }
     } else if (kPrint == 2) {
       size_t max_deep = 0;
@@ -222,7 +223,8 @@ void BuildTree(parlay::sequence<Point> const& WP, int const& rounds,
                   << " " << pkd.template GetAveTreeHeight<Leaf, Interior>()
                   << " " << std::flush;
       } else {
-        std::cout << "-1 -1" << " " << std::flush;
+        std::cout << "-1 -1"
+                  << " " << std::flush;
       }
     }
 
@@ -379,13 +381,12 @@ struct StepUpdateLogger {
 };
 template <typename Point, typename Tree, bool kInsert>
 void BatchInsertByStep(Tree& pkd, parlay::sequence<Point> const& WP,
-                       parlay::sequence<Point> const& WI, int const rounds,
-                       double const insert_ratio, double const max_ratio = 1) {
+                       int const rounds, double const insert_ratio,
+                       double const max_ratio = 1) {
   using Points = typename Tree::Points;
   using Box = typename Tree::Box;
   Points wp = Points::uninitialized(WP.size());
-  Points wi = Points::uninitialized(WI.size());
-  size_t n = static_cast<size_t>(max_ratio * wi.size());
+  size_t n = static_cast<size_t>(max_ratio * wp.size());
   size_t step = static_cast<size_t>(insert_ratio * n);
   size_t slice_num = n / step;
   parlay::sequence<parlay::sequence<double>> time_table(
@@ -402,10 +403,10 @@ void BatchInsertByStep(Tree& pkd, parlay::sequence<Point> const& WP,
   // NOTE: build the tree by type
   auto prepare_build = [&]() {
     if constexpr (pspt::IsKdTree<Tree> || pspt::IsPTree<Tree>) {
-      parlay::copy(WI, wi);
+      parlay::copy(WP, wp);
     } else if constexpr (pspt::IsOrthTree<Tree>) {
-      parlay::copy(WI, wi);
-      auto box = Tree::GetBox(wi.cut(0, n));
+      parlay::copy(WP, wp);
+      auto box = Tree::GetBox(wp.cut(0, n));
       pkd.SetBoundingBox(box);
     } else {
       std::cout << "Not supported Tree type\n" << std::flush;
@@ -418,7 +419,7 @@ void BatchInsertByStep(Tree& pkd, parlay::sequence<Point> const& WP,
     size_t cnt = 0;
     while (l < n) {
       r = std::min(l + step, n);
-      pkd.BatchInsert(parlay::make_slice(wi.begin() + l, wi.begin() + r));
+      pkd.BatchInsert(parlay::make_slice(wp.begin() + l, wp.begin() + r));
       l = r;
       time_table[round_cnt][cnt++] += t.next_time();
     }
@@ -1275,9 +1276,11 @@ void PrintTreeParam() {
             << "Inba: " << TreeWrapper::TreeType::GetImbalanceRatio() << "; ";
 
   if constexpr (std::is_integral_v<typename TreeWrapper::Point::Coord>) {
-    std::cout << "Coord: integer" << "; ";
+    std::cout << "Coord: integer"
+              << "; ";
   } else if (std::is_floating_point_v<typename TreeWrapper::Point::Coord>) {
-    std::cout << "Coord: float" << "; ";
+    std::cout << "Coord: float"
+              << "; ";
   }
   std::cout << "\n" << std::flush;
   return;

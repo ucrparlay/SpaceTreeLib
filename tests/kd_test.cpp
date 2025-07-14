@@ -85,14 +85,14 @@ int main(int argc, char* argv[]) {
     if (kTag & (1 << 3)) {
       parlay::sequence<double> const ratios = {1, 0.1, 0.01, 0.001, 0.0001};
       for (auto rat : ratios) {
-        BatchInsertByStep<Point, Tree, true>(tree, wp, wi, kRounds, rat);
+        BatchInsertByStep<Point, Tree, true>(tree, wp, kRounds, rat);
 
         // test knn
         std::cout << "knn time: ";
-        size_t batchSize = static_cast<size_t>(wi.size() * kBatchQueryRatio);
+        size_t batchSize = static_cast<size_t>(wp.size() * kBatchQueryRatio);
         int k[3] = {1, 10, 100};
         for (int i = 0; i < 3; i++) {
-          run_batch_knn(wi, k[i], batchSize);
+          run_batch_knn(wp, k[i], batchSize);
         }
         puts("");
       }

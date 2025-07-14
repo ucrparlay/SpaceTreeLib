@@ -165,7 +165,7 @@ void runPTreeParallel(auto const& wp, auto const& wi, Typename* kdknn,
   if (tag & (1 << 3)) {
     parlay::sequence<double> const ratios = {0.001};
     for (auto rat : ratios) {
-      BatchInsertByStep<Point, Tree, true>(tree, wp, wi, rounds, rat);
+      BatchInsertByStep<Point, Tree, true>(tree, wp, rounds, rat);
     }
   }
 
@@ -207,7 +207,7 @@ void runPTreeParallel(auto const& wp, auto const& wi, Typename* kdknn,
         static_cast<size_t>(total_batch_size * kCCPBatchDiffOverlapRatio);
     new_wp = wp.subseq(overlap_size, wp.size());
   } else if (tag == (1 << 3)) {
-    new_wp = wi;
+    new_wp = wp;
     // new_wp.append(wi);
   } else {
     new_wp = wp;

@@ -4,10 +4,9 @@ set -o xtrace
 Node=(1000000000)
 Tree=(0 1 2)
 Dim=(2)
-# paths=("/data/zmen002/kdtree/ss_varden_bigint/1000000000_2/1.in" "/data/zmen002/kdtree/uniform_bigint/1000000000_2/2_sort_by_0.in" "/data/zmen002/kdtree/uniform_bigint/1000000000_2/2.in")
-paths=("/data/zmen002/kdtree/uniform_bigint/1000000000_2/2.in")
+paths=("/data/zmen002/kdtree/ss_varden_bigint/1000000000_2/1.in" "/data/zmen002/kdtree/uniform_bigint/1000000000_2/2_sort_by_0.in" "/data/zmen002/kdtree/uniform_bigint/1000000000_2/2.in")
 
-tag=$((2#10000)) # 1110000
+tag=$((2#1000)) # 1110000
 k=10
 insNum=1
 summary=0
@@ -16,8 +15,8 @@ queryType=$((2#0)) # 1110000
 round=3
 resFile=""
 
-dest="incre_delete.log"
-# : >"${dest}"
+dest="incre_insert.log"
+: >"${dest}"
 echo ">>>${dest}"
 for tree in "${Tree[@]}"; do
     if [[ ${tree} -eq 0 ]]; then
@@ -34,7 +33,7 @@ for tree in "${Tree[@]}"; do
 
     for split in "${splits[@]}"; do
         for path in "${paths[@]}"; do
-            numactl -i all ${exe} -p "${path}" -r ${round} -k ${k} -i ${read_file} -s ${summary} -t ${tag} -d 2 -q ${queryType} -T ${tree} -l ${split} 2>&1 | tee -a "${dest}"
+            numactl -i all ${exe} -p ${path} -r ${round} -k ${k} -i ${read_file} -s ${summary} -t ${tag} -d 2 -q ${queryType} -T ${tree} -l ${split} 2>&1 | tee -a "${dest}"
         done
     done
 done
