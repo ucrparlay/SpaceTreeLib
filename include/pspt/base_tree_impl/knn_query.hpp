@@ -149,7 +149,8 @@ void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::KNNLeaf(
   while (i < TL->size) {
     Coord r =
         InterruptibleDistance(q, TL->pts[(!TL->is_dummy) * i], bq.top_value());
-    if (Num::Lt(r, bq.top_value())) {
+    if (Num::Lt(r, bq.top_value())) {  // PERF: the queue is full, no need to
+                                       // insert points with equal distances
       bq.insert(std::make_pair(std::ref(TL->pts[(!TL->is_dummy) * i]), r));
     } else if (TL->is_dummy) {
       break;

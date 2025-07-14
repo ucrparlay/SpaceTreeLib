@@ -298,7 +298,10 @@ struct augmented_ops : Map {
           return;
         }
         auto r = BT::InterruptibleDistance(q, et, bq.top_value());
-        if (r < bq.top_value()) {
+        if (r <
+            bq.top_value()) {  // PERF: remember currently the queue is full; if
+                               // r == bq.top(), then it is useless to insert
+                               // it, as it should not appears in the queue
           bq.insert(std::make_pair(std::ref(et), r));
         }
         return;
@@ -310,38 +313,25 @@ struct augmented_ops : Map {
     auto rb = Map::cast_to_regular(b);
     Coord d_lc = BT::P2BMinDistanceSquare(q, Map::aug_val_ref(rb->lc));
     Coord d_rc = BT::P2BMinDistanceSquare(q, Map::aug_val_ref(rb->rc));
-    bool go_left = d_lc < d_rc;
+    bool go_left = d_lc <= d_rc;
 
-    knn<BT>(go_left ? rb->lc : rb->rc, q, bq, logger);
-
+    // check current entry
     auto r = BT::InterruptibleDistance(q, rb->entry.first, bq.top_value());
     if (!bq.full() || r < bq.top_value()) {
       bq.insert(std::make_pair(std::ref(rb->entry.first), r));
     }
+
+    knn<BT>(go_left ? rb->lc : rb->rc, q, bq, logger);
 
     logger.check_box_num++;
     if (((go_left ? d_rc : d_lc) > bq.top_value()) && bq.full()) {
       logger.skip_box_num++;
       return;
     }
+
     knn<BT>(go_left ? rb->rc : rb->lc, q, bq, logger);
 
     return;
-    // if (!BT::BoxIntersectBox(node_box, query_box)) {
-    //   logger.skip_box_num++;
-    //   return 0;
-    // } else if (BT::WithinBox(node_box, query_box)) {
-    //   logger.full_box_num++;
-    //   return rb->s;
-    // }
-    //
-    // auto l = range_count_filter2<BaseTree>(rb->lc, query_box, logger);
-    // auto r = range_count_filter2<BaseTree>(rb->rc, query_box, logger);
-    //
-    // return l + r +
-    //        static_cast<size_t>(BT::WithinBox(rb->entry.first, query_box) ? 1
-    //                                                                      :
-    //                                                                      0);
   }
 
   template <class F, typename F2>
