@@ -61,12 +61,14 @@ struct aug_map_ : private map_<_Entry, Join_Tree> {
 
   template <class BaseTree, typename Logger, typename kBoundedQueue>
   static void knn(M m, E const& q, kBoundedQueue& bq, Logger& logger) {
-    return Tree::template knn<BaseTree>(m.root, q, bq, logger);
+    return Tree::template knn<BaseTree>(m.get_root(), q, bq, logger);
   }
 
-  template <class BaseTree, typename kBoundedQueue, typename Logger>
-  static void knn_filter(M m, E const& q, kBoundedQueue& bq, Logger& logger) {
-    Tree::template knn_filter<BaseTree>(m.root, q, bq, logger);
+  template <class BaseTree, typename F, typename F2, typename Out,
+            typename Logger>
+  static void knn_filter(M m, E const& q, F const& f, const F2& f2, size_t k,
+                         Out& out, Logger& logger) {
+    Tree::template knn_filter<BaseTree>(m.get_root(), q, f, f2, k, out, logger);
     return;
   }
 
