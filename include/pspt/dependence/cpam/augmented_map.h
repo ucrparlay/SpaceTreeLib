@@ -50,8 +50,8 @@ struct aug_map_ : private map_<_Entry, Join_Tree> {
   template <class BaseTree, typename Box, typename Logger>
   static size_t range_count_filter2(M m, Box const& query_box, Logger& logger) {
     return Tree::template range_count_filter2<BaseTree, Box, Logger>(
-        // m.get_root(), query_box, logger);
-        m.root, query_box, logger);
+        m.get_root(), query_box, logger);
+    // m.root, query_box, logger);
   }
 
   template <typename Range>
@@ -61,7 +61,13 @@ struct aug_map_ : private map_<_Entry, Join_Tree> {
 
   template <class BaseTree, typename Logger, typename kBoundedQueue>
   static void knn(M m, E const& q, kBoundedQueue& bq, Logger& logger) {
-    return Tree::template knn<BaseTree>(m.get_root(), q, bq, logger);
+    // parlay::internal::timer t;
+    // t.start();
+    // auto root = m.get_root();
+    // logger.generate_box_num += t.total_time();
+    // Tree::template knn<BaseTree>(m.get_root(), q, bq, logger);
+    Tree::template knn<BaseTree>(std::move(m.root), q, bq, logger);
+    // GC::decrement(root);
   }
 
   template <class BaseTree, typename F, typename F2, typename Out,
