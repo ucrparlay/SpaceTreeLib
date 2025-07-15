@@ -8,6 +8,7 @@
 #include "dependence/tree_node.h"
 
 // NOTE: for spacial filling curve
+#include "libmorton/morton_BMI.h"
 #include "space_filling_curve/hilbert.c"
 #include "space_filling_curve/hilbert.h"
 
@@ -30,14 +31,22 @@ struct MortonCurve {
 
   static auto Encode(Point const& p) {
     assert(std::is_integral_v<Coord>);
-    uint_fast8_t loc = 0;
-    CurveCode id = 0;
-    for (DimsType i = 0; i < 64 / Point::GetDim(); i++) {
-      for (DimsType d = 0; d < Point::GetDim(); d++) {
-        id = id | (((p.pnt[d] >> i) & static_cast<CurveCode>(1)) << (loc++));
-      }
+    if constexpr (Point::GetDim() == 2) {
+      return libmorton::m2D_e_BMI<uint64_t, Coord>(p.pnt[0], p.pnt[1]);
+    } else if constexpr (Point::GetDim() == 3) {
+      return libmorton::m3D_e_BMI<uint64_t, Coord>(p.pnt[0], p.pnt[1],
+                                                   p.pnt[2]);
+    } else {
+      static_assert("MortonCurve only supports 2D and 3D points");
     }
-    return id;
+    // uint_fast8_t loc = 0;
+    // CurveCode id = 0;
+    // for (DimsType i = 0; i < 64 / Point::GetDim(); i++) {
+    //   for (DimsType d = 0; d < Point::GetDim(); d++) {
+    //     id = id | (((p.pnt[d] >> i) & static_cast<CurveCode>(1)) << (loc++));
+    //   }
+    // }
+    // return id;
   }
 };
 

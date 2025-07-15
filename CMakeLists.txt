@@ -66,6 +66,10 @@ message(STATUS "\n\n---------------------------- PARLAY ------------------------
 add_subdirectory(include/parlaylib)
 message(STATUS "---------------------------- END PARLAY -----------------------------\n\n")
 
+message(STATUS "\n\n---------------------------- LIBMORTON -----------------------------")
+set(BUILD_TESTING OFF CACHE BOOL "Disable the libmorton test")
+add_subdirectory(include/libmorton)
+message(STATUS "---------------------------- END LIBMORTON -----------------------------\n\n")
 
 # NOTE: clear CMAKE_MODULE_PATH to avoid finding parlay's cmake files
 list(REMOVE_ITEM CMAKE_MODULE_PATH "${PARLAY_SOURCE_DIR}/cmake")
@@ -77,16 +81,12 @@ message(STATUS "\n\n---------------------------- PSPT --------------------------
 # NOTE: PSPT
 add_library(PSPT INTERFACE)
 set(PSPT_INCLUDE_DIR "${PSPT_SOURCE_DIR}/include/pspt")
-target_link_libraries(PSPT INTERFACE parlay)
+target_link_libraries(PSPT INTERFACE parlay libmorton)
 target_include_directories(PSPT INTERFACE $<BUILD_INTERFACE:${PSPT_INCLUDE_DIR}>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 
 add_subdirectory(static_analysis)
-
-include(GNUInstallDirs)
-install(TARGETS PSPT
-	LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-	PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+message(STATUS "---------------------------- END PSPT -----------------------------\n\n")
 
 add_executable(kd_test ${PROJECT_SOURCE_DIR}/tests/kd_test.cpp)
 target_link_libraries(kd_test PUBLIC PSPT)
@@ -112,6 +112,8 @@ target_include_directories(data_washer PUBLIC ${PROJECT_SOURCE_DIR}/include)
 
 # CGAL
 if(CGAL)
+	message(STATUS "\n\n---------------------------- CGAL -----------------------------")
+	message(STATUS "To disable using -DCGAL=OFF")
 	find_package(CGAL REQUIRED)
 
 	# TBB
@@ -151,6 +153,7 @@ if(CGAL)
 	# add_executable(boost_rtree ${PROJECT_SOURCE_DIR}/tests/boost_rtree.cpp)
 	# target_link_libraries(boost_rtree PUBLIC PSPT ${Boost_LIBRARIES})
 	# target_include_directories(boost_rtree PUBLIC ${PROJECT_SOURCE_DIR}/include ${Boost_INCLUDE_DIRS})
+	message(STATUS "\n\n---------------------------- END CGAL -----------------------------")
 endif()
 
 file(GLOB_RECURSE all_files
