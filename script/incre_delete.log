@@ -1,0 +1,163 @@
+Tree: KdTree; Split: MaxStretchDim-ObjectMedian; BDO: 6; Inba: 30; Coord: integer; 
+2_sort_by_0.in 5.19096 28 25.5197 Incre Delete--------------------------
+1
+median: (0, 0.297267)-> min: (0, 0.297267)-> max: (0, 0.297267)-> tot: 0.297269-> avg: 0.297267
+Incre Delete--------------------------
+0.1
+median: (5, 0.682709)-> min: (9, 0.030164)-> max: (3, 3.62644)-> tot: 10.567-> avg: 1.0567
+Incre Delete--------------------------
+0.01
+median: (21, 0.141999)-> min: (99, 0.00297267)-> max: (36, 4.27776)-> tot: 26.5047-> avg: 0.265047
+Incre Delete--------------------------
+0.001
+median: (712, 0.0170363)-> min: (999, 0.000242333)-> max: (368, 3.89516)-> tot: 42.3448-> avg: 0.0423443
+Incre Delete--------------------------
+0.0001
+median: (6755, 0.00366133)-> min: (9999, 5.76667e-05)-> max: (3680, 4.0606)-> tot: 73.223-> avg: 0.0073218
+
+Tree: KdTree; Split: MaxStretchDim-ObjectMedian; BDO: 6; Inba: 30; Coord: integer; 
+2_sort_by_0.in Unable to open file: /data/zmen002/kdtree/ss_varden_bigint/1000000000_2/2_sort_by_0.in
+Tree: OrthTree; Split: RotateDim-SpatialMedian; BDO: 6; Inba: 30; Coord: integer; 
+2_sort_by_0.in 4.86367 14 13.0001 Incre Delete--------------------------
+1
+median: (0, 0.493526)-> min: (0, 0.493526)-> max: (0, 0.493526)-> tot: 0.493528-> avg: 0.493526
+Incre Delete--------------------------
+0.1
+median: (7, 0.224001)-> min: (9, 0.048743)-> max: (1, 0.251135)-> tot: 1.90551-> avg: 0.190551
+Incre Delete--------------------------
+0.01
+median: (6, 0.0326153)-> min: (99, 0.005069)-> max: (47, 0.04516)-> tot: 3.1892-> avg: 0.0318915
+Incre Delete--------------------------
+0.001
+median: (242, 0.00432)-> min: (999, 0.000476333)-> max: (972, 0.008844)-> tot: 4.26436-> avg: 0.00426386
+Incre Delete--------------------------
+0.0001
+median: (1868, 0.000865333)-> min: (9999, 0.000122)-> max: (9910, 0.00468)-> tot: 8.90759-> avg: 0.00089026
+
+Tree: OrthTree; Split: RotateDim-SpatialMedian; BDO: 6; Inba: 30; Coord: integer; 
+2_sort_by_0.in Unable to open file: /data/zmen002/kdtree/ss_varden_bigint/1000000000_2/2_sort_by_0.in
+Tree: PTree; Split: HilbertCurve; BDO: 6; Inba: 30; Coord: integer; 
+2_sort_by_0.in 3.40317 -1 -1 Incre Delete--------------------------
+1
+median: (0, 2.5955)-> min: (0, 2.5955)-> max: (0, 2.5955)-> tot: 2.5955-> avg: 2.5955
+Incre Delete--------------------------
+0.1
+median: (8, 0.246298)-> min: (1, 0.24298)-> max: (4, 0.248164)-> tot: 2.45762-> avg: 0.245762
+Incre Delete--------------------------
+0.01
+median: (22, 0.0263213)-> min: (14, 0.0256397)-> max: (61, 0.028262)-> tot: 2.65362-> avg: 0.0265357
+Incre Delete--------------------------
+0.001
+median: (284, 0.00325067)-> min: (58, 0.00301233)-> max: (324, 0.005924)-> tot: 3.33899-> avg: 0.0033385
+Incre Delete--------------------------
+0.0001
+median: (3241, 0.000815333)-> min: (9999, 0.000579)-> max: (7656, 0.00547367)-> tot: 8.32403-> avg: 0.000831903
+
+Tree: PTree; Split: HilbertCurve; BDO: 6; Inba: 30; Coord: integer; 
+2_sort_by_0.in Unable to open file: /data/zmen002/kdtree/ss_varden_bigint/1000000000_2/2_sort_by_0.in
+
+
+
+Tree: KdTree; Split: MaxStretchDim-ObjectMedian; BDO: 6; Inba: 30; Coord: integer; 
+1.in 6.04706 28 25.5294 Incre Delete--------------------------
+1
+median: (0, 0.296325)-> min: (0, 0.296325)-> max: (0, 0.296325)-> tot: 0.296326-> avg: 0.296325
+Incre Delete--------------------------
+0.1
+median: (1, 0.824771)-> min: (9, 0.0307483)-> max: (5, 1.92537)-> tot: 9.54512-> avg: 0.954512
+Incre Delete--------------------------
+0.01
+median: (63, 0.10007)-> min: (99, 0.00319433)-> max: (54, 1.95879)-> tot: 19.0648-> avg: 0.190648
+Incre Delete--------------------------
+0.001
+median: (453, 0.0114447)-> min: (999, 0.000238667)-> max: (542, 1.97495)-> tot: 28.9079-> avg: 0.0289074
+Incre Delete--------------------------
+0.0001
+median: (8742, 0.00286267)-> min: (9999, 5.7e-05)-> max: (5428, 1.96704)-> tot: 51.0609-> avg: 0.00510559
+
+Tree: OrthTree; Split: RotateDim-SpatialMedian; BDO: 6; Inba: 30; Coord: integer; 
+1.in 12.1265 28 24.5588 Incre Delete--------------------------
+1
+median: (0, 0.519095)-> min: (0, 0.519095)-> max: (0, 0.519095)-> tot: 0.519097-> avg: 0.519095
+Incre Delete--------------------------
+0.1
+median: (2, 0.69603)-> min: (9, 0.0531903)-> max: (1, 0.968921)-> tot: 6.78003-> avg: 0.678003
+Incre Delete--------------------------
+0.01
+median: (95, 0.0862223)-> min: (99, 0.00677967)-> max: (11, 0.112054)-> tot: 8.5545-> avg: 0.0855444
+Incre Delete--------------------------
+0.001
+median: (684, 0.012535)-> min: (999, 0.000453667)-> max: (115, 0.0173577)-> tot: 12.5444-> avg: 0.0125439
+Incre Delete--------------------------
+0.0001
+median: (7364, 0.002785)-> min: (9999, 4.33333e-05)-> max: (8519, 0.00646633)-> tot: 28.6916-> avg: 0.00286866
+
+Tree: PTree; Split: HilbertCurve; BDO: 6; Inba: 30; Coord: integer; 
+1.in 3.14303 -1 -1 Incre Delete--------------------------
+1
+median: (0, 2.49988)-> min: (0, 2.49988)-> max: (0, 2.49988)-> tot: 2.49988-> avg: 2.49988
+Incre Delete--------------------------
+0.1
+median: (2, 0.23319)-> min: (0, 0.229608)-> max: (6, 0.240174)-> tot: 2.33842-> avg: 0.233841
+Incre Delete--------------------------
+0.01
+median: (81, 0.0261857)-> min: (47, 0.0242357)-> max: (61, 0.0357593)-> tot: 2.6756-> avg: 0.0267555
+Incre Delete--------------------------
+0.001
+median: (175, 0.00346133)-> min: (0, 0.00277133)-> max: (917, 0.006631)-> tot: 3.65407-> avg: 0.00365357
+Incre Delete--------------------------
+0.0001
+median: (6993, 0.000781667)-> min: (425, 0.000518333)-> max: (9860, 0.00512)-> tot: 8.10176-> avg: 0.000809674
+
+
+Tree: KdTree; Split: MaxStretchDim-ObjectMedian; BDO: 6; Inba: 30; Coord: integer; 
+2.in 3.77454 28 25.5267 Incre Delete--------------------------
+1
+median: (0, 0.323776)-> min: (0, 0.323776)-> max: (0, 0.323776)-> tot: 0.323778-> avg: 0.323776
+Incre Delete--------------------------
+0.1
+median: (4, 0.484593)-> min: (9, 0.046327)-> max: (1, 0.544913)-> tot: 4.30293-> avg: 0.430292
+Incre Delete--------------------------
+0.01
+median: (52, 0.104374)-> min: (99, 0.00510167)-> max: (20, 0.122418)-> tot: 9.78085-> avg: 0.0978079
+Incre Delete--------------------------
+0.001
+median: (505, 0.0201063)-> min: (999, 0.000385667)-> max: (235, 0.0235687)-> tot: 18.9318-> avg: 0.0189313
+Incre Delete--------------------------
+0.0001
+median: (6010, 0.00493467)-> min: (9999, 7.2e-05)-> max: (381, 0.00831333)-> tot: 47.3446-> avg: 0.00473396
+
+Tree: OrthTree; Split: RotateDim-SpatialMedian; BDO: 6; Inba: 30; Coord: integer; 
+2.in 3.34457 14 13.0001 Incre Delete--------------------------
+1
+median: (0, 0.471056)-> min: (0, 0.471056)-> max: (0, 0.471056)-> tot: 0.471058-> avg: 0.471056
+Incre Delete--------------------------
+0.1
+median: (3, 0.483171)-> min: (9, 0.0758013)-> max: (4, 0.495522)-> tot: 4.11179-> avg: 0.411179
+Incre Delete--------------------------
+0.01
+median: (38, 0.103484)-> min: (99, 0.00755067)-> max: (20, 0.114744)-> tot: 9.25524-> avg: 0.0925519
+Incre Delete--------------------------
+0.001
+median: (386, 0.0186693)-> min: (999, 0.000443667)-> max: (114, 0.022683)-> tot: 17.1436-> avg: 0.0171431
+Incre Delete--------------------------
+0.0001
+median: (5030, 0.002694)-> min: (9999, 9.53333e-05)-> max: (4892, 0.00654)-> tot: 26.2164-> avg: 0.00262114
+
+Tree: PTree; Split: HilbertCurve; BDO: 6; Inba: 30; Coord: integer; 
+2.in 3.34955 -1 -1 Incre Delete--------------------------
+1
+median: (0, 2.7336)-> min: (0, 2.7336)-> max: (0, 2.7336)-> tot: 2.7336-> avg: 2.7336
+Incre Delete--------------------------
+0.1
+median: (6, 0.535102)-> min: (9, 0.282929)-> max: (3, 0.689919)-> tot: 4.9361-> avg: 0.493609
+Incre Delete--------------------------
+0.01
+median: (49, 0.159061)-> min: (99, 0.0320373)-> max: (30, 0.208037)-> tot: 14.6913-> avg: 0.146913
+Incre Delete--------------------------
+0.001
+median: (235, 0.029837)-> min: (999, 0.00384933)-> max: (628, 0.0425303)-> tot: 28.5188-> avg: 0.0285183
+Incre Delete--------------------------
+0.0001
+median: (4491, 0.00440633)-> min: (9999, 0.000570333)-> max: (2673, 0.0103163)-> tot: 44.0221-> avg: 0.00440172
+
