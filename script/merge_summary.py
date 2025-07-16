@@ -9,22 +9,35 @@ path = "../benchmark"
 benchmarks = ["uniform_bigint", "ss_varden_bigint"]
 store_prefix = "data/"
 Nodes = [1000000000]
-Dims = [2, 3]
+# Dims = [2, 3]
+Dims = [2]
 
-solver_name = ["kd", "orth"]
+solver_name = ["kdtree", "orth", "cpam"]
 res_map = {
-    "kd": "res_0_",
+    "kdtree": "res_0_",
     "orth": "res_1_",
-    "r": "res_2_",
+    "cpam": "res_2_",
 }
-split_name = {"0", "1", "2", "3"}
+
+solver_split_map = {
+    "kdtree": ["kd_0", "kd_3"],
+    "orth": ["orth_3"],
+    "cpam": ["cpam_1", "cpam_2"],
+}
+
 split_map = {
-    "0": "MaxStr/Obj",
-    "1": "Rot/Obj",
-    "2": "MaxStr/SpaMid",
-    "3": "Rot/SpaMid",
+    "kd_0": "MaxStr/Obj",
+    "kd_1": "Rot/Obj",
+    "kd_2": "MaxStr/SpaMid",
+    "kd_3": "Rot/SpaMid",
+    "orth_0": "MaxStr/Obj",
+    "orth_1": "Rot/Obj",
+    "orth_2": "MaxStr/SpaMid",
+    "orth_3": "Rot/SpaMid",
+    "cpam_1": "Hilbert",
+    "cpam_2": "Morton",
 }
-type = "summary"
+op = "summary"
 
 common = [
     "solver",
@@ -161,7 +174,7 @@ if len(sys.argv) > 1 and int(sys.argv[1]) == 1:
         for bench in benchmarks:
             for dim in Dims:
                 for solver in solver_name:
-                    for split in list(split_name):
+                    for split in solver_split_map[solver]:
                         for node in Nodes:
                             P = (
                                 path
@@ -173,9 +186,9 @@ if len(sys.argv) > 1 and int(sys.argv[1]) == 1:
                                 + str(dim)
                                 + "/"
                                 + res_map[solver]
-                                + type
+                                + op
                                 + "_"
-                                + split
+                                + split[-1]
                                 + ".out"
                             )
                             combine(

@@ -13,7 +13,7 @@ Dims = [2, 3]
 
 # type = "batch_update"
 # type = "batch_knn_query"
-type = "query"
+op = "query"
 # type = "summary"
 # type = "quality"
 # type = "count"
@@ -22,27 +22,26 @@ type = "query"
 files = []
 solver_name = []
 
-if type == "batch_update":
+if op == "batch_update":
     solver_name = ["test", "zdtree", "cgal"]
     files = ["build", "insert", "delete"]
     Dims = [3]
-elif type == "query":
+elif op == "query":
     solver_name = ["kdtree", "orth", "cpam"]
-    # files = ["build", "knn_3", "count_3", "rquery_3"]
-    files = ["build", "count_3", "rquery_3"]
+    files = ["build", "knn_3", "count_3", "rquery_3"]
+    # files = ["build", "count_3", "rquery_3"]
     Dims = [2]
-elif type == "summary":
+elif op == "summary":
     solver_name = ["kdtree", "orth"]
-    files = ["build", "insert", "delete",
-             "diff", "knn_1", "count_1", "rquery_1"]
+    files = ["build", "insert", "delete", "diff", "knn_1", "count_1", "rquery_1"]
     Dims = [2, 3]
-elif type == "quality":
+elif op == "quality":
     solver_name = ["test"]
     files = ["build", "increBuild", "decreBuild", "increKNN"]
-elif type == "real_world":
+elif op == "real_world":
     solver_name = ["test", "zdtree", "cgal", "LogTree", "BhlTree"]
     files = ["real_world"]
-elif type == "count":
+elif op == "count":
     solver_name = ["test"]
     files = ["build", "count"]
     Dims = [2, 3, 5, 9]
@@ -56,7 +55,7 @@ res_map = {
 solver_split_map = {
     "kdtree": ["kd_0", "kd_3"],
     "orth": ["orth_3"],
-    "cpam": ["cpam_1"],
+    "cpam": ["cpam_1", "cpam_2"],
 }
 
 split_map = {
@@ -208,7 +207,7 @@ def calculatePrefix():
 
 # * merge the result
 if len(sys.argv) > 1 and int(sys.argv[1]) == 1:
-    print(type)
+    print(op)
     calculatePrefix()
     for file in files:
         csvWriter = csvSetup(file)
@@ -216,6 +215,7 @@ if len(sys.argv) > 1 and int(sys.argv[1]) == 1:
         for bench in benchmarks:
             for dim in Dims:
                 for node in Nodes:
+                    # solver_name = ["kdtree", "orth", "cpam"]
                     for solver in solver_name:
                         for split in solver_split_map[solver]:
                             P = (
@@ -228,12 +228,11 @@ if len(sys.argv) > 1 and int(sys.argv[1]) == 1:
                                 + str(dim)
                                 + "/"
                                 + res_map[solver]
-                                + type
+                                + op
                                 + "_"
                                 + split[-1]
                                 + ".out"
                             )
-                            combine(P, file, csvWriter, solver,
-                                    bench, node, dim, split)
+                            combine(P, file, csvWriter, solver, bench, node, dim, split)
 
 print(">>>ok, done")
