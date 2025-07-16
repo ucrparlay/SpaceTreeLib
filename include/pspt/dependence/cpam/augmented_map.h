@@ -66,7 +66,7 @@ struct aug_map_ : private map_<_Entry, Join_Tree> {
     // auto root = m.get_root();
     // logger.generate_box_num += t.total_time();
     // Tree::template knn<BaseTree>(m.get_root(), q, bq, logger);
-    Tree::template knn<BaseTree>(std::move(m.root), q, bq, logger);
+    Tree::template knn<BaseTree>(m.root, q, bq, logger);
     // GC::decrement(root);
   }
 
