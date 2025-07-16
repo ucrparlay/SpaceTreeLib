@@ -1,10 +1,12 @@
 #!/bin/bash
 set -o xtrace
 
+/usr/bin/drop_caches
+
 Node=(1000000000)
 # Tree=(2)
 Tree=(0 1 2)
-Dim=(2)
+Dim=(3)
 declare -A datas
 # datas["/data/legacy/data3/zmen002/kdtree/ss_varden/"]="../benchmark/ss_varden/"
 # datas["/data/legacy/data3/zmen002/kdtree/uniform/"]="../benchmark/uniform/"
@@ -16,7 +18,7 @@ k=10
 insNum=2
 summary=0
 read_file=0
-queryType=$((2#110)) # 1110000
+queryType=$((2#111)) # 1110000
 # queryType=$((2#1)) # 1110000
 type="query"
 round=4
@@ -31,7 +33,7 @@ for tree in "${Tree[@]}"; do
         splits=(3)
     elif [[ ${tree} -eq 2 ]]; then
         solver="p_test"
-        splits=(1)
+        splits=(1 2)
     fi
     exe="../build/${solver}"
 
@@ -41,6 +43,12 @@ for tree in "${Tree[@]}"; do
         for dim in "${Dim[@]}"; do
             for dataPath in "${!datas[@]}"; do
                 for node in "${Node[@]}"; do
+
+                    # Hilbert curve is not supported for 3D with p_test
+                    if [ ${dim} -eq 3 ] && [ ${tree} -eq 2 ] && [ ${split} -eq 1 ]; then
+                        continue
+                    fi
+
                     files_path="${dataPath}${node}_${dim}"
                     log_path="${datas[${dataPath}]}${node}_${dim}"
                     mkdir -p "${log_path}"

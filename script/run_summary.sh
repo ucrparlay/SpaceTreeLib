@@ -1,12 +1,12 @@
 #!/bin/bash
 set -o xtrace
 
-Solvers=("test")
-# Solvers=("rtree")
+/usr/bin/drop_caches
+
 Node=(1000000000)
 # Tree=(1)
-Tree=(0 1)
-Dim=(2 3)
+Tree=(0 1 2)
+Dim=(3)
 declare -A datas
 # datas["/data/legacy/data3/zmen002/kdtree/ss_varden/"]="../benchmark/ss_varden/"
 # datas["/data/legacy/data3/zmen002/kdtree/uniform/"]="../benchmark/uniform/"
@@ -23,38 +23,40 @@ type="summary"
 round=3
 resFile=""
 
-for solver in "${Solvers[@]}"; do
+for tree in "${Tree[@]}"; do
+    if [[ ${tree} -eq 0 ]]; then
+        solver="kd_test"
+        splits=(0 3)
+    elif [[ ${tree} -eq 1 ]]; then
+        solver="kd_test"
+        splits=(3)
+    elif [[ ${tree} -eq 2 ]]; then
+        solver="p_test"
+        splits=(1 2)
+    fi
     exe="../build/${solver}"
 
-    for tree in "${Tree[@]}"; do
-        if [[ ${tree} -eq 0 ]]; then
-            splits=(0 3)
-        elif [[ ${tree} -eq 1 ]]; then
-            splits=(3)
-        elif [[ ${tree} -eq 2 ]]; then
-            splits=(0)
-        fi
+    for split in "${splits[@]}"; do
+        resFile="res_${tree}_${type}_${split}.out"
 
-        for split in "${splits[@]}"; do
+        for dim in "${Dim[@]}"; do
+            for dataPath in "${!datas[@]}"; do
+                for node in "${Node[@]}"; do
 
-            if [[ ${solver} == "rtree" ]]; then
-                resFile="rtree.out"
-            elif [[ ${solver} == "test" ]]; then
-                resFile="res_${tree}_${type}_${split}.out"
-            fi
-            for dim in "${Dim[@]}"; do
-                for dataPath in "${!datas[@]}"; do
-                    for node in "${Node[@]}"; do
-                        files_path="${dataPath}${node}_${dim}"
-                        log_path="${datas[${dataPath}]}${node}_${dim}"
-                        mkdir -p "${log_path}"
-                        dest="${log_path}/${resFile}"
-                        : >"${dest}"
-                        echo ">>>${dest}"
+                    # Hilbert curve is not supported for 3D with p_test
+                    if [ ${dim} -eq 3 ] && [ ${tree} -eq 2 ] && [ ${split} -eq 1 ]; then
+                        continue
+                    fi
 
-                        for ((i = 1; i <= insNum; i++)); do
-                            numactl -i all ${exe} -p "${files_path}/${i}.in" -r ${round} -k ${k} -i ${read_file} -s ${summary} -t ${tag} -d ${dim} -q ${queryType} -T ${tree} -l ${split} 2>&1 | tee -a "${dest}"
-                        done
+                    files_path="${dataPath}${node}_${dim}"
+                    log_path="${datas[${dataPath}]}${node}_${dim}"
+                    mkdir -p "${log_path}"
+                    dest="${log_path}/${resFile}"
+                    : >"${dest}"
+                    echo ">>>${dest}"
+
+                    for ((i = 1; i <= insNum; i++)); do
+                        numactl -i all ${exe} -p "${files_path}/${i}.in" -r ${round} -k ${k} -i ${read_file} -s ${summary} -t ${tag} -d ${dim} -q ${queryType} -T ${tree} -l ${split} 2>&1 | tee -a "${dest}"
                     done
                 done
             done

@@ -1446,16 +1446,18 @@ class Wrapper {
         build_tree_type.template operator()<
             Point, pspt::OrthogonalSplitRule<pspt::RotateDim<Point>,
                                              pspt::SpatialMedian<Point>>>();
+      } else {
+        std::cout << "Unsupported split type: " << split_type << std::endl;
       }
     };
 
     if (dim == 2) {
       // run_with_split_type.template operator()<BasicPoint<Coord, 2>>();
       run_with_split_type.template operator()<AugPoint<Coord, 2, AugId>>();
+    } else if (dim == 3) {
+      run_with_split_type.template operator()<AugPoint<Coord, 3, AugId>>();
     }
-    // else if (dim == 3) {
-    //   run_with_split_type.template operator()<AugPoint<Coord, 3, AugId>>();
-    // } else if (dim == 5) {
+    // else if (dim == 5) {
     //   run_with_split_type.template operator()<AugPoint<Coord, 5, AugId>>();
     // }
     // else if (dim == 7) {
@@ -1508,6 +1510,8 @@ class Wrapper {
         // run.template operator()<OrthTreeWrapper<Point, SplitRule>>();
       } else if (tree_type == 2) {
         Run<PTreeWrapper<Point, SplitRule>>(params, test_func);
+      } else {
+        std::cout << "Unsupported tree type: " << tree_type << std::endl;
       }
     };
 
@@ -1523,9 +1527,9 @@ class Wrapper {
     };
 
     if (dim == 2) {
-      // TODO: change
-      // run_with_split_type.template operator()<BasicPoint<Coord, 2>>();
       run_with_split_type.template operator()<AugPoint<Coord, 2, AugIdCode>>();
+    } else if (dim == 3) {
+      run_with_split_type.template operator()<AugPoint<Coord, 3, AugIdCode>>();
     }
   }
 };
