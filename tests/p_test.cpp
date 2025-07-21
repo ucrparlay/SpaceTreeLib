@@ -103,6 +103,18 @@ int main(int argc, char* argv[]) {
       parlay::sequence<double> const ratios = {1, 0.1, 0.01, 0.001, 0.0001};
       for (auto rat : ratios) {
         BatchDeleteByStep<Point, Tree, true>(tree, wp, wi, kRounds, rat);
+
+        // test knn
+        if (static_cast<int>(rat) == 1) continue;
+        std::cout << tree.GetRoot()->size << std::endl;
+
+        std::cout << "knn time: ";
+        size_t batchSize = static_cast<size_t>(wp.size() * kBatchQueryRatio);
+        int k[3] = {1, 10, 100};
+        for (int i = 0; i < 3; i++) {
+          run_batch_knn(wp, k[i], batchSize);
+        }
+        puts("");
       }
     }
 
