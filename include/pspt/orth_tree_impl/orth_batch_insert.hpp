@@ -38,7 +38,7 @@ void OrthTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::BatchInsert_(
   Node* T = this->root_;
   // this->tree_box_ = BT::GetBox(this->tree_box_, BT::GetBox(A));
   // PERF: no need to compute bounding box here, checked previously
-  this->root_ = BatchInsertRecursive(T, A, B.cut(0, A.size()));
+  this->root_ = BatchInsertRecursive(T, A, B.cut(0, A.size()), this->tree_box_);
   assert(this->root_ != NULL);
   return;
 }
@@ -71,7 +71,8 @@ void OrthTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::
 template <typename Point, typename SplitRule, uint_fast8_t kMD,
           uint_fast8_t kSkHeight, uint_fast8_t kImbaRatio>
 Node* OrthTree<Point, SplitRule, kMD, kSkHeight,
-               kImbaRatio>::BatchInsertRecursive(Node* T, Slice In, Slice Out) {
+               kImbaRatio>::BatchInsertRecursive(Node* T, Slice In, Slice Out,
+                                                 Box const& box) {
   size_t n = In.size();
 
   if (n == 0) return T;
@@ -85,7 +86,8 @@ Node* OrthTree<Point, SplitRule, kMD, kSkHeight,
          parlay::all_of(In, [&](Point const& p) { return p == TL->pts[0]; }))) {
       return BT::template InsertPoints2Leaf<Leaf>(T, In);
     } else {
-      return BT::template RebuildWithInsert<Leaf, Interior>(T, In);
+      return BT::template RebuildWithInsert<Leaf, Interior>(
+          T, [&](Node*, Points&, Points&) { return box; }, In);
     }
   }
 
@@ -95,12 +97,13 @@ Node* OrthTree<Point, SplitRule, kMD, kSkHeight,
     SerialSplitSkeleton(T, In, 0, 1, sums);
     assert(std::cmp_equal(std::accumulate(sums.begin(), sums.end(), 0), n));
 
+    auto TI = static_cast<Interior*>(T);
     OrthNodeArr new_nodes;
     size_t start = 0;
     for (DimsType i = 0; i < kNodeRegions; ++i) {
       new_nodes[i] = BatchInsertRecursive(
-          static_cast<Interior*>(T)->tree_nodes[i],
-          In.cut(start, start + sums[i]), Out.cut(start, start + sums[i]));
+          TI->tree_nodes[i], In.cut(start, start + sums[i]),
+          Out.cut(start, start + sums[i]), TI->GetBoxByRegionId(i, box));
       start += sums[i];
     }
     BT::template UpdateInterior<Interior>(T, new_nodes);
@@ -118,8 +121,13 @@ Node* OrthTree<Point, SplitRule, kMD, kSkHeight,
 
   // NOTE: no need to tag imbalance node in orth tree as it never rebuilds the
   // tree, used to remap the bucket node tag to kBucketNum+1
-  // TODO: this may incur extra work e.g., reduce sum
-  IT.TagInbalanceNode([]() -> bool { return false; });
+  // and compute the bounding boxes
+  // NOTE: we pass has_tomb as true, to make the leaf set to kBucketNum+1
+  // IT.TagInbalanceNode([]() -> bool { return false; });
+  BoxSeq box_seq(IT.tags_num);  // PARA: the box for bucket nodes
+  [[maybe_unused]] auto [re_num, tot_re_size] =
+      IT.template TagInbalanceNodeDeletion<false>(
+          box_seq, box, true, [&](BucketType idx) -> bool { return false; });
 
   auto tree_nodes = parlay::sequence<Node*>::uninitialized(IT.tags_num);
 
@@ -132,10 +140,10 @@ Node* OrthTree<Point, SplitRule, kMD, kSkHeight,
         }
 
         assert(IT.tags[IT.rev_tag[i]].second == BT::kBucketNum + 1);
-        tree_nodes[i] =
-            BatchInsertRecursive(IT.tags[IT.rev_tag[i]].first,
-                                 Out.cut(s, s + IT.sums_tree[IT.rev_tag[i]]),
-                                 In.cut(s, s + IT.sums_tree[IT.rev_tag[i]]));
+        tree_nodes[i] = BatchInsertRecursive(
+            IT.tags[IT.rev_tag[i]].first,
+            Out.cut(s, s + IT.sums_tree[IT.rev_tag[i]]),
+            In.cut(s, s + IT.sums_tree[IT.rev_tag[i]]), box_seq[i]);
       },
       1);
 

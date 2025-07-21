@@ -1,6 +1,8 @@
 #ifndef PSPT_KD_TREE_IMPL_KD_BATCH_INSERT_HPP_
 #define PSPT_KD_TREE_IMPL_KD_BATCH_INSERT_HPP_
 
+#include <oneapi/tbb/profiling.h>
+
 #include "../kd_tree.h"
 #include "parlay/slice.h"
 
@@ -30,6 +32,10 @@ Node* KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchInsertRecursive(
 
   if (n == 0) return T;
 
+  auto prepare_func = [](Node*, Points& wp, Points&) {
+    return BT::GetBox(parlay::make_slice(wp));
+  };
+
   if (T->is_leaf) {
     Leaf* TL = static_cast<Leaf*>(T);
     if ((!TL->is_dummy && n + T->size <= BT::kLeaveWrap) ||
@@ -38,7 +44,8 @@ Node* KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchInsertRecursive(
       return BT::template InsertPoints2Leaf<Leaf>(T, In);
     } else {  // PERF: if a nomarl leaf TL cannot handle more duplicates,
               // leave them here
-      return BT::template RebuildWithInsert<Leaf, Interior>(T, In, d);
+      return BT::template RebuildWithInsert<Leaf, Interior>(T, prepare_func, In,
+                                                            d);
     }
   }
 
@@ -54,7 +61,8 @@ Node* KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchInsertRecursive(
     // NOTE: rebuild
     if (split_rule_.AllowRebuild() &&
         BT::ImbalanceNode(TI->left->size + split_pos, TI->size + n)) {
-      return BT::template RebuildWithInsert<Leaf, Interior>(T, In, d);
+      return BT::template RebuildWithInsert<Leaf, Interior>(T, prepare_func, In,
+                                                            d);
     }
 
     // NOTE: continue
@@ -114,7 +122,7 @@ Node* KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchInsertRecursive(
                  0);
 
           tree_nodes[i] = BT::template RebuildWithInsert<Leaf, Interior>(
-              IT.tags[IT.rev_tag[i]].first,
+              IT.tags[IT.rev_tag[i]].first, prepare_func,
               Out.cut(s, s + IT.sums_tree[IT.rev_tag[i]]), next_dim);
         }
       },

@@ -44,17 +44,19 @@ void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::PrepareRebuild(
 
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
-template <typename Leaf, typename Interior, typename... Args>
+template <typename Leaf, typename Interior, typename PrepareFunc,
+          typename... Args>
 Node* BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::RebuildWithInsert(
-    Node* T, Slice In, Args&&... args) {
-  Points wx, wo;
-  PrepareRebuild<Leaf, Interior>(T, In, wx, wo);
+    Node* T, PrepareFunc prepare_func, Slice In, Args&&... args) {
+  Points w_in, w_out;
+  PrepareRebuild<Leaf, Interior>(T, In, w_in, w_out);
+  auto additional_arg = prepare_func(T, w_in, w_out);
   static_assert(
       std::is_invocable_v<decltype(&DerivedTree::BuildRecursive), DerivedTree*,
                           Slice, Slice, Args&&..., Box>);
   return static_cast<DerivedTree*>(this)->BuildRecursive(
-      parlay::make_slice(wx), parlay::make_slice(wo),
-      std::forward<Args>(args)..., GetBox(parlay::make_slice(wx)));
+      parlay::make_slice(w_in), parlay::make_slice(w_out),
+      std::forward<Args>(args)..., additional_arg);
 }
 
 // PARA: when granularity set to false, it will disable the default value for
@@ -74,9 +76,10 @@ Node* BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::RebuildSingleTree(
       std::forward<Args>(args)...);
 }
 
-// NOTE: rebuild a binary tree
-// PARA: if allow_enable_rebuild enabled, this method will re-balance the tree;
-// otherwise, it flattens all sparcy node into leaf nodes
+// NOTE: traverse a tree, if it satisfy the condition, then rebuild a binary
+// tree
+// PARA: if allow_enable_rebuild enabled, this method will re-balance the
+// tree; otherwise, it flattens all sparcy node into leaf nodes
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 template <typename Leaf, IsBinaryNode Interior, bool granularity,

@@ -252,8 +252,10 @@ class BaseTree {
                            parlay::sequence<BallsType>& sums,
                            BucketType const tags_num);
 
-  template <typename Leaf, typename Interior, typename... Args>
-  Node* RebuildWithInsert(Node* T, Slice In, Args&&... args);
+  template <typename Leaf, typename Interior, typename PrepareFunc,
+            typename... Args>
+  Node* RebuildWithInsert(Node* T, PrepareFunc prepare_func, Slice In,
+                          Args&&... args);
 
   template <typename Leaf, typename Interior, bool granularity,
             typename... Args>

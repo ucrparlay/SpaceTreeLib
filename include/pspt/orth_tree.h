@@ -61,8 +61,10 @@ class OrthTree
             typename... Args>
   friend Node* BT::RebuildSingleTree(Node* T, Args&&... args);
 
-  template <typename Leaf, typename Interior, typename... Args>
-  friend Node* BT::RebuildWithInsert(Node* T, Slice In, Args&&... args);
+  template <typename Leaf, typename Interior, typename PrepareFunc,
+            typename... Args>
+  friend Node* BT::RebuildWithInsert(Node* T, PrepareFunc prepare_func,
+                                     Slice In, Args&&... args);
 
   void OrthTreeTag();
 
@@ -126,7 +128,7 @@ class OrthTree
 
   void BatchInsert_(Slice In);
 
-  Node* BatchInsertRecursive(Node* T, Slice In, Slice Out);
+  Node* BatchInsertRecursive(Node* T, Slice In, Slice Out, Box const& bx);
 
   void BatchDiff_(Slice In);
 

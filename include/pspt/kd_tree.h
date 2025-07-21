@@ -63,8 +63,10 @@ class KdTree
             typename... Args>
   friend Node* BT::RebuildSingleTree(Node* T, Args&&... args);
 
-  template <typename Leaf, typename Interior, typename... Args>
-  friend Node* BT::RebuildWithInsert(Node* T, Slice In, Args&&... args);
+  template <typename Leaf, typename Interior, typename PrepareFunc,
+            typename... Args>
+  friend Node* BT::RebuildWithInsert(Node* T, PrepareFunc prepare_func,
+                                     Slice In, Args&&... args);
 
   void KdTreeTag();
 

@@ -252,6 +252,8 @@ struct BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::InnerTree {
   // the *bucket* Node whose ancestor has been rebuilt has tag kBucketNum+2
   // the *bucket* Node whose ancestor has not been ... has kBucketNum+1
   // otherwise, it's kBucketNum
+  // TODO: maybe we can make tagInbalance node and tagInbalancedNodeDeletion
+  // together
 
   template <bool kSetParallelFlag, typename... Args>
   auto TagInbalanceNodeDeletion(Args&&... args) {
