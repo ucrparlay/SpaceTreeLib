@@ -11,6 +11,7 @@
 #include "libmorton/morton.h"
 #include "space_filling_curve/hilbert.c"
 #include "space_filling_curve/hilbert.h"
+#include "space_filling_curve/hilbert_high_dim.h"
 
 namespace pspt {
 // NOTE: ---------------- Spacial Filling Curver ---------------
@@ -68,6 +69,7 @@ struct HilbertCurve {
   using Coord = BT::Coord;
   using HyperPlane = BT::HyperPlane;
 
+  using MortonCurve = MortonCurve<Point>;
   using CurveCode = typename Point::AT::CurveCode;
 
   void HilbertTag() {}
@@ -80,8 +82,17 @@ struct HilbertCurve {
     // auto iy = static_cast<CurveCode>(p.pnt[1]);
     // CurveCode arr[] = {ix, iy};
     // return hilbert::hilbert_c2i(2, 32, arr);
-    return hilbert::hilbert_c2i(
-        2, 32, reinterpret_cast<CurveCode const*>(p.GetCoords().data()));
+    // return hilbert::hilbert_c2i(
+    //     2, 32, reinterpret_cast<CurveCode const*>(p.GetCoords().data()));
+
+    if constexpr (Point::GetDim() == 2) {
+      return hilbert::hilbert_c2i(
+          2, 32, reinterpret_cast<CurveCode const*>(p.GetCoords().data()));
+    } else if constexpr (Point::GetDim() == 3) {
+      return PSPT::LUT::mortonToHilbert3D(MortonCurve::Encode(p), 32);
+    } else {
+      static_assert("HilbertCurve only supports 2D and 3D points");
+    }
     // return hilbert::hilbert_c2i(2, 32, p.GetCoords().data());
   }
 };
