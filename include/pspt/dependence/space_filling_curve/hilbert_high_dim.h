@@ -1,3 +1,6 @@
+// Source:
+// https://github.com/rawrunprotected/hilbert_curves/blob/master/hilbert_curves.cpp
+
 #define HILBERT_HIGH_DIM_H
 
 #include <cstdint>

@@ -1479,7 +1479,7 @@ class Wrapper {
 
   struct AugIdCode {
     using IdType = int_fast32_t;
-    using CurveCode = hilbert::bitmask_t;
+    using CurveCode = uint64_t;
 
     AugIdCode() : code(0), id(0) {}
 

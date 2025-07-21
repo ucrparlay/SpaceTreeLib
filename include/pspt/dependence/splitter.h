@@ -87,7 +87,9 @@ struct HilbertCurve {
 
     if constexpr (Point::GetDim() == 2) {
       return hilbert::hilbert_c2i(
-          2, 32, reinterpret_cast<CurveCode const*>(p.GetCoords().data()));
+          2, 32,
+          reinterpret_cast<hilbert::bitmask_t const*>(p.GetCoords().data()));
+      // return PSPT::LUT::hilbertXYToIndex(32, p.pnt[0], p.pnt[1]);
     } else if constexpr (Point::GetDim() == 3) {
       return PSPT::LUT::mortonToHilbert3D(MortonCurve::Encode(p), 32);
     } else {
