@@ -1,8 +1,6 @@
 #ifndef PSPT_KD_TREE_IMPL_KD_BATCH_INSERT_HPP_
 #define PSPT_KD_TREE_IMPL_KD_BATCH_INSERT_HPP_
 
-#include <oneapi/tbb/profiling.h>
-
 #include "../kd_tree.h"
 #include "parlay/slice.h"
 
