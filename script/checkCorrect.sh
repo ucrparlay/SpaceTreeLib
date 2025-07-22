@@ -5,13 +5,13 @@ Nodes=(1000000 5000000 8000000 10000000 50000000)
 # Nodes=(50000000)
 
 # NOTE: parameters
-tester="p_ccp"
-# tester="kd_ccp"
+# tester="p_ccp"
+tester="kd_ccp"
 
 make -C ../build ${tester}
 
 if [[ ${tester} == "p_ccp" ]]; then
-	tag=$((2#0010))
+	tag=$((2#0000))
 	read_file=1
 	dims=(2)
 	queryTypes=$((2#110))
@@ -19,8 +19,8 @@ if [[ ${tester} == "p_ccp" ]]; then
 elif [[ ${tester} == "kd_ccp" ]]; then
 	tag=$((2#1000))
 	read_file=1
-	dims=(2 3 5)
-	queryTypes=$((2#110))
+	dims=(2 3)
+	queryTypes=$((2#111))
 	trees=(0 1)
 fi
 K=100
@@ -38,6 +38,7 @@ Paths=("/ssd1/zmen002/kdtree/ss_varden/" "/ssd1/zmen002/kdtree/uniform/")
 # Paths=("/ssd1/zmen002/kdtree/uniform/")
 
 #* check node
+make -C ../build ${tester}
 for queryType in "${queryTypes[@]}"; do
 	for path in "${Paths[@]}"; do
 		for node in "${Nodes[@]}"; do
@@ -48,8 +49,8 @@ for queryType in "${queryTypes[@]}"; do
 					elif [[ ${tree} -eq 1 ]]; then
 						splits=(3)
 					elif [[ ${tree} -eq 2 ]]; then
-						# splits=(1 2)
-						splits=(1)
+						splits=(1 2)
+						# splits=(2)
 					elif [[ ${tree} -eq 3 ]]; then
 						splits=(0)
 					fi
