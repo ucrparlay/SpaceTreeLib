@@ -106,7 +106,6 @@ int main(int argc, char* argv[]) {
 
         // test knn
         if (static_cast<int>(rat) == 1) continue;
-        std::cout << tree.GetRoot()->size << std::endl;
 
         std::cout << "knn time: ";
         size_t batchSize = static_cast<size_t>(wp.size() * kBatchQueryRatio);
