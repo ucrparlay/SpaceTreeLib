@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <tuple>
+#include <type_traits>
 #include <variant>
 
 #include "comparator.h"
@@ -19,6 +20,8 @@ template <typename T, uint_fast8_t d>
 struct BasicPoint {
   using Coord = T;
   using Coords = std::array<T, d>;
+  using DisType =
+      std::conditional_t<std::is_integral_v<Coord>, int_fast64_t, double>;
   using Num = Num_Comparator<Coord>;
   using DimsType = uint_fast8_t;
   using BP = BasicPoint<T, d>;

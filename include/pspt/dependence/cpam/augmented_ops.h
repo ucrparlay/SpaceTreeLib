@@ -347,6 +347,7 @@ struct augmented_ops : Map {
   static void knn(node* b, ET const& q, kBoundedQueue& bq, Logger& logger) {
     using BT = BaseTree;
     using Coord = typename ET::Coord;
+    using DisType = typename ET::DisType;
 
     logger.vis_node_num++;
 
@@ -372,10 +373,12 @@ struct augmented_ops : Map {
     }
 
     auto rb = Map::cast_to_regular(b);
-    Coord d_lc = rb->lc ? BT::P2BMinDistanceSquare(q, Map::aug_val_ref(rb->lc))
-                        : std::numeric_limits<Coord>::max();
-    Coord d_rc = rb->rc ? BT::P2BMinDistanceSquare(q, Map::aug_val_ref(rb->rc))
-                        : std::numeric_limits<Coord>::max();
+    DisType d_lc = rb->lc
+                       ? BT::P2BMinDistanceSquare(q, Map::aug_val_ref(rb->lc))
+                       : std::numeric_limits<DisType>::max();
+    DisType d_rc = rb->rc
+                       ? BT::P2BMinDistanceSquare(q, Map::aug_val_ref(rb->rc))
+                       : std::numeric_limits<DisType>::max();
     bool go_left = d_lc <= d_rc;
 
     // check current entry

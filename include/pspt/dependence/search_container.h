@@ -8,8 +8,8 @@ namespace pspt {
 
 template <typename Point, typename T>
 class NN_Comparator {
-  using Coord = typename Point::Coord;
-  using Num = Num_Comparator<Coord>;
+  using DisType = typename Point::DisType;
+  using Num = Num_Comparator<DisType>;
 
  public:
   bool operator()(T const& a, T const& b) {
@@ -32,8 +32,8 @@ class kBoundedQueue {
   // A simplified version of CGAL bounded_priority_queue
   // https://github.com/CGAL/cgal/blob/v5.4/Spatial_searching/include/CGAL/Spatial_searching/internal/bounded_priority_queue.h
 
-  using Coord = typename Point::Coord;
-  // using T = std::pair<Point*, Coord>;
+  using DisType = typename Point::DisType;
+  // using T = std::pair<Point*, DisType>;
 
  public:
   kBoundedQueue(Compare const& comp = Compare()) : m_comp(comp) {}
@@ -54,11 +54,12 @@ class kBoundedQueue {
 
   inline T const& top() const { return m_data[0]; }
 
-  inline Coord const top_value() const { return m_data[0].second; }
+  inline DisType const top_value() const { return m_data[0].second; }
 
   inline parlay::slice<T*, T*> data() const { return m_data; }
 
-  inline void insert(std::pair<std::reference_wrapper<Point>, Coord> const x) {
+  inline void insert(
+      std::pair<std::reference_wrapper<Point>, DisType> const x) {
     // T x( _x.first, _x.second );
     T* data1 = (&m_data[0] - 1);
     if (full()) {

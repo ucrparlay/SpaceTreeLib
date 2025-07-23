@@ -571,10 +571,11 @@ void queryKNN([[maybe_unused]] uint_fast8_t const& Dim,
               Typename* kdknn, int const K, bool const flattenTreeTag) {
   using Points = typename Tree::Points;
   using Coord = typename Point::Coord;
-  using nn_pair = std::pair<std::reference_wrapper<Point>, Coord>;
+  using DisType = typename Point::DisType;
+  using nn_pair = std::pair<std::reference_wrapper<Point>, DisType>;
   using Leaf = typename Tree::Leaf;
   using Interior = typename Tree::Interior;
-  // using nn_pair = std::pair<Point, Coord>;
+  // using nn_pair = std::pair<Point, DisType>;
   size_t n = WP.size();
   // int LEAVE_WRAP = 32;
   double loopLate = rounds > 1 ? 1.0 : -0.1;
@@ -583,7 +584,7 @@ void queryKNN([[maybe_unused]] uint_fast8_t const& Dim,
   Points wp = WP;
 
   parlay::sequence<nn_pair> Out(
-      K * n, nn_pair(std::ref(wp[0]), static_cast<Coord>(0)));
+      K * n, nn_pair(std::ref(wp[0]), static_cast<DisType>(0)));
   // parlay::sequence<nn_pair> Out(K * n);
   parlay::sequence<kBoundedQueue<Point, nn_pair>> bq =
       parlay::sequence<kBoundedQueue<Point, nn_pair>>::uninitialized(n);
@@ -599,6 +600,7 @@ void queryKNN([[maybe_unused]] uint_fast8_t const& Dim,
           pkd.Flatten(parlay::make_slice(wp));
         }
         parlay::parallel_for(0, n, [&](size_t i) {
+          // for (size_t i = 0; i < n; i++) {
           auto [vis_node_num, gen_box_num, check_box_num, skip_box_num] =
               pkd.KNN(KDParallelRoot, wp[i], bq[i]);
           kdknn[i] = bq[i].top().second;
@@ -606,6 +608,7 @@ void queryKNN([[maybe_unused]] uint_fast8_t const& Dim,
           gen_box[i] = gen_box_num;
           check_box[i] = check_box_num;
           skip_box[i] = skip_box_num;
+          // }
         });
       },
       [&]() {});
@@ -1470,7 +1473,8 @@ class Wrapper {
     // } else if (dim == 9) {
     //   run_with_split_type.template operator()<AugPoint<Coord, 9, AugId>>();
     // } else if (dim == 10) {
-    //   run_with_split_type.template operator()<AugPoint<Coord, 10, AugId>>();
+    //   run_with_split_type.template operator()<AugPoint<Coord, 10,
+    //   AugId>>();
     // } else {
     //   std::cerr << "Unsupported dimension: " << dim << std::endl;
     //   abort();

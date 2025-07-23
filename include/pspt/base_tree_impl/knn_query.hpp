@@ -14,26 +14,27 @@ namespace pspt {
 // TODO: change the name to P2PDistanceSquare to avoid ambiguous
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
-inline typename BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::Coord
+inline typename BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::DisType
 BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::P2PDistanceSquare(
     Point const& p, Point const& q) {
   constexpr uint_fast8_t kDim = Point::GetDim();
-  Coord r = 0;
+  DisType r = 0;
 
   if constexpr (kDim == 2) {
-    r += (p.pnt[0] - q.pnt[0]) * (p.pnt[0] - q.pnt[0]);
-    r += (p.pnt[1] - q.pnt[1]) * (p.pnt[1] - q.pnt[1]);
+    DisType x = static_cast<DisType>(p.pnt[0]) - static_cast<DisType>(q.pnt[0]);
+    DisType y = static_cast<DisType>(p.pnt[1]) - static_cast<DisType>(q.pnt[1]);
+    r = x * x + y * y;
   } else if constexpr (kDim == 3) {
-    r += (p.pnt[0] - q.pnt[0]) * (p.pnt[0] - q.pnt[0]);
-    r += (p.pnt[1] - q.pnt[1]) * (p.pnt[1] - q.pnt[1]);
-    r += (p.pnt[2] - q.pnt[2]) * (p.pnt[2] - q.pnt[2]);
+    DisType x = static_cast<DisType>(p.pnt[0]) - static_cast<DisType>(q.pnt[0]);
+    DisType y = static_cast<DisType>(p.pnt[1]) - static_cast<DisType>(q.pnt[1]);
+    DisType z = static_cast<DisType>(p.pnt[2]) - static_cast<DisType>(q.pnt[2]);
+    r = x * x + y * y + z * z;
   } else {
     for (DimsType i = 0; i < kDim; ++i) {
-      // TODO: maybe std::inner_product
-      r += (p.pnt[i] - q.pnt[i]) * (p.pnt[i] - q.pnt[i]);
+      r += (static_cast<DisType>(p.pnt[i]) - static_cast<DisType>(q.pnt[i])) *
+           (static_cast<DisType>(p.pnt[i]) - static_cast<DisType>(q.pnt[i]));
     }
   }
-
   return r;
 }
 
@@ -41,17 +42,23 @@ BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::P2PDistanceSquare(
 // return 0 when p is inside the box a
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
-inline typename BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::Coord
+inline typename BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::DisType
 BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::P2BMinDistanceSquare(
     Point const& p,
     typename BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::Box const&
         a) {
-  Coord r = 0;
+  DisType r = 0;
   for (DimsType i = 0; i < kDim; ++i) {
     if (Num::Lt(p.pnt[i], a.first.pnt[i])) {
-      r += (a.first.pnt[i] - p.pnt[i]) * (a.first.pnt[i] - p.pnt[i]);
+      r += (static_cast<DisType>(a.first.pnt[i]) -
+            static_cast<DisType>(p.pnt[i])) *
+           (static_cast<DisType>(a.first.pnt[i]) -
+            static_cast<DisType>(p.pnt[i]));
     } else if (Num::Gt(p.pnt[i], a.second.pnt[i])) {
-      r += (p.pnt[i] - a.second.pnt[i]) * (p.pnt[i] - a.second.pnt[i]);
+      r += (static_cast<DisType>(p.pnt[i]) -
+            static_cast<DisType>(a.second.pnt[i])) *
+           (static_cast<DisType>(p.pnt[i]) -
+            static_cast<DisType>(a.second.pnt[i]));
     }
   }
   return r;
@@ -60,27 +67,34 @@ BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::P2BMinDistanceSquare(
 // NOTE: Max distance between a Point and a Box
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
-inline typename BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::Coord
+inline typename BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::DisType
 BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::P2BMaxDistanceSquare(
     Point const& p,
     typename BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::Box const&
         a) {
-  Coord r = 0;
+  DisType r = 0;
   for (DimsType i = 0; i < kDim; ++i) {
     if (Num::Lt(p.pnt[i], (a.second.pnt[i] + a.first.pnt[i]) / 2)) {
-      r += (a.second.pnt[i] - p.pnt[i]) * (a.second.pnt[i] - p.pnt[i]);
+      r += (static_cast<DisType>(a.second.pnt[i]) -
+            static_cast<DisType>(p.pnt[i])) *
+           (static_cast<DisType>(a.second.pnt[i]) -
+            static_cast<DisType>(p.pnt[i]));
     } else {
-      r += (p.pnt[i] - a.first.pnt[i]) * (p.pnt[i] - a.first.pnt[i]);
+      r += (static_cast<DisType>(p.pnt[i]) -
+            static_cast<DisType>(a.first.pnt[i])) *
+           (static_cast<DisType>(p.pnt[i]) -
+            static_cast<DisType>(a.first.pnt[i]));
     }
   }
   return r;
 }
+
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 inline double BaseTree<Point, DerivedTree, kSkHeight,
                        kImbaRatio>::P2CMinDistance(Point const& p,
                                                    Point const& center,
-                                                   Coord const r) {
+                                                   DisType const r) {
   // return Num_Comparator<double>::Max(
   //     0.0, std::sqrt(P2PDistanceSquare(p, center)) - static_cast<double>(r));
   return std::sqrt(P2PDistanceSquare(p, center)) - static_cast<double>(r);
@@ -99,23 +113,27 @@ inline double BaseTree<Point, DerivedTree, kSkHeight,
 // r else return the distance between p and q
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
-inline typename BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::Coord
+inline typename BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::DisType
 BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::InterruptibleDistance(
-    Point const& p, Point const& q, Coord up) {
-  Coord r = 0;
+    Point const& p, Point const& q, DisType up) {
+  DisType r = 0;
   DimsType i = 0;
   if (kDim >= 6) {
     while (1) {
-      r += (p.pnt[i] - q.pnt[i]) * (p.pnt[i] - q.pnt[i]);
+      r += (static_cast<DisType>(p.pnt[i]) - static_cast<DisType>(q.pnt[i])) *
+           (static_cast<DisType>(p.pnt[i]) - static_cast<DisType>(q.pnt[i]));
       ++i;
-      r += (p.pnt[i] - q.pnt[i]) * (p.pnt[i] - q.pnt[i]);
+      r += (static_cast<DisType>(p.pnt[i]) - static_cast<DisType>(q.pnt[i])) *
+           (static_cast<DisType>(p.pnt[i]) - static_cast<DisType>(q.pnt[i]));
       ++i;
-      r += (p.pnt[i] - q.pnt[i]) * (p.pnt[i] - q.pnt[i]);
+      r += (static_cast<DisType>(p.pnt[i]) - static_cast<DisType>(q.pnt[i])) *
+           (static_cast<DisType>(p.pnt[i]) - static_cast<DisType>(q.pnt[i]));
       ++i;
-      r += (p.pnt[i] - q.pnt[i]) * (p.pnt[i] - q.pnt[i]);
+      r += (static_cast<DisType>(p.pnt[i]) - static_cast<DisType>(q.pnt[i])) *
+           (static_cast<DisType>(p.pnt[i]) - static_cast<DisType>(q.pnt[i]));
       ++i;
 
-      if (Num::Gt(r, up)) {
+      if (Num_Comparator<DisType>::Gt(r, up)) {
         return r;
       }
       if (i + 4 > kDim) {
@@ -124,7 +142,8 @@ BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::InterruptibleDistance(
     }
   }
   while (i < kDim) {
-    r += (p.pnt[i] - q.pnt[i]) * (p.pnt[i] - q.pnt[i]);
+    r += (static_cast<DisType>(p.pnt[i]) - static_cast<DisType>(q.pnt[i])) *
+         (static_cast<DisType>(p.pnt[i]) - static_cast<DisType>(q.pnt[i]));
     ++i;
   }
   return r;
@@ -147,7 +166,7 @@ void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::KNNLeaf(
     i++;
   }
   while (i < TL->size) {
-    Coord r =
+    auto r =
         InterruptibleDistance(q, TL->pts[(!TL->is_dummy) * i], bq.top_value());
     if (Num::Lt(r, bq.top_value())) {  // PERF: the queue is full, no need to
                                        // insert points with equal distances

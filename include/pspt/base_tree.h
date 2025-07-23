@@ -36,6 +36,7 @@ class BaseTree {
 
   using Coord = typename Point::Coord;
   using Coords = typename Point::Coords;
+  using DisType = typename Point::DisType;
   using Num = Num_Comparator<Coord>;
   using Slice = parlay::slice<Point*, Point*>;
   using Points = parlay::sequence<Point>;
@@ -300,20 +301,20 @@ class BaseTree {
   static void DeleteTreeRecursive(Node* T);
 
   // NOTE: KNN query stuffs
-  static inline Coord P2PDistanceSquare(Point const& p, Point const& q);
+  static inline DisType P2PDistanceSquare(Point const& p, Point const& q);
 
-  static inline Coord P2BMinDistanceSquare(Point const& p, Box const& a);
+  static inline DisType P2BMinDistanceSquare(Point const& p, Box const& a);
 
-  static inline Coord P2BMaxDistanceSquare(Point const& p, Box const& a);
+  static inline DisType P2BMaxDistanceSquare(Point const& p, Box const& a);
 
   static inline double P2CMinDistance(Point const& p, Point const& center,
-                                      Coord const r);
+                                      DisType const r);
 
   template <typename CircleType>
   static inline double P2CMinDistance(Point const& p, CircleType const& cl);
 
-  static inline Coord InterruptibleDistance(Point const& p, Point const& q,
-                                            Coord up);
+  static inline DisType InterruptibleDistance(Point const& p, Point const& q,
+                                              DisType up);
 
   // NOTE: get the split for a node
   template <typename Leaf, typename Interior>
