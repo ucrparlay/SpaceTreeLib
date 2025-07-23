@@ -1,6 +1,8 @@
 #!/bin/bash
 set -o xtrace
 
+/usr/bin/drop_caches
+
 Node=(1000000000)
 Tree=(0 1 2)
 Dim=(2)
@@ -15,6 +17,7 @@ queryType=$((2#0)) # 1110000
 round=3
 resFile=""
 
+make -C ../build/ -j
 dest="incre_insert.log"
 : >"${dest}"
 echo ">>>${dest}"

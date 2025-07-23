@@ -1,11 +1,13 @@
 #!/bin/bash
 set -o xtrace
 
+/usr/bin/drop_caches
+
 Node=(1000000000)
 Tree=(0 1 2)
 Dim=(2)
-# paths=("/data/zmen002/kdtree/ss_varden_bigint/1000000000_2/1.in" "/data/zmen002/kdtree/uniform_bigint/1000000000_2/2_sort_by_0.in" "/data/zmen002/kdtree/uniform_bigint/1000000000_2/2.in")
-paths=("/data/zmen002/kdtree/uniform_bigint/1000000000_2/2.in")
+paths=("/data/zmen002/kdtree/ss_varden_bigint/1000000000_2/1.in" "/data/zmen002/kdtree/uniform_bigint/1000000000_2/2_sort_by_0.in" "/data/zmen002/kdtree/uniform_bigint/1000000000_2/2.in")
+# paths=("/data/zmen002/kdtree/uniform_bigint/1000000000_2/2.in")
 
 tag=$((2#10000)) # 1110000
 k=10
@@ -16,8 +18,9 @@ queryType=$((2#0)) # 1110000
 round=3
 resFile=""
 
+make -C ../build/ -j
 dest="incre_delete.log"
-# : >"${dest}"
+: >"${dest}"
 echo ">>>${dest}"
 for tree in "${Tree[@]}"; do
     if [[ ${tree} -eq 0 ]]; then
