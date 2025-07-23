@@ -9,7 +9,7 @@ path = "../benchmark"
 benchmarks = ["uniform_bigint", "ss_varden_bigint"]
 storePrefix = "data/"
 Nodes = [1000000000]
-Dims = [2, 3]
+Dims = []
 
 # type = "batch_update"
 # type = "batch_knn_query"
