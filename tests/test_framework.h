@@ -471,8 +471,8 @@ void BatchInsertByStep(Tree& pkd, parlay::sequence<Point> const& WP,
 
 template <typename Point, typename Tree, bool kInsert>
 void BatchDeleteByStep(Tree& pkd, parlay::sequence<Point> const& WP,
-                       parlay::sequence<Point> const& WI, int const rounds,
-                       double const insert_ratio, double const max_ratio = 1) {
+                       int const rounds, double const insert_ratio,
+                       double const max_ratio = 1) {
   using Points = typename Tree::Points;
   using Box = typename Tree::Box;
   Points wp = Points::uninitialized(WP.size());
@@ -558,6 +558,7 @@ void BatchDeleteByStep(Tree& pkd, parlay::sequence<Point> const& WP,
             << "-> avg: " << average_time << std::endl;
 
   // WARN: restore status
+  pkd.DeleteTree();
   build_tree_by_type();
   incre_delete(slice_num / 2);
 
@@ -582,6 +583,7 @@ void queryKNN([[maybe_unused]] uint_fast8_t const& Dim,
   auto* KDParallelRoot = pkd.GetRoot();
 
   Points wp = WP;
+  // Points wp = parlay::random_shuffle(WP);
 
   parlay::sequence<nn_pair> Out(
       K * n, nn_pair(std::ref(wp[0]), static_cast<DisType>(0)));
@@ -596,9 +598,9 @@ void queryKNN([[maybe_unused]] uint_fast8_t const& Dim,
       rounds, loopLate,
       [&]() { parlay::parallel_for(0, n, [&](size_t i) { bq[i].reset(); }); },
       [&]() {
-        if (!flattenTreeTag) {  // WARN: Need ensure pkd.size() == wp.size()
-          pkd.Flatten(parlay::make_slice(wp));
-        }
+        // if (!flattenTreeTag) {  // WARN: Need ensure pkd.size() == wp.size()
+        //   pkd.Flatten(parlay::make_slice(wp));
+        // }
         parlay::parallel_for(0, n, [&](size_t i) {
           // for (size_t i = 0; i < n; i++) {
           auto [vis_node_num, gen_box_num, check_box_num, skip_box_num] =
@@ -1461,10 +1463,10 @@ class Wrapper {
     if (dim == 2) {
       // run_with_split_type.template operator()<BasicPoint<Coord, 2>>();
       run_with_split_type.template operator()<AugPoint<Coord, 2, AugId>>();
-    } else if (dim == 3) {
-      // run_with_split_type.template operator()<BasicPoint<Coord, 3>>();
-      run_with_split_type.template operator()<AugPoint<Coord, 3, AugId>>();
     }
+    // if (dim == 3) {
+    //   run_with_split_type.template operator()<AugPoint<Coord, 3, AugId>>();
+    // }
     // else if (dim == 5) {
     //   run_with_split_type.template operator()<AugPoint<Coord, 5, AugId>>();
     // }

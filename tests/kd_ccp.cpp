@@ -191,10 +191,33 @@ void runKDParallel(auto const& wp, auto const& wi, Typename* kdknn,
               << std::flush;
   }
 
+  Points new_wp;
+  if (tag == (1 << 0)) {
+    new_wp = wp;
+    new_wp.append(
+        wi.cut(0, static_cast<size_t>(wi.size() * batchInsertCheckRatio)));
+  } else if (tag == (1 << 1)) {
+    new_wp = wp.subseq(static_cast<size_t>(wi.size() * batchInsertCheckRatio),
+                       wp.size());
+  } else if (tag == (1 << 2)) {
+    size_t total_batch_size =
+        static_cast<size_t>(wp.size() * kCCPBatchDiffTotalRatio);
+    size_t overlap_size =
+        static_cast<size_t>(total_batch_size * kCCPBatchDiffOverlapRatio);
+    new_wp = wp.subseq(overlap_size, wp.size());
+  } else if (tag == (1 << 3)) {
+    new_wp = wp;
+    // new_wp.append(wi);
+  } else if (tag == (1 << 4)) {
+    new_wp = wp.subseq(wp.size() / 2, wp.size());
+  } else {
+    new_wp = wp;
+  }
+
   if (query_type & (1 << 1)) {  // NOTE: range count
     for (auto range_query_type : {0, 1, 2}) {
-      Points new_wp(tree.GetRoot()->size);
-      tree.Flatten(new_wp);
+      // Points new_wp(tree.GetRoot()->size);
+      // tree.Flatten(new_wp);
       RangeCount<Point>(new_wp, tree, rounds, query_num, range_query_type,
                         kDim);
     }
@@ -204,8 +227,8 @@ void runKDParallel(auto const& wp, auto const& wi, Typename* kdknn,
 
   if (query_type & (1 << 2)) {  // NOTE: range query
     for (auto range_query_type : {0, 1, 2}) {
-      Points new_wp(tree.GetRoot()->size);
-      tree.Flatten(new_wp);
+      // Points new_wp(tree.GetRoot()->size);
+      // tree.Flatten(new_wp);
       RangeQuery<Point>(new_wp, tree, rounds, kCCPQueryNum, range_query_type,
                         kDim);
     }

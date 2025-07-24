@@ -100,9 +100,10 @@ int main(int argc, char* argv[]) {
 
     // NOTE: batch delete by step
     if (kTag & (1 << 4)) {
-      parlay::sequence<double> const ratios = {1, 0.1, 0.01, 0.001, 0.0001};
+      // parlay::sequence<double> const ratios = {1, 0.1, 0.01, 0.001, 0.0001};
+      parlay::sequence<double> const ratios = {0.0001};
       for (auto rat : ratios) {
-        BatchDeleteByStep<Point, Tree, true>(tree, wp, wi, kRounds, rat);
+        BatchDeleteByStep<Point, Tree, true>(tree, wp, kRounds, rat);
 
         // test knn
         if (static_cast<int>(rat) == 1) continue;

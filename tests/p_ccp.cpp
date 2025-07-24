@@ -169,6 +169,13 @@ void runPTreeParallel(auto const& wp, auto const& wi, Typename* kdknn,
     }
   }
 
+  if (tag & (1 << 3)) {
+    parlay::sequence<double> const ratios = {0.001};
+    for (auto rat : ratios) {
+      BatchDeleteByStep<Point, Tree, true>(tree, wp, rounds, rat);
+    }
+  }
+
   // NOTE: query phase
   if (query_type & (1 << 0)) {  // NOTE: NN query
     Points new_wp(kCCPBatchQuerySize);
@@ -209,6 +216,8 @@ void runPTreeParallel(auto const& wp, auto const& wi, Typename* kdknn,
   } else if (tag == (1 << 3)) {
     new_wp = wp;
     // new_wp.append(wi);
+  } else if (tag == (1 << 4)) {
+    new_wp = wp.subseq(wp.size() / 2, wp.size());
   } else {
     new_wp = wp;
   }
