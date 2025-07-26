@@ -5,14 +5,14 @@ set -o xtrace
 
 Node=(1000000000)
 # Tree=(0 1 2)
-Tree=(2)
+Tree=(0 1)
 # Dim=(2 3)
-Dim=(2)
+Dim=(3)
 declare -A datas
-# datas["/data/legacy/data3/zmen002/kdtree/ss_varden/"]="../benchmark/ss_varden/"
-# datas["/data/legacy/data3/zmen002/kdtree/uniform/"]="../benchmark/uniform/"
-datas["/data/zmen002/kdtree/ss_varden_bigint/"]="../benchmark/ss_varden_bigint/"
-datas["/data/zmen002/kdtree/uniform_bigint/"]="../benchmark/uniform_bigint/"
+datas["/data/legacy/data3/zmen002/kdtree/ss_varden/"]="../benchmark/ss_varden/"
+datas["/data/legacy/data3/zmen002/kdtree/uniform/"]="../benchmark/uniform/"
+# datas["/data/zmen002/kdtree/ss_varden_bigint/"]="../benchmark/ss_varden_bigint/"
+# datas["/data/zmen002/kdtree/uniform_bigint/"]="../benchmark/uniform_bigint/"
 
 tag=$((2#111)) # 1110000
 k=10
