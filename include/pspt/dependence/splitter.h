@@ -2,6 +2,7 @@
 #define PSPT_DEPENDENCE_SPLITTER_H
 
 #include <concepts>
+#include <cstdint>
 
 #include "../base_tree.h"
 #include "dependence/concepts.h"
@@ -9,6 +10,7 @@
 
 // NOTE: for spacial filling curve
 #include "libmorton/morton.h"
+#include "libmorton/morton3D.h"
 #include "space_filling_curve/hilbert.c"
 #include "space_filling_curve/hilbert.h"
 #include "space_filling_curve/hilbert_high_dim.h"
@@ -32,30 +34,32 @@ struct MortonCurve {
 
   static auto Encode(Point const& p) {
     assert(std::is_integral_v<Coord>);
-    // if constexpr (Point::GetDim() == 2) {
-    //   return libmorton::morton2D_64_encode(p.pnt[0], p.pnt[1]);
-    // } else if constexpr (Point::GetDim() == 3) {
-    //   return libmorton::morton3D_64_encode(p.pnt[0], p.pnt[1], p.pnt[2]);
-    // } else {
-    //   static_assert("MortonCurve only supports 2D and 3D points");
-    // }
-    uint_fast8_t loc = 0;
-    CurveCode id = 0;
-    for (DimsType i = 0; i < 64 / Point::GetDim(); i++) {
-      if constexpr (Point::GetDim() == 2) {
-        id = id | (((p.pnt[0] >> i) & static_cast<CurveCode>(1)) << (loc++));
-        id = id | (((p.pnt[1] >> i) & static_cast<CurveCode>(1)) << (loc++));
-      } else if constexpr (Point::GetDim() == 3) {
-        id = id | (((p.pnt[0] >> i) & static_cast<CurveCode>(1)) << (loc++));
-        id = id | (((p.pnt[1] >> i) & static_cast<CurveCode>(1)) << (loc++));
-        id = id | (((p.pnt[2] >> i) & static_cast<CurveCode>(1)) << (loc++));
-      } else {
-        for (DimsType d = 0; d < Point::GetDim(); d++) {
-          id = id | (((p.pnt[d] >> i) & static_cast<CurveCode>(1)) << (loc++));
-        }
-      }
+    if constexpr (Point::GetDim() == 2) {
+      return libmorton::m2D_e_for<CurveCode, uint32_t>(p.pnt[0], p.pnt[1]);
+    } else if constexpr (Point::GetDim() == 3) {
+      return libmorton::m3D_e_for_ET<CurveCode, uint32_t>(p.pnt[0], p.pnt[1],
+                                                          p.pnt[2]);
+    } else {
+      static_assert("MortonCurve only supports 2D and 3D points");
     }
-    return id;
+    // uint_fast8_t loc = 0;
+    // CurveCode id = 0;
+    // for (DimsType i = 0; i < 64 / Point::GetDim(); i++) {
+    //   if constexpr (Point::GetDim() == 2) {
+    //     id = id | (((p.pnt[0] >> i) & static_cast<CurveCode>(1)) << (loc++));
+    //     id = id | (((p.pnt[1] >> i) & static_cast<CurveCode>(1)) << (loc++));
+    //   } else if constexpr (Point::GetDim() == 3) {
+    //     id = id | (((p.pnt[0] >> i) & static_cast<CurveCode>(1)) << (loc++));
+    //     id = id | (((p.pnt[1] >> i) & static_cast<CurveCode>(1)) << (loc++));
+    //     id = id | (((p.pnt[2] >> i) & static_cast<CurveCode>(1)) << (loc++));
+    //   } else {
+    //     for (DimsType d = 0; d < Point::GetDim(); d++) {
+    //       id = id | (((p.pnt[d] >> i) & static_cast<CurveCode>(1)) <<
+    //       (loc++));
+    //     }
+    //   }
+    // }
+    // return id;
   }
 };
 
@@ -89,13 +93,14 @@ struct HilbertCurve {
       return hilbert::hilbert_c2i(
           2, 32,
           reinterpret_cast<hilbert::bitmask_t const*>(p.GetCoords().data()));
-      // return PSPT::LUT::hilbertXYToIndex(32, p.pnt[0], p.pnt[1]);
     } else if constexpr (Point::GetDim() == 3) {
-      return PSPT::LUT::mortonToHilbert3D(MortonCurve::Encode(p), 32);
+      // maximum 20 bits for each dimension (2^20 = 1048576))
+      return hilbert::hilbert_c2i(
+          3, 20,
+          reinterpret_cast<hilbert::bitmask_t const*>(p.GetCoords().data()));
     } else {
       static_assert("HilbertCurve only supports 2D and 3D points");
     }
-    // return hilbert::hilbert_c2i(2, 32, p.GetCoords().data());
   }
 };
 
