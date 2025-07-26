@@ -413,11 +413,15 @@ void BatchInsertByStep(Tree& pkd, parlay::sequence<Point> const& WP,
     }
   };
 
-  auto incre_build = [&]() {
+  auto incre_build = [&](int rounds_num_cutoff) {
     parlay::internal::timer t;
     size_t l = 0, r = 0;
     size_t cnt = 0;
     while (l < n) {
+      if (cnt >= rounds_num_cutoff) {
+        break;
+      }
+
       r = std::min(l + step, n);
       pkd.BatchInsert(parlay::make_slice(wp.begin() + l, wp.begin() + r));
       l = r;
@@ -427,8 +431,8 @@ void BatchInsertByStep(Tree& pkd, parlay::sequence<Point> const& WP,
   };
 
   double ave_time = time_loop(
-      rounds, 0.01, [&]() { prepare_build(); }, [&]() { incre_build(); },
-      [&]() { pkd.DeleteTree(); });
+      rounds, 0.01, [&]() { prepare_build(); },
+      [&]() { incre_build(slice_num + 1); }, [&]() { pkd.DeleteTree(); });
 
   if (round_cnt - 1 != rounds) {
     throw std::runtime_error("rounds not match!");
@@ -462,7 +466,7 @@ void BatchInsertByStep(Tree& pkd, parlay::sequence<Point> const& WP,
 
   // WARN: restore status
   prepare_build();
-  incre_build();
+  incre_build(slice_num / 2);
   // auto root = pkd.cpam_aug_map_;
   // std::cout << "root size: " << root.size() << std::endl;
 

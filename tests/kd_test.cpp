@@ -73,10 +73,10 @@ int main(int argc, char* argv[]) {
     }
 
     Typename* kdknn = nullptr;
-    auto run_batch_knn = [&](Points const& pts, int kth, size_t batchSize) {
-      Points newPts(batchSize);
-      parlay::copy(pts.cut(0, batchSize), newPts.cut(0, batchSize));
-      kdknn = new Typename[batchSize];
+    auto run_batch_knn = [&](Points const& pts, int kth, size_t batch_size) {
+      Points newPts(batch_size);
+      parlay::copy(pts.cut(0, batch_size), newPts.cut(0, batch_size));
+      kdknn = new Typename[batch_size];
       queryKNN<Point>(kDim, newPts, kRounds, tree, kdknn, kth, true);
       delete[] kdknn;
     };
@@ -88,11 +88,21 @@ int main(int argc, char* argv[]) {
         BatchInsertByStep<Point, Tree, true>(tree, wp, kRounds, rat);
 
         // test knn
-        std::cout << "knn time: ";
-        size_t batchSize = static_cast<size_t>(wp.size() * kBatchQueryRatio);
+        if (static_cast<int>(rat) == 1) continue;
+        std::cout << tree.GetRoot()->size << std::endl;
+
+        std::cout << "in-dis knn time: ";
+        size_t batch_size = static_cast<size_t>(wp.size() * kBatchQueryRatio);
         int k[3] = {1, 10, 100};
         for (int i = 0; i < 3; i++) {
-          run_batch_knn(wp, k[i], batchSize);
+          run_batch_knn(wp, k[i], batch_size);
+        }
+        puts("");
+
+        std ::cout << "out-dis knn time: ";
+        for (int i = 0; i < 3; i++) {
+          run_batch_knn(wp.subseq(wp.size() - batch_size, wp.size()), k[i],
+                        batch_size);
         }
         puts("");
       }
@@ -100,8 +110,8 @@ int main(int argc, char* argv[]) {
 
     // NOTE: batch delete by step
     if (kTag & (1 << 4)) {
-      // parlay::sequence<double> const ratios = {1, 0.1, 0.01, 0.001, 0.0001};
-      parlay::sequence<double> const ratios = {0.0001};
+      parlay::sequence<double> const ratios = {1, 0.1, 0.01, 0.001, 0.0001};
+      // parlay::sequence<double> const ratios = {0.001};
       for (auto rat : ratios) {
         BatchDeleteByStep<Point, Tree, true>(tree, wp, kRounds, rat);
 
@@ -109,11 +119,18 @@ int main(int argc, char* argv[]) {
         if (static_cast<int>(rat) == 1) continue;
         std::cout << tree.GetRoot()->size << std::endl;
 
-        std::cout << "knn time: ";
-        size_t batchSize = static_cast<size_t>(wp.size() * kBatchQueryRatio);
+        std::cout << "out-dis knn time: ";
+        size_t batch_size = static_cast<size_t>(wp.size() * kBatchQueryRatio);
         int k[3] = {1, 10, 100};
         for (int i = 0; i < 3; i++) {
-          run_batch_knn(wp, k[i], batchSize);
+          run_batch_knn(wp, k[i], batch_size);
+        }
+        puts("");
+
+        std ::cout << "in-dis knn time: ";
+        for (int i = 0; i < 3; i++) {
+          run_batch_knn(wp.subseq(wp.size() - batch_size, wp.size()), k[i],
+                        batch_size);
         }
         puts("");
       }
@@ -125,15 +142,15 @@ int main(int argc, char* argv[]) {
     // }
 
     if (kQueryType & (1 << 0)) {  // NOTE: KNN
-      size_t batchSize = static_cast<size_t>(wp.size() * kBatchQueryRatio);
+      size_t batch_size = static_cast<size_t>(wp.size() * kBatchQueryRatio);
 
       if (kSummary == 0) {
         int k[3] = {1, 10, 100};
         for (int i = 0; i < 3; i++) {
-          run_batch_knn(wp, k[i], batchSize);
+          run_batch_knn(wp, k[i], batch_size);
         }
       } else {  // test kSummary
-        run_batch_knn(wp, K, batchSize);
+        run_batch_knn(wp, K, batch_size);
       }
     }
 
