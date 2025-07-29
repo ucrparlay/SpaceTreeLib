@@ -73,11 +73,9 @@ int main(int argc, char* argv[]) {
     }
 
     Typename* kdknn = nullptr;
-    auto run_batch_knn = [&](Points const& pts, int kth, size_t batch_size) {
-      Points newPts(batch_size);
-      parlay::copy(pts.cut(0, batch_size), newPts.cut(0, batch_size));
-      kdknn = new Typename[batch_size];
-      queryKNN<Point>(kDim, newPts, kRounds, tree, kdknn, kth, true);
+    auto run_batch_knn = [&](Points const& query_pts, int kth) {
+      kdknn = new Typename[query_pts.size()];
+      queryKNN<Point>(kDim, query_pts, kRounds, tree, kdknn, kth, true);
       delete[] kdknn;
     };
 
@@ -95,14 +93,13 @@ int main(int argc, char* argv[]) {
         size_t batch_size = static_cast<size_t>(wp.size() * kBatchQueryRatio);
         int k[3] = {1, 10, 100};
         for (int i = 0; i < 3; i++) {
-          run_batch_knn(wp, k[i], batch_size);
+          run_batch_knn(wp.subseq(0, batch_size), k[i]);
         }
         puts("");
 
         std ::cout << "out-dis knn time: ";
         for (int i = 0; i < 3; i++) {
-          run_batch_knn(wp.subseq(wp.size() - batch_size, wp.size()), k[i],
-                        batch_size);
+          run_batch_knn(wp.subseq(wp.size() - batch_size, wp.size()), k[i]);
         }
         puts("");
       }
@@ -123,14 +120,13 @@ int main(int argc, char* argv[]) {
         size_t batch_size = static_cast<size_t>(wp.size() * kBatchQueryRatio);
         int k[3] = {1, 10, 100};
         for (int i = 0; i < 3; i++) {
-          run_batch_knn(wp, k[i], batch_size);
+          run_batch_knn(wp.subseq(0, batch_size), k[i]);
         }
         puts("");
 
         std ::cout << "in-dis knn time: ";
         for (int i = 0; i < 3; i++) {
-          run_batch_knn(wp.subseq(wp.size() - batch_size, wp.size()), k[i],
-                        batch_size);
+          run_batch_knn(wp.subseq(wp.size() - batch_size, wp.size()), k[i]);
         }
         puts("");
       }
@@ -147,10 +143,10 @@ int main(int argc, char* argv[]) {
       if (kSummary == 0) {
         int k[3] = {1, 10, 100};
         for (int i = 0; i < 3; i++) {
-          run_batch_knn(wp, k[i], batch_size);
+          run_batch_knn(wp.subseq(0, batch_size), k[i]);
         }
       } else {  // test kSummary
-        run_batch_knn(wp, K, batch_size);
+        run_batch_knn(wp.subseq(0, batch_size), K);
       }
     }
 
