@@ -939,238 +939,6 @@ void rangeQueryFix(parlay::sequence<Point> const& WP, Tree& pkd,
             << " " << std::flush;
   return;
 }
-//
-// template<typename Point>
-// void rangeQuerySerialWithLog(const parlay::sequence<Point>& WP,
-// BaseTree<Point>& pkd, Typename* kdknn,
-//                              const int& rounds, parlay::sequence<Point>& Out,
-//                              int rec_type, int rec_num, int DIM) {
-//     using Tree = BaseTree<Point>;
-//     using Points = typename Tree::Points;
-//     using node = typename Tree::node;
-//     using Box = typename Tree::Box;
-//
-//     auto [query_box_seq, max_size] = gen_rectangles(rec_num, rec_type, WP,
-//     DIM); Out.resize(rec_num * max_size);
-//
-//     size_t step = Out.size() / rec_num;
-//     // using ref_t = std::reference_wrapper<Point>;
-//     // parlay::sequence<ref_t> out_ref( Out.size(), std::ref( Out[0] ) );
-//
-//     for (int i = 0; i < rec_num; i++) {
-//         double aveQuery = time_loop(
-//             rounds, -1.0, [&]() {},
-//             [&]() { kdknn[i] = pkd.range_query_serial(query_box_seq[i].first,
-//             Out.cut(i * step, (i + 1) * step)); },
-//             [&]() {});
-//         if (query_box_seq[i].second != kdknn[i]) std::cout << "wrong" <<
-//         std::endl; std::cout << query_box_seq[i].second << " " <<
-//         std::scientific << aveQuery
-//         << std::endl;
-//         // std::cout << query_box_seq[i].second << " " <<
-//         std::setprecision(7) << aveQuery << std::endl;
-//     }
-//
-//     return;
-// }
-//
-// template<typename Point>
-// void generate_knn(const uint_fast8_t& Dim, const parlay::sequence<Point>& WP,
-// const int K, const char* outFile) {
-//     using Tree = BaseTree<Point>;
-//     using Points = typename Tree::Points;
-//     using node = typename Tree::node;
-//     using Coord = typename Point::Coord;
-//     using nn_pair = std::pair<Point, Coord>;
-//     // using nn_pair = std::pair<std::reference_wrapper<Point>, Coord>;
-//     using ID_type = uint;
-//
-//     size_t n = WP.size();
-//
-//     Tree pkd;
-//     Points wp = Points(n);
-//     parlay::copy(WP.cut(0, n), wp.cut(0, n));
-//
-//     pkd.build(parlay::make_slice(wp), Dim);
-//
-//     parlay::sequence<nn_pair> Out(K * n);
-//     parlay::sequence<kBoundedQueue<Point, nn_pair>> bq =
-//         parlay::sequence<kBoundedQueue<Point, nn_pair>>::uninitialized(n);
-//     parlay::parallel_for(0, n, [&](size_t i) {
-//         bq[i].resize(Out.cut(i * K, i * K + K));
-//         bq[i].reset();
-//     });
-//
-//     std::cout << "begin query" << std::endl;
-//     parlay::copy(WP.cut(0, n), wp.cut(0, n));
-//     node* KDParallelRoot = pkd.get_root();
-//     auto bx = pkd.get_root_box();
-//     parlay::parallel_for(0, n, [&](size_t i) {
-//         size_t visNodeNum = 0;
-//         pkd.k_nearest(KDParallelRoot, wp[i], Dim, bq[i], bx, visNodeNum);
-//     });
-//     std::cout << "finish query" << std::endl;
-//
-//     std::ofstream ofs(outFile);
-//     if (!ofs.is_open()) {
-//         throw("file not open");
-//         abort();
-//     }
-//     size_t m = n * K;
-//     ofs << "WeightedAdjacencyGraph" << '\n';
-//     ofs << n << '\n';
-//     ofs << m << '\n';
-//     parlay::sequence<uint64_t> offset(n + 1);
-//     parlay::parallel_for(0, n + 1, [&](size_t i) { offset[i] = i * K; });
-//     // parlay::parallel_for( 0, n, [&]( size_t i ) {
-//     //   for ( size_t j = 0; j < K; j++ ) {
-//     //     if ( Out[i * K + j].first == wp[i] ) {
-//     //       printf( "%d, self-loop\n", i );
-//     //       exit( 0 );
-//     //     }
-//     //   }
-//     // } );
-//
-//     parlay::sequence<ID_type> edge(m);
-//     parlay::parallel_for(0, m, [&](size_t i) { edge[i] = Out[i].first.id; });
-//     parlay::sequence<double> weight(m);
-//     parlay::parallel_for(0, m, [&](size_t i) { weight[i] = Out[i].second; });
-//     for (size_t i = 0; i < n; i++) {
-//         ofs << offset[i] << '\n';
-//     }
-//     for (size_t i = 0; i < m; i++) {
-//         ofs << edge[i];
-//         ofs << "\n";
-//         // ofs << edge[i] << '\n';
-//     }
-//     for (size_t i = 0; i < m; i++) {
-//         ofs << weight[i] << '\n';
-//     }
-//     ofs.close();
-//     return;
-// }
-//
-// template<typename Point>
-// void insertOsmByTime(const int Dim, const
-// parlay::sequence<parlay::sequence<Point>>& node_by_time, const int rounds,
-//                      BaseTree<Point>& pkd, const int K, Typename* kdknn) {
-//     using Tree = BaseTree<Point>;
-//     using Points = typename Tree::Points;
-//     using node = typename Tree::node;
-//     using Box = typename Tree::Box;
-//
-//     pkd.delete_tree();
-//     int time_period_num = node_by_time.size();
-//     parlay::sequence<Points> wp(time_period_num);
-//     for (int i = 0; i < time_period_num; i++) {
-//         wp[i].resize(node_by_time[i].size());
-//     }
-//
-//     double ave = time_loop(
-//         rounds, 1.0,
-//         [&]() {
-//             for (int i = 0; i < time_period_num; i++) {
-//                 parlay::copy(node_by_time[i], wp[i]);
-//             }
-//         },
-//         [&]() {
-//             for (int i = 0; i < time_period_num; i++) {
-//                 pkd.BatchInsert(parlay::make_slice(wp[i]), Dim);
-//             }
-//         },
-//         [&]() { pkd.delete_tree(); });
-//
-//     // NOTE: begin revert
-//     for (int i = 0; i < time_period_num; i++) {
-//         parlay::copy(node_by_time[i], wp[i]);
-//     }
-//     std::cout << std::endl;
-//     for (int i = 0; i < time_period_num; i++) {
-//         parlay::internal::timer t;
-//         t.reset(), t.start();
-//
-//         pkd.BatchInsert(parlay::make_slice(wp[i]), Dim);
-//
-//         t.stop();
-//         std::cout << wp[i].size() << " " << t.total_time() << " ";
-//
-//         if (time_period_num < 12) {
-//             Points tmp(wp[0].begin(), wp[0].begin() + batchQueryOsmSize);
-//             queryKNN(Dim, tmp, rounds, pkd, kdknn, K, true);
-//         } else if (i != 0 && (i + 1) % 12 == 0) {
-//             Points tmp(batchQueryOsmSize);
-//             parlay::copy(parlay::make_slice(wp[0]), tmp.cut(0,
-//             wp[0].size())); parlay::copy(parlay::make_slice(wp[1].begin(),
-//             wp[1].begin() + batchQueryOsmSize - wp[0].size()),
-//                          tmp.cut(wp[0].size(), tmp.size()));
-//             queryKNN(Dim, tmp, rounds, pkd, kdknn, K, true);
-//         }
-//
-//         std::cout << std::endl;
-//     }
-//
-//     size_t max_deep = 0;
-//     std::cout << ave << " " << pkd.getMaxTreeDepth(pkd.get_root(), max_deep)
-//     << " "
-//     << pkd.getAveTreeHeight() << " "
-//         << std::flush;
-//
-//     return;
-// }
-//
-// template<typename Point, int print = 1>
-// void incrementalBuildAndQuery(const int Dim, const parlay::sequence<Point>&
-// WP, const int rounds, BaseTree<Point>& pkd,
-//                               double stepRatio, const
-//                               parlay::sequence<Point>& query_points) {
-//     using Tree = BaseTree<Point>;
-//     using Points = typename Tree::Points;
-//     using node = typename Tree::node;
-//     size_t n = WP.size();
-//     size_t step = n * stepRatio;
-//     Points wp = Points::uninitialized(n);
-//
-//     pkd.delete_tree();
-//
-//     parlay::copy(WP, wp);
-//     size_t l = 0, r = 0;
-//
-//     size_t batchSize = static_cast<size_t>(WP.size() * knnBatchInbaRatio);
-//     Typename* kdknn = new Typename[batchSize];
-//     const int k[3] = {1, 5, 100};
-//
-//     std::cout << "begin insert: " << batchSize << std::endl;
-//     size_t cnt = 0;
-//     while (l < n) {
-//         parlay::internal::timer t;
-//         t.reset(), t.start();
-//         r = std::min(l + step, n);
-//         pkd.BatchInsert(wp.cut(l, r), Dim);
-//         t.stop();
-//
-//         // NOTE: print info
-//
-//         if ((cnt < 50 && cnt % 5 == 0) || (cnt < 100 && cnt % 10 == 0) ||
-//         (cnt % 100 == 0)) {
-//             size_t max_deep = 0;
-//             std::cout << l << " " << r << " " << t.total_time() << " " <<
-//             pkd.getMaxTreeDepth(pkd.get_root(), max_deep) << " "
-//                 << pkd.getAveTreeHeight() << " " << std::flush;
-//
-//             // NOTE: add additional query phase
-//             for (int i = 0; i < 3; i++) {
-//                 queryKNN<Point, 0, 1>(Dim, query_points, 1, pkd, kdknn, k[i],
-//                 true);
-//             }
-//             std::cout << std::endl;
-//         }
-//         cnt++;
-//         l = r;
-//     }
-//     delete[] kdknn;
-//
-//     return;
-// }
 
 template <typename T>
 class counter_iterator {
@@ -1352,6 +1120,182 @@ class Wrapper {
     using SplitRule = SplitRuleType;
     using TreeType = typename pspt::RTree<Point, SplitRule>;
   };
+
+  // NOTE: default test functions for all custom tree
+  static auto constexpr default_test_func =
+      []<class TreeDesc, typename Point>(
+          int const& kDim, parlay::sequence<Point> const& wp,
+          parlay::sequence<Point> const& wi, size_t const& N, int const& K,
+          int const& kRounds, string const& kInsertFile, int const& kTag,
+          int const& kQueryType, int const kSummary) {
+        using Tree = TreeDesc::TreeType;
+        using Points = typename Tree::Points;
+
+        Tree tree;
+        constexpr bool kTestTime = true;
+
+        BuildTree<Point, Tree, kTestTime, 2>(wp, kRounds, tree);
+
+        // NOTE: batch insert
+        if (kTag & (1 << 0)) {
+          if (kSummary) {
+            parlay::sequence<double> const ratios = {0.0001, 0.001, 0.01, 0.1};
+            for (size_t i = 0; i < ratios.size(); i++) {
+              BatchInsert<Point, Tree, kTestTime>(tree, wp, wi, kRounds,
+                                                  ratios[i]);
+            }
+          } else {
+            BatchInsert<Point, Tree, kTestTime>(tree, wp, wi, kRounds, 0.1);
+          }
+        }
+
+        // NOTE: batch delete
+        if (kTag & (1 << 1)) {
+          if (kSummary) {
+            parlay::sequence<double> const ratios = {0.0001, 0.001, 0.01, 0.1};
+            for (size_t i = 0; i < ratios.size(); i++) {
+              BatchDelete<Point, Tree, kTestTime>(tree, wp, wp, kRounds,
+                                                  ratios[i]);
+            }
+          } else {
+            BatchDelete<Point, Tree, kTestTime>(tree, wp, wp, kRounds,
+                                                kBatchInsertRatio);
+          }
+        }
+
+        // NOTE: batch diff
+        if (kTag & (1 << 2)) {
+          if (kSummary) {
+            parlay::sequence<double> const overlap_ratios = {0.1, 0.2, 0.5, 1};
+            for (size_t i = 0; i < overlap_ratios.size(); i++) {
+              BatchDiff<Point, Tree, kTestTime>(
+                  tree, wp, kRounds, kBatchDiffTotalRatio, overlap_ratios[i]);
+            }
+          } else {
+            BatchDiff<Point, Tree, kTestTime>(tree, wp, kRounds,
+                                              kBatchDiffTotalRatio,
+                                              kBatchDiffOverlapRatio);
+          }
+        }
+
+        Typename* kdknn = nullptr;
+        auto run_batch_knn = [&](Points const& query_pts, int kth) {
+          kdknn = new Typename[query_pts.size()];
+          queryKNN<Point>(kDim, query_pts, kRounds, tree, kdknn, kth, true);
+          delete[] kdknn;
+        };
+
+        // NOTE: batch insert by step
+        if (kTag & (1 << 3)) {
+          parlay::sequence<double> const ratios = {1, 0.1, 0.01, 0.001, 0.0001};
+          for (auto rat : ratios) {
+            BatchInsertByStep<Point, Tree, true>(tree, wp, kRounds, rat);
+
+            // test knn
+            if (static_cast<int>(rat) == 1) continue;
+
+            std::cout << "in-dis knn time: ";
+            size_t batch_size =
+                static_cast<size_t>(wp.size() * kBatchQueryRatio);
+            int k[3] = {1, 10, 100};
+            for (int i = 0; i < 3; i++) {
+              run_batch_knn(wp.subseq(0, batch_size), k[i]);
+            }
+            puts("");
+
+            std ::cout << "out-dis knn time: ";
+            for (int i = 0; i < 3; i++) {
+              run_batch_knn(wp.subseq(wp.size() - batch_size, wp.size()), k[i]);
+            }
+            puts("");
+          }
+        }
+
+        // NOTE: batch delete by step
+        if (kTag & (1 << 4)) {
+          parlay::sequence<double> const ratios = {1, 0.1, 0.01, 0.001, 0.0001};
+          // parlay::sequence<double> const ratios = {0.001};
+          for (auto rat : ratios) {
+            BatchDeleteByStep<Point, Tree, true>(tree, wp, kRounds, rat);
+
+            // test knn
+            if (static_cast<int>(rat) == 1) continue;
+
+            std::cout << "out-dis knn time: ";
+            size_t batch_size =
+                static_cast<size_t>(wp.size() * kBatchQueryRatio);
+            int k[3] = {1, 10, 100};
+            for (int i = 0; i < 3; i++) {
+              run_batch_knn(wp.subseq(0, batch_size), k[i]);
+            }
+            puts("");
+
+            std ::cout << "in-dis knn time: ";
+            for (int i = 0; i < 3; i++) {
+              run_batch_knn(wp.subseq(wp.size() - batch_size, wp.size()), k[i]);
+            }
+            puts("");
+          }
+        }
+
+        // WARN: compress the kdnode to MultiNode, should remove except for
+        // exp if constexpr (IsKdTree<Tree>) {
+        //   tree.Compress2Multi();
+        // }
+
+        if (kQueryType & (1 << 0)) {  // NOTE: KNN
+          size_t batch_size = static_cast<size_t>(wp.size() * kBatchQueryRatio);
+
+          if (kSummary == 0) {
+            int k[3] = {1, 10, 100};
+            for (int i = 0; i < 3; i++) {
+              run_batch_knn(wp.subseq(0, batch_size), k[i]);
+            }
+          } else {  // test kSummary
+            run_batch_knn(wp.subseq(0, batch_size), K);
+          }
+        }
+
+        if (kQueryType & (1 << 1)) {  // NOTE: range count
+          if (!kSummary) {
+            int recNum = kRangeQueryNum;
+            kdknn = new Typename[recNum];
+
+            // std::cout << std::endl;
+            for (int i = 0; i < 3; i++) {
+              rangeCountFix<Point>(wp, tree, kdknn, kRounds, i, recNum, kDim);
+            }
+
+            delete[] kdknn;
+          }
+        }
+
+        if (kQueryType & (1 << 2)) {  // NOTE: range query
+          if (kSummary == 0) {
+            int recNum = kRangeQueryNum;
+            kdknn = new Typename[recNum];
+
+            for (int i = 0; i < 3; i++) {
+              Points Out;
+              rangeQueryFix<Point>(wp, tree, kdknn, kRounds, Out, i, recNum,
+                                   kDim);
+            }
+            delete[] kdknn;
+          } else if (kSummary == 1) {  // NOTE: for kSummary
+            kdknn = new Typename[kSummaryRangeQueryNum];
+            Points Out;
+            rangeQueryFix<Point>(wp, tree, kdknn, kRounds, Out, 2,
+                                 kSummaryRangeQueryNum, kDim);
+            delete[] kdknn;
+          }
+        }
+
+        std::cout << "\n" << std::flush;
+
+        tree.DeleteTree();
+
+        return;
+      };
 
   // NOTE: driven functions
   template <typename TreeWrapper, typename RunFunc>
