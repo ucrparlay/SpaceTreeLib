@@ -199,8 +199,8 @@ void runPTreeParallel(auto const& wp, auto const& wi, Typename* kdknn,
     }
     knn_checker(wp.subseq(wp.size() / 2, wp.size()), wi,
                 wp.subseq(0, kCCPBatchQuerySize));
-    knn_checker(wp.subseq(0, wp.size() / 2), wi,
-                wp.subseq(wp.size() - kCCPBatchQuerySize, wp.size()));
+    knn_checker(wp.subseq(wp.size() / 2, wp.size()), wi,
+                wp.subseq(0, kCCPBatchQuerySize));
   }
 
   // NOTE: query phase
