@@ -45,8 +45,8 @@ double const kCCPBatchDiffTotalRatio = 1.0;
 double const kCCPBatchDiffOverlapRatio = 0.5;
 
 template <typename Point>
-void runCGAL(auto const& wp, auto const& wi, Typename* cgknn,
-             [[maybe_unused]] int query_num, int const tag,
+void runCGAL(auto const& wp, auto const& wi, auto const& query_points,
+             Typename* cgknn, [[maybe_unused]] int query_num, int const tag,
              int const query_type, int const K) {
   //* cgal
   size_t const N = wp.size();
@@ -92,23 +92,21 @@ void runCGAL(auto const& wp, auto const& wi, Typename* cgknn,
   std::cout << "begin tbb query" << std::endl << std::flush;
   assert(tree.is_built());
 
-  if (query_type & (1 << 0)) {  //* NN
-    // size_t S = wp.size();
-    size_t S = kCCPBatchQuerySize;
-    tbb::parallel_for(tbb::blocked_range<std::size_t>(0, S),
-                      [&](tbb::blocked_range<std::size_t> const& r) {
-                        for (std::size_t s = r.begin(); s != r.end(); ++s) {
-                          // Neighbor search can be instantiated from
-                          // several threads at the same time
-                          Point_d query(kDim, std::begin(wp[s].pnt),
-                                        std::begin(wp[s].pnt) + kDim);
-                          Neighbor_search search(tree, query, K);
-                          Neighbor_search::iterator it = search.end();
-                          it--;
-                          cgknn[s] = it->second;
-                        }
-                      });
-  }
+  // size_t S = wp.size();
+  size_t S = query_points.size();
+  tbb::parallel_for(tbb::blocked_range<std::size_t>(0, S),
+                    [&](tbb::blocked_range<std::size_t> const& r) {
+                      for (std::size_t s = r.begin(); s != r.end(); ++s) {
+                        // Neighbor search can be instantiated from
+                        // several threads at the same time
+                        Point_d query(kDim, std::begin(query_points[s].pnt),
+                                      std::begin(query_points[s].pnt) + kDim);
+                        Neighbor_search search(tree, query, K);
+                        Neighbor_search::iterator it = search.end();
+                        it--;
+                        cgknn[s] = it->second;
+                      }
+                    });
 
   tree.clear();
 }
@@ -162,30 +160,14 @@ void runPTreeParallel(auto const& wp, auto const& wi, Typename* kdknn,
     std::cout << "---------------finish diff------------------\n" << std::flush;
   }
 
-  if (tag & (1 << 3)) {
-    parlay::sequence<double> const ratios = {0.001};
-    for (auto rat : ratios) {
-      BatchInsertByStep<Point, Tree, true>(tree, wp, rounds, rat);
-    }
-  }
-
-  if (tag & (1 << 3)) {
-    parlay::sequence<double> const ratios = {0.001};
-    for (auto rat : ratios) {
-      BatchDeleteByStep<Point, Tree, true>(tree, wp, rounds, rat);
-    }
-  }
-
-  // NOTE: query phase
-  if (query_type & (1 << 0)) {  // NOTE: NN query
-    Points new_wp(kCCPBatchQuerySize);
-    parlay::copy(wp.cut(0, kCCPBatchQuerySize),
-                 new_wp.cut(0, kCCPBatchQuerySize));
-    queryKNN<Point>(kDim, new_wp, rounds, tree, kdknn, K, true);
+  auto knn_checker = [&](Points const& wp, Points const& wi,
+                         Points const query_points) {
+    // assert(query_points.size() == kCCPBatchQuerySize);
+    queryKNN<Point>(kDim, query_points, rounds, tree, kdknn, K, true);
     std::cout << "run cgal\n" << std::flush;
-    runCGAL<Point>(wp, wi, cgknn, query_num, tag, query_type, K);
+    runCGAL<Point>(wp, wi, query_points, cgknn, query_num, tag, query_type, K);
     std::cout << "check NN\n" << std::flush;
-    size_t S = kCCPBatchQuerySize;
+    size_t S = query_points.size();
     for (size_t i = 0; i < S; i++) {
       if (std::abs(static_cast<double>(cgknn[i] - kdknn[i])) > 1e-4) {
         puts("");
@@ -197,6 +179,33 @@ void runPTreeParallel(auto const& wp, auto const& wi, Typename* kdknn,
     }
     std::cout << "--------------finish NN query------------------\n"
               << std::flush;
+  };
+
+  if (tag & (1 << 3)) {
+    parlay::sequence<double> const ratios = {0.001};
+    for (auto rat : ratios) {
+      BatchInsertByStep<Point, Tree, true>(tree, wp, rounds, rat);
+    }
+    knn_checker(wp.subseq(0, wp.size() / 2), wi,
+                wp.subseq(0, kCCPBatchQuerySize));
+    knn_checker(wp.subseq(0, wp.size() / 2), wi,
+                wp.subseq(wp.size() - kCCPBatchQuerySize, wp.size()));
+  }
+
+  if (tag & (1 << 4)) {
+    parlay::sequence<double> const ratios = {0.001};
+    for (auto rat : ratios) {
+      BatchDeleteByStep<Point, Tree, true>(tree, wp, rounds, rat);
+    }
+    knn_checker(wp.subseq(wp.size() / 2, wp.size()), wi,
+                wp.subseq(0, kCCPBatchQuerySize));
+    knn_checker(wp.subseq(0, wp.size() / 2), wi,
+                wp.subseq(wp.size() - kCCPBatchQuerySize, wp.size()));
+  }
+
+  // NOTE: query phase
+  if (query_type & (1 << 0)) {  // NOTE: NN query
+    knn_checker(wp, wi, wp.subseq(0, kCCPBatchQuerySize));
   }
 
   Points new_wp;
@@ -268,36 +277,9 @@ int main(int argc, char* argv[]) {
     // NOTE: alloc the memory
     Coord* cgknn;
     Coord* kdknn;
-    if (query_type & (1 << 0)) {  //*NN
-      if (tag == 0) {
-        cgknn = new Coord[wp.size()];
-        kdknn = new Coord[wp.size()];
-      } else if (tag & (1 << 0)) {
-        cgknn = new Coord[wp.size()];
-        kdknn = new Coord[wp.size()];
-      } else if (tag & (1 << 1)) {
-        cgknn = new Coord[wp.size() + wi.size()];
-        kdknn = new Coord[wp.size() + wi.size()];
-      } else if (tag & (1 << 2)) {
-        cgknn = new Coord[wp.size()];
-        kdknn = new Coord[wp.size()];
-      } else if (tag & (1 << 3)) {
-        cgknn = new Coord[wp.size() + wi.size()];
-        kdknn = new Coord[wp.size() + wi.size()];
-      } else {
-        puts("wrong tag");
-        abort();
-      }
-    } else if (query_type & (1 << 1)) {  //* range Count
-      kdknn = new Coord[wp.size()];
-      cgknn = new Coord[wp.size()];
-    } else if (query_type & (1 << 2)) {
-      kdknn = new Coord[wp.size()];
-      cgknn = new Coord[wp.size()];
-    } else {
-      puts("Nothing to be queried");
-      // abort();
-    }
+
+    cgknn = new Coord[kCCPBatchQuerySize];
+    kdknn = new Coord[kCCPBatchQuerySize];
 
     // NOTE: run the test
     runPTreeParallel<Point, TreeWrapper>(wp, wi, kdknn, cgknn, kCCPQueryNum,
