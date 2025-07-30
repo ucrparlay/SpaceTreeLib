@@ -5,8 +5,8 @@ Nodes=(1000000 5000000 8000000 10000000 50000000)
 # Nodes=(50000000)
 
 # NOTE: parameters
-# tester="p_ccp"
-tester="kd_ccp"
+tester="p_ccp"
+# tester="kd_ccp"
 
 make -C ../build ${tester}
 
@@ -14,13 +14,13 @@ if [[ ${tester} == "p_ccp" ]]; then
 	tag=$((2#0000))
 	read_file=1
 	dims=(2)
-	queryTypes=$((2#110))
+	queryTypes=$((2#001))
 	trees=(2)
 elif [[ ${tester} == "kd_ccp" ]]; then
-	tag=$((2#1000))
+	tag=$((2#0000))
 	read_file=1
 	dims=(2 3)
-	queryTypes=$((2#111))
+	queryTypes=$((2#001))
 	trees=(0 1)
 fi
 K=100

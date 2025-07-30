@@ -45,8 +45,8 @@ double const kCCPBatchDiffTotalRatio = 1.0;
 double const kCCPBatchDiffOverlapRatio = 0.5;
 
 template <typename Point>
-void runCGAL(auto const& wp, auto const& wi, Typename* cgknn,
-             [[maybe_unused]] int query_num, int const tag,
+void runCGAL(auto const& wp, auto const& wi, auto const& query_points,
+             Typename* cgknn, [[maybe_unused]] int query_num, int const tag,
              int const query_type, int const K) {
   //* cgal
   size_t const N = wp.size();
@@ -100,8 +100,8 @@ void runCGAL(auto const& wp, auto const& wi, Typename* cgknn,
                         for (std::size_t s = r.begin(); s != r.end(); ++s) {
                           // Neighbor search can be instantiated from
                           // several threads at the same time
-                          Point_d query(kDim, std::begin(wp[s].pnt),
-                                        std::begin(wp[s].pnt) + kDim);
+                          Point_d query(kDim, std::begin(query_points[s].pnt),
+                                        std::begin(query_points[s].pnt) + kDim);
                           Neighbor_search search(tree, query, K);
                           Neighbor_search::iterator it = search.end();
                           it--;
@@ -157,6 +157,27 @@ void runKDParallel(auto const& wp, auto const& wi, Typename* kdknn,
     std::cout << "---------------finish diff------------------\n" << std::flush;
   }
 
+  auto knn_checker = [&](Points const& wp, Points const& wi,
+                         Points const query_points) {
+    assert(query_points.size() == kCCPBatchQuerySize);
+    queryKNN<Point>(kDim, query_points, rounds, tree, kdknn, K, true);
+    std::cout << "run cgal\n" << std::flush;
+    runCGAL<Point>(wp, wi, cgknn, query_num, tag, query_type, K);
+    std::cout << "check NN\n" << std::flush;
+    size_t S = kCCPBatchQuerySize;
+    for (size_t i = 0; i < S; i++) {
+      if (std::abs(static_cast<double>(cgknn[i] - kdknn[i])) > 1e-4) {
+        puts("");
+        puts("wrong");
+        std::cout << i << " " << cgknn[i] << " " << kdknn[i] << "\n"
+                  << std::flush;
+        abort();
+      }
+    }
+    std::cout << "--------------finish NN query------------------\n"
+              << std::flush;
+  };
+
   if (tag & (1 << 3)) {
     parlay::sequence<double> const ratios = {0.001};
     for (auto rat : ratios) {
@@ -165,6 +186,18 @@ void runKDParallel(auto const& wp, auto const& wi, Typename* kdknn,
     tree.template Validate<typename Tree::Leaf, typename Tree::Interior,
                            typename Tree::SplitRuleType>();
     std::cout << "---------------finish incre build------------------\n"
+              << std::flush;
+    knn_checker(wp, wi, wp.cut(0, kCCPBatchQuerySize));
+  }
+
+  if (tag & (1 << 4)) {
+    parlay::sequence<double> const ratios = {0.001};
+    for (auto rat : ratios) {
+      BatchDeleteByStep<Point, Tree, true>(tree, wp, rounds, rat);
+    }
+    tree.template Validate<typename Tree::Leaf, typename Tree::Interior,
+                           typename Tree::SplitRuleType>();
+    std::cout << "---------------finish incre delete------------------\n"
               << std::flush;
   }
 
