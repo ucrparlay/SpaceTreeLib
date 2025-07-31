@@ -1194,18 +1194,38 @@ class Wrapper {
             // test knn
             if (static_cast<int>(rat) == 1) continue;
 
-            std::cout << "in-dis knn time: ";
+            int k[3] = {1, 10, 100};
+
+            std::cout << "in-dis-skewed knn time: ";
             size_t batch_size =
                 static_cast<size_t>(wp.size() * kBatchQueryRatio);
-            int k[3] = {1, 10, 100};
             for (int i = 0; i < 3; i++) {
               run_batch_knn(wp.subseq(0, batch_size), k[i]);
             }
             puts("");
 
-            std ::cout << "out-dis knn time: ";
+            std ::cout << "out-dis-skewed knn time: ";
             for (int i = 0; i < 3; i++) {
               run_batch_knn(wp.subseq(wp.size() - batch_size, wp.size()), k[i]);
+            }
+            puts("");
+
+            // NOTE: sample points within the whole input datasets
+            auto query_pts = parlay::pack(
+                wp, parlay::tabulate(wp.size(), [&](size_t i) -> bool {
+                  return i % (wp.size() / (batch_size * 2)) == 0;
+                }));
+
+            std::cout << "in-dis-uniform knn time: ";
+            for (int i = 0; i < 3; i++) {
+              run_batch_knn(query_pts.subseq(0, batch_size), k[i]);
+            }
+            puts("");
+
+            std::cout << "out-dis-uniform knn time: ";
+            for (int i = 0; i < 3; i++) {
+              run_batch_knn(query_pts.subseq(batch_size, query_pts.size()),
+                            k[i]);
             }
             puts("");
           }
@@ -1233,6 +1253,25 @@ class Wrapper {
             std ::cout << "in-dis knn time: ";
             for (int i = 0; i < 3; i++) {
               run_batch_knn(wp.subseq(wp.size() - batch_size, wp.size()), k[i]);
+            }
+            puts("");
+
+            // NOTE: sample points within the whole input datasets
+            auto query_pts = parlay::pack(
+                wp, parlay::tabulate(wp.size(), [&](size_t i) -> bool {
+                  return i % (wp.size() / (batch_size * 2)) == 0;
+                }));
+
+            std::cout << "out-dis-uniform knn time: ";
+            for (int i = 0; i < 3; i++) {
+              run_batch_knn(query_pts.subseq(0, batch_size), k[i]);
+            }
+            puts("");
+
+            std::cout << "in-dis-uniform knn time: ";
+            for (int i = 0; i < 3; i++) {
+              run_batch_knn(query_pts.subseq(batch_size, query_pts.size()),
+                            k[i]);
             }
             puts("");
           }
