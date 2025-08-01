@@ -15,6 +15,7 @@
 #include "parlay/monoid.h"
 #include "parlay/parallel.h"
 #include "parlay/primitives.h"
+#include "parlay/random.h"
 #include "parlay/slice.h"
 #include "pspt/base_tree.h"
 #include "pspt/cover_tree.h"
@@ -1218,13 +1219,16 @@ class Wrapper {
 
             std::cout << "in-dis-uniform knn time: ";
             for (int i = 0; i < 3; i++) {
-              run_batch_knn(query_pts.subseq(0, batch_size), k[i]);
+              run_batch_knn(
+                  parlay::random_shuffle(query_pts.subseq(0, batch_size)),
+                  k[i]);
             }
             puts("");
 
             std::cout << "out-dis-uniform knn time: ";
             for (int i = 0; i < 3; i++) {
-              run_batch_knn(query_pts.subseq(batch_size, query_pts.size()),
+              run_batch_knn(parlay::random_shuffle(
+                                query_pts.subseq(batch_size, query_pts.size())),
                             k[i]);
             }
             puts("");
@@ -1264,13 +1268,16 @@ class Wrapper {
 
             std::cout << "out-dis-uniform knn time: ";
             for (int i = 0; i < 3; i++) {
-              run_batch_knn(query_pts.subseq(0, batch_size), k[i]);
+              run_batch_knn(
+                  parlay::random_shuffle(query_pts.subseq(0, batch_size)),
+                  k[i]);
             }
             puts("");
 
             std::cout << "in-dis-uniform knn time: ";
             for (int i = 0; i < 3; i++) {
-              run_batch_knn(query_pts.subseq(batch_size, query_pts.size()),
+              run_batch_knn(parlay::random_shuffle(
+                                query_pts.subseq(batch_size, query_pts.size())),
                             k[i]);
             }
             puts("");
