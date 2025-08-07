@@ -484,6 +484,8 @@ void BatchDeleteByStep(Tree& pkd, parlay::sequence<Point> const& WP,
   size_t n = static_cast<size_t>(max_ratio * wp.size());
   size_t step = static_cast<size_t>(insert_ratio * n);
   size_t slice_num = n / step;
+  std::cout << "n: " << n << " step: " << step << " slice_num: " << slice_num
+            << std::endl;
   parlay::sequence<parlay::sequence<double>> time_table(
       rounds + 2, parlay::sequence<double>(slice_num, 0.0));
   parlay::sequence<StepUpdateLogger> log_time(slice_num);
@@ -515,13 +517,19 @@ void BatchDeleteByStep(Tree& pkd, parlay::sequence<Point> const& WP,
     parlay::internal::timer t;
     size_t l = 0, r = 0;
     size_t cnt = 0;
+    size_t offset = n - rounds_num_cutoff * step;
+    std::cout << "rounds_num_cutoff: " << rounds_num_cutoff << " step: " << step
+              << std::endl;
+    std::cout << "offset: " << offset << std::endl;
     while (l < n) {
       if (cnt >= rounds_num_cutoff) {
         break;
       }
 
       r = std::min(l + step, n);
-      pkd.BatchDelete(parlay::make_slice(wp.begin() + l, wp.begin() + r));
+      // WARN: r may exceeds the right bounds with offset
+      pkd.BatchDelete(
+          parlay::make_slice(wp.begin() + offset + l, wp.begin() + offset + r));
       l = r;
       time_table[round_cnt][cnt++] += t.next_time();
     }
@@ -530,7 +538,7 @@ void BatchDeleteByStep(Tree& pkd, parlay::sequence<Point> const& WP,
 
   double ave_time = time_loop(
       rounds, 0.01, [&]() { build_tree_by_type(); },
-      [&]() { incre_delete(slice_num + 1); }, [&]() { pkd.DeleteTree(); });
+      [&]() { incre_delete(slice_num); }, [&]() { pkd.DeleteTree(); });
 
   if (round_cnt - 1 != rounds) {
     throw std::runtime_error("rounds not match!");
@@ -1245,7 +1253,7 @@ class Wrapper {
             // test knn
             if (static_cast<int>(rat) == 1) continue;
 
-            std::cout << "out-dis knn time: ";
+            std::cout << "in-dis-skewed knn time: ";
             size_t batch_size =
                 static_cast<size_t>(wp.size() * kBatchQueryRatio);
             int k[3] = {1, 10, 100};
@@ -1254,7 +1262,7 @@ class Wrapper {
             }
             puts("");
 
-            std ::cout << "in-dis knn time: ";
+            std ::cout << "out-dis-skewed knn time: ";
             for (int i = 0; i < 3; i++) {
               run_batch_knn(wp.subseq(wp.size() - batch_size, wp.size()), k[i]);
             }
@@ -1266,7 +1274,7 @@ class Wrapper {
                   return i % (wp.size() / (batch_size * 2)) == 0;
                 }));
 
-            std::cout << "out-dis-uniform knn time: ";
+            std::cout << "in-dis-uniform knn time: ";
             for (int i = 0; i < 3; i++) {
               run_batch_knn(
                   parlay::random_shuffle(query_pts.subseq(0, batch_size)),
@@ -1274,7 +1282,7 @@ class Wrapper {
             }
             puts("");
 
-            std::cout << "in-dis-uniform knn time: ";
+            std::cout << "out-dis-uniform knn time: ";
             for (int i = 0; i < 3; i++) {
               run_batch_knn(parlay::random_shuffle(
                                 query_pts.subseq(batch_size, query_pts.size())),
@@ -1457,9 +1465,10 @@ class Wrapper {
     if (dim == 2) {
       // run_with_split_type.template operator()<BasicPoint<Coord, 2>>();
       run_with_split_type.template operator()<AugPoint<Coord, 2, AugId>>();
-    } else if (dim == 3) {
-      run_with_split_type.template operator()<AugPoint<Coord, 3, AugId>>();
     }
+    // else if (dim == 3) {
+    //   run_with_split_type.template operator()<AugPoint<Coord, 3, AugId>>();
+    // }
     // else if (dim == 5) {
     //   run_with_split_type.template operator()<AugPoint<Coord, 5, AugId>>();
     // }
