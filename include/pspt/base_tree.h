@@ -333,9 +333,9 @@ class BaseTree {
     requires std::same_as<typename Interior::ST, HyperPlane>;
 
   template <typename Leaf, IsBinaryNode Interior, typename Range>
-  static void KNNBinary(Node* T, Point const& q,
-                        kBoundedQueue<Point, Range>& bq, KNNLogger& logger)
-    requires std::same_as<typename Interior::ST, Box>;
+  static void KNNBinaryBox(Node* T, Point const& q,
+                           kBoundedQueue<Point, Range>& bq, KNNLogger& logger);
+  // requires std::same_as<typename Interior::ST, Box>;
 
   // NOTE: search knn in the expanded multi node
   template <typename Leaf, IsMultiNode Interior, typename Range>
@@ -440,6 +440,9 @@ class BaseTree {
   template <IsBinaryNode BN, IsMultiNode MN>
   static Node* Compress2Multi(Node* T)
     requires std::same_as<typename BN::ST, typename MN::ST::value_type>;
+
+  template <typename Leaf, typename Interior>
+  static Node* MergeUp(Node* T);
 
   // NOTE: validations
   template <typename Leaf, typename Interior>

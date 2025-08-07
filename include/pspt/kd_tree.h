@@ -42,7 +42,6 @@ class KdTree
   using NodeBoxSeq = typename BT::NodeBoxSeq;
   using Splitter = HyperPlane;
   using SplitterSeq = HyperPlaneSeq;
-  using AugType = std::optional<bool>;
   using SplitRuleType = SplitRule;
 
   static constexpr DimsType const kMD = 2;
@@ -51,8 +50,12 @@ class KdTree
   template <uint_fast8_t kMD>
   struct KdCompressionNode;
 
-  using Leaf = LeafNode<Point, Slice, BT::kLeaveWrap, std::monostate,
-                        parlay::move_assign_tag>;
+  struct KdAugType;
+  using AugType = KdAugType;
+  using Leaf =
+      LeafNode<Point, Slice, BT::kLeaveWrap, Box, parlay::move_assign_tag>;
+  // using Leaf = LeafNode<Point, Slice, BT::kLeaveWrap, std::monostate,
+  //                       parlay::move_assign_tag>;
   struct KdInteriorNode;
   using Interior = KdInteriorNode;
   using CompressInterior = KdCompressionNode<kMD>;

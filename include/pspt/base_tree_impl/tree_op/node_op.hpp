@@ -16,6 +16,27 @@ namespace pspt {
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 template <typename Leaf, typename Interior>
+static Node* BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::MergeUp(
+    Node* T) {
+  if (T->is_leaf) {
+    auto TL = static_cast<Leaf*>(T);
+    TL->aug = GetBox(static_cast<Leaf*>(T)->pts.cut(0, T->size));
+    return T;
+  }
+  auto TI = static_cast<Interior*>(T);
+  auto left = MergeUp<Leaf, Interior>(TI->left);
+  auto right = MergeUp<Leaf, Interior>(TI->right);
+  auto left_box = left->is_leaf ? static_cast<Leaf*>(left)->aug
+                                : static_cast<Interior*>(left)->aug.box;
+  auto right_box = right->is_leaf ? static_cast<Leaf*>(right)->aug
+                                  : static_cast<Interior*>(right)->aug.box;
+  TI->aug.box = GetBox(left_box, right_box);
+  return TI;
+}
+
+template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
+template <typename Leaf, typename Interior>
 typename Interior::ST const&
 BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::GetSplit(Node const* node)
   requires std::same_as<

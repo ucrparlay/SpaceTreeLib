@@ -219,11 +219,11 @@ void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::KNNBinary(
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 template <typename Leaf, IsBinaryNode Interior, typename Range>
-void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::KNNBinary(
+void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::KNNBinaryBox(
     Node* T, Point const& q, kBoundedQueue<Point, Range>& bq, KNNLogger& logger)
-  requires std::same_as<
-      typename Interior::ST,
-      typename BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::Box>
+// requires std::same_as<
+//     typename Interior::ST,
+//     typename BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::Box>
 {
   logger.vis_node_num++;
 
@@ -233,9 +233,13 @@ void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::KNNBinary(
   }
 
   Interior* TI = static_cast<Interior*>(T);
-  Coord dist_left = P2BMinDistanceSquare(q, GetSplit<Leaf, Interior>(TI->left));
-  Coord dist_right =
-      P2BMinDistanceSquare(q, GetSplit<Leaf, Interior>(TI->right));
+  auto left_box = TI->left->is_leaf ? static_cast<Leaf*>(TI->left)->aug
+                                    : static_cast<Interior*>(TI->left)->aug.box;
+  auto right_box = TI->right->is_leaf
+                       ? static_cast<Leaf*>(TI->right)->aug
+                       : static_cast<Interior*>(TI->right)->aug.box;
+  Coord dist_left = P2BMinDistanceSquare(q, left_box);
+  Coord dist_right = P2BMinDistanceSquare(q, right_box);
   bool go_left = Num::Leq(dist_left, dist_right);
 
   KNNBinary<Leaf, Interior>(go_left ? TI->left : TI->right, q, bq, logger);

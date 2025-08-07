@@ -7,6 +7,32 @@
 namespace pspt {
 template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
+struct KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::KdAugType {
+  std::optional<bool> parallel_flag;
+  Box box;
+
+  inline void SetParallelFlag(bool const flag) {
+    this->parallel_flag.emplace(flag);
+  }
+
+  inline void ResetParallelFlag() { this->parallel_flag.reset(); }
+
+  inline bool GetParallelFlagIniStatus() {
+    return this->parallel_flag.has_value();
+  }
+
+  // NOTE: use a tri-state bool to indicate whether a subtree needs to be
+  // rebuilt. If aug is not INITIALIZED, then it means there is no need to
+  // rebuild; otherwise, the value depends on the initial tree size before
+  // rebuilding.
+  inline bool ForceParallel() const {
+    // BUG: this is not consistent as the original one
+    return this->parallel_flag.has_value() ? this->parallel_flag.value() : true;
+  }
+};
+
+template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
 struct KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::KdInteriorNode
     : BinaryNode<Point, Splitter, AugType> {
   using PT = Point;
@@ -18,21 +44,36 @@ struct KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::KdInteriorNode
 
   // Adding a virtual destructor makes Node polymorphic
   virtual ~KdInteriorNode() = default;
+  inline void SetParallelFlag(bool const flag) {
+    this->aug.SetParallelFlag(flag);
+  }
 
-  inline void SetParallelFlag(bool const flag) { this->aug.emplace(flag); }
+  inline void ResetParallelFlag() { this->aug.ResetParallelFlag(); }
 
-  inline void ResetParallelFlag() { this->aug.reset(); }
-
-  inline bool GetParallelFlagIniStatus() { return this->aug.has_value(); }
+  inline bool GetParallelFlagIniStatus() {
+    return this->aug.GetParallelFlagIniStatus();
+  }
 
   // NOTE: use a tri-state bool to indicate whether a subtree needs to be
   // rebuilt. If aug is not INITIALIZED, then it means there is no need to
   // rebuild; otherwise, the value depends on the initial tree size before
   // rebuilding.
-  inline bool ForceParallel() const {
-    return this->aug.has_value() ? this->aug.value()
-                                 : this->size > BT::kSerialBuildCutoff;
-  }
+  inline bool ForceParallel() const { return true; }
+
+  // inline void SetParallelFlag(bool const flag) { this->aug.emplace(flag); }
+
+  // inline void ResetParallelFlag() { this->aug.reset(); }
+
+  // inline bool GetParallelFlagIniStatus() { return this->aug.has_value(); }
+
+  // // NOTE: use a tri-state bool to indicate whether a subtree needs to be
+  // // rebuilt. If aug is not INITIALIZED, then it means there is no need to
+  // // rebuild; otherwise, the value depends on the initial tree size before
+  // // rebuilding.
+  // inline bool ForceParallel() const {
+  //   return this->aug.has_value() ? this->aug.value()
+  //                                : this->size > BT::kSerialBuildCutoff;
+  // }
 };
 
 template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
