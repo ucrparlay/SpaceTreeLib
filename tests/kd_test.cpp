@@ -43,13 +43,15 @@ int main(int argc, char* argv[]) {
     // NOTE: batch insert by step
     if (kTag & (1 << 3)) {
       parlay::sequence<double> const ratios = {1, 0.1, 0.01, 0.001, 0.0001};
+      // parlay::sequence<double> const ratios = {1, 0.001};
       for (auto rat : ratios) {
         BatchInsertByStep<Point, Tree, true>(tree, wp, kRounds, rat);
 
-        tree.template MergeUp<Leaf, Interior>(tree.GetRoot());
-
         // test knn
         if (static_cast<int>(rat) == 1) continue;
+
+        auto new_root = tree.template MergeUp<Leaf, Interior>(tree.GetRoot());
+        tree.SetRoot(new_root);
 
         int k[3] = {1, 10, 100};
 

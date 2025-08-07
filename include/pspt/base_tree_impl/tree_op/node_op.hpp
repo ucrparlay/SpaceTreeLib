@@ -16,8 +16,7 @@ namespace pspt {
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 template <typename Leaf, typename Interior>
-static Node* BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::MergeUp(
-    Node* T) {
+Node* BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::MergeUp(Node* T) {
   if (T->is_leaf) {
     auto TL = static_cast<Leaf*>(T);
     TL->aug = GetBox(static_cast<Leaf*>(T)->pts.cut(0, T->size));

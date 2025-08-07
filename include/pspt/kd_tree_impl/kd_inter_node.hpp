@@ -50,30 +50,13 @@ struct KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::KdInteriorNode
 
   inline void ResetParallelFlag() { this->aug.ResetParallelFlag(); }
 
-  inline bool GetParallelFlagIniStatus() {
-    return this->aug.GetParallelFlagIniStatus();
-  }
+  inline bool GetParallelFlagIniStatus() { return false; }
 
   // NOTE: use a tri-state bool to indicate whether a subtree needs to be
   // rebuilt. If aug is not INITIALIZED, then it means there is no need to
   // rebuild; otherwise, the value depends on the initial tree size before
   // rebuilding.
   inline bool ForceParallel() const { return true; }
-
-  // inline void SetParallelFlag(bool const flag) { this->aug.emplace(flag); }
-
-  // inline void ResetParallelFlag() { this->aug.reset(); }
-
-  // inline bool GetParallelFlagIniStatus() { return this->aug.has_value(); }
-
-  // // NOTE: use a tri-state bool to indicate whether a subtree needs to be
-  // // rebuilt. If aug is not INITIALIZED, then it means there is no need to
-  // // rebuild; otherwise, the value depends on the initial tree size before
-  // // rebuilding.
-  // inline bool ForceParallel() const {
-  //   return this->aug.has_value() ? this->aug.value()
-  //                                : this->size > BT::kSerialBuildCutoff;
-  // }
 };
 
 template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,

@@ -242,14 +242,14 @@ void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::KNNBinaryBox(
   Coord dist_right = P2BMinDistanceSquare(q, right_box);
   bool go_left = Num::Leq(dist_left, dist_right);
 
-  KNNBinary<Leaf, Interior>(go_left ? TI->left : TI->right, q, bq, logger);
+  KNNBinaryBox<Leaf, Interior>(go_left ? TI->left : TI->right, q, bq, logger);
 
   logger.check_box_num++;
   if (Num::Gt(go_left ? dist_right : dist_left, bq.top_value()) && bq.full()) {
     logger.skip_box_num++;
     return;
   }
-  KNNBinary<Leaf, Interior>(go_left ? TI->right : TI->left, q, bq, logger);
+  KNNBinaryBox<Leaf, Interior>(go_left ? TI->right : TI->left, q, bq, logger);
   return;
 }
 
