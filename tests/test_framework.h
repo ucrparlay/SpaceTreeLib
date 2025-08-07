@@ -468,6 +468,10 @@ void BatchInsertByStep(Tree& pkd, parlay::sequence<Point> const& WP,
   // WARN: restore status
   prepare_build();
   incre_build(slice_num / 2);
+  auto original_box = Tree::GetBox(wp.cut(0, n / 2));
+  auto tree_box = pkd.GetRootBox();
+  std::cout << original_box.first << ' ' << original_box.second << std::endl;
+  std::cout << tree_box.first << ' ' << tree_box.second << std::endl;
   // auto root = pkd.cpam_aug_map_;
   // std::cout << "root size: " << root.size() << std::endl;
 

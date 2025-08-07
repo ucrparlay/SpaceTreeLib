@@ -14,6 +14,7 @@ void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::DeleteTreeWrapper() {
     return;
   }
   DeleteTreeRecursive<Leaf, Interior>(this->root_);
+  this->tree_box_ = GetEmptyBox();
   this->root_ = nullptr;
   return;
 }
