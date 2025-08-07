@@ -52,6 +52,8 @@ int main(int argc, char* argv[]) {
 
         auto new_root = tree.template MergeUp<Leaf, Interior>(tree.GetRoot());
         tree.SetRoot(new_root);
+        auto tb = tree.GetRootBox();
+        std::cout << tb.first << ' ' << tb.second << std::endl;
 
         int k[3] = {1, 10, 100};
 

@@ -117,6 +117,8 @@ void runKDParallel(auto const& wp, auto const& wi, Typename* kdknn,
                    int const K, int const tag, int const rounds) {
   using Tree = TreeDesc::TreeType;
   using Points = typename Tree::Points;
+  using Leaf = typename Tree::Leaf;
+  using Interior = typename Tree::Interior;
   size_t const kDim = std::tuple_size_v<typename Point::Coords>;
 
   Tree tree;
@@ -181,6 +183,8 @@ void runKDParallel(auto const& wp, auto const& wi, Typename* kdknn,
     for (auto rat : ratios) {
       BatchInsertByStep<Point, Tree, true>(tree, wp, rounds, rat);
       std::cout << "root size: " << tree.GetRoot()->size << std::endl;
+      auto new_root = tree.template MergeUp<Leaf, Interior>(tree.GetRoot());
+      tree.SetRoot(new_root);
     }
     tree.template Validate<typename Tree::Leaf, typename Tree::Interior,
                            typename Tree::SplitRuleType>();
