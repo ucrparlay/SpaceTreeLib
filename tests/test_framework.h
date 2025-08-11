@@ -470,8 +470,8 @@ void BatchInsertByStep(Tree& pkd, parlay::sequence<Point> const& WP,
   incre_build(slice_num / 2);
   auto original_box = Tree::GetBox(wp.cut(0, n / 2));
   auto tree_box = pkd.GetRootBox();
-  std::cout << original_box.first << ' ' << original_box.second << std::endl;
-  std::cout << tree_box.first << ' ' << tree_box.second << std::endl;
+  // std::cout << original_box.first << ' ' << original_box.second << std::endl;
+  // std::cout << tree_box.first << ' ' << tree_box.second << std::endl;
   // auto root = pkd.cpam_aug_map_;
   // std::cout << "root size: " << root.size() << std::endl;
 
@@ -488,8 +488,8 @@ void BatchDeleteByStep(Tree& pkd, parlay::sequence<Point> const& WP,
   size_t n = static_cast<size_t>(max_ratio * wp.size());
   size_t step = static_cast<size_t>(insert_ratio * n);
   size_t slice_num = n / step;
-  std::cout << "n: " << n << " step: " << step << " slice_num: " << slice_num
-            << std::endl;
+  // std::cout << "n: " << n << " step: " << step << " slice_num: " << slice_num
+  // << std::endl;
   parlay::sequence<parlay::sequence<double>> time_table(
       rounds + 2, parlay::sequence<double>(slice_num, 0.0));
   parlay::sequence<StepUpdateLogger> log_time(slice_num);
@@ -522,9 +522,10 @@ void BatchDeleteByStep(Tree& pkd, parlay::sequence<Point> const& WP,
     size_t l = 0, r = 0;
     size_t cnt = 0;
     size_t offset = n - rounds_num_cutoff * step;
-    std::cout << "rounds_num_cutoff: " << rounds_num_cutoff << " step: " << step
-              << std::endl;
-    std::cout << "offset: " << offset << std::endl;
+    // std::cout << "rounds_num_cutoff: " << rounds_num_cutoff << " step: " <<
+    // step
+    //           << std::endl;
+    // std::cout << "offset: " << offset << std::endl;
     while (l < n) {
       if (cnt >= rounds_num_cutoff) {
         break;
