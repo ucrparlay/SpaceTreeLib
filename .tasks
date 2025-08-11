@@ -1,0 +1,19 @@
+# vim: set fenc=utf-8 ft=taskini:
+# see: https://github.com/skywind3000/asynctasks.vim/wiki/Task-Config
+
+[build-all]
+command=make -C build -j
+cwd=${VIM_ROOT}
+errorformat=%. %#--> %f:%l:%c
+
+[build-kd_test]
+command=make -C build kd_test
+cwd=${VIM_ROOT}
+errorformat=%. %#--> %f:%l:%c
+
+[run]
+command=cmake -C build test && ./build/test -p /data/zmen002/kdtree/ -i 0 -t 0 -q 0 -T 0 -l 0 -s 0 -r 3 
+cwd=${VIM_ROOT}
+output=terminal
+
+

@@ -444,7 +444,7 @@ struct OrthogonalSplitRule {
     }
 
     return AllocInteriorNode<typename Tree::Interior>(
-        L, R, box_cut.GetHyperPlane(), typename Tree::AugType());
+        L, R, box_cut.GetHyperPlane(), typename Tree::InteriorAugType());
   }
 
   // INFO: divide the space for multi node
