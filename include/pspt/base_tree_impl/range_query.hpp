@@ -5,6 +5,7 @@
 #include <utility>
 
 #include "../base_tree.h"
+#include "dependence/concepts.h"
 
 namespace pspt {
 // NOTE: orthogonal range count in leaf
@@ -53,16 +54,14 @@ size_t BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::RangeCountRectangle(
     }
   };
 
-  if constexpr (std::same_as<typename Interior::ST,
-                             HyperPlane>) {  // use hyperplane
+  if constexpr (!HasBox<typename Interior::AT>) {  // use hyperplane
     BoxCut box_cut(node_box, TI->split, true);
     logger.generate_box_num++;
     recurse(TI->left, box_cut.GetFirstBoxCut(), left_cnt);
     recurse(TI->right, box_cut.GetSecondBoxCut(), right_cnt);
-  } else if constexpr (std::same_as<typename Interior::ST,
-                                    Box>) {  // use bounding box
-    recurse(TI->left, GetSplit<Leaf, Interior>(TI->left), left_cnt);
-    recurse(TI->right, GetSplit<Leaf, Interior>(TI->right), right_cnt);
+  } else if constexpr (HasBox<typename Interior::AT>) {  // use bounding box
+    recurse(TI->left, RetriveBox<Leaf, Interior>(TI->left), left_cnt);
+    recurse(TI->right, RetriveBox<Leaf, Interior>(TI->right), right_cnt);
   } else {
     assert(0);
   }
@@ -217,16 +216,14 @@ void BaseTree<Point, DerivedTree, kSkHeight,
     }
   };
 
-  if constexpr (std::same_as<typename Interior::ST,
-                             HyperPlane>) {  // use hyperplane
+  if constexpr (!HasBox<typename Interior::AT>) {  // use hyperplane
     BoxCut box_cut(node_box, TI->split, true);
     logger.generate_box_num++;
     recurse(TI->left, box_cut.GetFirstBoxCut());
     recurse(TI->right, box_cut.GetSecondBoxCut());
-  } else if constexpr (std::same_as<typename Interior::ST,
-                                    Box>) {  // use bounding box
-    recurse(TI->left, GetSplit<Leaf, Interior>(TI->left));
-    recurse(TI->right, GetSplit<Leaf, Interior>(TI->right));
+  } else if constexpr (HasBox<typename Interior::AT>) {  // use bounding box
+    recurse(TI->left, RetriveBox<Leaf, Interior>(TI->left));
+    recurse(TI->right, RetriveBox<Leaf, Interior>(TI->right));
   } else {
     assert(0);
   }

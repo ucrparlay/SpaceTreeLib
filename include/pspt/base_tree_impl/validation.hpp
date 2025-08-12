@@ -20,9 +20,8 @@ BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::CheckBox(Node* T,
   if (T->is_leaf) {
     [[maybe_unused]] auto const* TL = static_cast<Leaf const*>(T);
     [[maybe_unused]] auto const node_box = GetBox<Leaf, Interior>(T);
-    if constexpr (std::same_as<decltype(TL->GetSplit()),
-                               Box>) {  // whether storing a bounding box
-      SameBox(node_box, box);
+    if constexpr (HasBox<typename Leaf::AT>) {  // whether has bb
+      SameBox(node_box, TL->GetBox());
     } else {
       WithinBox(node_box, box);
     }
@@ -32,8 +31,8 @@ BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::CheckBox(Node* T,
   assert(!TI->GetParallelFlagIniStatus());  // NOTE: ensure that uninitialized
                                             // force parallelism
   if constexpr (IsBinaryNode<Interior> &&
-                std::same_as<typename Interior::ST,
-                             HyperPlane>) {  // NOTE: use hyperplane as splitter
+                !HasBox<typename Interior::AT>) {  // NOTE: use hyperplane as
+                                                   // splitter
     Box lbox(box), rbox(box);
     lbox.second.pnt[TI->split.second] = TI->split.first;
     rbox.first.pnt[TI->split.second] = TI->split.first;
@@ -46,16 +45,16 @@ BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::CheckBox(Node* T,
     assert(WithinBox(new_box, box));
     return new_box;
   } else if constexpr (IsBinaryNode<Interior> &&
-                       std::same_as<typename Interior::ST,
-                                    Box>) {  // use box as splitter
-    Box const left_return_box =
-        CheckBox<Leaf, Interior>(TI->left, GetSplit<Leaf, Interior>(TI->left));
+                       HasBox<typename Interior::AT>) {
+    // std::cout << " has box " << std::endl;
+    Box const left_return_box = CheckBox<Leaf, Interior>(
+        TI->left, RetriveBox<Leaf, Interior>(TI->left));
     Box const right_return_box = CheckBox<Leaf, Interior>(
-        TI->right, GetSplit<Leaf, Interior>(TI->right));
+        TI->right, RetriveBox<Leaf, Interior>(TI->right));
     Box const new_box = GetBox(left_return_box, right_return_box);
-    assert(SameBox(left_return_box, GetSplit<Leaf, Interior>(TI->left)));
-    assert(SameBox(right_return_box, GetSplit<Leaf, Interior>(TI->right)));
-    assert(SameBox(new_box, box));
+    assert(SameBox(left_return_box, RetriveBox<Leaf, Interior>(TI->left)));
+    assert(SameBox(right_return_box, RetriveBox<Leaf, Interior>(TI->right)));
+    assert(SameBox(new_box, TI->GetBox()));
     return new_box;
   } else if (IsMultiNode<Interior>) {
     BoxSeq new_box(TI->template ComputeSubregions<BoxSeq>(box));

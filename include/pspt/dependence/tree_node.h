@@ -86,22 +86,50 @@ struct LeafNode : Node {
 
   Points const GetPoints() const { return pts.substr(0, this->size); }
 
-  AugType const& GetAug() const { return aug; }
+  AugType& GetAug() const { return aug; }
 
   AugType const& GetSplit() const { return aug; }
+
+  auto GetBox() const {
+    if constexpr (std::is_same_v<AugType, std::monostate>) {
+      throw std::runtime_error("LeafNode does not have a box");
+    } else {
+      return aug.GetBox();
+    }
+  }
 
   bool is_dummy;
   Points pts;
   AugType aug;
 };
 
+template <typename NodeType, typename Range>
+static auto GetAugByType(Range In) {
+  if constexpr (std::same_as<typename NodeType::AT, std::monostate>) {
+    return typename NodeType::AT();
+  } else {
+    return typename NodeType::AT(In);
+  }
+}
+
+template <typename NodeType>
+static auto GetAugByType(Node* l, Node* r) {
+  if constexpr (std::same_as<typename NodeType::AT, std::monostate>) {
+    return typename NodeType::AT();
+  } else {
+    return typename NodeType::AT(l, r);
+  }
+}
+
 // NOTE:: Alloc a leaf with input IN and given size
+// TODO: the input aug is no longer valid
 template <typename Range, typename Leaf>
 static Leaf* AllocFixSizeLeafNode(
     Range In, size_t const alloc_size,
     typename Leaf::AT const& aug = typename Leaf::AT()) {
   Leaf* o = parlay::type_allocator<Leaf>::alloc();
-  new (o) Leaf(In, alloc_size, aug, AllocNormalLeafTag());
+  new (o) Leaf(In, alloc_size, GetAugByType<Leaf>(In.cut(0, alloc_size)),
+               AllocNormalLeafTag());
   assert(o->is_dummy == false);
   return o;
 }
@@ -111,7 +139,7 @@ template <typename Range, typename Leaf>
 static Leaf* AllocNormalLeafNode(
     Range In, typename Leaf::AT const& aug = typename Leaf::AT()) {
   Leaf* o = parlay::type_allocator<Leaf>::alloc();
-  new (o) Leaf(In, aug, AllocNormalLeafTag());
+  new (o) Leaf(In, GetAugByType<Leaf>(In), AllocNormalLeafTag());
   assert(o->is_dummy == false);
   return o;
 }
@@ -137,7 +165,7 @@ template <typename Range, typename Leaf>
 static Leaf* AllocDummyLeafNode(
     Range In, typename Leaf::AT const& aug = typename Leaf::AT()) {
   Leaf* o = parlay::type_allocator<Leaf>::alloc();
-  new (o) Leaf(In, aug, AllocDummyLeafTag());
+  new (o) Leaf(In, GetAugByType<Leaf>(In.cut(0, 1)), AllocDummyLeafTag());
   assert(o->is_dummy == true);
   assert(o->pts.size() == 1);
   return o;
@@ -279,21 +307,22 @@ struct DynamicNode : Node {
 };
 
 template <typename Interior>
-static Interior* AllocInteriorNode(Node* L, Node* R,
-                                   typename Interior::ST const& split,
-                                   typename Interior::AT const& aug) {
+static Interior* AllocInteriorNode(
+    Node* L, Node* R, typename Interior::ST const& split,
+    typename Interior::AT const& aug = typename Interior::AT()) {
   Interior* o = parlay::type_allocator<Interior>::alloc();
-  new (o) Interior(L, R, split, aug);
+  new (o) Interior(L, R, split, GetAugByType<Interior>(L, R));
   return o;
 }
 
 // TODO: maybe replace the NodeArr, ST, and AT with template parameters
 template <typename Interior>
-static Interior* AllocInteriorNode(typename Interior::NodeArr const& tree_nodes,
-                                   typename Interior::ST const& split,
-                                   typename Interior::AT const& aug) {
+static Interior* AllocInteriorNode(
+    typename Interior::NodeArr const& tree_nodes,
+    typename Interior::ST const& split,
+    typename Interior::AT const& aug = typename Interior::AT()) {
   Interior* o = parlay::type_allocator<Interior>::alloc();
-  new (o) Interior(tree_nodes, split, aug);
+  new (o) Interior(tree_nodes, split, GetAugByType<Interior>(tree_nodes));
   return o;
 }
 

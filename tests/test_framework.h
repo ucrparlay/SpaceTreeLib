@@ -1435,7 +1435,7 @@ class Wrapper {
       if (tree_type == 0) {
         Run<KdTreeWrapper<Point, SplitRule>>(params, test_func);
       } else if (tree_type == 1) {
-        Run<OrthTreeWrapper<Point, SplitRule>>(params, test_func);
+        // Run<OrthTreeWrapper<Point, SplitRule>>(params, test_func);
       }
     };
 

@@ -25,7 +25,8 @@ auto KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::KNN(
   KNNLogger logger;
   // BT::template KNNMix<Leaf, KdInteriorNode, CompressInterior>(
   //     T, q, 0, 1, bq, this->tree_box_, logger);
-  BT::template KNNBinary<Leaf, Interior>(T, q, bq, this->tree_box_, logger);
+  BT::template KNNBinaryBox<Leaf, Interior>(T, q, bq, logger);
+  // BT::template KNNBinary<Leaf, Interior>(T, q, bq, this->tree_box_, logger);
   return logger;
 }
 
