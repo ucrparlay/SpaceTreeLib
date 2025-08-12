@@ -113,10 +113,8 @@ class BaseTree {
                                                      Box const& box,
                                                      DimsType d);
   template <typename Leaf, typename Interior>
-  static inline Box RetriveBox(Node* T) {
-    return T->is_leaf ? static_cast<Leaf*>(T)->GetBox()
-                      : static_cast<Interior*>(T)->GetBox();
-  }
+  static inline auto RetriveBox(Node const* T)
+    requires(HasBox<typename Leaf::AT> && HasBox<typename Interior::AT>);
 
   static inline Box GetEmptyBox();
   static inline Point GetBoxCenter(Box const& box);

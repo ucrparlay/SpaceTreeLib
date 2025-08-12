@@ -16,6 +16,17 @@ namespace pspt {
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 template <typename Leaf, typename Interior>
+auto BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::RetriveBox(
+    Node const* node)
+  requires(HasBox<typename Leaf::AT> && HasBox<typename Interior::AT>)
+{
+  return node->is_leaf ? static_cast<Leaf const*>(node)->GetBox()
+                       : static_cast<Interior const*>(node)->GetBox();
+}
+
+template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
+template <typename Leaf, typename Interior>
 typename Interior::ST const&
 BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::GetSplit(Node const* node)
   requires std::same_as<
