@@ -15,17 +15,18 @@
 namespace pspt {
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
-template <typename Leaf, IsBinaryNode Interior, typename Base>
-Base BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::BuildInnerTree(
+template <typename Leaf, IsBinaryNode Interior, typename ReturnType>
+ReturnType BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::BuildInnerTree(
     BucketType idx, HyperPlaneSeq const& pivots,
-    parlay::sequence<Base> const& tree_nodes) {
+    parlay::sequence<ReturnType> const& tree_nodes) {
   if (idx > kPivotNum) {
     assert(idx - kPivotNum - 1 < kBucketNum);
     return tree_nodes[idx - kPivotNum - 1];
   }
 
-  Base const L = BuildInnerTree<Leaf, Interior>(idx << 1, pivots, tree_nodes);
-  Base const R =
+  ReturnType const L =
+      BuildInnerTree<Leaf, Interior>(idx << 1, pivots, tree_nodes);
+  ReturnType const R =
       BuildInnerTree<Leaf, Interior>(idx << 1 | 1, pivots, tree_nodes);
 
   return AllocInteriorNode<Interior>(L, R, pivots[idx]);

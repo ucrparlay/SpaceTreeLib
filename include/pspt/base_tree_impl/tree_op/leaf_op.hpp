@@ -49,7 +49,7 @@ Node* BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::InsertPoints2Leaf(
   TL->size += In.size();
 
   if constexpr (NodeHasNonTrivialAug<Leaf>) {
-    TL->UpdateAug(In);
+    TL->UpdateAug(TL->pts.cut(0, TL->size));
   }
   return T;
 }
@@ -68,15 +68,20 @@ ReturnType BaseTree<Point, DerivedTree, kSkHeight,
     if (TL->size == 0) {
       TL->is_dummy = false;
       TL->pts = Points::uninitialized(kLeaveWrap);
+      TL->ResetAug();
     }
 
     if constexpr (std::same_as<ReturnType, Node*>) {
       return T;
     } else if constexpr (std::same_as<ReturnType, NodeBox>) {
-      return NodeBox(T, T->size ? Box(TL->pts[0], TL->pts[0]) : GetEmptyBox());
+      if constexpr (HasBox<typename Leaf::AT>) {
+        return NodeBox(T, TL->GetBox());
+      } else {
+        return NodeBox(T,
+                       T->size ? Box(TL->pts[0], TL->pts[0]) : GetEmptyBox());
+      }
     } else {
-      static_assert(std::same_as<ReturnType, Node*> ||
-                    std::same_as<ReturnType, NodeBox>);
+      ;
     }
   }
 
@@ -91,14 +96,17 @@ ReturnType BaseTree<Point, DerivedTree, kSkHeight,
                         TL->size - In.size()));
   TL->size -= In.size();
   assert(TL->size >= 0);
+  TL->UpdateAug(TL->pts.cut(0, TL->size));
 
   if constexpr (std::same_as<ReturnType, Node*>) {
     return T;
   } else if constexpr (std::same_as<ReturnType, NodeBox>) {
-    return NodeBox(T, GetBox(TL->pts.cut(0, TL->size)));
+    if constexpr (HasBox<typename Leaf::AT>) {
+      return NodeBox(T, TL->GetBox());
+    } else {
+      return NodeBox(T, GetBox(TL->pts.cut(0, TL->size)));
+    }
   } else {
-    static_assert(std::same_as<ReturnType, Node*> ||
-                  std::same_as<ReturnType, NodeBox>);
   }
 }
 

@@ -23,6 +23,11 @@ struct KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::LeafAugType {
     return;
   }
 
+  void Reset() {
+    this->box = BT::GetEmptyBox();
+    return;
+  }
+
   Box box;
 };
 
@@ -60,6 +65,11 @@ struct KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::InteriorAugType {
     this->box = BT::GetBox(BT::template RetriveBox<Leaf, Interior>(l),
                            BT::template RetriveBox<Leaf, Interior>(r));
     return;
+  }
+
+  void Reset() {
+    this->box = BT::GetEmptyBox();
+    this->force_par_indicator.reset();
   }
 
   // NOTE: use a tri-state bool to indicate whether a subtree needs to be
@@ -111,6 +121,8 @@ struct KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::KdInteriorNode
   {
     return this->aug.GetBox();
   }
+
+  auto ResetAug() { return this->aug.Reset(); }
 };
 
 // template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
