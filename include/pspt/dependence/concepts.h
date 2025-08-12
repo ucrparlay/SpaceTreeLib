@@ -115,6 +115,12 @@ concept IsAugPoint = requires(T t) {
   { t.AugPointTag() } -> std::same_as<void>;
 };
 
+// NOTE: tag contain bounding box
+template <typename T>
+concept HasBox = requires(T t) {
+  { t.box };
+};
+
 // NOTE: tag a orth tree
 template <typename T>
 concept IsOrthTree = requires(T t) {

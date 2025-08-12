@@ -119,7 +119,7 @@ Node* KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::SerialBuildRecursive(
   R = SerialBuildRecursive(In.cut(split_iter - In.begin(), n),
                            Out.cut(split_iter - In.begin(), n), d,
                            box_cut.GetSecondBoxCut());
-  return AllocInteriorNode<Interior>(L, R, split.value(), InteriorAugType());
+  return AllocInteriorNode<Interior>(L, R, split.value());
 }
 
 template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,

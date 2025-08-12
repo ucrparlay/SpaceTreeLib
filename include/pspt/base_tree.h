@@ -112,6 +112,12 @@ class BaseTree {
   static inline bool VerticalLineIntersectBoxExclude(Coord const& l,
                                                      Box const& box,
                                                      DimsType d);
+  template <typename Leaf, typename Interior>
+  static inline Box RetriveBox(Node* T) {
+    return T->is_leaf ? static_cast<Leaf*>(T)->GetBox()
+                      : static_cast<Interior*>(T)->GetBox();
+  }
+
   static inline Box GetEmptyBox();
   static inline Point GetBoxCenter(Box const& box);
   static Box GetBox(Box const& x, Box const& y);
@@ -333,9 +339,8 @@ class BaseTree {
     requires std::same_as<typename Interior::ST, HyperPlane>;
 
   template <typename Leaf, IsBinaryNode Interior, typename Range>
-  static void KNNBinary(Node* T, Point const& q,
-                        kBoundedQueue<Point, Range>& bq, KNNLogger& logger)
-    requires std::same_as<typename Interior::ST, Box>;
+  static void KNNBinaryBox(Node* T, Point const& q,
+                           kBoundedQueue<Point, Range>& bq, KNNLogger& logger);
 
   // NOTE: search knn in the expanded multi node
   template <typename Leaf, IsMultiNode Interior, typename Range>

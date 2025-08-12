@@ -443,8 +443,8 @@ struct OrthogonalSplitRule {
       std::ranges::swap(L, R);
     }
 
-    return AllocInteriorNode<typename Tree::Interior>(
-        L, R, box_cut.GetHyperPlane(), typename Tree::InteriorAugType());
+    return AllocInteriorNode<typename Tree::Interior>(L, R,
+                                                      box_cut.GetHyperPlane());
   }
 
   // INFO: divide the space for multi node
@@ -497,8 +497,8 @@ struct OrthogonalSplitRule {
                           : AllocEmptyLeafNode<Slice, typename Tree::Leaf>();
     }
 
-    return AllocInteriorNode<typename Tree::Interior>(tree_nodes, nodebox_split,
-                                                      typename Tree::AugType());
+    return AllocInteriorNode<typename Tree::Interior>(tree_nodes,
+                                                      nodebox_split);
   }
 
   // NOTE: cannot divide the points on @dim, while the points are not the same

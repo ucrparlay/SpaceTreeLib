@@ -11,22 +11,26 @@ namespace pspt {
 template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 struct KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::LeafAugType {
+  LeafAugType() : box(BT::GetEmptyBox()) {};
+  LeafAugType(Box const& _box) : box(_box) {};
+  LeafAugType(Slice In) : box(BT::GetBox(In)) {};
+
+  Box& GetBox() { return this->box; }
+  Box const& GetBox() const { return this->box; }
+
   Box box;
-  Box& GetBox() const { return this->box; }
-  Box const& GetBox() { return this->box; }
 };
 
 template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 struct KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::InteriorAugType {
-  using PT = Point;
-
-  // NOTE: use a tri-state bool to indicate whether a subtree needs to be
-  // rebuilt. If aug is not INITIALIZED, then it means there is no need to
-  // rebuild; otherwise, the value depends on the initial tree size before
-  // rebuilding.
-  std::optional<bool> force_par_indicator;
-  Box box;
+  InteriorAugType() : box(BT::GetEmptyBox()) { force_par_indicator.reset(); }
+  InteriorAugType(Box const& _box) : box(_box) { force_par_indicator.reset(); }
+  InteriorAugType(Node* l, Node* r)
+      : box(BT::GetBox(BT::template RetriveBox<Leaf, Interior>(l),
+                       BT::template RetriveBox<Leaf, Interior>(r))) {
+    force_par_indicator.reset();
+  }
 
   void SetParallelFlag(bool const flag) {
     this->force_par_indicator.emplace(flag);
@@ -44,8 +48,15 @@ struct KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::InteriorAugType {
                : sz > BT::kSerialBuildCutoff;
   }
 
-  Box& GetBox() const { return this->box; }
-  Box const& GetBox() { return this->box; }
+  Box& GetBox() { return this->box; }
+  Box const& GetBox() const { return this->box; }
+
+  // NOTE: use a tri-state bool to indicate whether a subtree needs to be
+  // rebuilt. If aug is not INITIALIZED, then it means there is no need to
+  // rebuild; otherwise, the value depends on the initial tree size before
+  // rebuilding.
+  std::optional<bool> force_par_indicator;
+  Box box;
 };
 
 template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
@@ -74,6 +85,22 @@ struct KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::KdInteriorNode
 
   inline bool ForceParallel() const {
     return this->aug.ForceParallel(this->size);
+  }
+
+  auto GetBox() {
+    if constexpr (std::is_same_v<AT, std::monostate>) {
+      throw std::runtime_error("LeafNode does not have a box");
+    } else {
+      return this->aug.GetBox();
+    }
+  }
+
+  auto GetBox() const {
+    if constexpr (std::is_same_v<AT, std::monostate>) {
+      throw std::runtime_error("LeafNode does not have a box");
+    } else {
+      return this->aug.GetBox();
+    }
   }
 };
 

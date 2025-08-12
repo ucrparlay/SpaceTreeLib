@@ -28,16 +28,7 @@ Base BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::BuildInnerTree(
   Base const R =
       BuildInnerTree<Leaf, Interior>(idx << 1 | 1, pivots, tree_nodes);
 
-  if constexpr (std::same_as<HyperPlane, typename Interior::ST>) {
-    return AllocInteriorNode<Interior>(L, R, pivots[idx],
-                                       typename Interior::AT());
-  } else if constexpr (std::same_as<Box, typename Interior::ST>) {
-    return AllocInteriorNode<Interior>(
-        L, R, GetBox(GetSplit<Leaf, Interior>(L), GetSplit<Leaf, Interior>(R)),
-        typename Interior::AT());
-  } else {
-    // static_assert(0);
-  }
+  return AllocInteriorNode<Interior>(L, R, pivots[idx]);
 }
 
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
@@ -63,8 +54,7 @@ Node* BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::BuildInnerTree(
     assert(i == 0 || pivots[idx * (1 << i)] == pivots[idx * (1 << i) + 1]);
   }
 
-  return AllocInteriorNode<Interior>(multi_nodes, split,
-                                     typename Interior::AT());
+  return AllocInteriorNode<Interior>(multi_nodes, split);
 }
 }  // namespace pspt
 
