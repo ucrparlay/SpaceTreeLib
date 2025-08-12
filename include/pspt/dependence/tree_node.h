@@ -90,13 +90,19 @@ struct LeafNode : Node {
 
   AugType const& GetSplit() const { return aug; }
 
-  auto GetBox() const {
-    if constexpr (std::is_same_v<AugType, std::monostate>) {
-      throw std::runtime_error("LeafNode does not have a box");
-    } else {
-      return aug.GetBox();
-    }
+  auto GetBox()
+    requires(!std::same_as<AugType, std::monostate>)
+  {
+    return aug.GetBox();
   }
+
+  auto GetBox() const
+    requires(!std::same_as<AugType, std::monostate>)
+  {
+    return aug.GetBox();
+  }
+
+  auto UpdateAug(Range In) { return aug.UpdateAug(In); }
 
   bool is_dummy;
   Points pts;

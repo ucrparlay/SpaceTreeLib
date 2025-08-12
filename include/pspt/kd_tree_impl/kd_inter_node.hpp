@@ -18,6 +18,11 @@ struct KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::LeafAugType {
   Box& GetBox() { return this->box; }
   Box const& GetBox() const { return this->box; }
 
+  void UpdateAug(Slice In) {
+    BT::GetBox(box, BT::GetBox(In));
+    return;
+  }
+
   Box box;
 };
 
@@ -50,6 +55,12 @@ struct KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::InteriorAugType {
 
   Box& GetBox() { return this->box; }
   Box const& GetBox() const { return this->box; }
+
+  void Update(Node* l, Node* r) {
+    this->box = BT::GetBox(BT::template RetriveBox<Leaf, Interior>(l),
+                           BT::template RetriveBox<Leaf, Interior>(r));
+    return;
+  }
 
   // NOTE: use a tri-state bool to indicate whether a subtree needs to be
   // rebuilt. If aug is not INITIALIZED, then it means there is no need to
@@ -87,20 +98,18 @@ struct KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::KdInteriorNode
     return this->aug.ForceParallel(this->size);
   }
 
-  auto GetBox() {
-    if constexpr (std::is_same_v<AT, std::monostate>) {
-      throw std::runtime_error("LeafNode does not have a box");
-    } else {
-      return this->aug.GetBox();
-    }
+  auto UpdateAug(Node* l, Node* r) { return this->aug.Update(l, r); }
+
+  auto GetBox()
+    requires HasBox<AT>
+  {
+    return this->aug.GetBox();
   }
 
-  auto GetBox() const {
-    if constexpr (std::is_same_v<AT, std::monostate>) {
-      throw std::runtime_error("LeafNode does not have a box");
-    } else {
-      return this->aug.GetBox();
-    }
+  auto GetBox() const
+    requires HasBox<AT>
+  {
+    return this->aug.GetBox();
   }
 };
 

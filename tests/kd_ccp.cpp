@@ -176,7 +176,7 @@ void runKDParallel(auto const& wp, auto const& wi, Typename* kdknn,
               << std::flush;
   };
 
-  if (tag & (1 << 3)) {
+  if (tag & (1 << 3)) {  // incre insert
     parlay::sequence<double> const ratios = {0.001};
     for (auto rat : ratios) {
       BatchInsertByStep<Point, Tree, true>(tree, wp, rounds, rat);
@@ -192,7 +192,7 @@ void runKDParallel(auto const& wp, auto const& wi, Typename* kdknn,
                 wp.subseq(wp.size() - kCCPBatchQuerySize, wp.size()));
   }
 
-  if (tag & (1 << 4)) {
+  if (tag & (1 << 4)) {  // incre delete
     parlay::sequence<double> const ratios = {0.001};
     for (auto rat : ratios) {
       BatchDeleteByStep<Point, Tree, true>(tree, wp, rounds, rat);

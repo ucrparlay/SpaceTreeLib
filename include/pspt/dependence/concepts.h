@@ -42,6 +42,10 @@ concept IsNodeBox = requires {
                IsBox<typename T::second_type, Point>;
 };
 
+// NOTE: tag whether a node has non-trivial augmentation
+template <typename T>
+concept NodeHasNonTrivialAug = !std::same_as<typename T::AT, std::monostate>;
+
 // NOTE:  Concept to check if a type is present in a parameter pack
 template <typename T, typename... Args>
 concept ContainsType = (std::same_as<T, Args> || ...);
