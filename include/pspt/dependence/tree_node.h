@@ -15,6 +15,7 @@
 
 #include "basic_point.h"
 #include "comparator.h"
+#include "dependence/concepts.h"
 #include "parlay/utilities.h"
 
 namespace pspt {
@@ -102,7 +103,22 @@ struct LeafNode : Node {
     return aug.GetBox();
   }
 
-  auto UpdateAug(Range In) { return aug.UpdateAug(In); }
+  // TODO: should put this one in the aug as well and don't use the monostate
+  auto UpdateAug(Range In) {
+    if constexpr (!std::same_as<AT, std::monostate>) {
+      return aug.UpdateAug(In);
+    } else {
+      return;
+    }
+  }
+
+  auto ResetAug() {
+    if constexpr (!std::same_as<AT, std::monostate>) {
+      return aug.Reset();
+    } else {
+      return;
+    }
+  }
 
   bool is_dummy;
   Points pts;

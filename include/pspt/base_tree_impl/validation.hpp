@@ -21,6 +21,7 @@ BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::CheckBox(Node* T,
     [[maybe_unused]] auto const* TL = static_cast<Leaf const*>(T);
     [[maybe_unused]] auto const node_box = GetBox<Leaf, Interior>(T);
     if constexpr (HasBox<typename Leaf::AT>) {  // whether has bb
+      // std::cout << " has box in leaf " << std::endl;
       SameBox(node_box, TL->GetBox());
     } else {
       WithinBox(node_box, box);
