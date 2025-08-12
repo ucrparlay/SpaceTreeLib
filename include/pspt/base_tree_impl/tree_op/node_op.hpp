@@ -51,6 +51,7 @@ inline void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::UpdateInterior(
   TI->size = L->size + R->size;
   TI->left = L;
   TI->right = R;
+  TI->UpdateAug(L, R);
   return;
 }
 
@@ -67,6 +68,7 @@ inline void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::UpdateInterior(
   TI->size = L.first->size + R.first->size;
   TI->left = L.first;
   TI->right = R.first;
+  TI->UpdateAug(L.first, R.first);
   return;
 }
 
@@ -84,6 +86,7 @@ inline void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::UpdateInterior(
       new_nodes.begin(), new_nodes.end(), 0,
       [](size_t acc, Node* n) -> size_t { return acc + n->size; });
   TI->tree_nodes = new_nodes;
+  TI->UpdateAug(new_nodes);
   return;
 }
 }  // namespace pspt

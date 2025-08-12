@@ -313,11 +313,11 @@ struct BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::InnerTree {
   };
 
   // NOTE: update the skeleton based on the @UpdateType
-  template <UpdateType kUT, bool UpdateParFlag = true, typename Base,
+  template <UpdateType kUT, bool UpdateParFlag = true, typename ReturnType,
             typename... Args>
-    requires IsPointerToNode<Base> || IsNodeBox<Base, Point>
-  Base UpdateInnerTree(parlay::sequence<Base> const& tree_nodes,
-                       Args&&... args) {
+    requires IsPointerToNode<ReturnType> || IsNodeBox<ReturnType, Point>
+  ReturnType UpdateInnerTree(parlay::sequence<ReturnType> const& tree_nodes,
+                             Args&&... args) {
     BucketType p = 0;
     if constexpr (kUT == kUpdatePointer ||
                   kUT == kUpdatePointerBox) {  // NOTE: update the inner tree
@@ -360,11 +360,12 @@ struct BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::InnerTree {
   }
 
   // NOTE: udpate inner tree for binary nodes
-  template <UpdateType kUT, bool UpdateParFlag, typename Base, typename Func>
+  template <UpdateType kUT, bool UpdateParFlag, typename ReturnType,
+            typename Func>
     requires IsBinaryNode<Interior>
-  Base UpdateInnerTreeRecursive(BucketType idx,
-                                parlay::sequence<Base> const& tree_nodes,
-                                BucketType& p, Func&& func) {
+  ReturnType UpdateInnerTreeRecursive(
+      BucketType idx, parlay::sequence<ReturnType> const& tree_nodes,
+      BucketType& p, Func&& func) {
     // WARN: needs to ensure this success for both insert and delete
     if (this->tags[idx].second == kBucketNum + 1 ||
         this->tags[idx].second == kBucketNum + 2) {
@@ -378,15 +379,15 @@ struct BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::InnerTree {
       }
     }
 
-    Base const& left = UpdateInnerTreeRecursive<kUT, UpdateParFlag>(
+    ReturnType const& left = UpdateInnerTreeRecursive<kUT, UpdateParFlag>(
         idx << 1, tree_nodes, p, func);
-    Base const& right = UpdateInnerTreeRecursive<kUT, UpdateParFlag>(
+    ReturnType const& right = UpdateInnerTreeRecursive<kUT, UpdateParFlag>(
         idx << 1 | 1, tree_nodes, p, func);
 
     if constexpr (kUT == kUpdatePointer) {  // only update the pointers
       UpdateInterior<Interior, UpdateParFlag>(this->tags[idx].first, left,
                                               right);
-      if constexpr (IsPointerToNode<Base>) {
+      if constexpr (IsPointerToNode<ReturnType>) {
         return this->tags[idx].first;
       } else {  // WARN: if only update pointer, then avoid update box
         return NodeBox(this->tags[idx].first, Box());
@@ -428,11 +429,12 @@ struct BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::InnerTree {
   }
 
   // NOTE: update inner tree for multi nodes
-  template <UpdateType kUT, bool UpdateParFlag, typename Base, typename Func>
+  template <UpdateType kUT, bool UpdateParFlag, typename ReturnType,
+            typename Func>
     requires IsMultiNode<Interior>
-  Base UpdateInnerTreeRecursive(BucketType idx,
-                                parlay::sequence<Base> const& tree_nodes,
-                                BucketType& p, Func&& func) {
+  ReturnType UpdateInnerTreeRecursive(
+      BucketType idx, parlay::sequence<ReturnType> const& tree_nodes,
+      BucketType& p, Func&& func) {
     if (tags[idx].second == BT::kBucketNum + 1 ||
         tags[idx].second == BT::kBucketNum + 2) {
       return tree_nodes[p++];

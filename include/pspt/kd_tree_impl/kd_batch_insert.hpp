@@ -14,10 +14,14 @@ void KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchInsert(Slice A) {
 
   Points B = Points::uninitialized(A.size());
   Node* T = this->root_;
-  this->tree_box_ = BT::GetBox(this->tree_box_, BT::GetBox(A));
   DimsType d = T->is_leaf ? 0 : static_cast<Interior*>(T)->split.second;
   this->root_ = BatchInsertRecursive(T, A, B.cut(0, A.size()), d);
-  assert(this->root_ != NULL);
+  assert(this->root_ != nullptr);
+  if constexpr (HasBox<typename Interior::AT>) {
+    this->tree_box_ = BT::template RetriveBox<Leaf, Interior>(this->root_);
+  } else {
+    this->tree_box_ = BT::GetBox(this->tree_box_, BT::GetBox(A));
+  }
   return;
 }
 

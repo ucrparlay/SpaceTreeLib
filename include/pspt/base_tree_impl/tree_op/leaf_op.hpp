@@ -11,6 +11,7 @@
 #include <utility>
 
 #include "../../base_tree.h"
+#include "dependence/concepts.h"
 
 namespace pspt {
 
@@ -46,14 +47,18 @@ Node* BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::InsertPoints2Leaf(
     TL->pts[TL->size + i] = In[i];
   }
   TL->size += In.size();
+
+  if constexpr (NodeHasNonTrivialAug<Leaf>) {
+    TL->UpdateAug(In);
+  }
   return T;
 }
 
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
-template <typename Leaf, typename RT>
-RT BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::DeletePoints4Leaf(
-    Node* T, Slice In) {
+template <typename Leaf, typename ReturnType>
+ReturnType BaseTree<Point, DerivedTree, kSkHeight,
+                    kImbaRatio>::DeletePoints4Leaf(Node* T, Slice In) {
   assert(T->size >= In.size());
   Leaf* TL = static_cast<Leaf*>(T);
 
@@ -65,12 +70,13 @@ RT BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::DeletePoints4Leaf(
       TL->pts = Points::uninitialized(kLeaveWrap);
     }
 
-    if constexpr (std::same_as<RT, Node*>) {
+    if constexpr (std::same_as<ReturnType, Node*>) {
       return T;
-    } else if constexpr (std::same_as<RT, NodeBox>) {
+    } else if constexpr (std::same_as<ReturnType, NodeBox>) {
       return NodeBox(T, T->size ? Box(TL->pts[0], TL->pts[0]) : GetEmptyBox());
     } else {
-      static_assert(std::same_as<RT, Node*> || std::same_as<RT, NodeBox>);
+      static_assert(std::same_as<ReturnType, Node*> ||
+                    std::same_as<ReturnType, NodeBox>);
     }
   }
 
@@ -86,12 +92,13 @@ RT BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::DeletePoints4Leaf(
   TL->size -= In.size();
   assert(TL->size >= 0);
 
-  if constexpr (std::same_as<RT, Node*>) {
+  if constexpr (std::same_as<ReturnType, Node*>) {
     return T;
-  } else if constexpr (std::same_as<RT, NodeBox>) {
+  } else if constexpr (std::same_as<ReturnType, NodeBox>) {
     return NodeBox(T, GetBox(TL->pts.cut(0, TL->size)));
   } else {
-    static_assert(std::same_as<RT, Node*> || std::same_as<RT, NodeBox>);
+    static_assert(std::same_as<ReturnType, Node*> ||
+                  std::same_as<ReturnType, NodeBox>);
   }
 }
 
@@ -99,8 +106,8 @@ RT BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::DeletePoints4Leaf(
 // {1, 2, 5, 5, 5, 9} ∖ {2, 5, 7} == {1, 5, 5, 9}
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
-template <typename Leaf, typename RT>
-RT BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::DiffPoints4Leaf(
+template <typename Leaf, typename ReturnType>
+ReturnType BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::DiffPoints4Leaf(
     Node* T, Slice In) {
   Leaf* TL = static_cast<Leaf*>(T);
 
@@ -114,12 +121,13 @@ RT BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::DiffPoints4Leaf(
       TL->pts = Points::uninitialized(kLeaveWrap);
     }
 
-    if constexpr (std::same_as<RT, Node*>) {
+    if constexpr (std::same_as<ReturnType, Node*>) {
       return T;
-    } else if constexpr (std::same_as<RT, NodeBox>) {
+    } else if constexpr (std::same_as<ReturnType, NodeBox>) {
       return NodeBox(T, TL->size ? Box(TL->pts[0], TL->pts[0]) : GetEmptyBox());
     } else {
-      static_assert(std::same_as<RT, Node*> || std::same_as<RT, NodeBox>);
+      static_assert(std::same_as<ReturnType, Node*> ||
+                    std::same_as<ReturnType, NodeBox>);
     }
   }
 
@@ -129,12 +137,13 @@ RT BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::DiffPoints4Leaf(
       [](Point const& p1, Point const& p2) { return p1 < p2; });
   TL->size = std::ranges::distance(TL->pts.begin(), diff_res.out);
 
-  if constexpr (std::same_as<RT, Node*>) {
+  if constexpr (std::same_as<ReturnType, Node*>) {
     return T;
-  } else if constexpr (std::same_as<RT, NodeBox>) {
+  } else if constexpr (std::same_as<ReturnType, NodeBox>) {
     return NodeBox(T, GetBox(TL->pts.cut(0, TL->size)));
   } else {
-    static_assert(std::same_as<RT, Node*> || std::same_as<RT, NodeBox>);
+    static_assert(std::same_as<ReturnType, Node*> ||
+                  std::same_as<ReturnType, NodeBox>);
   }
 }
 }  // namespace pspt
