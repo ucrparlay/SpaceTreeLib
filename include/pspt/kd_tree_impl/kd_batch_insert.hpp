@@ -44,6 +44,10 @@ Node* KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchInsertRecursive(
         (TL->is_dummy &&
          parlay::all_of(In, [&](Point const& p) { return p == TL->pts[0]; }))) {
       return BT::template InsertPoints2Leaf<Leaf>(T, In);
+      // auto o = BT::template InsertPoints2Leaf<Leaf>(T, In);
+      // assert(BT::SameBox(BT::template GetBox<Leaf, Interior>(o),
+      //                    BT::template RetriveBox<Leaf, Interior>(o)));
+      // return o;
     } else {  // PERF: if a nomarl leaf TL cannot handle more duplicates,
               // leave them here
       return BT::template RebuildWithInsert<Leaf, Interior>(T, prepare_func, In,

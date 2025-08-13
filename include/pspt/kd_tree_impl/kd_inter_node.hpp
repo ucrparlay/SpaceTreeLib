@@ -19,7 +19,7 @@ struct KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::LeafAugType {
   Box const& GetBox() const { return this->box; }
 
   void UpdateAug(Slice In) {
-    BT::GetBox(box, BT::GetBox(In));
+    this->box = BT::GetBox(box, BT::GetBox(In));
     return;
   }
 

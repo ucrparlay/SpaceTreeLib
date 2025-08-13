@@ -138,8 +138,7 @@ static Leaf* AllocFixSizeLeafNode(
     Range In, size_t const alloc_size,
     typename Leaf::AT const& aug = typename Leaf::AT()) {
   Leaf* o = parlay::type_allocator<Leaf>::alloc();
-  new (o) Leaf(In, alloc_size, GetAugByType<Leaf>(In.cut(0, alloc_size)),
-               AllocNormalLeafTag());
+  new (o) Leaf(In, alloc_size, GetAugByType<Leaf>(In), AllocNormalLeafTag());
   assert(o->is_dummy == false);
   return o;
 }
