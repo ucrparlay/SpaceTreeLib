@@ -517,15 +517,10 @@ void BatchDeleteByStep(Tree& pkd, parlay::sequence<Point> const& WP,
     parlay::copy(WP, wp);
   };
 
-  auto incre_delete = [&](int rounds_num_cutoff) {
+  auto incre_delete = [&](int rounds_num_cutoff, auto wp_slice) {
     parlay::internal::timer t;
     size_t l = 0, r = 0;
     size_t cnt = 0;
-    size_t offset = n - rounds_num_cutoff * step;
-    // std::cout << "rounds_num_cutoff: " << rounds_num_cutoff << " step: " <<
-    // step
-    //           << std::endl;
-    // std::cout << "offset: " << offset << std::endl;
     while (l < n) {
       if (cnt >= rounds_num_cutoff) {
         break;
@@ -534,7 +529,7 @@ void BatchDeleteByStep(Tree& pkd, parlay::sequence<Point> const& WP,
       r = std::min(l + step, n);
       // WARN: r may exceeds the right bounds with offset
       pkd.BatchDelete(
-          parlay::make_slice(wp.begin() + offset + l, wp.begin() + offset + r));
+          parlay::make_slice(wp_slice.begin() + l, wp_slice.begin() + r));
       l = r;
       time_table[round_cnt][cnt++] += t.next_time();
     }
@@ -543,7 +538,8 @@ void BatchDeleteByStep(Tree& pkd, parlay::sequence<Point> const& WP,
 
   double ave_time = time_loop(
       rounds, 0.01, [&]() { build_tree_by_type(); },
-      [&]() { incre_delete(slice_num); }, [&]() { pkd.DeleteTree(); });
+      [&]() { incre_delete(slice_num, wp.cut(0, slice_num * step)); },
+      [&]() { pkd.DeleteTree(); });
 
   if (round_cnt - 1 != rounds) {
     throw std::runtime_error("rounds not match!");
@@ -578,7 +574,7 @@ void BatchDeleteByStep(Tree& pkd, parlay::sequence<Point> const& WP,
   // WARN: restore status
   pkd.DeleteTree();
   build_tree_by_type();
-  incre_delete(slice_num / 2);
+  incre_delete(slice_num / 2, wp.cut(slice_num / 2 * step, n));
 
   return;
 }
