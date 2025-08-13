@@ -606,7 +606,8 @@ void queryKNN([[maybe_unused]] uint_fast8_t const& Dim,
       parlay::sequence<kBoundedQueue<Point, nn_pair>>::uninitialized(n);
   parlay::parallel_for(
       0, n, [&](size_t i) { bq[i].resize(Out.cut(i * K, i * K + K)); });
-  parlay::sequence<size_t> vis_nodes(n), gen_box(n), check_box(n), skip_box(n);
+  parlay::sequence<size_t> vis_leaf(n), vis_inter(n), gen_box(n), check_box(n),
+      skip_box(n);
 
   double aveQuery = time_loop(
       rounds, loopLate,
@@ -617,10 +618,11 @@ void queryKNN([[maybe_unused]] uint_fast8_t const& Dim,
         // }
         parlay::parallel_for(0, n, [&](size_t i) {
           // for (size_t i = 0; i < n; i++) {
-          auto [vis_node_num, gen_box_num, check_box_num, skip_box_num] =
-              pkd.KNN(KDParallelRoot, wp[i], bq[i]);
+          auto [vis_leaf_num, vis_inter_num, gen_box_num, check_box_num,
+                skip_box_num] = pkd.KNN(KDParallelRoot, wp[i], bq[i]);
           kdknn[i] = bq[i].top().second;
-          vis_nodes[i] = vis_node_num;
+          vis_leaf[i] = vis_leaf_num;
+          vis_inter[i] = vis_inter_num;
           gen_box[i] = gen_box_num;
           check_box[i] = check_box_num;
           skip_box[i] = skip_box_num;
@@ -639,7 +641,10 @@ void queryKNN([[maybe_unused]] uint_fast8_t const& Dim,
               << std::flush;
   }
   if (printVisNode) {
-    std::cout << static_cast<double>(parlay::reduce(vis_nodes.cut(0, n))) /
+    std::cout << static_cast<double>(parlay::reduce(vis_leaf.cut(0, n))) /
+                     static_cast<double>(n)
+              << " " << std::flush;
+    std::cout << static_cast<double>(parlay::reduce(vis_inter.cut(0, n))) /
                      static_cast<double>(n)
               << " " << std::flush;
     std::cout << static_cast<double>(parlay::reduce(gen_box.cut(0, n))) /
@@ -739,8 +744,8 @@ void RangeQuery(parlay::sequence<Point> const& wp, Tree& pkd, int const& rounds,
   offset.push_back(tot_size);
   Points Out(tot_size);
   parlay::sequence<size_t> kdknn(rec_num, 0);
-  parlay::sequence<size_t> vis_nodes(rec_num), gen_box(rec_num),
-      full_box(rec_num), skip_box(rec_num);
+  parlay::sequence<size_t> vis_leaf(rec_num), vis_inter(rec_num),
+      gen_box(rec_num), full_box(rec_num), skip_box(rec_num);
 
   double aveQuery = time_loop(
       rounds, 1.0, [&]() {},
@@ -749,7 +754,8 @@ void RangeQuery(parlay::sequence<Point> const& wp, Tree& pkd, int const& rounds,
           auto [size, logger] = pkd.RangeQuery(
               query_box_seq[i].first, Out.cut(offset[i], offset[i + 1]));
           kdknn[i] = size;
-          vis_nodes[i] = logger.vis_node_num;
+          vis_leaf[i] = logger.vis_leaf_num;
+          vis_inter[i] = logger.vis_interior_num;
           gen_box[i] = logger.generate_box_num;
           full_box[i] = logger.full_box_num;
           skip_box[i] = logger.skip_box_num;
@@ -764,8 +770,8 @@ void RangeQuery(parlay::sequence<Point> const& wp, Tree& pkd, int const& rounds,
       std::cout << kdknn[i] << " " << query_box_seq[i].second.size() << " "
                 << query_box_seq[i].first.first << query_box_seq[i].first.second
                 << std::endl;
-      std::cout << vis_nodes[i] << " " << gen_box[i] << " " << full_box[i]
-                << " " << skip_box[i] << std::endl;
+      std::cout << vis_leaf[i] << " " << gen_box[i] << " " << full_box[i] << " "
+                << skip_box[i] << std::endl;
     }
     assert(std::cmp_equal(kdknn[i], query_box_seq[i].second.size()));
     // std::cout << kdknn[i] << " " << query_box_seq[i].second.size() << " "
@@ -819,8 +825,8 @@ void rangeCountFix(parlay::sequence<Point> const& WP, Tree& pkd,
 
   auto [query_box_seq, max_size] =
       gen_rectangles<Point, Tree, false>(rec_num, rec_type, WP, DIM);
-  parlay::sequence<size_t> vis_nodes(rec_num), gen_box(rec_num),
-      full_box(rec_num), skip_box(rec_num);
+  parlay::sequence<size_t> vis_leaf(rec_num), vis_inter(rec_num),
+      gen_box(rec_num), full_box(rec_num), skip_box(rec_num);
 
   double aveCount = time_loop(
       rounds, 1.0, [&]() {},
@@ -829,7 +835,8 @@ void rangeCountFix(parlay::sequence<Point> const& WP, Tree& pkd,
           auto [size, logger] = pkd.RangeCount(query_box_seq[i].first);
 
           kdknn[i] = size;
-          vis_nodes[i] = logger.vis_node_num;
+          vis_leaf[i] = logger.vis_leaf_num;
+          vis_inter[i] = logger.vis_inter_num;
           gen_box[i] = logger.generate_box_num;
           full_box[i] = logger.full_box_num;
           skip_box[i] = logger.skip_box_num;
@@ -841,7 +848,10 @@ void rangeCountFix(parlay::sequence<Point> const& WP, Tree& pkd,
       [&]() {});
 
   std::cout << aveCount << " " << std::flush;
-  std::cout << static_cast<double>(parlay::reduce(vis_nodes.cut(0, rec_num))) /
+  std::cout << static_cast<double>(parlay::reduce(vis_leaf.cut(0, rec_num))) /
+                   static_cast<double>(rec_num)
+            << " " << std::flush;
+  std::cout << static_cast<double>(parlay::reduce(vis_inter.cut(0, rec_num))) /
                    static_cast<double>(rec_num)
             << " " << std::flush;
   std::cout << static_cast<double>(parlay::reduce(gen_box.cut(0, rec_num))) /
@@ -901,8 +911,8 @@ void rangeQueryFix(parlay::sequence<Point> const& WP, Tree& pkd,
 
   auto [query_box_seq, max_size] =
       gen_rectangles<Point, Tree, false>(rec_num, rec_type, WP, DIM);
-  parlay::sequence<size_t> vis_nodes(rec_num), gen_box(rec_num),
-      full_box(rec_num), skip_box(rec_num);
+  parlay::sequence<size_t> vis_leaf(rec_num), vis_inter(rec_num),
+      gen_box(rec_num), full_box(rec_num), skip_box(rec_num);
   auto [offset, tot_size] = parlay::scan(
       parlay::delayed_tabulate(
           rec_num, [&](size_t i) -> size_t { return query_box_seq[i].second; }),
@@ -926,7 +936,8 @@ void rangeQueryFix(parlay::sequence<Point> const& WP, Tree& pkd,
               query_box_seq[i].first, Out.cut(offset[i], offset[i + 1]));
 
           kdknn[i] = size;
-          vis_nodes[i] = logger.vis_node_num;
+          vis_leaf[i] = logger.vis_leaf_num;
+          vis_inter[i] = logger.vis_interior_num;
           gen_box[i] = logger.generate_box_num;
           full_box[i] = logger.full_box_num;
           skip_box[i] = logger.skip_box_num;
@@ -935,7 +946,10 @@ void rangeQueryFix(parlay::sequence<Point> const& WP, Tree& pkd,
       [&]() {});
 
   std::cout << aveQuery << " " << std::flush;
-  std::cout << static_cast<double>(parlay::reduce(vis_nodes.cut(0, rec_num))) /
+  std::cout << static_cast<double>(parlay::reduce(vis_leaf.cut(0, rec_num))) /
+                   static_cast<double>(rec_num)
+            << " " << std::flush;
+  std::cout << static_cast<double>(parlay::reduce(vis_inter.cut(0, rec_num))) /
                    static_cast<double>(rec_num)
             << " " << std::flush;
   std::cout << static_cast<double>(parlay::reduce(gen_box.cut(0, rec_num))) /

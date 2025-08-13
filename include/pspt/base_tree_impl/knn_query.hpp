@@ -189,13 +189,13 @@ void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::KNNBinary(
       typename Interior::ST,
       typename BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::HyperPlane>
 {
-  logger.vis_node_num++;
-
   if (T->is_leaf) {
+    logger.vis_leaf_num++;
     KNNLeaf<Leaf>(T, q, bq);
     return;
   }
 
+  logger.vis_interior_num++;
   Interior* TI = static_cast<Interior*>(T);
   bool go_left = Num::Gt(TI->split.first - q.pnt[TI->split.second], 0);
   BoxCut box_cut(node_box, TI->split, go_left);
@@ -222,13 +222,13 @@ template <typename Leaf, IsBinaryNode Interior, typename Range>
 void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::KNNBinaryBox(
     Node* T, Point const& q, kBoundedQueue<Point, Range>& bq,
     KNNLogger& logger) {
-  logger.vis_node_num++;
-
   if (T->is_leaf) {
+    logger.vis_leaf_num++;
     KNNLeaf<Leaf>(T, q, bq);
     return;
   }
 
+  logger.vis_interior_num++;
   Interior* TI = static_cast<Interior*>(T);
   Coord dist_left =
       P2BMinDistanceSquare(q, RetriveBox<Leaf, Interior>(TI->left));
@@ -254,16 +254,17 @@ template <typename Leaf, IsMultiNode Interior, typename Range>
 void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::KNNMultiExpand(
     Node* T, Point const& q, DimsType dim, BucketType idx,
     kBoundedQueue<Point, Range>& bq, Box const& node_box, KNNLogger& logger) {
-  logger.vis_node_num++;
-
   if (T->size == 0) {
     return;
   }
 
   if (T->is_leaf) {
+    logger.vis_leaf_num++;
     KNNLeaf<Leaf>(T, q, bq);
     return;
   }
+
+  logger.vis_interior_num++;
 
   Interior* TI = static_cast<Interior*>(T);
   auto const& split = Interior::EqualSplit() ? TI->split[dim] : TI->split[idx];
@@ -308,17 +309,17 @@ template <typename Leaf, IsMultiNode Interior, typename Range>
 void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::KNNMulti(
     Node* T, Point const& q, kBoundedQueue<Point, Range>& bq,
     Box const& node_box, KNNLogger& logger) {
-  logger.vis_node_num++;
-
   if (T->size == 0) {
     return;
   }
 
   if (T->is_leaf) {
+    logger.vis_leaf_num++;
     KNNLeaf<Leaf>(T, q, bq);
     return;
   }
 
+  logger.vis_interior_num++;
   Interior* TI = static_cast<Interior*>(T);
 
   BoxSeq regions(Interior::GetRegions());
@@ -357,17 +358,17 @@ template <typename Leaf, IsBinaryNode BN, IsMultiNode MN, typename Range>
 void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::KNNMix(
     Node* T, Point const& q, DimsType dim, BucketType idx,
     kBoundedQueue<Point, Range>& bq, Box const& node_box, KNNLogger& logger) {
-  logger.vis_node_num++;
-
   if (T->size == 0) {
     return;
   }
 
   if (T->is_leaf) {
+    logger.vis_leaf_num++;
     KNNLeaf<Leaf>(T, q, bq);
     return;
   }
 
+  logger.vis_interior_num++;
   bool go_left(false);
   HyperPlane* split(nullptr);
   Node *first_node(nullptr), *second_node(nullptr);
@@ -426,17 +427,18 @@ void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::KNNCover(
     Node* T, Point const& q, kBoundedQueue<Point, Range>& bq,
     KNNLogger& logger) {
   using CoverCircle = typename Interior::CircleType;
-  logger.vis_node_num++;
 
   if (T->size == 0) {
     return;
   }
 
   if (T->is_leaf) {
+    logger.vis_leaf_num++;
     KNNLeaf<Leaf>(T, q, bq);
     return;
   }
 
+  logger.vis_interior_num++;
   Interior* TI = static_cast<Interior*>(T);
   auto sorted_idx = parlay::sort(
       parlay::tabulate(TI->tree_nodes.size(), [&](auto i) { return i; }),
