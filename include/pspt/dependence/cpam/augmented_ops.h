@@ -349,11 +349,10 @@ struct augmented_ops : Map {
     using Coord = typename ET::Coord;
     using DisType = typename ET::DisType;
 
-    logger.vis_node_num++;
-
     if (!b) return;
 
     if (Map::is_compressed(b)) {  // leaf node
+      logger.vis_leaf_num++;
       auto f_filter = [&](ET& et) {
         if (!bq.full()) {
           bq.insert(std::make_pair(std::ref(et), BT::P2PDistanceSquare(q, et)));
@@ -372,6 +371,7 @@ struct augmented_ops : Map {
       return;
     }
 
+    logger.vis_interior_num++;
     auto rb = Map::cast_to_regular(b);
     DisType d_lc = rb->lc
                        ? BT::P2BMinDistanceSquare(q, Map::aug_val_ref(rb->lc))

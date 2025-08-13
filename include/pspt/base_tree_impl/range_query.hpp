@@ -34,11 +34,12 @@ template <typename Leaf, IsBinaryNode Interior>
 size_t BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::RangeCountRectangle(
     Node* T, Box const& query_box, Box const& node_box,
     RangeQueryLogger& logger) {
-  logger.vis_node_num++;
   if (T->is_leaf) {
+    logger.vis_leaf_num++;
     return RangeCountRectangleLeaf<Leaf>(T, query_box);
   }
 
+  logger.vis_interior_num++;
   Interior* TI = static_cast<Interior*>(T);
 
   size_t left_cnt, right_cnt;
@@ -76,11 +77,12 @@ template <typename Leaf, IsMultiNode Interior>
 size_t BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::RangeCountRectangle(
     Node* T, Box const& query_box, Box const& node_box, DimsType dim,
     BucketType idx, RangeQueryLogger& logger) {
-  logger.vis_node_num++;
   if (T->is_leaf) {
+    logger.vis_leaf_num++;
     return RangeCountRectangleLeaf<Leaf>(T, query_box);
   }
 
+  logger.vis_interior_num++;
   Interior* TI = static_cast<Interior*>(T);
 
   auto recurse = [&query_box, &logger](Node* Ts, Box const& box,
@@ -192,12 +194,13 @@ void BaseTree<Point, DerivedTree, kSkHeight,
                                                      Box const& query_box,
                                                      Box const& node_box,
                                                      RangeQueryLogger& logger) {
-  logger.vis_node_num++;
   if (T->is_leaf) {
+    logger.vis_leaf_num++;
     RangeQueryLeaf<Leaf>(T, Out, s, query_box);
     return;
   }
 
+  logger.vis_interior_num++;
   Interior* TI = static_cast<Interior*>(T);
 
   auto recurse = [&](Node* Ts, Box const& box) -> void {
@@ -242,12 +245,13 @@ void BaseTree<Point, DerivedTree, kSkHeight,
                                                      DimsType dim,
                                                      BucketType idx,
                                                      RangeQueryLogger& logger) {
-  logger.vis_node_num++;
   if (T->is_leaf) {
+    logger.vis_leaf_num++;
     RangeQueryLeaf<Leaf>(T, Out, s, query_box);
     return;
   }
 
+  logger.vis_interior_num++;
   Interior* TI = static_cast<Interior*>(T);
 
   auto recurse = [&query_box, &s, &Out, &logger](Node* Ts, Box const& box,
