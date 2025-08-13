@@ -92,33 +92,21 @@ struct LeafNode : Node {
   AugType const& GetSplit() const { return aug; }
 
   auto GetBox()
-    requires(!std::same_as<AugType, std::monostate>)
+    requires(NodeHasNonTrivialAug<AT> && HasBox<AT>)
   {
     return aug.GetBox();
   }
 
   auto GetBox() const
-    requires(!std::same_as<AugType, std::monostate>)
+    requires(NodeHasNonTrivialAug<AT> && HasBox<AT>)
   {
     return aug.GetBox();
   }
 
   // TODO: should put this one in the aug as well and don't use the monostate
-  auto UpdateAug(Range In) {
-    if constexpr (!std::same_as<AT, std::monostate>) {
-      return aug.UpdateAug(In);
-    } else {
-      return;
-    }
-  }
+  auto UpdateAug(Range In) { return aug.UpdateAug(In); }
 
-  auto ResetAug() {
-    if constexpr (!std::same_as<AT, std::monostate>) {
-      return aug.Reset();
-    } else {
-      return;
-    }
-  }
+  auto ResetAug() { return aug.Reset(); }
 
   bool is_dummy;
   Points pts;
@@ -127,19 +115,19 @@ struct LeafNode : Node {
 
 template <typename NodeType, typename Range>
 static auto GetAugByType(Range In) {
-  if constexpr (std::same_as<typename NodeType::AT, std::monostate>) {
-    return typename NodeType::AT();
-  } else {
+  if constexpr (NodeHasNonTrivialAug<typename NodeType::AT>) {
     return typename NodeType::AT(In);
+  } else {
+    return typename NodeType::AT();
   }
 }
 
 template <typename NodeType>
 static auto GetAugByType(Node* l, Node* r) {
-  if constexpr (std::same_as<typename NodeType::AT, std::monostate>) {
-    return typename NodeType::AT();
-  } else {
+  if constexpr (NodeHasNonTrivialAug<typename NodeType::AT>) {
     return typename NodeType::AT(l, r);
+  } else {
+    return typename NodeType::AT();
   }
 }
 
@@ -359,6 +347,26 @@ template <typename NodeType>
 static void FreeNode(Node* T) {
   parlay::type_allocator<NodeType>::retire(static_cast<NodeType*>(T));
 }
+
+// Define some alias for concept check
+template <typename T>
+concept IsBinaryNode = CheckBinaryNode<T, pspt::BinaryNode>;
+
+template <typename T>
+concept IsMultiNode = CheckMultiNode<T, pspt::MultiNode>;
+
+template <typename T>
+concept IsDynamicNode = CheckDynamicNode<T, pspt::DynamicNode>;
+
+// TODO: may remove below from inner tree
+template <typename T>
+concept IsPointerToNode = CheckPointerToNode<T, Node>;
+
+template <typename T, typename Point>
+concept IsNodeBox = requires {
+  requires IsPair<T> && IsPointerToNode<typename T::first_type> &&
+               IsBox<typename T::second_type, Point>;
+};
 
 }  // namespace pspt
 

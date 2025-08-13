@@ -3,8 +3,8 @@
 
 #include <concepts>
 #include <type_traits>
-
-#include "tree_node.h"
+#include <utility>
+#include <variant>
 
 namespace pspt {
 
@@ -19,8 +19,8 @@ namespace pspt {
 template <typename T>
 concept IsPointer = std::is_pointer_v<T>;
 
-template <typename T>
-concept IsPointerToNode =
+template <typename T, typename Node>
+concept CheckPointerToNode =
     std::is_pointer_v<T> && std::is_base_of_v<Node, std::remove_pointer_t<T>>;
 
 template <typename T>
@@ -36,15 +36,10 @@ concept IsBox = requires {
                std::same_as<typename T::second_type, typename Point::BP>;
 };
 
-template <typename T, typename Point>
-concept IsNodeBox = requires {
-  requires IsPair<T> && IsPointerToNode<typename T::first_type> &&
-               IsBox<typename T::second_type, Point>;
-};
-
 // NOTE: tag whether a node has non-trivial augmentation
 template <typename T>
-concept NodeHasNonTrivialAug = !std::same_as<typename T::AT, std::monostate>;
+concept NodeHasNonTrivialAug =
+    (!std::is_empty_v<T>) && (!std::same_as<T, std::monostate>);
 
 // NOTE:  Concept to check if a type is present in a parameter pack
 template <typename T, typename... Args>
@@ -93,25 +88,32 @@ ReturnType InvokeWithOptionalArg(Func&& func, Arg&& arg) {
 }
 
 // NOTE: define the what is a binary node
-template <typename T>
-concept IsBinaryNode = std::is_base_of_v<
-    BinaryNode<typename T::PT, typename T::ST, typename T::AT>, T>;
+template <typename T,
+          template <typename, typename, typename> typename BinaryNodeT>
+concept CheckBinaryNode = std::is_base_of_v<
+    BinaryNodeT<typename T::PT, typename T::ST, typename T::AT>, T>;
 
 // NOTE: helper for decide a multi-way node
-template <typename T, std::size_t... Ns>
+template <
+    typename T,
+    template <typename, uint_fast8_t, typename, typename> typename MultiNodeT,
+    uint_fast8_t... Ns>
 concept IsMultiNodeHelper =
     (std::is_base_of_v<
-         MultiNode<typename T::PT, Ns, typename T::ST, typename T::AT>, T> ||
+         MultiNodeT<typename T::PT, Ns, typename T::ST, typename T::AT>, T> ||
      ...);
 
 // NOTE: define the what is a multi-way node
-template <typename T>
-concept IsMultiNode = IsMultiNodeHelper<T, 2, 3, 4, 5, 6, 7, 8, 9, 10>;
+template <typename T, template <typename, uint_fast8_t, typename,
+                                typename> typename MultiNodeT>
+concept CheckMultiNode =
+    IsMultiNodeHelper<T, MultiNodeT, 2, 3, 4, 5, 6, 7, 8, 9, 10>;
 
-// NOTE: define the what is a binary node
-template <typename T>
-concept IsDynamicNode = std::is_base_of_v<
-    DynamicNode<typename T::PT, typename T::ST, typename T::AT>, T>;
+// NOTE: define the what is a dynamic node
+template <typename T,
+          template <typename, typename, typename> typename DynamicNodeT>
+concept CheckDynamicNode = std::is_base_of_v<
+    DynamicNodeT<typename T::PT, typename T::ST, typename T::AT>, T>;
 
 // NOTE: tag aug point
 template <typename T>
