@@ -201,9 +201,9 @@ void runKDParallel(auto const& wp, auto const& wi, Typename* kdknn,
                            typename Tree::SplitRuleType>();
     std::cout << "---------------finish incre delete------------------\n"
               << std::flush;
-    knn_checker(wp.subseq(wp.size() / 2, wp.size()), wi,
+    knn_checker(wp.subseq(0, wp.size() / 2), wi,
                 wp.subseq(wp.size() - kCCPBatchQuerySize, wp.size()));
-    knn_checker(wp.subseq(wp.size() / 2, wp.size()), wi,
+    knn_checker(wp.subseq(0, wp.size() / 2), wi,
                 wp.subseq(0, kCCPBatchQuerySize));
   }
 
