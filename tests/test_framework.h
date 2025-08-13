@@ -448,8 +448,8 @@ void BatchInsertByStep(Tree& pkd, parlay::sequence<Point> const& WP,
     log_time[j].t /= rounds;
   }
 
-  puts("Incre Insert--------------------------");
-  std::cout << insert_ratio << std::endl;
+  puts("# Insert");
+  std::cout << "## " << insert_ratio << std::endl;
   // puts("");
   // std::cout << ave_time << " " << std::flush;
   std::sort(log_time.begin(), log_time.end(),
@@ -554,8 +554,8 @@ void BatchDeleteByStep(Tree& pkd, parlay::sequence<Point> const& WP,
     log_time[j].t /= rounds;
   }
 
-  puts("Incre Delete--------------------------");
-  std::cout << insert_ratio << std::endl;
+  puts("# Delete");
+  std::cout << "## " << insert_ratio << std::endl;
   // puts("");
   // std::cout << ave_time << " " << std::flush;
   std::sort(log_time.begin(), log_time.end(),
@@ -1329,6 +1329,7 @@ class Wrapper {
 
         // NOTE: batch insert by step
         if (kTag & (1 << 3)) {
+          puts("");
           parlay::sequence<double> const ratios = {1, 0.1, 0.01, 0.001, 0.0001};
           for (auto rat : ratios) {
             BatchInsertByStep<Point, Tree, true>(tree, wp, kRounds, rat);
@@ -1378,6 +1379,7 @@ class Wrapper {
 
         // NOTE: batch delete by step
         if (kTag & (1 << 4)) {
+          puts("");
           parlay::sequence<double> const ratios = {1, 0.1, 0.01, 0.001, 0.0001};
           // parlay::sequence<double> const ratios = {0.001};
           for (auto rat : ratios) {
@@ -1562,10 +1564,10 @@ class Wrapper {
     auto build_tree_type = [&]<typename Point, typename SplitRule>() {
       using BT = pspt::BaseTree<Point>;
       if (tree_type == 0) {
-        Run<KdTreeWrapper<Point, SplitRule, LeafAugEmpty<BT>,
-                          InteriorAugEmpty<BT>>>(params, test_func);
-        // Run<KdTreeWrapper<Point, SplitRule, LeafAugBox<BT>,
-        //                   InteriorAugBox<BT>>>(params, test_func);
+        // Run<KdTreeWrapper<Point, SplitRule, LeafAugEmpty<BT>,
+        // InteriorAugEmpty<BT>>>(params, test_func);
+        Run<KdTreeWrapper<Point, SplitRule, LeafAugBox<BT>,
+                          InteriorAugBox<BT>>>(params, test_func);
       } else if (tree_type == 1) {
         // Run<OrthTreeWrapper<Point, SplitRule>>(params, test_func);
       }
