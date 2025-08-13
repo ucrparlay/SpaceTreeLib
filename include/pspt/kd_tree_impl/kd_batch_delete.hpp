@@ -6,10 +6,10 @@
 namespace pspt {
 
 // NOTE: default batch delete
-template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
+template <typename Point, typename SplitRule, typename LeafAugType, typename InteriorAugType,  uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 template <typename Range>
-void KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDelete(Range&& In) {
+void KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight , kImbaRatio>::BatchDelete(Range&& In) {
   static_assert(parlay::is_random_access_range_v<Range>);
   static_assert(
       parlay::is_less_than_comparable_v<parlay::range_reference_type_t<Range>>);
@@ -22,9 +22,9 @@ void KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDelete(Range&& In) {
 }
 
 // NOTE: assume all Points are fully covered in the tree
-template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
+template <typename Point, typename SplitRule, typename LeafAugType, typename InteriorAugType,  uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
-void KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDelete_(Slice A) {
+void KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight , kImbaRatio>::BatchDelete_(Slice A) {
   Points B = Points::uninitialized(A.size());
   Node* T = this->root_;
   Box box = this->tree_box_;
@@ -37,12 +37,12 @@ void KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDelete_(Slice A) {
 // NOTE: delete with rebuild, with the assumption that all Points are in the
 // tree
 // WARN: the param d can be only used when rotate cutting is applied
-template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
+template <typename Point, typename SplitRule, typename LeafAugType, typename InteriorAugType,  uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
-typename KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::NodeBox
-KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDeleteRecursive(
+typename KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight , kImbaRatio>::NodeBox
+KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight , kImbaRatio>::BatchDeleteRecursive(
     Node* T,
-    typename KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::Box const& box,
+    typename KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight , kImbaRatio>::Box const& box,
     Slice In, Slice Out, DimsType d, bool has_tomb) {
   size_t n = In.size();
 

@@ -50,11 +50,11 @@ struct LeafNode : Node {
       : Node{true, static_cast<size_t>(0)}, is_dummy(false), aug(_aug) {}
 
   // NOTE: alloc a leaf with default size
-  LeafNode(Range In, AugType const& _aug, AllocNormalLeafTag)
+  LeafNode(Range In, AllocNormalLeafTag)
       : Node{true, static_cast<size_t>(In.size())},
         is_dummy(false),
         pts(Points::uninitialized(kDefaultWrap)),
-        aug(_aug) {
+        aug(AT(In)) {
     assert(In.size() <= kDefaultWrap);
     std::ranges::for_each(In, [&, i = 0](auto&& x) mutable {
       parlay::assign_dispatch(pts[i++], x, PointAssignTag());
@@ -62,12 +62,11 @@ struct LeafNode : Node {
   }
 
   // NOTE: alloc a leaf with specific size
-  LeafNode(Range In, size_t const alloc_size, AugType const& _aug,
-           AllocNormalLeafTag)
+  LeafNode(Range In, size_t const alloc_size, AllocNormalLeafTag)
       : Node{true, static_cast<size_t>(In.size())},
         is_dummy(false),
         pts(Points::uninitialized(alloc_size)),
-        aug(_aug) {
+        aug(AT(In)) {
     assert(In.size() <= alloc_size);
     std::ranges::for_each(In, [&, i = 0](auto&& x) mutable {
       parlay::assign_dispatch(pts[i++], x, PointAssignTag());
@@ -75,11 +74,11 @@ struct LeafNode : Node {
   }
 
   // NOTE: alloc a dummy leaf
-  LeafNode(Range In, AugType const& _aug, AllocDummyLeafTag)
+  LeafNode(Range In, AllocDummyLeafTag)
       : Node{true, static_cast<size_t>(In.size())},
         is_dummy(true),
         pts(Points::uninitialized(1)),
-        aug(_aug) {
+        aug(AT(In.cut(0, 1))) {
     parlay::assign_dispatch(pts[0], In[0], PointAssignTag());
   }
 
@@ -134,21 +133,18 @@ static auto GetAugByType(Node* l, Node* r) {
 // NOTE:: Alloc a leaf with input IN and given size
 // TODO: the input aug is no longer valid
 template <typename Range, typename Leaf>
-static Leaf* AllocFixSizeLeafNode(
-    Range In, size_t const alloc_size,
-    typename Leaf::AT const& aug = typename Leaf::AT()) {
+static Leaf* AllocFixSizeLeafNode(Range In, size_t const alloc_size) {
   Leaf* o = parlay::type_allocator<Leaf>::alloc();
-  new (o) Leaf(In, alloc_size, GetAugByType<Leaf>(In), AllocNormalLeafTag());
+  new (o) Leaf(In, alloc_size, AllocNormalLeafTag());
   assert(o->is_dummy == false);
   return o;
 }
 
 // NOTE: Alloc a leaf
 template <typename Range, typename Leaf>
-static Leaf* AllocNormalLeafNode(
-    Range In, typename Leaf::AT const& aug = typename Leaf::AT()) {
+static Leaf* AllocNormalLeafNode(Range In) {
   Leaf* o = parlay::type_allocator<Leaf>::alloc();
-  new (o) Leaf(In, GetAugByType<Leaf>(In), AllocNormalLeafTag());
+  new (o) Leaf(In, AllocNormalLeafTag());
   assert(o->is_dummy == false);
   return o;
 }
@@ -171,10 +167,9 @@ static Leaf* AllocEmptyLeafNode(typename Leaf::AT const& aug) {
 
 // NOTE: Alloc a dummy leaf
 template <typename Range, typename Leaf>
-static Leaf* AllocDummyLeafNode(
-    Range In, typename Leaf::AT const& aug = typename Leaf::AT()) {
+static Leaf* AllocDummyLeafNode(Range In) {
   Leaf* o = parlay::type_allocator<Leaf>::alloc();
-  new (o) Leaf(In, GetAugByType<Leaf>(In.cut(0, 1)), AllocDummyLeafTag());
+  new (o) Leaf(In, AllocDummyLeafTag());
   assert(o->is_dummy == true);
   assert(o->pts.size() == 1);
   return o;
@@ -316,11 +311,19 @@ struct DynamicNode : Node {
 };
 
 template <typename Interior>
-static Interior* AllocInteriorNode(
-    Node* L, Node* R, typename Interior::ST const& split,
-    typename Interior::AT const& aug = typename Interior::AT()) {
+static Interior* AllocInteriorNode(Node* L, Node* R,
+                                   typename Interior::ST const& split) {
   Interior* o = parlay::type_allocator<Interior>::alloc();
-  new (o) Interior(L, R, split, GetAugByType<Interior>(L, R));
+  new (o) Interior(L, R, split);
+  return o;
+}
+
+template <typename Interior>
+static Interior* AllocInteriorNode(Node* L, Node* R,
+                                   typename Interior::ST const& split,
+                                   typename Interior::AT const& aug) {
+  Interior* o = parlay::type_allocator<Interior>::alloc();
+  new (o) Interior(L, R, split, aug);
   return o;
 }
 

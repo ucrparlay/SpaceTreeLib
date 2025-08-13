@@ -10,13 +10,17 @@
 
 namespace pspt {
 
-template <typename Point, typename SplitRule, uint_fast8_t kSkHeight = 6,
+template <typename Point, typename SplitRule, typename LeafAugType,
+          typename InteriorAugType, uint_fast8_t kSkHeight = 6,
           uint_fast8_t kImbaRatio = 30>
-class KdTree
-    : public BaseTree<Point, KdTree<Point, SplitRule, kSkHeight, kImbaRatio>,
-                      kSkHeight, kImbaRatio> {
+class KdTree : public BaseTree<Point,
+                               KdTree<Point, SplitRule, LeafAugType,
+                                      InteriorAugType, kSkHeight, kImbaRatio>,
+                               kSkHeight, kImbaRatio> {
  public:
-  using BT = BaseTree<Point, KdTree<Point, SplitRule, kSkHeight, kImbaRatio>,
+  using BT = BaseTree<Point,
+                      KdTree<Point, SplitRule, LeafAugType, InteriorAugType,
+                             kSkHeight, kImbaRatio>,
                       kSkHeight, kImbaRatio>;
 
   using BucketType = typename BT::BucketType;
@@ -50,8 +54,6 @@ class KdTree
   template <uint_fast8_t kMD>
   struct KdCompressionNode;
 
-  struct InteriorAugType;
-  struct LeafAugType;
   using Leaf = LeafNode<Point, Slice, BT::kLeaveWrap, LeafAugType,
                         parlay::move_assign_tag>;
   struct KdInteriorNode;

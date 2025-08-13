@@ -9,18 +9,18 @@
 #include "pspt/dependence/tree_node.h"
 
 namespace pspt {
-template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
+template <typename Point, typename SplitRule, typename LeafAugType, typename InteriorAugType,  uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
-void KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::Compress2Multi() {
+void KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight , kImbaRatio>::Compress2Multi() {
   this->root_ = BT::template Compress2Multi<KdInteriorNode, CompressInterior>(
       this->root_);
   return;
 }
 
-template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
+template <typename Point, typename SplitRule, typename LeafAugType, typename InteriorAugType,  uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 template <typename Range>
-auto KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::KNN(
+auto KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight , kImbaRatio>::KNN(
     Node* T, Point const& q, kBoundedQueue<Point, Range>& bq) {
   KNNLogger logger;
   // BT::template KNNMix<Leaf, KdInteriorNode, CompressInterior>(
@@ -30,17 +30,17 @@ auto KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::KNN(
   return logger;
 }
 
-template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
+template <typename Point, typename SplitRule, typename LeafAugType, typename InteriorAugType,  uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 template <typename Range>
-void KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::Flatten(Range&& Out) {
+void KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight , kImbaRatio>::Flatten(Range&& Out) {
   BT::template FlattenRec<Leaf, Interior>(this->root_, parlay::make_slice(Out));
   return;
 }
 
-template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
+template <typename Point, typename SplitRule, typename LeafAugType, typename InteriorAugType,  uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
-auto KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::RangeCount(
+auto KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight , kImbaRatio>::RangeCount(
     Box const& bx) {
   RangeQueryLogger logger;
   size_t size = BT::template RangeCountRectangle<Leaf, Interior>(
@@ -48,18 +48,18 @@ auto KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::RangeCount(
   return std::make_pair(size, logger);
 }
 
-// template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
+// template <typename Point, typename SplitRule, typename LeafAugType, typename InteriorAugType,  uint_fast8_t kSkHeight,
 //           uint_fast8_t kImbaRatio>
-// auto KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::RangeCount(
+// auto KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight , kImbaRatio>::RangeCount(
 //     Circle const& cl) {
 //   return BT::template RangeCountRadius<Leaf, Interior>(this->root_, cl,
 //                                                        this->tree_box_);
 // }
 
-template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
+template <typename Point, typename SplitRule, typename LeafAugType, typename InteriorAugType,  uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 template <typename Range>
-auto KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::RangeQuery(
+auto KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight , kImbaRatio>::RangeQuery(
     Box const& query_box, Range&& Out) {
   RangeQueryLogger logger;
   size_t s = 0;
@@ -69,9 +69,9 @@ auto KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::RangeQuery(
   return std::make_pair(s, logger);
 }
 
-template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
+template <typename Point, typename SplitRule, typename LeafAugType, typename InteriorAugType,  uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
-constexpr void KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::DeleteTree() {
+constexpr void KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight , kImbaRatio>::DeleteTree() {
   BT::template DeleteTreeWrapper<Leaf, Interior>();
 }
 

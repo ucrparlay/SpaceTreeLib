@@ -5,9 +5,9 @@
 #include "parlay/slice.h"
 
 namespace pspt {
-template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
+template <typename Point, typename SplitRule, typename LeafAugType, typename InteriorAugType,  uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
-void KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchInsert(Slice A) {
+void KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight , kImbaRatio>::BatchInsert(Slice A) {
   if (this->root_ == nullptr) {  // TODO: may check using explicity tag
     return Build_(A);
   }
@@ -26,9 +26,9 @@ void KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchInsert(Slice A) {
 }
 
 // NOTE: return the updated Node
-template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
+template <typename Point, typename SplitRule, typename LeafAugType, typename InteriorAugType,  uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
-Node* KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchInsertRecursive(
+Node* KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight , kImbaRatio>::BatchInsertRecursive(
     Node* T, Slice In, Slice Out, DimsType d) {
   size_t n = In.size();
 
