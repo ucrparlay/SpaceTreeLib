@@ -18,13 +18,12 @@ typename BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::Box
 BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::CheckBox(Node* T,
                                                               Box const& box) {
   if (T->is_leaf) {
-    [[maybe_unused]] auto const* TL = static_cast<Leaf const*>(T);
-    [[maybe_unused]] auto const node_box = GetBox<Leaf, Interior>(T);
+    auto const* TL = static_cast<Leaf const*>(T);
+    auto const node_box = GetBox<Leaf, Interior>(T);
     if constexpr (HasBox<typename Leaf::AT>) {  // whether has bb
-      // std::cout << " has box in leaf " << std::endl;
-      SameBox(node_box, TL->GetBox());
+      assert(SameBox(node_box, TL->GetBox()));
     } else {
-      WithinBox(node_box, box);
+      assert(WithinBox(node_box, box));
     }
     return node_box;
   }
@@ -48,10 +47,10 @@ BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::CheckBox(Node* T,
   } else if constexpr (IsBinaryNode<Interior> &&
                        HasBox<typename Interior::AT>) {
     // std::cout << " has box " << std::endl;
-    Box const left_return_box = CheckBox<Leaf, Interior>(
-        TI->left, RetriveBox<Leaf, Interior>(TI->left));
-    Box const right_return_box = CheckBox<Leaf, Interior>(
-        TI->right, RetriveBox<Leaf, Interior>(TI->right));
+    auto left_box = RetriveBox<Leaf, Interior>(TI->left);
+    auto right_box = RetriveBox<Leaf, Interior>(TI->right);
+    Box const left_return_box = CheckBox<Leaf, Interior>(TI->left, left_box);
+    Box const right_return_box = CheckBox<Leaf, Interior>(TI->right, right_box);
     Box const new_box = GetBox(left_return_box, right_return_box);
     assert(SameBox(left_return_box, RetriveBox<Leaf, Interior>(TI->left)));
     assert(SameBox(right_return_box, RetriveBox<Leaf, Interior>(TI->right)));

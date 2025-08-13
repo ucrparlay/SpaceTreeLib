@@ -40,7 +40,9 @@ Node* BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::InsertPoints2Leaf(
     return T;
   }
 
+  assert(T->size + In.size() <= kLeaveWrap);
   if (TL->pts.size() == 0) {
+    assert(TL->size == 0);
     TL->pts = Points::uninitialized(kLeaveWrap);
   }
   for (size_t i = 0; i < In.size(); i++) {
