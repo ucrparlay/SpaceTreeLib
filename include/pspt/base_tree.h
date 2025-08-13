@@ -8,13 +8,13 @@
 #include <type_traits>
 
 #include "dependence/comparator.h"
-#include "dependence/concepts.h"
 #include "dependence/loggers.h"
 #include "dependence/search_container.h"
 #include "dependence/tree_node.h"
 
 namespace pspt {
 
+// NOTE: Basetree
 template <typename Point, typename DerivedTree = void,
           uint_fast8_t kSkHeight = 6, uint_fast8_t kImbaRatio = 30>
 class BaseTree {
