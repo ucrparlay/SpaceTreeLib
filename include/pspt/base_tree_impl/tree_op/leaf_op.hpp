@@ -50,9 +50,7 @@ Node* BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::InsertPoints2Leaf(
   }
   TL->size += In.size();
 
-  if constexpr (NodeHasNonTrivialAug<Leaf>) {
-    TL->UpdateAug(TL->pts.cut(0, TL->size));
-  }
+  TL->UpdateAug(TL->pts.cut(0, TL->size));
   return T;
 }
 
