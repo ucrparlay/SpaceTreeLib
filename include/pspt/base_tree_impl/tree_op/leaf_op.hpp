@@ -127,15 +127,20 @@ ReturnType BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::DiffPoints4Leaf(
                           // node has been deleted
       TL->is_dummy = false;
       TL->pts = Points::uninitialized(kLeaveWrap);
+      TL->ResetAug();
     }
 
     if constexpr (std::same_as<ReturnType, Node*>) {
       return T;
     } else if constexpr (std::same_as<ReturnType, NodeBox>) {
-      return NodeBox(T, TL->size ? Box(TL->pts[0], TL->pts[0]) : GetEmptyBox());
+      if constexpr (HasBox<typename Leaf::AT>) {
+        return NodeBox(T, TL->GetBox());
+      } else {
+        return NodeBox(T,
+                       T->size ? Box(TL->pts[0], TL->pts[0]) : GetEmptyBox());
+      }
     } else {
-      static_assert(std::same_as<ReturnType, Node*> ||
-                    std::same_as<ReturnType, NodeBox>);
+      ;
     }
   }
 
@@ -144,14 +149,18 @@ ReturnType BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::DiffPoints4Leaf(
       parlay::sort(TL->pts.cut(0, TL->size)), parlay::sort(In), TL->pts.begin(),
       [](Point const& p1, Point const& p2) { return p1 < p2; });
   TL->size = std::ranges::distance(TL->pts.begin(), diff_res.out);
+  TL->UpdateAug(TL->pts.cut(0, TL->size));
 
   if constexpr (std::same_as<ReturnType, Node*>) {
     return T;
   } else if constexpr (std::same_as<ReturnType, NodeBox>) {
-    return NodeBox(T, GetBox(TL->pts.cut(0, TL->size)));
+    if constexpr (HasBox<typename Leaf::AT>) {
+      return NodeBox(T, TL->GetBox());
+    } else {
+      return NodeBox(T, GetBox(TL->pts.cut(0, TL->size)));
+    }
   } else {
-    static_assert(std::same_as<ReturnType, Node*> ||
-                  std::same_as<ReturnType, NodeBox>);
+    ;
   }
 }
 }  // namespace pspt
