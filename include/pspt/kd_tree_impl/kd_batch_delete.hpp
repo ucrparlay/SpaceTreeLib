@@ -47,36 +47,46 @@ KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDeleteRecursive(
   size_t n = In.size();
 
   if (n == 0) {
-    assert(BT::WithinBox(BT::template GetBox<Leaf, Interior>(T), box));
-    return NodeBox(T, box);
+    if constexpr (HasBox<typename Interior::AT> && HasBox<typename Leaf::AT>) {
+      assert(BT::SameBox(BT::template GetBox<Leaf, Interior>(T),
+                         BT::template RetriveBox<Leaf, Interior>(T)));
+      return NodeBox(T, BT::template RetriveBox<Leaf, Interior>(T));
+    } else {
+      assert(BT::WithinBox(BT::template GetBox<Leaf, Interior>(T), box));
+      return NodeBox(T, box);
+    }
   }
 
   // INFO: it can be used to accelerate the whole deletion process
-  if (n == T->size) {
-    if (has_tomb) {  // rebuild this subtree
-      BT::template DeleteTreeRecursive<Leaf, Interior>(T);
-      return NodeBox(AllocEmptyLeafNode<Slice, Leaf>(), BT::GetEmptyBox());
-    }
-    // within a rebuild tree
-    if (!T->is_leaf) {  // interior
-      auto TI = static_cast<Interior*>(T);
-      TI->ResetAug();  // needs to put before set parallel flag
-      // WARN: only set the flag for root, the remaining tree is still unset
-      TI->SetParallelFlag(T->size > BT::kSerialBuildCutoff);
-    } else {  // leaf
-      auto TL = static_cast<Leaf*>(T);
-      TL->ResetAug();
-    }
-    T->size = 0;
-    return NodeBox(T, BT::GetEmptyBox());
-  }
+  // if (n == T->size) {
+  //   if (has_tomb) {  // rebuild this subtree
+  //     BT::template DeleteTreeRecursive<Leaf, Interior>(T);
+  //     return NodeBox(AllocEmptyLeafNode<Slice, Leaf>(), BT::GetEmptyBox());
+  //   }
+  //   // within a rebuild tree
+  //   if (!T->is_leaf) {  // interior
+  //     auto TI = static_cast<Interior*>(T);
+  //     TI->ResetAug();  // needs to put before set parallel flag
+  //     // WARN: only set the flag for root, the remaining tree is still unset
+  //     TI->SetParallelFlag(T->size > BT::kSerialBuildCutoff);
+  //   } else {  // leaf
+  //     auto TL = static_cast<Leaf*>(T);
+  //     TL->ResetAug();
+  //   }
+  //   T->size = 0;
+  //   return NodeBox(T, BT::GetEmptyBox());
+  // }
 
   if (T->is_leaf) {
-    return BT::template DeletePoints4Leaf<Leaf, NodeBox>(T, In);
+    // return BT::template DeletePoints4Leaf<Leaf, NodeBox>(T, In);
+    auto o = BT::template DeletePoints4Leaf<Leaf, NodeBox>(T, In);
+    assert(BT::SameBox(BT::template GetBox<Leaf, Interior>(o.first),
+                       BT::template RetriveBox<Leaf, Interior>(o.first)));
+    return o;
   }
 
-  // if (1) {
-  if (In.size() <= BT::kSerialBuildCutoff) {
+  if (1) {
+    // if (In.size() <= BT::kSerialBuildCutoff) {
     Interior* TI = static_cast<Interior*>(T);
     PointsIter split_iter =
         std::ranges::partition(In, [&](Point const& p) {
@@ -123,6 +133,11 @@ KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDeleteRecursive(
              (split_rule_.AllowRebuild() &&
               BT::ImbalanceNode(TI->left->size, TI->size)));
       auto const new_box = BT::GetBox(Lbox, Rbox);
+      // auto const tree_box = BT::template GetBox<Leaf, Interior>(T);
+      // auto const left_box = BT::template RetriveBox<Leaf,
+      // Interior>(TI->left); auto const right_box = BT::template
+      // RetriveBox<Leaf, Interior>(TI->right); auto const tree_in_box =
+      // BT::template RetriveBox<Leaf, Interior>(T);
       assert(BT::WithinBox(BT::template GetBox<Leaf, Interior>(T), new_box));
       return NodeBox(
           BT::template RebuildSingleTree<Leaf, Interior, false>(T, d, new_box),

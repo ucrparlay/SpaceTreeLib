@@ -282,18 +282,27 @@ template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
 template <typename Leaf, typename Interior>
 typename BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::Box
 BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::GetBox(Node* T) {
+  if (T->size == 0) {
+    return GetEmptyBox();
+  }
   if (T->is_leaf) {
     Leaf* TL = static_cast<Leaf*>(T);
     if (TL->is_dummy) {
       return Box(TL->pts[0], TL->pts[0]);
     }
     return GetBox(TL->pts.cut(0, TL->size));
+    // auto nb = GetBox(TL->pts.cut(0, TL->size));
+    // assert(SameBox(nb, TL->GetBox()));
+    // return nb;
   }
   Interior* TI = static_cast<Interior*>(T);
   if constexpr (IsBinaryNode<Interior>) {
     Box const& left_box = GetBox<Leaf, Interior>(TI->left);
     Box const& right_box = GetBox<Leaf, Interior>(TI->right);
     return GetBox(left_box, right_box);
+    // auto nb = GetBox(left_box, right_box);
+    // assert(SameBox(nb, TI->GetBox()));
+    // return nb;
   } else if constexpr (IsMultiNode<Interior>) {
     BoxSeq return_box_seq(Interior::GetRegions());
     for (size_t i = 0; i < Interior::GetRegions(); i++) {
