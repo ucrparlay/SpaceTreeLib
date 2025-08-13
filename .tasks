@@ -11,9 +11,18 @@ command=make -C build kd_test
 cwd=${VIM_ROOT}
 errorformat=%. %#--> %f:%l:%c
 
-[run]
-command=cmake -C build test && ./build/test -p /data/zmen002/kdtree/ -i 0 -t 0 -q 0 -T 0 -l 0 -s 0 -r 3 
+[kd_ccp_build_all]
+command=make -C build kd_ccp && ./build/kd_ccp -p benchmark/ss_varden_bigint/1000000_2/1.in -d 2 -i 0 -t 0 -q 7 -T 0 -l 0 -s 0 -r 2 
 cwd=${VIM_ROOT}
 output=terminal
 
+[kd_ccp_static_check_all]
+command=make -C build kd_ccp && ./build/kd_ccp -p benchmark/ss_varden_bigint/1000000_2/1.in -d 2 -i 1 -t 7 -q 7 -T 0 -l 0 -s 0 -r 2 
+cwd=${VIM_ROOT}
+output=terminal
+
+[kd_ccp_incre_check_all]
+command=make -C build kd_ccp && ./build/kd_ccp -p benchmark/ss_varden_bigint/1000000_2/1.in -d 2 -i 0 -t 24 -q 0 -T 0 -l 0 -s 0 -r 2 
+cwd=${VIM_ROOT}
+output=terminal
 

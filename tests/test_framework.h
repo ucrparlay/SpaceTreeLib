@@ -380,6 +380,7 @@ struct StepUpdateLogger {
     return os;
   }
 };
+
 template <typename Point, typename Tree, bool kInsert>
 void BatchInsertByStep(Tree& pkd, parlay::sequence<Point> const& WP,
                        int const rounds, double const insert_ratio,
@@ -1108,14 +1109,27 @@ class Wrapper {
   }
 
   template <class BaseTree>
-  struct LeafAugType {
+  struct LeafAugEmpty {
     using BT = BaseTree;
     using Box = BT::Box;
     using Slice = BT::Slice;
 
-    LeafAugType() : box(BT::GetEmptyBox()) {};
-    LeafAugType(Box const& _box) : box(_box) {};
-    LeafAugType(Slice In) : box(BT::GetBox(In)) {};
+    LeafAugEmpty() {};
+    LeafAugEmpty(Box const& _box) {};
+    LeafAugEmpty(Slice In) {};
+    void UpdateAug(Slice In) { return; }
+    void Reset() { return; }
+  };
+
+  template <class BaseTree>
+  struct LeafAugBox {
+    using BT = BaseTree;
+    using Box = BT::Box;
+    using Slice = BT::Slice;
+
+    LeafAugBox() : box(BT::GetEmptyBox()) {};
+    LeafAugBox(Box const& _box) : box(_box) {};
+    LeafAugBox(Slice In) : box(BT::GetBox(In)) {};
 
     Box& GetBox() { return this->box; }
     Box const& GetBox() const { return this->box; }
@@ -1134,20 +1148,15 @@ class Wrapper {
   };
 
   template <class BaseTree>
-  struct InteriorAugType {
+  struct InteriorAugEmpty {
     using BT = BaseTree;
-    using Box = BT::Box;
-    using Slice = BT::Slice;
 
-    InteriorAugType() : box(BT::GetEmptyBox()) { force_par_indicator.reset(); }
-    InteriorAugType(Box const& _box) : box(_box) {
-      force_par_indicator.reset();
-    }
+    InteriorAugEmpty() { force_par_indicator.reset(); }
+    InteriorAugEmpty(bool) { force_par_indicator.reset(); }
 
     template <typename Leaf, typename Interior>
-    static Box Create(Node* l, Node* r) {
-      return BT::GetBox(BT::template RetriveBox<Leaf, Interior>(l),
-                        BT::template RetriveBox<Leaf, Interior>(r));
+    static bool Create(Node* l, Node* r) {
+      return true;
     }
 
     void SetParallelFlag(bool const flag) {
@@ -1166,6 +1175,36 @@ class Wrapper {
                  : sz > BT::kSerialBuildCutoff;
     }
 
+    template <typename Leaf, typename Interior>
+    void Update(Node* l, Node* r) {
+      return;
+    }
+
+    void Reset() { this->force_par_indicator.reset(); }
+
+    // NOTE: use a tri-state bool to indicate whether a subtree needs to be
+    // rebuilt. If aug is not INITIALIZED, then it means there is no need to
+    // rebuild; otherwise, the value depends on the initial tree size before
+    // rebuilding.
+    std::optional<bool> force_par_indicator;
+  };
+
+  template <class BaseTree>
+  struct InteriorAugBox : public InteriorAugEmpty<BaseTree> {
+    using BT = BaseTree;
+    using Box = BT::Box;
+    using Slice = BT::Slice;
+    using BaseAug = InteriorAugEmpty<BT>;
+
+    InteriorAugBox() : BaseAug(), box(BT::GetEmptyBox()) {}
+    InteriorAugBox(Box const& _box) : BaseAug(), box(_box) {}
+
+    template <typename Leaf, typename Interior>
+    static Box Create(Node* l, Node* r) {
+      return BT::GetBox(BT::template RetriveBox<Leaf, Interior>(l),
+                        BT::template RetriveBox<Leaf, Interior>(r));
+    }
+
     Box& GetBox() { return this->box; }
     Box const& GetBox() const { return this->box; }
 
@@ -1177,15 +1216,10 @@ class Wrapper {
     }
 
     void Reset() {
-      this->box = BT::GetEmptyBox();
+      BaseAug::Reset();
       this->force_par_indicator.reset();
     }
 
-    // NOTE: use a tri-state bool to indicate whether a subtree needs to be
-    // rebuilt. If aug is not INITIALIZED, then it means there is no need to
-    // rebuild; otherwise, the value depends on the initial tree size before
-    // rebuilding.
-    std::optional<bool> force_par_indicator;
     Box box;
   };
 
@@ -1195,7 +1229,6 @@ class Wrapper {
   struct KdTreeWrapper {
     using Point = PointType;
     using SplitRule = SplitRuleType;
-    using BaseTree = BaseTree<Point>;
     using TreeType =
         typename pspt::KdTree<Point, SplitRule, LeafAugType, InteriorAugType>;
   };
@@ -1204,7 +1237,6 @@ class Wrapper {
   struct OrthTreeWrapper {
     using Point = PointType;
     using SplitRule = SplitRuleType;
-    using BaseTree = BaseTree<Point>;
     using TreeType =
         typename pspt::OrthTree<Point, SplitRule, Point::GetDim(),
                                 OrthGetBuildDepthOnce(Point::GetDim())>;
@@ -1530,8 +1562,10 @@ class Wrapper {
     auto build_tree_type = [&]<typename Point, typename SplitRule>() {
       using BT = pspt::BaseTree<Point>;
       if (tree_type == 0) {
-        Run<KdTreeWrapper<Point, SplitRule, LeafAugType<BT>,
-                          InteriorAugType<BT>>>(params, test_func);
+        Run<KdTreeWrapper<Point, SplitRule, LeafAugEmpty<BT>,
+                          InteriorAugEmpty<BT>>>(params, test_func);
+        // Run<KdTreeWrapper<Point, SplitRule, LeafAugBox<BT>,
+        //                   InteriorAugBox<BT>>>(params, test_func);
       } else if (tree_type == 1) {
         // Run<OrthTreeWrapper<Point, SplitRule>>(params, test_func);
       }

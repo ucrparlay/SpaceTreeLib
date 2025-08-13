@@ -220,7 +220,9 @@ void runKDParallel(auto const& wp, auto const& wi, Typename* kdknn,
   } else if (tag == (1 << 1)) {
     new_wp = wp.subseq(static_cast<size_t>(wi.size() * batchInsertCheckRatio),
                        wp.size());
-  } else if (tag == (1 << 2)) {
+  } else if (tag & (1 << 2)) {  // WARN: this assume before we run diff, the
+                                // tree should conation wp, e.g., just after
+                                // build or build->insert->delete
     size_t total_batch_size =
         static_cast<size_t>(wp.size() * kCCPBatchDiffTotalRatio);
     size_t overlap_size =

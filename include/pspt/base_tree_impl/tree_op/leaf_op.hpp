@@ -99,7 +99,7 @@ ReturnType BaseTree<Point, DerivedTree, kSkHeight,
   TL->size -= In.size();
   assert(TL->size >= 0);
   TL->UpdateAug(TL->pts.cut(0, TL->size));
-  assert(TL->GetBox() == GetBox(TL->pts.cut(0, TL->size)));
+  // assert(TL->GetBox() == GetBox(TL->pts.cut(0, TL->size)));
 
   if constexpr (std::same_as<ReturnType, Node*>) {
     return T;
