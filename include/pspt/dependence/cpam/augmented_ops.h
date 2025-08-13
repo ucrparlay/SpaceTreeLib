@@ -248,11 +248,11 @@ struct augmented_ops : Map {
   static size_t range_count_filter2(node* b, Box const& query_box,
                                     Logger& logger) {
     using BT = BaseTree;
-    logger.vis_node_num++;
 
     if (!b) return 0;
 
     if (Map::is_compressed(b)) {  // leaf node
+      logger.vis_leaf_num++;
       size_t ret = 0;
       auto f_filter = [&](auto const& et) {
         if (BT::WithinBox(et, query_box)) {
@@ -263,6 +263,7 @@ struct augmented_ops : Map {
       return ret;
     }
 
+    logger.vis_interior_num++;
     auto rb = Map::cast_to_regular(b);
     auto const& node_box = rb->entry.second;
 
@@ -289,7 +290,6 @@ struct augmented_ops : Map {
                          size_t& k, Out& out, Logger& logger) {
     using BT = BaseTree;
     if (!b) return;
-    logger.vis_node_num++;
 
     auto pt_check = [&](auto& cur_pt) {
       auto cur_dis = f(cur_pt);
@@ -303,11 +303,13 @@ struct augmented_ops : Map {
     };
 
     if (Map::is_compressed(b)) {  // leaf node·
+      logger.vis_leaf_num++;
       auto f_filter = [&](ET& et) { pt_check(et); };
       Map::iterate_seq(b, f_filter);
       return;
     }
 
+    logger.vis_interior_num++;
     auto rb = Map::cast_to_regular(b);
     // auto cur_pt = Map::get_val(rb);
     auto cur_pt = rb->entry.first;
@@ -512,10 +514,10 @@ struct augmented_ops : Map {
   static void range_report_filter2(node* b, Box const& query_box, size_t& cnt,
                                    Out out, Logger& logger) {
     using BT = BaseTree;
-    logger.vis_node_num++;
 
     if (!b) return;
     if (Map::is_compressed(b)) {  // leaf node
+      logger.vis_leaf_num++;
       auto f_filter = [&](auto const& et) {
         if (BT::WithinBox(et, query_box)) {
           out[cnt++] = et;
@@ -525,6 +527,7 @@ struct augmented_ops : Map {
       return;
     }
 
+    logger.vis_interior_num++;
     auto rb = Map::cast_to_regular(b);
     auto const& node_box = rb->entry.second;
     if (!BT::BoxIntersectBox(node_box, query_box)) {
