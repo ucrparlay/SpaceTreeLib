@@ -14,15 +14,24 @@ errorformat=%. %#--> %f:%l:%c
 [kd_ccp_build_all]
 command=make -C build kd_ccp && ./build/kd_ccp -p benchmark/ss_varden_bigint/1000000_2/1.in -d 2 -i 0 -t 0 -q 7 -T 0 -l 0 -s 0 -r 2 
 cwd=${VIM_ROOT}
-output=terminal
+output=quickfix
 
 [kd_ccp_static_check_all]
 command=make -C build kd_ccp && ./build/kd_ccp -p benchmark/ss_varden_bigint/1000000_2/1.in -d 2 -i 1 -t 7 -q 7 -T 0 -l 0 -s 0 -r 2 
 cwd=${VIM_ROOT}
-output=terminal
+output=quickfix
 
 [kd_ccp_incre_check_all]
 command=make -C build kd_ccp && ./build/kd_ccp -p benchmark/ss_varden_bigint/1000000_2/1.in -d 2 -i 0 -t 24 -q 0 -T 0 -l 0 -s 0 -r 2 
 cwd=${VIM_ROOT}
-output=terminal
+output=quickfix
 
+[p_ccp_build]
+command=make -C build p_ccp && ./build/p_ccp -p benchmark/ss_varden_bigint/1000000_2/1.in -d 2 -i 0 -t 0 -q 0 -T 2 -l 1 -s 0 -r 2 
+cwd=${VIM_ROOT}
+output=quickfix
+
+[p_ccp_insert]
+command=make -C build p_ccp && ./build/p_ccp -p benchmark/uniform_bigint/1000000_2/1.in -d 2 -i 1 -t 1 -q 0 -T 2 -l 1 -s 0 -r 2 
+cwd=${VIM_ROOT}
+output=quickfix

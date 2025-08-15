@@ -103,6 +103,9 @@ struct weight_balanced_tree {
       return ratio * weight(t1) > weight(t2);
     }
 
+    // if alpha = 0.5, then ratio = 1, fully balanced
+    // if alpha = 0.2, if s_t1 = 8, s_t2 = 2, then still balance;
+    // if s_t1 = 9, s_t2 = 1, then below inequality holds, then leaf heavy
     static inline bool is_left_heavy(size_t s_t1, size_t s_t2) {
       return ratio * (s_t1 + 1) > (s_t2 + 1);
     }
