@@ -8,19 +8,22 @@
 
 namespace pspt {
 
-template <typename Point, typename SplitRule, uint_fast8_t kMD = 2,
+template <typename Point, typename SplitRule, typename LeafAugType,
+          typename InteriorAugType, uint_fast8_t kMD = 2,
           uint_fast8_t kSkHeight = 6, uint_fast8_t kImbaRatio = 30>
 class OrthTree
     : public BaseTree<Point,
-                      OrthTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>,
+                      OrthTree<Point, SplitRule, LeafAugType, InteriorAugType,
+                               kMD, kSkHeight, kImbaRatio>,
                       kSkHeight, kImbaRatio> {
  public:
   static constexpr size_t kSplitterNum = kMD;
   static constexpr size_t kNodeRegions = 1 << kMD;
 
-  using BT =
-      BaseTree<Point, OrthTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>,
-               kSkHeight, kImbaRatio>;
+  using BT = BaseTree<Point,
+                      OrthTree<Point, SplitRule, LeafAugType, InteriorAugType,
+                               kMD, kSkHeight, kImbaRatio>,
+                      kSkHeight, kImbaRatio>;
 
   using BucketType = BT::BucketType;
   using BallsType = BT::BallsType;
@@ -44,13 +47,13 @@ class OrthTree
   using NodeTagSeq = BT::NodeTagSeq;
   using NodeBoxSeq = BT::NodeBoxSeq;
   using NodeBox = BT::NodeBox;
-  using AugType = std::optional<bool>;
+  // using AugType = std::optional<bool>;
 
   // struct KdInteriorNode;
   struct OrthInteriorNode;
 
   using SplitRuleType = SplitRule;
-  using Leaf = LeafNode<Point, Slice, BT::kLeaveWrap, std::monostate,
+  using Leaf = LeafNode<Point, Slice, BT::kLeaveWrap, LeafAugType,
                         parlay::move_assign_tag>;
   using Interior = OrthInteriorNode;
   using OrthNodeArr = Interior::OrthNodeArr;

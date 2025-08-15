@@ -1154,8 +1154,14 @@ class Wrapper {
     InteriorAugEmpty() { force_par_indicator.reset(); }
     InteriorAugEmpty(bool) { force_par_indicator.reset(); }
 
+    // use a bool to reload default constructor
     template <typename Leaf, typename Interior>
     static bool Create(Node* l, Node* r) {
+      return true;
+    }
+
+    template <typename TreeNodes>
+    static bool Create(TreeNodes const& /*nodes*/) {
       return true;
     }
 
@@ -1176,7 +1182,12 @@ class Wrapper {
     }
 
     template <typename Leaf, typename Interior>
-    void Update(Node* l, Node* r) {
+    void Update(Node*, Node*) {
+      return;
+    }
+
+    template <typename TreeNodes>
+    void Update(TreeNodes const& /*nodes*/) {
       return;
     }
 
@@ -1199,19 +1210,37 @@ class Wrapper {
     InteriorAugBox() : BaseAug(), box(BT::GetEmptyBox()) {}
     InteriorAugBox(Box const& _box) : BaseAug(), box(_box) {}
 
+    // binary create
     template <typename Leaf, typename Interior>
     static Box Create(Node* l, Node* r) {
       return BT::GetBox(BT::template RetriveBox<Leaf, Interior>(l),
                         BT::template RetriveBox<Leaf, Interior>(r));
     }
 
+    // multi create
+    template <typename Leaf, typename Interior, typename TreeNodes>
+    static Box Create(TreeNodes const& nodes) {
+      Box box = BT::GetEmptyBox();
+      for (auto t : nodes) {
+        box = BT::GetBox(box, BT::template RetriveBox<Leaf, Interior>(t));
+      }
+      return box;
+    }
+
     Box& GetBox() { return this->box; }
     Box const& GetBox() const { return this->box; }
 
+    // binary update
     template <typename Leaf, typename Interior>
     void Update(Node* l, Node* r) {
-      this->box = BT::GetBox(BT::template RetriveBox<Leaf, Interior>(l),
-                             BT::template RetriveBox<Leaf, Interior>(r));
+      this->box = this->Create<Leaf, Interior>(l, r);
+      return;
+    }
+
+    // multi update
+    template <typename Leaf, typename Interior, typename TreeNodes>
+    void Update(TreeNodes const& nodes) {
+      this->box = this->Create<Leaf, Interior>(nodes);
       return;
     }
 
@@ -1233,12 +1262,14 @@ class Wrapper {
         typename pspt::KdTree<Point, SplitRule, LeafAugType, InteriorAugType>;
   };
 
-  template <class PointType, class SplitRuleType>
+  template <class PointType, class SplitRuleType, class LeafAugType,
+            class InteriorAugType>
   struct OrthTreeWrapper {
     using Point = PointType;
     using SplitRule = SplitRuleType;
     using TreeType =
-        typename pspt::OrthTree<Point, SplitRule, Point::GetDim(),
+        typename pspt::OrthTree<Point, SplitRule, LeafAugType, InteriorAugType,
+                                Point::GetDim(),
                                 OrthGetBuildDepthOnce(Point::GetDim())>;
   };
 
@@ -1569,7 +1600,8 @@ class Wrapper {
         Run<KdTreeWrapper<Point, SplitRule, LeafAugBox<BT>,
                           InteriorAugBox<BT>>>(params, test_func);
       } else if (tree_type == 1) {
-        // Run<OrthTreeWrapper<Point, SplitRule>>(params, test_func);
+        Run<OrthTreeWrapper<Point, SplitRule, LeafAugBox<BT>,
+                            InteriorAugBox<BT>>>(params, test_func);
       }
     };
 

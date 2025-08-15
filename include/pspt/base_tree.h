@@ -349,7 +349,7 @@ class BaseTree {
   // NOTE: search knn in the multi node
   template <typename Leaf, IsMultiNode Interior, typename Range>
   static void KNNMulti(Node* T, Point const& q, kBoundedQueue<Point, Range>& bq,
-                       Box const& node_box, KNNLogger& logger);
+                       KNNLogger& logger);
 
   // NOTE: search knn in the mix of binary and multi node
   template <typename Leaf, IsBinaryNode BN, IsMultiNode MN, typename Range>

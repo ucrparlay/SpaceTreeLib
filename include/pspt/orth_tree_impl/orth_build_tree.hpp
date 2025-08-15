@@ -11,11 +11,12 @@
 #include "pspt/orth_tree.h"
 
 namespace pspt {
-template <typename Point, typename SplitRule, uint_fast8_t kMD,
-          uint_fast8_t kSkHeight, uint_fast8_t kImbaRatio>
+template <typename Point, typename SplitRule, typename LeafAugType,
+          typename InteriorAugType, uint_fast8_t kMD, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
 template <typename Range, typename... Args>
-void OrthTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::Build(
-    Range&& In, Args&&... args) {
+void OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight,
+              kImbaRatio>::Build(Range&& In, Args&&... args) {
   static_assert(parlay::is_random_access_range_v<Range>);
   static_assert(
       parlay::is_less_than_comparable_v<parlay::range_reference_type_t<Range>>);
@@ -29,11 +30,13 @@ void OrthTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::Build(
 }
 
 // TODO: maybe we don't need this function, it can be directly computed by value
-template <typename Point, typename SplitRule, uint_fast8_t kMD,
-          uint_fast8_t kSkHeight, uint_fast8_t kImbaRatio>
-void OrthTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::DivideRotate(
-    HyperPlaneSeq& pivots, DimsType dim, BucketType idx, BoxSeq& box_seq,
-    Box const& box) {
+template <typename Point, typename SplitRule, typename LeafAugType,
+          typename InteriorAugType, uint_fast8_t kMD, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
+void OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight,
+              kImbaRatio>::DivideRotate(HyperPlaneSeq& pivots, DimsType dim,
+                                        BucketType idx, BoxSeq& box_seq,
+                                        Box const& box) {
   if (idx > BT::kPivotNum) {
     // WARN: sometimes cut dimension can be -1, never use pivots[idx].first ==
     // -1 to check whether it is in bucket; instead, use idx > PIVOT_NUM
@@ -53,11 +56,13 @@ void OrthTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::DivideRotate(
   return;
 }
 
-template <typename Point, typename SplitRule, uint_fast8_t kMD,
-          uint_fast8_t kSkHeight, uint_fast8_t kImbaRatio>
-void OrthTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::SerialSplit(
-    Slice In, DimsType dim, DimsType idx, Box const& box,
-    parlay::sequence<BallsType>& sums) {
+template <typename Point, typename SplitRule, typename LeafAugType,
+          typename InteriorAugType, uint_fast8_t kMD, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
+void OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight,
+              kImbaRatio>::SerialSplit(Slice In, DimsType dim, DimsType idx,
+                                       Box const& box,
+                                       parlay::sequence<BallsType>& sums) {
   assert(dim <= BT::kDim);
 
   if (dim == BT::kDim) {
@@ -72,9 +77,10 @@ void OrthTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::SerialSplit(
               box, sums);
 }
 
-template <typename Point, typename SplitRule, uint_fast8_t kMD,
-          uint_fast8_t kSkHeight, uint_fast8_t kImbaRatio>
-Node* OrthTree<Point, SplitRule, kMD, kSkHeight,
+template <typename Point, typename SplitRule, typename LeafAugType,
+          typename InteriorAugType, uint_fast8_t kMD, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
+Node* OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight,
                kImbaRatio>::SerialBuildRecursive(Slice In, Slice Out,
                                                  Box const& box,
                                                  bool checked_duplicate) {
@@ -128,13 +134,15 @@ Node* OrthTree<Point, SplitRule, kMD, kSkHeight,
     start += sums[i];
   }
 
-  return AllocInteriorNode<Interior>(tree_nodes, splitter, AugType());
+  return AllocInteriorNode<Interior>(tree_nodes, splitter);
 }
 
-template <typename Point, typename SplitRule, uint_fast8_t kMD,
-          uint_fast8_t kSkHeight, uint_fast8_t kImbaRatio>
-Node* OrthTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::BuildRecursive(
-    Slice In, Slice Out, Box const& box) {
+template <typename Point, typename SplitRule, typename LeafAugType,
+          typename InteriorAugType, uint_fast8_t kMD, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
+Node* OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight,
+               kImbaRatio>::BuildRecursive(Slice In, Slice Out,
+                                           Box const& box) {
   // TODO: may ensure the bucket is corresponding the the splitter
   assert(In.size() == 0 || BT::WithinBox(BT::GetBox(In), box));
   size_t n = In.size();
@@ -187,9 +195,11 @@ Node* OrthTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::BuildRecursive(
   return BT::template BuildInnerTree<Interior>(1, pivots, tree_nodes);
 }
 
-template <typename Point, typename SplitRule, uint_fast8_t kMD,
-          uint_fast8_t kSkHeight, uint_fast8_t kImbaRatio>
-void OrthTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::Build_(Slice A) {
+template <typename Point, typename SplitRule, typename LeafAugType,
+          typename InteriorAugType, uint_fast8_t kMD, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
+void OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight,
+              kImbaRatio>::Build_(Slice A) {
   Points B = Points::uninitialized(A.size());
   if (!fixed_box) {
     this->tree_box_ = BT::GetBox(A);
@@ -200,10 +210,11 @@ void OrthTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::Build_(Slice A) {
   return;
 }
 
-template <typename Point, typename SplitRule, uint_fast8_t kMD,
-          uint_fast8_t kSkHeight, uint_fast8_t kImbaRatio>
-void OrthTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::Build_(
-    Slice A, Box const& box) {
+template <typename Point, typename SplitRule, typename LeafAugType,
+          typename InteriorAugType, uint_fast8_t kMD, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
+void OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight,
+              kImbaRatio>::Build_(Slice A, Box const& box) {
   assert(BT::WithinBox(BT::GetBox(A), box));
 
   Points B = Points::uninitialized(A.size());

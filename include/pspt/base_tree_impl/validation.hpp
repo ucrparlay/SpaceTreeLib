@@ -45,7 +45,7 @@ BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::CheckBox(Node* T,
     assert(WithinBox(new_box, box));
     return new_box;
   } else if constexpr (IsBinaryNode<Interior> &&
-                       HasBox<typename Interior::AT>) {
+                       HasBox<typename Interior::AT>) {  // kd with box
     // std::cout << " has box " << std::endl;
     auto left_box = RetriveBox<Leaf, Interior>(TI->left);
     auto right_box = RetriveBox<Leaf, Interior>(TI->right);
@@ -56,7 +56,8 @@ BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::CheckBox(Node* T,
     assert(SameBox(right_return_box, RetriveBox<Leaf, Interior>(TI->right)));
     assert(SameBox(new_box, TI->GetBox()));
     return new_box;
-  } else if (IsMultiNode<Interior>) {
+  } else if (IsMultiNode<Interior> &&
+             !HasBox<typename Interior::AT>) {  // orth without box
     BoxSeq new_box(TI->template ComputeSubregions<BoxSeq>(box));
     BoxSeq return_box_seq(new_box.size());
     assert(new_box.size() == TI->tree_nodes.size());
@@ -68,6 +69,22 @@ BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::CheckBox(Node* T,
     auto return_box = GetBox(return_box_seq);
     assert(WithinBox(return_box, box));
     return return_box;
+  } else if (IsMultiNode<Interior> &&
+             HasBox<typename Interior::AT>) {  // orth with box
+    BoxSeq new_box(TI->template ComputeSubregions<BoxSeq>(box));
+    BoxSeq return_box_seq(new_box.size());
+    assert(new_box.size() == TI->tree_nodes.size());
+    for (size_t i = 0; i < TI->tree_nodes.size(); i++) {
+      return_box_seq[i] =
+          CheckBox<Leaf, Interior>(TI->tree_nodes[i], new_box[i]);
+      assert(SameBox(return_box_seq[i],
+                     RetriveBox<Leaf, Interior>(TI->tree_nodes[i])));
+    }
+    auto return_box = GetBox(return_box_seq);
+    assert(SameBox(return_box, TI->GetBox()));
+    return return_box;
+  } else {
+    assert(false);
   }
 }
 

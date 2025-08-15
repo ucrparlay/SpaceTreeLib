@@ -5,15 +5,21 @@
 #include "pspt/dependence/tree_node.h"
 
 namespace pspt {
-template <typename Point, typename SplitRule, uint_fast8_t kMD,
-          uint_fast8_t kSkHeight, uint_fast8_t kImbaRatio>
-struct OrthTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::OrthInteriorNode
-    : MultiNode<Point, kMD, Splitter, AugType> {
-  using BaseNode = MultiNode<Point, kMD, Splitter, AugType>;
+template <typename Point, typename SplitRule, typename LeafAugType,
+          typename InteriorAugType, uint_fast8_t kMD, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
+struct OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight,
+                kImbaRatio>::OrthInteriorNode
+    : MultiNode<Point, kMD, Splitter, InteriorAugType> {
+  using BaseNode = MultiNode<Point, kMD, Splitter, InteriorAugType>;
   using OrthNodeArr = typename BaseNode::NodeArr;
   using PT = Point;
   using ST = Splitter;
-  using AT = AugType;
+  using AT = InteriorAugType;
+
+  OrthInteriorNode(OrthNodeArr const& _tree_nodes, const ST& _split)
+      : BaseNode(_tree_nodes, _split,
+                 AT(AT::template Create<Leaf, Interior>(_tree_nodes))) {}
 
   OrthInteriorNode(OrthNodeArr const& _tree_nodes, const ST& _split,
                    const AT& _aug)
@@ -21,20 +27,37 @@ struct OrthTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::OrthInteriorNode
 
   constexpr auto GetSubTreeNum() const { return BaseNode::GetRegions(); }
 
-  void SetParallelFlag(bool const flag) { this->aug.emplace(flag); }
-
-  void ResetParallelFlag() { this->aug.reset(); }
-
-  bool GetParallelFlagIniStatus() { return this->aug.has_value(); }
-
-  // NOTE: use a tri-state bool to indicate whether a subtree needs to be
-  // rebuilt. If aug is not INITIALIZED, then it means there is no need to
-  // rebuild; otherwise, the value depends on the initial tree size before
-  // rebuilding.
-  bool ForceParallel() const {
-    return this->aug.has_value() ? this->aug.value()
-                                 : this->size > BT::kSerialBuildCutoff;
+  inline void SetParallelFlag(bool const flag) {
+    this->aug.SetParallelFlag(flag);
   }
+
+  inline void ResetParallelFlag() { this->aug.ResetParallelFlag(); }
+
+  inline bool GetParallelFlagIniStatus() {
+    return this->aug.GetParallelFlagIniStatus();
+  }
+
+  inline bool ForceParallel() const {
+    return this->aug.ForceParallel(this->size);
+  }
+
+  auto UpdateAug(OrthNodeArr const& tree_nodes) {
+    return this->aug.template Update<Leaf, Interior>(tree_nodes);
+  }
+
+  auto GetBox()
+    requires HasBox<AT>
+  {
+    return this->aug.GetBox();
+  }
+
+  auto GetBox() const
+    requires HasBox<AT>
+  {
+    return this->aug.GetBox();
+  }
+
+  auto ResetAug() { return this->aug.Reset(); }
 
   // NOTE: specific part
   // NOTE: compute the spliiter

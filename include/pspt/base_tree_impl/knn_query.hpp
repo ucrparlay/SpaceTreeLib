@@ -48,6 +48,7 @@ BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::P2BMinDistanceSquare(
     typename BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::Box const&
         a) {
   DisType r = 0;
+  // NOTE: the distance is 0 when p is inside the box
   for (DimsType i = 0; i < kDim; ++i) {
     if (Num::Lt(p.pnt[i], a.first.pnt[i])) {
       r += (static_cast<DisType>(a.first.pnt[i]) -
@@ -59,6 +60,8 @@ BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::P2BMinDistanceSquare(
             static_cast<DisType>(a.second.pnt[i])) *
            (static_cast<DisType>(p.pnt[i]) -
             static_cast<DisType>(a.second.pnt[i]));
+    } else {  // will not count the dis if p is inside the box in dimension i
+      ;
     }
   }
   return r;
@@ -308,7 +311,7 @@ template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
 template <typename Leaf, IsMultiNode Interior, typename Range>
 void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::KNNMulti(
     Node* T, Point const& q, kBoundedQueue<Point, Range>& bq,
-    Box const& node_box, KNNLogger& logger) {
+    KNNLogger& logger) {
   if (T->size == 0) {
     return;
   }
@@ -322,31 +325,27 @@ void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::KNNMulti(
   logger.vis_interior_num++;
   Interior* TI = static_cast<Interior*>(T);
 
-  BoxSeq regions(Interior::GetRegions());
+  // TODO: may change to use parlay::sequence
   std::array<std::pair<Coord, BucketType>, Interior::GetRegions()> dists;
-  TI->ComputeSubregions(
-      regions, node_box, 1,
-      0);  // PERF: find better way to compute the bounding boxes
-  logger.generate_box_num += Interior::GetRegions() * 2 - 1;
 
-  std::ranges::generate(dists, [i = 0, &q, &regions]() mutable {
-    auto r = std::make_pair(P2BMinDistanceSquare(q, regions[i]), i);
+  std::ranges::generate(dists, [i = 0, &q, TI]() mutable {
+    auto r = std::make_pair(
+        P2BMinDistanceSquare(q, RetriveBox<Leaf, Interior>(TI->tree_nodes[i])),
+        i);
     i++;
     return r;
   });
   std::ranges::sort(dists, std::less<>(),
                     [&](auto const& box_pair) { return box_pair.first; });
 
-  KNNMulti<Leaf, Interior>(TI->tree_nodes[dists[0].second], q, bq,
-                           regions[dists[0].second], logger);
+  KNNMulti<Leaf, Interior>(TI->tree_nodes[dists[0].second], q, bq, logger);
   for (BucketType i = 1; i < Interior::GetRegions(); ++i) {
     logger.check_box_num++;
     if (Num::Gt(dists[i].first, bq.top_value()) && bq.full()) {
       logger.skip_box_num++;
       continue;
     }
-    KNNMulti<Leaf, Interior>(TI->tree_nodes[dists[i].second], q, bq,
-                             regions[dists[i].second], logger);
+    KNNMulti<Leaf, Interior>(TI->tree_nodes[dists[i].second], q, bq, logger);
   }
 
   return;

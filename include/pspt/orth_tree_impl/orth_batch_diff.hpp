@@ -8,11 +8,12 @@
 namespace pspt {
 
 // NOTE: default batch delete
-template <typename Point, typename SplitRule, uint_fast8_t kMD,
-          uint_fast8_t kSkHeight, uint_fast8_t kImbaRatio>
+template <typename Point, typename SplitRule, typename LeafAugType,
+          typename InteriorAugType, uint_fast8_t kMD, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
 template <typename Range>
-void OrthTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::BatchDiff(
-    Range&& In) {
+void OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight,
+              kImbaRatio>::BatchDiff(Range&& In) {
   static_assert(parlay::is_random_access_range_v<Range>);
   static_assert(
       parlay::is_less_than_comparable_v<parlay::range_reference_type_t<Range>>);
@@ -25,10 +26,11 @@ void OrthTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::BatchDiff(
 }
 
 // NOTE: assume points are partially covered in the tree
-template <typename Point, typename SplitRule, uint_fast8_t kMD,
-          uint_fast8_t kSkHeight, uint_fast8_t kImbaRatio>
-void OrthTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::BatchDiff_(
-    Slice A) {
+template <typename Point, typename SplitRule, typename LeafAugType,
+          typename InteriorAugType, uint_fast8_t kMD, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
+void OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight,
+              kImbaRatio>::BatchDiff_(Slice A) {
   // NOTE: diff points from the tree
   Points B = Points::uninitialized(A.size());
   this->root_ = BatchDiffRecursive(this->root_, A, parlay::make_slice(B));
@@ -48,9 +50,10 @@ void OrthTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::BatchDiff_(
 }
 
 // NOTE: the orth does not need box since the box will never change
-template <typename Point, typename SplitRule, uint_fast8_t kMD,
-          uint_fast8_t kSkHeight, uint_fast8_t kImbaRatio>
-Node* OrthTree<Point, SplitRule, kMD, kSkHeight,
+template <typename Point, typename SplitRule, typename LeafAugType,
+          typename InteriorAugType, uint_fast8_t kMD, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
+Node* OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight,
                kImbaRatio>::BatchDiffRecursive(Node* T, Slice In, Slice Out) {
   size_t n = In.size();
 

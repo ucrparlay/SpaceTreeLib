@@ -230,6 +230,7 @@ struct MultiNode : Node {
   static consteval auto GetSplitNums() { return kMD; }
 
   // NOTE: whether we use same splitter for same level
+  // e.g., the horizontal in lavel is not the same
   static consteval auto EqualSplit()
     requires std::same_as<ST, std::array<typename ST::value_type, kMD>>
   {
@@ -327,14 +328,21 @@ static Interior* AllocInteriorNode(Node* L, Node* R,
   return o;
 }
 
+template <typename Interior>
+static Interior* AllocInteriorNode(typename Interior::NodeArr const& tree_nodes,
+                                   typename Interior::ST const& split) {
+  Interior* o = parlay::type_allocator<Interior>::alloc();
+  new (o) Interior(tree_nodes, split);
+  return o;
+}
+
 // TODO: maybe replace the NodeArr, ST, and AT with template parameters
 template <typename Interior>
-static Interior* AllocInteriorNode(
-    typename Interior::NodeArr const& tree_nodes,
-    typename Interior::ST const& split,
-    typename Interior::AT const& aug = typename Interior::AT()) {
+static Interior* AllocInteriorNode(typename Interior::NodeArr const& tree_nodes,
+                                   typename Interior::ST const& split,
+                                   typename Interior::AT const& aug) {
   Interior* o = parlay::type_allocator<Interior>::alloc();
-  new (o) Interior(tree_nodes, split, GetAugByType<Interior>(tree_nodes));
+  new (o) Interior(tree_nodes, split, aug);
   return o;
 }
 

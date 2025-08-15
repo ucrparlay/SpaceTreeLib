@@ -26,6 +26,21 @@ command=make -C build kd_ccp && ./build/kd_ccp -p benchmark/ss_varden_bigint/100
 cwd=${VIM_ROOT}
 output=quickfix
 
+[orth_ccp_build_all]
+command=make -C build kd_ccp && ./build/kd_ccp -p benchmark/ss_varden_bigint/1000000_2/1.in -d 2 -i 0 -t 0 -q 7 -T 1 -l 3 -s 0 -r 2 
+cwd=${VIM_ROOT}
+output=quickfix
+
+[orth_ccp_static_check_all]
+command=make -C build kd_ccp && ./build/kd_ccp -p benchmark/ss_varden_bigint/1000000_2/1.in -d 2 -i 1 -t 7 -q 7 -T 1 -l 3 -s 0 -r 2 
+cwd=${VIM_ROOT}
+output=quickfix
+
+[orth_ccp_incre_check_all]
+command=make -C build kd_ccp && ./build/kd_ccp -p benchmark/ss_varden_bigint/1000000_2/1.in -d 2 -i 0 -t 24 -q 0 -T 1 -l 3 -s 0 -r 2 
+cwd=${VIM_ROOT}
+output=quickfix
+
 [p_ccp_build]
 command=make -C build p_ccp && ./build/p_ccp -p benchmark/ss_varden_bigint/1000000_2/1.in -d 2 -i 0 -t 0 -q 0 -T 2 -l 1 -s 0 -r 2 
 cwd=${VIM_ROOT}
