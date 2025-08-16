@@ -143,6 +143,12 @@ class OrthTree
   Node* BatchDiffRecursive(Node* T, Slice In, Slice Out);
 
   constexpr static char const* GetTreeName() { return "OrthTree"; }
+  constexpr static char const* CheckHasBox() {
+    if constexpr (HasBox<InteriorAugType>)
+      return "HasBox";
+    else
+      return "NoBox";
+  }
 
   SplitRule split_rule_;
   bool fixed_box = false;

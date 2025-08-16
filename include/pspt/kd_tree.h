@@ -7,6 +7,7 @@
 #include <utility>
 
 #include "base_tree.h"
+#include "dependence/concepts.h"
 
 namespace pspt {
 
@@ -136,6 +137,13 @@ class KdTree : public BaseTree<Point,
   void Build_(Slice In);
 
   constexpr static char const* GetTreeName() { return "KdTree"; }
+
+  constexpr static char const* CheckHasBox() {
+    if constexpr (HasBox<InteriorAugType>)
+      return "HasBox";
+    else
+      return "NoBox";
+  }
 
   SplitRule split_rule_;
 };

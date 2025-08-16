@@ -1077,6 +1077,7 @@ std::pair<size_t, int> read_points(char const* iFile,
 template <typename TreeWrapper>
 void PrintTreeParam() {
   std::cout << "Tree: " << TreeWrapper::TreeType::GetTreeName() << "; "
+            << "AugType: " << TreeWrapper::TreeType::CheckHasBox() << "; "
             << "Split: " << TreeWrapper::SplitRule::GetSplitName() << "; "
             << "BDO: " << TreeWrapper::TreeType::GetBuildDepthOnce() << "; "
             << "Inba: " << TreeWrapper::TreeType::GetImbalanceRatio() << "; ";
