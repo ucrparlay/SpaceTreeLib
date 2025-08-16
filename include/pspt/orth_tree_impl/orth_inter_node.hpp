@@ -57,6 +57,26 @@ struct OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight,
     return this->aug.GetBox();
   }
 
+  auto GetBoxByIdRecursive(int idx)
+    requires HasBox<AT>
+  {
+    if (idx >= BaseNode::GetRegions()) {
+      auto o = this->tree_nodes[idx - BaseNode::GetRegions()];
+      return BT::template RetriveBox<Leaf, Interior>(o);
+    }
+    return BT::GetBox(GetBoxByIdRecursive(2 * idx),
+                      GetBoxByIdRecursive(2 * idx + 1));
+  }
+
+  auto GetBoxById(int idx)
+    requires HasBox<AT>
+  {
+    if (idx == 1) {
+      return this->aug.GetBox();
+    }
+    return GetBoxByIdRecursive(idx);
+  }
+
   auto ResetAug() { return this->aug.Reset(); }
 
   // NOTE: specific part

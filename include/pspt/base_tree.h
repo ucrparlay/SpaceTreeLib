@@ -346,6 +346,12 @@ class BaseTree {
                              BucketType idx, kBoundedQueue<Point, Range>& bq,
                              Box const& node_box, KNNLogger& logger);
 
+  // NOTE: search knn in the expanded multi node
+  template <typename Leaf, IsMultiNode Interior, typename Range>
+  static void KNNMultiExpandBox(Node* T, Point const& q, DimsType dim,
+                                BucketType idx, kBoundedQueue<Point, Range>& bq,
+                                KNNLogger& logger);
+
   // NOTE: search knn in the multi node
   template <typename Leaf, IsMultiNode Interior, typename Range>
   static void KNNMulti(Node* T, Point const& q, kBoundedQueue<Point, Range>& bq,

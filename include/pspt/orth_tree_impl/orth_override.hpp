@@ -24,11 +24,12 @@ auto OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight,
   // BT::template KNNBinary<Leaf, KdInteriorNode>(T, q, DIM, bq,
   // this->tree_box_,
   //                                              logger);
-  if constexpr (!HasBox<typename Interior::AT>) {
+  if constexpr (HasBox<typename Interior::AT>) {
+    // BT::template KNNMulti<Leaf, Interior>(T, q, bq, logger);
+    BT::template KNNMultiExpandBox<Leaf, Interior>(T, q, 0, 1, bq, logger);
+  } else {
     BT::template KNNMultiExpand<Leaf, Interior>(T, q, 0, 1, bq, this->tree_box_,
                                                 logger);
-  } else {
-    BT::template KNNMulti<Leaf, Interior>(T, q, bq, logger);
   }
   return logger;
 }

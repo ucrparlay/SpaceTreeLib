@@ -305,6 +305,63 @@ void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::KNNMultiExpand(
   return;
 }
 
+// NOTE: compute knn for multinode as if a binary node
+template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
+template <typename Leaf, IsMultiNode Interior, typename Range>
+void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::KNNMultiExpandBox(
+    Node* T, Point const& q, DimsType dim, BucketType idx,
+    kBoundedQueue<Point, Range>& bq, KNNLogger& logger) {
+  if (T->size == 0) {
+    return;
+  }
+
+  if (T->is_leaf) {
+    logger.vis_leaf_num++;
+    KNNLeaf<Leaf>(T, q, bq);
+    return;
+  }
+
+  logger.vis_interior_num++;
+
+  Interior* TI = static_cast<Interior*>(T);
+  auto const& split = Interior::EqualSplit() ? TI->split[dim] : TI->split[idx];
+  bool go_left = Num::Gt(split.first - q.pnt[split.second], 0);
+
+  BucketType first_idx = (idx << 1) + static_cast<BucketType>(!go_left);
+  BucketType second_idx = (idx << 1) + static_cast<BucketType>(go_left);
+  bool reach_leaf =
+      first_idx >= Interior::GetRegions();  // whether reach the skeleton leaf
+  Node* first_node =
+      reach_leaf ? TI->tree_nodes[first_idx - Interior::GetRegions()] : T;
+  Node* second_node =
+      reach_leaf ? TI->tree_nodes[second_idx - Interior::GetRegions()] : T;
+  if (reach_leaf) {
+    first_idx = second_idx = 1;
+  }
+  auto second_box =
+      second_node->is_leaf
+          ? RetriveBox<Leaf, Interior>(second_node)
+          : static_cast<Interior*>(second_node)->GetBoxById(second_idx);
+
+  logger.generate_box_num += 1;
+  assert((dim + 1) % kDim != 0 || (first_idx == 1 && second_idx == 1));
+
+  KNNMultiExpandBox<Leaf, Interior>(first_node, q, (dim + 1) % kDim, first_idx,
+                                    bq, logger);
+
+  // NOTE: compute the other bounding box
+  logger.check_box_num++;
+  if (Num::Gt(P2BMinDistanceSquare(q, second_box), bq.top_value()) &&
+      bq.full()) {
+    logger.skip_box_num++;
+    return;
+  }
+  KNNMultiExpandBox<Leaf, Interior>(second_node, q, (dim + 1) % kDim,
+                                    second_idx, bq, logger);
+  return;
+}
+
 // NOTE: compute KNN for multi-node by computing bounding boxes
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
