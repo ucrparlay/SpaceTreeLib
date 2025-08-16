@@ -157,6 +157,7 @@ class PTree
   size_t GetSize() const { return cpam_aug_map_.size(); }
 
   constexpr static char const* GetTreeName() { return "PTree"; }
+  constexpr static char const* CheckHasBox() { return "HasBox"; }
 
   // TODO: need to hide the basetree assests, e.g., root_
 
