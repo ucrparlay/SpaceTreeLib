@@ -52,6 +52,8 @@ class kBoundedQueue {
 
   auto size() { return m_count; }
 
+  auto max_size() const { return m_data.size(); }
+
   bool full() const { return m_count == m_data.size(); }
 
   T const& top() const { return m_data[0]; }

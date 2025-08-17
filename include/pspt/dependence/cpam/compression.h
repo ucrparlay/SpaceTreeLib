@@ -8,6 +8,7 @@
 #include "basic_node_helpers.h"
 #include "parlay/primitives.h"
 
+namespace pspt {
 namespace cpam {
 
 struct diffencoded_entry_encoder {
@@ -321,3 +322,4 @@ struct default_entry_encoder {
 };
 
 }  // namespace cpam
+}  // namespace pspt

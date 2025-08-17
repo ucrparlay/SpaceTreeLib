@@ -6,6 +6,7 @@
 //   SEQUENCES
 // *******************************************
 
+namespace pspt {
 namespace cpam {
 
 template <class Tree>
@@ -818,3 +819,4 @@ struct sequence_ops : Tree {
 };
 
 }  // namespace cpam
+}  // namespace pspt

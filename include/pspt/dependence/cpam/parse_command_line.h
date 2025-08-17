@@ -27,6 +27,7 @@
 #include <iostream>
 #include <string>
 
+namespace pspt {
 namespace cpam {
 
 struct commandLine {
@@ -117,3 +118,4 @@ struct commandLine {
 };
 
 }  // namespace cpam
+}  // namespace pspt

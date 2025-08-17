@@ -6,6 +6,7 @@
 //   GC
 // *******************************************
 
+namespace pspt {
 namespace cpam {
 using namespace std;
 
@@ -206,3 +207,4 @@ struct gc {
 };
 
 }  // namespace cpam
+}  // namespace pspt

@@ -8,6 +8,7 @@
 #include "parlay/parallel.h"
 #include "parlay/primitives.h"
 
+namespace pspt {
 namespace cpam {
 
 template <class Entry>
@@ -176,3 +177,4 @@ struct build {
 };
 
 }  // namespace cpam
+}  // namespace pspt

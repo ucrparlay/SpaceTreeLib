@@ -12,6 +12,7 @@
 
 // bool start_logging = false;
 
+namespace pspt {
 namespace cpam {
 using namespace std;
 namespace utils {
@@ -164,3 +165,4 @@ static size_t PAM_binary_search(AT* A, size_t n, F const& less) {
 
 }  // namespace utils
 }  // namespace cpam
+}  // namespace pspt

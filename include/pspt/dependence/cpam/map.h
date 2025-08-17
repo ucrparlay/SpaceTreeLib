@@ -10,6 +10,7 @@
 //   MAPS
 // *******************************************
 
+namespace pspt {
 namespace cpam {
 using namespace std;
 
@@ -921,3 +922,4 @@ using pam_seq = map_<
 //        balance<basic_node<typename Balance::data, data>>>;
 
 }  // namespace cpam
+}  // namespace pspt

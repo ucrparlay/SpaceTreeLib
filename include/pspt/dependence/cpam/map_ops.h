@@ -9,6 +9,7 @@
 //   MAPS and SETS
 // *******************************************
 
+namespace pspt {
 namespace cpam {
 
 template <class Seq, class EntryT>
@@ -2087,5 +2088,6 @@ struct map_ops : Seq {
     }
   }
 };
-
 }  // namespace cpam
+
+}  // namespace pspt

@@ -7,6 +7,7 @@
 #include <ios>
 #include <iostream>
 
+#include "baselines/cpam_raw/cpamtree.hpp"
 #include "common/geometryIO.h"
 #include "common/parse_command_line.h"
 #include "common/time_loop.h"
@@ -269,7 +270,8 @@ void BatchInsert(Tree& pkd, parlay::sequence<Point> const& WP,
       // std::cout << box.first << ' ' << box.second << std::endl;
       pkd.Build(parlay::make_slice(wp), box);
     } else {
-      std::cout << "Not supported Tree type\n" << std::flush;
+      parlay::copy(WP, wp), parlay::copy(WI, wi);
+      pkd.Build(parlay::make_slice(wp));
     }
   };
 
@@ -1282,6 +1284,13 @@ class Wrapper {
   };
 
   template <class PointType, class SplitRuleType>
+  struct CpamRawWrapper {
+    using Point = PointType;
+    using SplitRule = SplitRuleType;
+    using TreeType = typename CPAMTree::CpamRaw<Point, SplitRule>;
+  };
+
+  template <class PointType, class SplitRuleType>
   struct CoverTreeWrapper {
     using Point = PointType;
     using SplitRule = SplitRuleType;
@@ -1339,17 +1348,18 @@ class Wrapper {
 
         // NOTE: batch diff
         if (kTag & (1 << 2)) {
-          if (kSummary) {
-            parlay::sequence<double> const overlap_ratios = {0.1, 0.2, 0.5, 1};
-            for (size_t i = 0; i < overlap_ratios.size(); i++) {
-              BatchDiff<Point, Tree, kTestTime>(
-                  tree, wp, kRounds, kBatchDiffTotalRatio, overlap_ratios[i]);
-            }
-          } else {
-            BatchDiff<Point, Tree, kTestTime>(tree, wp, kRounds,
-                                              kBatchDiffTotalRatio,
-                                              kBatchDiffOverlapRatio);
-          }
+          // if (kSummary) {
+          //   parlay::sequence<double> const overlap_ratios = {0.1, 0.2, 0.5,
+          //   1}; for (size_t i = 0; i < overlap_ratios.size(); i++) {
+          //     BatchDiff<Point, Tree, kTestTime>(
+          //         tree, wp, kRounds, kBatchDiffTotalRatio,
+          //         overlap_ratios[i]);
+          //   }
+          // } else {
+          //   BatchDiff<Point, Tree, kTestTime>(tree, wp, kRounds,
+          //                                     kBatchDiffTotalRatio,
+          //                                     kBatchDiffOverlapRatio);
+          // }
         }
 
         Typename* kdknn = nullptr;
@@ -1589,6 +1599,7 @@ class Wrapper {
     }
   };
 
+  // NOTE: For kd tree and orth tree
   template <typename RunFunc>
   static void ApplyOrthogonal(int const tree_type, int const dim,
                               int const split_type, commandLine& params,
@@ -1637,26 +1648,14 @@ class Wrapper {
     if (dim == 2) {
       // run_with_split_type.template operator()<BasicPoint<Coord, 2>>();
       run_with_split_type.template operator()<AugPoint<Coord, 2, AugId>>();
+    } else if (dim == 3) {
+      run_with_split_type.template operator()<AugPoint<Coord, 3, AugId>>();
     }
-    // else if (dim == 3) {
-    //   run_with_split_type.template operator()<AugPoint<Coord, 3, AugId>>();
-    // }
-    // else if (dim == 5) {
-    //   run_with_split_type.template operator()<AugPoint<Coord, 5, AugId>>();
-    // }
-    // else if (dim == 7) {
-    //   run_with_split_type.template operator()<AugPoint<Coord, 7, AugId>>();
-    // } else if (dim == 9) {
-    //   run_with_split_type.template operator()<AugPoint<Coord, 9, AugId>>();
-    // } else if (dim == 10) {
-    //   run_with_split_type.template operator()<AugPoint<Coord, 10,
-    //   AugId>>();
-    // } else {
-    //   std::cerr << "Unsupported dimension: " << dim << std::endl;
-    //   abort();
-    // }
   }
 
+  // For the spacial filling curve, we use the AugIdCode to
+  // ensure the id is unique and the code is used to determine the
+  // order of the points in the tree.
   struct AugIdCode {
     using IdType = int_fast32_t;
     using CurveCode = uint64_t;
@@ -1695,6 +1694,46 @@ class Wrapper {
         // run.template operator()<OrthTreeWrapper<Point, SplitRule>>();
       } else if (tree_type == 2) {
         Run<PTreeWrapper<Point, SplitRule>>(params, test_func);
+      } else {
+        std::cout << "Unsupported tree type: " << tree_type << std::endl;
+      }
+    };
+
+    // NOTE: pick the split rule
+    auto run_with_split_type = [&]<typename Point>() {
+      if (split_type & (1 << 0)) {
+        build_tree_type.template
+        operator()<Point, pspt::SpacialFillingCurve<HilbertCurve<Point>>>();
+      } else if (split_type & (1 << 1)) {
+        build_tree_type.template
+        operator()<Point, pspt::SpacialFillingCurve<MortonCurve<Point>>>();
+      }
+    };
+
+    if (dim == 2) {
+      run_with_split_type.template operator()<AugPoint<Coord, 2, AugIdCode>>();
+    } else if (dim == 3) {
+      run_with_split_type.template operator()<AugPoint<Coord, 3, AugIdCode>>();
+    }
+  }
+
+  template <typename RunFunc>
+  static void ApplyBaselines(int const tree_type, int const dim,
+                             int const split_type, commandLine& params,
+                             RunFunc test_func) {
+    auto build_tree_type = [&]<typename Point, typename SplitRule>() {
+      if (tree_type == 0) {
+        // run.template operator()<KdTreeWrapper<Point, SplitRule>>();
+      } else if (tree_type == 1) {
+        // run.template operator()<OrthTreeWrapper<Point, SplitRule>>();
+      } else if (tree_type == 2) {
+        // Run<PTreeWrapper<Point, SplitRule>>(params, test_func);
+      } else if (tree_type == 3) {
+        Run<CpamRawWrapper<Point, SplitRule>>(params, test_func);
+      } else if (tree_type == 4) {
+        // Run<MVZDWrapper<Point, SplitRule>>(params, test_func);
+      } else if (tree_type == 5) {
+        // Run<BoostRTreeWrapper<Point, SplitRule>>(params, test_func);
       } else {
         std::cout << "Unsupported tree type: " << tree_type << std::endl;
       }

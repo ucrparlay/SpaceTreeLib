@@ -4,6 +4,7 @@
 
 #include "utils.h"
 
+namespace pspt {
 namespace cpam {
 namespace basic_node_helpers {
 
@@ -197,3 +198,4 @@ static typename Node::node* make_compressed_node(typename Node::node* b,
 
 }  // namespace basic_node_helpers
 }  // namespace cpam
+}  // namespace pspt

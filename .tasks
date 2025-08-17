@@ -50,3 +50,13 @@ output=quickfix
 command=make -C build p_ccp && ./build/p_ccp -p benchmark/uniform_bigint/1000000_2/1.in -d 2 -i 1 -t 1 -q 0 -T 2 -l 1 -s 0 -r 2 
 cwd=${VIM_ROOT}
 output=quickfix
+
+[cpam_raw_build]
+command=make -C build baselines && ./build/baselines -p benchmark/ss_varden_bigint/1000000_2/1.in -d 2 -i 0 -t 0 -q 0 -T 3 -l 1 -s 0 -r 2 
+cwd=${VIM_ROOT}
+output=quickfix
+
+[cpam_raw_all]
+command=make -C build baselines && ./build/baselines -p benchmark/ss_varden_bigint/1000000_2/1.in -d 2 -i 0 -t 3 -q 7 -T 3 -l 1 -s 1 -r 2 
+cwd=${VIM_ROOT}
+output=quickfix

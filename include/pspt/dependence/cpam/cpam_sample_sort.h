@@ -238,6 +238,6 @@ auto cpam_sample_sort(slice<InputIterator, InputIterator> A,
 
 }  // namespace cpam
 }  // namespace internal
-}  // namespace parlay
 
+}  // namespace parlay
 #endif  // CPAM_SAMPLE_SORT_H

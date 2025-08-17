@@ -7,6 +7,7 @@
 #include <iostream>
 #include <string>
 
+namespace pspt {
 namespace cpam {
 
 struct timer {
@@ -83,3 +84,4 @@ struct timer {
 };
 
 }  // namespace cpam
+}  // namespace pspt

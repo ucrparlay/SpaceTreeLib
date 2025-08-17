@@ -1,5 +1,6 @@
 #pragma once
 
+namespace pspt {
 namespace cpam {
 
 #define LAST_BIT_SET(b) (b & (0x80))
@@ -41,3 +42,4 @@ inline long encodeUnsigned(uint8_t* start, long curOffset, K diff) {
 }
 
 }  // namespace cpam
+}  // namespace pspt

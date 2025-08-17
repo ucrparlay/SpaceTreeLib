@@ -4,7 +4,7 @@
 // *******************************************
 //   AUGMENTED NODE
 // *******************************************
-
+namespace pspt {
 namespace cpam {
 
 // Creates an augmented node from a basic node.
@@ -333,3 +333,4 @@ struct aug_node
 };
 
 }  // namespace cpam
+}  // namespace pspt

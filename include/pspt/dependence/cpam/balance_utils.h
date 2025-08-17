@@ -6,6 +6,7 @@
 //   although not all schemes use these functions
 // *******************************************
 
+namespace pspt {
 namespace cpam {
 
 template <class Node>
@@ -355,3 +356,4 @@ struct balance_utils {
 };
 
 }  // namespace cpam
+}  // namespace pspt

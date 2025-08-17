@@ -5,6 +5,7 @@
 #include "parlay/alloc.h"
 #include "utils.h"
 
+namespace pspt {
 namespace cpam {
 
 using node_size_t = unsigned int;
@@ -385,3 +386,4 @@ struct basic_node {
 };
 
 }  // namespace cpam
+}  // namespace pspt

@@ -7,6 +7,7 @@
 //   AUGMENTED MAP OPERATIONS
 // *******************************************
 
+namespace pspt {
 namespace cpam {
 
 template <class Map>
@@ -578,3 +579,4 @@ struct augmented_ops : Map {
 };
 
 }  // namespace cpam
+}  // namespace pspt

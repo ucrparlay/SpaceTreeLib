@@ -96,9 +96,14 @@ add_executable(p_test ${PROJECT_SOURCE_DIR}/tests/p_test.cpp)
 target_link_libraries(p_test PUBLIC PSPT)
 target_include_directories(p_test PUBLIC ${PROJECT_SOURCE_DIR}/include)
 
+add_executable(baselines ${PROJECT_SOURCE_DIR}/tests/baselines.cpp)
+target_link_libraries(baselines PUBLIC PSPT)
+target_include_directories(baselines PUBLIC ${PROJECT_SOURCE_DIR}/include)
+
 if(JEMA)
 	target_link_libraries(kd_test PUBLIC libjemalloc.so)
 	target_link_libraries(p_test PUBLIC libjemalloc.so)
+	target_link_libraries(baseline PUBLIC libjemalloc.so)
 endif()
 
 add_executable(data_generator ${PROJECT_SOURCE_DIR}/tests/data_generate.cpp)

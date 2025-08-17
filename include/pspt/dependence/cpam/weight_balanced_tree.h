@@ -9,6 +9,7 @@
 //   SPAA 2016
 // *******************************************
 
+namespace pspt {
 namespace cpam {
 
 struct weight_balanced_tree {
@@ -130,3 +131,4 @@ struct weight_balanced_tree {
 };
 
 }  // namespace cpam
+}  // namespace pspt
