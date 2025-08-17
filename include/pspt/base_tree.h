@@ -23,6 +23,7 @@ class BaseTree {
   // 255*2
 
   using BasicPoint = Point::BP;
+  using TemplatePoint = Point;
 
   using BucketType =
       std::conditional_t<(kSkHeight > 7), uint_fast16_t, uint_fast8_t>;

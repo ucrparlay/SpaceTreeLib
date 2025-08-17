@@ -1,5 +1,9 @@
 #pragma once
 
+#include "augmented_map.h"
+#include "augmented_node.h"
+#include "augmented_ops.h"
+#include "map.h"
 using namespace std;
 
 // *******************************************
@@ -43,7 +47,7 @@ struct aug_map_ : private map_<_Entry, Join_Tree> {
   }
 
   template <class F, typename F2>
-  static size_t range_count_filter2(M m, F const& f, const F2& f2) {
+  static size_t range_count_filter2(M& m, F const& f, const F2& f2) {
     // auto ret = Tree::range_count_filter2(m.get_root(), f, f2);
     auto ret = Tree::range_count_filter2(m.root, f, f2);
     return ret;
@@ -56,17 +60,33 @@ struct aug_map_ : private map_<_Entry, Join_Tree> {
   }
 
   template <typename F, typename Out>
-  static void range_report_filter2(M m, F const& f, int64_t& cnt, Out& out) {
+  static void range_report_filter2(M& m, F const& f, int64_t& cnt, Out& out) {
     Tree::range_report_filter2(m.root, f, cnt, out);
     return;
   }
 
+  template <class BaseTree, typename Logger, typename kBoundedQueue>
+  static void knn(M& m, auto const& q, kBoundedQueue& bq, Logger& logger) {
+    // parlay::internal::timer t;
+    // t.start();
+    // auto root = m.get_root();
+    // logger.generate_box_num += t.total_time();
+    // Tree::template knn<BaseTree>(m.get_root(), q, bq, logger);
+    Tree::template knn<BaseTree>(m.root, q, bq, logger);
+    // GC::decrement(root);
+  }
+
   template <typename F, typename F2, typename Out>
-  static void knn_filter(M m, F const& f, const F2& f2, size_t& k, Out& out,
+  static void knn_filter(M& m, F const& f, const F2& f2, size_t& k, Out& out,
                          size_t& vis_leaf) {
-    Tree::knn_filter(m.get_root(), f, f2, k, out, vis_leaf);
+    Tree::knn_filter(m.root, f, f2, k, out, vis_leaf);
     return;
   }
+
+  // template <class BaseTree, typename Logger, typename kBoundedQueue>
+  // static void knn(M& m, E const& q, kBoundedQueue& bq, Logger& logger) {
+  //   Tree::template knn<BaseTree>(m.root, q, bq, logger);
+  // }
 
   // extract the augmented values
   A aug_val() const { return Tree::aug_val(Map::root); }

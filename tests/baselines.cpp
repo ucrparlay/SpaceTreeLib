@@ -8,7 +8,7 @@ int main(int argc, char* argv[]) {
       "<_insertFile>] [-s <kSummary>]");
 
   char* input_file_path = params.getOptionValue("-p");
-  int K = params.getOptionIntValue("-k", 100);
+  int K = params.getOptionIntValue("-k", 10);
   int dims = params.getOptionIntValue("-d", 3);
   size_t N = params.getOptionLongValue("-n", -1);
   int tag = params.getOptionIntValue("-t", 1);

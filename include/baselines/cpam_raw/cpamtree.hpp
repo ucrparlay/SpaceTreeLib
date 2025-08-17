@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 #include "../pspt/base_tree.h"
 #include "cpam/cpam.h"
 #include "dependence/loggers.h"
@@ -52,7 +54,7 @@ class CpamRaw
   using val_type = Point;
   using aug_type = pair<Box, size_t>;
 
-  typedef pair<Point, double> nn_pair;
+  typedef pair<Point, int64_t> nn_pair;
 
   struct nn_pair_cmp {
     bool operator()(nn_pair& lhs, nn_pair& rhs) {
@@ -83,22 +85,22 @@ class CpamRaw
   using Leaf = zmap::Tree::node;
   using Interior = zmap::Tree::node;
 
-  template <typename T>
-  auto knn(T& tree, Point const& query_point, auto k, auto& vis_leaf) {
-    auto f = [&](auto cur_pt) {
-      return BT::P2PDistanceSquare(cur_pt, query_point);
-      // return point_point_sqrdis(cur_pt, query_point);
-    };
-
-    auto f2 = [&](auto cur_mbr) {
-      return BT::P2BMinDistanceSquare(query_point, cur_mbr);
-      // return point_mbr_sqrdis(query_point, cur_mbr);
-    };
-
-    std::priority_queue<nn_pair, vector<nn_pair>, nn_pair_cmp> nn_res;
-    zmap::knn_filter(tree, f, f2, k, nn_res, vis_leaf);
-    return nn_res.top().second;
-  }
+  // template <typename T>
+  // auto knn(T& tree, Point const& query_point, auto k, auto& vis_leaf) {
+  //   auto f = [&](auto cur_pt) {
+  //     return BT::P2PDistanceSquare(cur_pt, query_point);
+  //     // return point_point_sqrdis(cur_pt, query_point);
+  //   };
+  //
+  //   auto f2 = [&](auto cur_mbr) {
+  //     return BT::P2BMinDistanceSquare(query_point, cur_mbr);
+  //     // return point_mbr_sqrdis(query_point, cur_mbr);
+  //   };
+  //
+  //   std::priority_queue<nn_pair, vector<nn_pair>, nn_pair_cmp> nn_res;
+  //   zmap::knn_filter(tree, f, f2, k, nn_res, vis_leaf);
+  //   return nn_res.top().second;
+  // }
 
   template <typename M>
   auto map_diff(M& lhs, M& rhs) {
@@ -143,11 +145,11 @@ class CpamRaw
     // t2.total();
     // auto vals = zmap::values(m1);
     // return std::make_tuple(m1, SFC_time);
-    return m1;
+    return std::move(m1);
   }
 
   template <typename PT, typename M>
-  auto map_insert(PT& P, M&& mmp) {
+  auto map_insert(PT P, M&& mmp) {
     size_t n = P.size();
 
     parlay::parallel_for(
@@ -158,13 +160,12 @@ class CpamRaw
       insert_pts[i] = {{P[i].aug.code, P[i].aug.id}, P[i]};
       // insert_pts[i] = {P[i]->id, P[i]};
     });
-    auto m2 = zmap::multi_insert(mmp, insert_pts);
 
-    return m2;
+    return std::move(zmap::multi_insert(std::forward<M>(mmp), insert_pts));
   }
 
   template <typename PT, typename M>
-  auto map_delete(PT& P, M&& mmp) {
+  auto map_delete(PT P, M&& mmp) {
     size_t n = P.size();
 
     parlay::parallel_for(
@@ -176,9 +177,8 @@ class CpamRaw
       // delete_pts[i] = {P[i]->morton_id, P[i]->id};
       // insert_pts[i] = {P[i]->id, P[i]};
     });
-    auto m2 = zmap::multi_delete(mmp, delete_pts);
 
-    return m2;
+    return std::move(zmap::multi_delete(std::forward<M>(mmp), delete_pts));
   }
 
   int mbr_mbr_relation(Box const& a, Box const& b) {
@@ -192,7 +192,7 @@ class CpamRaw
   }
 
   template <class T, class MBR>
-  auto range_count(T& zCPAM, MBR& query_mbr, bool use_hilbert = false) {
+  auto range_count(T& zCPAM, MBR& query_mbr) {
     // auto f = [&](auto& cur) { return mbr_mbr_relation(cur, query_mbr); };
     // auto f2 = [&](auto& cur) { return point_in_mbr(cur, query_mbr); };
     auto f = [&](auto& cur_mbr) {
@@ -230,29 +230,28 @@ class CpamRaw
   template <typename Range>
   void Build(Range In) {
     Slice A = parlay::make_slice(In);
-    cpam_aug_map_ = std::move(map_init(A));  // WARN: use_hilbert = true
+    cpam_aug_map_ = std::move(map_init(A));
   }
 
   void BatchInsert(Slice In) {
     if (!this->cpam_aug_map_.root || !zmap::size(this->cpam_aug_map_.root)) {
       return Build(std::forward<Slice>(In));
     }
-    cpam_aug_map_ =
-        map_insert(In, std::move(cpam_aug_map_));  // WARN: use_hilbert = true
+    cpam_aug_map_ = map_insert(In, std::move(cpam_aug_map_));
   }
 
   void BatchDelete(Slice In) {
     if (!this->cpam_aug_map_.root || !zmap::size(this->cpam_aug_map_.root)) {
       return;
     }
-    cpam_aug_map_ =
-        map_delete(In, std::move(cpam_aug_map_));  // WARN: use_hilbert = true
+    cpam_aug_map_ = map_delete(In, std::move(cpam_aug_map_));
   }
 
   template <typename Node, typename Range>
   auto KNN(Node* T, Point const& q, pspt::kBoundedQueue<Point, Range>& bq) {
     pspt::KNNLogger logger;
-    this->knn(this->cpam_aug_map_, q, bq.max_size(), logger.vis_leaf_num);
+    // this->knn(this->cpam_aug_map_, q, bq.max_size(), logger.vis_leaf_num);
+    zmap::template knn<BT>(this->cpam_aug_map_, q, bq, logger);
     return logger;
   }
 
@@ -275,7 +274,7 @@ class CpamRaw
   }
 
   size_t GetSize() const { return cpam_aug_map_.size(); }
-  constexpr static char const* GetTreeName() { return "CPAM_RAW"; }
+  constexpr static char const* GetTreeName() { return "CpamRaw"; }
   constexpr static char const* CheckHasBox() { return "HasBox"; }
   zmap cpam_aug_map_;
 };
