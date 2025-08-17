@@ -50,16 +50,17 @@ class kBoundedQueue {
 
   void reset() { m_count = 0; }
 
-  inline bool full() const { return m_count == m_data.size(); }
+  auto size() { return m_count; }
 
-  inline T const& top() const { return m_data[0]; }
+  bool full() const { return m_count == m_data.size(); }
 
-  inline DisType const top_value() const { return m_data[0].second; }
+  T const& top() const { return m_data[0]; }
 
-  inline parlay::slice<T*, T*> data() const { return m_data; }
+  DisType const top_value() const { return m_data[0].second; }
 
-  inline void insert(
-      std::pair<std::reference_wrapper<Point>, DisType> const x) {
+  parlay::slice<T*, T*> data() const { return m_data; }
+
+  void insert(std::pair<std::reference_wrapper<Point>, DisType> const x) {
     // T x( _x.first, _x.second );
     T* data1 = (&m_data[0] - 1);
     if (full()) {

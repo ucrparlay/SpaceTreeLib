@@ -225,6 +225,14 @@ template <typename Leaf, IsBinaryNode Interior, typename Range>
 void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::KNNBinaryBox(
     Node* T, Point const& q, kBoundedQueue<Point, Range>& bq,
     KNNLogger& logger) {
+  if (bq.size() &&
+      Num::Gt(P2BMinDistanceSquare(q, RetriveBox<Leaf, Interior>(T)),
+              bq.top_value()) &&
+      bq.full()) {
+    logger.skip_box_num++;
+    return;
+  }
+
   if (T->is_leaf) {
     logger.vis_leaf_num++;
     KNNLeaf<Leaf>(T, q, bq);
@@ -316,6 +324,13 @@ void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::KNNMultiExpandBox(
     return;
   }
 
+  if (idx == 1 && bq.size() &&
+      Num::Gt(P2BMinDistanceSquare(q, RetriveBox<Leaf, Interior>(T)),
+              bq.top_value()) &&
+      bq.full()) {
+    logger.skip_box_num++;
+    return;
+  }
   if (T->is_leaf) {
     logger.vis_leaf_num++;
     KNNLeaf<Leaf>(T, q, bq);
@@ -344,7 +359,6 @@ void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::KNNMultiExpandBox(
           ? RetriveBox<Leaf, Interior>(second_node)
           : static_cast<Interior*>(second_node)->GetBoxById(second_idx);
 
-  logger.generate_box_num += 1;
   assert((dim + 1) % kDim != 0 || (first_idx == 1 && second_idx == 1));
 
   KNNMultiExpandBox<Leaf, Interior>(first_node, q, (dim + 1) % kDim, first_idx,
@@ -373,6 +387,13 @@ void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::KNNMulti(
     return;
   }
 
+  if (bq.size() &&
+      Num::Gt(P2BMinDistanceSquare(q, RetriveBox<Leaf, Interior>(T)),
+              bq.top_value()) &&
+      bq.full()) {
+    logger.skip_box_num++;
+    return;
+  }
   if (T->is_leaf) {
     logger.vis_leaf_num++;
     KNNLeaf<Leaf>(T, q, bq);
