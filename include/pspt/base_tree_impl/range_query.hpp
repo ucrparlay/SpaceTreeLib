@@ -35,6 +35,8 @@ size_t BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::RangeCountRectangle(
     Node* T, Box const& query_box, Box const& node_box,
     RangeQueryLogger& logger) {
   if (T->is_leaf) {
+    // PERF: no need to check box because we already check it before we
+    // recursion
     logger.vis_leaf_num++;
     return RangeCountRectangleLeaf<Leaf>(T, query_box);
   }
