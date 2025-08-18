@@ -60,3 +60,8 @@ output=quickfix
 command=make -C build baselines && ./build/baselines -p benchmark/ss_varden_bigint/1000000_2/1.in -d 2 -i 0 -t 3 -q 7 -T 3 -l 1 -s 1 -r 2 
 cwd=${VIM_ROOT}
 output=quickfix
+
+[boost_r_build]
+command=make -C build boost_rtree && ./build/boost_rtree -p benchmark/ss_varden_bigint/1000000_2/1.in -d 2 -i 0 -t 0 -q 0 -T 0 -l 0 -s 0 -r 2 
+cwd=${VIM_ROOT}
+output=quickfix

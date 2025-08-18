@@ -1582,6 +1582,7 @@ class Wrapper {
       assert(d == kDim);
     }
 
+    // Apply the test function
     test_func.template operator()<TreeWrapper, Point>(
         kDim, wp, wi, N, K, rounds, insert_file_path, tag, query_type, summary);
   };
