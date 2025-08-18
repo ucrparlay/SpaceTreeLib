@@ -72,7 +72,7 @@ int main(int argc, char* argv[]) {
     using Tree = TreeDesc::TreeType;
     using RPoint = bg::model::point<Coord, Point::GetDim(), bg::cs::cartesian>;
     using RBox = bg::model::box<RPoint>;
-    constexpr size_t kRTreeMaxEle = 40;  // Max elements per node in R-tree
+    constexpr size_t kRTreeMaxEle = 32;  // Max elements per node in R-tree
     // using Points = typename Tree::Points;
     // using Box = typename Tree::Box;
 
@@ -102,7 +102,7 @@ int main(int argc, char* argv[]) {
     timer.start();
     // bgi::rtree<RPoint, bgi::rstar<kRTreeMaxEle>> tree(_points.begin(),
     //                                                   _points.end());
-    bgi::rtree<RPoint, bgi::rstar<kRTreeMaxEle>> tree();
+    bgi::rtree<RPoint, bgi::rstar<kRTreeMaxEle>> tree;
     // timer.stop();
     // std::cout << timer.total_time() << " " << -1 << " " << std::flush;
 
