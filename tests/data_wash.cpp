@@ -7,9 +7,9 @@ void RoundDataAndShift(commandLine& P) {
   int pts_dim, multiply_offset;
 
   input_path = P.getOptionValue("-p");
-  output_suffix = P.getOptionValue("-s", ".out");
+  output_suffix = P.getOptionValue("-output_suffix", ".out");
   pts_dim = P.getOptionIntValue("-d", 2);
-  multiply_offset = P.getOptionIntValue("-k", 1);
+  multiply_offset = P.getOptionIntValue("-multiply_offset", 1);
 
   std::cout << input_path << std::endl;
   std::cout << output_suffix << std::endl;
@@ -50,9 +50,9 @@ void SortByCoord(commandLine& P) {
   int pts_dim, sort_dim;
 
   input_path = P.getOptionValue("-p");
-  output_suffix = P.getOptionValue("-s", ".out");
+  output_suffix = P.getOptionValue("-output_suffix", ".out");
   pts_dim = P.getOptionIntValue("-d", 2);
-  sort_dim = P.getOptionIntValue("-t", 0);
+  sort_dim = P.getOptionIntValue("-sort_dim", 0);
 
   using OutputPoint = AugPoint<int64_t, InputPoint::GetDim(), Wrapper::AugId>;
   using Laundy = DataLaundry<InputPoint, OutputPoint>;
@@ -77,9 +77,9 @@ int main(int argc, char* argv[]) {
                 "[-k {1,...,100}] [-d {2,3,5,7,9,10}] [-n <node num>] [-t "
                 "<parallelTag>] [-p <inFile>] [-r {1,...,5}] [-q {0,1}] [-i "
                 "<_insertFile>] [-s <kSummary>] [-u <usage>]");
-  int coord_type = P.getOptionIntValue("-c", 0);
+  int coord_type = P.getOptionIntValue("-coord_type", 0);
   int pts_dim = P.getOptionIntValue("-d", 2);
-  int usage = P.getOptionIntValue("-u", 0);
+  int usage = P.getOptionIntValue("-usage", 0);
 
   auto apply = [&]<typename InputPoint>() {
     if (usage & (1 << 0)) {

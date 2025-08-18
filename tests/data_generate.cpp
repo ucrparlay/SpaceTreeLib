@@ -11,16 +11,16 @@ int main(int argc, char* argv[]) {
   path = P.getOptionValue("-p");
   pts_num = P.getOptionIntValue("-n", 1'000'000);
   pts_dim = P.getOptionIntValue("-d", 2);
-  file_num = P.getOptionIntValue("-f", 2);
-  varden = P.getOptionIntValue("-t", 0);
+  file_num = P.getOptionIntValue("-file_num", 2);
+  varden = P.getOptionIntValue("-varden", 0);
   std::cout << "pts_num: " << pts_num << " pts_dim: " << pts_dim
             << " file_num: " << file_num << " varden: " << varden << std::endl;
 
   // NOTE: ../kdtree/
   path += std::string(*path.rbegin() == '/' ? "" : "/") +
-          std::string(varden ? "ss_varden_bigint/" : "uniform_bigint/") +
-          toString(pts_num) + "_" + toString(pts_dim) + "/";
-  // + "/0_" + toString(static_cast<size_t>(kValueUB)) + "/";
+          // std::string(varden ? "ss_varden_bigint/" : "uniform_bigint/") +
+          std::string(varden ? "ss_varden/" : "uniform/") + toString(pts_num) +
+          "_" + toString(pts_dim) + "/";
   std::filesystem::create_directory(path);
 
   auto generate = [&]<typename Point>(std::string const& new_path) {
