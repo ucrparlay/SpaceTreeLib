@@ -6,7 +6,7 @@
 #include "cpam/cpam.h"
 #include "dependence/loggers.h"
 // #include "geobase.h"
-#include "hilbert.h"
+// #include "hilbert.h"
 #include "pspt/base_tree.h"
 
 namespace CPAMTree {
@@ -274,7 +274,7 @@ class CpamRaw
   }
 
   size_t GetSize() const { return cpam_aug_map_.size(); }
-  constexpr static char const* GetTreeName() { return "CpamRaw"; }
+  constexpr static char const* GetTreeName() { return "CPAM"; }
   constexpr static char const* CheckHasBox() { return "HasBox"; }
   zmap cpam_aug_map_;
 };

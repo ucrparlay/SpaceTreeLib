@@ -6,6 +6,7 @@
 extern "C" {
 #endif
 
+namespace pspt {
 namespace hilbert {
 /* define the bitmask_t type as an integer of sufficient size */
 typedef unsigned long long bitmask_t;
@@ -156,6 +157,7 @@ int hilbert_nextinbox(unsigned nDims, unsigned nBytes, unsigned nBits,
 void hilbert_incr(unsigned nDims, unsigned nBits, bitmask_t coord[]);
 
 }  // namespace hilbert
+}  // namespace pspt
 
 #ifdef __cplusplus
 }

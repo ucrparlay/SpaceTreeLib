@@ -24,6 +24,8 @@
 
 #include "hilbert.h"
 
+namespace pspt {
+
 namespace hilbert {
 /* implementation of the hilbert functions */
 
@@ -1509,3 +1511,4 @@ int main() {
 }
 #endif
 }  // namespace hilbert
+}  // namespace pspt
