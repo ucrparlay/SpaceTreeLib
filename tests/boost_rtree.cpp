@@ -100,56 +100,61 @@ int main(int argc, char* argv[]) {
 
     parlay::internal::timer timer;
     timer.start();
-    bgi::rtree<RPoint, bgi::rstar<kRTreeMaxEle>> tree(_points.begin(),
-                                                      _points.end());
-    timer.stop();
-    std::cout << timer.total_time() << " " << -1 << " " << std::flush;
+    // bgi::rtree<RPoint, bgi::rstar<kRTreeMaxEle>> tree(_points.begin(),
+    //                                                   _points.end());
+    bgi::rtree<RPoint, bgi::rstar<kRTreeMaxEle>> tree();
+    // timer.stop();
+    // std::cout << timer.total_time() << " " << -1 << " " << std::flush;
 
-    if (kTag & (1 << 0)) {  // insert
-      auto rtree_insert = [&](auto r_tree, double r) {
-        timer.reset();
-        timer.start();
-        size_t sz = _points_insert.size() * r;
-        r_tree.insert(_points_insert.begin(), _points_insert.begin() + sz);
-        std::cout << timer.total_time() << " " << std::flush;
-      };
-
-      if (kSummary) {
-        parlay::sequence<double> const ratios = {0.0001, 0.001, 0.01, 0.1};
-        for (size_t i = 0; i < ratios.size(); i++) {
-          auto r_tree = tree;
-          rtree_insert(r_tree, ratios[i]);
-        }
-      } else {
-        auto r_tree = tree;
-        rtree_insert(r_tree, kBatchInsertRatio);
-      }
-
-      // if (kTag == 1) wp.append(wi);
+    for (int i = 0; i < _points.size(); i++) {
+      tree.insert(_points[i]);
     }
 
-    if (kTag & (1 << 1)) {  // delete
-      auto rtree_delete = [&](auto& r_tree, double ratio = 1.0) {
-        timer.reset();
-        timer.start();
-        assert(tree.size() == wp.size());
-        size_t sz = _points.size() * ratio;
-        r_tree.remove(_points.begin(), _points.begin() + sz);
-        timer.stop();
-        std::cout << timer.total_time() << " " << std::flush;
-      };
+    // if (kTag & (1 << 0)) {  // insert
+    //   auto rtree_insert = [&](auto r_tree, double r) {
+    //     timer.reset();
+    //     timer.start();
+    //     size_t sz = _points_insert.size() * r;
+    //     r_tree.insert(_points_insert.begin(), _points_insert.begin() + sz);
+    //     std::cout << timer.total_time() << " " << std::flush;
+    //   };
 
-      if (kSummary) {
-        parlay::sequence<double> const ratios = {0.0001, 0.001, 0.01, 0.1};
-        for (size_t i = 0; i < ratios.size(); i++) {
-          auto r_tree = tree;
-          rtree_delete(r_tree, ratios[i]);
-        }
-      } else {
-        auto r_tree = tree;
-        rtree_delete(r_tree, kBatchInsertRatio);
-      }
-    }
+    //   if (kSummary) {
+    //     parlay::sequence<double> const ratios = {0.0001, 0.001, 0.01, 0.1};
+    //     for (size_t i = 0; i < ratios.size(); i++) {
+    //       auto r_tree = tree;
+    //       rtree_insert(r_tree, ratios[i]);
+    //     }
+    //   } else {
+    //     auto r_tree = tree;
+    //     rtree_insert(r_tree, kBatchInsertRatio);
+    //   }
+
+    //   // if (kTag == 1) wp.append(wi);
+    // }
+
+    // if (kTag & (1 << 1)) {  // delete
+    //   auto rtree_delete = [&](auto& r_tree, double ratio = 1.0) {
+    //     timer.reset();
+    //     timer.start();
+    //     assert(tree.size() == wp.size());
+    //     size_t sz = _points.size() * ratio;
+    //     r_tree.remove(_points.begin(), _points.begin() + sz);
+    //     timer.stop();
+    //     std::cout << timer.total_time() << " " << std::flush;
+    //   };
+
+    //   if (kSummary) {
+    //     parlay::sequence<double> const ratios = {0.0001, 0.001, 0.01, 0.1};
+    //     for (size_t i = 0; i < ratios.size(); i++) {
+    //       auto r_tree = tree;
+    //       rtree_delete(r_tree, ratios[i]);
+    //     }
+    //   } else {
+    //     auto r_tree = tree;
+    //     rtree_delete(r_tree, kBatchInsertRatio);
+    //   }
+    // }
 
     // kNN query: find the 3 nearest neighbors to the point (2.5, 2.5)
     // Point query_point(2.5, 2.5);

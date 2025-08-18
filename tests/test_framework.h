@@ -386,11 +386,11 @@ struct StepUpdateLogger {
 template <typename Point, typename Tree, bool kInsert>
 void BatchInsertByStep(Tree& pkd, parlay::sequence<Point> const& WP,
                        int const rounds, double const insert_ratio,
-                       double const max_ratio = 1) {
+                       int const remain_divide_ratio = 2) {
   using Points = typename Tree::Points;
   using Box = typename Tree::Box;
   Points wp = Points::uninitialized(WP.size());
-  size_t n = static_cast<size_t>(max_ratio * wp.size());
+  size_t n = wp.size();
   size_t step = static_cast<size_t>(insert_ratio * n);
   size_t slice_num = n / step;
   parlay::sequence<parlay::sequence<double>> time_table(
@@ -470,9 +470,9 @@ void BatchInsertByStep(Tree& pkd, parlay::sequence<Point> const& WP,
 
   // WARN: restore status
   prepare_build();
-  incre_build(slice_num / 2);
-  auto original_box = Tree::GetBox(wp.cut(0, n / 2));
-  auto tree_box = pkd.GetRootBox();
+  incre_build(slice_num / remain_divide_ratio);
+  // auto original_box = Tree::GetBox(wp.cut(0, n / remain_divide_ratio));
+  // auto tree_box = pkd.GetRootBox();
   // std::cout << original_box.first << ' ' << original_box.second << std::endl;
   // std::cout << tree_box.first << ' ' << tree_box.second << std::endl;
   // auto root = pkd.cpam_aug_map_;
@@ -484,11 +484,11 @@ void BatchInsertByStep(Tree& pkd, parlay::sequence<Point> const& WP,
 template <typename Point, typename Tree, bool kInsert>
 void BatchDeleteByStep(Tree& pkd, parlay::sequence<Point> const& WP,
                        int const rounds, double const insert_ratio,
-                       double const max_ratio = 1) {
+                       size_t const remain_divide_ratio = 2) {
   using Points = typename Tree::Points;
   using Box = typename Tree::Box;
   Points wp = Points::uninitialized(WP.size());
-  size_t n = static_cast<size_t>(max_ratio * wp.size());
+  size_t n = wp.size();
   size_t step = static_cast<size_t>(insert_ratio * n);
   size_t slice_num = n / step;
   // std::cout << "n: " << n << " step: " << step << " slice_num: " << slice_num
@@ -577,7 +577,8 @@ void BatchDeleteByStep(Tree& pkd, parlay::sequence<Point> const& WP,
   // WARN: restore status
   pkd.DeleteTree();
   build_tree_by_type();
-  incre_delete(slice_num / 2, wp.cut(slice_num / 2 * step, n));
+  incre_delete(slice_num / remain_divide_ratio,
+               wp.cut(slice_num / remain_divide_ratio * step, n));
 
   return;
 }
@@ -1474,6 +1475,7 @@ class Wrapper {
         //   tree.Compress2Multi();
         // }
 
+        // BatchInsertByStep<Point, Tree, true>(tree, wp, kRounds, 0.000000001);
         if (kQueryType & (1 << 0)) {  // NOTE: KNN
           size_t batch_size = static_cast<size_t>(wp.size() * kBatchQueryRatio);
 
