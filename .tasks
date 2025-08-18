@@ -41,6 +41,11 @@ command=make -C build kd_ccp && ./build/kd_ccp -p benchmark/ss_varden_bigint/100
 cwd=${VIM_ROOT}
 output=quickfix
 
+[p_test_build]
+command=make -C build p_ccp && ./build/p_ccp -p benchmark/uniform_bigint/1000000_3/1.in -d 3 -i 0 -t 0 -q 1 -T 2 -l 1 -s 0 -r 2 
+cwd=${VIM_ROOT}
+output=quickfix
+
 [p_ccp_build]
 command=make -C build p_ccp && ./build/p_ccp -p benchmark/ss_varden_bigint/1000000_2/1.in -d 2 -i 0 -t 0 -q 0 -T 2 -l 1 -s 0 -r 2 
 cwd=${VIM_ROOT}

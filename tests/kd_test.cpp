@@ -29,7 +29,7 @@ int main(int argc, char* argv[]) {
   };
 
   Wrapper::ApplyOrthogonal(tree_type, dims, split_type, params,
-                           Wrapper::default_test_func);
+                           DefaultTestFunc);
 
   return 0;
 }
