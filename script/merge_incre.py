@@ -2,6 +2,7 @@
 import re
 import sys
 import csv
+import os
 import io
 from typing import Dict, List, Tuple, Optional
 from dataclasses import dataclass, field
@@ -11,9 +12,8 @@ incre_ratios = [1, 0.1, 0.01, 0.001, 0.0001]
 solver = ""
 ratio_map = {}
 input_path = sys.argv[1]
-store_prefix = "data/"
-type = "incre_insert" if input_path.find(
-    "incre_insert") != -1 else "incre_delete"
+store_path = "data/" + os.path.splitext(input_path)[0] + ".csv"
+type = ""
 
 
 def to_float(match):
@@ -41,7 +41,7 @@ def parse_insert_time(text):
         to_float(avg_num),
         to_float(min_num),
         to_float(max_num),
-        to_float(tot_num)
+        to_float(tot_num),
     ]
 
 
@@ -54,21 +54,26 @@ def parse_knn_time(text):
         return [0.0, 0.0, 0.0] * 4
 
     # print(text)
-    pattern = r'(\S+)\s+knn time:\s*((?:[\d\.]+\s*)+)'
+    pattern = r"(\S+)\s+knn time:\s*((?:[\d\.]+\s*)+)"
     result = {}
-    query_type_order = ['in-dis-skewed', 'out-dis-skewed',
-                        'in-dis-uniform', 'out-dis-uniform']
+    query_type_order = [
+        "in-dis-skewed",
+        "out-dis-skewed",
+        "in-dis-uniform",
+        "out-dis-uniform",
+    ]
     for line in text:
         match = re.search(pattern, line)
         if match:
             label = match.group(1)
             numbers_str = match.group(2)
-            numbers = [float(num)
-                       for num in re.findall(r'[\d\.]+', numbers_str)]
-            result[label] = [numbers[i]
-                             for i in range(0, len(numbers), 6)] if numbers else [0.0, 0.0, 0.0]
-    sorted_res = {key: result[key]
-                  for key in query_type_order if key in result}
+            numbers = [float(num) for num in re.findall(r"[\d\.]+", numbers_str)]
+            result[label] = (
+                [numbers[i] for i in range(0, len(numbers), 6)]
+                if numbers
+                else [0.0, 0.0, 0.0]
+            )
+    sorted_res = {key: result[key] for key in query_type_order if key in result}
     knn_res = list(sorted_res.values())
     flattened = [item for sublist in knn_res for item in sublist]
     return flattened
@@ -82,6 +87,7 @@ def combine(P, csv_writer):
     solver = ""
     benchmark = ""
     index = 0
+    all_data = []
     while index < len(lines):
         lin_sep = " ".join(lines[index].split())
         lin_sep = lin_sep.split(" ")
@@ -92,7 +98,7 @@ def combine(P, csv_writer):
             continue
 
         # Tree information
-        if lin_sep[0] == 'Tree:':
+        if lin_sep[0] == "Tree:":
             if lin_sep[1] == "KdTree;":
                 solver = "KdTree"
             elif lin_sep[1] == "OrthTree;":
@@ -113,32 +119,58 @@ def combine(P, csv_writer):
         # Query information
         match lin_sep[0]:
             case "#":
-                type = lin_sep[1]
+                # type = lin_sep[1]
                 index += 1
             case "##":
                 data = parse_insert_time(lines[index + 1])
                 ratio = float(lin_sep[1])
-                if (lin_sep[1] == "1"):
+                if lin_sep[1] == "1":
                     data = data + parse_knn_time([""])
                     index += 2
                 else:
-                    data = data + parse_knn_time(lines[index+2:index+2+4])
+                    data = data + parse_knn_time(lines[index + 2 : index + 2 + 4])
                     index += 6
                 ratio_map[ratio] = data
-                csv_writer.writerow(
-                    [benchmark, solver, ratio] + data
-                )
+                all_data = all_data + [[benchmark, solver, ratio] + data]
+    return all_data
+
+
+def post_processing(data):
+    # desired order for x[0]
+    bench_order = ["Uniform_by_x", "Varden", "Uniform"]
+    tree_order = [
+        "PTree",
+        "KdTree",
+        "OrthTree",
+        "CPAM",
+        "MVZD",
+    ]  # desired order for x[1]
+
+    sorted_lst = sorted(
+        data,
+        key=lambda x: (
+            bench_order.index(x[0]),
+            tree_order.index(x[1]),
+            -x[2],
+        ),
+    )
+    return sorted_lst
 
 
 def csvSetup():
-    csv_file_pointer = open(store_prefix + type + ".csv", "w", newline="")
+    csv_file_pointer = open(store_path, "w", newline="")
     print(csv_file_pointer.name)
     csv_file_pointer.truncate()
     csv_writer = csv.writer(csv_file_pointer)
-    csv_writer.writerow(['benchmark', 'solver', 'ratio', 'median',
-                         'avg', 'min', 'max', 'tot'] + ['k=1', 'k=2', 'k=3']*3)
+    csv_writer.writerow(
+        ["benchmark", "solver", "ratio", "median", "avg", "min", "max", "tot"]
+        + ["k=1", "k=2", "k=3"] * 4
+    )
     return csv_writer, csv_file_pointer
 
 
 csv_writer, csv_file_pointer = csvSetup()
-combine(input_path, csv_writer)
+data = combine(input_path, csv_writer)
+# print(data)
+data = post_processing(data)
+csv_writer.writerows(data)
