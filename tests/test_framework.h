@@ -826,17 +826,17 @@ void RangeQuery(parlay::sequence<Point> const& wp, Tree& pkd, int const& rounds,
 
 //* test range count for fix rectangle
 template <typename Point, typename Tree>
-void rangeCountFix(parlay::sequence<Point> const& WP, Tree& pkd,
-                   Typename* kdknn, int const& rounds, int rec_type,
-                   int rec_num, int DIM) {
+void rangeCountFix(Tree& pkd, Typename* kdknn, int const& rounds, int rec_type,
+                   int rec_num, int DIM, auto const& query_box_seq,
+                   auto max_size) {
   // using Tree = Tree;
   // using Points = typename Tree::Points;
   // using Box = typename Tree::Box;
 
   // int n = WP.size();
 
-  auto [query_box_seq, max_size] =
-      gen_rectangles<Point, Tree, false>(rec_num, rec_type, WP, DIM);
+  // auto [query_box_seq, max_size] =
+  //     gen_rectangles<Point, Tree, false>(rec_num, rec_type, WP, DIM);
   parlay::sequence<size_t> vis_leaf(rec_num), vis_inter(rec_num),
       gen_box(rec_num), full_box(rec_num), skip_box(rec_num);
 
@@ -913,16 +913,11 @@ void rangeCountFix(parlay::sequence<Point> const& WP, Tree& pkd,
 //
 //* test range query for fix rectangle
 template <typename Point, typename Tree>
-void rangeQueryFix(parlay::sequence<Point> const& WP, Tree& pkd,
-                   Typename* kdknn, int const& rounds,
+void rangeQueryFix(Tree& pkd, Typename* kdknn, int const& rounds,
                    parlay::sequence<Point>& Out, int rec_type, int rec_num,
-                   int DIM) {
-  // using Tree = Tree;
-  // using Points = typename Tree::Points;
-  // using Box = typename Tree::Box;
-
-  auto [query_box_seq, max_size] =
-      gen_rectangles<Point, Tree, false>(rec_num, rec_type, WP, DIM);
+                   int DIM, auto const& query_box_seq, auto max_size) {
+  // auto [query_box_seq, max_size] =
+  //     gen_rectangles<Point, Tree, false>(rec_num, rec_type, WP, DIM);
   parlay::sequence<size_t> vis_leaf(rec_num), vis_inter(rec_num),
       gen_box(rec_num), full_box(rec_num), skip_box(rec_num);
   auto [offset, tot_size] = parlay::scan(
@@ -1121,7 +1116,7 @@ static auto constexpr DefaultTestFunc = []<class TreeDesc, typename Point>(
   Tree tree;
   constexpr bool kTestTime = true;
 
-  BuildTree<Point, Tree, kTestTime, 2>(wp, kRounds, tree);
+  // BuildTree<Point, Tree, kTestTime, 2>(wp, kRounds, tree);
 
   // NOTE: batch insert
   if (kTag & (1 << 0)) {
@@ -1171,7 +1166,23 @@ static auto constexpr DefaultTestFunc = []<class TreeDesc, typename Point>(
     delete[] kdknn;
   };
 
-  auto incre_update_test_bundle = [&](Points const& tree_points) {
+  auto generate_query_box = [&](int rec_num, int rec_total_type,
+                                Points const& wp) {
+    // NOTE: generate rectangles for the first half of the points
+    parlay::sequence<parlay::sequence<std::pair<typename Tree::Box, size_t>>>
+        query_box_seq(rec_total_type);
+    parlay::sequence<size_t> query_max_size(rec_total_type);
+    for (int i = 0; i < rec_total_type; i++) {
+      auto [query_box, max_size] =
+          gen_rectangles<Point, Tree, false>(rec_num, i, wp, kDim);
+      query_box_seq[i] = query_box;
+      query_max_size[i] = max_size;
+    }
+    return std::make_pair(query_box_seq, query_max_size);
+  };
+
+  auto incre_update_test_bundle = [&](auto const& query_box_seq,
+                                      auto const& query_max_size) {
     // NOTE: knn query
     {
       int k[3] = {1, 10, 100};
@@ -1213,13 +1224,13 @@ static auto constexpr DefaultTestFunc = []<class TreeDesc, typename Point>(
 
     // NOTE: range count
     {
-      int recNum = kRangeQueryNum;
-      kdknn = new Typename[recNum];
+      int rec_num = query_box_seq[0].size();
+      kdknn = new Typename[rec_num];
 
-      // std::cout << std::endl;
+      std::cout << "range count time: ";
       for (int i = 0; i < 3; i++) {
-        rangeCountFix<Point>(tree_points, tree, kdknn, kRounds, i, recNum,
-                             kDim);
+        rangeCountFix<Point>(tree, kdknn, kRounds, i, rec_num, kDim,
+                             query_box_seq[i], query_max_size[i]);
       }
       delete[] kdknn;
       puts("");
@@ -1227,13 +1238,14 @@ static auto constexpr DefaultTestFunc = []<class TreeDesc, typename Point>(
 
     // NOTE: range query
     {
-      int recNum = kRangeQueryNum;
-      kdknn = new Typename[recNum];
+      int rec_num = query_box_seq[0].size();
+      kdknn = new Typename[rec_num];
 
+      std::cout << "range query time: ";
       for (int i = 0; i < 3; i++) {
         Points Out;
-        rangeQueryFix<Point>(tree_points, tree, kdknn, kRounds, Out, i, recNum,
-                             kDim);
+        rangeQueryFix<Point>(tree, kdknn, kRounds, Out, i, rec_num, kDim,
+                             query_box_seq[i], query_max_size[i]);
       }
       delete[] kdknn;
       puts("");
@@ -1242,26 +1254,35 @@ static auto constexpr DefaultTestFunc = []<class TreeDesc, typename Point>(
 
   // NOTE: batch insert by step
   if (kTag & (1 << 3)) {
+    puts("");
     BuildTree<Point, Tree, kTestTime, 3>(wp, kRounds, tree, 2);
-    incre_update_test_bundle(wp.subseq(0, wp.size() / 2));
+
+    auto [query_box_seq, query_max_size] =
+        generate_query_box(kRangeQueryNum, 3, wp.subseq(0, wp.size() / 2));
+
+    incre_update_test_bundle(query_box_seq, query_max_size);
 
     parlay::sequence<double> const ratios = {0.1, 0.01, 0.001, 0.0001};
     for (auto rat : ratios) {
       BatchInsertByStep<Point, Tree, true>(tree, wp, kRounds, rat);
-      incre_update_test_bundle(wp.subseq(0, wp.size() / 2));
+      incre_update_test_bundle(query_box_seq, query_max_size);
     }
   }
 
   // NOTE: batch delete by step
   if (kTag & (1 << 4)) {
+    puts("");
     BuildTree<Point, Tree, kTestTime, 3>(wp, kRounds, tree, 2);
-    incre_update_test_bundle(wp.subseq(0, wp.size() / 2));
+    auto [query_box_seq, query_max_size] =
+        generate_query_box(kRangeQueryNum, 3, wp.subseq(0, wp.size() / 2));
+    incre_update_test_bundle(query_box_seq, query_max_size);
 
     parlay::sequence<double> const ratios = {0.1, 0.01, 0.001, 0.0001};
     // parlay::sequence<double> const ratios = {0.001};
     for (auto rat : ratios) {
       BatchDeleteByStep<Point, Tree, true>(tree, wp, kRounds, rat);
-      incre_update_test_bundle(wp.subseq(0, wp.size() / 2));
+      incre_update_test_bundle(query_box_seq, query_max_size);
+      // incre_update_test_bundle(wp.subseq(0, wp.size() / 2));
     }
   }
 
@@ -1285,13 +1306,17 @@ static auto constexpr DefaultTestFunc = []<class TreeDesc, typename Point>(
   }
 
   if (kQueryType & (1 << 1)) {  // NOTE: range count
+    auto [query_box_seq, query_max_size] =
+        generate_query_box(kRangeQueryNum, 3, wp);
+
     if (!kSummary) {
       int recNum = kRangeQueryNum;
       kdknn = new Typename[recNum];
 
       // std::cout << std::endl;
       for (int i = 0; i < 3; i++) {
-        rangeCountFix<Point>(wp, tree, kdknn, kRounds, i, recNum, kDim);
+        rangeCountFix<Point>(tree, kdknn, kRounds, i, recNum, kDim,
+                             query_box_seq[i], query_max_size[i]);
       }
 
       delete[] kdknn;
@@ -1300,19 +1325,26 @@ static auto constexpr DefaultTestFunc = []<class TreeDesc, typename Point>(
 
   if (kQueryType & (1 << 2)) {  // NOTE: range query
     if (kSummary == 0) {
+      auto [query_box_seq, query_max_size] =
+          generate_query_box(kRangeQueryNum, 3, wp);
+
       int recNum = kRangeQueryNum;
       kdknn = new Typename[recNum];
 
       for (int i = 0; i < 3; i++) {
         Points Out;
-        rangeQueryFix<Point>(wp, tree, kdknn, kRounds, Out, i, recNum, kDim);
+        rangeQueryFix<Point>(tree, kdknn, kRounds, Out, i, recNum, kDim,
+                             query_box_seq[i], query_max_size[i]);
       }
       delete[] kdknn;
     } else if (kSummary == 1) {  // NOTE: for kSummary
+      auto [query_box_seq, query_max_size] =
+          generate_query_box(kSummaryRangeQueryNum, 3, wp);
+
       kdknn = new Typename[kSummaryRangeQueryNum];
       Points Out;
-      rangeQueryFix<Point>(wp, tree, kdknn, kRounds, Out, 2,
-                           kSummaryRangeQueryNum, kDim);
+      rangeQueryFix<Point>(tree, kdknn, kRounds, Out, 2, kSummaryRangeQueryNum,
+                           kDim, query_box_seq[2], query_max_size[2]);
       delete[] kdknn;
     }
   }
