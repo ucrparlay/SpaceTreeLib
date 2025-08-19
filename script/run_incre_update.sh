@@ -37,19 +37,18 @@ for dim in "${Dims[@]}"; do
                 splits=(0)
             fi
 
-            if [[ ${query_type} -eq 0 ]]; then
-                tag=$((2#1000)) # 1110000
-                dest="logs/incre_insert_${tree}_${dim}.log"
-            else
-                tag=$((2#10000)) # 1110000
-                dest="logs/incre_delete_${tree}_${dim}.log"
-            fi
-
-            : >"${dest}"
-            echo ">>>${dest}"
-            exe="../build/${solver}"
-
             for split in "${splits[@]}"; do
+                if [[ ${query_type} -eq 0 ]]; then
+                    tag=$((2#1000)) # 1110000
+                    dest="logs/incre_insert_${dim}_${tree}_${split}.log"
+                else
+                    tag=$((2#10000)) # 1110000
+                    dest="logs/incre_delete_${dim}_${tree}_${split}.log"
+                fi
+                : >"${dest}"
+                echo ">>>${dest}"
+                exe="../build/${solver}"
+
                 for path in "${paths[@]}"; do
                     numactl -i all ${exe} -p ${path} -r ${round} -k ${k} -i ${read_file} -s ${summary} -t ${tag} -d ${dim} -q ${queryType} -T ${tree} -l ${split} 2>&1 | tee -a "${dest}"
                 done
