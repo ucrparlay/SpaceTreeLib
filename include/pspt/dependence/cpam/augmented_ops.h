@@ -354,6 +354,15 @@ struct augmented_ops : Map {
 
     if (!b) return;
 
+    if (bq.size() &&
+        BT::P2BMinDistanceSquare(q, Map::aug_val_ref(b)) > bq.top_value() &&
+        bq.full()) {
+      logger.skip_box_num++;
+      return;
+    }
+    //|| 1.in 3.23852 -1 -1 0.632097 21.9842 242.518 0 242.518
+    // 221.534 1.71764 41.0132 304.856 0 304.856 264.842 8.85462 94.1879 381.589
+    // 0 381.589 288.401
     if (Map::is_compressed(b)) {  // leaf node
       logger.vis_leaf_num++;
       auto f_filter = [&](ET& et) {
