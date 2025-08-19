@@ -5,12 +5,12 @@ set -o xtrace
 
 Node=(1000000000)
 Tree=(0 1 2)
-Dims=(3)
+Dims=(2)
 Type=(0 1)
 # paths=("/data/zmen002/kdtree/ss_varden_bigint/1000000000_2/1.in" "/data/zmen002/kdtree/uniform_bigint/1000000000_2/2_sort_by_0.in" "/data/zmen002/kdtree/uniform_bigint/1000000000_2/2.in")
 
 k=10
-insNum=1
+insNum=0
 summary=0
 read_file=0
 # queryType=$((2#0)) # 1110000
@@ -20,24 +20,8 @@ resFile=""
 make -C ../build/ kd_test p_test baselines
 
 for dim in "${Dims[@]}"; do
-    if [[ ${dim} -eq 2 ]]; then
-        paths=("/data/zmen002/kdtree/ss_varden/1000000000_2/1.in" "/data/zmen002/kdtree/uniform/1000000000_2/2_sort_by_0.in" "/data/zmen002/kdtree/uniform/1000000000_2/2.in")
-    elif [[ ${dim} -eq 3 ]]; then
-        paths=("/data/zmen002/kdtree/ss_varden/1000000000_3/1.in" "/data/zmen002/kdtree/uniform/1000000000_3/2_sort_by_0.in" "/data/zmen002/kdtree/uniform/1000000000_3/2.in")
-    fi
-
+    paths=("/data/zmen002/kdtree/ss_varden_bigint/1000000000_$((dim))/1.in" "/data/zmen002/kdtree/uniform_bigint/1000000000_${dim}/2_sort_by_0.in" "/data/zmen002/kdtree/uniform_bigint/1000000000_${dim}/2.in")
     for query_type in "${Type[@]}"; do
-
-        if [[ ${query_type} -eq 0 ]]; then
-            tag=$((2#1000)) # 1110000
-            dest="incre_insert_${dim}.log"
-        else
-            tag=$((2#10000)) # 1110000
-            dest="incre_delete_${dim}.log"
-        fi
-        : >"${dest}"
-        echo ">>>${dest}"
-
         for tree in "${Tree[@]}"; do
             if [[ ${tree} -eq 0 ]]; then
                 solver="kd_test"
@@ -48,7 +32,21 @@ for dim in "${Dims[@]}"; do
             elif [[ ${tree} -eq 2 ]]; then
                 solver="p_test"
                 splits=(1)
+            else
+                solver="baselines"
+                splits=(0)
             fi
+
+            if [[ ${query_type} -eq 0 ]]; then
+                tag=$((2#1000)) # 1110000
+                dest="logs/incre_insert_${tree}_${dim}.log"
+            else
+                tag=$((2#10000)) # 1110000
+                dest="logs/incre_delete_${tree}_${dim}.log"
+            fi
+
+            : >"${dest}"
+            echo ">>>${dest}"
             exe="../build/${solver}"
 
             for split in "${splits[@]}"; do
