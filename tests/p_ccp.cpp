@@ -197,9 +197,9 @@ void runPTreeParallel(auto const& wp, auto const& wi, Typename* kdknn,
     for (auto rat : ratios) {
       BatchDeleteByStep<Point, Tree, true>(tree, wp, rounds, rat);
     }
-    knn_checker(wp.subseq(wp.size() / 2, wp.size()), wi,
+    knn_checker(wp.subseq(0, wp.size() / 2), wi,
                 wp.subseq(0, kCCPBatchQuerySize));
-    knn_checker(wp.subseq(wp.size() / 2, wp.size()), wi,
+    knn_checker(wp.subseq(0, wp.size() / 2), wi,
                 wp.subseq(0, kCCPBatchQuerySize));
   }
 
