@@ -129,7 +129,7 @@ size_t recurse_box(parlay::slice<Point*, Point*> In, auto& box_seq, int DIM,
   }
 }
 
-template <typename Point, typename Tree, bool SavePoint>
+template <typename Point, typename Tree, bool SavePoint, bool FixSize = false>
 auto gen_rectangles(int rec_num, int const type,
                     parlay::sequence<Point> const& WP, int DIM) {
   using Points = typename Tree::Points;
@@ -140,28 +140,39 @@ auto gen_rectangles(int rec_num, int const type,
 
   size_t n = WP.size();
   std::pair<size_t, size_t> range;
-  if (type == 0) {  //* small bracket
-    range.first = 1;
-    range.second = static_cast<size_t>(std::sqrt(std::sqrt(1.0 * n)));
-  } else if (type == 1) {  //* medium bracket
-    range.first = static_cast<size_t>(std::sqrt(std::sqrt(1.0 * n)));
-    range.second = static_cast<size_t>(std::sqrt(1.0 * n));
-  } else if (type == 2) {  //* large bracket
-    range.first = static_cast<size_t>(std::sqrt(1.0 * n));
-
-    // NOTE: special handle for large dimension datasets
-
-    // if (n >= 1'000'000'000)
-    //   range.second = n / 1000 - 1;
-    // else if (n >= 100'000'000)
-    //   range.second = n / 100 - 1;
-    // else if (n >= 10'000'000)
-    //   range.second = n / 10 - 1;
-    if (n > 1'000'000) {
-      range.second = 1'000'000;
-    }  // ensure we can generate 50k rect.
-    else {
-      range.second = n - 1;
+  if constexpr (FixSize) {
+    if (type == 0) {  //* small bracket
+      range.first = 1;
+      // range.second = static_cast<size_t>(std::sqrt(std::sqrt(1.0 * n)));
+      range.second = 100;
+    } else if (type == 1) {  //* medium bracket
+      range.first = 100;
+      // range.second = static_cast<size_t>(std::sqrt(1.0 * n));
+      range.second = 10000;
+    } else if (type == 2) {  //* large bracket
+      range.first = 10000;
+      if (n > 1'000'000) {
+        range.second = 1'000'000;
+      }  // ensure we can generate 50k rect.
+      else {
+        range.second = n - 1;
+      }
+    }
+  } else {
+    if (type == 0) {  //* small bracket
+      range.first = 1;
+      range.second = static_cast<size_t>(std::sqrt(std::sqrt(1.0 * n)));
+    } else if (type == 1) {  //* medium bracket
+      range.second = static_cast<size_t>(std::sqrt(std::sqrt(1.0 * n)));
+      range.second = static_cast<size_t>(std::sqrt(1.0 * n));
+    } else if (type == 2) {  //* large bracket
+      range.second = static_cast<size_t>(std::sqrt(1.0 * n));
+      if (n > 1'000'000) {
+        range.second = 1'000'000;
+      }  // ensure we can generate 50k rect.
+      else {
+        range.second = n - 1;
+      }
     }
   }
   BoxSeq box_seq(rec_num);
@@ -1174,7 +1185,7 @@ static auto constexpr DefaultTestFunc = []<class TreeDesc, typename Point>(
     parlay::sequence<size_t> query_max_size(rec_total_type);
     for (int i = 0; i < rec_total_type; i++) {
       auto [query_box, max_size] =
-          gen_rectangles<Point, Tree, false>(rec_num, i, wp, kDim);
+          gen_rectangles<Point, Tree, false, true>(rec_num, i, wp, kDim);
       query_box_seq[i] = query_box;
       query_max_size[i] = max_size;
     }
