@@ -158,6 +158,7 @@ if(CGAL)
 	add_executable(boost_rtree ${PROJECT_SOURCE_DIR}/tests/boost_rtree.cpp)
 	target_link_libraries(boost_rtree PUBLIC PSPT ${Boost_LIBRARIES})
 	target_include_directories(boost_rtree PUBLIC ${PROJECT_SOURCE_DIR}/include ${Boost_INCLUDE_DIRS})
+	target_compile_options(boost_rtree PRIVATE -DBOOST_MATH_DISABLE_FLOAT128 -DBOOST_CSTDFLOAT_NO_LIBQUADMATH_SUPPORT)
 
 	message(STATUS "\n\n---------------------------- END CGAL -----------------------------")
 endif()

@@ -1,6 +1,7 @@
 // NOTE: R tree references
 // https://www.boost.org/doc/libs/1_86_0/libs/geometry/doc/html/geometry/spatial_indexes/introduction.html
 #include <boost/geometry.hpp>
+#include <boost/geometry/index/parameters.hpp>
 #include <boost/geometry/index/rtree.hpp>
 
 #include "test_framework.h"
@@ -102,7 +103,7 @@ int main(int argc, char* argv[]) {
     timer.start();
     // bgi::rtree<RPoint, bgi::rstar<kRTreeMaxEle>> tree(_points.begin(),
     //                                                   _points.end());
-    bgi::rtree<RPoint, bgi::rstar<kRTreeMaxEle>> tree;
+    bgi::rtree<RPoint, bgi::quadratic<kRTreeMaxEle>> tree;
     // timer.stop();
     // std::cout << timer.total_time() << " " << -1 << " " << std::flush;
 
@@ -110,6 +111,7 @@ int main(int argc, char* argv[]) {
       tree.insert(_points[i]);
     }
 
+    std::cout << "incre insert: " << timer.total_time() << " " << std::flush;
     // if (kTag & (1 << 0)) {  // insert
     //   auto rtree_insert = [&](auto r_tree, double r) {
     //     timer.reset();
@@ -205,7 +207,7 @@ int main(int argc, char* argv[]) {
       auto run_rtree_range_query = [&](int type) {
         int queryNum = kSummary ? kSummaryRangeQueryNum : kRangeQueryNum;
         auto [queryBox, maxSize] =
-            gen_rectangles<Point, Tree, false>(queryNum, type, wp, kDim);
+            gen_rectangles<Point, Tree, false, true>(queryNum, type, wp, kDim);
         // using ref_t = std::reference_wrapper<Point_d>;
         // std::vector<ref_t> out_ref( queryNum * maxSize, std::ref( _points[0]
         // )
