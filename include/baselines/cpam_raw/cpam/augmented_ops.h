@@ -274,6 +274,13 @@ struct augmented_ops : Map {
 
     if (!b) return;
 
+    if (bq.size() &&
+        BT::P2BMinDistanceSquare(q, Map::aug_val(b).first) > bq.top_value() &&
+        bq.full()) {
+      logger.skip_box_num++;
+      return;
+    }
+
     if (Map::is_compressed(b)) {  // leaf node
       logger.vis_leaf_num++;
       auto f_filter = [&](auto& cur_pt) {
@@ -386,6 +393,26 @@ struct augmented_ops : Map {
     }
   }
 
+  template <typename R>
+  static size_t flatten(node* b, R out) {
+    if (!b) return 0;
+    if (Map::is_compressed(b)) {
+      size_t sz = 0;
+      auto copy_f = [&](auto const& et) { out[sz++] = std::get<1>(et); };
+      Map::template iterate_seq<decltype(copy_f)>(b, copy_f);
+      return sz;
+    }
+    auto rb = Map::cast_to_regular(b);
+    auto ls = Map::size(rb->lc);
+
+    utils::fork_no_result(
+        rb->s >= 1024, [&]() { flatten(rb->lc, out.cut(0, ls)); },
+        [&]() { flatten(rb->rc, out.cut(ls + 1, out.size())); });
+    out[ls] = Map::get_val(rb);
+
+    return Map::size(rb);
+  }
+
   template <class F, typename Out>
   static void range_report_filter2(node* b, F const& f, int64_t& cnt, Out& out,
                                    size_t granularity = kNodeLimit) {
@@ -393,6 +420,10 @@ struct augmented_ops : Map {
     auto cur_aug = aug_val(b);
     auto flag = f(cur_aug.first);
     if (flag < 0) return;  // exclude
+    if (flag == 1) {
+      cnt += flatten(b, out.cut(cnt, cnt + Map::size(b)));
+      return;
+    }
 
     if (Map::is_compressed(b)) {  // leaf node
       if (flag == 1) {
