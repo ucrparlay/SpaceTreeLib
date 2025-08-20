@@ -242,10 +242,9 @@ void BuildTree(parlay::sequence<Point> const& WP, int const& rounds, Tree& pkd,
     } else if (kPrint == 3) {  // for incre insert directly
       puts("# Insert");
       std::cout << "## " << 1 << std::endl;
-      std::cout << "median: " << aveBuild << " "
-                << "-> min: " << aveBuild << "-> max: " << aveBuild
-                << "-> tot: " << aveBuild << "-> avg: " << aveBuild
-                << std::endl;
+      std::cout << "median: (1, " << aveBuild << ")-> min: (1, " << aveBuild
+                << ")-> max: (1, " << aveBuild << ")-> tot: " << aveBuild
+                << "-> avg: " << aveBuild << std::endl;
     }
 
   } else {
