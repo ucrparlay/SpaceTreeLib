@@ -252,6 +252,15 @@ struct augmented_ops : Map {
 
     if (!b) return 0;
 
+    auto const& node_box = Map::aug_val_ref(b);
+    if (!BT::BoxIntersectBox(node_box, query_box)) {
+      logger.skip_box_num++;
+      return 0;
+    } else if (BT::WithinBox(node_box, query_box)) {
+      logger.full_box_num++;
+      return Map::size(b);  // fully contained
+    }
+
     if (Map::is_compressed(b)) {  // leaf node
       logger.vis_leaf_num++;
       size_t ret = 0;
@@ -266,15 +275,6 @@ struct augmented_ops : Map {
 
     logger.vis_interior_num++;
     auto rb = Map::cast_to_regular(b);
-    auto const& node_box = rb->entry.second;
-
-    if (!BT::BoxIntersectBox(node_box, query_box)) {
-      logger.skip_box_num++;
-      return 0;
-    } else if (BT::WithinBox(node_box, query_box)) {
-      logger.full_box_num++;
-      return rb->s;
-    }
 
     auto l = range_count_filter2<BaseTree>(rb->lc, query_box, logger);
     auto r = range_count_filter2<BaseTree>(rb->rc, query_box, logger);
@@ -360,9 +360,7 @@ struct augmented_ops : Map {
       logger.skip_box_num++;
       return;
     }
-    //|| 1.in 3.23852 -1 -1 0.632097 21.9842 242.518 0 242.518
-    // 221.534 1.71764 41.0132 304.856 0 304.856 264.842 8.85462 94.1879 381.589
-    // 0 381.589 288.401
+
     if (Map::is_compressed(b)) {  // leaf node
       logger.vis_leaf_num++;
       auto f_filter = [&](ET& et) {
@@ -526,6 +524,17 @@ struct augmented_ops : Map {
     using BT = BaseTree;
 
     if (!b) return;
+
+    auto const& node_box = Map::aug_val_ref(b);
+    if (!BT::BoxIntersectBox(node_box, query_box)) {
+      logger.skip_box_num++;
+      return;
+    } else if (BT::WithinBox(node_box, query_box)) {
+      logger.full_box_num++;
+      cnt += flatten(b, out.cut(cnt, cnt + Map::size(b)));
+      return;
+    }
+
     if (Map::is_compressed(b)) {  // leaf node
       logger.vis_leaf_num++;
       auto f_filter = [&](auto const& et) {
@@ -539,15 +548,6 @@ struct augmented_ops : Map {
 
     logger.vis_interior_num++;
     auto rb = Map::cast_to_regular(b);
-    auto const& node_box = rb->entry.second;
-    if (!BT::BoxIntersectBox(node_box, query_box)) {
-      logger.skip_box_num++;
-      return;
-    } else if (BT::WithinBox(node_box, query_box)) {
-      logger.full_box_num++;
-      cnt += flatten(b, out.cut(cnt, cnt + rb->s));
-      return;
-    }
 
     if (BT::WithinBox(rb->entry.first, query_box)) {
       out[cnt++] = rb->entry.first;
