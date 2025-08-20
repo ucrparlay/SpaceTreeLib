@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import re
+import subprocess
 import sys
 import csv
 import os
@@ -11,8 +12,9 @@ from pathlib import Path
 incre_ratios = [1, 0.1, 0.01, 0.001, 0.0001]
 solver = ""
 ratio_map = {}
-input_path = sys.argv[1]
-store_path = "data/" + os.path.splitext(input_path)[0] + ".csv"
+input_type = sys.argv[1]
+input_path = "logs/" + input_type + ".log"
+store_path = "data/" + input_type + ".csv"
 type = ""
 
 
@@ -79,6 +81,35 @@ def parse_knn_time(text):
     return flattened
 
 
+def parse_range_time(text):
+    result = []
+
+    for line in text:
+        # Skip empty lines or lines that don't start with "range"
+        if not line.strip() or not line.startswith("range"):
+            continue
+
+        # Split the line into parts and extract numbers
+        parts = line.split()
+
+        # Remove the "range" prefix and get the numbers
+        numbers = []
+        for part in parts[2:]:  # Skip "range" and the type (count/query)
+            try:
+                # Try to convert to float
+                numbers.append(float(part))
+            except ValueError:
+                continue
+
+        # Extract 1st, 7th, and 13th elements (0-indexed: 0, 6, 12)
+        if len(numbers) >= 13:
+            extracted = [numbers[0], numbers[6], numbers[12]]
+            result.append(extracted)
+
+    flattened = [item for sublist in result for item in sublist]
+    return flattened
+
+
 def combine(P, csv_writer):
     lines = open(P, "r").readlines()
     if len(lines) == 0:
@@ -124,12 +155,13 @@ def combine(P, csv_writer):
             case "##":
                 data = parse_insert_time(lines[index + 1])
                 ratio = float(lin_sep[1])
-                if lin_sep[1] == "1":
-                    data = data + parse_knn_time([""])
-                    index += 2
-                else:
-                    data = data + parse_knn_time(lines[index + 2 : index + 2 + 4])
-                    index += 6
+
+                data = data + parse_knn_time(lines[index + 2 : index + 2 + 4])
+                index += 6
+
+                data = data + parse_range_time(lines[index : index + 2])
+                index += 2
+
                 ratio_map[ratio] = data
                 all_data = all_data + [[benchmark, solver, ratio] + data]
     return all_data
@@ -165,9 +197,15 @@ def csvSetup():
     csv_writer.writerow(
         ["benchmark", "solver", "ratio", "median", "avg", "min", "max", "tot"]
         + ["k=1", "k=2", "k=3"] * 4
+        + ["S", "M", "L"] * 2
     )
     return csv_writer, csv_file_pointer
 
+
+subprocess.run(
+    f"cat $(ls logs/*{input_type}* | grep -v {input_type}.log) > logs/{input_type}.log",
+    shell=True,
+)
 
 csv_writer, csv_file_pointer = csvSetup()
 data = combine(input_path, csv_writer)
