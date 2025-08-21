@@ -13,8 +13,8 @@ incre_ratios = [1, 0.1, 0.01, 0.001, 0.0001]
 solver = ""
 ratio_map = {}
 input_type = sys.argv[1]
-input_path = "logs/" + input_type + ".log"
-store_path = "data/" + input_type + ".csv"
+input_path = "logs/incre_update/" + input_type + ".log"
+store_path = "data/incre_update/" + input_type + ".csv"
 type = ""
 
 
@@ -177,10 +177,10 @@ def post_processing(data):
     tree_order = [
         "PTree-H",
         "PTree-Z",
-        "KdTree",
-        "OrthTree",
         "CPAM-H",
         "CPAM-Z",
+        "KdTree",
+        "OrthTree",
         "MVZD",
     ]  # desired order for x[1]
 

@@ -4,9 +4,10 @@ set -o xtrace
 /usr/bin/drop_caches
 
 Node=(1000000000)
-Tree=(0 1 2)
+# Tree=(0 1 2)
+Tree=(3)
 Dims=(2)
-Type=(0 1)
+Type=(1)
 # paths=("/data/zmen002/kdtree/ss_varden_bigint/1000000000_2/1.in" "/data/zmen002/kdtree/uniform_bigint/1000000000_2/2_sort_by_0.in" "/data/zmen002/kdtree/uniform_bigint/1000000000_2/2.in")
 
 k=10
@@ -33,6 +34,9 @@ for dim in "${Dims[@]}"; do
             elif [[ ${tree} -eq 2 ]]; then
                 solver="p_test"
                 splits=(1)
+            elif [[ ${tree} -eq 3 ]]; then
+                solver="baselines"
+                splits=(1 2)
             else
                 solver="baselines"
                 splits=(0)
