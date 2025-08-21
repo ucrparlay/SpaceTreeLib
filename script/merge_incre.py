@@ -71,8 +71,11 @@ def parse_knn_time(text):
             numbers_str = match.group(2)
             numbers = [float(num)
                        for num in re.findall(r"[\d\.]+", numbers_str)]
+            sep = 6
+            if len(numbers) == 3:  # for boost r-tree
+                sep = 1
             result[label] = (
-                [numbers[i] for i in range(0, len(numbers), 6)]
+                [numbers[i] for i in range(0, len(numbers), sep)]
                 if numbers
                 else [0.0, 0.0, 0.0]
             )
@@ -104,6 +107,10 @@ def parse_range_time(text):
                 continue
 
         # Extract 1st, 7th, and 13th elements (0-indexed: 0, 6, 12)
+        if len(numbers) == 3:  # for boost r-tree
+            extracted = [numbers[0], numbers[1], numbers[2]]
+            result.append(extracted)
+
         if len(numbers) >= 13:
             extracted = [numbers[0], numbers[6], numbers[12]]
             result.append(extracted)
@@ -112,10 +119,75 @@ def parse_range_time(text):
     return flattened
 
 
-def combine(P):
+def combine_boost(P) -> List:
     lines = open(P, "r").readlines()
-    if len(lines) == 0:
-        return
+
+    solver = ""
+    benchmark = ""
+    index = 0
+    all_data = []
+    while index < len(lines):
+        lin_sep = " ".join(lines[index].split())
+        lin_sep = lin_sep.split(" ")
+        # print(lin_sep)
+
+        if len(lin_sep) == 0 or lin_sep[0] == "":  # Skip empty lines
+            index += 1
+            continue
+
+        # Tree information
+        if lin_sep[0] == "Tree:":
+            solver = "Boost"
+            match lines[index + 1].split(" ")[0]:
+                case "1.in":
+                    benchmark = "Varden"
+                case "2_sort_by_0.in":
+                    benchmark = "Uniform_by_x"
+                case "2.in":
+                    benchmark = "Uniform"
+            index += 2
+
+        def process(data, lin_sep_arg, index_arg):
+            data = data + parse_knn_time(lin_sep_arg[index_arg: index_arg + 4])
+            index_arg += 4
+
+            data = data + \
+                parse_range_time(lin_sep_arg[index_arg: index_arg + 2])
+            index_arg += 2
+            return data
+
+        # Query information
+        match lin_sep[0]:
+            case "##":
+                data = []
+                ratio = 0.0
+                if lin_sep[3] == "full:":
+                    data = [-1, -1, -1, -1, float(lin_sep[-1])]
+                    ratio = float(1)
+                    data = process(data, lines, index+15)
+                    index += 7
+                elif ("insert" in str(input_type)) and lin_sep[2] == "insert":
+                    data = [-1, -1, -1, -1, float(lin_sep[-1])]
+                    ratio = float(0.0001)
+                    data = process(data, lines, index+1)
+                    index += 7
+                elif ("delete" in str(input_type)) and lin_sep[2] == "delete":
+                    data = [-1, -1, -1, -1, float(lin_sep[-1])]
+                    ratio = float(0.0001)
+                    data = process(data, lines, index+1)
+                    index += 7
+                else:
+                    index += 7
+                    continue
+
+                ratio_map[ratio] = data
+                all_data = all_data + [[benchmark, solver, ratio] + data]
+
+    return all_data
+
+
+def combine(P) -> List:
+    lines = open(P, "r").readlines()
 
     solver = ""
     benchmark = ""
@@ -182,6 +254,7 @@ def post_processing(data):
         "KdTree",
         "OrthTree",
         "MVZD",
+        "Boost",
     ]  # desired order for x[1]
 
     sorted_lst = sorted(
@@ -203,8 +276,8 @@ def csvSetup():
     csv_writer.writerow(
         ["benchmark", "solver", "ratio", "median", "avg", "min", "max", "tot"]
         + ["IDS1", "IDS10", "IDS100"]
-        + ["IDU1", "IDU10", "IDU100"]
         + ["ODS1", "ODS10", "ODS100"]
+        + ["IDU1", "IDU10", "IDU100"]
         + ["ODU1", "ODU10", "ODU100"]
         + ["RCS", "RCM", "RCL"]
         + ["RRS", "RRM", "RRL"]
@@ -219,6 +292,9 @@ subprocess.run(
 
 csv_writer, csv_file_pointer = csvSetup()
 data = combine(input_path)
+data = data + combine_boost("logs/boost_rtree/uniform_by_x.log") + combine_boost(
+    "logs/boost_rtree/varden.log") + combine_boost("logs/boost_rtree/uniform.log")
 # print(data)
 data = post_processing(data)
+# print(data)
 csv_writer.writerows(data)
