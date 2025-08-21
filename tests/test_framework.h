@@ -202,7 +202,7 @@ void BuildTree(parlay::sequence<Point> const& WP, int const& rounds, Tree& pkd,
   using Leaf = typename Tree::Leaf;
   using Interior = typename Tree::Interior;
 
-  double loopLate = rounds > 1 ? 1.0 : -0.1;
+  double loop_late = rounds > 1 ? 1.0 : -0.1;
   size_t n = WP.size();
   // size_t n = 100;
   Points wp = Points::uninitialized(n);
@@ -211,7 +211,7 @@ void BuildTree(parlay::sequence<Point> const& WP, int const& rounds, Tree& pkd,
     pkd.DeleteTree();
 
     double aveBuild = time_loop(
-        rounds, loopLate, [&]() { parlay::copy(WP.cut(0, n), wp.cut(0, n)); },
+        rounds, loop_late, [&]() { parlay::copy(WP.cut(0, n), wp.cut(0, n)); },
         [&]() { pkd.Build(wp.cut(0, n)); }, [&]() { pkd.DeleteTree(); });
 
     parlay::copy(WP.cut(0, n / remaining_frac), wp.cut(0, n / remaining_frac));
@@ -452,8 +452,9 @@ void BatchInsertByStep(Tree& pkd, parlay::sequence<Point> const& WP,
     round_cnt++;
   };
 
+  double loop_late = rounds > 1 ? 1.0 : -0.1;
   double ave_time = time_loop(
-      rounds, 0.01, [&]() { prepare_build(); },
+      rounds, loop_late, [&]() { prepare_build(); },
       [&]() { incre_build(slice_num + 1); }, [&]() { pkd.DeleteTree(); });
 
   // begin count the time
@@ -557,8 +558,9 @@ void BatchDeleteByStep(Tree& pkd, parlay::sequence<Point> const& WP,
     round_cnt++;
   };
 
+  double loop_late = rounds > 1 ? 1.0 : -0.1;
   double ave_time = time_loop(
-      rounds, 0.01, [&]() { build_tree_by_type(); },
+      rounds, loop_late, [&]() { build_tree_by_type(); },
       [&]() { incre_delete(slice_num, wp.cut(0, slice_num * step)); },
       [&]() { pkd.DeleteTree(); });
 
@@ -1153,22 +1155,6 @@ static auto constexpr DefaultTestFunc = []<class TreeDesc, typename Point>(
     }
   }
 
-  // NOTE: batch diff
-  if (kTag & (1 << 2)) {
-    // if (kSummary) {
-    //   parlay::sequence<double> const overlap_ratios = {0.1, 0.2, 0.5,
-    //   1}; for (size_t i = 0; i < overlap_ratios.size(); i++) {
-    //     BatchDiff<Point, Tree, kTestTime>(
-    //         tree, wp, kRounds, kBatchDiffTotalRatio,
-    //         overlap_ratios[i]);
-    //   }
-    // } else {
-    //   BatchDiff<Point, Tree, kTestTime>(tree, wp, kRounds,
-    //                                     kBatchDiffTotalRatio,
-    //                                     kBatchDiffOverlapRatio);
-    // }
-  }
-
   Typename* kdknn = nullptr;
   auto run_batch_knn = [&](Points const& query_pts, int kth) {
     kdknn = new Typename[query_pts.size()];
@@ -1261,6 +1247,19 @@ static auto constexpr DefaultTestFunc = []<class TreeDesc, typename Point>(
       puts("");
     }
   };
+
+  // NOTE: batch diff
+  if (kTag & (1 << 2)) {
+    puts("");
+    parlay::sequence<double> const ratios = {0.01, 0.0001};
+    BuildTree<Point, Tree, kTestTime, 3>(wp, kRounds, tree, 1);
+    for (auto rat : ratios) {
+      BatchInsertByStep<Point, Tree, true>(tree, wp, kRounds, rat);
+    }
+    for (auto rat : ratios) {
+      BatchDeleteByStep<Point, Tree, true>(tree, wp, kRounds, rat);
+    }
+  }
 
   // NOTE: batch insert by step
   if (kTag & (1 << 3)) {

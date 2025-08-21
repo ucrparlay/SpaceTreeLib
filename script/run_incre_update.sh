@@ -15,7 +15,8 @@ summary=0
 read_file=0
 # queryType=$((2#0)) # 1110000
 round=3
-resFile=""
+log_path="logs/incre_update"
+mkdir -p "${log_path}"
 
 make -C ../build/ kd_test p_test baselines
 
@@ -40,10 +41,10 @@ for dim in "${Dims[@]}"; do
             for split in "${splits[@]}"; do
                 if [[ ${query_type} -eq 0 ]]; then
                     tag=$((2#1000)) # 1110000
-                    dest="logs/incre_insert_${dim}_${tree}_${split}.log"
+                    dest="${log_path}/incre_insert_${dim}_${tree}_${split}.log"
                 else
                     tag=$((2#10000)) # 1110000
-                    dest="logs/incre_delete_${dim}_${tree}_${split}.log"
+                    dest="${log_path}/incre_delete_${dim}_${tree}_${split}.log"
                 fi
                 : >"${dest}"
                 echo ">>>${dest}"

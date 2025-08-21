@@ -69,13 +69,15 @@ def parse_knn_time(text):
         if match:
             label = match.group(1)
             numbers_str = match.group(2)
-            numbers = [float(num) for num in re.findall(r"[\d\.]+", numbers_str)]
+            numbers = [float(num)
+                       for num in re.findall(r"[\d\.]+", numbers_str)]
             result[label] = (
                 [numbers[i] for i in range(0, len(numbers), 6)]
                 if numbers
                 else [0.0, 0.0, 0.0]
             )
-    sorted_res = {key: result[key] for key in query_type_order if key in result}
+    sorted_res = {key: result[key]
+                  for key in query_type_order if key in result}
     knn_res = list(sorted_res.values())
     flattened = [item for sublist in knn_res for item in sublist]
     return flattened
@@ -110,7 +112,7 @@ def parse_range_time(text):
     return flattened
 
 
-def combine(P, csv_writer):
+def combine(P):
     lines = open(P, "r").readlines()
     if len(lines) == 0:
         return
@@ -135,7 +137,9 @@ def combine(P, csv_writer):
             elif lin_sep[1] == "OrthTree;":
                 solver = "OrthTree"
             elif lin_sep[1] == "PTree;":
-                solver = "PTree"
+                solver = "PTree-H" if lin_sep[5] == "HilbertCurve;" else "PTree-Z"
+            elif lin_sep[1] == "CPAM;":
+                solver = "CPAM-H" if lin_sep[5] == "HilbertCurve;" else "CPAM-Z"
             else:
                 raise ValueError(f"Unknown solver: {lin_sep[1]}")
             match lines[index + 1].split(" ")[0]:
@@ -156,10 +160,10 @@ def combine(P, csv_writer):
                 data = parse_insert_time(lines[index + 1])
                 ratio = float(lin_sep[1])
 
-                data = data + parse_knn_time(lines[index + 2 : index + 2 + 4])
+                data = data + parse_knn_time(lines[index + 2: index + 2 + 4])
                 index += 6
 
-                data = data + parse_range_time(lines[index : index + 2])
+                data = data + parse_range_time(lines[index: index + 2])
                 index += 2
 
                 ratio_map[ratio] = data
@@ -171,10 +175,12 @@ def post_processing(data):
     # desired order for x[0]
     bench_order = ["Uniform_by_x", "Varden", "Uniform"]
     tree_order = [
-        "PTree",
+        "PTree-H",
+        "PTree-Z",
         "KdTree",
         "OrthTree",
-        "CPAM",
+        "CPAM-H",
+        "CPAM-Z",
         "MVZD",
     ]  # desired order for x[1]
 
@@ -196,19 +202,23 @@ def csvSetup():
     csv_writer = csv.writer(csv_file_pointer)
     csv_writer.writerow(
         ["benchmark", "solver", "ratio", "median", "avg", "min", "max", "tot"]
-        + ["k=1", "k=2", "k=3"] * 4
-        + ["S", "M", "L"] * 2
+        + ["IDS1", "IDS10", "IDS100"]
+        + ["IDU1", "IDU10", "IDU100"]
+        + ["ODS1", "ODS10", "ODS100"]
+        + ["ODU1", "ODU10", "ODU100"]
+        + ["RCS", "RCM", "RCL"]
+        + ["RRS", "RRM", "RRL"]
     )
     return csv_writer, csv_file_pointer
 
 
 subprocess.run(
-    f"cat $(ls logs/*{input_type}* | grep -v {input_type}.log) > logs/{input_type}.log",
+    f"cat $(ls logs/incre_update/*{input_type}* | grep -v {input_type}.log) > logs/incre_update/{input_type}.log",
     shell=True,
 )
 
 csv_writer, csv_file_pointer = csvSetup()
-data = combine(input_path, csv_writer)
+data = combine(input_path)
 # print(data)
 data = post_processing(data)
 csv_writer.writerows(data)
