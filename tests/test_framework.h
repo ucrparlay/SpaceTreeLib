@@ -533,7 +533,7 @@ void BatchDeleteByStep(Tree& pkd, parlay::sequence<Point> const& WP,
       auto box = Tree::GetBox(wp.cut(0, n));
       pkd.Build(parlay::make_slice(wp), box);
     } else {
-      std::cout << "Not supported Tree type\n" << std::flush;
+      pkd.Build(parlay::make_slice(wp));
     }
 
     parlay::copy(WP, wp);
