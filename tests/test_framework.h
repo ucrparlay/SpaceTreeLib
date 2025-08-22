@@ -983,6 +983,34 @@ void rangeQueryFix(Tree& pkd, Typename* kdknn, int const& rounds,
   return;
 }
 
+template <typename Point, typename Tree>
+void RangeQuerySerialWithLog(Tree& pkd, Typename* kdknn, int const& rounds,
+                             parlay::sequence<Point>& Out, int rec_type,
+                             int rec_num, int DIM, auto const& query_box_seq,
+                             auto max_size) {
+  auto [offset, tot_size] = parlay::scan(
+      parlay::delayed_tabulate(
+          rec_num, [&](size_t i) -> size_t { return query_box_seq[i].second; }),
+      parlay::addm<size_t>());
+  offset.push_back(tot_size);
+  // using ref_t = std::reference_wrapper<point>;
+  // parlay::sequence<ref_t> out_ref( Out.size(), std::ref( Out[0] ) );
+
+  for (int i = 0; i < rec_num; i++) {
+    double ave_query = time_loop(
+        rounds, -1.0, [&]() {},
+        [&]() {
+          auto [size, logger] = pkd.RangeQuery(
+              query_box_seq[i].first, Out.cut(offset[i], offset[i + 1]));
+        },
+        [&]() {});
+    std::cout << rec_type << " " << query_box_seq[i].second << " "
+              << std::scientific << ave_query << std::endl;
+  }
+
+  return;
+}
+
 template <typename T>
 class counter_iterator {
  private:
@@ -1292,6 +1320,31 @@ static auto constexpr DefaultTestFunc = []<class TreeDesc, typename Point>(
       BatchDeleteByStep<Point, Tree, true>(tree, wp, kRounds, rat);
       incre_update_test_bundle(query_box_seq, query_max_size);
       // incre_update_test_bundle(wp.subseq(0, wp.size() / 2));
+    }
+  }
+
+  if (kTag & (1 << 5)) {
+    BatchInsertByStep<Point, Tree, true>(tree, wp, kRounds, 0.0001);
+
+    auto [query_box_seq, query_max_size] =
+        generate_query_box(kRangeQueryNum, 3, wp.subseq(0, wp.size() / 2));
+
+    puts("");
+    // NOTE: range query
+    {
+      int rec_num = query_box_seq[0].size();
+      kdknn = new Typename[rec_num];
+
+      // std::cout << "range query time: " << std::endl;
+      for (int i = 0; i < 3; i++) {
+        // std::cout << "range query time: " << std::endl;
+        Points Out;
+        RangeQuerySerialWithLog<Point>(tree, kdknn, kRounds, Out, i, rec_num,
+                                       kDim, query_box_seq[i],
+                                       query_max_size[i]);
+      }
+      delete[] kdknn;
+      puts("");
     }
   }
 
