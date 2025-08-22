@@ -202,7 +202,7 @@ void BuildTree(parlay::sequence<Point> const& WP, int const& rounds, Tree& pkd,
   using Leaf = typename Tree::Leaf;
   using Interior = typename Tree::Interior;
 
-  double loop_late = rounds > 1 ? 1.0 : -0.1;
+  double loop_late = rounds > 1 ? 1.0 : -100;
   size_t n = WP.size();
   // size_t n = 100;
   Points wp = Points::uninitialized(n);
@@ -452,7 +452,7 @@ void BatchInsertByStep(Tree& pkd, parlay::sequence<Point> const& WP,
     round_cnt++;
   };
 
-  double loop_late = rounds > 1 ? 1.0 : -0.1;
+  double loop_late = rounds > 1 ? 1.0 : -100;
   double ave_time = time_loop(
       rounds, loop_late, [&]() { prepare_build(); },
       [&]() { incre_build(slice_num + 1); }, [&]() { pkd.DeleteTree(); });
@@ -558,7 +558,7 @@ void BatchDeleteByStep(Tree& pkd, parlay::sequence<Point> const& WP,
     round_cnt++;
   };
 
-  double loop_late = rounds > 1 ? 1.0 : -0.1;
+  double loop_late = rounds > 1 ? 1.0 : -100;
   double ave_time = time_loop(
       rounds, loop_late, [&]() { build_tree_by_type(); },
       [&]() { incre_delete(slice_num, wp.cut(0, slice_num * step)); },
@@ -1280,7 +1280,7 @@ static auto constexpr DefaultTestFunc = []<class TreeDesc, typename Point>(
   if (kTag & (1 << 2)) {
     puts("");
     parlay::sequence<double> const ratios = {0.01, 0.0001};
-    BuildTree<Point, Tree, kTestTime, 3>(wp, kRounds, tree, 1);
+    BuildTree<Point, Tree, kTestTime, 3>(wp, kRounds, tree, 2);
     for (auto rat : ratios) {
       BatchInsertByStep<Point, Tree, true>(tree, wp, kRounds, rat);
     }
