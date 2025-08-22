@@ -66,7 +66,7 @@ for tree in "${Tree[@]}"; do
 
             for path in "${paths[@]}"; do
                 export "${threads[${i}]}"
-                if [[ ${i} -eq 0 ]]; then
+                if [[ ${i} -eq 0 || ${i} -eq 1 || ${i} -eq 2 ]]; then
                     rounds=1
                 else
                     rounds=2
