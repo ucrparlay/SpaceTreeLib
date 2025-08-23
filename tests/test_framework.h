@@ -89,11 +89,11 @@ size_t recurse_box(parlay::slice<Point*, Point*> In, auto& box_seq, int DIM,
 
     // WARN: Modify the coefficient to make the rectangle size distribute as
     // uniform as possible within the range in lograthmic scale
-    // if (parlay::all_of(
-    if ((type == 0 && n < 40 * range.first) ||
-        (type == 1 && n < 10 * range.first) ||
-        (type == 2 && n < 2 * range.first) ||
-        parlay::all_of(
+    if (parlay::all_of(
+            // if ((type == 0 && n < 40 * range.first) ||
+            // (type == 1 && n < 10 * range.first) ||
+            // (type == 2 && n < 2 * range.first) ||
+            // parlay::all_of(
             In, [&](Point const& p) { return p.SameDimension(In[0]); })) {
       // NOTE: handle the cose that all Points are the same which is
       // undivideable
@@ -203,7 +203,7 @@ void BuildTree(parlay::sequence<Point> const& WP, int const& rounds, Tree& pkd,
   using Leaf = typename Tree::Leaf;
   using Interior = typename Tree::Interior;
 
-  double loop_late = rounds > 1 ? 1.0 : -100;
+  double loop_late = rounds > 1 ? 0.01 : -100;
   size_t n = WP.size();
   // size_t n = 100;
   Points wp = Points::uninitialized(n);
@@ -272,7 +272,7 @@ void BatchInsert(Tree& pkd, parlay::sequence<Point> const& WP,
   using Box = typename Tree::Box;
   Points wp = Points::uninitialized(WP.size());
   Points wi = Points::uninitialized(WI.size());
-  double loop_late = rounds > 1 ? 1.0 : -100;
+  double loop_late = rounds > 1 ? 0.01 : -100;
 
   // NOTE: build the tree by type
   auto build_tree_by_type = [&]() {
@@ -325,7 +325,7 @@ void BatchDelete(Tree& pkd, parlay::sequence<Point> const& WP,
   Points wp = Points::uninitialized(WP.size());
   Points wi = Points::uninitialized(WP.size());
   size_t batchSize = static_cast<size_t>(WP.size() * ratio);
-  double loop_late = rounds > 1 ? 1.0 : -100;
+  double loop_late = rounds > 1 ? 0.01 : -100;
 
   if constexpr (kTestTime) {
     pkd.DeleteTree();
@@ -376,7 +376,7 @@ void BatchDiff(Tree& pkd, parlay::sequence<Point> const& WP, int const& rounds,
   if constexpr (kTestTime) {
     pkd.DeleteTree();
     double aveDelete = time_loop(
-        rounds, 1.0,
+        rounds, 0.01,
         [&]() {
           BuildTree<Point, Tree, false>(WP, rounds, pkd);
           parlay::copy(WI, wi);
@@ -449,6 +449,7 @@ void BatchInsertByStep(Tree& pkd, parlay::sequence<Point> const& WP,
       }
 
       r = std::min(l + step, n);
+      // std::cout << l << " " << r << " " << n << std::endl;
       pkd.BatchInsert(parlay::make_slice(wp.begin() + l, wp.begin() + r));
       l = r;
       time_table[round_cnt][cnt++] += t.next_time();
@@ -456,7 +457,7 @@ void BatchInsertByStep(Tree& pkd, parlay::sequence<Point> const& WP,
     round_cnt++;
   };
 
-  double loop_late = rounds > 1 ? 1.0 : -100;
+  double loop_late = rounds > 1 ? 0.01 : -100;
   double ave_time = time_loop(
       rounds, loop_late, [&]() { prepare_build(); },
       [&]() { incre_build(slice_num + 1); }, [&]() { pkd.DeleteTree(); });
@@ -562,7 +563,7 @@ void BatchDeleteByStep(Tree& pkd, parlay::sequence<Point> const& WP,
     round_cnt++;
   };
 
-  double loop_late = rounds > 1 ? 1.0 : -100;
+  double loop_late = rounds > 1 ? 0.01 : -100;
   double ave_time = time_loop(
       rounds, loop_late, [&]() { build_tree_by_type(); },
       [&]() { incre_delete(slice_num, wp.cut(0, slice_num * step)); },
@@ -621,7 +622,7 @@ void queryKNN([[maybe_unused]] uint_fast8_t const& Dim,
   // using nn_pair = std::pair<Point, DisType>;
   size_t n = WP.size();
   // int LEAVE_WRAP = 32;
-  double loopLate = rounds > 1 ? 1.0 : -0.1;
+  double loopLate = rounds > 1 ? 0.01 : -0.1;
   auto* KDParallelRoot = pkd.GetRoot();
 
   Points wp = WP;
@@ -701,7 +702,7 @@ void RangeCount(parlay::sequence<Point> const& wp, Tree& pkd, int const& rounds,
   parlay::sequence<size_t> kdknn(rec_num, 0);
 
   double aveCount = time_loop(
-      rounds, 1.0, [&]() {},
+      rounds, 0.01, [&]() {},
       [&]() {
         parlay::parallel_for(0, rec_num, [&](size_t i) {
           auto [size, logger] = pkd.RangeCount(query_box_seq[i].first);
@@ -737,7 +738,7 @@ void rangeCountRadius(parlay::sequence<Point> const& wp, Tree& pkd,
   int n = wp.size();
 
   double aveCount = time_loop(
-      rounds, 1.0, [&]() {},
+      rounds, 0.01, [&]() {},
       [&]() {
         parlay::parallel_for(0, queryNum, [&](size_t i) {
           Box query_box_seq = pkd.get_box(
@@ -776,7 +777,7 @@ void RangeQuery(parlay::sequence<Point> const& wp, Tree& pkd, int const& rounds,
       gen_box(rec_num), full_box(rec_num), skip_box(rec_num);
 
   double aveQuery = time_loop(
-      rounds, 1.0, [&]() {},
+      rounds, 0.01, [&]() {},
       [&]() {
         parlay::parallel_for(0, rec_num, [&](size_t i) {
           auto [size, logger] = pkd.RangeQuery(
@@ -857,7 +858,7 @@ void rangeCountFix(Tree& pkd, Typename* kdknn, int const& rounds, int rec_type,
       gen_box(rec_num), full_box(rec_num), skip_box(rec_num);
 
   double aveCount = time_loop(
-      rounds, 1.0, [&]() {},
+      rounds, 0.01, [&]() {},
       [&]() {
         parlay::parallel_for(0, rec_num, [&](size_t i) {
           auto [size, logger] = pkd.RangeCount(query_box_seq[i].first);
@@ -952,7 +953,7 @@ void rangeQueryFix(Tree& pkd, Typename* kdknn, int const& rounds,
   // parlay::sequence<ref_t> out_ref( Out.size(), std::ref( Out[0] ) );
 
   double aveQuery = time_loop(
-      rounds, 1.0, [&]() {},
+      rounds, 0.01, [&]() {},
       [&]() {
         parlay::parallel_for(0, rec_num, [&](size_t i) {
           auto [size, logger] = pkd.RangeQuery(
@@ -1337,7 +1338,6 @@ static auto constexpr DefaultTestFunc = []<class TreeDesc, typename Point>(
         generate_query_box(kRangeQueryNum, 3, wp.subseq(0, wp.size() / 2));
 
     BuildTree<Point, Tree, kTestTime, 3>(wp, kRounds, tree, 2);
-
     incre_update_test_bundle(query_box_seq, query_max_size);
 
     BatchInsertByStep<Point, Tree, true>(tree, wp, kRounds, 0.0001);
@@ -1805,13 +1805,13 @@ class Wrapper {
       }
     };
 
-    if (dim == 2) {
-      // run_with_split_type.template operator()<BasicPoint<Coord, 2>>();
-      run_with_split_type.template operator()<AugPoint<Coord, 2, AugId>>();
+    // if (dim == 2) {
+    //   // run_with_split_type.template operator()<BasicPoint<Coord, 2>>();
+    //   run_with_split_type.template operator()<AugPoint<Coord, 2, AugId>>();
+    // } else
+    if (dim == 3) {
+      run_with_split_type.template operator()<AugPoint<Coord, 3, AugId>>();
     }
-    // else if (dim == 3) {
-    //   run_with_split_type.template operator()<AugPoint<Coord, 3, AugId>>();
-    // }
   }
 
   template <typename RunFunc>
@@ -1843,11 +1843,9 @@ class Wrapper {
 
     if (dim == 2) {
       run_with_split_type.template operator()<AugPoint<Coord, 2, AugIdCode>>();
+    } else if (dim == 3) {
+      run_with_split_type.template operator()<AugPoint<Coord, 3, AugIdCode>>();
     }
-    // else if (dim == 3) {
-    //   run_with_split_type.template operator()<AugPoint<Coord, 3,
-    //   AugIdCode>>();
-    // }
   }
 
   template <typename RunFunc>
@@ -1885,10 +1883,8 @@ class Wrapper {
 
     if (dim == 2) {
       run_with_split_type.template operator()<AugPoint<Coord, 2, AugIdCode>>();
+    } else if (dim == 3) {
+      run_with_split_type.template operator()<AugPoint<Coord, 3, AugIdCode>>();
     }
-    // else if (dim == 3) {
-    //   run_with_split_type.template operator()<AugPoint<Coord, 3,
-    //   AugIdCode>>();
-    // }
   }
 };
