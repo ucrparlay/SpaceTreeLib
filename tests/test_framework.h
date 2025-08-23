@@ -1642,13 +1642,12 @@ class Wrapper {
   };
 
   /* Zdtree Wrapper */
-  // template <class PointType, class SplitRuleType>
-  // struct ZdtreeWrapper {
-  //   using Point = PointType;
-  //   using SplitRule = SplitRuleType;
-  //   using TreeType = typename ZDTree::CpamRaw<Point, SplitRule>;
-  // };
-
+  template <class PointType, class SplitRuleType>
+  struct ZdTreeWrapper {
+    using Point = PointType;
+    using SplitRule = SplitRuleType;
+    using TreeType = typename ZD::Zdtree<Point, SplitRule>;
+  };
 
   template <class PointType, class SplitRuleType>
   struct CoverTreeWrapper {
@@ -1871,13 +1870,12 @@ class Wrapper {
       } else if (tree_type == 3) {
         Run<CpamRawWrapper<Point, SplitRule>>(params, test_func);
       } else if (tree_type == 4) {
-        // Run<MVZDWrapper<Point, SplitRule>>(params, test_func);
+        Run<ZdTreeWrapper<Point, SplitRule>>(params, test_func);
       } else if (tree_type == 5) {
         // Run<BoostRTreeWrapper<Point, SplitRule>>(params, test_func);
-      } else if (tree_type == 6){
-        // Run<BoostRTreeWrapper<Point, SplitRule>>(params, test_func); 
-      }
-      else {
+      } else if (tree_type == 6) {
+        // Run<BoostRTreeWrapper<Point, SplitRule>>(params, test_func);
+      } else {
         std::cout << "Unsupported tree type: " << tree_type << std::endl;
       }
     };
