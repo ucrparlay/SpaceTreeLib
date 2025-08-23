@@ -42,7 +42,7 @@ static constexpr double kBatchQueryRatio = 0.01;
 static constexpr size_t kBatchQueryOsmSize = 10000000;
 // NOTE: rectangle numbers
 static constexpr int kRangeQueryNum = 50000;
-static constexpr int singleQueryLogRepeatNum = 100;
+static constexpr int kSingleQueryLogRepeatNum = 100;
 
 // NOTE: rectangle numbers for inba ratio
 static constexpr int rangeQueryNumInbaRatio = 50000;
@@ -89,10 +89,11 @@ size_t recurse_box(parlay::slice<Point*, Point*> In, auto& box_seq, int DIM,
 
     // WARN: Modify the coefficient to make the rectangle size distribute as
     // uniform as possible within the range in lograthmic scale
-    // if ((type == 0 && n < 40 * range.first) ||
-    //     (type == 1 && n < 10 * range.first) ||
-    //     (type == 2 && n < 2 * range.first) ||
-    if (parlay::all_of(
+    // if (parlay::all_of(
+    if ((type == 0 && n < 40 * range.first) ||
+        (type == 1 && n < 10 * range.first) ||
+        (type == 2 && n < 2 * range.first) ||
+        parlay::all_of(
             In, [&](Point const& p) { return p.SameDimension(In[0]); })) {
       // NOTE: handle the cose that all Points are the same which is
       // undivideable
@@ -995,17 +996,23 @@ void RangeQuerySerialWithLog(Tree& pkd, Typename* kdknn, int const& rounds,
   offset.push_back(tot_size);
   // using ref_t = std::reference_wrapper<point>;
   // parlay::sequence<ref_t> out_ref( Out.size(), std::ref( Out[0] ) );
+  Out.resize(tot_size);
 
   for (int i = 0; i < rec_num; i++) {
-    double ave_query = time_loop(
-        rounds, -1.0, [&]() {},
-        [&]() {
-          auto [size, logger] = pkd.RangeQuery(
-              query_box_seq[i].first, Out.cut(offset[i], offset[i + 1]));
-        },
-        [&]() {});
+    parlay::internal::timer t;
+    t.reset(), t.start();
+    auto [size, logger] = pkd.RangeQuery(query_box_seq[i].first,
+                                         Out.cut(offset[i], offset[i + 1]));
+    t.stop();
+    // double ave_query = time_loop(
+    //     rounds, -1.0, [&]() {},
+    //     [&]() {
+    //       auto [size, logger] = pkd.RangeQuery(
+    //           query_box_seq[i].first, Out.cut(offset[i], offset[i + 1]));
+    //     },
+    //     [&]() {});
     std::cout << rec_type << " " << query_box_seq[i].second << " "
-              << std::scientific << ave_query << std::endl;
+              << std::scientific << t.total_time() << std::endl;
   }
 
   return;
@@ -1344,25 +1351,25 @@ static auto constexpr DefaultTestFunc = []<class TreeDesc, typename Point>(
   // range query with log
   if (kTag & (1 << 6)) {
     puts("");
-    BatchInsertByStep<Point, Tree, true>(tree, wp, kRounds, 0.0001, 1);
+    BatchInsertByStep<Point, Tree, true>(tree, wp, kRounds, 0.0001);
 
-    auto [query_box_seq, query_max_size] =
-        generate_query_box(kRangeQueryNum, 3, wp.subseq(0, wp.size()));
+    auto [query_box_seq, query_max_size] = generate_query_box(
+        kSingleQueryLogRepeatNum, 3, wp.subseq(0, wp.size() / 2));
 
     // NOTE: range query
     {
-      int rec_num = query_box_seq[0].size();
+      int rec_num = kSingleQueryLogRepeatNum;
       kdknn = new Typename[rec_num];
 
       std::cout << "range query time: " << std::endl;
       for (int i = 0; i < 3; i++) {
         // std::cout << "range query time: " << std::endl;
         Points Out;
-        rangeQueryFix<Point>(tree, kdknn, kRounds, Out, i, rec_num, kDim,
-                             query_box_seq[i], query_max_size[i]);
-        // RangeQuerySerialWithLog<Point>(tree, kdknn, kRounds, Out, i, rec_num,
-        //                                kDim, query_box_seq[i],
-        //                                query_max_size[i]);
+        // rangeQueryFix<Point>(tree, kdknn, kRounds, Out, i, rec_num, kDim,
+        //                      query_box_seq[i], query_max_size[i]);
+        RangeQuerySerialWithLog<Point>(tree, kdknn, kRounds, Out, i, rec_num,
+                                       kDim, query_box_seq[i],
+                                       query_max_size[i]);
       }
       delete[] kdknn;
       puts("");
@@ -1765,7 +1772,7 @@ class Wrapper {
       } else if (tree_type == 1) {
         Run<OrthTreeWrapper<Point, SplitRule, LeafAugBox<BT>,
                             InteriorAugBox<BT>>>(params, test_func);
-      } else if (tree_type == 4) {  // for boost
+      } else if (tree_type == 4) {  // NOTE: for boost
         Run<KdTreeWrapper<Point, SplitRule, LeafAugBox<BT>,
                           InteriorAugBox<BT>>>(params, test_func);
       }
@@ -1802,9 +1809,10 @@ class Wrapper {
     if (dim == 2) {
       // run_with_split_type.template operator()<BasicPoint<Coord, 2>>();
       run_with_split_type.template operator()<AugPoint<Coord, 2, AugId>>();
-    } else if (dim == 3) {
-      run_with_split_type.template operator()<AugPoint<Coord, 3, AugId>>();
     }
+    // else if (dim == 3) {
+    //   run_with_split_type.template operator()<AugPoint<Coord, 3, AugId>>();
+    // }
   }
 
   template <typename RunFunc>
@@ -1836,9 +1844,11 @@ class Wrapper {
 
     if (dim == 2) {
       run_with_split_type.template operator()<AugPoint<Coord, 2, AugIdCode>>();
-    } else if (dim == 3) {
-      run_with_split_type.template operator()<AugPoint<Coord, 3, AugIdCode>>();
     }
+    // else if (dim == 3) {
+    //   run_with_split_type.template operator()<AugPoint<Coord, 3,
+    //   AugIdCode>>();
+    // }
   }
 
   template <typename RunFunc>
@@ -1876,8 +1886,10 @@ class Wrapper {
 
     if (dim == 2) {
       run_with_split_type.template operator()<AugPoint<Coord, 2, AugIdCode>>();
-    } else if (dim == 3) {
-      run_with_split_type.template operator()<AugPoint<Coord, 3, AugIdCode>>();
     }
+    // else if (dim == 3) {
+    //   run_with_split_type.template operator()<AugPoint<Coord, 3,
+    //   AugIdCode>>();
+    // }
   }
 };
