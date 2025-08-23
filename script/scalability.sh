@@ -60,9 +60,9 @@ for tree in "${Tree[@]}"; do
 
     for split in "${splits[@]}"; do
         for i in "${!threads[@]}"; do
-            for path_id in "${!paths[@]}"; do
-                file="${path##*/}"
-                dest="${log_path}/${file}_${cores[${i}]}_${tree}_${split}"
+            for j in "${!origin_paths[@]}"; do
+                file="${origin_paths[${j}]##*/}"
+                dest="${log_path}/${file}_${cores[${i}]}_${tree}_${split}.log"
                 : >"${dest}"
                 echo ">>>${dest}"
                 exe="../build/${solver}"
@@ -73,12 +73,12 @@ for tree in "${Tree[@]}"; do
                     rounds=2
                 fi
 
-                input="${origin_paths[${path_id}]}"
-                insert="${insert_paths[${path_id}]}"
+                input="${origin_paths[${j}]}"
+                insert="${insert_paths[${j}]}"
                 echo ${input}
                 echo ${insert}
 
-                ${commands[${i}]} "${exe}" -p "${input}" -I "${insert}" -k ${k} -t ${tag} -d 2 -r ${rounds} -q 0 -i 0 -s 0 -T ${tree} -l ${split} 2>&1 | tee -a "${dest}"
+                ${commands[${i}]} "${exe}" -p "${input}" -I "${insert}" -k ${k} -t ${tag} -d 2 -r ${rounds} -q 0 -i 1 -s 0 -T ${tree} -l ${split} 2>&1 | tee -a "${dest}"
             done
         done
     done
