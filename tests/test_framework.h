@@ -218,8 +218,9 @@ void BuildTree(parlay::sequence<Point> const& WP, int const& rounds, Tree& pkd,
     parlay::copy(WP.cut(0, n / remaining_frac), wp.cut(0, n / remaining_frac));
     pkd.Build(wp.cut(0, n / remaining_frac));
 
-    // std::cout << aveBuild << " " << std::flush;
-    if (kPrint == 1) {
+    if constexpr (kPrint == 0) {
+      std::cout << aveBuild << " " << std::flush;
+    } else if constexpr (kPrint == 1) {
       std::cout << aveBuild << " " << std::flush;
       if constexpr (IsKdTree<Tree> || IsOrthTree<Tree>) {
         auto deep = pkd.template GetAveTreeHeight<Leaf, Interior>();
@@ -228,7 +229,7 @@ void BuildTree(parlay::sequence<Point> const& WP, int const& rounds, Tree& pkd,
         std::cout << "-1"
                   << " " << std::flush;
       }
-    } else if (kPrint == 2) {
+    } else if constexpr (kPrint == 2) {
       size_t max_deep = 0;
       std::cout << aveBuild << " ";
       if constexpr (IsKdTree<Tree> || IsOrthTree<Tree>) {
@@ -240,7 +241,7 @@ void BuildTree(parlay::sequence<Point> const& WP, int const& rounds, Tree& pkd,
         std::cout << "-1 -1"
                   << " " << std::flush;
       }
-    } else if (kPrint == 3) {  // for incre insert directly
+    } else if constexpr (kPrint == 3) {  // for incre insert directly
       puts("# Insert");
       std::cout << "## " << 1 << std::endl;
       std::cout << "median: (1, " << aveBuild << ")-> min: (1, " << aveBuild
@@ -271,6 +272,7 @@ void BatchInsert(Tree& pkd, parlay::sequence<Point> const& WP,
   using Box = typename Tree::Box;
   Points wp = Points::uninitialized(WP.size());
   Points wi = Points::uninitialized(WI.size());
+  double loop_late = rounds > 1 ? 1.0 : -100;
 
   // NOTE: build the tree by type
   auto build_tree_by_type = [&]() {
@@ -296,7 +298,7 @@ void BatchInsert(Tree& pkd, parlay::sequence<Point> const& WP,
   if constexpr (kTestTime) {  // NOTE: clean and measure time
     pkd.DeleteTree();
     double aveInsert = time_loop(
-        rounds, 1.0, [&]() { build_tree_by_type(); },
+        rounds, loop_late, [&]() { build_tree_by_type(); },
         [&]() {
           pkd.BatchInsert(wi.cut(0, static_cast<size_t>(wi.size() * ratio)));
         },
@@ -323,11 +325,12 @@ void BatchDelete(Tree& pkd, parlay::sequence<Point> const& WP,
   Points wp = Points::uninitialized(WP.size());
   Points wi = Points::uninitialized(WP.size());
   size_t batchSize = static_cast<size_t>(WP.size() * ratio);
+  double loop_late = rounds > 1 ? 1.0 : -100;
 
   if constexpr (kTestTime) {
     pkd.DeleteTree();
     double aveDelete = time_loop(
-        rounds, 1.0,
+        rounds, loop_late,
         [&]() {
           BuildTree<Point, Tree, false>(WP, rounds, pkd);
           parlay::copy(WI, wi);
@@ -1286,15 +1289,11 @@ static auto constexpr DefaultTestFunc = []<class TreeDesc, typename Point>(
   // NOTE: scalability
   if (kTag & (1 << 2)) {
     puts("");
-    // parlay::sequence<double> const ratios = {0.01, 0.0001};
-    parlay::sequence<double> const ratios = {0.0001};
-    BuildTree<Point, Tree, kTestTime, 3>(wp, kRounds, tree, 2);
-    for (auto rat : ratios) {
-      BatchInsertByStep<Point, Tree, true>(tree, wp, kRounds, rat);
-    }
-    for (auto rat : ratios) {
-      BatchDeleteByStep<Point, Tree, true>(tree, wp, kRounds, rat);
-    }
+    BuildTree<Point, Tree, kTestTime, 0>(wp, kRounds, tree);
+    BatchInsert<Point, Tree, kTestTime>(tree, wp, wi, kRounds,
+                                        kBatchInsertRatio);
+    BatchDelete<Point, Tree, kTestTime>(tree, wp, wp, kRounds,
+                                        kBatchInsertRatio);
   }
 
   // NOTE: batch insert by step

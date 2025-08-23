@@ -38,7 +38,8 @@ mkdir -p "${log_path}"
 Tree=(0 1 2 3)
 make -C ../build/ kd_test p_test baselines
 
-paths=("/data/zmen002/kdtree/ss_varden_bigint/1000000000_$((dim))/1.in" "/data/zmen002/kdtree/uniform_bigint/1000000000_${dim}/2_sort_by_0.in" "/data/zmen002/kdtree/uniform_bigint/1000000000_${dim}/2.in")
+origin_paths=("/data/zmen002/kdtree/ss_varden_bigint/1000000000_$((dim))/1.in" "/data/zmen002/kdtree/uniform_bigint/1000000000_${dim}/2_sort_by_0.in" "/data/zmen002/kdtree/uniform_bigint/1000000000_${dim}/2.in")
+insert_paths=("/data/zmen002/kdtree/ss_varden_bigint/1000000000_$((dim))/2.in" "/data/zmen002/kdtree/uniform_bigint/1000000000_${dim}/1_sort_by_0.in" "/data/zmen002/kdtree/uniform_bigint/1000000000_${dim}/1.in")
 for tree in "${Tree[@]}"; do
     if [[ ${tree} -eq 0 ]]; then
         solver="kd_test"
@@ -59,19 +60,25 @@ for tree in "${Tree[@]}"; do
 
     for split in "${splits[@]}"; do
         for i in "${!threads[@]}"; do
-            dest="${log_path}/${cores[${i}]}_${tree}_${split}"
-            : >"${dest}"
-            echo ">>>${dest}"
-            exe="../build/${solver}"
-
-            for path in "${paths[@]}"; do
+            for path_id in "${!paths[@]}"; do
+                file="${path##*/}"
+                dest="${log_path}/${file}_${cores[${i}]}_${tree}_${split}"
+                : >"${dest}"
+                echo ">>>${dest}"
+                exe="../build/${solver}"
                 export "${threads[${i}]}"
-                if [[ ${i} -eq 0 || ${i} -eq 1 || ${i} -eq 2 ]]; then
+                if [[ ${i} -eq 0 || ${i} -eq 1 ]]; then
                     rounds=1
                 else
                     rounds=2
                 fi
-                ${commands[${i}]} "${exe}" -p "${path}" -k ${k} -t ${tag} -d 2 -r ${rounds} -q 0 -i 0 -s 0 -T ${tree} -l ${split} 2>&1 | tee -a "${dest}"
+
+                input="${origin_paths[${path_id}]}"
+                insert="${insert_paths[${path_id}]}"
+                echo ${input}
+                echo ${insert}
+
+                ${commands[${i}]} "${exe}" -p "${input}" -I "${insert}" -k ${k} -t ${tag} -d 2 -r ${rounds} -q 0 -i 0 -s 0 -T ${tree} -l ${split} 2>&1 | tee -a "${dest}"
             done
         done
     done
