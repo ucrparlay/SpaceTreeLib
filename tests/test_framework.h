@@ -1276,10 +1276,11 @@ static auto constexpr DefaultTestFunc = []<class TreeDesc, typename Point>(
     }
   };
 
-  // NOTE: batch diff
+  // NOTE: scalability
   if (kTag & (1 << 2)) {
     puts("");
-    parlay::sequence<double> const ratios = {0.01, 0.0001};
+    // parlay::sequence<double> const ratios = {0.01, 0.0001};
+    parlay::sequence<double> const ratios = {0.0001};
     BuildTree<Point, Tree, kTestTime, 3>(wp, kRounds, tree, 2);
     for (auto rat : ratios) {
       BatchInsertByStep<Point, Tree, true>(tree, wp, kRounds, rat);
@@ -1309,9 +1310,9 @@ static auto constexpr DefaultTestFunc = []<class TreeDesc, typename Point>(
   // NOTE: batch delete by step
   if (kTag & (1 << 4)) {
     puts("");
-    BuildTree<Point, Tree, kTestTime, 3>(wp, kRounds, tree, 2);
     auto [query_box_seq, query_max_size] =
         generate_query_box(kRangeQueryNum, 3, wp.subseq(0, wp.size() / 2));
+    BuildTree<Point, Tree, kTestTime, 3>(wp, kRounds, tree, 2);
     incre_update_test_bundle(query_box_seq, query_max_size);
 
     parlay::sequence<double> const ratios = {0.1, 0.01, 0.001, 0.0001};
@@ -1323,25 +1324,45 @@ static auto constexpr DefaultTestFunc = []<class TreeDesc, typename Point>(
     }
   }
 
+  // real world
   if (kTag & (1 << 5)) {
-    BatchInsertByStep<Point, Tree, true>(tree, wp, kRounds, 0.0001);
-
+    puts("");
     auto [query_box_seq, query_max_size] =
         generate_query_box(kRangeQueryNum, 3, wp.subseq(0, wp.size() / 2));
 
+    BuildTree<Point, Tree, kTestTime, 3>(wp, kRounds, tree, 2);
+
+    incre_update_test_bundle(query_box_seq, query_max_size);
+
+    BatchInsertByStep<Point, Tree, true>(tree, wp, kRounds, 0.0001);
+    incre_update_test_bundle(query_box_seq, query_max_size);
+
+    BatchDeleteByStep<Point, Tree, true>(tree, wp, kRounds, 0.0001);
+    incre_update_test_bundle(query_box_seq, query_max_size);
+  }
+
+  // range query with log
+  if (kTag & (1 << 6)) {
     puts("");
+    BatchInsertByStep<Point, Tree, true>(tree, wp, kRounds, 0.0001, 1);
+
+    auto [query_box_seq, query_max_size] =
+        generate_query_box(kRangeQueryNum, 3, wp.subseq(0, wp.size()));
+
     // NOTE: range query
     {
       int rec_num = query_box_seq[0].size();
       kdknn = new Typename[rec_num];
 
-      // std::cout << "range query time: " << std::endl;
+      std::cout << "range query time: " << std::endl;
       for (int i = 0; i < 3; i++) {
         // std::cout << "range query time: " << std::endl;
         Points Out;
-        RangeQuerySerialWithLog<Point>(tree, kdknn, kRounds, Out, i, rec_num,
-                                       kDim, query_box_seq[i],
-                                       query_max_size[i]);
+        rangeQueryFix<Point>(tree, kdknn, kRounds, Out, i, rec_num, kDim,
+                             query_box_seq[i], query_max_size[i]);
+        // RangeQuerySerialWithLog<Point>(tree, kdknn, kRounds, Out, i, rec_num,
+        //                                kDim, query_box_seq[i],
+        //                                query_max_size[i]);
       }
       delete[] kdknn;
       puts("");
@@ -1744,6 +1765,9 @@ class Wrapper {
       } else if (tree_type == 1) {
         Run<OrthTreeWrapper<Point, SplitRule, LeafAugBox<BT>,
                             InteriorAugBox<BT>>>(params, test_func);
+      } else if (tree_type == 4) {  // for boost
+        Run<KdTreeWrapper<Point, SplitRule, LeafAugBox<BT>,
+                          InteriorAugBox<BT>>>(params, test_func);
       }
     };
 

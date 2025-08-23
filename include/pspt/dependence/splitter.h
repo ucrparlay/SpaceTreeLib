@@ -96,7 +96,7 @@ struct HilbertCurve {
     } else if constexpr (Point::GetDim() == 3) {
       // maximum 20 bits for each dimension (2^20 = 1048576))
       return hilbert::hilbert_c2i(
-          3, 20,
+          3, 21,
           reinterpret_cast<hilbert::bitmask_t const*>(p.GetCoords().data()));
     } else {
       static_assert("HilbertCurve only supports 2D and 3D points");

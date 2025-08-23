@@ -29,7 +29,7 @@ void RoundDataAndShift(commandLine& P) {
   auto new_wp = Laundy::RoundDown(wp, multiply_offset);
   // PrintPoints(new_wp);
   new_wp = Laundy::RemoveDuplicates(new_wp);
-  PrintPoints(new_wp);
+  // PrintPoints(new_wp);
   new_wp = Laundy::ShiftToFirstRegion(new_wp);
   // PrintPoints(new_wp);
   if (!Laundy::CheckCoordWithinRange(new_wp)) {
