@@ -8,6 +8,7 @@
 #include <iostream>
 
 #include "baselines/cpam_raw/cpamtree.hpp"
+#include "baselines/zdtree/zdtree.hpp"
 #include "common/geometryIO.h"
 #include "common/parse_command_line.h"
 #include "common/time_loop.h"
@@ -1640,6 +1641,15 @@ class Wrapper {
     using TreeType = typename CPAMTree::CpamRaw<Point, SplitRule>;
   };
 
+  /* Zdtree Wrapper */
+  // template <class PointType, class SplitRuleType>
+  // struct ZdtreeWrapper {
+  //   using Point = PointType;
+  //   using SplitRule = SplitRuleType;
+  //   using TreeType = typename ZDTree::CpamRaw<Point, SplitRule>;
+  // };
+
+
   template <class PointType, class SplitRuleType>
   struct CoverTreeWrapper {
     using Point = PointType;
@@ -1864,7 +1874,10 @@ class Wrapper {
         // Run<MVZDWrapper<Point, SplitRule>>(params, test_func);
       } else if (tree_type == 5) {
         // Run<BoostRTreeWrapper<Point, SplitRule>>(params, test_func);
-      } else {
+      } else if (tree_type == 6){
+        // Run<BoostRTreeWrapper<Point, SplitRule>>(params, test_func); 
+      }
+      else {
         std::cout << "Unsupported tree type: " << tree_type << std::endl;
       }
     };
