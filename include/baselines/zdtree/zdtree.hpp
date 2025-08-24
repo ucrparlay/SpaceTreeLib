@@ -689,11 +689,11 @@ class Zdtree
     // std::cout << cnv_q.first.x << ", " << cnv_q.first.y << ", "
     //           << cnv_q.second.x << ", " << cnv_q.second.y << std::endl;
     size_t size = 0;
-    parlay::sequence<geobase::Point> ret(Out.size());
+    // parlay::sequence<geobase::Point> ret(Out.size());
 
-    tree.range_report(cnv_q, largest_mbr, size, ret);
+    tree.range_report(cnv_q, largest_mbr, size, Out);
 
-    assert(ret.size() == size);
+    assert(Out.size() == size);
     // std::cout << (ret.size() == size) << std::endl;
     return std::make_pair(size, logger);
   }
