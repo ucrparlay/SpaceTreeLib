@@ -80,7 +80,7 @@ struct Point {
     return p;
   }
   static consteval auto GetDim() { return 2; }
-  bool SameDimension(Point const& b) const { return *this == b; }
+  bool SameDimension(Point const& b) const { return x == b.x && y == b.y; }
   Coords GetCoords() const { return {x, y}; }
 
   // original things
