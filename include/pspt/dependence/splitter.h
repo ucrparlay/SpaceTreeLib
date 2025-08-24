@@ -29,7 +29,7 @@ struct MortonCurve {
 
   using CurveCode = typename Point::AT::CurveCode;
 
-  void ZTag() {}
+  void MortonTag() {}
   static std::string GetName() { return "MortonCurve"; }
 
   static auto Encode(Point const& p) {

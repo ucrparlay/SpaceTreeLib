@@ -181,6 +181,15 @@ concept IsSpatialMedianSplit = requires(T t) {
   { t.SpatialMedianTag() } -> std::same_as<void>;
 };
 
+template <typename T>
+concept IsHilbertCode = requires(T t) {
+  { t.HilbertTag() } -> std::same_as<void>;
+};
+
+template <typename T>
+concept IsMortonCode = requires(T t) {
+  { t.MortonTag() } -> std::same_as<void>;
+};
 struct FullCoveredTag {};
 struct PartialCoverTag {};
 

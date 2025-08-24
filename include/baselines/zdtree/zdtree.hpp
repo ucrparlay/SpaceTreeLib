@@ -2,6 +2,7 @@
 
 #include "geobase.h"
 #include "pspt/base_tree.h"
+#include "pspt/dependence/concepts.h"
 // #define USE_MBR
 // #define SEQ
 #define USE_PT
@@ -103,7 +104,7 @@ class Tree {
   shared_ptr<BaseNode> build(sequence<Point>& P, size_t l, size_t r, size_t b);
   void build(sequence<Point>& P);
 
-  auto collect_records(shared_ptr<BaseNode> &x);
+  auto collect_records(shared_ptr<BaseNode>& x);
 
   void clear();
 
@@ -532,24 +533,22 @@ void Tree::knn_report_node(shared_ptr<BaseNode>& x, size_t& k,
   return;
 }
 
-auto Tree::collect_records(shared_ptr<BaseNode> &x){
+auto Tree::collect_records(shared_ptr<BaseNode>& x) {
   sequence<Point> ret = {};
-  if (!x){
+  if (!x) {
     return ret;
   }
-  if (x->is_leaf()){
+  if (x->is_leaf()) {
     auto cur_leaf = static_cast<LeafNode*>(x.get());
     ret = cur_leaf->records;
     return ret;
   }
   auto cur_inte = static_cast<InteNode*>(x.get());
   sequence<Point> R;
-  auto collect_left = [&](){ret = collect_records(cur_inte->l_son); }; 
-  auto collect_right = [&](){R = collect_records(cur_inte->r_son); };
-  par_do_if(x->get_num_points() >= granularity_cutoff,
-    collect_left,
-    collect_right
-  );
+  auto collect_left = [&]() { ret = collect_records(cur_inte->l_son); };
+  auto collect_right = [&]() { R = collect_records(cur_inte->r_son); };
+  par_do_if(x->get_num_points() >= granularity_cutoff, collect_left,
+            collect_right);
   ret.append(R);
   return ret;
 }
@@ -592,41 +591,51 @@ class Zdtree
     return;
   }
 
-  geobase::Bounding_Box largest_mbr;  
+  geobase::Bounding_Box largest_mbr;
   // convert to zdtree point format, with storing Z-values
   template <typename Range>
-  auto point_convert(Range &In){
+  auto point_convert(Range& In) {
     Slice A = parlay::make_slice(In);
     parlay::sequence<geobase::Point> P(In.size());
-    FT x_min(FT_INF_MAX), x_max(FT_INF_MIN), y_min(FT_INF_MAX), y_max(FT_INF_MIN);
-    parlay::parallel_for(0, In.size(), [&](size_t i){
-      P[i].id = In[i].aug.id;
-      P[i].x = In[i].pnt[0];
-      P[i].y = In[i].pnt[1];
+    FT x_min(FT_INF_MAX), x_max(FT_INF_MIN), y_min(FT_INF_MAX),
+        y_max(FT_INF_MIN);
+    parlay::parallel_for(0, In.size(), [&](size_t i) {
+      // P[i].id = In[i].aug.id;
+      // P[i].x = In[i].pnt[0];
+      // P[i].y = In[i].pnt[1];
       x_max = max(x_max, P[i].x);
       x_min = min(x_min, P[i].x);
       y_max = max(y_max, P[i].y);
       y_min = min(y_min, P[i].y);
-      // P[i].morton_id = P[i].interleave_bits();
-      P[i].morton_id = SplitRule::Encode(In[i]);
+      if constexpr (pspt::IsHilbertCode<SplitRule>) {
+        P[i].morton_id = P[i].overlap_bits();
+      } else {
+        P[i].morton_id = P[i].interleave_bits();
+      }
+      // P[i].morton_id = SplitRule::Encode(In[i]);
     });
-    largest_mbr = geobase::Bounding_Box({geobase::Point(x_min, y_min), geobase::Point(x_max, y_max)});
+    largest_mbr = geobase::Bounding_Box(
+        {geobase::Point(x_min, y_min), geobase::Point(x_max, y_max)});
     return P;
   }
 
-  auto box_convert(Box const& q){
-    geobase::Bounding_Box cur_q({geobase::Point(q.first.pnt[0], q.first.pnt[1]), geobase::Point(q.second.pnt[0], q.second.pnt[1])});
-    return cur_q;
+  auto box_convert(Box const& q) {
+    // geobase::Bounding_Box cur_q(
+    //     {geobase::Point(q.first.pnt[0], q.first.pnt[1]),
+    //      geobase::Point(q.second.pnt[0], q.second.pnt[1])});
+    // return cur_q;
+    return q;
   }
 
   template <typename Pset>
-  void check_first(Pset &P, size_t ed = 10){
+  void check_first(Pset& P, size_t ed = 10) {
     std::cout << "sz: " << P.size() << std::endl;
-    for (auto i = 0; i != ed; i++){
-      std::cout << fixed << setprecision(6) << P[i].id << ", " << P[i].x << ", " << P[i].y << ", " << P[i].morton_id << std::endl;
+    for (auto i = 0; i != ed; i++) {
+      std::cout << fixed << setprecision(6) << P[i].id << ", " << P[i].x << ", "
+                << P[i].y << ", " << P[i].morton_id << std::endl;
     }
   }
-  
+
   template <typename Range>
   void Build(Range In) {
     auto P = point_convert(In);
@@ -638,27 +647,31 @@ class Zdtree
   void BatchInsert(Slice In) {
     auto P = point_convert(In);
     auto P_set = geobase::get_sorted_points(P);
-    // std::cout << "[Insert_PRV]: " << tree.collect_records(tree.root).size() << endl;
+    // std::cout << "[Insert_PRV]: " << tree.collect_records(tree.root).size()
+    // << endl;
     tree.batch_insert_sorted(P_set);
-    // std::cout << "[Insert_AFT]: " << tree.collect_records(tree.root).size() << endl;
+    // std::cout << "[Insert_AFT]: " << tree.collect_records(tree.root).size()
+    // << endl;
   }
 
   void BatchDelete(Slice In) {
     auto P = point_convert(In);
     auto P_set = geobase::get_sorted_points(P);
-    // std::cout << "[Delete_PRV]: " << tree.collect_records(tree.root).size() << endl;
+    // std::cout << "[Delete_PRV]: " << tree.collect_records(tree.root).size()
+    // << endl;
     tree.batch_delete_sorted(P_set);
-    // std::cout << "[Delete_AFT]: " << tree.collect_records(tree.root).size() << endl;
+    // std::cout << "[Delete_AFT]: " << tree.collect_records(tree.root).size()
+    // << endl;
   }
 
   template <typename Node, typename Range>
   auto KNN(Node* T, Point const& q, pspt::kBoundedQueue<Point, Range>& bq) {
     pspt::KNNLogger logger;
-    geobase::Point cnv_q(q.pnt[0], q.pnt[1]);
+    // geobase::Point cnv_q(q[0], q[1]);
     size_t k = bq.max_size();
-    
-    auto knnsqrdis = tree.knn_report(k, cnv_q, largest_mbr).top().second;
-    
+
+    auto knnsqrdis = tree.knn_report(k, q, largest_mbr).top().second;
+
     // std::cout << knnsqrdis << std::endl;
     return logger;
   }
