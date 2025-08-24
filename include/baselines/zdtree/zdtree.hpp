@@ -607,11 +607,7 @@ class Zdtree
       x_min = min(x_min, P[i].x);
       y_max = max(y_max, P[i].y);
       y_min = min(y_min, P[i].y);
-      if constexpr (pspt::IsHilbertCode<SplitRule>) {
-        P[i].morton_id = P[i].overlap_bits();
-      } else {
-        P[i].morton_id = P[i].interleave_bits();
-      }
+      P[i].morton_id = P[i].interleave_bits();
       // P[i].morton_id = SplitRule::Encode(In[i]);
     });
     largest_mbr = geobase::Bounding_Box(
@@ -695,6 +691,7 @@ class Zdtree
 
     tree.range_report(cnv_q, largest_mbr, size, ret);
 
+    assert(ret.size() == size);
     // std::cout << (ret.size() == size) << std::endl;
     return std::make_pair(size, logger);
   }
