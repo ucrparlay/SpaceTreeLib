@@ -104,49 +104,25 @@ def combine_boost(P) -> List:
         if lin_sep[0] == "Tree:":
             solver = "Boost"
             match lines[index + 1].split(" ")[0]:
-                case "Cosmo50_round_no_dup.in":
-                    benchmark = "Cosmo50"
-                case "GeoLifeNoScale_round_no_dup.in":
-                    benchmark = "GeoLife"
-                case "osm_round_no_dup.in":
-                    benchmark = "OSM"
+                case "1.in":
+                    benchmark = "Varden"
+                case "2_sort_by_0.in":
+                    benchmark = "Uniform_by_x"
+                case "2.in":
+                    benchmark = "Uniform"
             index += 2
-
-        def process(data, lin_sep_arg, index_arg):
-            data = data + parse_knn_time(lin_sep_arg[index_arg: index_arg + 4])
-            index_arg += 4
-
-            data = data + \
-                parse_range_time(lin_sep_arg[index_arg: index_arg + 2])
-            index_arg += 2
-            return data
 
         # Query information
         match lin_sep[0]:
             case "##":
-                data = []
-                ratio = 0.0
-                if lin_sep[3] == "full:":
-                    data = [-1, -1, -1, -1, float(lin_sep[-1])]
-                    ratio = float(1)
-                    data = process(data, lines, index+15)
-                    index += 7
-                elif ("insert" in str(input_type)) and lin_sep[2] == "insert":
-                    data = [-1, -1, -1, -1, float(lin_sep[-1])]
-                    ratio = float(0.0001)
-                    data = process(data, lines, index+1)
-                    index += 7
-                elif ("delete" in str(input_type)) and lin_sep[2] == "delete":
-                    data = [-1, -1, -1, -1, float(lin_sep[-1])]
-                    ratio = float(0.0001)
-                    data = process(data, lines, index+1)
-                    index += 7
-                else:
-                    index += 7
-                    continue
+                index += 1
+                data = [
+                    [benchmark, solver] + line.split()
+                    for line in lines[index: index + 300]
+                ]
+                index += 300
 
-                ratio_map[ratio] = data
-                all_data = all_data + [[benchmark, solver, ratio] + data]
+                all_data = all_data + data
 
     return all_data
 
@@ -162,7 +138,7 @@ def combine(P) -> List:
     while index < len(lines):
         lin_sep = " ".join(lines[index].split())
         lin_sep = lin_sep.split(" ")
-        print(lin_sep)
+        # print(lin_sep)
 
         if len(lin_sep) == 0 or lin_sep[0] == "":  # Skip empty lines
             index += 1
@@ -249,8 +225,8 @@ def csvSetup():
 
 csv_writer, csv_file_pointer = csvSetup()
 data = combine(input_path)
-# data = data + combine_boost("logs/real_world/4_0.log")
-# print(data)
+boost_res = combine_boost("logs/range_query_log/2_4_0.log")
+data = data + boost_res
 data = post_processing(data)
 # print(data)
 csv_writer.writerows(data)

@@ -29,7 +29,7 @@ range count time: 0.00104767 6.12338 37.4987 37.4987 0.00332 32.372 0.013743 180
 range query time: 0.000811 6.12338 37.4987 37.4987 0.00332 32.372 0.0165333 180.535 360.259 360.259 7.87858 172.845 1.75433 3594.64 6357.33 6357.33 902.992 1860.71 
 
 Tree: OrthTree; AugType: HasBox; Split: RotateDim-SpatialMedian; BDO: 6; Inba: 30; Coord: integer;
-GeoLifeNoScale_round_no_dup.in
+GeoLifeNoScale_round_no_dup.in 
 # Insert
 ## 1
 median: (1, 0.00639233)-> min: (1, 0.00639233)-> max: (1, 0.00639233)-> tot: 0.00639233-> avg: 0.00639233

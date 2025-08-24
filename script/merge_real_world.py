@@ -161,21 +161,25 @@ def combine_boost(P) -> List:
             return data
 
         # Query information
+        op = ""
         match lin_sep[0]:
             case "##":
                 data = []
                 ratio = 0.0
                 if lin_sep[3] == "full:":
+                    op = "Insert"
                     data = [-1, -1, -1, -1, float(lin_sep[-1])]
                     ratio = float(1)
                     data = process(data, lines, index+15)
                     index += 7
-                elif ("insert" in str(input_type)) and lin_sep[2] == "insert":
+                elif lin_sep[2] == "insert":
+                    op = "Insert"
                     data = [-1, -1, -1, -1, float(lin_sep[-1])]
                     ratio = float(0.0001)
                     data = process(data, lines, index+1)
                     index += 7
-                elif ("delete" in str(input_type)) and lin_sep[2] == "delete":
+                elif lin_sep[2] == "delete":
+                    op = "Delete"
                     data = [-1, -1, -1, -1, float(lin_sep[-1])]
                     ratio = float(0.0001)
                     data = process(data, lines, index+1)
@@ -185,7 +189,7 @@ def combine_boost(P) -> List:
                     continue
 
                 ratio_map[ratio] = data
-                all_data = all_data + [[benchmark, solver, ratio] + data]
+                all_data = all_data + [[benchmark, solver, op, ratio] + data]
 
     return all_data
 
@@ -201,7 +205,7 @@ def combine(P) -> List:
     while index < len(lines):
         lin_sep = " ".join(lines[index].split())
         lin_sep = lin_sep.split(" ")
-        print(lin_sep)
+        # print(lin_sep)
 
         if len(lin_sep) == 0 or lin_sep[0] == "":  # Skip empty lines
             index += 1
@@ -211,6 +215,7 @@ def combine(P) -> List:
         if lin_sep[0] == "Tree:":
             if lin_sep[1] == "KdTree;":
                 solver = "KdTree"
+                # print(solver, index)
             elif lin_sep[1] == "OrthTree;":
                 solver = "OrthTree"
             elif lin_sep[1] == "PTree;":
@@ -220,10 +225,12 @@ def combine(P) -> List:
             else:
                 raise ValueError(f"Unknown solver: {lin_sep[1]}")
 
+            # print(lines[index + 1].split(" "))
             match lines[index + 1].split(" ")[0]:
                 case "Cosmo50_round_no_dup.in":
                     benchmark = "Cosmo50"
                 case "GeoLifeNoScale_round_no_dup.in":
+                    print(solver)
                     benchmark = "GeoLife"
                 case "osm_round_no_dup.in":
                     benchmark = "OSM"
@@ -244,7 +251,6 @@ def combine(P) -> List:
                 data = data + parse_range_time(lines[index: index + 2])
                 index += 2
 
-                ratio_map[ratio] = data
                 all_data = all_data + [[benchmark, solver, op, ratio] + data]
     return all_data
 
@@ -267,8 +273,7 @@ def post_processing(data):
         data,
         key=lambda x: (
             bench_order.index(x[0]),
-            tree_order.index(x[1]),
-            -x[2],
+            tree_order.index(x[1])
         ),
     )
     return sorted_lst
@@ -280,7 +285,8 @@ def csvSetup():
     csv_file_pointer.truncate()
     csv_writer = csv.writer(csv_file_pointer)
     csv_writer.writerow(
-        ["benchmark", "solver", "ratio", "median", "avg", "min", "max", "tot"]
+        ["benchmark", "solver", "op", "ratio",
+            "median", "avg", "min", "max", "tot"]
         + ["IDS1", "IDS10", "IDS100"]
         + ["ODS1", "ODS10", "ODS100"]
         + ["IDU1", "IDU10", "IDU100"]

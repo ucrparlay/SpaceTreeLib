@@ -29,7 +29,7 @@ range count time: 0.002007 3.95898 32.411 0 0.0005 29.4515 0.010648 95.5049 223.
 range query time: 0.000693333 3.95898 32.411 0 0.0005 29.4515 0.0138353 95.5049 223.973 0 3.58076 125.887 1.67222 1780.88 3269.7 0 429.127 1060.69 
 
 Tree: KdTree; AugType: HasBox; Split: MaxStretchDim-ObjectMedian; BDO: 6; Inba: 30; Coord: integer;
-GeoLifeNoScale_round_no_dup.in
+GeoLifeNoScale_round_no_dup.in 
 # Insert
 ## 1
 median: (1, 0.00529767)-> min: (1, 0.00529767)-> max: (1, 0.00529767)-> tot: 0.00529767-> avg: 0.00529767
