@@ -1,0 +1,336 @@
+Tree: KdTree; AugType: HasBox; Split: MaxStretchDim-ObjectMedian; BDO: 6; Inba: 30; Coord: integer; 
+1.in 
+207.853 3.39631 2.09083  1
+
+Tree: OrthTree; AugType: HasBox; Split: RotateDim-SpatialMedian; BDO: 6; Inba: 30; Coord: integer; 
+1.in 
+270.997 2.78906 1.79493  1
+
+Tree: PTree; AugType: HasBox; Split: HilbertCurve; BDO: 6; Inba: 30; Coord: integer; 
+1.in 
+207.981 2.15717 1.76248  1
+
+Tree: CPAM; AugType: HasBox; Split: HilbertCurve; BDO: 6; Inba: 30; Coord: integer; 
+1.in 
+294.528 2.60799 2.56338  1
+
+Tree: KdTree; AugType: HasBox; Split: MaxStretchDim-ObjectMedian; BDO: 6; Inba: 30; Coord: integer; 
+1.in 
+6.05009 0.107061 0.0717145  112
+
+Tree: OrthTree; AugType: HasBox; Split: RotateDim-SpatialMedian; BDO: 6; Inba: 30; Coord: integer; 
+1.in 
+13.1326 0.123142 0.111308  112
+
+Tree: PTree; AugType: HasBox; Split: HilbertCurve; BDO: 6; Inba: 30; Coord: integer; 
+1.in 
+3.26778 0.032914 0.0279555  112
+
+Tree: CPAM; AugType: HasBox; Split: HilbertCurve; BDO: 6; Inba: 30; Coord: integer; 
+1.in 
+9.59429 0.104701 0.112679  112
+
+Tree: KdTree; AugType: HasBox; Split: MaxStretchDim-ObjectMedian; BDO: 6; Inba: 30; Coord: integer; 
+1.in 
+15.1288 0.268539 0.174671  16
+
+Tree: OrthTree; AugType: HasBox; Split: RotateDim-SpatialMedian; BDO: 6; Inba: 30; Coord: integer; 
+1.in 
+20.2021 0.230157 0.169441  16
+
+Tree: PTree; AugType: HasBox; Split: HilbertCurve; BDO: 6; Inba: 30; Coord: integer; 
+1.in 
+15.0642 0.136186 0.129981  16
+
+Tree: CPAM; AugType: HasBox; Split: HilbertCurve; BDO: 6; Inba: 30; Coord: integer; 
+1.in 
+29.0815 0.224817 0.247803  16
+
+Tree: KdTree; AugType: HasBox; Split: MaxStretchDim-ObjectMedian; BDO: 6; Inba: 30; Coord: integer; 
+1.in 
+5.94439 0.108308 0.069206  224
+
+Tree: OrthTree; AugType: HasBox; Split: RotateDim-SpatialMedian; BDO: 6; Inba: 30; Coord: integer; 
+1.in 
+11.5881 0.116511 0.103106  224
+
+Tree: PTree; AugType: HasBox; Split: HilbertCurve; BDO: 6; Inba: 30; Coord: integer; 
+1.in 
+3.06021 0.0269395 0.025768  224
+
+Tree: CPAM; AugType: HasBox; Split: HilbertCurve; BDO: 6; Inba: 30; Coord: integer; 
+1.in 
+9.53323 0.089831 0.104819  224
+
+Tree: KdTree; AugType: HasBox; Split: MaxStretchDim-ObjectMedian; BDO: 6; Inba: 30; Coord: integer; 
+1.in 
+7.9088 0.147358 0.100278  32
+
+Tree: OrthTree; AugType: HasBox; Split: RotateDim-SpatialMedian; BDO: 6; Inba: 30; Coord: integer; 
+1.in 
+10.9138 0.137691 0.11027  32
+
+Tree: PTree; AugType: HasBox; Split: HilbertCurve; BDO: 6; Inba: 30; Coord: integer; 
+1.in 
+7.83994 0.073579 0.0676925  32
+
+Tree: CPAM; AugType: HasBox; Split: HilbertCurve; BDO: 6; Inba: 30; Coord: integer; 
+1.in 
+16.2095 0.12983 0.139748  32
+
+Tree: KdTree; AugType: HasBox; Split: MaxStretchDim-ObjectMedian; BDO: 6; Inba: 30; Coord: integer; 
+1.in 
+59.9145 1.00979 0.620766  4
+
+Tree: OrthTree; AugType: HasBox; Split: RotateDim-SpatialMedian; BDO: 6; Inba: 30; Coord: integer; 
+1.in 
+78.6392 0.830102 0.528435  4
+
+Tree: PTree; AugType: HasBox; Split: HilbertCurve; BDO: 6; Inba: 30; Coord: integer; 
+1.in 
+62.3264 0.543049 0.475507  4
+
+Tree: CPAM; AugType: HasBox; Split: HilbertCurve; BDO: 6; Inba: 30; Coord: integer; 
+1.in 
+95.8082 0.850812 0.758808  4
+
+Tree: KdTree; AugType: HasBox; Split: MaxStretchDim-ObjectMedian; BDO: 6; Inba: 30; Coord: integer; 
+1.in 
+4.69264 0.103157 0.0665835  64
+
+Tree: OrthTree; AugType: HasBox; Split: RotateDim-SpatialMedian; BDO: 6; Inba: 30; Coord: integer; 
+1.in 
+8.04065 0.104268 0.0913305  64
+
+Tree: PTree; AugType: HasBox; Split: HilbertCurve; BDO: 6; Inba: 30; Coord: integer; 
+1.in 
+4.2063 0.040597 0.036825  64
+
+Tree: CPAM; AugType: HasBox; Split: HilbertCurve; BDO: 6; Inba: 30; Coord: integer; 
+1.in 
+9.52085 0.0813 0.088355  64
+
+Tree: KdTree; AugType: HasBox; Split: MaxStretchDim-ObjectMedian; BDO: 6; Inba: 30; Coord: integer; 
+2_sort_by_0.in 
+204.232 2.18252 2.34546  1
+
+Tree: OrthTree; AugType: HasBox; Split: RotateDim-SpatialMedian; BDO: 6; Inba: 30; Coord: integer; 
+2_sort_by_0.in 
+159.463 1.50312 0.795595  1
+
+Tree: PTree; AugType: HasBox; Split: HilbertCurve; BDO: 6; Inba: 30; Coord: integer; 
+2_sort_by_0.in 
+231.188 2.45436 1.73565  1
+
+Tree: CPAM; AugType: HasBox; Split: HilbertCurve; BDO: 6; Inba: 30; Coord: integer; 
+2_sort_by_0.in 
+308.049 3.16155 2.67388  1
+
+Tree: KdTree; AugType: HasBox; Split: MaxStretchDim-ObjectMedian; BDO: 6; Inba: 30; Coord: integer; 
+2_sort_by_0.in 
+5.17671 0.058462 0.080583  112
+
+Tree: OrthTree; AugType: HasBox; Split: RotateDim-SpatialMedian; BDO: 6; Inba: 30; Coord: integer; 
+2_sort_by_0.in 
+5.48606 0.054854 0.0382915  112
+
+Tree: PTree; AugType: HasBox; Split: HilbertCurve; BDO: 6; Inba: 30; Coord: integer; 
+2_sort_by_0.in 
+3.64443 0.043057 0.029662  112
+
+Tree: CPAM; AugType: HasBox; Split: HilbertCurve; BDO: 6; Inba: 30; Coord: integer; 
+2_sort_by_0.in 
+9.92476 0.10106 0.12061  112
+
+Tree: KdTree; AugType: HasBox; Split: MaxStretchDim-ObjectMedian; BDO: 6; Inba: 30; Coord: integer; 
+2_sort_by_0.in 
+14.9864 0.164015 0.191186  16
+
+Tree: OrthTree; AugType: HasBox; Split: RotateDim-SpatialMedian; BDO: 6; Inba: 30; Coord: integer; 
+2_sort_by_0.in 
+12.1662 0.121855 0.074634  16
+
+Tree: PTree; AugType: HasBox; Split: HilbertCurve; BDO: 6; Inba: 30; Coord: integer; 
+2_sort_by_0.in 
+17.0015 0.185441 0.126449  16
+
+Tree: CPAM; AugType: HasBox; Split: HilbertCurve; BDO: 6; Inba: 30; Coord: integer; 
+2_sort_by_0.in 
+29.5275 0.259665 0.250183  16
+
+Tree: KdTree; AugType: HasBox; Split: MaxStretchDim-ObjectMedian; BDO: 6; Inba: 30; Coord: integer; 
+2_sort_by_0.in 
+4.86093 0.055413 0.088788  224
+
+Tree: OrthTree; AugType: HasBox; Split: RotateDim-SpatialMedian; BDO: 6; Inba: 30; Coord: integer; 
+2_sort_by_0.in 
+4.7469 0.050729 0.035385  224
+
+Tree: PTree; AugType: HasBox; Split: HilbertCurve; BDO: 6; Inba: 30; Coord: integer; 
+2_sort_by_0.in 
+3.30364 0.0360145 0.0261995  224
+
+Tree: CPAM; AugType: HasBox; Split: HilbertCurve; BDO: 6; Inba: 30; Coord: integer; 
+2_sort_by_0.in 
+10.0527 0.096287 0.11915  224
+
+Tree: KdTree; AugType: HasBox; Split: MaxStretchDim-ObjectMedian; BDO: 6; Inba: 30; Coord: integer; 
+2_sort_by_0.in 
+7.73828 0.0879385 0.109201  32
+
+Tree: OrthTree; AugType: HasBox; Split: RotateDim-SpatialMedian; BDO: 6; Inba: 30; Coord: integer; 
+2_sort_by_0.in 
+6.44159 0.06825 0.044804  32
+
+Tree: PTree; AugType: HasBox; Split: HilbertCurve; BDO: 6; Inba: 30; Coord: integer; 
+2_sort_by_0.in 
+8.71861 0.097684 0.06625  32
+
+Tree: CPAM; AugType: HasBox; Split: HilbertCurve; BDO: 6; Inba: 30; Coord: integer; 
+2_sort_by_0.in 
+16.5695 0.147322 0.140039  32
+
+Tree: KdTree; AugType: HasBox; Split: MaxStretchDim-ObjectMedian; BDO: 6; Inba: 30; Coord: integer; 
+2_sort_by_0.in 
+59.1826 0.630404 0.676772  4
+
+Tree: OrthTree; AugType: HasBox; Split: RotateDim-SpatialMedian; BDO: 6; Inba: 30; Coord: integer; 
+2_sort_by_0.in 
+48.4134 0.470308 0.236135  4
+
+Tree: PTree; AugType: HasBox; Split: HilbertCurve; BDO: 6; Inba: 30; Coord: integer; 
+2_sort_by_0.in 
+71.6143 0.774607 0.471023  4
+
+Tree: CPAM; AugType: HasBox; Split: HilbertCurve; BDO: 6; Inba: 30; Coord: integer; 
+2_sort_by_0.in 
+99.7279 1.01285 0.782128  4
+
+Tree: KdTree; AugType: HasBox; Split: MaxStretchDim-ObjectMedian; BDO: 6; Inba: 30; Coord: integer; 
+2_sort_by_0.in 
+4.68568 0.053656 0.090148  64
+
+Tree: OrthTree; AugType: HasBox; Split: RotateDim-SpatialMedian; BDO: 6; Inba: 30; Coord: integer; 
+2_sort_by_0.in 
+3.95385 0.0463235 0.032113  64
+
+Tree: PTree; AugType: HasBox; Split: HilbertCurve; BDO: 6; Inba: 30; Coord: integer; 
+2_sort_by_0.in 
+4.69997 0.0529295 0.0368295  64
+
+Tree: CPAM; AugType: HasBox; Split: HilbertCurve; BDO: 6; Inba: 30; Coord: integer; 
+2_sort_by_0.in 
+9.70774 0.0904825 0.088255  64
+
+Tree: KdTree; AugType: HasBox; Split: MaxStretchDim-ObjectMedian; BDO: 6; Inba: 30; Coord: integer; 
+2.in 
+221.559 5.2387 5.24781  1
+
+Tree: OrthTree; AugType: HasBox; Split: RotateDim-SpatialMedian; BDO: 6; Inba: 30; Coord: integer; 
+2.in 
+171.682 5.22146 5.50216  1
+
+Tree: PTree; AugType: HasBox; Split: HilbertCurve; BDO: 6; Inba: 30; Coord: integer; 
+2.in 
+274.441 4.27118 6.0512  1
+
+Tree: CPAM; AugType: HasBox; Split: HilbertCurve; BDO: 6; Inba: 30; Coord: integer; 
+2.in 
+339.846 19.2195 18.7477  1
+
+Tree: KdTree; AugType: HasBox; Split: MaxStretchDim-ObjectMedian; BDO: 6; Inba: 30; Coord: integer; 
+2.in 
+3.89007 0.138218 0.156604  112
+
+Tree: OrthTree; AugType: HasBox; Split: RotateDim-SpatialMedian; BDO: 6; Inba: 30; Coord: integer; 
+2.in 
+3.34989 0.139799 0.1539  112
+
+Tree: PTree; AugType: HasBox; Split: HilbertCurve; BDO: 6; Inba: 30; Coord: integer; 
+2.in 
+3.99097 0.0690835 0.178286  112
+
+Tree: CPAM; AugType: HasBox; Split: HilbertCurve; BDO: 6; Inba: 30; Coord: integer; 
+2.in 
+10.4856 0.613881 0.618699  112
+
+Tree: KdTree; AugType: HasBox; Split: MaxStretchDim-ObjectMedian; BDO: 6; Inba: 30; Coord: integer; 
+2.in 
+16.9666 0.561514 0.626709  16
+
+Tree: OrthTree; AugType: HasBox; Split: RotateDim-SpatialMedian; BDO: 6; Inba: 30; Coord: integer; 
+2.in 
+13.7199 0.555951 0.615787  16
+
+Tree: PTree; AugType: HasBox; Split: HilbertCurve; BDO: 6; Inba: 30; Coord: integer; 
+2.in 
+20.5554 0.370059 0.65149  16
+
+Tree: CPAM; AugType: HasBox; Split: HilbertCurve; BDO: 6; Inba: 30; Coord: integer; 
+2.in 
+32.391 1.66693 1.70553  16
+
+Tree: KdTree; AugType: HasBox; Split: MaxStretchDim-ObjectMedian; BDO: 6; Inba: 30; Coord: integer; 
+2.in 
+3.60524 0.127918 0.136349  224
+
+Tree: OrthTree; AugType: HasBox; Split: RotateDim-SpatialMedian; BDO: 6; Inba: 30; Coord: integer; 
+2.in 
+3.33232 0.116529 0.117066  224
+
+Tree: PTree; AugType: HasBox; Split: HilbertCurve; BDO: 6; Inba: 30; Coord: integer; 
+2.in 
+3.30875 0.0556895 0.161897  224
+
+Tree: CPAM; AugType: HasBox; Split: HilbertCurve; BDO: 6; Inba: 30; Coord: integer; 
+2.in 
+11.5923 0.599136 0.593379  224
+
+Tree: KdTree; AugType: HasBox; Split: MaxStretchDim-ObjectMedian; BDO: 6; Inba: 30; Coord: integer; 
+2.in 
+8.66606 0.300824 0.333526  32
+
+Tree: OrthTree; AugType: HasBox; Split: RotateDim-SpatialMedian; BDO: 6; Inba: 30; Coord: integer; 
+2.in 
+7.08534 0.299982 0.344996  32
+
+Tree: PTree; AugType: HasBox; Split: HilbertCurve; BDO: 6; Inba: 30; Coord: integer; 
+2.in 
+10.369 0.189325 0.345001  32
+
+Tree: CPAM; AugType: HasBox; Split: HilbertCurve; BDO: 6; Inba: 30; Coord: integer; 
+2.in 
+17.7779 1.06037 1.07917  32
+
+Tree: KdTree; AugType: HasBox; Split: MaxStretchDim-ObjectMedian; BDO: 6; Inba: 30; Coord: integer; 
+2.in 
+66.9285 1.70293 1.71865  4
+
+Tree: OrthTree; AugType: HasBox; Split: RotateDim-SpatialMedian; BDO: 6; Inba: 30; Coord: integer; 
+2.in 
+55.2684 1.70004 1.79071  4
+
+Tree: PTree; AugType: HasBox; Split: HilbertCurve; BDO: 6; Inba: 30; Coord: integer; 
+2.in 
+87.0163 1.43569 1.87185  4
+
+Tree: CPAM; AugType: HasBox; Split: HilbertCurve; BDO: 6; Inba: 30; Coord: integer; 
+2.in 
+108.622 5.38477 5.46031  4
+
+Tree: KdTree; AugType: HasBox; Split: MaxStretchDim-ObjectMedian; BDO: 6; Inba: 30; Coord: integer; 
+2.in 
+4.66168 0.162835 0.179542  64
+
+Tree: OrthTree; AugType: HasBox; Split: RotateDim-SpatialMedian; BDO: 6; Inba: 30; Coord: integer; 
+2.in 
+3.86682 0.156047 0.179876  64
+
+Tree: PTree; AugType: HasBox; Split: HilbertCurve; BDO: 6; Inba: 30; Coord: integer; 
+2.in 
+5.45721 0.099944 0.194626  64
+
+Tree: CPAM; AugType: HasBox; Split: HilbertCurve; BDO: 6; Inba: 30; Coord: integer; 
+2.in 
+10.4221 0.611698 0.622453  64
+

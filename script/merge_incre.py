@@ -129,7 +129,7 @@ def combine_boost(P) -> List:
     while index < len(lines):
         lin_sep = " ".join(lines[index].split())
         lin_sep = lin_sep.split(" ")
-        # print(lin_sep)
+        print(lin_sep)
 
         if len(lin_sep) == 0 or lin_sep[0] == "":  # Skip empty lines
             index += 1
