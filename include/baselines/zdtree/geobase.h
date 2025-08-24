@@ -8,6 +8,7 @@
 #include <random>
 
 #include "parlay/internal/merge.h"
+#include "pspt/dependence/comparator.h"
 #include "pspt/dependence/space_filling_curve/hilbert.h"
 
 namespace ZD {
@@ -53,6 +54,36 @@ struct Point {
     // morton_id = interleave_bits();
   }
 
+  // new things
+  using Coord = FT;
+  using Coords = std::array<Coord, 2>;
+  using Num = pspt::Num_Comparator<Coord>;
+  using DisType =
+      std::conditional_t<std::is_integral_v<Coord>, int_fast64_t, double>;
+  using DimsType = uint_fast8_t;
+  using BP = Point;
+  Point(Coords const& _pnt) : x(_pnt[0]), y(_pnt[1]) {}
+  Point(FT x) : x(x), y(x) {}
+  Coord& operator[](DimsType i) { return i == 0 ? x : y; }
+  Coord const& operator[](DimsType i) const { return i == 0 ? x : y; }
+  Point const MinCoords(Point const& b) const {
+    Point p;
+    p[0] = Num::Min(x, b[0]);
+    p[1] = Num::Min(y, b[1]);
+    return p;
+  }
+
+  Point const MaxCoords(Point const& b) const {
+    Point p;
+    p[0] = Num::Max(x, b[0]);
+    p[1] = Num::Max(y, b[1]);
+    return p;
+  }
+  static consteval auto GetDim() { return 2; }
+  bool SameDimension(Point const& b) const { return *this == b; }
+  Coords GetCoords() const { return {x, y}; }
+
+  // original things
   bool operator==(Point const& p) const {
     return !(id - p.id) && !dcmp(x - p.x) && !dcmp(y - p.y);
   }

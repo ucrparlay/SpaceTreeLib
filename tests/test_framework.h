@@ -109,7 +109,7 @@ size_t recurse_box(parlay::slice<Point*, Point*> In, auto& box_seq, int DIM,
   size_t pos = get_random_index(0, n, rand());
   parlay::sequence<bool> flag(n, 0);
   parlay::parallel_for(0, n, [&](size_t i) {
-    if (pspt::Num_Comparator<Coord>::Gt(In[i].pnt[dim], In[pos].pnt[dim]))
+    if (pspt::Num_Comparator<Coord>::Gt(In[i][dim], In[pos][dim]))
       flag[i] = 1;
     else
       flag[i] = 0;
@@ -1088,7 +1088,7 @@ void generate_random_points(parlay::sequence<Point>& wp, Coord _box_size,
       [&](long i) {
         auto r = gen[i];
         for (int j = 0; j < Dim; j++) {
-          wp[i].pnt[j] = dis(r);
+          wp[i][j] = dis(r);
         }
       },
       1000);
@@ -1120,10 +1120,12 @@ std::pair<size_t, int> read_points(char const* iFile,
   wp.resize(N);
   parlay::parallel_for(0, n, [&](size_t i) {
     for (int j = 0; j < Dim; j++) {
-      wp[i].pnt[j] = a[i * Dim + j];
+      wp[i][j] = a[i * Dim + j];
       if constexpr (std::is_same_v<Point,
                                    BasicPoint<Coord, a_sample_point.size()>>) {
         ;
+      } else if constexpr (std::is_same_v<Point, typename ZD::geobase::Point>) {
+        wp[i].id = i + id_offset;
       } else {
         wp[i].aug.id = i + id_offset;
       }
@@ -1871,7 +1873,8 @@ class Wrapper {
       } else if (tree_type == 3) {
         Run<CpamRawWrapper<Point, SplitRule>>(params, test_func);
       } else if (tree_type == 4) {
-        Run<ZdTreeWrapper<Point, SplitRule>>(params, test_func);
+        Run<ZdTreeWrapper<typename ZD::geobase::Point, SplitRule>>(params,
+                                                                   test_func);
       } else if (tree_type == 5) {
         // Run<BoostRTreeWrapper<Point, SplitRule>>(params, test_func);
       } else if (tree_type == 6) {
@@ -1895,7 +1898,12 @@ class Wrapper {
     if (dim == 2) {
       run_with_split_type.template operator()<AugPoint<Coord, 2, AugIdCode>>();
     } else if (dim == 3) {
-      run_with_split_type.template operator()<AugPoint<Coord, 3, AugIdCode>>();
+      if (tree_type == 4) {
+        ;
+      } else {
+        run_with_split_type
+            .template operator()<AugPoint<Coord, 3, AugIdCode>>();
+      }
     }
   }
 };

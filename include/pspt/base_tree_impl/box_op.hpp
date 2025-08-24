@@ -269,8 +269,9 @@ BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::GetBox(Slice V) {
     auto minmax = [&](Box const& x, Box const& y) {
       return Box(x.first.MinCoords(y.first), x.second.MaxCoords(y.second));
     };
-    auto boxes = parlay::delayed_seq<Box>(
-        V.size(), [&](size_t i) { return Box(V[i].pnt, V[i].pnt); });
+    auto boxes = parlay::delayed_seq<Box>(V.size(), [&](size_t i) {
+      return Box(V[i].GetCoords(), V[i].GetCoords());
+    });
     return parlay::reduce(boxes, parlay::make_monoid(minmax, boxes[0]));
   }
 }
