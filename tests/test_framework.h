@@ -1168,7 +1168,8 @@ static auto constexpr DefaultTestFunc = []<class TreeDesc, typename Point>(
   Tree tree;
   constexpr bool kTestTime = true;
 
-  // BuildTree<Point, Tree, kTestTime, 2>(wp, kRounds, tree);
+  std::cout << "Called Build" << std::endl;
+  BuildTree<Point, Tree, kTestTime, 2>(wp, kRounds, tree);
 
   // NOTE: batch insert
   if (kTag & (1 << 0)) {
