@@ -591,27 +591,28 @@ class Zdtree
     return;
   }
 
-  geobase::Bounding_Box largest_mbr;
+  geobase::Bounding_Box largest_mbr = BT::GetEmptyBox();
   // convert to zdtree point format, with storing Z-values
   template <typename Range>
   auto point_convert(Range& In) {
     Slice A = parlay::make_slice(In);
     // parlay::sequence<geobase::Point> P(In.size());
-    FT x_min(FT_INF_MAX), x_max(FT_INF_MIN), y_min(FT_INF_MAX),
-        y_max(FT_INF_MIN);
-    parlay::parallel_for(0, In.size(), [&](size_t i) {
-      // P[i].id = In[i].aug.id;
-      // P[i].x = In[i].pnt[0];
-      // P[i].y = In[i].pnt[1];
-      x_max = max(x_max, In[i].x);
-      x_min = min(x_min, In[i].x);
-      y_max = max(y_max, In[i].y);
-      y_min = min(y_min, In[i].y);
-      In[i].morton_id = In[i].interleave_bits();
-      // P[i].morton_id = SplitRule::Encode(In[i]);
-    });
-    largest_mbr = geobase::Bounding_Box(
-        {geobase::Point(x_min, y_min), geobase::Point(x_max, y_max)});
+    // FT x_min(FT_INF_MAX), x_max(FT_INF_MIN), y_min(FT_INF_MAX),
+    //     y_max(FT_INF_MIN);
+    // parlay::parallel_for(0, In.size(), [&](size_t i) {
+    // P[i].id = In[i].aug.id;
+    // P[i].x = In[i].pnt[0];
+    // P[i].y = In[i].pnt[1];
+    // x_max = max(x_max, In[i].x);
+    // x_min = min(x_min, In[i].x);
+    // y_max = max(y_max, In[i].y);
+    // y_min = min(y_min, In[i].y);
+    // In[i].morton_id = In[i].interleave_bits();
+    // P[i].morton_id = SplitRule::Encode(In[i]);
+    // });
+    largest_mbr = BT::GetBox(largest_mbr, BT::GetBox(In));
+    // largest_mbr = geobase::Bounding_Box(
+    // {geobase::Point(x_min, y_min), geobase::Point(x_max, y_max)});
     return In;
   }
 
@@ -640,6 +641,7 @@ class Zdtree
     // check_first(P_set);
     tree.build(P_set);
   }
+
   void BatchInsert(Slice In) {
     auto P = point_convert(In);
     auto P_set = geobase::get_sorted_points(P);
