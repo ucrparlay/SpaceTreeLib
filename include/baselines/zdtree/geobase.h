@@ -21,21 +21,6 @@ constexpr FT FT_INF_MIN = numeric_limits<FT>::min();
 constexpr FT FT_INF_MAX = numeric_limits<FT>::max();
 constexpr FT FT_EPS = numeric_limits<FT>::epsilon();
 
-struct break_down {
-  FT sort_time = 0;
-  FT leaf_time = 0;
-  FT inte_time = 0;
-  FT split_time = 0;
-  FT slice_time = 0;
-  void clear() {
-    sort_time = 0;
-    leaf_time = 0;
-    inte_time = 0;
-    split_time = 0;
-    slice_time = 0;
-  }
-};
-
 inline int dcmp(const FT& x) {
   if (fabs(x) < FT_EPS) return 0;
   return x < 0 ? -1 : 1;
@@ -45,31 +30,34 @@ bool less_msb(unsigned int x, unsigned int y) { return x < y && x < (x ^ y); }
 
 struct Point {
   size_t id;
-  FT x, y;
+  FT x, y, z; // add z
   unsigned long long morton_id;
   Point() {}
   Point(FT _x, FT _y) : x(_x), y(_y) {}
-  Point(size_t _id, FT _x, FT _y) : id(_id), x(_x), y(_y) {
-    // morton_id = mortonIndex();
-    // morton_id = interleave_bits();
-  }
+  Point(size_t _id, FT _x, FT _y) : id(_id), x(_x), y(_y) {}
+
+  // 3D
+  Point(FT _x, FT _y, FT _z) : x(_x), y(_y), z(_z) {}
+  Point(size_t _id, FT _x, FT _y, FT _z) : id(_id), x(_x), y(_y), z(_z) {}
 
   // new things
   using Coord = FT;
-  using Coords = std::array<Coord, 2>;
+  // using Coords = std::array<Coord, 2>;
+  using Coords = std::array<Coord, 3>;
   using Num = pspt::Num_Comparator<Coord>;
   using DisType =
       std::conditional_t<std::is_integral_v<Coord>, int_fast64_t, double>;
   using DimsType = uint_fast8_t;
   using BP = Point;
-  Point(Coords const& _pnt) : x(_pnt[0]), y(_pnt[1]) {}
-  Point(FT x) : x(x), y(x) {}
-  Coord& operator[](DimsType i) { return i == 0 ? x : y; }
-  Coord const& operator[](DimsType i) const { return i == 0 ? x : y; }
+  Point(Coords const& _pnt) : x(_pnt[0]), y(_pnt[1]), z(_pnt[1]){}
+  Point(FT x) : x(x), y(x), z(x) {}
+  Coord& operator[](DimsType i) { if (i == 0) return x; return i == 1 ? y : z;}
+  Coord const& operator[](DimsType i) const { if (i == 0) return x; return i == 1 ? y : z; }
   Point const MinCoords(Point const& b) const {
     Point p;
     p[0] = Num::Min(x, b[0]);
     p[1] = Num::Min(y, b[1]);
+    p[2] = Num::Min(z, b[2]);
     return p;
   }
 
@@ -77,45 +65,49 @@ struct Point {
     Point p;
     p[0] = Num::Max(x, b[0]);
     p[1] = Num::Max(y, b[1]);
+    p[2] = Num::Max(z, b[2]);
     return p;
   }
-  static consteval auto GetDim() { return 2; }
-  bool SameDimension(Point const& b) const { return x == b.x && y == b.y; }
-  Coords GetCoords() const { return {x, y}; }
+  // static consteval auto GetDim() { return 2; }
+  static consteval auto GetDim() { return 3; }
+  bool SameDimension(Point const& b) const { return x == b.x && y == b.y && z == b.z; }
+  Coords GetCoords() const { return {x, y, z}; }
 
   // original things
   bool operator==(Point const& p) const {
-    return !(id - p.id) && !dcmp(x - p.x) && !dcmp(y - p.y);
+    return !(id - p.id) && !dcmp(x - p.x) && !dcmp(y - p.y) && !dcmp(z - p.z);
   }
 
   friend std::ostream& operator<<(std::ostream& os, Point const& p) {
-    os << fixed << setprecision(6) << p.id << ": (" << p.x << ", " << p.y
-       << ")";
-    // os << "(" << p.x << ", " << p.y << ")";
+    os << fixed << setprecision(6) << p.id << ": (" << p.x << ", " << p.y << ", " << p.z << ")";
     return os;
   }
 
-  // bool operator < (const Point &b) const{
-  //     return (morton_id < b.morton_id) ||
-  //         (morton_id == b.morton_id && id < b.id);
-  // }
-
   /* return Z value of this point */
   unsigned long long interleave_bits() const {
-    // Pun the x and y coordinates as integers: Just re-interpret the bits.
-    //
+    /* 3D Morton Value Form: xyzxyz...xyz- the lowest bit is not used. */
     auto ix = static_cast<unsigned int>(x);
     auto iy = static_cast<unsigned int>(y);
-    // cout << ix << ", " << iy << endl;
-    // cout << bitset<32>(ix) << endl;
-    // cout << bitset<32>(iy) << endl;
-
-    auto ret = 0ull;
-    for (auto i = 0; i < 32; i++) {
-      ret |= ((ix & (1ull << i)) << (i + 1)) | ((iy & (1ull << i)) << i);
+    auto iz = static_cast<unsigned int>(z);
+    unsigned long long ret = 0ull;
+    for (int b = 0; b < 21; ++b) {
+        ret |= ((iz >> b) & 1) << (3 * b);     
+        ret |= ((iy >> b) & 1) << (3 * b + 1); 
+        ret |= ((ix >> b) & 1) << (3 * b + 2); 
     }
-    // cout << bitset<64>(ret) << endl;
+    ret <<= 1;
     return ret;
+
+    // /* Original Implementation for 2D */
+    // // Pun the x and y coordinates as integers: Just re-interpret the bits.
+    // auto ix = static_cast<unsigned int>(x);
+    // auto iy = static_cast<unsigned int>(y);
+
+    // auto ret = 0ull;
+    // for (auto i = 0; i < 32; i++) {
+    //   ret |= ((ix & (1ull << i)) << (i + 1)) | ((iy & (1ull << i)) << i);
+    // }
+    // return ret;
   }
 
   unsigned long long overlap_bits() const {
@@ -349,7 +341,7 @@ MBR merge_mbr(MBR& a, MBR& b) {
 template <class MBR>
 bool point_in_mbr(Point& p, MBR& mbr) {
   return mbr.first.x <= p.x && p.x <= mbr.second.x && mbr.first.y <= p.y &&
-         p.y <= mbr.second.y;
+         p.y <= mbr.second.y && mbr.first.z <= p.z && p.z <= mbr.second.z;
 }
 
 // check whether a given mbr inside a mbr, e,g., check whether small_mbr in
@@ -374,18 +366,32 @@ bool mbr_exclude_mbr(MBR& small_mbr, MBR& large_mbr) {
 // relations between two mbrs: -1: excluded; 0: intersected; 1: the smaller one
 // is contained by the larger one;
 template <class MBR>
-int mbr_mbr_relation(MBR& small_mbr, MBR& large_mbr) {
+int mbr_mbr_relation(MBR& small_mbr, MBR& large_mbr, size_t d = 2) {
   auto minc_x = max(small_mbr.first.x, large_mbr.first.x);
   auto minc_y = max(small_mbr.first.y, large_mbr.first.y);
   auto maxc_x = min(small_mbr.second.x, large_mbr.second.x);
   auto maxc_y = min(small_mbr.second.y, large_mbr.second.y);
-  if (minc_x <= maxc_x && minc_y <= maxc_y) {
-    if (minc_x == small_mbr.first.x && maxc_x == small_mbr.second.x &&
-        minc_y == small_mbr.first.y && maxc_y == small_mbr.second.y)
-      return 1;
-    return 0;
+  if (d == 2){
+    if (minc_x <= maxc_x && minc_y <= maxc_y) {
+      if (minc_x == small_mbr.first.x && maxc_x == small_mbr.second.x &&
+          minc_y == small_mbr.first.y && maxc_y == small_mbr.second.y)
+        return 1;
+      return 0;
+    }
+    return -1;
   }
-  return -1;
+
+  /* 3D case */
+  auto minc_z = max(small_mbr.first.z, large_mbr.first.z);
+  auto maxc_z = min(small_mbr.second.z, large_mbr.second.z);
+  if (minc_x <= maxc_x && minc_y <= maxc_y && minc_z <= maxc_z) {
+      if (minc_x == small_mbr.first.x && maxc_x == small_mbr.second.x &&
+          minc_y == small_mbr.first.y && maxc_y == small_mbr.second.y &&
+          minc_z == small_mbr.first.z && maxc_z == small_mbr.second.z)
+          return 1; 
+      return 0;
+  }
+  return -1; 
 }
 
 template <class Records>
@@ -415,7 +421,10 @@ auto point_mbr_sqrdis(Point& p, MBR& mbr) {
       max(max(mbr.first.x - p.x, (FT)0.0), max(p.x - mbr.second.x, (FT)0.0));
   FT dy =
       max(max(mbr.first.y - p.y, (FT)0.0), max(p.y - mbr.second.y, (FT)0.0));
-  return dx * dx + dy * dy;
+  FT dz = 
+      max(max(mbr.first.z - p.z, (FT)0.0), max(p.z - mbr.second.z, (FT)0.0));
+
+  return dx * dx + dy * dy + dz * dz;
 }
 
 // return the sqr distance between two points
@@ -608,6 +617,33 @@ auto compute_cur_box(Bounding_Box& cur_mbr, FT& x_prefix, FT& y_prefix,
     ry_prefix += split_value;
   }
   return make_tuple(L_box, R_box, rx_prefix, ry_prefix);
+}
+
+auto compute_cur_box3(Bounding_Box& cur_mbr, FT& x_prefix, FT& y_prefix, FT& z_prefix,
+                     size_t b, size_t split_axis) {
+  size_t shift_b = (b + 2) / 3;
+  FT split_value = 1.0 * (1u << (shift_b - 1));
+
+  auto L_box = cur_mbr;
+  auto R_box = cur_mbr;
+  auto rx_prefix = x_prefix;
+  auto ry_prefix = y_prefix;
+  auto rz_prefix = z_prefix;
+  if (split_axis == 0) {  //  cut x
+    L_box.second.x = min(x_prefix + split_value - FT_EPS, L_box.second.x);
+    R_box.first.x = max(x_prefix + split_value, R_box.first.x);
+    rx_prefix += split_value;
+  } else if (split_axis == 1){  // cut y
+    L_box.second.y = min(y_prefix + split_value - FT_EPS, L_box.second.y);
+    R_box.first.y = max(y_prefix + split_value, R_box.first.y);
+    ry_prefix += split_value;
+  }
+  else{ //  cut z
+    L_box.second.z = min(z_prefix + split_value - FT_EPS, L_box.second.z);
+    R_box.first.z = max(z_prefix + split_value, R_box.first.z);
+    rz_prefix += split_value;
+  }
+  return make_tuple(L_box, R_box, rx_prefix, ry_prefix, rz_prefix);
 }
 
 auto get_delete_p(parlay::sequence<Point>& lhs, parlay::sequence<Point>& P,
