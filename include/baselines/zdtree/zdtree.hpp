@@ -627,6 +627,11 @@ auto Tree::collect_records(shared_ptr<BaseNode>& x) {
     return ret;
   }
   auto cur_inte = static_cast<InteNode*>(x.get());
+  if (x == root){
+    cout << "root sz: " << cur_inte->get_num_points() << endl;
+    cout << "lson sz: " << cur_inte->l_son->get_num_points() << endl;
+    cout << "rson sz: " << cur_inte->r_son->get_num_points() << endl;
+  }
   sequence<Point> R;
   auto collect_left = [&]() { ret = collect_records(cur_inte->l_son); };
   auto collect_right = [&]() { R = collect_records(cur_inte->r_son); };
@@ -734,7 +739,7 @@ class Zdtree
     // check_first(P_set, 12);
     tree.build(P_set);
     auto p_list = tree.collect_records(tree.root);
-    auto q = geobase::Bounding_Box({geobase::Point(0.5, 0.0, 0.5), geobase::Point(1.0, 1.0, 2.0)});
+    auto q = geobase::Bounding_Box({geobase::Point(14.0, 2.0, 8.0), geobase::Point(65536.0, 99992.0, 99997.0)});
     size_t sz = 0;
     auto Out = parlay::sequence<geobase::Point>::uninitialized(12);
     tree.range_report(q, largest_mbr, sz, Out, 3);
