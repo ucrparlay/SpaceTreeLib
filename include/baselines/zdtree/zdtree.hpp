@@ -207,6 +207,7 @@ shared_ptr<LeafNode> Tree::create_leaf(sequence<Point>& P, size_t l, size_t r,
 
 shared_ptr<BaseNode> Tree::build(sequence<Point>& P, size_t l, size_t r,
                                  size_t b) {
+  // cout << "l, r = " << l << ", " << r << endl;
   if (!b || (r - l <= leaf_size)) {
     return create_leaf(P, l, r, b);
   }
@@ -449,20 +450,29 @@ void Tree::range_report_node3(shared_ptr<BaseNode>& x, Bounding_Box& query_mbr,
                              Bounding_Box& cur_mbr, FT x_prefix, FT y_prefix, FT z_prefix,
                              size_t b, size_t split_axis, size_t& cnt, Out& out) {
   std::cout << std::endl << "access new node" << std::endl;
+  cout << "b = " << b << endl;
+  std::cout << "cur_box: ";
   print_mbr(cur_mbr);
+  std::cout << "qry_box: ";
   print_mbr(query_mbr);
+
   if (!x) {
     return;
   }
+
+  cout << "covered points: " << x->get_num_points() << endl;
   auto flag = mbr_mbr_relation(cur_mbr, query_mbr, 3);
   std::cout << "relation: " << flag << std::endl;
-  int tt; cin >> tt;
   if (flag < 0) return;
 
   if (x->is_leaf()) {
-    // std::cout << "found leaf" << std::endl;
+    cout << "find leaf" << endl;
+    cout << "leaf size = " << x->get_num_points() << endl;
     auto cur_leaf = static_cast<LeafNode*>(x.get());
     for (auto& p : cur_leaf->records) {
+      if (!point_in_mbr(p, cur_mbr)){
+        std::cout << "[ERROR] point in wrong mbrs!" << std::endl;
+      }
       if (point_in_mbr(p, query_mbr)) {
         out[cnt++] = p;
       }
@@ -471,11 +481,13 @@ void Tree::range_report_node3(shared_ptr<BaseNode>& x, Bounding_Box& query_mbr,
   }
   auto cur_inte = static_cast<InteNode*>(x.get());
   auto [L_box, R_box, rx_prefix, ry_prefix, rz_prefix] = compute_cur_box3(cur_mbr, x_prefix, y_prefix, z_prefix, b, split_axis);
-  // std::cout << "L_box: ";
-  // print_mbr(L_box);
-  // std::cout << "R_box: ";
-  // print_mbr(R_box);
+  std::cout << "L_box: ";
+  print_mbr(L_box);
+  std::cout << "R_box: ";
+  print_mbr(R_box);
+  cout << "go left" << endl;
   range_report_node3(cur_inte->l_son, query_mbr, L_box, x_prefix, y_prefix, z_prefix, b - 1, (split_axis + 1) % 3, cnt, out);
+  cout << "go right" << endl;
   range_report_node3(cur_inte->r_son, query_mbr, R_box, rx_prefix, ry_prefix, rz_prefix, b - 1, (split_axis + 1) % 3, cnt, out);
 }
 
@@ -486,7 +498,7 @@ void Tree::range_report(Bounding_Box& query_mbr, Bounding_Box& cur_mbr,
     range_report_node(root, query_mbr, cur_mbr, 0.0, 0.0, 64, true, cnt, out);
   }                        
   else{
-    range_report_node3(root, query_mbr, cur_mbr, 0.0, 0.0, 0.0, 64, true, cnt, out);
+    range_report_node3(root, query_mbr, cur_mbr, 0.0, 0.0, 0.0, 64, 0, cnt, out);
   }
 }
 
@@ -496,7 +508,7 @@ auto Tree::knn_report(size_t& k, Point query_point, Bounding_Box& cur_mbr, size_
     knn_report_node(root, k, query_point, cur_mbr, 0.0, 0.0, 64, true, nn_res);
   }
   else{
-    knn_report_node3(root, k, query_point, cur_mbr, 0.0, 0.0, 0.0, 64, true, nn_res);
+    knn_report_node3(root, k, query_point, cur_mbr, 0.0, 0.0, 0.0, 64, 0, nn_res);
   }
   return nn_res;
 }
@@ -606,8 +618,12 @@ auto Tree::collect_records(shared_ptr<BaseNode>& x) {
     return ret;
   }
   if (x->is_leaf()) {
+    // cout << "cur leaf:" << endl;
     auto cur_leaf = static_cast<LeafNode*>(x.get());
     ret = cur_leaf->records;
+    // for (auto &p: ret){
+      // cout << p << endl;
+    // }
     return ret;
   }
   auto cur_inte = static_cast<InteNode*>(x.get());
@@ -695,8 +711,9 @@ class Zdtree
   void check_first(Pset& P, size_t ed = 10) {
     std::cout << "sz: " << P.size() << std::endl;
     for (auto i = 0; i != ed; i++) {
-      std::cout << fixed << setprecision(6) << P[i].id << ", " << P[i].x << ", "
-                << P[i].y << ", " << P[i].z << ", " << P[i].morton_id << std::endl;
+      cout << P[i] << endl;
+      // std::cout << fixed << setprecision(6) << P[i].id << ", " << P[i].x << ", "
+      //           << P[i].y << ", " << P[i].z << ", " << P[i].morton_id << std::endl;
     }
   }
 
@@ -714,9 +731,20 @@ class Zdtree
   void Build(Range In) {
     auto P = point_convert(In);
     auto P_set = geobase::get_sorted_points(P);
-    // check_first(P_set);
+    // check_first(P_set, 12);
     tree.build(P_set);
-
+    auto p_list = tree.collect_records(tree.root);
+    auto q = geobase::Bounding_Box({geobase::Point(0.5, 0.0, 0.5), geobase::Point(1.0, 1.0, 2.0)});
+    size_t sz = 0;
+    auto Out = parlay::sequence<geobase::Point>::uninitialized(12);
+    tree.range_report(q, largest_mbr, sz, Out, 3);
+    cout << "sz = " << sz << endl;
+    cout << Out.size() << endl;
+    for (auto &p: Out){
+      cout << p << endl;
+    }
+    // cout << "collected sz = " << p_list.size() << endl;
+    int xx; cin >> xx;
   }
 
   void BatchInsert(Slice In) {
@@ -770,16 +798,16 @@ class Zdtree
     size_t size = 0;
     // parlay::sequence<geobase::Point> ret(Out.size());
 
-    auto p_list = tree.collect_records(tree.root);
-    auto check_q = geobase::Bounding_Box({geobase::Point(65536.0, 2.0, 8.0), geobase::Point(98532.0, 99992.0, 65536.0)});
-    std::cout << std::endl << "check pt: " << check_pt(p_list, check_q) << std::endl; 
+    // auto p_list = tree.collect_records(tree.root);
+    // auto check_q = geobase::Bounding_Box({geobase::Point(65536.0, 2.0, 8.0), geobase::Point(98532.0, 99992.0, 99997.0)});
+    // std::cout << std::endl << "check pt: " << check_pt(p_list, check_q) << std::endl; 
 
     tree.range_report(cnv_q, largest_mbr, size, Out, 3);
 
     // assert(Out.size() == size);
     if (size != Out.size()){
       std::cout << "[ERROR]: " << size << ", " << Out.size() << std::endl;
-      // int x; cin >> x;
+      int xx; cin >> xx;
     }
     // std::cout << (Out.size() == size) << std::endl;
     return std::make_pair(size, logger);
@@ -787,7 +815,7 @@ class Zdtree
 
   constexpr static char const* GetTreeName() { return "ZdTree"; }
   constexpr static char const* CheckHasBox() { return "WithoutBox"; }
-  Tree tree = Tree(32);
+  Tree tree = Tree(2);
 };
 
 }  // namespace ZD

@@ -79,7 +79,7 @@ struct Point {
   }
 
   friend std::ostream& operator<<(std::ostream& os, Point const& p) {
-    os << fixed << setprecision(6) << p.id << ": (" << p.x << ", " << p.y << ", " << p.z << ")";
+    os << fixed << setprecision(6) << p.id << ": (" << p.x << ", " << p.y << ", " << p.z << ")" << bitset<64>(p.morton_id);
     return os;
   }
 
@@ -90,11 +90,18 @@ struct Point {
     auto iy = static_cast<unsigned int>(y);
     auto iz = static_cast<unsigned int>(z);
     unsigned long long ret = 0ull;
-    for (int b = 0; b < 21; ++b) {
-        ret |= ((iz >> b) & 1) << (3 * b);     
-        ret |= ((iy >> b) & 1) << (3 * b + 1); 
-        ret |= ((ix >> b) & 1) << (3 * b + 2); 
+    // std::cout << std::bitset<32>(ix) << std::endl;
+    // std::cout << std::bitset<32>(iy) << std::endl;
+    // std::cout << std::bitset<32>(iz) << std::endl;
+    for (int i = 0; i < 21; i++) {
+      // std::cout << "i = " << i << std::endl;
+      // ret |= (((ix & (1ull << i)) << (3 * i + 2)) | ((iy & (1ull << i)) << (3 * i + 1)) | ((iz & (1ull << i)) << (3 * i)));
+      ret |= ((iz >> i) & 1ull) << (3 * i);     
+      ret |= ((iy >> i) & 1ull) << (3 * i + 1); 
+      ret |= ((ix >> i) & 1ull) << (3 * i + 2); 
+      // std::cout << std::bitset<64>(ret) << std::endl;
     }
+    
     ret <<= 1;
     return ret;
 
@@ -307,22 +314,25 @@ bool is_same_mbr(MBR& lhs, MBR& rhs) {
 
 template <class T>
 size_t split_by_bit(T& P, size_t l, size_t r, size_t b) {
-  unsigned int splitter = (1u << ((b - 1) / 2));
+  // unsigned int splitter = (1u << ((b - 1) / 2));
+  // auto less = [&](auto pt) {
+  //   return b % 2 ? (static_cast<unsigned int>(pt.y) & splitter) == 0
+  //                : (static_cast<unsigned int>(pt.x) & splitter) == 0;
+  // };
   auto less = [&](auto pt) {
-    return b % 2 ? (static_cast<unsigned int>(pt.y) & splitter) == 0
-                 : (static_cast<unsigned int>(pt.x) & splitter) == 0;
+    return (pt.morton_id >> (b - 1)) & 1;
   };
   size_t start = l, end = r, mid = start;
   while (end - start > 16) {
     mid = (start + end) / 2;
-    if (!less(P[mid]))
-      end = mid;
-    else
+    if (less(P[mid]))
       start = mid + 1;
+    else
+      end = mid;
   }
   mid = end;
   for (auto i = start; i < end; i++) {
-    if (!less(P[i])) {
+    if (less(P[i])) {
       mid = i;
       return i;
     }
@@ -621,8 +631,10 @@ auto compute_cur_box(Bounding_Box& cur_mbr, FT& x_prefix, FT& y_prefix,
 
 auto compute_cur_box3(Bounding_Box& cur_mbr, FT& x_prefix, FT& y_prefix, FT& z_prefix,
                      size_t b, size_t split_axis) {
-  size_t shift_b = (b + 2) / 3;
+  size_t shift_b = (b + 1) / 3;
   FT split_value = 1.0 * (1u << (shift_b - 1));
+  // std::cout << "shift_b = " << shift_b << std::endl; 
+  // std::cout << "split_value = " << split_value << std::endl; 
 
   auto L_box = cur_mbr;
   auto R_box = cur_mbr;
