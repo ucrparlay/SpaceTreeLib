@@ -953,22 +953,35 @@ void rangeQueryFix(Tree& pkd, Typename* kdknn, int const& rounds,
   // using ref_t = std::reference_wrapper<Point>;
   // parlay::sequence<ref_t> out_ref( Out.size(), std::ref( Out[0] ) );
 
-  double aveQuery = time_loop(
-      rounds, 0.01, [&]() {},
-      [&]() {
-        parlay::parallel_for(0, rec_num, [&](size_t i) {
-          auto [size, logger] = pkd.RangeQuery(
-              query_box_seq[i].first, Out.cut(offset[i], offset[i + 1]));
+  // double aveQuery = time_loop(
+  //     rounds, 0.01, [&]() {},
+  //     [&]() {
+  //       // parlay::parallel_for(0, rec_num, [&](size_t i) {
+  //       //   auto [size, logger] = pkd.RangeQuery(
+  //       //       query_box_seq[i].first, Out.cut(offset[i], offset[i + 1]));
 
-          kdknn[i] = size;
-          vis_leaf[i] = logger.vis_leaf_num;
-          vis_inter[i] = logger.vis_interior_num;
-          gen_box[i] = logger.generate_box_num;
-          full_box[i] = logger.full_box_num;
-          skip_box[i] = logger.skip_box_num;
-        });
-      },
-      [&]() {});
+  //       //   kdknn[i] = size;
+  //       //   vis_leaf[i] = logger.vis_leaf_num;
+  //       //   vis_inter[i] = logger.vis_interior_num;
+  //       //   gen_box[i] = logger.generate_box_num;
+  //       //   full_box[i] = logger.full_box_num;
+  //       //   skip_box[i] = logger.skip_box_num;
+  //       // });
+
+  //       /* Correctness Check */
+  //       auto [size, logger] = pkd.RangeQuery(
+  //         query_box_seq[0].first, Out.cut(offset[0], offset[1]));
+  //     },
+  //     [&]() {});
+
+  double aveQuery = time_loop(
+    1, -1, [&]() {},
+    [&]() {
+      /* Correctness Check */
+      auto [size, logger] = pkd.RangeQuery(
+        query_box_seq[0].first, Out.cut(offset[0], offset[1]));
+    },
+    [&]() {});
 
   std::cout << aveQuery << " " << std::flush;
   std::cout << static_cast<double>(parlay::reduce(vis_leaf.cut(0, rec_num))) /
@@ -1171,7 +1184,7 @@ static auto constexpr DefaultTestFunc = []<class TreeDesc, typename Point>(
   constexpr bool kTestTime = true;
 
   std::cout << "Called Build" << std::endl;
-  // BuildTree<Point, Tree, kTestTime, 2>(wp, kRounds, tree);
+  BuildTree<Point, Tree, kTestTime, 2>(wp, kRounds, tree);
 
   // NOTE: batch insert
   if (kTag & (1 << 0)) {

@@ -49,7 +49,7 @@ struct Point {
       std::conditional_t<std::is_integral_v<Coord>, int_fast64_t, double>;
   using DimsType = uint_fast8_t;
   using BP = Point;
-  Point(Coords const& _pnt) : x(_pnt[0]), y(_pnt[1]), z(_pnt[1]){}
+  Point(Coords const& _pnt) : x(_pnt[0]), y(_pnt[1]), z(_pnt[2]){}
   Point(FT x) : x(x), y(x), z(x) {}
   Coord& operator[](DimsType i) { if (i == 0) return x; return i == 1 ? y : z;}
   Coord const& operator[](DimsType i) const { if (i == 0) return x; return i == 1 ? y : z; }
@@ -293,8 +293,8 @@ void print_binary(T x) {
 
 template <class MBR>
 void print_mbr(MBR& mbr) {
-  cout << fixed << setprecision(6) << "[(" << mbr.first.x << ", " << mbr.first.y
-       << "), (" << mbr.second.x << ", " << mbr.second.y << ")" << "]" << endl;
+  cout << fixed << setprecision(6) << "[(" << mbr.first.x << ", " << mbr.first.y << ", " << mbr.first.z
+       << "), (" << mbr.second.x << ", " << mbr.second.y << ", " << mbr.second.z << ")" << "]" << endl;
 }
 
 template <class MBR>
@@ -368,8 +368,8 @@ bool mbr_exclude_mbr(MBR& small_mbr, MBR& large_mbr) {
 template <class MBR>
 int mbr_mbr_relation(MBR& small_mbr, MBR& large_mbr, size_t d = 2) {
   auto minc_x = max(small_mbr.first.x, large_mbr.first.x);
-  auto minc_y = max(small_mbr.first.y, large_mbr.first.y);
   auto maxc_x = min(small_mbr.second.x, large_mbr.second.x);
+  auto minc_y = max(small_mbr.first.y, large_mbr.first.y);
   auto maxc_y = min(small_mbr.second.y, large_mbr.second.y);
   if (d == 2){
     if (minc_x <= maxc_x && minc_y <= maxc_y) {

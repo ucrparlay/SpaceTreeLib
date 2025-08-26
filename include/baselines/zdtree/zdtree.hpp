@@ -139,22 +139,15 @@ class Tree {
   template <class Out>
   void range_report(Bounding_Box& query_mbr, Bounding_Box& cur_mbr, size_t& cnt,
                     Out& out, size_t d = 3);
-  template <class Out>
-  void range_report(shared_ptr<BaseNode>& x, Bounding_Box& query_mbr,
-                    Bounding_Box& cur_mbr, size_t& cnt, Out& out);
 
   // range count
   size_t range_count_node(shared_ptr<BaseNode>& x, Bounding_Box& query_mbr,
                           Bounding_Box& cur_mbr, FT x_prefix, FT y_prefix,
                           size_t b, bool x_splitter);
-
   size_t range_count_node3(shared_ptr<BaseNode>& x, Bounding_Box& query_mbr,
                           Bounding_Box& cur_mbr, FT x_prefix, FT y_prefix, FT z_prefix,
                           size_t b, size_t x_splitter);
-                
   size_t range_count(Bounding_Box& query_mbr, Bounding_Box& cur_mbr, size_t d = 3);
-  size_t range_count(shared_ptr<BaseNode>& x, Bounding_Box& query_mbr,
-                     Bounding_Box& cur_mbr);
 
   // k nearest neighbor report
   template <class T>
@@ -426,12 +419,6 @@ size_t Tree::range_count(Bounding_Box& query_mbr, Bounding_Box& cur_mbr, size_t 
   return ret;
 }
 
-size_t Tree::range_count(shared_ptr<BaseNode>& x, Bounding_Box& query_mbr,
-                         Bounding_Box& cur_mbr) {
-  size_t ret = range_count_node(x, query_mbr, cur_mbr, 0.0, 0.0, 32, true);
-  return ret;
-}
-
 template <class Out>
 void Tree::range_report_node(shared_ptr<BaseNode>& x, Bounding_Box& query_mbr,
                              Bounding_Box& cur_mbr, FT x_prefix, FT y_prefix,
@@ -461,13 +448,19 @@ template <class Out>
 void Tree::range_report_node3(shared_ptr<BaseNode>& x, Bounding_Box& query_mbr,
                              Bounding_Box& cur_mbr, FT x_prefix, FT y_prefix, FT z_prefix,
                              size_t b, size_t split_axis, size_t& cnt, Out& out) {
+  std::cout << std::endl << "access new node" << std::endl;
+  print_mbr(cur_mbr);
+  print_mbr(query_mbr);
   if (!x) {
     return;
   }
-  auto flag = mbr_mbr_relation(cur_mbr, query_mbr);
+  auto flag = mbr_mbr_relation(cur_mbr, query_mbr, 3);
+  std::cout << "relation: " << flag << std::endl;
+  int tt; cin >> tt;
   if (flag < 0) return;
 
   if (x->is_leaf()) {
+    // std::cout << "found leaf" << std::endl;
     auto cur_leaf = static_cast<LeafNode*>(x.get());
     for (auto& p : cur_leaf->records) {
       if (point_in_mbr(p, query_mbr)) {
@@ -478,6 +471,10 @@ void Tree::range_report_node3(shared_ptr<BaseNode>& x, Bounding_Box& query_mbr,
   }
   auto cur_inte = static_cast<InteNode*>(x.get());
   auto [L_box, R_box, rx_prefix, ry_prefix, rz_prefix] = compute_cur_box3(cur_mbr, x_prefix, y_prefix, z_prefix, b, split_axis);
+  // std::cout << "L_box: ";
+  // print_mbr(L_box);
+  // std::cout << "R_box: ";
+  // print_mbr(R_box);
   range_report_node3(cur_inte->l_son, query_mbr, L_box, x_prefix, y_prefix, z_prefix, b - 1, (split_axis + 1) % 3, cnt, out);
   range_report_node3(cur_inte->r_son, query_mbr, R_box, rx_prefix, ry_prefix, rz_prefix, b - 1, (split_axis + 1) % 3, cnt, out);
 }
@@ -491,12 +488,6 @@ void Tree::range_report(Bounding_Box& query_mbr, Bounding_Box& cur_mbr,
   else{
     range_report_node3(root, query_mbr, cur_mbr, 0.0, 0.0, 0.0, 64, true, cnt, out);
   }
-}
-
-template <class Out>
-void Tree::range_report(shared_ptr<BaseNode>& x, Bounding_Box& query_mbr,
-                        Bounding_Box& cur_mbr, size_t& cnt, Out& out) {
-  range_report_node(x, query_mbr, cur_mbr, 0.0, 0.0, 64, true, cnt, out);
 }
 
 auto Tree::knn_report(size_t& k, Point query_point, Bounding_Box& cur_mbr, size_t d) {
@@ -705,17 +696,27 @@ class Zdtree
     std::cout << "sz: " << P.size() << std::endl;
     for (auto i = 0; i != ed; i++) {
       std::cout << fixed << setprecision(6) << P[i].id << ", " << P[i].x << ", "
-                << P[i].y << ", " << P[i].morton_id << std::endl;
+                << P[i].y << ", " << P[i].z << ", " << P[i].morton_id << std::endl;
     }
+  }
+
+  template <typename Range>
+  bool check_pt(Range &In, geobase::Bounding_Box &q){
+    for (size_t i = 0; i < In.size(); i++){
+      if (geobase::point_in_mbr(In[i], q)){
+        return true;
+      }
+    }
+    return false;
   }
 
   template <typename Range>
   void Build(Range In) {
     auto P = point_convert(In);
-    // check_first(P);
     auto P_set = geobase::get_sorted_points(P);
     // check_first(P_set);
     tree.build(P_set);
+
   }
 
   void BatchInsert(Slice In) {
@@ -769,10 +770,18 @@ class Zdtree
     size_t size = 0;
     // parlay::sequence<geobase::Point> ret(Out.size());
 
+    auto p_list = tree.collect_records(tree.root);
+    auto check_q = geobase::Bounding_Box({geobase::Point(65536.0, 2.0, 8.0), geobase::Point(98532.0, 99992.0, 65536.0)});
+    std::cout << std::endl << "check pt: " << check_pt(p_list, check_q) << std::endl; 
+
     tree.range_report(cnv_q, largest_mbr, size, Out, 3);
 
-    assert(Out.size() == size);
-    // std::cout << (ret.size() == size) << std::endl;
+    // assert(Out.size() == size);
+    if (size != Out.size()){
+      std::cout << "[ERROR]: " << size << ", " << Out.size() << std::endl;
+      // int x; cin >> x;
+    }
+    // std::cout << (Out.size() == size) << std::endl;
     return std::make_pair(size, logger);
   }
 
