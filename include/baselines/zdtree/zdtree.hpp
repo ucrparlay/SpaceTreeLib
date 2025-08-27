@@ -5,7 +5,7 @@
 #include "pspt/dependence/concepts.h"
 // #define USE_MBR
 // #define SEQ
-#define USE_PT
+// #define USE_PT
 
 namespace ZD {
 
