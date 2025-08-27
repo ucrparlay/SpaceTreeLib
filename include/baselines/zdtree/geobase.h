@@ -178,6 +178,7 @@ struct Point {
 };
 
 typedef pair<Point, Point> Bounding_Box;
+Bounding_Box empty_mbr = {Point(FT_INF_MAX, FT_INF_MAX), Point(FT_INF_MIN, FT_INF_MIN)};
 
 struct diff_type {
   size_t add_cnt, remove_cnt;

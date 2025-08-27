@@ -3,9 +3,9 @@
 #include "geobase.h"
 #include "pspt/base_tree.h"
 #include "pspt/dependence/concepts.h"
-// #define USE_MBR
+#define USE_MBR
 // #define SEQ
-#define USE_PT
+// #define USE_PT
 
 namespace ZD {
 
@@ -21,7 +21,11 @@ using parlay::par_do_if;
 using parlay::sequence;
 
 struct BaseNode {
-  BaseNode() {}
+  #ifdef USE_MBR
+  Bounding_Box mbr;
+  BaseNode(): mbr(empty_mbr){}
+  #endif
+  // BaseNode() {}
 
   virtual ~BaseNode() = default;
   virtual bool is_leaf() { return false; }
@@ -55,6 +59,7 @@ struct LeafNode : BaseNode {
       // records[i] = r[i];
     }
     records.resize(r.size());
+    mbr = get_mbr(r);
   }
 
   template <typename Records, typename Func>
@@ -70,6 +75,7 @@ struct LeafNode : BaseNode {
       // records[i] = r[i];
     }
     records.resize(i);
+    mbr = get_mbr(r);
   }
 
   // LeafNode(LeafNode &x): records(x->records){}
@@ -174,6 +180,7 @@ void Tree::delete_merge_nodes(shared_ptr<BaseNode>& L, shared_ptr<BaseNode>& R,
   auto L_num_pts = (L == nullptr) ? 0 : L->get_num_points();
   auto R_num_pts = (R == nullptr) ? 0 : R->get_num_points();
 
+  cur_node->mbr = merge_mbr(L->mbr, R->mbr);
   cur_node->num_pts = L_num_pts + R_num_pts;
   cur_node->l_son = move(L);
   cur_node->r_son = move(R);
@@ -185,6 +192,7 @@ void Tree::merge_nodes(shared_ptr<BaseNode>& L, shared_ptr<BaseNode>& R,
   auto L_num_pts = L == nullptr ? 0 : L->get_num_points();
   auto R_num_pts = R == nullptr ? 0 : R->get_num_points();
 
+  cur_node->mbr = merge_mbr(L->mbr, R->mbr);
   cur_node->num_pts = L_num_pts + R_num_pts;
   cur_node->l_son = move(L);
   cur_node->r_son = move(R);
@@ -287,6 +295,7 @@ void Tree::batch_delete_sorted_node(shared_ptr<BaseNode>& x, sequence<Point>& P,
   if (x->is_leaf()) {
     auto cur_leaf = static_cast<LeafNode*>(x.get());
     cur_leaf->records = get_delete_p(cur_leaf->records, P, l, r);
+    cur_leaf->mbr = get_mbr(cur_leaf->records);
     if (!cur_leaf->records.size()) x.reset();
     return;
   }
@@ -338,7 +347,10 @@ void Tree::batch_delete_sorted_node(shared_ptr<BaseNode>& x, sequence<Point>& P,
         cur_inte->l_son == nullptr ? 0 : cur_inte->l_son->get_num_points();
     auto R_num_pts =
         cur_inte->r_son == nullptr ? 0 : cur_inte->r_son->get_num_points();
+    auto L_mbr = 
+        cur_inte->l_son == nullptr ? geobase::empty_mbr : cur_inte->l_son->mbr;
     cur_inte->num_pts = L_num_pts + R_num_pts;
+    cur_inte->mbr = merge_mbr(cur_inte->l_son->mbr, cur_inte->r_son->mbr);
   }
 }
 
