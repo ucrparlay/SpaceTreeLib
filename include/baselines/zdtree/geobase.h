@@ -7,6 +7,7 @@
 #include <limits>
 #include <random>
 
+#include "parlay/internal/integer_sort.h"
 #include "parlay/internal/merge.h"
 #include "pspt/dependence/comparator.h"
 #include "pspt/dependence/space_filling_curve/hilbert.h"
@@ -868,6 +869,9 @@ auto get_sorted_points(PT& P, bool use_hilbert = false) {
     return lhs.morton_id < rhs.morton_id ||
            (lhs.morton_id == rhs.morton_id && lhs.id < rhs.id);
   });
+
+  // return parlay::internal::integer_sort(
+  // P, [&](auto const& p) { return p.morton_id; });
   // if (use_hilbert){
   // }
   // else{
