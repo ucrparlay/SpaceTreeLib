@@ -3,7 +3,7 @@
 #include "geobase.h"
 #include "pspt/base_tree.h"
 #include "pspt/dependence/concepts.h"
-// #define USE_MBR
+#define USE_MBR
 // #define SEQ
 // #define USE_PT
 
@@ -21,12 +21,14 @@ using parlay::par_do;
 using parlay::par_do_if;
 using parlay::sequence;
 
+Bounding_Box empty_mbr(Point(FT_INF_MAX, FT_INF_MAX), Point(FT_INF_MIN, FT_INF_MIN));
+
 struct BaseNode {
 #ifdef USE_MBR
   Bounding_Box mbr;
-  BaseNode() : mbr({Point(-1, -1), Point(-1, -1)}) {}
+  BaseNode() : mbr(empty_mbr) {}
 #endif
-  BaseNode() {}
+  // BaseNode() {}
 
   virtual ~BaseNode() = default;
   virtual bool is_leaf() { return false; }
@@ -60,6 +62,7 @@ struct LeafNode : BaseNode {
       // records[i] = r[i];
     }
     records.resize(r.size());
+    mbr = get_mbr(r);
   }
 
   template <typename Records, typename Func>
@@ -75,6 +78,7 @@ struct LeafNode : BaseNode {
       // records[i] = r[i];
     }
     records.resize(i);
+    get_mbr(r);
   }
 
   // LeafNode(LeafNode &x): records(x->records){}
@@ -134,30 +138,18 @@ class Tree {
 
   // range report
   template <class Out>
-  void range_report_node(shared_ptr<BaseNode>& x, Bounding_Box& query_mbr,
-                         Bounding_Box& cur_mbr, FT x_prefix, FT y_prefix,
-                         size_t b, bool x_splitter, size_t& cnt, Out& out);
+  void range_report_node(shared_ptr<BaseNode>& x, Bounding_Box& query_mbr, size_t& cnt, Out& out);
   template <class Out>
-  void range_report(Bounding_Box& query_mbr, Bounding_Box& cur_mbr, size_t& cnt,
-                    Out& out);
-  template <class Out>
-  void range_report(shared_ptr<BaseNode>& x, Bounding_Box& query_mbr,
-                    Bounding_Box& cur_mbr, size_t& cnt, Out& out);
+  void range_report(Bounding_Box& query_mbr, size_t& cnt, Out& out);
 
   // range count
-  size_t range_count_node(shared_ptr<BaseNode>& x, Bounding_Box& query_mbr,
-                          Bounding_Box& cur_mbr, FT x_prefix, FT y_prefix,
-                          size_t b, bool x_splitter);
-  size_t range_count(Bounding_Box& query_mbr, Bounding_Box& cur_mbr);
-  size_t range_count(shared_ptr<BaseNode>& x, Bounding_Box& query_mbr,
-                     Bounding_Box& cur_mbr);
+  size_t range_count_node(shared_ptr<BaseNode>& x, Bounding_Box& query_mbr);
+  size_t range_count(Bounding_Box& query_mbr);
 
   // k nearest neighbor report
   template <class T>
-  void knn_report_node(shared_ptr<BaseNode>& x, size_t& k, Point query_point,
-                       Bounding_Box& cur_mbr, FT x_prefix, FT y_prefix,
-                       size_t b, bool x_splitter, T& nn_res);
-  auto knn_report(size_t& k, Point query_point, Bounding_Box& cur_mbr);
+  void knn_report_node(shared_ptr<BaseNode>& x, size_t& k, Point query_point, T& nn_res);
+  auto knn_report(size_t& k, Point query_point);
 };
 
 Tree::Tree(size_t _leaf_sz) { leaf_size = _leaf_sz; }
@@ -172,6 +164,10 @@ void Tree::delete_merge_nodes(shared_ptr<BaseNode>& L, shared_ptr<BaseNode>& R,
   // deal with MBR, covered points of parent
   auto L_num_pts = (L == nullptr) ? 0 : L->get_num_points();
   auto R_num_pts = (R == nullptr) ? 0 : R->get_num_points();
+  auto L_mbr = L == nullptr ? empty_mbr : L->mbr;
+  auto R_mbr = R == nullptr ? empty_mbr : R->mbr;
+
+  cur_node->mbr = merge_mbr(L_mbr, R_mbr);
 
   cur_node->num_pts = L_num_pts + R_num_pts;
   cur_node->l_son = move(L);
@@ -183,7 +179,10 @@ void Tree::merge_nodes(shared_ptr<BaseNode>& L, shared_ptr<BaseNode>& R,
   // deal with MBR, covered points of parent
   auto L_num_pts = L == nullptr ? 0 : L->get_num_points();
   auto R_num_pts = R == nullptr ? 0 : R->get_num_points();
+  auto L_mbr = L == nullptr ? empty_mbr : L->mbr;
+  auto R_mbr = R == nullptr ? empty_mbr : R->mbr;
 
+  cur_node->mbr = merge_mbr(L_mbr, R_mbr);
   cur_node->num_pts = L_num_pts + R_num_pts;
   cur_node->l_son = move(L);
   cur_node->r_son = move(R);
@@ -245,6 +244,7 @@ void Tree::batch_insert_sorted_node(shared_ptr<BaseNode>& x, sequence<Point>& P,
                   leaf_size) {  // current leaf is not full
       cur_leaf->records = parlay::merge(cur_leaf->records,
                                         parlay::make_slice(&P[l], &P[r]), less);
+      cur_leaf->mbr = get_mbr(cur_leaf->records);                                        
       return;
     } else {
       auto new_points = parlay::merge(cur_leaf->records,
@@ -285,6 +285,7 @@ void Tree::batch_delete_sorted_node(shared_ptr<BaseNode>& x, sequence<Point>& P,
   if (x->is_leaf()) {
     auto cur_leaf = static_cast<LeafNode*>(x.get());
     cur_leaf->records = get_delete_p(cur_leaf->records, P, l, r);
+    cur_leaf->mbr = get_mbr(cur_leaf->records);                                        
     if (!cur_leaf->records.size()) x.reset();
     return;
   }
@@ -334,8 +335,12 @@ void Tree::batch_delete_sorted_node(shared_ptr<BaseNode>& x, sequence<Point>& P,
     }
     auto L_num_pts =
         cur_inte->l_son == nullptr ? 0 : cur_inte->l_son->get_num_points();
+    auto L_mbr = cur_inte->l_son == nullptr ? empty_mbr : cur_inte->l_son->mbr;
     auto R_num_pts =
         cur_inte->r_son == nullptr ? 0 : cur_inte->r_son->get_num_points();
+    auto R_mbr = cur_inte->r_son == nullptr ? empty_mbr : cur_inte->r_son->mbr;
+    
+    cur_inte->mbr = merge_mbr(L_mbr, R_mbr);                                        
     cur_inte->num_pts = L_num_pts + R_num_pts;
   }
 }
@@ -347,10 +352,8 @@ void Tree::batch_delete_sorted(sequence<Point>& P) {
     batch_delete_sorted_node(root, P, 0, P.size(), 64);
 }
 
-size_t Tree::range_count_node(shared_ptr<BaseNode>& x, Bounding_Box& query_mbr,
-                              Bounding_Box& cur_mbr, FT x_prefix, FT y_prefix,
-                              size_t b, bool x_splitter) {
-  int flag = mbr_mbr_relation(cur_mbr, query_mbr);
+size_t Tree::range_count_node(shared_ptr<BaseNode>& x, Bounding_Box& query_mbr) {
+  int flag = mbr_mbr_relation(x->mbr, query_mbr);
   if (flag < 0) return 0;
   if (flag > 0) {
     return x->get_num_points();
@@ -367,56 +370,34 @@ size_t Tree::range_count_node(shared_ptr<BaseNode>& x, Bounding_Box& query_mbr,
     return ret;
   } else {
     auto cur_inte = static_cast<InteNode*>(x.get());
-    FT splitter = 1.0 * (1u << (b - 1));
+    
     size_t ret_L = 0, ret_R = 0;
     if (cur_inte->l_son != nullptr) {
-      auto L_box = cur_mbr;
-      if (x_splitter) {
-        L_box.second.x = min(x_prefix + splitter - FT_EPS, L_box.second.x);
-        ret_L = range_count_node(cur_inte->l_son, query_mbr, L_box, x_prefix,
-                                 y_prefix, b, !x_splitter);
-      } else {
-        L_box.second.y = min(y_prefix + splitter - FT_EPS, L_box.second.y);
-        ret_L = range_count_node(cur_inte->l_son, query_mbr, L_box, x_prefix,
-                                 y_prefix, b - 1, !x_splitter);
-      }
+      ret_L = range_count_node(cur_inte->l_son, query_mbr);
     }
     if (cur_inte->r_son != nullptr) {
-      auto R_box = cur_mbr;
-      if (x_splitter) {
-        R_box.first.x = max(x_prefix + splitter, R_box.first.x);
-        ret_R = range_count_node(cur_inte->r_son, query_mbr, R_box,
-                                 x_prefix + splitter, y_prefix, b, !x_splitter);
-      } else {
-        R_box.first.y = max(y_prefix + splitter, R_box.first.y);
-        ret_R = range_count_node(cur_inte->r_son, query_mbr, R_box, x_prefix,
-                                 y_prefix + splitter, b - 1, !x_splitter);
-      }
+      ret_R = range_count_node(cur_inte->r_son, query_mbr);
     }
     return ret_L + ret_R;
   }
   return -1;  // unexpected error happens if the code runs to here.
 }
 
-size_t Tree::range_count(Bounding_Box& query_mbr, Bounding_Box& cur_mbr) {
-  size_t ret = range_count_node(root, query_mbr, cur_mbr, 0.0, 0.0, 32, true);
-  return ret;
-}
-
-size_t Tree::range_count(shared_ptr<BaseNode>& x, Bounding_Box& query_mbr,
-                         Bounding_Box& cur_mbr) {
-  size_t ret = range_count_node(x, query_mbr, cur_mbr, 0.0, 0.0, 32, true);
+size_t Tree::range_count(Bounding_Box& query_mbr) {
+  // size_t ret = range_count_node(root, query_mbr, cur_mbr, 0.0, 0.0, 32, true);
+  size_t ret = range_count_node(root, query_mbr);
   return ret;
 }
 
 template <class Out>
-void Tree::range_report_node(shared_ptr<BaseNode>& x, Bounding_Box& query_mbr,
-                             Bounding_Box& cur_mbr, FT x_prefix, FT y_prefix,
-                             size_t b, bool x_splitter, size_t& cnt, Out& out) {
+void Tree::range_report_node(shared_ptr<BaseNode>& x, Bounding_Box& query_mbr, size_t& cnt, Out& out) {
   if (!x) {
+    // cout << "nullptr" << endl;
     return;
   }
-  auto flag = mbr_mbr_relation(cur_mbr, query_mbr);
+  // cout << "cur_mbr: "; print_mbr(x->mbr);
+  // cout << "qry_mbr: "; print_mbr(query_mbr);
+  auto flag = mbr_mbr_relation(x->mbr, query_mbr);
   if (flag < 0) return;
 
   if (x->is_leaf()) {
@@ -429,37 +410,28 @@ void Tree::range_report_node(shared_ptr<BaseNode>& x, Bounding_Box& query_mbr,
     return;
   }
   auto cur_inte = static_cast<InteNode*>(x.get());
-  auto [L_box, R_box, rx_prefix, ry_prefix] =
-      compute_cur_box(cur_mbr, x_prefix, y_prefix, b, x_splitter);
-  range_report_node(cur_inte->l_son, query_mbr, L_box, x_prefix, y_prefix,
-                    b - 1, !x_splitter, cnt, out);
-  range_report_node(cur_inte->r_son, query_mbr, R_box, rx_prefix, ry_prefix,
-                    b - 1, !x_splitter, cnt, out);
+  if (cur_inte->l_son != nullptr) {
+    range_report_node(cur_inte->l_son, query_mbr, cnt, out);
+  }
+  if (cur_inte->r_son != nullptr) {
+    range_report_node(cur_inte->r_son, query_mbr, cnt, out);
+  }
 }
 
 template <class Out>
-void Tree::range_report(Bounding_Box& query_mbr, Bounding_Box& cur_mbr,
-                        size_t& cnt, Out& out) {
-  range_report_node(root, query_mbr, cur_mbr, 0.0, 0.0, 64, true, cnt, out);
+void Tree::range_report(Bounding_Box& query_mbr, size_t& cnt, Out& out) {
+  // range_report_node(root, query_mbr, cur_mbr, 0.0, 0.0, 64, true, cnt, out);
+  range_report_node(root, query_mbr, cnt, out);
 }
 
-template <class Out>
-void Tree::range_report(shared_ptr<BaseNode>& x, Bounding_Box& query_mbr,
-                        Bounding_Box& cur_mbr, size_t& cnt, Out& out) {
-  range_report_node(x, query_mbr, cur_mbr, 0.0, 0.0, 32, true, cnt, out);
-}
-
-auto Tree::knn_report(size_t& k, Point query_point, Bounding_Box& cur_mbr) {
+auto Tree::knn_report(size_t& k, Point query_point) {
   priority_queue<nn_pair, vector<nn_pair>, nn_pair_cmp> nn_res;
-  knn_report_node(root, k, query_point, cur_mbr, 0.0, 0.0, 32, true, nn_res);
+  knn_report_node(root, k, query_point, nn_res);
   return nn_res;
 }
 
 template <class T>
-void Tree::knn_report_node(shared_ptr<BaseNode>& x, size_t& k,
-                           Point query_point, Bounding_Box& cur_mbr,
-                           FT x_prefix, FT y_prefix, size_t b, bool x_splitter,
-                           T& nn_res) {
+void Tree::knn_report_node(shared_ptr<BaseNode>& x, size_t& k, Point query_point, T& nn_res) {
   if (!x) return;
   if (x->is_leaf()) {
     auto cur_leaf = static_cast<LeafNode*>(x.get());
@@ -476,58 +448,27 @@ void Tree::knn_report_node(shared_ptr<BaseNode>& x, size_t& k,
   }
   auto cur_inte = static_cast<InteNode*>(x.get());
   auto l_son_sqrdis = FT_INF_MAX, r_son_sqrdis = FT_INF_MAX;
-  FT splitter = 1.0 * (1u << (b - 1));
-  auto L_box = cur_mbr, R_box = cur_mbr;
+  
   if (cur_inte->l_son != nullptr) {
-    if (x_splitter) {
-      L_box.second.x = min(x_prefix + splitter - FT_EPS, L_box.second.x);
-    } else {
-      L_box.second.y = min(y_prefix + splitter - FT_EPS, L_box.second.y);
-    }
-    l_son_sqrdis = point_mbr_sqrdis(query_point, L_box);
+    l_son_sqrdis = point_mbr_sqrdis(query_point, cur_inte->l_son->mbr);
   }
   if (cur_inte->r_son != nullptr) {
-    if (x_splitter) {
-      R_box.first.x = max(x_prefix + splitter, R_box.first.x);
-    } else {
-      R_box.first.y = max(y_prefix + splitter, R_box.first.y);
-    }
-    r_son_sqrdis = point_mbr_sqrdis(query_point, R_box);
+    r_son_sqrdis = point_mbr_sqrdis(query_point, cur_inte->r_son->mbr);
   }
 
   if (l_son_sqrdis <= r_son_sqrdis) {  // first go left
     if (nn_res.size() < k || l_son_sqrdis < nn_res.top().second) {
-      if (x_splitter)
-        knn_report_node(cur_inte->l_son, k, query_point, L_box, x_prefix,
-                        y_prefix, b, !x_splitter, nn_res);
-      else
-        knn_report_node(cur_inte->l_son, k, query_point, L_box, x_prefix,
-                        y_prefix, b - 1, !x_splitter, nn_res);
+      knn_report_node(cur_inte->l_son, k, query_point, nn_res);
     }
     if (nn_res.size() < k || r_son_sqrdis < nn_res.top().second) {
-      if (x_splitter)
-        knn_report_node(cur_inte->r_son, k, query_point, R_box,
-                        x_prefix + splitter, y_prefix, b, !x_splitter, nn_res);
-      else
-        knn_report_node(cur_inte->r_son, k, query_point, R_box, x_prefix,
-                        y_prefix + splitter, b - 1, !x_splitter, nn_res);
+      knn_report_node(cur_inte->r_son, k, query_point, nn_res);
     }
   } else {  // first go right
     if (nn_res.size() < k || r_son_sqrdis < nn_res.top().second) {
-      if (x_splitter)
-        knn_report_node(cur_inte->r_son, k, query_point, R_box,
-                        x_prefix + splitter, y_prefix, b, !x_splitter, nn_res);
-      else
-        knn_report_node(cur_inte->r_son, k, query_point, R_box, x_prefix,
-                        y_prefix + splitter, b - 1, !x_splitter, nn_res);
+      knn_report_node(cur_inte->r_son, k, query_point, nn_res);
     }
     if (nn_res.size() < k || l_son_sqrdis < nn_res.top().second) {
-      if (x_splitter)
-        knn_report_node(cur_inte->l_son, k, query_point, L_box, x_prefix,
-                        y_prefix, b, !x_splitter, nn_res);
-      else
-        knn_report_node(cur_inte->l_son, k, query_point, L_box, x_prefix,
-                        y_prefix, b - 1, !x_splitter, nn_res);
+      knn_report_node(cur_inte->l_son, k, query_point, nn_res);
     }
   }
   return;
@@ -635,9 +576,9 @@ class Zdtree
 
   template <typename Range>
   void Build(Range In) {
-    auto P = point_convert(In);
+    // auto P = point_convert(In);
     // check_first(P);
-    auto P_set = geobase::get_sorted_points(P);
+    auto P_set = geobase::get_sorted_points(In);
     // check_first(P_set);
     tree.build(P_set);
   }
@@ -668,7 +609,7 @@ class Zdtree
     // geobase::Point cnv_q(q[0], q[1]);
     size_t k = bq.max_size();
 
-    auto knnsqrdis = tree.knn_report(k, q, largest_mbr).top().second;
+    auto knnsqrdis = tree.knn_report(k, q).top().second;
 
     // std::cout << knnsqrdis << std::endl;
     return logger;
@@ -679,7 +620,7 @@ class Zdtree
     int size = 0;
     auto cnv_q = box_convert(q);
 
-    size = tree.range_count(cnv_q, largest_mbr);
+    size = tree.range_count(cnv_q);
 
     return std::make_pair(size, logger);
   }
@@ -693,10 +634,14 @@ class Zdtree
     size_t size = 0;
     // parlay::sequence<geobase::Point> ret(Out.size());
 
-    tree.range_report(cnv_q, largest_mbr, size, Out);
+    tree.range_report(cnv_q, size, Out);
 
     assert(Out.size() == size);
-    // std::cout << (ret.size() == size) << std::endl;
+    if (Out.size() != size){
+      cout << "[ERROR]: " << size << ", " << Out.size() << endl;
+      // int xx; cin >> xx;
+    }
+    // std::cout << (Out.size() == size) << std::endl;
     return std::make_pair(size, logger);
   }
 
