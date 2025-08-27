@@ -178,7 +178,6 @@ struct Point {
 };
 
 typedef pair<Point, Point> Bounding_Box;
-Bounding_Box empty_mbr = {Point(FT_INF_MAX, FT_INF_MAX), Point(FT_INF_MIN, FT_INF_MIN)};
 
 struct diff_type {
   size_t add_cnt, remove_cnt;
@@ -345,8 +344,8 @@ size_t split_by_bit(T& P, size_t l, size_t r, size_t b) {
 // merge two bounding boxes, please make sure *both bounding boxes are valid*.
 template <class MBR>
 MBR merge_mbr(MBR& a, MBR& b) {
-  return {Point(min(a.first.x, b.first.x), min(a.first.y, b.first.y)),
-          Point(max(a.second.x, b.second.x), max(a.second.y, b.second.y))};
+  return {Point(min(a.first.x, b.first.x), min(a.first.y, b.first.y), min(a.first.z, b.first.z)),
+          Point(max(a.second.x, b.second.x), max(a.second.y, b.second.y), max(a.second.z, b.second.z))};
 }
 
 // check whether a given point inside a mbr (boundary included).
@@ -409,14 +408,16 @@ int mbr_mbr_relation(MBR& small_mbr, MBR& large_mbr, size_t d = 2) {
 template <class Records>
 auto get_mbr(Records& P) {
   FT x_min = FT_INF_MAX, x_max = FT_INF_MIN, y_min = FT_INF_MAX,
-     y_max = FT_INF_MIN;
+     y_max = FT_INF_MIN, z_min = FT_INF_MAX, z_max = FT_INF_MIN;
   for (auto& p : P) {
     x_min = min(x_min, p.x);
     x_max = max(x_max, p.x);
     y_min = min(y_min, p.y);
     y_max = max(y_max, p.y);
+    z_min = min(z_min, p.z);
+    z_max = max(z_max, p.z);
   }
-  return Bounding_Box({Point(x_min, y_min), Point(x_max, y_max)});
+  return Bounding_Box({Point(x_min, y_min, z_min), Point(x_max, y_max, z_max)});
 }
 
 auto mbr_mbr_within_dis(Bounding_Box& mbr1, Bounding_Box& mbr2, FT& point_dis) {
@@ -441,7 +442,7 @@ auto point_mbr_sqrdis(Point& p, MBR& mbr) {
 
 // return the sqr distance between two points
 auto point_point_sqrdis(Point& lhs, Point& rhs) {
-  return (lhs.x - rhs.x) * (lhs.x - rhs.x) + (lhs.y - rhs.y) * (lhs.y - rhs.y);
+  return (lhs.x - rhs.x) * (lhs.x - rhs.x) + (lhs.y - rhs.y) * (lhs.y - rhs.y) + (lhs.z - rhs.z) * (lhs.z - rhs.z);
 }
 
 // check whether two given MBRs are intersected.
@@ -503,7 +504,7 @@ struct nn_pair_cmp {
 };
 
 template <class Pset>
-FT knn_bf(size_t& k, Point& q, Pset& P) {
+FT knn_bf(size_t& k, Point q, Pset& P) {
   vector<FT> q_sqrdis = {};
   for (size_t i = 0; i < P.size(); i++) {
     auto cur_sqrdis = point_point_sqrdis(q, P[i]);
