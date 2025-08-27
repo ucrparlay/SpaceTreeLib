@@ -637,10 +637,10 @@ class Zdtree
     tree.range_report(cnv_q, size, Out);
 
     assert(Out.size() == size);
-    if (Out.size() != size){
-      cout << "[ERROR]: " << size << ", " << Out.size() << endl;
+    // if (Out.size() != size){
+    //   cout << "[ERROR]: " << size << ", " << Out.size() << endl;
       // int xx; cin >> xx;
-    }
+    // }
     // std::cout << (Out.size() == size) << std::endl;
     return std::make_pair(size, logger);
   }
