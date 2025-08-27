@@ -482,7 +482,7 @@ struct nn_pair_cmp {
 };
 
 template <class Pset>
-FT knn_bf(size_t& k, Point& q, Pset& P) {
+FT knn_bf(size_t& k, Point q, Pset& P) {
   vector<FT> q_sqrdis = {};
   for (size_t i = 0; i < P.size(); i++) {
     auto cur_sqrdis = point_point_sqrdis(q, P[i]);

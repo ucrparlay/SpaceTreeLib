@@ -606,12 +606,18 @@ class Zdtree
   template <typename Node, typename Range>
   auto KNN(Node* T, Point const& q, pspt::kBoundedQueue<Point, Range>& bq) {
     pspt::KNNLogger logger;
-    // geobase::Point cnv_q(q[0], q[1]);
+    geobase::Point cnv_q(q[0], q[1], q[2]);
     size_t k = bq.max_size();
 
     auto knnsqrdis = tree.knn_report(k, q).top().second;
 
-    // std::cout << knnsqrdis << std::endl;
+    // auto all_pts = tree.collect_records(tree.root);
+    // auto bfsqrdis = geobase::knn_bf(k, q, all_pts);
+    // if (dcmp(knnsqrdis - bfsqrdis) != 0){
+    //   cout << "[ERROR] Incorrect KNN results" << endl;
+    //   cout << bfsqrdis << ", " << knnsqrdis << endl;
+    // }
+
     return logger;
   }
 
