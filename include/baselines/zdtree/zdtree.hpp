@@ -591,9 +591,12 @@ class Zdtree
   template <typename Range>
   void Build(Range In) {
     // auto P = point_convert(In);
+    parlay::internam::timer t("build breakdown", 1);
     auto P_set = geobase::get_sorted_points(In);
+    t.next("sort time");
     // check_first(P_set, 12);
     tree.build(P_set);
+    t.next("tree time")
     // auto p_list = tree.collect_records(tree.root);
     // auto q = geobase::Bounding_Box({geobase::Point(14.0, 2.0, 8.0), geobase::Point(65536.0, 99992.0, 99997.0)});
     // size_t sz = 0;
