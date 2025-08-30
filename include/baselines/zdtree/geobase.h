@@ -939,9 +939,9 @@ template <typename PT>
 auto get_sorted_points(PT& P, bool use_hilbert = false) {
   auto n = P.size();
   parlay::parallel_for(0, n, [&](int i) {
-    // P[i].morton_id = use_hilbert ? P[i].overlap_bits() : P[i].interleave_bits();
-    unsigned long a = P[i].x, b = P[i].y, c = P[i].z;
-    P[i].morton_id = libmorton::m3D_e_for<unsigned long long, unsigned long>(a, b, c);
+    P[i].morton_id = use_hilbert ? P[i].overlap_bits() : P[i].interleave_bits();
+    // unsigned long a = P[i].x, b = P[i].y, c = P[i].z;
+    // P[i].morton_id = libmorton::m3D_e_for<unsigned long long, unsigned long>(a, b, c);
   });
 
   return parlay::sort(P, [&](auto lhs, auto rhs) {
