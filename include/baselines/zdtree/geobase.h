@@ -30,7 +30,7 @@ inline int dcmp(const FT& x) {
 bool less_msb(unsigned int x, unsigned int y) { return x < y && x < (x ^ y); }
 
 struct Point {
-  size_t id;
+  size_t id = 0;
   FT x, y, z; // add z
   unsigned long long morton_id;
   Point() {}
@@ -309,8 +309,8 @@ template <class MBR>
 bool is_same_mbr(MBR& lhs, MBR& rhs) {
   // cout << "[(" << mbr.first.x << ", " << mbr.first.y << "), (" <<
   // mbr.second.x << ", " << mbr.second.y << ")" << "]" << endl;
-  return lhs.first.x == rhs.first.x && lhs.first.y == rhs.first.y &&
-         lhs.second.x == rhs.second.x && lhs.second.y == rhs.second.y;
+  return lhs.first.x == rhs.first.x && lhs.first.y == rhs.first.y && lhs.first.z == rhs.first.z &&
+         lhs.second.x == rhs.second.x && lhs.second.y == rhs.second.y && lhs.second.z == rhs.second.z;
 }
 
 template <class T>
@@ -377,7 +377,7 @@ bool mbr_exclude_mbr(MBR& small_mbr, MBR& large_mbr) {
 // relations between two mbrs: -1: excluded; 0: intersected; 1: the smaller one
 // is contained by the larger one;
 template <class MBR>
-int mbr_mbr_relation(MBR& small_mbr, MBR& large_mbr, size_t d = 2) {
+int mbr_mbr_relation(MBR& small_mbr, MBR& large_mbr, size_t d = 3) {
   auto minc_x = max(small_mbr.first.x, large_mbr.first.x);
   auto maxc_x = min(small_mbr.second.x, large_mbr.second.x);
   auto minc_y = max(small_mbr.first.y, large_mbr.first.y);
@@ -443,6 +443,33 @@ auto point_mbr_sqrdis(Point& p, MBR& mbr) {
 // return the sqr distance between two points
 auto point_point_sqrdis(Point& lhs, Point& rhs) {
   return (lhs.x - rhs.x) * (lhs.x - rhs.x) + (lhs.y - rhs.y) * (lhs.y - rhs.y) + (lhs.z - rhs.z) * (lhs.z - rhs.z);
+}
+
+/* Add Ziyang's box check logic */
+template<class MBR>
+bool box_same_box(MBR &a, MBR &b){
+  return !dcmp(a.first.x - b.first.x) && !dcmp(a.first.y - b.first.y) && !dcmp(a.first.z - b.first.z) &&
+         !dcmp(a.second.x - b.second.x) && !dcmp(a.second.y - b.second.y) && !dcmp(a.second.z - b.second.z);
+}
+
+template<class MBR>
+bool box_within_box(MBR &a, MBR &b){
+  return dcmp(a.first.x - b.first.x) >= 0 && dcmp(a.first.y - b.first.y) >= 0 && dcmp(a.first.z - b.first.z) >= 0 &&
+         dcmp(a.second.x - b.second.x) <= 0 && dcmp(a.second.y - b.second.y) <= 0 && dcmp(a.second.z - b.second.z) <= 0;
+}
+
+template<class MBR>
+bool box_intersect_box(MBR &a, MBR &b){
+  return !(dcmp(a.second.x - b.first.x) < 0 || dcmp(a.first.x - b.second.x) > 0 || 
+           dcmp(a.second.y - b.first.y) < 0 || dcmp(a.first.y - b.second.y) > 0 || 
+           dcmp(a.second.z - b.first.z) < 0 || dcmp(a.first.z - b.second.z) > 0);
+}
+
+template<class MBR>
+auto zy_mbr_relation(MBR &a, MBR &b){
+  if (!box_intersect_box(a, b)) return -1;
+  if (box_within_box(a, b)) return 1;
+  return 0;
 }
 
 // check whether two given MBRs are intersected.

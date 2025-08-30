@@ -149,6 +149,8 @@ class Tree {
   template <class T>
   void knn_report_node(shared_ptr<BaseNode>& x, size_t& k, Point query_point, T& nn_res);
   auto knn_report(size_t& k, Point query_point);
+
+  auto check_mbr(shared_ptr<BaseNode>& x);
 };
 
 Tree::Tree(size_t _leaf_sz) { leaf_size = _leaf_sz; }
@@ -352,7 +354,8 @@ void Tree::batch_delete_sorted(sequence<Point>& P) {
 }
 
 size_t Tree::range_count_node(shared_ptr<BaseNode>& x, Bounding_Box& query_mbr) {
-  int flag = mbr_mbr_relation(x->mbr, query_mbr);
+  // int flag = mbr_mbr_relation(x->mbr, query_mbr);
+  int flag = zy_mbr_relation(x->mbr, query_mbr);
   if (flag < 0) return 0;
   if (flag > 0) {
     return x->get_num_points();
@@ -392,10 +395,15 @@ void Tree::range_report_node(shared_ptr<BaseNode>& x, Bounding_Box& query_mbr, s
   if (!x) {
     return;
   }
-  auto flag = mbr_mbr_relation(x->mbr, query_mbr);
+  // auto flag = mbr_mbr_relation(x->mbr, query_mbr);
+  auto flag = zy_mbr_relation(x->mbr, query_mbr);
   if (flag < 0) return;
 
   if (x->is_leaf()) {
+    // cout << "scanned leaf size: " << x->get_num_points() << endl;
+    // if (x->get_num_points() > 32) {
+    //   cout << "large leaf touched" << endl;
+    // }
     auto cur_leaf = static_cast<LeafNode*>(x.get());
     for (auto& p : cur_leaf->records) {
       if (point_in_mbr(p, query_mbr)) {
@@ -473,15 +481,18 @@ auto Tree::collect_records(shared_ptr<BaseNode>& x) {
   if (!x) {
     return ret;
   }
+  // cout << "[Cur MBR]: ";
+  // print_mbr(x->mbr);
   if (x->is_leaf()) {
-    // cout << "cur leaf:" << endl;
+    // cout << "meet leaf node" << endl;
     auto cur_leaf = static_cast<LeafNode*>(x.get());
     ret = cur_leaf->records;
     // for (auto &p: ret){
-      // cout << p << endl;
+    //   cout << p << endl;
     // }
     return ret;
   }
+  // cout << "meet inte node" << endl;
   auto cur_inte = static_cast<InteNode*>(x.get());
   // if (x == root){
   //   cout << "root sz: " << cur_inte->get_num_points() << endl;
@@ -494,6 +505,32 @@ auto Tree::collect_records(shared_ptr<BaseNode>& x) {
   par_do_if(x->get_num_points() >= granularity_cutoff, collect_left,
             collect_right);
   ret.append(R);
+  return ret;
+}
+
+auto Tree::check_mbr(shared_ptr<BaseNode>& x) {
+  if (!x) {
+    return empty_mbr;
+  }
+  if (x->is_leaf()) {
+    auto cur_leaf = static_cast<LeafNode*>(x.get());
+    auto mbr = get_mbr(cur_leaf->records);
+    if (!is_same_mbr(mbr, x->mbr)){
+      cout << "[ERROR]: incorrect MBR" << endl;
+    }
+    return mbr;
+  }
+
+  auto cur_inte = static_cast<InteNode*>(x.get());
+  geobase::Bounding_Box L_mbr, R_mbr;
+  auto collect_left = [&]() { L_mbr = check_mbr(cur_inte->l_son); };
+  auto collect_right = [&]() { R_mbr = check_mbr(cur_inte->r_son); };
+  par_do_if(x->get_num_points() >= granularity_cutoff, collect_left,
+            collect_right);
+  auto ret = merge_mbr(L_mbr, R_mbr);
+  if (!is_same_mbr(ret, x->mbr)){
+    cout << "[ERROR]: incorrect MBR" << endl;
+  }
   return ret;
 }
 
@@ -588,15 +625,98 @@ class Zdtree
     return false;
   }
 
+  void run_tests() {
+      struct TestCase {
+          Bounding_Box a, b;
+          int expected;
+          std::string description;
+      };
+      using geobase::Point;
+      std::vector<TestCase> tests = {
+        // Basic cases
+        { Bounding_Box({Point(1.0,1.0,1.0)}, {Point(3.0,3.0,3.0)}), 
+          Bounding_Box({Point(0.0,0.0,0.0)}, {Point(5.0,5.0,5.0)}),
+          1, "Full Containment" },
+
+        { Bounding_Box({Point(0.0,0.0,0.0)}, {Point(4.0,4.0,4.0)}),
+          Bounding_Box({Point(2.0,2.0,2.0)}, {Point(6.0,6.0,6.0)}),
+          0, "Partial Overlap" },
+
+        { Bounding_Box({Point(0.0,0.0,0.0)}, {Point(2.0,2.0,2.0)}),
+          Bounding_Box({Point(2.0,0.0,0.0)}, {Point(4.0,2.0,2.0)}),
+          0, "Touching at Face" },
+
+        { Bounding_Box({Point(0.0,0.0,0.0)}, {Point(2.0,2.0,2.0)}),
+          Bounding_Box({Point(2.0,2.0,0.0)}, {Point(4.0,4.0,2.0)}),
+          0, "Touching at Edge" },
+
+        { Bounding_Box({Point(0.0,0.0,0.0)}, {Point(1.0,1.0,1.0)}),
+          Bounding_Box({Point(1.0,1.0,1.0)}, {Point(2.0,2.0,2.0)}),
+          0, "Touching at Point" },
+
+        { Bounding_Box({Point(0.0,0.0,0.0)}, {Point(1.0,1.0,1.0)}),
+          Bounding_Box({Point(2.0,0.0,0.0)}, {Point(3.0,1.0,1.0)}),
+          -1, "Disjoint" },
+
+        { Bounding_Box({Point(1.0,1.0,1.0)}, {Point(3.0,3.0,3.0)}),
+          Bounding_Box({Point(1.0,1.0,1.0)}, {Point(3.0,3.0,3.0)}),
+          1, "Equal Boxes" },
+
+        // More complicated cases
+        { Bounding_Box({Point(2.5,3.5,1.5)}, {Point(4.5,5.5,3.5)}),
+          Bounding_Box({Point(1.0,2.0,0.0)}, {Point(6.0,7.0,5.0)}),
+          1, "Containment not aligned with origin" },
+
+        { Bounding_Box({Point(0.0,0.0,0.0)}, {Point(3.0,3.0,1.0)}),
+          Bounding_Box({Point(1.0,1.0,2.0)}, {Point(4.0,4.0,3.0)}),
+          -1, "XY overlap but Z disjoint" },
+
+        { Bounding_Box({Point(0.0,0.0,0.0)}, {Point(3.0,3.0,1.0)}),
+          Bounding_Box({Point(1.0,1.0,1.0)}, {Point(2.0,2.0,2.0)}),
+          0, "Thin slab overlap at z=1" },
+
+        { Bounding_Box({Point(2.0,2.0,0.0)}, {Point(4.0,4.0,2.0)}),
+          Bounding_Box({Point(1.0,1.0,1.0)}, {Point(5.0,5.0,3.0)}),
+          0, "Nested overlap but not full containment" },
+
+        { Bounding_Box({Point(0.0,0.0,0.0)}, {Point(10.0,10.0,10.0)}),
+          Bounding_Box({Point(2.0,2.0,2.0)}, {Point(3.0,3.0,3.0)}),
+          0, "Large box passed as 'small_mbr'" },
+
+        { Bounding_Box({Point(0.0,0.0,0.0)}, {Point(2.0,2.0,2.0)}),
+          Bounding_Box({Point(1.5,1.5,1.5)}, {Point(3.0,3.0,3.0)}),
+          0, "Diagonal partial overlap small cube" },
+
+        { Bounding_Box({Point(0.0,0.0,0.0)}, {Point(1.0,1.0,1.0)}),
+          Bounding_Box({Point(1.0,1.0,1.0)}, {Point(2.0,2.0,2.0)}),
+          0, "Diagonal single point touch" },
+      };
+
+      for (size_t i = 0; i < tests.size(); i++) {
+          int result = zy_mbr_relation(tests[i].a, tests[i].b);
+          std::cout << "Case " << i+1 << " (" << tests[i].description << "): "
+                    << "Expected = " << tests[i].expected
+                    << ", Got = " << result
+                    << (result == tests[i].expected ? " [OK]" : " [FAIL]") 
+                    << "\n";
+          assert(result == tests[i].expected);
+      }
+
+      std::cout << "✅ All tests passed!\n";
+  }
+
+
   template <typename Range>
   void Build(Range In) {
     // auto P = point_convert(In);
-    parlay::internam::timer t("build breakdown", 1);
+    // run_tests();
     auto P_set = geobase::get_sorted_points(In);
-    t.next("sort time");
     // check_first(P_set, 12);
     tree.build(P_set);
-    t.next("tree time")
+    // cout << "check mbr start" << endl;
+    // tree.check_mbr(tree.root);
+    // cout << "check mbr end" << endl;
+
     // auto p_list = tree.collect_records(tree.root);
     // auto q = geobase::Bounding_Box({geobase::Point(14.0, 2.0, 8.0), geobase::Point(65536.0, 99992.0, 99997.0)});
     // size_t sz = 0;
@@ -617,6 +737,9 @@ class Zdtree
     // std::cout << "[Insert_PRV]: " << tree.collect_records(tree.root).size()
     // << endl;
     tree.batch_insert_sorted(P_set);
+    // cout << "check mbr start" << endl;
+    // tree.check_mbr(tree.root);
+    // cout << "check mbr end" << endl;
     // std::cout << "[Insert_AFT]: " << tree.collect_records(tree.root).size()
     // << endl;
   }
@@ -627,6 +750,9 @@ class Zdtree
     // std::cout << "[Delete_PRV]: " << tree.collect_records(tree.root).size()
     // << endl;
     tree.batch_delete_sorted(P_set);
+    // cout << "check mbr start" << endl;
+    // tree.check_mbr(tree.root);
+    // cout << "check mbr end" << endl;
     // std::cout << "[Delete_AFT]: " << tree.collect_records(tree.root).size()
     // << endl;
   }
@@ -684,7 +810,7 @@ class Zdtree
 
   constexpr static char const* GetTreeName() { return "ZdTree"; }
   constexpr static char const* CheckHasBox() { return "WithoutBox"; }
-  Tree tree = Tree(32);
+  Tree tree = Tree(2);
 };
 
 }  // namespace ZD
