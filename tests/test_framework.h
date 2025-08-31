@@ -1186,8 +1186,8 @@ static auto constexpr DefaultTestFunc = []<class TreeDesc, typename Point>(
   constexpr bool kTestTime = true;
 
   // std::cout << "Called Build" << std::endl;
-  BuildTree<Point, Tree, kTestTime, 3>(wp, kRounds, tree);
-  BatchDeleteByStep<Point, Tree, true>(tree, wp, kRounds, 0.5);
+  // BuildTree<Point, Tree, kTestTime, 3>(wp, kRounds, tree);
+  // BatchDeleteByStep<Point, Tree, true>(tree, wp, kRounds, 0.5);
 
   // NOTE: batch insert
   if (kTag & (1 << 0)) {
@@ -1238,7 +1238,7 @@ static auto constexpr DefaultTestFunc = []<class TreeDesc, typename Point>(
 
   auto incre_update_test_bundle = [&](auto const& query_box_seq,
                                       auto const& query_max_size) {
-    std::cout << "start knn" << std::endl;                           
+    // std::cout << "start knn" << std::endl;
     // NOTE: knn query
     {
       int k[3] = {1, 10, 100};
@@ -1278,7 +1278,7 @@ static auto constexpr DefaultTestFunc = []<class TreeDesc, typename Point>(
       puts("");
     }
 
-    std::cout << "start range count" << std::endl;                           
+    // std::cout << "start range count" << std::endl;
     // NOTE: range count
     {
       int rec_num = query_box_seq[0].size();
@@ -1294,7 +1294,7 @@ static auto constexpr DefaultTestFunc = []<class TreeDesc, typename Point>(
     }
 
     // NOTE: range query
-    std::cout << "start range count" << std::endl;                           
+    // std::cout << "start range count" << std::endl;
     {
       int rec_num = query_box_seq[0].size();
       kdknn = new Typename[rec_num];
@@ -1356,22 +1356,23 @@ static auto constexpr DefaultTestFunc = []<class TreeDesc, typename Point>(
 
   // real world
   if (kTag & (1 << 5)) {
-    std::cout << "run here." << std::endl;;
-    
+    // std::cout << "run here." << std::endl;
+    // ;
+
     auto [query_box_seq, query_max_size] =
         generate_query_box(kRangeQueryNum, 3, wp.subseq(0, wp.size() / 2));
 
-    BatchDeleteByStep<Point, Tree, true>(tree, wp, kRounds, 0.0001);
-    std::cout << "delete finished." << std::endl;
-    incre_update_test_bundle(query_box_seq, query_max_size);
-
     BuildTree<Point, Tree, kTestTime, 3>(wp, kRounds, tree, 2);
-    std::cout << "build finished." << std::endl;
+    // std::cout << "build finished." << std::endl;
     incre_update_test_bundle(query_box_seq, query_max_size);
 
     BatchInsertByStep<Point, Tree, true>(tree, wp, kRounds, 0.0001);
-    std::cout << "insert finished." << std::endl;
-    incre_update_test_bundle(query_box_seq, query_max_size); 
+    // std::cout << "insert finished." << std::endl;
+    incre_update_test_bundle(query_box_seq, query_max_size);
+
+    BatchDeleteByStep<Point, Tree, true>(tree, wp, kRounds, 0.0001);
+    // std::cout << "delete finished." << std::endl;
+    incre_update_test_bundle(query_box_seq, query_max_size);
   }
 
   // range query with log
