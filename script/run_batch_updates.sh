@@ -4,17 +4,18 @@ set -o xtrace
 
 /usr/bin/drop_caches
 
-tag=4
+tag=128
 dim=2
 k=10
 summary=0
 read_file=0
 queryType=0
+rounds=3
 
 log_path="logs/batch_updates"
 mkdir -p "${log_path}"
 
-Tree=(0 1 2 3 4)
+Tree=(0 1 2 3 5)
 make -C ../build/ kd_test p_test baselines
 
 origin_paths=("/data/zmen002/kdtree/ss_varden_bigint/1000000000_$((dim))/1.in" "/data/zmen002/kdtree/uniform_bigint/1000000000_${dim}/2_sort_by_0.in" "/data/zmen002/kdtree/uniform_bigint/1000000000_${dim}/2.in")
@@ -28,10 +29,10 @@ for tree in "${Tree[@]}"; do
         splits=(3)
     elif [[ ${tree} -eq 2 ]]; then
         solver="p_test"
-        splits=(1)
+        splits=(1 2)
     elif [[ ${tree} -eq 3 ]]; then
         solver="baselines"
-        splits=(1)
+        splits=(1 2)
     elif [[ ${tree} -eq 5 ]]; then
         solver="baselines"
         splits=(2)
