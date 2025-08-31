@@ -6,8 +6,7 @@ DataPath="/data/legacy/data3/zmen002/kdtree/geometry/round_small_coord"
 declare -A file2Dims
 file2Dims["Cosmo50_round_no_dup"]="3"
 file2Dims["GeoLifeNoScale_round_no_dup"]="3"
-file2Dims["osm_round_no_dup"]="2"
-# file2Dims["HT"]="10"
+# file2Dims["osm_round_no_dup"]="2"
 
 tag=32
 k=10
@@ -16,8 +15,8 @@ readFile=0
 summary=0
 queryType=$((2#0)) # 1110000
 # queryType=1 # 1110000
-Tree=(0 1 2 3 4)
-# Tree=(4)
+# Tree=(0 1 2 3 4)
+Tree=(5)
 
 for tree in "${Tree[@]}"; do
     if [[ ${tree} -eq 0 ]]; then
@@ -35,6 +34,9 @@ for tree in "${Tree[@]}"; do
     elif [[ ${tree} -eq 4 ]]; then
         solver="boost_rtree"
         splits=(0)
+    elif [[ ${tree} -eq 5 ]]; then
+        solver="baselines"
+        splits=(2)
     else
         solver="baselines"
         splits=(0)

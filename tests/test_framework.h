@@ -1359,6 +1359,7 @@ static auto constexpr DefaultTestFunc = []<class TreeDesc, typename Point>(
     // std::cout << "run here." << std::endl;
     // ;
 
+    puts("");
     auto [query_box_seq, query_max_size] =
         generate_query_box(kRangeQueryNum, 3, wp.subseq(0, wp.size() / 2));
 
