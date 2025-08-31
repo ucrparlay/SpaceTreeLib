@@ -66,24 +66,24 @@ KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight, kImbaRatio>::
   }
 
   // INFO: it can be used to accelerate the whole deletion process
-  if (n == T->size) {
-    if (has_tomb) {  // rebuild this subtree
-      BT::template DeleteTreeRecursive<Leaf, Interior>(T);
-      return NodeBox(AllocEmptyLeafNode<Slice, Leaf>(), BT::GetEmptyBox());
-    }
-    // within a rebuild tree
-    if (!T->is_leaf) {  // interior
-      auto TI = static_cast<Interior*>(T);
-      TI->ResetAug();  // needs to put before set parallel flag
-      // WARN: only set the flag for root, the remaining tree is still unset
-      TI->SetParallelFlag(T->size > BT::kSerialBuildCutoff);
-    } else {  // leaf
-      auto TL = static_cast<Leaf*>(T);
-      TL->ResetAug();
-    }
-    T->size = 0;
-    return NodeBox(T, BT::GetEmptyBox());
-  }
+  // if (n == T->size) {
+  //   if (has_tomb) {  // rebuild this subtree
+  //     BT::template DeleteTreeRecursive<Leaf, Interior>(T);
+  //     return NodeBox(AllocEmptyLeafNode<Slice, Leaf>(), BT::GetEmptyBox());
+  //   }
+  //   // within a rebuild tree
+  //   if (!T->is_leaf) {  // interior
+  //     auto TI = static_cast<Interior*>(T);
+  //     TI->ResetAug();  // needs to put before set parallel flag
+  //     // WARN: only set the flag for root, the remaining tree is still unset
+  //     TI->SetParallelFlag(T->size > BT::kSerialBuildCutoff);
+  //   } else {  // leaf
+  //     auto TL = static_cast<Leaf*>(T);
+  //     TL->ResetAug();
+  //   }
+  //   T->size = 0;
+  //   return NodeBox(T, BT::GetEmptyBox());
+  // }
 
   if (T->is_leaf) {
     return BT::template DeletePoints4Leaf<Leaf, NodeBox>(T, In);
@@ -175,6 +175,10 @@ KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight, kImbaRatio>::
       });
 
   assert(re_num <= IT.tags_num);
+  // if (re_num != 0) {
+  //   std::cout << "Total delete size: " << n << " Rebuild nodes: " << re_num
+  //             << " Total rebuild size: " << tot_re_size << std::endl;
+  // }
 
   // NOTE: delete the points in the tree
   parlay::parallel_for(
@@ -216,10 +220,13 @@ KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight, kImbaRatio>::
     assert(IT.tags[IT.rev_tag[i]].second == BT::kBucketNum + 3);
 
     if (IT.tags[IT.rev_tag[i]].first->size == 0) {  // NOTE: empty
-      BT::template DeleteTreeRecursive<Leaf, Interior, false>(
+      BT::template DeleteTreeRecursive<Leaf, Interior, true>(
           IT.tags[IT.rev_tag[i]].first);
       IT.tags[IT.rev_tag[i]].first = AllocEmptyLeafNode<Slice, Leaf>();
     } else {  // NOTE: rebuild
+      // std::cout << "Rebuild node size: " <<
+      // IT.tags[IT.rev_tag[i]].first->size
+      // << std::endl;
       assert(BT::WithinBox(
           BT::template GetBox<Leaf, Interior>(IT.tags[IT.rev_tag[i]].first),
           box_seq[i]));

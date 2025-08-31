@@ -19,8 +19,7 @@ template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
 template <SupportsForceParallel Interior, bool granularity>
 inline bool BaseTree<Point, DerivedTree, kSkHeight,
                      kImbaRatio>::ForceParallelRecursion(Interior const* TI) {
-  return (granularity && TI->size > kSerialBuildCutoff) ||
-         (!granularity && TI->ForceParallel());
+  return (granularity) || (!granularity && TI->ForceParallel());
 }
 
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,

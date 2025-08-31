@@ -52,18 +52,18 @@ Node* OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight,
 
   // INFO: delete the whole tree directly if its size equals to the input size,
   // can be used to accelerate the whole deletion process
-  if (n == T->size) {
-    if (has_tomb) {
-      BT::template DeleteTreeRecursive<Leaf, Interior>(T);
-      return AllocEmptyLeafNode<Slice, Leaf>();
-    }
-    if (!T->is_leaf) {
-      auto TI = static_cast<Interior*>(T);
-      TI->SetParallelFlag(T->size > BT::kSerialBuildCutoff);
-    }
-    T->size = 0;
-    return T;
-  }
+  // if (n == T->size) {
+  //   if (has_tomb) {
+  //     BT::template DeleteTreeRecursive<Leaf, Interior>(T);
+  //     return AllocEmptyLeafNode<Slice, Leaf>();
+  //   }
+  //   if (!T->is_leaf) {
+  //     auto TI = static_cast<Interior*>(T);
+  //     TI->SetParallelFlag(T->size > BT::kSerialBuildCutoff);
+  //   }
+  //   T->size = 0;
+  //   return T;
+  // }
 
   if (T->is_leaf) {
     return BT::template DeletePoints4Leaf<Leaf, Node*>(T, In);
@@ -155,14 +155,21 @@ Node* OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight,
       IT.template UpdateInnerTree<InnerTree::kTagRebuildNode>(tree_nodes);
   assert(IT.tags_num == re_num);
 
+  // if (re_num != 0) {
+  //   std::cout << "Total delete size: " << n << " Rebuild nodes: " << re_num
+  //             << " Total rebuild size: " << tot_re_size << std::endl;
+  // }
   parlay::parallel_for(0, IT.tags_num, [&](size_t i) {
     assert(IT.tags[IT.rev_tag[i]].second == BT::kBucketNum + 3);
 
     if (IT.tags[IT.rev_tag[i]].first->size == 0) {  // NOTE: empty
-      BT::template DeleteTreeRecursive<Leaf, Interior, false>(
+      BT::template DeleteTreeRecursive<Leaf, Interior, true>(
           IT.tags[IT.rev_tag[i]].first);
       IT.tags[IT.rev_tag[i]].first = AllocEmptyLeafNode<Slice, Leaf>();
     } else {  // NOTE: rebuild
+      // std::cout << "Rebuild node size: " <<
+      // IT.tags[IT.rev_tag[i]].first->size
+      //           << std::endl;
       assert(BT::WithinBox(
           BT::template GetBox<Leaf, Interior>(IT.tags[IT.rev_tag[i]].first),
           IT.GetBoxByRegionIdx(IT.rev_tag[i], box)));
