@@ -206,11 +206,14 @@ shared_ptr<LeafNode> Tree::create_leaf(sequence<Point>& P, size_t l, size_t r,
 shared_ptr<BaseNode> Tree::build(sequence<Point>& P, size_t l, size_t r,
                                  size_t b) {
   // cout << "l, r = " << l << ", " << r << endl;
+  // cout << "b = " << b << endl;
   if (!b || (r - l <= leaf_size)) {
+  // if (b == 1 || (r - l <= leaf_size)) {
     return create_leaf(P, l, r, b);
   }
 
   auto splitter = split_by_bit(P, l, r, b);
+  // cout << "splitter = " << splitter << endl;
   shared_ptr<BaseNode> L = nullptr;
   shared_ptr<BaseNode> R = nullptr;
   auto build_left = [&]() {
@@ -225,7 +228,7 @@ shared_ptr<BaseNode> Tree::build(sequence<Point>& P, size_t l, size_t r,
 
 void Tree::build(sequence<Point>& P) {
   if (!P.size()) return;
-  root = build(P, 0, P.size(), 64);
+  root = build(P, 0, P.size(), 63);
 }
 
 void Tree::batch_insert_sorted_node(shared_ptr<BaseNode>& x, sequence<Point>& P,
@@ -241,8 +244,8 @@ void Tree::batch_insert_sorted_node(shared_ptr<BaseNode>& x, sequence<Point>& P,
   if (x->is_leaf()) {
     auto cur_leaf = static_cast<LeafNode*>(x.get());
     auto cur_records = parlay::make_slice(&P[l], &P[r]);
-    if (!b || cur_leaf->records.size() + cur_records.size() <=
-                  leaf_size) {  // current leaf is not full
+    if (!b || cur_leaf->records.size() + cur_records.size() <= leaf_size) {  // current leaf is not full
+    // if (b == 1 || cur_leaf->records.size() + cur_records.size() <= leaf_size) {  // current leaf is not full
       cur_leaf->records = parlay::merge(cur_leaf->records,
                                         parlay::make_slice(&P[l], &P[r]), less);
       cur_leaf->mbr = get_mbr(cur_leaf->records);                                                                          
@@ -275,23 +278,29 @@ void Tree::batch_insert_sorted(sequence<Point>& P) {
   if (root == nullptr)
     build(P);
   else
-    batch_insert_sorted_node(root, P, 0, P.size(), 64);
+    batch_insert_sorted_node(root, P, 0, P.size(), 63);
 }
 
 void Tree::batch_delete_sorted_node(shared_ptr<BaseNode>& x, sequence<Point>& P,
                                     size_t l, size_t r, size_t b) {
-  if (x == nullptr) {
+  if (!x) {
     return;
   }
   if (x->is_leaf()) {
+    // cout << "Leaf-delete: " << r - l << " points, b = " << b << endl;
     auto cur_leaf = static_cast<LeafNode*>(x.get());
+    // cout << "cur mbr: "; print_mbr(x->mbr);
+    // cout << "before size: " << cur_leaf->get_num_points() << endl;
     cur_leaf->records = get_delete_p(cur_leaf->records, P, l, r);
+    // cout << "after size: " << cur_leaf->get_num_points() << endl;
     cur_leaf->mbr = get_mbr(cur_leaf->records);
     if (!cur_leaf->records.size()) x.reset();
     return;
   }
 
+  // cout << "calculate splitter" << endl;
   auto splitter = split_by_bit(P, l, r, b);
+  // cout << "splitter = " << splitter << endl;
   auto cur_inte = static_cast<InteNode*>(x.get());
   auto delete_left = [&]() {
     if (l < splitter) {
@@ -347,10 +356,11 @@ void Tree::batch_delete_sorted_node(shared_ptr<BaseNode>& x, sequence<Point>& P,
 }
 
 void Tree::batch_delete_sorted(sequence<Point>& P) {
+  // cout << "delete " << P.size() << " points" << endl;
   if (!P.size() || root == nullptr)
     return;
   else
-    batch_delete_sorted_node(root, P, 0, P.size(), 64);
+    batch_delete_sorted_node(root, P, 0, P.size(), 63);
 }
 
 size_t Tree::range_count_node(shared_ptr<BaseNode>& x, Bounding_Box& query_mbr) {
@@ -435,6 +445,7 @@ auto Tree::knn_report(size_t& k, Point query_point) {
 template <class T>
 void Tree::knn_report_node(shared_ptr<BaseNode>& x, size_t& k, Point query_point, T& nn_res) {
   if (!x) return;
+  // print_mbr(x->mbr);
   if (x->is_leaf()) {
     auto cur_leaf = static_cast<LeafNode*>(x.get());
     for (auto& p : cur_leaf->records) {
@@ -709,11 +720,12 @@ class Zdtree
 
   template <typename Range>
   void Build(Range In) {
-    auto P = point_convert(In);
+    // auto P = point_convert(In);
     // run_tests();
-    auto P_set = geobase::get_sorted_points(P);
+    auto P_set = geobase::get_sorted_points(In);
     // check_first(P_set, 12);
     tree.build(P_set);
+
     // cout << "check mbr start" << endl;
     // tree.check_mbr(tree.root);
     // cout << "check mbr end" << endl;
@@ -733,39 +745,43 @@ class Zdtree
   }
 
   void BatchInsert(Slice In) {
-    auto P = point_convert(In);
-    auto P_set = geobase::get_sorted_points(P);
-    // std::cout << "[Insert_PRV]: " << tree.collect_records(tree.root).size()
-    // << endl;
+    auto P_set = geobase::get_sorted_points(In);
     tree.batch_insert_sorted(P_set);
+
     // cout << "check mbr start" << endl;
     // tree.check_mbr(tree.root);
     // cout << "check mbr end" << endl;
-    // std::cout << "[Insert_AFT]: " << tree.collect_records(tree.root).size()
-    // << endl;
   }
 
   void BatchDelete(Slice In) {
-    auto P = point_convert(In);
-    auto P_set = geobase::get_sorted_points(P);
-    // std::cout << "[Delete_PRV]: " << tree.collect_records(tree.root).size()
-    // << endl;
+    auto P_set = geobase::get_sorted_points(In);
+    cout << "remove: " << In.size() << endl;
+    auto sz0 = tree.collect_records(tree.root).size();
+    cout << "before: " << sz0 << endl;
     tree.batch_delete_sorted(P_set);
+    auto sz1 = tree.collect_records(tree.root).size();
+    cout << "after: " << sz1 << endl;
     // cout << "check mbr start" << endl;
     // tree.check_mbr(tree.root);
     // cout << "check mbr end" << endl;
-    // std::cout << "[Delete_AFT]: " << tree.collect_records(tree.root).size()
-    // << endl;
   }
 
   template <typename Node, typename Range>
   auto KNN(Node* T, Point const& q, pspt::kBoundedQueue<Point, Range>& bq) {
+    // auto num_pts_in_tree = tree.collect_records(tree.root).size();
+    // cout << num_pts_in_tree << endl;
+    // // print_mbr(tree.root->mbr);
+    // if (num_pts_in_tree != 5000000){
+    //   cout << "[ERROR] # of points in tree: " << num_pts_in_tree << endl;
+    // }
+
     pspt::KNNLogger logger;
     // geobase::Point cnv_q(q[0], q[1]);
     size_t k = bq.max_size();
 
     auto knnsqrdis = tree.knn_report(k, q).top().second;
 
+    // cout << knnsqrdis << endl;
     // auto all_pts = tree.collect_records(tree.root);
     // auto bfsqrdis = geobase::knn_bf(k, q, all_pts);
     // if (dcmp(knnsqrdis - bfsqrdis) != 0){
@@ -777,6 +793,11 @@ class Zdtree
   }
 
   auto RangeCount(Box const& q) {
+    // auto num_pts_in_tree = tree.collect_records(tree.root).size();
+    // if (num_pts_in_tree != 5000000){
+    //   cout << "[ERROR] # of points in tree: " << num_pts_in_tree << endl;
+    // }
+
     pspt::RangeQueryLogger logger;
     int size = 0;
     auto cnv_q = box_convert(q);
@@ -788,6 +809,11 @@ class Zdtree
 
   template <typename Range>
   auto RangeQuery(Box const& q, Range&& Out) {
+    // auto num_pts_in_tree = tree.collect_records(tree.root).size();
+    // if (num_pts_in_tree != 5000000){
+    //   cout << "[ERROR] # of points in tree: " << num_pts_in_tree << endl;
+    // }
+
     pspt::RangeQueryLogger logger;
     auto cnv_q = box_convert(q);
     // std::cout << cnv_q.first.x << ", " << cnv_q.first.y << ", "
@@ -802,7 +828,7 @@ class Zdtree
     tree.range_report(cnv_q, size, Out);
 
     // assert(Out.size() == size);
-    // if (size != Out.size()){
+    // if (size != Out.size()){··
     //   std::cout << "[ERROR]: " << size << ", " << Out.size() << std::endl;
     // }
     // std::cout << (Out.size() == size) << std::endl;
@@ -811,7 +837,7 @@ class Zdtree
 
   constexpr static char const* GetTreeName() { return "ZdTree"; }
   constexpr static char const* CheckHasBox() { return "WithoutBox"; }
-  Tree tree = Tree(2);
+  Tree tree = Tree(32);
 };
 
 }  // namespace ZD

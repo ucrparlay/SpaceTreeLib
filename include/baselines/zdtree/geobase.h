@@ -80,7 +80,9 @@ struct Point {
   }
 
   friend std::ostream& operator<<(std::ostream& os, Point const& p) {
-    os << fixed << setprecision(6) << p.id << ": (" << p.x << ", " << p.y << ", " << p.z << ")" << bitset<64>(p.morton_id);
+    // os << fixed << setprecision(6) << p.id << ": (" << p.x << ", " << p.y << ", " << p.z << ")" << bitset<64>(p.morton_id);
+    // os << fixed << setprecision(6) << p.id << ": (" << p.x << ", " << p.y << ", " << p.z << ")";
+    os << fixed << setprecision(6) << "Zvalue: " << bitset<64>(p.morton_id) << ", ID: " << p.id << ", XYZ: (" << p.x << ", " << p.y << ", " << p.z << ")";
     return os;
   }
 
@@ -103,7 +105,7 @@ struct Point {
       // std::cout << std::bitset<64>(ret) << std::endl;
     }
     
-    ret <<= 1;
+    // ret <<= 1;
     return ret;
 
     // /* Original Implementation for 2D */
@@ -315,13 +317,23 @@ bool is_same_mbr(MBR& lhs, MBR& rhs) {
 
 template <class T>
 size_t split_by_bit(T& P, size_t l, size_t r, size_t b) {
-  // unsigned int splitter = (1u << ((b - 1) / 2));
+  unsigned int splitter = (b - 1) / 3;
   // auto less = [&](auto pt) {
   //   return b % 2 ? (static_cast<unsigned int>(pt.y) & splitter) == 0
   //                : (static_cast<unsigned int>(pt.x) & splitter) == 0;
   // };
   auto less = [&](auto pt) {
-    return (pt.morton_id >> (b - 1)) & 1;
+    if (b % 3 == 0) { // x axis
+      auto x = static_cast<unsigned int>(pt.x);
+      return ((x >> splitter) & 1) == 0;
+    } else if (b % 3 == 2){ // y axis
+      auto y = static_cast<unsigned int>(pt.y);
+      return ((y >> splitter) & 1) == 0;
+    }
+    else{
+      auto z = static_cast<unsigned int>(pt.z);
+      return ((z >> splitter) & 1) == 0;
+    }
   };
   size_t start = l, end = r, mid = start;
   while (end - start > 16) {
@@ -332,8 +344,15 @@ size_t split_by_bit(T& P, size_t l, size_t r, size_t b) {
       end = mid;
   }
   mid = end;
+  // cout << "start = " << start << ", end = " << end << endl;
   for (auto i = start; i < end; i++) {
-    if (less(P[i])) {
+    // cout << "i = " << i << endl;
+    // if (b == 4){ 
+    //   auto z = static_cast<unsigned int>(P[i].z);
+    //   cout << "z value = " << z << endl;
+    //   cout << ((z >> 1) & 1) << endl;
+    // }
+    if (!less(P[i])) {
       mid = i;
       return i;
     }

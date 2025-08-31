@@ -496,6 +496,7 @@ void BatchInsertByStep(Tree& pkd, parlay::sequence<Point> const& WP,
   // WARN: restore status
   prepare_build();
   incre_build(slice_num / remain_divide_ratio);
+  // pkd.Build(wp.cut(0, n / 2));
   // auto original_box = Tree::GetBox(wp.cut(0, n / remain_divide_ratio));
   // auto tree_box = pkd.GetRootBox();
   // std::cout << original_box.first << ' ' << original_box.second << std::endl;
@@ -646,6 +647,20 @@ void queryKNN([[maybe_unused]] uint_fast8_t const& Dim,
         // if (!flattenTreeTag) {  // WARN: Need ensure pkd.size() == wp.size()
         //   pkd.Flatten(parlay::make_slice(wp));
         // }
+
+        /* For Debug */
+        // parlay::parallel_for(0, 1, [&](size_t i) {
+        //   // for (size_t i = 0; i < n; i++) {
+        //   auto [vis_leaf_num, vis_inter_num, gen_box_num, check_box_num,
+        //         skip_box_num] = pkd.KNN(KDParallelRoot, wp[i], bq[i]);
+        //   kdknn[i] = bq[i].top().second;
+        //   vis_leaf[i] = vis_leaf_num;
+        //   vis_inter[i] = vis_inter_num;
+        //   gen_box[i] = gen_box_num;
+        //   check_box[i] = check_box_num;
+        //   skip_box[i] = skip_box_num;
+        //   // }
+        // });
         parlay::parallel_for(0, n, [&](size_t i) {
           // for (size_t i = 0; i < n; i++) {
           auto [vis_leaf_num, vis_inter_num, gen_box_num, check_box_num,
@@ -1171,7 +1186,8 @@ static auto constexpr DefaultTestFunc = []<class TreeDesc, typename Point>(
   constexpr bool kTestTime = true;
 
   // std::cout << "Called Build" << std::endl;
-  BuildTree<Point, Tree, kTestTime, 2>(wp, kRounds, tree);
+  BuildTree<Point, Tree, kTestTime, 3>(wp, kRounds, tree);
+  BatchDeleteByStep<Point, Tree, true>(tree, wp, kRounds, 0.5);
 
   // NOTE: batch insert
   if (kTag & (1 << 0)) {
@@ -1222,6 +1238,7 @@ static auto constexpr DefaultTestFunc = []<class TreeDesc, typename Point>(
 
   auto incre_update_test_bundle = [&](auto const& query_box_seq,
                                       auto const& query_max_size) {
+    std::cout << "start knn" << std::endl;                           
     // NOTE: knn query
     {
       int k[3] = {1, 10, 100};
@@ -1261,6 +1278,7 @@ static auto constexpr DefaultTestFunc = []<class TreeDesc, typename Point>(
       puts("");
     }
 
+    std::cout << "start range count" << std::endl;                           
     // NOTE: range count
     {
       int rec_num = query_box_seq[0].size();
@@ -1276,6 +1294,7 @@ static auto constexpr DefaultTestFunc = []<class TreeDesc, typename Point>(
     }
 
     // NOTE: range query
+    std::cout << "start range count" << std::endl;                           
     {
       int rec_num = query_box_seq[0].size();
       kdknn = new Typename[rec_num];
@@ -1337,18 +1356,22 @@ static auto constexpr DefaultTestFunc = []<class TreeDesc, typename Point>(
 
   // real world
   if (kTag & (1 << 5)) {
-    puts("");
+    std::cout << "run here." << std::endl;;
+    
     auto [query_box_seq, query_max_size] =
         generate_query_box(kRangeQueryNum, 3, wp.subseq(0, wp.size() / 2));
 
+    BatchDeleteByStep<Point, Tree, true>(tree, wp, kRounds, 0.0001);
+    std::cout << "delete finished." << std::endl;
+    incre_update_test_bundle(query_box_seq, query_max_size);
+
     BuildTree<Point, Tree, kTestTime, 3>(wp, kRounds, tree, 2);
+    std::cout << "build finished." << std::endl;
     incre_update_test_bundle(query_box_seq, query_max_size);
 
     BatchInsertByStep<Point, Tree, true>(tree, wp, kRounds, 0.0001);
-    incre_update_test_bundle(query_box_seq, query_max_size);
-
-    BatchDeleteByStep<Point, Tree, true>(tree, wp, kRounds, 0.0001);
-    incre_update_test_bundle(query_box_seq, query_max_size);
+    std::cout << "insert finished." << std::endl;
+    incre_update_test_bundle(query_box_seq, query_max_size); 
   }
 
   // range query with log
