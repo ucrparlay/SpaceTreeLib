@@ -5,9 +5,9 @@ set -o xtrace
 
 Node=(1000000000)
 # Tree=(0 1 2)
-Tree=(3)
-Dims=(2)
-Type=(1)
+Tree=(5)
+Dims=(3)
+Type=(0 1)
 # paths=("/data/zmen002/kdtree/ss_varden_bigint/1000000000_2/1.in" "/data/zmen002/kdtree/uniform_bigint/1000000000_2/2_sort_by_0.in" "/data/zmen002/kdtree/uniform_bigint/1000000000_2/2.in")
 
 k=10
@@ -22,7 +22,11 @@ mkdir -p "${log_path}"
 make -C ../build/ kd_test p_test baselines
 
 for dim in "${Dims[@]}"; do
-    paths=("/data/zmen002/kdtree/ss_varden_bigint/1000000000_$((dim))/1.in" "/data/zmen002/kdtree/uniform_bigint/1000000000_${dim}/2_sort_by_0.in" "/data/zmen002/kdtree/uniform_bigint/1000000000_${dim}/2.in")
+    if [[ ${dim} -eq 2 ]]; then
+        paths=("/data/zmen002/kdtree/ss_varden_bigint/1000000000_$((dim))/1.in" "/data/zmen002/kdtree/uniform_bigint/1000000000_${dim}/2_sort_by_0.in" "/data/zmen002/kdtree/uniform_bigint/1000000000_${dim}/2.in")
+    elif [[ ${dim} -eq 3 ]]; then
+        paths=("/data/zmen002/kdtree/ss_varden/1000000000_$((dim))/1.in" "/data/zmen002/kdtree/uniform/1000000000_${dim}/2_sort_by_0.in" "/data/zmen002/kdtree/uniform/1000000000_${dim}/2.in")
+    fi
     for query_type in "${Type[@]}"; do
         for tree in "${Tree[@]}"; do
             if [[ ${tree} -eq 0 ]]; then
@@ -37,6 +41,9 @@ for dim in "${Dims[@]}"; do
             elif [[ ${tree} -eq 3 ]]; then
                 solver="baselines"
                 splits=(1 2)
+            elif [[ ${tree} -eq 5 ]]; then
+                solver="baselines"
+                splits=(2)
             else
                 solver="baselines"
                 splits=(0)
