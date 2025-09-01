@@ -154,6 +154,8 @@ def combine(P) -> List:
                 solver = "PTree-H" if lin_sep[5] == "HilbertCurve;" else "PTree-Z"
             elif lin_sep[1] == "CPAM;":
                 solver = "CPAM-H" if lin_sep[5] == "HilbertCurve;" else "CPAM-Z"
+            elif lin_sep[1] == "ZdTree;":
+                solver = "ZdTree"
             else:
                 raise ValueError(f"Unknown solver: {lin_sep[1]}")
 
