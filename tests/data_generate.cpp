@@ -35,19 +35,19 @@ int main(int argc, char* argv[]) {
     std::string newpath = path + toString(i + 1) + ".in";
     std::cout << newpath << std::endl;
     if (pts_dim == 2) {
-      generate.operator()<pspt::BasicPoint<Axis, 2>>(newpath);
+      generate.operator()<psi::BasicPoint<Axis, 2>>(newpath);
     } else if (pts_dim == 3) {
-      generate.operator()<pspt::BasicPoint<Axis, 3>>(newpath);
+      generate.operator()<psi::BasicPoint<Axis, 3>>(newpath);
     } else if (pts_dim == 5) {
-      generate.operator()<pspt::BasicPoint<Axis, 5>>(newpath);
+      generate.operator()<psi::BasicPoint<Axis, 5>>(newpath);
     } else if (pts_dim == 7) {
-      generate.operator()<pspt::BasicPoint<Axis, 7>>(newpath);
+      generate.operator()<psi::BasicPoint<Axis, 7>>(newpath);
     } else if (pts_dim == 9) {
-      generate.operator()<pspt::BasicPoint<Axis, 9>>(newpath);
+      generate.operator()<psi::BasicPoint<Axis, 9>>(newpath);
     } else if (pts_dim == 12) {
-      generate.operator()<pspt::BasicPoint<Axis, 12>>(newpath);
+      generate.operator()<psi::BasicPoint<Axis, 12>>(newpath);
     } else if (pts_dim == 16) {
-      generate.operator()<pspt::BasicPoint<Axis, 16>>(newpath);
+      generate.operator()<psi::BasicPoint<Axis, 16>>(newpath);
     } else {
       throw std::runtime_error("Invalid dimension");
     }

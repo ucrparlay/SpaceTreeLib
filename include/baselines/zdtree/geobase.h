@@ -9,13 +9,13 @@
 
 #include "parlay/internal/integer_sort.h"
 #include "parlay/internal/merge.h"
-#include "pspt/dependence/comparator.h"
-#include "pspt/dependence/space_filling_curve/hilbert.h"
+#include "psi/dependence/comparator.h"
+#include "psi/dependence/space_filling_curve/hilbert.h"
 
 namespace ZD {
 namespace geobase {
 using namespace std;
-using namespace pspt::hilbert;
+using namespace psi::hilbert;
 using FT = double;
 // using FT = float;
 constexpr FT FT_INF_MIN = numeric_limits<FT>::min();
@@ -58,7 +58,7 @@ struct Point {
   // new things
   using Coord = FT;
   using Coords = std::array<Coord, 2>;
-  using Num = pspt::Num_Comparator<Coord>;
+  using Num = psi::Num_Comparator<Coord>;
   using DisType =
       std::conditional_t<std::is_integral_v<Coord>, int_fast64_t, double>;
   using DimsType = uint_fast8_t;

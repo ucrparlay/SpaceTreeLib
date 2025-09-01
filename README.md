@@ -1,4 +1,4 @@
-# PSPT: A library for Parallel Spatial Partition Trees
+# PSI: A library for Parallel Spatial Partition Trees
 
 ## Requirements
 
@@ -36,7 +36,7 @@ File structure:
 ├── benchmark
 ├── include
 │   ├── parlaylib
-│   └── pspt
+│   └── psi
 │       ├── base_tree_impl
 │       │   └── tree_op
 │       ├── cover_tree_impl
@@ -55,7 +55,7 @@ File structure:
 |    Name     |          Usage          |
 | :---------: | :---------------------: |
 | `benchmark` | Stores sample benchmark |
-|  `include/pspt`  |  Source of `PSPT`   |
+|  `include/psi`  |  Source of `PSI`   |
 | `include/parlaylib` |   Provide parallelism   |
 |  `scipts`   | Scripts for experiments |
 |   `tests`   |   Helpers for testing   |
@@ -118,14 +118,14 @@ To parse the output, see [ Test Framework Format ](#test-framework-format) below
 
 ### Default setting
 
-In default, the PSPTs stores all coordinates of points in 64-bit integer (`long`). The balancing parameter is set to $0.3$, the leaf wrap is $32$. It builds $6$ levels of tree at once. Different values on different machine may influence the performance dramatically. See our paper for more explanation.
+In default, the PSIs stores all coordinates of points in 64-bit integer (`long`). The balancing parameter is set to $0.3$, the leaf wrap is $32$. It builds $6$ levels of tree at once. Different values on different machine may influence the performance dramatically. See our paper for more explanation.
 
 ## Test Framework Format
 
 Implemented in `tests/test_framework.h`.
 
 ## Graph Generator
-PSPT provides two types of parallel data generator: `Uniform` and `Varden`.
+PSI provides two types of parallel data generator: `Uniform` and `Varden`.
 
 Usage:
 ```{bash}

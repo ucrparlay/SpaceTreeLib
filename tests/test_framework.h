@@ -19,13 +19,13 @@
 #include "parlay/primitives.h"
 #include "parlay/random.h"
 #include "parlay/slice.h"
-#include "pspt/base_tree.h"
-#include "pspt/cover_tree.h"
-#include "pspt/dependence/splitter.h"
-#include "pspt/kd_tree.h"
-#include "pspt/orth_tree.h"
-#include "pspt/p_tree.h"
-#include "pspt/r_tree.h"
+#include "psi/base_tree.h"
+#include "psi/cover_tree.h"
+#include "psi/dependence/splitter.h"
+#include "psi/kd_tree.h"
+#include "psi/orth_tree.h"
+#include "psi/p_tree.h"
+#include "psi/r_tree.h"
 
 #ifdef CCP
 using Coord = long;
@@ -36,7 +36,7 @@ using Coord = long;
 #endif  // CCP
 
 using Typename = Coord;
-using namespace pspt;
+using namespace psi;
 
 // NOTE: KNN size
 static constexpr double kBatchQueryRatio = 0.01;
@@ -109,7 +109,7 @@ size_t recurse_box(parlay::slice<Point*, Point*> In, auto& box_seq, int DIM,
   size_t pos = get_random_index(0, n, rand());
   parlay::sequence<bool> flag(n, 0);
   parlay::parallel_for(0, n, [&](size_t i) {
-    if (pspt::Num_Comparator<Coord>::Gt(In[i][dim], In[pos][dim]))
+    if (psi::Num_Comparator<Coord>::Gt(In[i][dim], In[pos][dim]))
       flag[i] = 1;
     else
       flag[i] = 0;
@@ -277,10 +277,10 @@ void BatchInsert(Tree& pkd, parlay::sequence<Point> const& WP,
 
   // NOTE: build the tree by type
   auto build_tree_by_type = [&]() {
-    if constexpr (pspt::IsKdTree<Tree> || pspt::IsPTree<Tree>) {
+    if constexpr (psi::IsKdTree<Tree> || psi::IsPTree<Tree>) {
       parlay::copy(WP, wp), parlay::copy(WI, wi);
       pkd.Build(parlay::make_slice(wp));
-    } else if constexpr (pspt::IsOrthTree<Tree>) {
+    } else if constexpr (psi::IsOrthTree<Tree>) {
       parlay::copy(WP, wp), parlay::copy(WI, wi);
       auto box1 = Tree::GetBox(parlay::make_slice(wp));
       auto box2 =
@@ -429,9 +429,9 @@ void BatchInsertByStep(Tree& pkd, parlay::sequence<Point> const& WP,
   // NOTE: build the tree by type
   auto prepare_build = [&]() {
     pkd.DeleteTree();
-    if constexpr (pspt::IsKdTree<Tree> || pspt::IsPTree<Tree>) {
+    if constexpr (psi::IsKdTree<Tree> || psi::IsPTree<Tree>) {
       parlay::copy(WP, wp);
-    } else if constexpr (pspt::IsOrthTree<Tree>) {
+    } else if constexpr (psi::IsOrthTree<Tree>) {
       parlay::copy(WP, wp);
       auto box = Tree::GetBox(wp.cut(0, n));
       pkd.SetBoundingBox(box);
@@ -533,9 +533,9 @@ void BatchDeleteByStep(Tree& pkd, parlay::sequence<Point> const& WP,
   auto build_tree_by_type = [&]() {
     parlay::copy(WP, wp);
 
-    if constexpr (pspt::IsKdTree<Tree> || pspt::IsPTree<Tree>) {
+    if constexpr (psi::IsKdTree<Tree> || psi::IsPTree<Tree>) {
       pkd.Build(parlay::make_slice(wp));
-    } else if constexpr (pspt::IsOrthTree<Tree>) {
+    } else if constexpr (psi::IsOrthTree<Tree>) {
       auto box = Tree::GetBox(wp.cut(0, n));
       pkd.Build(parlay::make_slice(wp), box);
     } else {
@@ -1634,7 +1634,7 @@ class Wrapper {
     using Point = PointType;
     using SplitRule = SplitRuleType;
     using TreeType =
-        typename pspt::KdTree<Point, SplitRule, LeafAugType, InteriorAugType>;
+        typename psi::KdTree<Point, SplitRule, LeafAugType, InteriorAugType>;
   };
 
   template <class PointType, class SplitRuleType, class LeafAugType,
@@ -1643,7 +1643,7 @@ class Wrapper {
     using Point = PointType;
     using SplitRule = SplitRuleType;
     using TreeType =
-        typename pspt::OrthTree<Point, SplitRule, LeafAugType, InteriorAugType,
+        typename psi::OrthTree<Point, SplitRule, LeafAugType, InteriorAugType,
                                 Point::GetDim(),
                                 OrthGetBuildDepthOnce(Point::GetDim())>;
   };
@@ -1652,7 +1652,7 @@ class Wrapper {
   struct PTreeWrapper {
     using Point = PointType;
     using SplitRule = SplitRuleType;
-    using TreeType = typename pspt::PTree<Point, SplitRule>;
+    using TreeType = typename psi::PTree<Point, SplitRule>;
   };
 
   template <class PointType, class SplitRuleType>
@@ -1674,14 +1674,14 @@ class Wrapper {
   struct CoverTreeWrapper {
     using Point = PointType;
     using SplitRule = SplitRuleType;
-    using TreeType = typename pspt::CoverTree<Point, SplitRule>;
+    using TreeType = typename psi::CoverTree<Point, SplitRule>;
   };
 
   template <class PointType, class SplitRuleType>
   struct RTreeWrapper {
     using Point = PointType;
     using SplitRule = SplitRuleType;
-    using TreeType = typename pspt::RTree<Point, SplitRule>;
+    using TreeType = typename psi::RTree<Point, SplitRule>;
   };
 
   // NOTE: Apply the dim and split rule
@@ -1792,7 +1792,7 @@ class Wrapper {
                               int const split_type, commandLine& params,
                               RunFunc test_func) {
     auto build_tree_type = [&]<typename Point, typename SplitRule>() {
-      using BT = pspt::BaseTree<Point>;
+      using BT = psi::BaseTree<Point>;
       if (tree_type == 0) {
         // Run<KdTreeWrapper<Point, SplitRule, LeafAugEmpty<BT>,
         // InteriorAugEmpty<BT>>>(params, test_func);
@@ -1813,23 +1813,23 @@ class Wrapper {
       if (!(split_type & (1 << 0)) && !(split_type & (1 << 1))) {
         // NOTE: 0 -> max_stretch + object_mid
         build_tree_type.template operator()<
-            Point, pspt::OrthogonalSplitRule<pspt::MaxStretchDim<Point>,
-                                             pspt::ObjectMedian<Point>>>();
+            Point, psi::OrthogonalSplitRule<psi::MaxStretchDim<Point>,
+                                             psi::ObjectMedian<Point>>>();
       } else if ((split_type & (1 << 0)) && !(split_type & (1 << 1))) {
         // NOTE: 1 -> rotate_dim + object_mid
         build_tree_type.template operator()<
-            Point, pspt::OrthogonalSplitRule<pspt::RotateDim<Point>,
-                                             pspt::ObjectMedian<Point>>>();
+            Point, psi::OrthogonalSplitRule<psi::RotateDim<Point>,
+                                             psi::ObjectMedian<Point>>>();
       } else if (!(split_type & (1 << 0)) && (split_type & (1 << 1))) {
         // NOTE: 2 -> max_stretch + spatial_median
         build_tree_type.template operator()<
-            Point, pspt::OrthogonalSplitRule<pspt::MaxStretchDim<Point>,
-                                             pspt::SpatialMedian<Point>>>();
+            Point, psi::OrthogonalSplitRule<psi::MaxStretchDim<Point>,
+                                             psi::SpatialMedian<Point>>>();
       } else if ((split_type & (1 << 0)) && (split_type & (1 << 1))) {
         // NOTE: 3 -> rotate + spatial_median
         build_tree_type.template operator()<
-            Point, pspt::OrthogonalSplitRule<pspt::RotateDim<Point>,
-                                             pspt::SpatialMedian<Point>>>();
+            Point, psi::OrthogonalSplitRule<psi::RotateDim<Point>,
+                                             psi::SpatialMedian<Point>>>();
       } else {
         std::cout << "Unsupported split type: " << split_type << std::endl;
       }
@@ -1863,10 +1863,10 @@ class Wrapper {
     auto run_with_split_type = [&]<typename Point>() {
       if (split_type & (1 << 0)) {
         build_tree_type.template
-        operator()<Point, pspt::SpacialFillingCurve<HilbertCurve<Point>>>();
+        operator()<Point, psi::SpacialFillingCurve<HilbertCurve<Point>>>();
       } else if (split_type & (1 << 1)) {
         build_tree_type.template
-        operator()<Point, pspt::SpacialFillingCurve<MortonCurve<Point>>>();
+        operator()<Point, psi::SpacialFillingCurve<MortonCurve<Point>>>();
       }
     };
 
@@ -1904,10 +1904,10 @@ class Wrapper {
     auto run_with_split_type = [&]<typename Point>() {
       if (split_type & (1 << 0)) {
         build_tree_type.template
-        operator()<Point, pspt::SpacialFillingCurve<HilbertCurve<Point>>>();
+        operator()<Point, psi::SpacialFillingCurve<HilbertCurve<Point>>>();
       } else if (split_type & (1 << 1)) {
         build_tree_type.template
-        operator()<Point, pspt::SpacialFillingCurve<MortonCurve<Point>>>();
+        operator()<Point, psi::SpacialFillingCurve<MortonCurve<Point>>>();
       }
     };
 

@@ -2,12 +2,12 @@
 
 #include <cstdint>
 
-#include "../pspt/base_tree.h"
+#include "../psi/base_tree.h"
 #include "cpam/cpam.h"
 #include "dependence/loggers.h"
 // #include "geobase.h"
 // #include "hilbert.h"
-#include "pspt/base_tree.h"
+#include "psi/base_tree.h"
 
 namespace CPAMTree {
 using namespace std;
@@ -19,12 +19,12 @@ using parlay::sequence;
 template <typename Point, typename SplitRule, uint_fast8_t kSkHeight = 6,
           uint_fast8_t kImbaRatio = 30>
 class CpamRaw
-    : public pspt::BaseTree<Point,
+    : public psi::BaseTree<Point,
                             CpamRaw<Point, SplitRule, kSkHeight, kImbaRatio>,
                             kSkHeight, kImbaRatio> {
  public:
   using BT =
-      pspt::BaseTree<Point, CpamRaw<Point, SplitRule, kSkHeight, kImbaRatio>,
+      psi::BaseTree<Point, CpamRaw<Point, SplitRule, kSkHeight, kImbaRatio>,
                      kSkHeight, kImbaRatio>;
 
   using BucketType = typename BT::BucketType;
@@ -248,22 +248,22 @@ class CpamRaw
   }
 
   template <typename Node, typename Range>
-  auto KNN(Node* T, Point const& q, pspt::kBoundedQueue<Point, Range>& bq) {
-    pspt::KNNLogger logger;
+  auto KNN(Node* T, Point const& q, psi::kBoundedQueue<Point, Range>& bq) {
+    psi::KNNLogger logger;
     // this->knn(this->cpam_aug_map_, q, bq.max_size(), logger.vis_leaf_num);
     zmap::template knn<BT>(this->cpam_aug_map_, q, bq, logger);
     return logger;
   }
 
   auto RangeCount(Box const& q) {
-    pspt::RangeQueryLogger logger;
+    psi::RangeQueryLogger logger;
     auto size = this->range_count(this->cpam_aug_map_, q);
     return std::make_pair(size, logger);
   }
 
   template <typename Range>
   auto RangeQuery(Box const& q, Range&& Out) {
-    pspt::RangeQueryLogger logger;
+    psi::RangeQueryLogger logger;
     auto size = this->range_report(this->cpam_aug_map_, q, Out);
     return std::make_pair(size, logger);
   }
