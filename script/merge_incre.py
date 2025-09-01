@@ -196,7 +196,7 @@ def combine(P) -> List:
     while index < len(lines):
         lin_sep = " ".join(lines[index].split())
         lin_sep = lin_sep.split(" ")
-        # print(lin_sep)
+        print(lin_sep)
 
         if len(lin_sep) == 0 or lin_sep[0] == "":  # Skip empty lines
             index += 1
@@ -294,9 +294,12 @@ subprocess.run(
 
 csv_writer, csv_file_pointer = csvSetup()
 data = combine(input_path)
-data = data + combine_boost("logs/boost_rtree/uniform_by_x.log") + combine_boost(
-    "logs/boost_rtree/varden.log") + combine_boost("logs/boost_rtree/uniform.log")
-# print(data)
+# data = data + combine_boost("logs/boost_rtree/3d/incre_insert_3_4_0.log")
+# + combine_boost(
+# "logs/boost_rtree/varden.log") + combine_boost("logs/boost_rtree/uniform.log")
+# data = data + combine_boost("logs/boost_rtree/uniform_by_x.log") + combine_boost(
+#     "logs/boost_rtree/varden.log") + combine_boost("logs/boost_rtree/uniform.log")
+print(data)
 data = post_processing(data)
 # print(data)
 csv_writer.writerows(data)
