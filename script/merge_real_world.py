@@ -60,7 +60,8 @@ def parse_knn_time(text):
         return [0.0, 0.0, 0.0] * 4
 
     # print(text)
-    pattern = r"(\S+)\s+knn time:\s*((?:[\d\.]+\s*)+)"
+    # pattern = r"(\S+)\s+knn time:\s*((?:[\d\.]+\s*)+)"
+    pattern = r"(\S+)\s+knn time:\s*((?:[\d\.eE\+\-]+\s*)+)"
     result = {}
     query_type_order = [
         "in-dis-skewed",
@@ -73,8 +74,10 @@ def parse_knn_time(text):
         if match:
             label = match.group(1)
             numbers_str = match.group(2)
+            # numbers = [float(num)
+            #            for num in re.findall(r"[\d\.]+", numbers_str)]
             numbers = [float(num)
-                       for num in re.findall(r"[\d\.]+", numbers_str)]
+                       for num in re.findall(r"[\d\.eE\+\-]+", numbers_str)]
             sep = 6
             if len(numbers) == 3:  # for boost r-tree
                 sep = 1
@@ -99,7 +102,8 @@ def parse_range_time(text):
             continue
 
         # Split the line into parts and extract numbers
-        parts = line.split()
+        # parts = line.split()
+        parts = [part for part in line.split() if part.strip()]
 
         # Remove the "range" prefix and get the numbers
         numbers = []
@@ -114,10 +118,12 @@ def parse_range_time(text):
         if len(numbers) == 3:  # for boost r-tree
             extracted = [numbers[0], numbers[1], numbers[2]]
             result.append(extracted)
-
-        if len(numbers) >= 13:
+        elif len(numbers) >= 13:
             extracted = [numbers[0], numbers[6], numbers[12]]
             result.append(extracted)
+            # print(extracted)
+        else:
+            raise ValueError("Not enough numbers in range line")
 
     flattened = [item for sublist in result for item in sublist]
     return flattened
@@ -222,6 +228,8 @@ def combine(P) -> List:
                 solver = "PTree-H" if lin_sep[5] == "HilbertCurve;" else "PTree-Z"
             elif lin_sep[1] == "CPAM;":
                 solver = "CPAM-H" if lin_sep[5] == "HilbertCurve;" else "CPAM-Z"
+            elif lin_sep[1] == "ZdTree;":
+                solver = "ZdTree"
             else:
                 raise ValueError(f"Unknown solver: {lin_sep[1]}")
 
@@ -230,8 +238,8 @@ def combine(P) -> List:
                 case "Cosmo50_round_no_dup.in":
                     benchmark = "Cosmo50"
                 case "GeoLifeNoScale_round_no_dup.in":
-                    print(solver)
                     benchmark = "GeoLife"
+                    print(solver, benchmark)
                 case "osm_round_no_dup.in":
                     benchmark = "OSM"
             index += 2

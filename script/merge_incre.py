@@ -212,6 +212,8 @@ def combine(P) -> List:
                 solver = "PTree-H" if lin_sep[5] == "HilbertCurve;" else "PTree-Z"
             elif lin_sep[1] == "CPAM;":
                 solver = "CPAM-H" if lin_sep[5] == "HilbertCurve;" else "CPAM-Z"
+            elif lin_sep[1] == "ZdTree;":
+                solver = "ZdTree"
             else:
                 raise ValueError(f"Unknown solver: {lin_sep[1]}")
             match lines[index + 1].split(" ")[0]:
@@ -253,7 +255,7 @@ def post_processing(data):
         "CPAM-Z",
         "KdTree",
         "OrthTree",
-        "MVZD",
+        "ZdTree",
         "Boost",
     ]  # desired order for x[1]
 

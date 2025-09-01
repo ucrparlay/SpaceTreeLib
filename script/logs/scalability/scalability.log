@@ -14,6 +14,10 @@ Tree: CPAM; AugType: HasBox; Split: HilbertCurve; BDO: 6; Inba: 30; Coord: integ
 1.in 
 294.528 2.60799 2.56338  1
 
+Tree: ZdTree; AugType: WithoutBox; Split: MortonCurve; BDO: 6; Inba: 30; Coord: float; 
+1.in 
+201.286 1.93783 1.78993  1
+
 Tree: KdTree; AugType: HasBox; Split: MaxStretchDim-ObjectMedian; BDO: 6; Inba: 30; Coord: integer; 
 1.in 
 6.05009 0.107061 0.0717145  112
@@ -29,6 +33,10 @@ Tree: PTree; AugType: HasBox; Split: HilbertCurve; BDO: 6; Inba: 30; Coord: inte
 Tree: CPAM; AugType: HasBox; Split: HilbertCurve; BDO: 6; Inba: 30; Coord: integer; 
 1.in 
 9.59429 0.104701 0.112679  112
+
+Tree: ZdTree; AugType: WithoutBox; Split: MortonCurve; BDO: 6; Inba: 30; Coord: float; 
+1.in 
+6.31933 0.040979 0.0539845  112
 
 Tree: KdTree; AugType: HasBox; Split: MaxStretchDim-ObjectMedian; BDO: 6; Inba: 30; Coord: integer; 
 1.in 
@@ -46,6 +54,10 @@ Tree: CPAM; AugType: HasBox; Split: HilbertCurve; BDO: 6; Inba: 30; Coord: integ
 1.in 
 29.0815 0.224817 0.247803  16
 
+Tree: ZdTree; AugType: WithoutBox; Split: MortonCurve; BDO: 6; Inba: 30; Coord: float; 
+1.in 
+15.9826 0.151899 0.145299  16
+
 Tree: KdTree; AugType: HasBox; Split: MaxStretchDim-ObjectMedian; BDO: 6; Inba: 30; Coord: integer; 
 1.in 
 5.94439 0.108308 0.069206  224
@@ -61,6 +73,10 @@ Tree: PTree; AugType: HasBox; Split: HilbertCurve; BDO: 6; Inba: 30; Coord: inte
 Tree: CPAM; AugType: HasBox; Split: HilbertCurve; BDO: 6; Inba: 30; Coord: integer; 
 1.in 
 9.53323 0.089831 0.104819  224
+
+Tree: ZdTree; AugType: WithoutBox; Split: MortonCurve; BDO: 6; Inba: 30; Coord: float; 
+1.in 
+8.72297 0.0456065 0.0555115  224
 
 Tree: KdTree; AugType: HasBox; Split: MaxStretchDim-ObjectMedian; BDO: 6; Inba: 30; Coord: integer; 
 1.in 
@@ -78,6 +94,10 @@ Tree: CPAM; AugType: HasBox; Split: HilbertCurve; BDO: 6; Inba: 30; Coord: integ
 1.in 
 16.2095 0.12983 0.139748  32
 
+Tree: ZdTree; AugType: WithoutBox; Split: MortonCurve; BDO: 6; Inba: 30; Coord: float; 
+1.in 
+9.21704 0.083242 0.0806845  32
+
 Tree: KdTree; AugType: HasBox; Split: MaxStretchDim-ObjectMedian; BDO: 6; Inba: 30; Coord: integer; 
 1.in 
 59.9145 1.00979 0.620766  4
@@ -93,6 +113,10 @@ Tree: PTree; AugType: HasBox; Split: HilbertCurve; BDO: 6; Inba: 30; Coord: inte
 Tree: CPAM; AugType: HasBox; Split: HilbertCurve; BDO: 6; Inba: 30; Coord: integer; 
 1.in 
 95.8082 0.850812 0.758808  4
+
+Tree: ZdTree; AugType: WithoutBox; Split: MortonCurve; BDO: 6; Inba: 30; Coord: float; 
+1.in 
+63.8338 0.599756 0.504558  4
 
 Tree: KdTree; AugType: HasBox; Split: MaxStretchDim-ObjectMedian; BDO: 6; Inba: 30; Coord: integer; 
 1.in 
@@ -110,6 +134,10 @@ Tree: CPAM; AugType: HasBox; Split: HilbertCurve; BDO: 6; Inba: 30; Coord: integ
 1.in 
 9.52085 0.0813 0.088355  64
 
+Tree: ZdTree; AugType: WithoutBox; Split: MortonCurve; BDO: 6; Inba: 30; Coord: float; 
+1.in 
+5.98908 0.0478625 0.053365  64
+
 Tree: KdTree; AugType: HasBox; Split: MaxStretchDim-ObjectMedian; BDO: 6; Inba: 30; Coord: integer; 
 2_sort_by_0.in 
 204.232 2.18252 2.34546  1
@@ -125,6 +153,10 @@ Tree: PTree; AugType: HasBox; Split: HilbertCurve; BDO: 6; Inba: 30; Coord: inte
 Tree: CPAM; AugType: HasBox; Split: HilbertCurve; BDO: 6; Inba: 30; Coord: integer; 
 2_sort_by_0.in 
 308.049 3.16155 2.67388  1
+
+Tree: ZdTree; AugType: WithoutBox; Split: MortonCurve; BDO: 6; Inba: 30; Coord: float; 
+2_sort_by_0.in 
+217.025 3.32079 2.16814  1
 
 Tree: KdTree; AugType: HasBox; Split: MaxStretchDim-ObjectMedian; BDO: 6; Inba: 30; Coord: integer; 
 2_sort_by_0.in 
@@ -142,6 +174,10 @@ Tree: CPAM; AugType: HasBox; Split: HilbertCurve; BDO: 6; Inba: 30; Coord: integ
 2_sort_by_0.in 
 9.92476 0.10106 0.12061  112
 
+Tree: ZdTree; AugType: WithoutBox; Split: MortonCurve; BDO: 6; Inba: 30; Coord: float; 
+2_sort_by_0.in 
+6.2783 0.0429465 0.0423655  112
+
 Tree: KdTree; AugType: HasBox; Split: MaxStretchDim-ObjectMedian; BDO: 6; Inba: 30; Coord: integer; 
 2_sort_by_0.in 
 14.9864 0.164015 0.191186  16
@@ -157,6 +193,10 @@ Tree: PTree; AugType: HasBox; Split: HilbertCurve; BDO: 6; Inba: 30; Coord: inte
 Tree: CPAM; AugType: HasBox; Split: HilbertCurve; BDO: 6; Inba: 30; Coord: integer; 
 2_sort_by_0.in 
 29.5275 0.259665 0.250183  16
+
+Tree: ZdTree; AugType: WithoutBox; Split: MortonCurve; BDO: 6; Inba: 30; Coord: float; 
+2_sort_by_0.in 
+17.0105 0.171785 0.150657  16
 
 Tree: KdTree; AugType: HasBox; Split: MaxStretchDim-ObjectMedian; BDO: 6; Inba: 30; Coord: integer; 
 2_sort_by_0.in 
@@ -174,6 +214,10 @@ Tree: CPAM; AugType: HasBox; Split: HilbertCurve; BDO: 6; Inba: 30; Coord: integ
 2_sort_by_0.in 
 10.0527 0.096287 0.11915  224
 
+Tree: ZdTree; AugType: WithoutBox; Split: MortonCurve; BDO: 6; Inba: 30; Coord: float; 
+2_sort_by_0.in 
+8.46471 0.0402555 0.0452535  224
+
 Tree: KdTree; AugType: HasBox; Split: MaxStretchDim-ObjectMedian; BDO: 6; Inba: 30; Coord: integer; 
 2_sort_by_0.in 
 7.73828 0.0879385 0.109201  32
@@ -189,6 +233,10 @@ Tree: PTree; AugType: HasBox; Split: HilbertCurve; BDO: 6; Inba: 30; Coord: inte
 Tree: CPAM; AugType: HasBox; Split: HilbertCurve; BDO: 6; Inba: 30; Coord: integer; 
 2_sort_by_0.in 
 16.5695 0.147322 0.140039  32
+
+Tree: ZdTree; AugType: WithoutBox; Split: MortonCurve; BDO: 6; Inba: 30; Coord: float; 
+2_sort_by_0.in 
+9.92977 0.0928795 0.084964  32
 
 Tree: KdTree; AugType: HasBox; Split: MaxStretchDim-ObjectMedian; BDO: 6; Inba: 30; Coord: integer; 
 2_sort_by_0.in 
@@ -206,6 +254,10 @@ Tree: CPAM; AugType: HasBox; Split: HilbertCurve; BDO: 6; Inba: 30; Coord: integ
 2_sort_by_0.in 
 99.7279 1.01285 0.782128  4
 
+Tree: ZdTree; AugType: WithoutBox; Split: MortonCurve; BDO: 6; Inba: 30; Coord: float; 
+2_sort_by_0.in 
+68.4668 0.739173 0.522865  4
+
 Tree: KdTree; AugType: HasBox; Split: MaxStretchDim-ObjectMedian; BDO: 6; Inba: 30; Coord: integer; 
 2_sort_by_0.in 
 4.68568 0.053656 0.090148  64
@@ -221,6 +273,10 @@ Tree: PTree; AugType: HasBox; Split: HilbertCurve; BDO: 6; Inba: 30; Coord: inte
 Tree: CPAM; AugType: HasBox; Split: HilbertCurve; BDO: 6; Inba: 30; Coord: integer; 
 2_sort_by_0.in 
 9.70774 0.0904825 0.088255  64
+
+Tree: ZdTree; AugType: WithoutBox; Split: MortonCurve; BDO: 6; Inba: 30; Coord: float; 
+2_sort_by_0.in 
+6.20593 0.053443 0.0511915  64
 
 Tree: KdTree; AugType: HasBox; Split: MaxStretchDim-ObjectMedian; BDO: 6; Inba: 30; Coord: integer; 
 2.in 
@@ -238,6 +294,10 @@ Tree: CPAM; AugType: HasBox; Split: HilbertCurve; BDO: 6; Inba: 30; Coord: integ
 2.in 
 339.846 19.2195 18.7477  1
 
+Tree: ZdTree; AugType: WithoutBox; Split: MortonCurve; BDO: 6; Inba: 30; Coord: float; 
+2.in 
+271.919 14.991 14.3706  1
+
 Tree: KdTree; AugType: HasBox; Split: MaxStretchDim-ObjectMedian; BDO: 6; Inba: 30; Coord: integer; 
 2.in 
 3.89007 0.138218 0.156604  112
@@ -253,6 +313,10 @@ Tree: PTree; AugType: HasBox; Split: HilbertCurve; BDO: 6; Inba: 30; Coord: inte
 Tree: CPAM; AugType: HasBox; Split: HilbertCurve; BDO: 6; Inba: 30; Coord: integer; 
 2.in 
 10.4856 0.613881 0.618699  112
+
+Tree: ZdTree; AugType: WithoutBox; Split: MortonCurve; BDO: 6; Inba: 30; Coord: float; 
+2.in 
+6.94933 0.228853 0.229767  112
 
 Tree: KdTree; AugType: HasBox; Split: MaxStretchDim-ObjectMedian; BDO: 6; Inba: 30; Coord: integer; 
 2.in 
@@ -270,6 +334,10 @@ Tree: CPAM; AugType: HasBox; Split: HilbertCurve; BDO: 6; Inba: 30; Coord: integ
 2.in 
 32.391 1.66693 1.70553  16
 
+Tree: ZdTree; AugType: WithoutBox; Split: MortonCurve; BDO: 6; Inba: 30; Coord: float; 
+2.in 
+19.6642 0.74103 0.819681  16
+
 Tree: KdTree; AugType: HasBox; Split: MaxStretchDim-ObjectMedian; BDO: 6; Inba: 30; Coord: integer; 
 2.in 
 3.60524 0.127918 0.136349  224
@@ -285,6 +353,10 @@ Tree: PTree; AugType: HasBox; Split: HilbertCurve; BDO: 6; Inba: 30; Coord: inte
 Tree: CPAM; AugType: HasBox; Split: HilbertCurve; BDO: 6; Inba: 30; Coord: integer; 
 2.in 
 11.5923 0.599136 0.593379  224
+
+Tree: ZdTree; AugType: WithoutBox; Split: MortonCurve; BDO: 6; Inba: 30; Coord: float; 
+2.in 
+8.48344 0.191736 0.188943  224
 
 Tree: KdTree; AugType: HasBox; Split: MaxStretchDim-ObjectMedian; BDO: 6; Inba: 30; Coord: integer; 
 2.in 
@@ -302,6 +374,10 @@ Tree: CPAM; AugType: HasBox; Split: HilbertCurve; BDO: 6; Inba: 30; Coord: integ
 2.in 
 17.7779 1.06037 1.07917  32
 
+Tree: ZdTree; AugType: WithoutBox; Split: MortonCurve; BDO: 6; Inba: 30; Coord: float; 
+2.in 
+11.0323 0.410008 0.435043  32
+
 Tree: KdTree; AugType: HasBox; Split: MaxStretchDim-ObjectMedian; BDO: 6; Inba: 30; Coord: integer; 
 2.in 
 66.9285 1.70293 1.71865  4
@@ -318,6 +394,10 @@ Tree: CPAM; AugType: HasBox; Split: HilbertCurve; BDO: 6; Inba: 30; Coord: integ
 2.in 
 108.622 5.38477 5.46031  4
 
+Tree: ZdTree; AugType: WithoutBox; Split: MortonCurve; BDO: 6; Inba: 30; Coord: float; 
+2.in 
+79.7725 3.01575 2.66969  4
+
 Tree: KdTree; AugType: HasBox; Split: MaxStretchDim-ObjectMedian; BDO: 6; Inba: 30; Coord: integer; 
 2.in 
 4.66168 0.162835 0.179542  64
@@ -333,4 +413,8 @@ Tree: PTree; AugType: HasBox; Split: HilbertCurve; BDO: 6; Inba: 30; Coord: inte
 Tree: CPAM; AugType: HasBox; Split: HilbertCurve; BDO: 6; Inba: 30; Coord: integer; 
 2.in 
 10.4221 0.611698 0.622453  64
+
+Tree: ZdTree; AugType: WithoutBox; Split: MortonCurve; BDO: 6; Inba: 30; Coord: float; 
+2.in 
+6.94073 0.256799 0.260319  64
 
