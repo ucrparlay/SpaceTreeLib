@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.15)
 
 project(
-	PSPT
+	PSI
 	VERSION 0.1
 	DESCRIPTION "spatial partition tree"
 	HOMEPAGE_URL ""
@@ -73,31 +73,31 @@ message(STATUS "---------------------------- END LIBMORTON ---------------------
 
 # NOTE: clear CMAKE_MODULE_PATH to avoid finding parlay's cmake files
 list(REMOVE_ITEM CMAKE_MODULE_PATH "${PARLAY_SOURCE_DIR}/cmake")
-list(APPEND CMAKE_MODULE_PATH "${PSPT_SOURCE_DIR}/cmake")
+list(APPEND CMAKE_MODULE_PATH "${PSI_SOURCE_DIR}/cmake")
 
-# NOTE: begin of pspt library
-message(STATUS "\n\n---------------------------- PSPT -----------------------------")
+# NOTE: begin of psi library
+message(STATUS "\n\n---------------------------- PSI -----------------------------")
 
-# NOTE: PSPT
-add_library(PSPT INTERFACE)
-set(PSPT_INCLUDE_DIR "${PSPT_SOURCE_DIR}/include/pspt")
-target_link_libraries(PSPT INTERFACE parlay libmorton)
-target_include_directories(PSPT INTERFACE $<BUILD_INTERFACE:${PSPT_INCLUDE_DIR}>
+# NOTE: PSI
+add_library(PSI INTERFACE)
+set(PSI_INCLUDE_DIR "${PSI_SOURCE_DIR}/include/psi")
+target_link_libraries(PSI INTERFACE parlay libmorton)
+target_include_directories(PSI INTERFACE $<BUILD_INTERFACE:${PSI_INCLUDE_DIR}>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 
 add_subdirectory(static_analysis)
-message(STATUS "---------------------------- END PSPT -----------------------------\n\n")
+message(STATUS "---------------------------- END PSI -----------------------------\n\n")
 
 add_executable(kd_test ${PROJECT_SOURCE_DIR}/tests/kd_test.cpp)
-target_link_libraries(kd_test PUBLIC PSPT)
+target_link_libraries(kd_test PUBLIC PSI)
 target_include_directories(kd_test PUBLIC ${PROJECT_SOURCE_DIR}/include)
 
 add_executable(p_test ${PROJECT_SOURCE_DIR}/tests/p_test.cpp)
-target_link_libraries(p_test PUBLIC PSPT)
+target_link_libraries(p_test PUBLIC PSI)
 target_include_directories(p_test PUBLIC ${PROJECT_SOURCE_DIR}/include)
 
 add_executable(baselines ${PROJECT_SOURCE_DIR}/tests/baselines.cpp)
-target_link_libraries(baselines PUBLIC PSPT)
+target_link_libraries(baselines PUBLIC PSI)
 target_include_directories(baselines PUBLIC ${PROJECT_SOURCE_DIR}/include)
 
 if(JEMA)
@@ -107,12 +107,12 @@ if(JEMA)
 endif()
 
 add_executable(data_generator ${PROJECT_SOURCE_DIR}/tests/data_generate.cpp)
-target_link_libraries(data_generator PUBLIC PSPT)
+target_link_libraries(data_generator PUBLIC PSI)
 target_include_directories(data_generator PUBLIC ${PROJECT_SOURCE_DIR}/include)
 
 
 add_executable(data_washer ${PROJECT_SOURCE_DIR}/tests/data_wash.cpp)
-target_link_libraries(data_washer PUBLIC PSPT)
+target_link_libraries(data_washer PUBLIC PSI)
 target_include_directories(data_washer PUBLIC ${PROJECT_SOURCE_DIR}/include)
 
 # CGAL
@@ -142,21 +142,21 @@ if(CGAL)
 
 	# executables
 	# add_executable(cgal ${PROJECT_SOURCE_DIR}/tests/cgal.cpp)
-	# target_link_libraries(cgal PUBLIC PSPT CGAL::CGAL CGAL::TBB_support)
+	# target_link_libraries(cgal PUBLIC PSI CGAL::CGAL CGAL::TBB_support)
 	# target_include_directories(cgal PUBLIC ${PROJECT_SOURCE_DIR}/include )
 
 
 	add_executable(kd_ccp ${PROJECT_SOURCE_DIR}/tests/kd_ccp.cpp)
-	target_link_libraries(kd_ccp PUBLIC PSPT CGAL::CGAL CGAL::TBB_support)
+	target_link_libraries(kd_ccp PUBLIC PSI CGAL::CGAL CGAL::TBB_support)
 	target_include_directories(kd_ccp PUBLIC ${PROJECT_SOURCE_DIR}/include)
 
 	add_executable(p_ccp ${PROJECT_SOURCE_DIR}/tests/p_ccp.cpp)
-	target_link_libraries(p_ccp PUBLIC PSPT CGAL::CGAL CGAL::TBB_support)
+	target_link_libraries(p_ccp PUBLIC PSI CGAL::CGAL CGAL::TBB_support)
 	target_include_directories(p_ccp PUBLIC ${PROJECT_SOURCE_DIR}/include)
 
 	find_package(Boost REQUIRED)
 	add_executable(boost_rtree ${PROJECT_SOURCE_DIR}/tests/boost_rtree.cpp)
-	target_link_libraries(boost_rtree PUBLIC PSPT ${Boost_LIBRARIES})
+	target_link_libraries(boost_rtree PUBLIC PSI ${Boost_LIBRARIES})
 	target_include_directories(boost_rtree PUBLIC ${PROJECT_SOURCE_DIR}/include ${Boost_INCLUDE_DIRS})
 	target_compile_options(boost_rtree PRIVATE -DBOOST_MATH_DISABLE_FLOAT128 -DBOOST_CSTDFLOAT_NO_LIBQUADMATH_SUPPORT)
 
@@ -164,7 +164,7 @@ if(CGAL)
 endif()
 
 file(GLOB_RECURSE all_files
-  ${PROJECT_SOURCE_DIR}/include/pspt/*
+  ${PROJECT_SOURCE_DIR}/include/psi/*
 )
 
 

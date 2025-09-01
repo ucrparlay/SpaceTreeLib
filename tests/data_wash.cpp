@@ -22,7 +22,7 @@ void RoundDataAndShift(commandLine& P) {
 
   parlay::sequence<InputPoint> wp;
   read_points<InputPoint>(input_path.c_str(), wp, 0);
-  auto bb = pspt::BaseTree<InputPoint>::GetBox(parlay::make_slice(wp));
+  auto bb = psi::BaseTree<InputPoint>::GetBox(parlay::make_slice(wp));
   std::cout << bb.first << " " << bb.second << std::endl;
 
   // PrintPoints(wp);
@@ -37,7 +37,7 @@ void RoundDataAndShift(commandLine& P) {
     exit(1);
   }
 
-  auto new_bb = pspt::BaseTree<OutputPoint>::GetBox(parlay::make_slice(new_wp));
+  auto new_bb = psi::BaseTree<OutputPoint>::GetBox(parlay::make_slice(new_wp));
   std::cout << new_bb.first << " " << new_bb.second << std::endl;
 
   std::cout << "Writing... " << std::endl;
@@ -91,21 +91,21 @@ int main(int argc, char* argv[]) {
 
   auto generate_with_coord_type = [&]<typename CoordType>() {
     if (pts_dim == 2) {
-      apply.template operator()<pspt::AugPoint<CoordType, 2, Wrapper::AugId>>();
+      apply.template operator()<psi::AugPoint<CoordType, 2, Wrapper::AugId>>();
     } else if (pts_dim == 3) {
-      apply.template operator()<pspt::AugPoint<CoordType, 3, Wrapper::AugId>>();
+      apply.template operator()<psi::AugPoint<CoordType, 3, Wrapper::AugId>>();
     } else if (pts_dim == 5) {
-      apply.template operator()<pspt::AugPoint<CoordType, 5, Wrapper::AugId>>();
+      apply.template operator()<psi::AugPoint<CoordType, 5, Wrapper::AugId>>();
     } else if (pts_dim == 7) {
-      apply.template operator()<pspt::AugPoint<CoordType, 7, Wrapper::AugId>>();
+      apply.template operator()<psi::AugPoint<CoordType, 7, Wrapper::AugId>>();
     } else if (pts_dim == 9) {
-      apply.template operator()<pspt::AugPoint<CoordType, 9, Wrapper::AugId>>();
+      apply.template operator()<psi::AugPoint<CoordType, 9, Wrapper::AugId>>();
     } else if (pts_dim == 12) {
       apply
-          .template operator()<pspt::AugPoint<CoordType, 12, Wrapper::AugId>>();
+          .template operator()<psi::AugPoint<CoordType, 12, Wrapper::AugId>>();
     } else if (pts_dim == 16) {
       apply
-          .template operator()<pspt::AugPoint<CoordType, 16, Wrapper::AugId>>();
+          .template operator()<psi::AugPoint<CoordType, 16, Wrapper::AugId>>();
     } else {
       throw std::runtime_error("Invalid dimension");
     }

@@ -1,8 +1,8 @@
 #pragma once
 
 #include "geobase.h"
-#include "pspt/base_tree.h"
-#include "pspt/dependence/concepts.h"
+#include "psi/base_tree.h"
+#include "psi/dependence/concepts.h"
 #define USE_MBR
 // #define SEQ
 // #define USE_PT
@@ -504,12 +504,12 @@ auto Tree::collect_records(shared_ptr<BaseNode>& x) {
 template <typename Point, typename SplitRule, uint_fast8_t kSkHeight = 6,
           uint_fast8_t kImbaRatio = 30>
 class Zdtree
-    : public pspt::BaseTree<Point,
+    : public psi::BaseTree<Point,
                             Zdtree<Point, SplitRule, kSkHeight, kImbaRatio>,
                             kSkHeight, kImbaRatio> {
  public:
   using BT =
-      pspt::BaseTree<Point, Zdtree<Point, SplitRule, kSkHeight, kImbaRatio>,
+      psi::BaseTree<Point, Zdtree<Point, SplitRule, kSkHeight, kImbaRatio>,
                      kSkHeight, kImbaRatio>;
   using BucketType = typename BT::BucketType;
   using BallsType = typename BT::BallsType;
@@ -531,8 +531,8 @@ class Zdtree
   using NodeTagSeq = typename BT::NodeTagSeq;
   using NodeBox = typename BT::NodeBox;
   using NodeBoxSeq = typename BT::NodeBoxSeq;
-  using Leaf = pspt::Node;
-  using Interior = pspt::Node;
+  using Leaf = psi::Node;
+  using Interior = psi::Node;
 
   void DeleteTree() {
     tree.clear();
@@ -611,8 +611,8 @@ class Zdtree
   }
 
   template <typename Node, typename Range>
-  auto KNN(Node* T, Point const& q, pspt::kBoundedQueue<Point, Range>& bq) {
-    pspt::KNNLogger logger;
+  auto KNN(Node* T, Point const& q, psi::kBoundedQueue<Point, Range>& bq) {
+    psi::KNNLogger logger;
     // geobase::Point cnv_q(q[0], q[1]);
     size_t k = bq.max_size();
 
@@ -623,7 +623,7 @@ class Zdtree
   }
 
   auto RangeCount(Box const& q) {
-    pspt::RangeQueryLogger logger;
+    psi::RangeQueryLogger logger;
     int size = 0;
     auto cnv_q = box_convert(q);
 
@@ -634,7 +634,7 @@ class Zdtree
 
   template <typename Range>
   auto RangeQuery(Box const& q, Range&& Out) {
-    pspt::RangeQueryLogger logger;
+    psi::RangeQueryLogger logger;
     auto cnv_q = box_convert(q);
     // std::cout << cnv_q.first.x << ", " << cnv_q.first.y << ", "
     //           << cnv_q.second.x << ", " << cnv_q.second.y << std::endl;
