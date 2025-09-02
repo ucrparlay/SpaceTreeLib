@@ -785,7 +785,13 @@ class Zdtree
     // geobase::Point cnv_q(q[0], q[1]);
     size_t k = bq.max_size();
 
-    auto knnsqrdis = tree.knn_report(k, q).top().second;
+    auto que = tree.knn_report(k, q);
+    // auto knnsqrdis = tree.knn_report(k, q).top().second;
+    while (!que.empty()) {
+      auto t = que.top();
+      bq.insert(std::make_pair(std::ref(t.first), t.second));
+      que.pop();
+    }
 
     // cout << knnsqrdis << endl;
     // auto all_pts = tree.collect_records(tree.root);

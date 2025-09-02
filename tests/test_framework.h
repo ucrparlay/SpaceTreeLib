@@ -618,10 +618,10 @@ void queryKNN([[maybe_unused]] uint_fast8_t const& Dim,
   using Points = typename Tree::Points;
   using Coord = typename Point::Coord;
   using DisType = typename Point::DisType;
-  using nn_pair = std::pair<std::reference_wrapper<Point>, DisType>;
+  // using nn_pair = std::pair<std::reference_wrapper<Point>, DisType>;
   using Leaf = typename Tree::Leaf;
   using Interior = typename Tree::Interior;
-  // using nn_pair = std::pair<Point, DisType>;
+  using nn_pair = std::pair<Point, DisType>;
   size_t n = WP.size();
   // int LEAVE_WRAP = 32;
   double loopLate = rounds > 1 ? 0.01 : -0.1;
@@ -630,9 +630,9 @@ void queryKNN([[maybe_unused]] uint_fast8_t const& Dim,
   Points wp = WP;
   // Points wp = parlay::random_shuffle(WP);
 
-  parlay::sequence<nn_pair> Out(
-      K * n, nn_pair(std::ref(wp[0]), static_cast<DisType>(0)));
-  // parlay::sequence<nn_pair> Out(K * n);
+  // parlay::sequence<nn_pair> Out(
+  // K * n, nn_pair(std::ref(wp[0]), static_cast<DisType>(0)));
+  parlay::sequence<nn_pair> Out(K * n);
   parlay::sequence<kBoundedQueue<Point, nn_pair>> bq =
       parlay::sequence<kBoundedQueue<Point, nn_pair>>::uninitialized(n);
   parlay::parallel_for(
