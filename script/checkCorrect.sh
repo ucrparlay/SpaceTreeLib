@@ -11,11 +11,11 @@ tester="p_ccp"
 make -C ../build ${tester}
 
 if [[ ${tester} == "p_ccp" ]]; then
-	tag=$((2#0000))
-	read_file=1
-	dims=(2)
-	queryTypes=$((2#001))
-	trees=(2)
+	tag=$((2#1000))
+	read_file=0
+	dims=(3)
+	queryTypes=$((2#000))
+	trees=(5)
 elif [[ ${tester} == "kd_ccp" ]]; then
 	tag=$((2#0000))
 	read_file=1
@@ -53,6 +53,8 @@ for queryType in "${queryTypes[@]}"; do
 						# splits=(2)
 					elif [[ ${tree} -eq 3 ]]; then
 						splits=(0)
+					elif [[ ${tree} -eq 5 ]]; then
+						splits=(2)
 					fi
 
 					for split in "${splits[@]}"; do
