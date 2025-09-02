@@ -154,6 +154,10 @@ if(CGAL)
 	target_link_libraries(p_ccp PUBLIC PSPT CGAL::CGAL CGAL::TBB_support)
 	target_include_directories(p_ccp PUBLIC ${PROJECT_SOURCE_DIR}/include)
 
+	add_executable(baseline_ccp ${PROJECT_SOURCE_DIR}/tests/baseline_ccp.cpp)
+	target_link_libraries(baseline_ccp PUBLIC PSPT CGAL::CGAL CGAL::TBB_support)
+	target_include_directories(baseline_ccp PUBLIC ${PROJECT_SOURCE_DIR}/include)
+
 	find_package(Boost REQUIRED)
 	add_executable(boost_rtree ${PROJECT_SOURCE_DIR}/tests/boost_rtree.cpp)
 	target_link_libraries(boost_rtree PUBLIC PSPT ${Boost_LIBRARIES})

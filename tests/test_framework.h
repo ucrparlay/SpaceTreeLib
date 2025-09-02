@@ -28,10 +28,10 @@
 #include "pspt/r_tree.h"
 
 #ifdef CCP
-using Coord = long;
-// using Coord = double;
+// using Coord = long;
+using Coord = double;
 #else
-using Coord = long;
+// using Coord = long;
 // using Coord = double;
 #endif  // CCP
 
@@ -824,10 +824,10 @@ void RangeQuery(parlay::sequence<Point> const& wp, Tree& pkd, int const& rounds,
     //     << std::endl;
     parlay::sort_inplace(
         Out.cut(offset[i], offset[i + 1]),
-        [&](auto const& a, auto const& b) { return a.aug.id < b.aug.id; });
+        [&](auto const& a, auto const& b) { return a.id < b.id; });
     parlay::sort_inplace(
         query_box_seq[i].second,
-        [&](auto const& a, auto const& b) { return a.aug.id < b.aug.id; });
+        [&](auto const& a, auto const& b) { return a.id < b.id; });
     for (size_t j = 0; j < query_box_seq[i].second.size(); j++) {
       if (Out[offset[i] + j] != query_box_seq[i].second.at(j)) {
         std::cout << "wrong" << query_box_seq[i].first.first
@@ -1896,7 +1896,7 @@ class Wrapper {
       } else if (tree_type == 2) {
         // Run<PTreeWrapper<Point, SplitRule>>(params, test_func);
       } else if (tree_type == 3) {
-        Run<CpamRawWrapper<Point, SplitRule>>(params, test_func);
+        // Run<CpamRawWrapper<Point, SplitRule>>(params, test_func);
       } else if (tree_type == 4) {
         ;  // for boost
       } else if (tree_type == 5) {
@@ -1919,7 +1919,8 @@ class Wrapper {
     };
 
     if (dim == 2) {
-      run_with_split_type.template operator()<AugPoint<Coord, 2, AugIdCode>>();
+      // run_with_split_type.template operator()<AugPoint<Coord, 2,
+      // AugIdCode>>();
     } else if (dim == 3) {
       if (tree_type == 4) {
         ;
