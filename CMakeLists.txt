@@ -100,6 +100,10 @@ add_executable(baselines ${PROJECT_SOURCE_DIR}/tests/baselines.cpp)
 target_link_libraries(baselines PUBLIC PSI)
 target_include_directories(baselines PUBLIC ${PROJECT_SOURCE_DIR}/include)
 
+add_executable(testers ${PROJECT_SOURCE_DIR}/tests/testers.cpp)
+target_link_libraries(testers PUBLIC PSI)
+target_include_directories(testers PUBLIC ${PROJECT_SOURCE_DIR}/include)
+
 if(JEMA)
 	target_link_libraries(kd_test PUBLIC libjemalloc.so)
 	target_link_libraries(p_test PUBLIC libjemalloc.so)
