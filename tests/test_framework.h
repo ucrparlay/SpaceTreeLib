@@ -611,7 +611,7 @@ void BatchDeleteByStep(Tree& pkd, parlay::sequence<Point> const& WP,
 
 template <typename Point, typename Tree, bool printHeight = 0,
           bool printVisNode = 1>
-void queryKNN([[maybe_unused]] uint_fast8_t const& Dim,
+void QueryKNN([[maybe_unused]] uint_fast8_t const& Dim,
               parlay::sequence<Point> const& WP, int const& rounds, Tree& pkd,
               Typename* kdknn, int const K, bool const flattenTreeTag) {
   using Points = typename Tree::Points;
@@ -1204,7 +1204,7 @@ static auto constexpr DefaultTestFunc = []<class TreeDesc, typename Point>(
   Typename* kdknn = nullptr;
   auto run_batch_knn = [&](Points const& query_pts, int kth) {
     kdknn = new Typename[query_pts.size()];
-    queryKNN<Point>(kDim, query_pts, kRounds, tree, kdknn, kth, true);
+    QueryKNN<Point>(kDim, query_pts, kRounds, tree, kdknn, kth, true);
     delete[] kdknn;
   };
 

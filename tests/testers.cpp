@@ -84,6 +84,143 @@ void RangeQueryLinear(size_t idx, auto const& leaf_seq,
   return;
 }
 
+template <typename Point, typename Tree, typename Range>
+void KNNLinear(size_t idx, auto& leaf_seq, auto& inner_tree_seq, Point const& q,
+               kBoundedQueue<Point, Range>& bq, KNNLogger& logger) {
+  using Num = typename Tree::Num;
+  auto const& node = inner_tree_seq[idx];
+  if (bq.size() &&
+      Num::Gt(Tree::P2BMinDistanceSquare(q, node.box), bq.top_value()) &&
+      bq.full()) {
+    logger.skip_box_num++;
+    return;
+  }
+
+  if (node.is_leaf) {
+    logger.vis_leaf_num++;
+
+    size_t i = 0;
+    while (!bq.full() && i < node.size) {
+      bq.insert(std::make_pair(
+          std::ref(leaf_seq[node.leaf_offset + i]),
+          Tree::P2PDistanceSquare(q, leaf_seq[node.leaf_offset + i])));
+      i++;
+    }
+    while (i < node.size) {
+      auto r = Tree::InterruptibleDistance(q, leaf_seq[node.leaf_offset + i],
+                                           bq.top_value());
+      if (Num::Lt(r, bq.top_value())) {  // PERF: the queue is full, no need to
+                                         // insert points with equal distances
+        bq.insert(std::make_pair(std::ref(leaf_seq[node.leaf_offset + i]), r));
+      }
+      // else if (TL->is_dummy) {
+      //   break;
+      // }
+      i++;
+    }
+    return;
+  }
+
+  logger.vis_interior_num++;
+  // Interior* TI = static_cast<Interior*>(T);
+  Coord dist_left = Tree::P2BMinDistanceSquare(q, inner_tree_seq[idx * 2].box);
+  Coord dist_right =
+      Tree::P2BMinDistanceSquare(q, inner_tree_seq[idx * 2 + 1].box);
+  bool go_left = Num::Leq(dist_left, dist_right);
+
+  KNNLinear<Point, Tree, Range>(go_left ? idx * 2 : idx * 2 + 1, leaf_seq,
+                                inner_tree_seq, q, bq, logger);
+
+  logger.check_box_num++;
+  if (Num::Gt(go_left ? dist_right : dist_left, bq.top_value()) && bq.full()) {
+    logger.skip_box_num++;
+    return;
+  }
+  KNNLinear<Point, Tree, Range>(go_left ? idx * 2 + 1 : idx * 2, leaf_seq,
+                                inner_tree_seq, q, bq, logger);
+  return;
+}
+
+template <typename Point, typename Tree, typename Range>
+auto KNNLinearWrapper(auto& leaf_seq, auto& inner_tree_seq, Point const& q,
+                      kBoundedQueue<Point, Range>& bq) {
+  KNNLogger logger;
+  KNNLinear<Point, Tree, Range>(1, leaf_seq, inner_tree_seq, q, bq, logger);
+  return logger;
+}
+
+template <typename Point, typename Tree, bool printHeight = 0,
+          bool printVisNode = 1>
+void QueryKNNLinear(auto& leaf_seq, auto& inner_tree_seq,
+                    uint_fast8_t const& Dim, parlay::sequence<Point> const& WP,
+                    int const& rounds, Typename* kdknn, int const K) {
+  using Points = typename Tree::Points;
+  using Coord = typename Point::Coord;
+  using DisType = typename Point::DisType;
+  using nn_pair = std::pair<std::reference_wrapper<Point>, DisType>;
+  using Leaf = typename Tree::Leaf;
+  using Interior = typename Tree::Interior;
+  // using nn_pair = std::pair<Point, DisType>;
+  size_t n = WP.size();
+  // int LEAVE_WRAP = 32;
+  double loopLate = rounds > 1 ? 0.01 : -0.1;
+
+  Points wp = WP;
+  // Points wp = parlay::random_shuffle(WP);
+
+  parlay::sequence<nn_pair> Out(
+      K * n, nn_pair(std::ref(wp[0]), static_cast<DisType>(0)));
+  // parlay::sequence<nn_pair> Out(K * n);
+  parlay::sequence<kBoundedQueue<Point, nn_pair>> bq =
+      parlay::sequence<kBoundedQueue<Point, nn_pair>>::uninitialized(n);
+  parlay::parallel_for(
+      0, n, [&](size_t i) { bq[i].resize(Out.cut(i * K, i * K + K)); });
+  parlay::sequence<size_t> vis_leaf(n), vis_inter(n), gen_box(n), check_box(n),
+      skip_box(n);
+
+  double aveQuery = time_loop(
+      rounds, loopLate,
+      [&]() { parlay::parallel_for(0, n, [&](size_t i) { bq[i].reset(); }); },
+      [&]() {
+        parlay::parallel_for(0, n, [&](size_t i) {
+          // for (size_t i = 0; i < n; i++) {
+          auto [vis_leaf_num, vis_inter_num, gen_box_num, check_box_num,
+                skip_box_num] =
+              KNNLinearWrapper<Point, Tree>(leaf_seq, inner_tree_seq, wp[i],
+                                            bq[i]);
+          kdknn[i] = bq[i].top().second;
+          vis_leaf[i] = vis_leaf_num;
+          vis_inter[i] = vis_inter_num;
+          gen_box[i] = gen_box_num;
+          check_box[i] = check_box_num;
+          skip_box[i] = skip_box_num;
+          // }
+        });
+      },
+      [&]() {});
+
+  std::cout << aveQuery << " " << std::flush;
+  if (printVisNode) {
+    std::cout << static_cast<double>(parlay::reduce(vis_leaf.cut(0, n))) /
+                     static_cast<double>(n)
+              << " " << std::flush;
+    std::cout << static_cast<double>(parlay::reduce(vis_inter.cut(0, n))) /
+                     static_cast<double>(n)
+              << " " << std::flush;
+    std::cout << static_cast<double>(parlay::reduce(gen_box.cut(0, n))) /
+                     static_cast<double>(n)
+              << " " << std::flush;
+    std::cout << static_cast<double>(parlay::reduce(check_box.cut(0, n))) /
+                     static_cast<double>(n)
+              << " " << std::flush;
+    std::cout << static_cast<double>(parlay::reduce(skip_box.cut(0, n))) /
+                     static_cast<double>(n)
+              << " " << std::flush;
+  }
+
+  return;
+}
+
 template <typename Tree, typename Range, typename Box>
 auto RangeQueryLinearWrapper(auto const& inner_tree_seq, auto const& leaf_seq,
                              Box const& query_box, Range&& Out) {
@@ -195,10 +332,39 @@ int main(int argc, char* argv[]) {
                               leaf_offset, 1);
     assert(leaf_offset == wp.size());
 
-    // begin range query test
+    // NOTE: begin knn
+    puts("++ KNN Test ++");
+    Typename* kdknn;
+    auto run_batch_knn = [&](Points const& query_pts, int kth) {
+      kdknn = new Typename[query_pts.size()];
+      puts("-- kdtree pointer based:");
+      QueryKNN<Point>(kDim, query_pts, kRounds, tree, kdknn, kth, true);
+      std::cout << std::endl;
+      puts("-- kdtree array based:");
+      QueryKNNLinear<Point, Tree>(leaf_seq, inner_tree_seq, kDim, query_pts,
+                                  kRounds, kdknn, kth);
+      std::cout << std::endl;
+      delete[] kdknn;
+    };
+
+    int k[3] = {1, 10, 100};
+
+    std::cout << "in-dis-skewed knn time: " << std::endl;
+    size_t batch_size = static_cast<size_t>(wp.size() * kBatchQueryRatio);
+    for (int i = 0; i < 3; i++) {
+      run_batch_knn(wp.subseq(0, batch_size), k[i]);
+    }
+    puts("");
+
+    std ::cout << "out-dis-skewed knn time: " << std::endl;
+    for (int i = 0; i < 3; i++) {
+      run_batch_knn(wp.subseq(wp.size() - batch_size, wp.size()), k[i]);
+    }
+    puts("");
+
+    // NOTE: begin range query test
     auto generate_query_box = [&](int rec_num, int rec_total_type,
                                   Points const& wp) {
-      // NOTE: generate rectangles for the first half of the points
       parlay::sequence<parlay::sequence<std::pair<typename Tree::Box, size_t>>>
           query_box_seq(rec_total_type);
       parlay::sequence<size_t> query_max_size(rec_total_type);
@@ -213,11 +379,11 @@ int main(int argc, char* argv[]) {
 
     auto [query_box_seq, query_max_size] =
         generate_query_box(kRangeQueryNum, 3, wp);
-    Typename* kdknn = new Typename[kRangeQueryNum];
     Points Out;
 
-    puts("");
+    puts("++ Range Query Test ++");
     for (int rec_type = 0; rec_type < 3; rec_type++) {
+      kdknn = new Typename[kRangeQueryNum];
       puts("-- kdtree pointer based:");
       RangeQueryFix<Point, Tree>(tree, kdknn, kRounds, Out, rec_type,
                                  kRangeQueryNum, kDim, query_box_seq[rec_type],
@@ -230,9 +396,9 @@ int main(int argc, char* argv[]) {
                                        query_box_seq[rec_type],
                                        query_max_size[rec_type]);
       std::cout << std::endl;
+      delete[] kdknn;
     }
 
-    delete[] kdknn;
     tree.DeleteTree();
     return;
   };
