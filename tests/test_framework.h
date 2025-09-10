@@ -844,7 +844,7 @@ void RangeQuery(parlay::sequence<Point> const& wp, Tree& pkd, int const& rounds,
 
 //* test range count for fix rectangle
 template <typename Point, typename Tree>
-void rangeCountFix(Tree& pkd, Typename* kdknn, int const& rounds, int rec_type,
+void RangeCountFix(Tree& pkd, Typename* kdknn, int const& rounds, int rec_type,
                    int rec_num, int DIM, auto const& query_box_seq,
                    auto max_size) {
   // using Tree = Tree;
@@ -931,7 +931,7 @@ void rangeCountFix(Tree& pkd, Typename* kdknn, int const& rounds, int rec_type,
 //
 //* test range query for fix rectangle
 template <typename Point, typename Tree>
-void rangeQueryFix(Tree& pkd, Typename* kdknn, int const& rounds,
+void RangeQueryFix(Tree& pkd, Typename* kdknn, int const& rounds,
                    parlay::sequence<Point>& Out, int rec_type, int rec_num,
                    int DIM, auto const& query_box_seq, auto max_size) {
   // auto [query_box_seq, max_size] =
@@ -1269,7 +1269,7 @@ static auto constexpr DefaultTestFunc = []<class TreeDesc, typename Point>(
 
       std::cout << "range count time: ";
       for (int i = 0; i < 3; i++) {
-        rangeCountFix<Point>(tree, kdknn, kRounds, i, rec_num, kDim,
+        RangeCountFix<Point>(tree, kdknn, kRounds, i, rec_num, kDim,
                              query_box_seq[i], query_max_size[i]);
       }
       delete[] kdknn;
@@ -1284,7 +1284,7 @@ static auto constexpr DefaultTestFunc = []<class TreeDesc, typename Point>(
       std::cout << "range query time: ";
       for (int i = 0; i < 3; i++) {
         Points Out;
-        rangeQueryFix<Point>(tree, kdknn, kRounds, Out, i, rec_num, kDim,
+        RangeQueryFix<Point>(tree, kdknn, kRounds, Out, i, rec_num, kDim,
                              query_box_seq[i], query_max_size[i]);
       }
       delete[] kdknn;
@@ -1426,7 +1426,7 @@ static auto constexpr DefaultTestFunc = []<class TreeDesc, typename Point>(
 
       // std::cout << std::endl;
       for (int i = 0; i < 3; i++) {
-        rangeCountFix<Point>(tree, kdknn, kRounds, i, recNum, kDim,
+        RangeCountFix<Point>(tree, kdknn, kRounds, i, recNum, kDim,
                              query_box_seq[i], query_max_size[i]);
       }
 
@@ -1444,7 +1444,7 @@ static auto constexpr DefaultTestFunc = []<class TreeDesc, typename Point>(
 
       for (int i = 0; i < 3; i++) {
         Points Out;
-        rangeQueryFix<Point>(tree, kdknn, kRounds, Out, i, recNum, kDim,
+        RangeQueryFix<Point>(tree, kdknn, kRounds, Out, i, recNum, kDim,
                              query_box_seq[i], query_max_size[i]);
       }
       delete[] kdknn;
@@ -1454,7 +1454,7 @@ static auto constexpr DefaultTestFunc = []<class TreeDesc, typename Point>(
 
       kdknn = new Typename[kSummaryRangeQueryNum];
       Points Out;
-      rangeQueryFix<Point>(tree, kdknn, kRounds, Out, 2, kSummaryRangeQueryNum,
+      RangeQueryFix<Point>(tree, kdknn, kRounds, Out, 2, kSummaryRangeQueryNum,
                            kDim, query_box_seq[2], query_max_size[2]);
       delete[] kdknn;
     }
@@ -1923,6 +1923,18 @@ class Wrapper {
     }
   }
 
+  template <typename BaseTree>
+  struct InteriorTester : InteriorAugBox<BaseTree> {
+    using BT = BaseTree;
+    using Box = BT::Box;
+    using Slice = BT::Slice;
+
+    InteriorTester() : InteriorAugBox<BaseTree>(), leaf_offset(0) {}
+    InteriorTester(Box const& _box)
+        : InteriorAugBox<BaseTree>(_box), leaf_offset(0) {}
+    size_t leaf_offset;
+  };
+
   template <typename RunFunc>
   static void ApplyTesters(int const tree_type, int const dim,
                            int const split_type, commandLine& params,
@@ -1931,7 +1943,7 @@ class Wrapper {
       using BT = psi::BaseTree<Point>;
       if (tree_type == 0) {
         Run<KdTreeWrapper<Point, SplitRule, LeafAugBox<BT>,
-                          InteriorAugBox<BT>>>(params, test_func);
+                          InteriorTester<BT>>>(params, test_func);
       }
     };
 
