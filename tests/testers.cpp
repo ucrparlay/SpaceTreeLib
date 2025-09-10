@@ -1,6 +1,5 @@
 #include <tuple>
 
-#include "dependence/loggers.h"
 #include "test_framework.h"
 
 template <typename Tree>
@@ -219,7 +218,7 @@ int main(int argc, char* argv[]) {
 
     puts("");
     for (int rec_type = 0; rec_type < 3; rec_type++) {
-      puts("kdtree pointer based:");
+      puts("-- kdtree pointer based:");
       RangeQueryFix<Point, Tree>(tree, kdknn, kRounds, Out, rec_type,
                                  kRangeQueryNum, kDim, query_box_seq[rec_type],
                                  query_max_size[rec_type]);
