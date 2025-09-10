@@ -966,6 +966,8 @@ void RangeQueryFix(Tree& pkd, Typename* kdknn, int const& rounds,
           gen_box[i] = logger.generate_box_num;
           full_box[i] = logger.full_box_num;
           skip_box[i] = logger.skip_box_num;
+
+          assert(std::cmp_equal(kdknn[i], query_box_seq[i].second));
         });
       },
       [&]() {});

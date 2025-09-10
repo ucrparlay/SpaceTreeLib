@@ -23,8 +23,8 @@ void LinearDecomposition(Node* T, auto& leaf_seq, auto& inner_tree_seq,
   using Leaf = typename Tree::Leaf;
   using Interior = typename Tree::Interior;
   if (T->is_leaf) {
-    assert(!T->is_dummy);
     Leaf* TL = static_cast<Leaf*>(T);
+    assert(!TL->is_dummy);
     inner_tree_seq[inter_idx] = {TL->GetBox(), leaf_offset, T->size,
                                  T->is_leaf};
 
@@ -36,7 +36,7 @@ void LinearDecomposition(Node* T, auto& leaf_seq, auto& inner_tree_seq,
   Interior* TI = static_cast<Interior*>(T);
   inner_tree_seq[inter_idx] = {TI->GetBox(), leaf_offset, T->size, T->is_leaf};
 
-  assert(inter_idx * 2 + 1 < box_offset_seq.size());
+  assert(inter_idx * 2 + 1 < inner_tree_seq.size());
   LinearDecomposition<Tree>(TI->left, leaf_seq, inner_tree_seq, leaf_offset,
                             inter_idx * 2);
   LinearDecomposition<Tree>(TI->right, leaf_seq, inner_tree_seq, leaf_offset,
@@ -48,8 +48,8 @@ template <typename Tree, typename Range, typename Box>
 void RangeQueryLinear(size_t idx, auto const& leaf_seq,
                       auto const& inner_tree_seq, Range Out, size_t& s,
                       Box const& query_box, RangeQueryLogger& logger) {
-  auto const& node = inner_tree_seq[idx];
-  if (node.is_leaf) {
+  if (inner_tree_seq[idx].is_leaf) {
+    auto const& node = inner_tree_seq[idx];
     for (int i = 0; i < node.size; i++) {
       if (Tree::WithinBox(leaf_seq[node.leaf_offset + i], query_box)) {
         Out[s++] = leaf_seq[node.leaf_offset + i];
@@ -60,15 +60,17 @@ void RangeQueryLinear(size_t idx, auto const& leaf_seq,
   }
   logger.vis_interior_num++;
 
-  auto recurse = [&](size_t next_idx, Box const& box) -> void {
+  auto recurse = [&](size_t next_idx) -> void {
+    auto next_node = inner_tree_seq[next_idx];
+    auto const& box = next_node.box;
     if (!Tree::BoxIntersectBox(box, query_box)) {
       logger.skip_box_num++;
       return;
     } else if (Tree::WithinBox(box, query_box)) {
       logger.full_box_num++;
       // FlattenRec<Leaf, Interior>(Ts, Out.cut(s, s + Ts->size));
-      for (int i = 0; i < node.size; i++) {
-        Out[s++] = leaf_seq[node.leaf_offset + i];
+      for (int i = 0; i < next_node.size; i++) {
+        Out[s++] = leaf_seq[next_node.leaf_offset + i];
       }
       return;
     } else {
@@ -78,8 +80,8 @@ void RangeQueryLinear(size_t idx, auto const& leaf_seq,
     }
   };
 
-  recurse(idx * 2, inner_tree_seq[idx * 2].box);
-  recurse(idx * 2 + 1, inner_tree_seq[idx * 2 + 1].box);
+  recurse(idx * 2);
+  recurse(idx * 2 + 1);
   return;
 }
 
@@ -121,6 +123,13 @@ void RangeQueryFixLinear(auto& leaf_seq, auto& inner_tree_seq, Typename* kdknn,
           gen_box[i] = logger.generate_box_num;
           full_box[i] = logger.full_box_num;
           skip_box[i] = logger.skip_box_num;
+
+          if (!std::cmp_equal(kdknn[i], query_box_seq[i].second)) {
+            std::cout << kdknn[i] << " " << query_box_seq[i].second << " "
+                      << query_box_seq[i].first.first
+                      << query_box_seq[i].first.second << std::endl;
+            throw std::runtime_error("wrong range query");
+          }
         });
       },
       [&]() {});
@@ -201,22 +210,31 @@ int main(int argc, char* argv[]) {
       }
       return std::make_pair(query_box_seq, query_max_size);
     };
+
     auto [query_box_seq, query_max_size] =
         generate_query_box(kRangeQueryNum, 3, wp);
-    Typename* kdknn = nullptr;
+    Typename* kdknn = new Typename[kRangeQueryNum];
     Points Out;
+
+    puts("");
     for (int rec_type = 0; rec_type < 3; rec_type++) {
-      puts("kdtree pointer based:");
-      RangeQueryFix<Point, Tree>(tree, kdknn, kRounds, Out, rec_type,
-                                 kRangeQueryNum, kDim, query_box_seq[rec_type],
-                                 query_max_size[rec_type]);
+      // puts("kdtree pointer based:");
+      // RangeQueryFix<Point, Tree>(tree, kdknn, kRounds, Out, rec_type,
+      //                            kRangeQueryNum, kDim,
+      //                            query_box_seq[rec_type],
+      //                            query_max_size[rec_type]);
+      // puts("");
 
       puts("kdtree array based:");
       RangeQueryFixLinear<Point, Tree>(leaf_seq, inner_tree_seq, kdknn, kRounds,
                                        Out, rec_type, kRangeQueryNum, kDim,
                                        query_box_seq[rec_type],
                                        query_max_size[rec_type]);
+      puts("");
     }
+
+    delete[] kdknn;
+    return;
   };
 
   Wrapper::ApplyTesters(tree_type, dims, split_type, params, test_func);
