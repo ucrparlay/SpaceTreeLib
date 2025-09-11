@@ -124,12 +124,13 @@ void RangeQueryFixLinear(auto& leaf_seq, auto& inner_tree_seq, Typename* kdknn,
           full_box[i] = logger.full_box_num;
           skip_box[i] = logger.skip_box_num;
 
-          if (!std::cmp_equal(kdknn[i], query_box_seq[i].second)) {
-            std::cout << kdknn[i] << " " << query_box_seq[i].second << " "
-                      << query_box_seq[i].first.first
-                      << query_box_seq[i].first.second << std::endl;
-            throw std::runtime_error("wrong range query");
-          }
+          // if (!std::cmp_equal(kdknn[i], query_box_seq[i].second)) {
+          //   std::cout << kdknn[i] << " " << query_box_seq[i].second << " "
+          //             << query_box_seq[i].first.first
+          //             << query_box_seq[i].first.second << std::endl;
+          //   throw std::runtime_error("wrong range query");
+          // }
+          assert(std::cmp_equal(kdknn[i], query_box_seq[i].second));
         });
       },
       [&]() {});
@@ -218,22 +219,22 @@ int main(int argc, char* argv[]) {
 
     puts("");
     for (int rec_type = 0; rec_type < 3; rec_type++) {
-      // puts("kdtree pointer based:");
-      // RangeQueryFix<Point, Tree>(tree, kdknn, kRounds, Out, rec_type,
-      //                            kRangeQueryNum, kDim,
-      //                            query_box_seq[rec_type],
-      //                            query_max_size[rec_type]);
-      // puts("");
+      puts("kdtree pointer based:");
+      RangeQueryFix<Point, Tree>(tree, kdknn, kRounds, Out, rec_type,
+                                 kRangeQueryNum, kDim, query_box_seq[rec_type],
+                                 query_max_size[rec_type]);
+      std::cout << std::endl;
 
-      puts("kdtree array based:");
+      puts(">> kdtree array based:");
       RangeQueryFixLinear<Point, Tree>(leaf_seq, inner_tree_seq, kdknn, kRounds,
                                        Out, rec_type, kRangeQueryNum, kDim,
                                        query_box_seq[rec_type],
                                        query_max_size[rec_type]);
-      puts("");
+      std::cout << std::endl;
     }
 
     delete[] kdknn;
+    tree.DeleteTree();
     return;
   };
 
