@@ -43,6 +43,9 @@ static constexpr double kBatchQueryRatio = 0.01;
 static constexpr size_t kBatchQueryOsmSize = 10000000;
 // NOTE: rectangle numbers
 static constexpr int kRangeQueryNum = 50000;
+static constexpr int kSmallRangeQueryNum = 100000000;
+static constexpr int kMediumRangeQueryNum = 1000000;
+static constexpr int kLargeRangeQueryNum = 100000;
 static constexpr int kSingleQueryLogRepeatNum = 100;
 
 // NOTE: rectangle numbers for inba ratio

@@ -308,6 +308,7 @@ int main(int argc, char* argv[]) {
   int summary = params.getOptionIntValue("-s", 0);
   int tree_type = params.getOptionIntValue("-T", 0);
   int split_type = params.getOptionIntValue("-l", 0);
+  int leaf_wrap = params.getOptionIntValue("-leaf", 32);
 
   auto test_func = []<class TreeDesc, typename Point>(
                        int const& kDim, parlay::sequence<Point> const& wp,
@@ -323,7 +324,7 @@ int main(int argc, char* argv[]) {
     Tree tree;
     constexpr bool kTestTime = true;
 
-    BuildTree<Point, Tree, kTestTime, 2>(wp, kRounds, tree);
+    BuildTree<Point, Tree, kTestTime, 0>(wp, kRounds, tree);
 
     Points leaf_seq(wp.size());
     InnerTreeSeq inner_tree_seq(wp.size());
@@ -332,72 +333,78 @@ int main(int argc, char* argv[]) {
                               leaf_offset, 1);
     assert(leaf_offset == wp.size());
 
-    // NOTE: begin knn
-    puts("++ KNN Test ++");
+    // NOTE: knn
     Typename* kdknn;
-    auto run_batch_knn = [&](Points const& query_pts, int kth) {
+    auto run_batch_knn = [&]<bool kIsLinear>(Points const& query_pts, int kth) {
       kdknn = new Typename[query_pts.size()];
-      puts("-- kdtree pointer based:");
-      QueryKNN<Point>(kDim, query_pts, kRounds, tree, kdknn, kth, true);
-      std::cout << std::endl;
-      puts("-- kdtree array based:");
-      QueryKNNLinear<Point, Tree>(leaf_seq, inner_tree_seq, kDim, query_pts,
-                                  kRounds, kdknn, kth);
-      std::cout << std::endl;
+      if constexpr (kIsLinear) {
+        QueryKNNLinear<Point, Tree>(leaf_seq, inner_tree_seq, kDim, query_pts,
+                                    kRounds, kdknn, kth);
+      } else {
+        QueryKNN<Point>(kDim, query_pts, kRounds, tree, kdknn, kth, true);
+      }
       delete[] kdknn;
     };
 
-    int k[3] = {1, 10, 100};
-
-    std::cout << "in-dis-skewed knn time: " << std::endl;
-    size_t batch_size = static_cast<size_t>(wp.size() * kBatchQueryRatio);
-    for (int i = 0; i < 3; i++) {
-      run_batch_knn(wp.subseq(0, batch_size), k[i]);
-    }
-    puts("");
-
-    std ::cout << "out-dis-skewed knn time: " << std::endl;
-    for (int i = 0; i < 3; i++) {
-      run_batch_knn(wp.subseq(wp.size() - batch_size, wp.size()), k[i]);
-    }
-    puts("");
-
-    // NOTE: begin range query test
-    auto generate_query_box = [&](int rec_num, int rec_total_type,
-                                  Points const& wp) {
+    // NOTE: range query
+    // generate boxes
+    auto get_range_query_num_by_type = [](int const rec_type) {
+      return rec_type == 0   ? kSmallRangeQueryNum
+             : rec_type == 1 ? kMediumRangeQueryNum
+                             : kLargeRangeQueryNum;
+    };
+    auto generate_query_box = [&](int rec_total_type, Points const& wp) {
       parlay::sequence<parlay::sequence<std::pair<typename Tree::Box, size_t>>>
           query_box_seq(rec_total_type);
       parlay::sequence<size_t> query_max_size(rec_total_type);
-      for (int i = 0; i < rec_total_type; i++) {
-        auto [query_box, max_size] =
-            gen_rectangles<Point, Tree, false, true>(rec_num, i, wp, kDim);
-        query_box_seq[i] = query_box;
-        query_max_size[i] = max_size;
+      for (int rec_type = 0; rec_type < rec_total_type; rec_type++) {
+        auto [query_box, max_size] = gen_rectangles<Point, Tree, false, true>(
+            get_range_query_num_by_type(rec_type), rec_type, wp, kDim);
+        query_box_seq[rec_type] = query_box;
+        query_max_size[rec_type] = max_size;
       }
       return std::make_pair(query_box_seq, query_max_size);
     };
 
-    auto [query_box_seq, query_max_size] =
-        generate_query_box(kRangeQueryNum, 3, wp);
+    int const kRecType = 3;
+    auto [query_box_seq, query_max_size] = generate_query_box(kRecType, wp);
     Points Out;
 
-    puts("++ Range Query Test ++");
-    for (int rec_type = 0; rec_type < 3; rec_type++) {
-      kdknn = new Typename[kRangeQueryNum];
-      puts("-- kdtree pointer based:");
-      RangeQueryFix<Point, Tree>(tree, kdknn, kRounds, Out, rec_type,
-                                 kRangeQueryNum, kDim, query_box_seq[rec_type],
-                                 query_max_size[rec_type]);
-      std::cout << std::endl;
-
-      puts(">> kdtree array based:");
-      RangeQueryFixLinear<Point, Tree>(leaf_seq, inner_tree_seq, kdknn, kRounds,
-                                       Out, rec_type, kRangeQueryNum, kDim,
-                                       query_box_seq[rec_type],
-                                       query_max_size[rec_type]);
-      std::cout << std::endl;
+    // NOTE: run the range query
+    auto run_range_query = [&]<bool kIsLinear>(int const rec_type) {
+      int const rec_num = get_range_query_num_by_type(rec_type);
+      kdknn = new Typename[rec_num];
+      if constexpr (kIsLinear) {
+        RangeQueryFixLinear<Point, Tree>(
+            leaf_seq, inner_tree_seq, kdknn, kRounds, Out, rec_type, rec_num,
+            kDim, query_box_seq[rec_type], query_max_size[rec_type]);
+      } else {
+        RangeQueryFix<Point, Tree>(tree, kdknn, kRounds, Out, rec_type, rec_num,
+                                   kDim, query_box_seq[rec_type],
+                                   query_max_size[rec_type]);
+      }
       delete[] kdknn;
-    }
+    };
+
+    // NOTE: run all queries
+    auto run_tests = [&]<int kIsLinear>() {
+      int k[4] = {1, 10, 100, 1000};
+      size_t batch_size = static_cast<size_t>(wp.size() * kBatchQueryRatio);
+      for (int i = 0; i < 4; i++) {
+        run_batch_knn.template operator()<kIsLinear>(wp.subseq(0, batch_size),
+                                                     k[i]);
+        run_batch_knn.template operator()<kIsLinear>(
+            wp.subseq(wp.size() - batch_size, wp.size()), k[i]);
+      }
+      std::cout << std::flush;
+      for (int rec_type = 0; rec_type < kRecType; rec_type++) {
+        run_range_query.template operator()<kIsLinear>(rec_type);
+      }
+      std::cout << std::endl;
+    };
+
+    run_tests.template operator()<false>();
+    run_tests.template operator()<true>();
 
     tree.DeleteTree();
     return;
