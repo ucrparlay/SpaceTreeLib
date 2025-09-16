@@ -1145,7 +1145,9 @@ void PrintTreeParam() {
             << "AugType: " << TreeWrapper::TreeType::CheckHasBox() << "; "
             << "Split: " << TreeWrapper::SplitRule::GetSplitName() << "; "
             << "BDO: " << TreeWrapper::TreeType::GetBuildDepthOnce() << "; "
-            << "Inba: " << TreeWrapper::TreeType::GetImbalanceRatio() << "; ";
+            << "Inba: " << TreeWrapper::TreeType::GetImbalanceRatio() << "; "
+            << "LeafWrap: "
+            << static_cast<int>(TreeWrapper::TreeType::kLeaveWrap) << "; ";
 
   if constexpr (std::is_integral_v<typename TreeWrapper::Point::Coord>) {
     std::cout << "Coord: integer"

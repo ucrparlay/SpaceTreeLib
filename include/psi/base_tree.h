@@ -78,9 +78,9 @@ class BaseTree {
 #elif defined(LEAF128)
   static constexpr uint_fast8_t const kLeaveWrap = 128;
 #elif defined(LEAF512)
-  static constexpr uint_fast8_t const kLeaveWrap = 512;
+  static constexpr uint_fast16_t const kLeaveWrap = 512;
 #elif defined(LEAF1024)
-  static constexpr uint_fast8_t const kLeaveWrap = 1024;
+  static constexpr uint_fast16_t const kLeaveWrap = 1024;
 #else
   static constexpr uint_fast8_t const kLeaveWrap = 32;
 #endif  // LEAF1
