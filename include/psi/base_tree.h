@@ -58,26 +58,42 @@ class BaseTree {
 
   // NOTE: Const variables
   // NOTE: uint32t handle up to 4e9 at least
-  // WARN: bucket num should smaller than 1<<8 to handle type overflow
+  // WARN: bucket num should smaller than 1<<8 to handle type overfloc
   static constexpr DimsType const kDim = std::tuple_size_v<Coords>;
   static constexpr BucketType const kBuildDepthOnce = kSkHeight;
   static constexpr BucketType const kPivotNum = (1 << kBuildDepthOnce) - 1;
   static constexpr BucketType const kBucketNum = 1 << kBuildDepthOnce;
 
   // NOTE: tree structure
+#ifdef LEAF1
+  static constexpr uint_fast8_t const kLeaveWrap = 1;
+#elif defined(LEAF4)
+  static constexpr uint_fast8_t const kLeaveWrap = 4;
+#elif defined(LEAF16)
+  static constexpr uint_fast8_t const kLeaveWrap = 16;
+#elif defined(LEAF32)
   static constexpr uint_fast8_t const kLeaveWrap = 32;
+#elif defined(LEAF64)
+  static constexpr uint_fast8_t const kLeaveWrap = 64;
+#elif defined(LEAF128)
+  static constexpr uint_fast8_t const kLeaveWrap = 128;
+#elif defined(LEAF512)
+  static constexpr uint_fast8_t const kLeaveWrap = 512;
+#elif defined(LEAF1024)
+  static constexpr uint_fast8_t const kLeaveWrap = 1024;
+#else
+  static constexpr uint_fast8_t const kLeaveWrap = 32;
+#endif  // LEAF1
+
   static constexpr uint_fast8_t const kThinLeaveWrap = 24;
   static constexpr uint_fast8_t const kSlimLeaveWrap = 8;
-  // static constexpr uint_fast8_t const kLeaveWrap = 8;
-  // static constexpr uint_fast8_t const kThinLeaveWrap = 4;
-  // static constexpr uint_fast8_t const kSlimLeaveWrap = 4;
   static constexpr uint_fast16_t const kSerialBuildCutoff = 1 << 10;
 
   // NOTE: block param in Partition
   static constexpr uint_fast8_t const kLog2Base = 10;
   static constexpr uint_fast16_t const kBlockSize = 1 << kLog2Base;
 
-  // NOTE: reconstruct weight threshold
+  // NOTE: reconstruct ceight threshold
   static constexpr uint_fast8_t const kInbalanceRatio = kImbaRatio;
 
   // NOTE: array based inner tree for batch insertion and deletion

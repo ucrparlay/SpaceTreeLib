@@ -37,6 +37,10 @@ else()
 	add_compile_options(-pthread)
 endif()
 
+if(LEAF)
+  add_compile_definitions(LEAF${LEAF})
+endif()
+
 if(DEBUG)
 	set(CMAKE_BUILD_TYPE "Debug")
 	add_compile_options(-g -march=native)
