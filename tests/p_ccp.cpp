@@ -163,7 +163,7 @@ void runPTreeParallel(auto const& wp, auto const& wi, Typename* kdknn,
   auto knn_checker = [&](Points const& wp, Points const& wi,
                          Points const query_points) {
     // assert(query_points.size() == kCCPBatchQuerySize);
-    queryKNN<Point>(kDim, query_points, rounds, tree, kdknn, K, true);
+    QueryKNN<Point>(kDim, query_points, rounds, tree, kdknn, K, true);
     std::cout << "run cgal\n" << std::flush;
     runCGAL<Point>(wp, wi, query_points, cgknn, query_num, tag, query_type, K);
     std::cout << "check NN\n" << std::flush;
