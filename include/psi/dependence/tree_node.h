@@ -35,7 +35,7 @@ struct Node {
   size_t size;
 };
 
-template <typename Point, typename Range, uint_fast8_t kDefaultWrap,
+template <typename Point, typename Range, uint_fast16_t kDefaultWrap,
           typename AugType = std::monostate,
           typename PointAssignTag = parlay::move_assign_tag>
 struct LeafNode : Node {

@@ -4,7 +4,8 @@ set -o xtrace
 
 /usr/bin/drop_caches
 
-declare -a leaf_wrap=(4 16 32 64 128 512 1024)
+# declare -a leaf_wrap=(4 16 32 64 128 512 1024)
+declare -a leaf_wrap=(512 1024)
 
 tag=0
 dim=2
