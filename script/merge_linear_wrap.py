@@ -111,6 +111,6 @@ def csvSetup():
 csv_writer, csv_file_pointer = csvSetup()
 data = combine(input_path)
 # print(data)
-# data = post_processing(data)
+data = post_processing(data)
 # print(data)
 csv_writer.writerows(data)
