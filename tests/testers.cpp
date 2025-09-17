@@ -324,13 +324,14 @@ int main(int argc, char* argv[]) {
     Tree tree;
     constexpr bool kTestTime = true;
 
-    BuildTree<Point, Tree, kTestTime, 0>(wp, kRounds, tree);
+    BuildTree<Point, Tree, kTestTime, 2>(wp, kRounds, tree);
 
     Points leaf_seq(wp.size());
-    InnerTreeSeq inner_tree_seq(wp.size());
     size_t leaf_offset = 0;
+    InnerTreeSeq inner_tree_seq(8 * wp.size());
     LinearDecomposition<Tree>(tree.GetRoot(), leaf_seq, inner_tree_seq,
                               leaf_offset, 1);
+    std::cout << std::endl;
     assert(leaf_offset == wp.size());
 
     // NOTE: knn

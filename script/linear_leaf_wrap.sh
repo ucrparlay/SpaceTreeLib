@@ -4,7 +4,7 @@ set -o xtrace
 
 /usr/bin/drop_caches
 
-declare -a leaf_wrap=(1 4 16 32 64 128 512 1024)
+declare -a leaf_wrap=(4 16 32 64 128 512 1024)
 
 tag=0
 dim=2
@@ -40,7 +40,7 @@ for i in "${!leaf_wrap[@]}"; do
         input="${origin_paths[${j}]}"
         echo ${input}
 
-        ${commands[${i}]} "${exe}" -p "${input}" -k ${k} -t ${tag} -d 2 -r ${rounds} -q 0 -i 0 -s 0 -T ${tree} -l ${split} 2>&1 | tee -a "${dest}"
+        ${commands[${i}]} "${exe}" -p "${input}" -k ${k} -t ${tag} -d 2 -r 3 -q 0 -i 0 -s 0 -T ${tree} -l ${split} 2>&1 | tee -a "${dest}"
     done
 done
 
