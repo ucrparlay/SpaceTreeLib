@@ -134,10 +134,19 @@ class BaseTree {
     requires(HasBox<typename Leaf::AT> && HasBox<typename Interior::AT>);
 
   static inline Box GetEmptyBox();
+
   static inline Point GetBoxCenter(Box const& box);
+
   static Box GetBox(Box const& x, Box const& y);
-  static Box GetBox(Slice V);
+
+  template <typename SliceType>
+  static Box GetBoxFromSlice(SliceType const V);
+
+  template <typename Range>
+  static Box GetBox(Range&& range);
+
   static Box GetBox(BoxSeq const& box_seq);
+
   template <typename Leaf, typename Interior>
   static Box GetBox(Node* T);
 

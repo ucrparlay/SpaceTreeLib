@@ -261,8 +261,18 @@ BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::GetBox(Box const& x,
 
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
+template <typename Range>
 typename BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::Box
-BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::GetBox(Slice V) {
+BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::GetBox(Range&& In) {
+  return GetBoxFromSlice(parlay::make_slice(std::forward<Range>(In)));
+}
+
+template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
+template <typename SliceType>
+typename BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::Box
+BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::GetBoxFromSlice(
+    SliceType const V) {
   if (V.size() == 0) {
     return GetEmptyBox();
   } else {
