@@ -290,6 +290,45 @@ void RangeQueryFixLinear(auto& leaf_seq, auto& inner_tree_seq, Typename* kdknn,
   return;
 }
 
+template <typename Point, typename Tree>
+typename Tree::Box ComputeBoundingBox(size_t idx, auto const& leaf_seq,
+                                      auto const& inner_tree_seq) {
+  using Leaf = typename Tree::Leaf;
+  using Interior = typename Tree::Interior;
+  if (inner_tree_seq[idx].is_leaf) {
+    auto const& node = inner_tree_seq[idx];
+    // std::cout << node.leaf_offset << " " << node.size << std::endl;
+    return Tree::GetBox(
+        leaf_seq.cut(node.leaf_offset, node.leaf_offset + node.size));
+  }
+  return Tree::GetBox(
+      ComputeBoundingBox<Point, Tree>(idx * 2, leaf_seq, inner_tree_seq),
+      ComputeBoundingBox<Point, Tree>(idx * 2 + 1, leaf_seq, inner_tree_seq));
+}
+
+template <typename Point, typename Tree>
+void TestBoundingBox(auto const& leaf_seq, auto const& inner_tree_seq,
+                     int const& kRounds) {
+  using Box = typename Tree::Box;
+  size_t n = leaf_seq.size();
+  Box base_box, tree_box;
+  auto tree_box_time = time_loop(
+      kRounds, 0.1, []() {},
+      [&]() {
+        tree_box = ComputeBoundingBox<Point, Tree>(1, leaf_seq, inner_tree_seq);
+      },
+      []() {});
+  auto base_box_time = time_loop(
+      kRounds, 0.1, []() {}, [&]() { base_box = Tree::GetBox(leaf_seq); },
+      []() {});
+
+  std::cout << base_box_time << " " << base_box.first << " " << base_box.second
+            << " " << std::endl;
+  std::cout << tree_box_time << " " << tree_box.first << " " << tree_box.second
+            << " " << std::endl;
+  return;
+}
+
 int main(int argc, char* argv[]) {
   commandLine params(
       argc, argv,
@@ -333,6 +372,10 @@ int main(int argc, char* argv[]) {
                               leaf_offset, 1);
     std::cout << std::endl;
     assert(leaf_offset == wp.size());
+
+    TestBoundingBox<Point, Tree>(leaf_seq, inner_tree_seq, kRounds);
+    tree.DeleteTree();
+    return;
 
     // NOTE: knn
     Typename* kdknn;
