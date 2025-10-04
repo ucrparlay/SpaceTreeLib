@@ -315,17 +315,25 @@ BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::GetBox(Node* T) {
   }
   Interior* TI = static_cast<Interior*>(T);
   if constexpr (IsBinaryNode<Interior>) {
-    Box const& left_box = GetBox<Leaf, Interior>(TI->left);
-    Box const& right_box = GetBox<Leaf, Interior>(TI->right);
+    Box left_box, right_box;
+    parlay::par_do_if(
+        T->size > kSerialBuildCutoff,
+        [&]() { left_box = GetBox<Leaf, Interior>(TI->left); },
+        [&]() { right_box = GetBox<Leaf, Interior>(TI->right); });
+    // Box const& left_box = GetBox<Leaf, Interior>(TI->left);
+    // Box const& right_box = GetBox<Leaf, Interior>(TI->right);
     return GetBox(left_box, right_box);
-    // auto nb = GetBox(left_box, right_box);
-    // assert(SameBox(nb, TI->GetBox()));
-    // return nb;
   } else if constexpr (IsMultiNode<Interior>) {
     BoxSeq return_box_seq(Interior::GetRegions());
-    for (size_t i = 0; i < Interior::GetRegions(); i++) {
-      return_box_seq[i] = GetBox<Leaf, Interior>(TI->tree_nodes[i]);
-    }
+    parlay::parallel_for(
+        0, Interior::GetRegions(),
+        [&](size_t i) {
+          return_box_seq[i] = GetBox<Leaf, Interior>(TI->tree_nodes[i]);
+        },
+        TI->size > kSerialBuildCutoff ? 1 : Interior::GetRegions());
+    // for (size_t i = 0; i < Interior::GetRegions(); i++) {
+    //   return_box_seq[i] = GetBox<Leaf, Interior>(TI->tree_nodes[i]);
+    // }
     return GetBox(return_box_seq);
   } else {
     assert(false);
