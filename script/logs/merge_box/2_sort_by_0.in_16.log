@@ -1,0 +1,5 @@
+Tree: KdTree; AugType: HasBox; Split: MaxStretchDim-ObjectMedian; BDO: 6; Inba: 30; LeafWrap: 16; Coord: integer; 
+2_sort_by_0.in 14.5754 29 26.4979 
+Array-tree: 0.445424 (0, 0)  (1000000000, 999999999)  
+Pointer-tree: 0.497859 (0, 0)  (1000000000, 999999999)  
+Par-for: 0.287525 (0, 0)  (1000000000, 999999999)  

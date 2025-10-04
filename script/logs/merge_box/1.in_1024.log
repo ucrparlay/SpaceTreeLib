@@ -1,0 +1,5 @@
+Tree: KdTree; AugType: HasBox; Split: MaxStretchDim-ObjectMedian; BDO: 6; Inba: 30; LeafWrap: 1024; Coord: integer; 
+1.in 18.3342 24 24 
+Array-tree: 0.276367 (1511, 15998)  (999992674, 999991750)  
+Pointer-tree: 0.377239 (1511, 15998)  (999992674, 999991750)  
+Par-for: 0.280163 (1511, 15998)  (999992674, 999991750)  

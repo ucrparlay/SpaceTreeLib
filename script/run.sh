@@ -3,10 +3,7 @@
 # NOTE: find the process id by script name
 # pgrep -f script_name
 
-./run_incre_insert.sh
-./run_incre_delete.sh
-./run_summary.sh
-./run_querys.sh
+cmake -DDEBUG=OFF -DCGAL=ON -DCMAKE_CXX_COMPILER=g++-14 -DLEAF=64 ..
 
 # sleep 330m
 # ./kill_script.sh $1
