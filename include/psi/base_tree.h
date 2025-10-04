@@ -69,6 +69,8 @@ class BaseTree {
   // NOTE: tree structure
 #ifdef LEAF1
   static constexpr uint_fast8_t const kLeaveWrap = 1;
+#elif defined(LEAF2)
+  static constexpr uint_fast8_t const kLeaveWrap = 2;
 #elif defined(LEAF4)
   static constexpr uint_fast8_t const kLeaveWrap = 4;
 #elif defined(LEAF16)
