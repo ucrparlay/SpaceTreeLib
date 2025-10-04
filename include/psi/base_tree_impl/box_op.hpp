@@ -263,8 +263,15 @@ template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 template <typename Range>
 typename BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::Box
-BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::GetBox(Range&& In) {
-  return GetBoxFromSlice(parlay::make_slice(std::forward<Range>(In)));
+BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::GetBox(Range&& In)
+  requires(parlay::is_random_access_range_v<Range>)
+{
+  if constexpr (std::same_as<
+                    typename std::remove_reference_t<Range>::value_type, Box>) {
+    return GetBoxFromBoxSeq(std::forward<Range>(In));
+  } else {
+    return GetBoxFromSlice(parlay::make_slice(std::forward<Range>(In)));
+  }
 }
 
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
@@ -328,13 +335,17 @@ BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::GetBox(Node* T) {
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 typename BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::Box
-BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::GetBox(
+BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::GetBoxFromBoxSeq(
     BoxSeq const& box_seq) {
-  Box box = GetEmptyBox();
-  for (auto const& b : box_seq) {
-    box = GetBox(box, b);
-  }
-  return std::move(box);
+  return parlay::reduce(
+      box_seq, parlay::make_monoid(
+                   [&](Box const& x, Box const& y) { return GetBox(x, y); },
+                   GetEmptyBox()));
+  // Box box = GetEmptyBox();
+  // for (auto const& b : box_seq) {
+  //   box = GetBox(box, b);
+  // }
+  // return std::move(box);
 }
 
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,

@@ -40,7 +40,9 @@ class BaseTree {
   using DisType = typename Point::DisType;
   using Num = Num_Comparator<Coord>;
   using Slice = parlay::slice<Point*, Point*>;
+  using ConstSlice = parlay::slice<Point const*, Point const*>;
   using Points = parlay::sequence<Point>;
+  using ConstPoints = parlay::sequence<Point> const;
   using PointsIter = typename parlay::sequence<Point>::iterator;
   using HyperPlane = std::pair<Coord, DimsType>;
   using HyperPlaneSeq = parlay::sequence<HyperPlane>;
@@ -143,9 +145,10 @@ class BaseTree {
   static Box GetBoxFromSlice(SliceType const V);
 
   template <typename Range>
-  static Box GetBox(Range&& range);
+  static Box GetBox(Range&& range)
+    requires(parlay::is_random_access_range_v<Range>);
 
-  static Box GetBox(BoxSeq const& box_seq);
+  static Box GetBoxFromBoxSeq(BoxSeq const& box_seq);
 
   template <typename Leaf, typename Interior>
   static Box GetBox(Node* T);
@@ -537,7 +540,7 @@ class BaseTree {
 #include "base_tree_impl/circle_op.hpp"
 #include "base_tree_impl/delete_tree.hpp"
 #include "base_tree_impl/dimensinality.hpp"
-#include "base_tree_impl/inner_tree.hpp"
+#include "base_tree_impl/inner_tree/inner_tree.hpp"
 #include "base_tree_impl/knn_query.hpp"
 #include "base_tree_impl/points_op.hpp"
 #include "base_tree_impl/range_query.hpp"
