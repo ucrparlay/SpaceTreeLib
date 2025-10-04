@@ -1,0 +1,263 @@
+#ifndef PSI_BASE_TREE_IMPL_INNER_TREE_HPP_
+#define PSI_BASE_TREE_IMPL_INNER_TREE_HPP_
+
+#include <utility>
+
+#include "base_tree.h"
+#include "dependence/concepts.h"
+#include "inner_tree_binary.hpp"
+#include "inner_tree_multi.hpp"
+
+namespace psi {
+template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
+template <typename Leaf, typename Interior>
+struct BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::InnerTree {
+  using BT = BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>;
+
+  InnerTree(BT& _btref)
+      : BTRef(_btref),
+        tags_num(0),
+        tags(NodeTagSeq::uninitialized(kPivotNum + kBucketNum + 1)),
+        sums_tree(parlay::sequence<BallsType>(kPivotNum + kBucketNum + 1)),
+        rev_tag(BucketSeq::uninitialized(kBucketNum)) {}
+
+  bool AssertSize(Node* T) const {
+    if (T->is_leaf) {
+      Leaf* TI = static_cast<Leaf*>(T);
+      assert(T->size <= TI->pts.size() && T->size <= kLeaveWrap);
+      return true;
+    }
+    Interior* TI = static_cast<Interior*>(T);
+    if constexpr (IsBinaryNode<Interior>) {
+      assert(TI->size == TI->left->size + TI->right->size);
+    } else if constexpr (IsMultiNode<Interior>) {
+      assert(std::cmp_equal(
+          TI->size,
+          std::accumulate(TI->tree_nodes.begin(), TI->tree_nodes.end(), 0,
+                          [](size_t sum, Node* T) { return sum + T->size; })));
+    } else {
+      static_assert(IsBinaryNode<Interior> || IsMultiNode<Interior>);
+    }
+    return true;
+  }
+
+  inline BucketType GetNodeIdx(BucketType idx, Node* T) {
+    if (tags[idx].first == T) return idx;
+    if (idx > kPivotNum || tags[idx].first->is_leaf)
+      return inner_tree_detail::kInvalidBucket;
+    auto pos = GetNodeIdx(idx << 1, T);
+    if (pos != inner_tree_detail::kInvalidBucket) return pos;
+    return GetNodeIdx(idx << 1 | 1, T);
+  }
+
+  inline void ResetTagsNum() { tags_num = 0; }
+
+  Box GetBoxByRegionIdx(int const idx, Box const& box) {
+    if constexpr (IsBinaryNode<Interior>) {
+      return inner_tree_detail::BinaryNodeOps<Point, DerivedTree, kSkHeight,
+                                              kImbaRatio, Leaf,
+                                              Interior>::GetBoxByRegionIdx(this,
+                                                                           idx,
+                                                                           box);
+    } else if constexpr (IsMultiNode<Interior>) {
+      return inner_tree_detail::MultiNodeOps<Point, DerivedTree, kSkHeight,
+                                             kImbaRatio, Leaf,
+                                             Interior>::GetBoxByRegionIdx(this,
+                                                                          idx,
+                                                                          box);
+    } else {
+      static_assert(IsBinaryNode<Interior> || IsMultiNode<Interior>);
+    }
+  }
+
+  void AssignNodeTag(Node* T, BucketType idx) {
+    if constexpr (IsBinaryNode<Interior>) {
+      inner_tree_detail::BinaryNodeOps<Point, DerivedTree, kSkHeight,
+                                       kImbaRatio, Leaf,
+                                       Interior>::AssignNodeTag(this, T, idx);
+    } else if constexpr (IsMultiNode<Interior>) {
+      inner_tree_detail::MultiNodeOps<Point, DerivedTree, kSkHeight, kImbaRatio,
+                                      Leaf, Interior>::AssignNodeTag(this, T,
+                                                                     idx);
+    } else {
+      static_assert(IsBinaryNode<Interior> || IsMultiNode<Interior>);
+    }
+  }
+
+  void ReduceSums(BucketType idx) const {
+    if constexpr (IsBinaryNode<Interior>) {
+      inner_tree_detail::BinaryNodeOps<
+          Point, DerivedTree, kSkHeight, kImbaRatio, Leaf,
+          Interior>::ReduceSums(const_cast<InnerTree*>(this), idx);
+    } else if constexpr (IsMultiNode<Interior>) {
+      inner_tree_detail::MultiNodeOps<
+          Point, DerivedTree, kSkHeight, kImbaRatio, Leaf,
+          Interior>::ReduceSums(const_cast<InnerTree*>(this), idx);
+    } else {
+      static_assert(IsBinaryNode<Interior> || IsMultiNode<Interior>);
+    }
+  }
+
+  static inline BucketType GetDepthByIndex(BucketType idx) {
+    BucketType h = 0;
+    while (idx > 1) {
+      idx >>= 1;
+      ++h;
+    }
+    return h;
+  }
+
+  template <typename ViolateFunc>
+  void PickTag(BucketType idx, ViolateFunc&& violate_func) {
+    if constexpr (IsBinaryNode<Interior>) {
+      inner_tree_detail::BinaryNodeOps<
+          Point, DerivedTree, kSkHeight, kImbaRatio, Leaf,
+          Interior>::PickTag(this, idx,
+                             std::forward<ViolateFunc>(violate_func));
+    } else if constexpr (IsMultiNode<Interior>) {
+      inner_tree_detail::MultiNodeOps<
+          Point, DerivedTree, kSkHeight, kImbaRatio, Leaf,
+          Interior>::PickTag(this, idx,
+                             std::forward<ViolateFunc>(violate_func));
+    } else {
+      static_assert(IsBinaryNode<Interior> || IsMultiNode<Interior>);
+    }
+  }
+
+  template <typename... Args>
+  void TagInbalanceNode(Args&&... args) {
+    ReduceSums(1);
+    ResetTagsNum();
+    PickTag(1, std::forward<Args>(args)...);
+    assert(AssertSize(tags[1].first));
+  }
+
+  template <bool kSetParallelFlag, typename ViolateFunc>
+  void MarkNodesForRebuild(BucketType idx, BucketType& re_num,
+                           size_t& tot_re_size, BoxSeq& box_seq, Box const& box,
+                           bool has_tomb, ViolateFunc&& violate_func) {
+    if constexpr (IsBinaryNode<Interior>) {
+      inner_tree_detail::BinaryNodeOps<Point, DerivedTree, kSkHeight,
+                                       kImbaRatio, Leaf, Interior>::
+          template MarkNodesForRebuild<kSetParallelFlag>(
+              this, idx, re_num, tot_re_size, box_seq, box, has_tomb,
+              std::forward<ViolateFunc>(violate_func));
+    } else if constexpr (IsMultiNode<Interior>) {
+      inner_tree_detail::MultiNodeOps<Point, DerivedTree, kSkHeight, kImbaRatio,
+                                      Leaf, Interior>::
+          template MarkNodesForRebuild<kSetParallelFlag>(
+              this, idx, re_num, tot_re_size, box_seq, box, has_tomb,
+              std::forward<ViolateFunc>(violate_func));
+    } else {
+      static_assert(IsBinaryNode<Interior> || IsMultiNode<Interior>);
+    }
+  }
+
+  template <bool kSetParallelFlag, typename... Args>
+  auto TagInbalanceNodeDeletion(Args&&... args) {
+    ReduceSums(1);
+    ResetTagsNum();
+    BucketType re_num = 0;
+    size_t tot_re_size = 0;
+    MarkNodesForRebuild<kSetParallelFlag>(1, re_num, tot_re_size,
+                                          std::forward<Args>(args)...);
+    return std::make_pair(re_num, tot_re_size);
+  }
+
+  void TagOversizedNodesRecursive(BucketType idx) {
+    if constexpr (IsBinaryNode<Interior>) {
+      inner_tree_detail::BinaryNodeOps<
+          Point, DerivedTree, kSkHeight, kImbaRatio, Leaf,
+          Interior>::TagOversizedNodesRecursive(this, idx);
+    } else if constexpr (IsMultiNode<Interior>) {
+      inner_tree_detail::MultiNodeOps<
+          Point, DerivedTree, kSkHeight, kImbaRatio, Leaf,
+          Interior>::TagOversizedNodesRecursive(this, idx);
+    } else {
+      static_assert(IsBinaryNode<Interior> || IsMultiNode<Interior>);
+    }
+  }
+
+  void TagOversizedNodes() { TagOversizedNodesRecursive(1); }
+
+  enum UpdateType {
+    kUpdatePointer,
+    kUpdatePointerBox,
+    kTagRebuildNode,
+    kPostDelUpdate
+  };
+
+  template <UpdateType kUT, bool UpdateParFlag = true, typename ReturnType,
+            typename... Args>
+    requires IsPointerToNode<ReturnType> || IsNodeBox<ReturnType, Point>
+  ReturnType UpdateInnerTree(parlay::sequence<ReturnType> const& tree_nodes,
+                             Args&&... args) {
+    BucketType p = 0;
+    if constexpr (kUT == kUpdatePointer || kUT == kUpdatePointerBox) {
+      return UpdateInnerTreeRecursive<kUT, UpdateParFlag>(1, tree_nodes, p,
+                                                          [&]() {});
+    } else if constexpr (kUT == kTagRebuildNode) {
+      this->ResetTagsNum();
+
+      auto func_2_rebuild_node = [&](auto const&... params) -> void {
+        if constexpr (IsBinaryNode<Interior>) {
+          auto const& new_box = std::get<0>(std::forward_as_tuple(params...));
+          auto const& idx = std::get<1>(std::forward_as_tuple(params...));
+          rev_tag[tags_num] = idx;
+          FindVar<BoxSeq>(std::forward<Args>(args)...)[tags_num++] = new_box;
+        } else if constexpr (IsMultiNode<Interior>) {
+          auto const& idx = std::get<0>(std::forward_as_tuple(params...));
+          rev_tag[tags_num++] = idx;
+        }
+      };
+
+      return UpdateInnerTreeRecursive<kUT, UpdateParFlag>(1, tree_nodes, p,
+                                                          func_2_rebuild_node);
+    } else if constexpr (kUT == kPostDelUpdate) {
+      bool under_rebuild_tree = false;
+      return UpdateInnerTreeRecursive<kUT, UpdateParFlag>(
+          1, tree_nodes, p, [&](bool op) -> bool {
+            return op == 0 ? (under_rebuild_tree = !under_rebuild_tree)
+                           : under_rebuild_tree;
+          });
+    }
+  }
+
+  template <UpdateType kUT, bool UpdateParFlag, typename ReturnType,
+            typename Func>
+  ReturnType UpdateInnerTreeRecursive(
+      BucketType idx, parlay::sequence<ReturnType> const& tree_nodes,
+      BucketType& p, Func&& func) {
+    if constexpr (IsBinaryNode<Interior>) {
+      return inner_tree_detail::BinaryNodeOps<Point, DerivedTree, kSkHeight,
+                                              kImbaRatio, Leaf, Interior>::
+          template UpdateInnerTreeRecursive<kUT, UpdateParFlag>(
+              this, idx, tree_nodes, p, std::forward<Func>(func));
+    } else if constexpr (IsMultiNode<Interior>) {
+      return inner_tree_detail::MultiNodeOps<Point, DerivedTree, kSkHeight,
+                                             kImbaRatio, Leaf, Interior>::
+          template UpdateInnerTreeRecursive<kUT, UpdateParFlag>(
+              this, idx, tree_nodes, p, std::forward<Func>(func));
+    } else {
+      static_assert(IsBinaryNode<Interior> || IsMultiNode<Interior>);
+    }
+  }
+
+  void Reset() {
+    ResetTagsNum();
+    tags = NodeTagSeq::uninitialized(kPivotNum + kBucketNum + 1);
+    sums_tree = parlay::sequence<BallsType>(kPivotNum + kBucketNum + 1);
+    rev_tag = BucketSeq::uninitialized(kBucketNum);
+  }
+
+  BT& BTRef;
+  BucketType tags_num;
+  NodeTagSeq tags;
+  mutable parlay::sequence<BallsType> sums_tree;
+  mutable BucketSeq rev_tag;
+  parlay::sequence<BallsType> sums;
+};
+};  // namespace psi
+
+#endif  // PSI_BASE_TREE_IMPL_INNER_TREE_HPP_
