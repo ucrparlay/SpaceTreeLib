@@ -181,63 +181,129 @@ struct BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::InnerTree {
 
   void TagOversizedNodes() { TagOversizedNodesRecursive(1); }
 
-  enum UpdateType {
-    kUpdatePointer,
-    kUpdatePointerBox,
-    kTagRebuildNode,
-    kPostDelUpdate
-  };
-
-  template <UpdateType kUT, bool UpdateParFlag = true, typename ReturnType,
-            typename... Args>
+  template <bool UpdateParFlag = true, typename ReturnType>
     requires IsPointerToNode<ReturnType> || IsNodeBox<ReturnType, Point>
-  ReturnType UpdateInnerTree(parlay::sequence<ReturnType> const& tree_nodes,
-                             Args&&... args) {
+  ReturnType UpdateInnerTreePointers(
+      parlay::sequence<ReturnType> const& tree_nodes) {
     BucketType p = 0;
-    if constexpr (kUT == kUpdatePointer || kUT == kUpdatePointerBox) {
-      return UpdateInnerTreeRecursive<kUT, UpdateParFlag>(1, tree_nodes, p,
-                                                          [&]() {});
-    } else if constexpr (kUT == kTagRebuildNode) {
-      this->ResetTagsNum();
+    return UpdateInnerTreePointersRecursive<UpdateParFlag>(1, tree_nodes, p);
+  }
 
-      auto func_2_rebuild_node = [&](auto const&... params) -> void {
-        if constexpr (IsBinaryNode<Interior>) {
-          auto const& new_box = std::get<0>(std::forward_as_tuple(params...));
-          auto const& idx = std::get<1>(std::forward_as_tuple(params...));
-          rev_tag[tags_num] = idx;
-          FindVar<BoxSeq>(std::forward<Args>(args)...)[tags_num++] = new_box;
-        } else if constexpr (IsMultiNode<Interior>) {
-          auto const& idx = std::get<0>(std::forward_as_tuple(params...));
-          rev_tag[tags_num++] = idx;
-        }
-      };
-
-      return UpdateInnerTreeRecursive<kUT, UpdateParFlag>(1, tree_nodes, p,
-                                                          func_2_rebuild_node);
-    } else if constexpr (kUT == kPostDelUpdate) {
-      bool under_rebuild_tree = false;
-      return UpdateInnerTreeRecursive<kUT, UpdateParFlag>(
-          1, tree_nodes, p, [&](bool op) -> bool {
-            return op == 0 ? (under_rebuild_tree = !under_rebuild_tree)
-                           : under_rebuild_tree;
-          });
+  template <bool UpdateParFlag, typename ReturnType>
+  ReturnType UpdateInnerTreePointersRecursive(
+      BucketType idx, parlay::sequence<ReturnType> const& tree_nodes,
+      BucketType& p) {
+    if constexpr (IsBinaryNode<Interior>) {
+      return inner_tree_detail::BinaryNodeOps<Point, DerivedTree, kSkHeight,
+                                              kImbaRatio, Leaf, Interior>::
+          template UpdateInnerTreePointersRecursive<UpdateParFlag>(
+              this, idx, tree_nodes, p);
+    } else if constexpr (IsMultiNode<Interior>) {
+      return inner_tree_detail::MultiNodeOps<Point, DerivedTree, kSkHeight,
+                                             kImbaRatio, Leaf, Interior>::
+          template UpdateInnerTreePointersRecursive<UpdateParFlag>(
+              this, idx, tree_nodes, p);
+    } else {
+      static_assert(IsBinaryNode<Interior> || IsMultiNode<Interior>);
     }
   }
 
-  template <UpdateType kUT, bool UpdateParFlag, typename ReturnType,
-            typename Func>
-  ReturnType UpdateInnerTreeRecursive(
+  template <bool UpdateParFlag = true, typename ReturnType>
+    requires IsNodeBox<ReturnType, Point>
+  ReturnType UpdateInnerTreePointersWithBox(
+      parlay::sequence<ReturnType> const& tree_nodes) {
+    BucketType p = 0;
+    return UpdateInnerTreePointersWithBoxRecursive<UpdateParFlag>(1, tree_nodes,
+                                                                  p);
+  }
+
+  template <bool UpdateParFlag, typename ReturnType>
+  ReturnType UpdateInnerTreePointersWithBoxRecursive(
+      BucketType idx, parlay::sequence<ReturnType> const& tree_nodes,
+      BucketType& p) {
+    if constexpr (IsBinaryNode<Interior>) {
+      return inner_tree_detail::BinaryNodeOps<Point, DerivedTree, kSkHeight,
+                                              kImbaRatio, Leaf, Interior>::
+          template UpdateInnerTreePointersWithBoxRecursive<UpdateParFlag>(
+              this, idx, tree_nodes, p);
+    } else if constexpr (IsMultiNode<Interior>) {
+      return inner_tree_detail::MultiNodeOps<Point, DerivedTree, kSkHeight,
+                                             kImbaRatio, Leaf, Interior>::
+          template UpdateInnerTreePointersWithBoxRecursive<UpdateParFlag>(
+              this, idx, tree_nodes, p);
+    } else {
+      static_assert(IsBinaryNode<Interior> || IsMultiNode<Interior>);
+    }
+  }
+
+  template <bool UpdateParFlag = true, typename ReturnType, typename... Args>
+    requires IsPointerToNode<ReturnType> || IsNodeBox<ReturnType, Point>
+  ReturnType TagNodesForRebuild(parlay::sequence<ReturnType> const& tree_nodes,
+                                Args&&... args) {
+    this->ResetTagsNum();
+
+    auto func_2_rebuild_node = [&](auto const&... params) -> void {
+      if constexpr (IsBinaryNode<Interior>) {
+        auto const& new_box = std::get<0>(std::forward_as_tuple(params...));
+        auto const& idx = std::get<1>(std::forward_as_tuple(params...));
+        rev_tag[tags_num] = idx;
+        FindVar<BoxSeq>(std::forward<Args>(args)...)[tags_num++] = new_box;
+      } else if constexpr (IsMultiNode<Interior>) {
+        auto const& idx = std::get<0>(std::forward_as_tuple(params...));
+        rev_tag[tags_num++] = idx;
+      }
+    };
+
+    BucketType p = 0;
+    return TagNodesForRebuildRecursive<UpdateParFlag>(1, tree_nodes, p,
+                                                      func_2_rebuild_node);
+  }
+
+  template <bool UpdateParFlag, typename ReturnType, typename Func>
+  ReturnType TagNodesForRebuildRecursive(
       BucketType idx, parlay::sequence<ReturnType> const& tree_nodes,
       BucketType& p, Func&& func) {
     if constexpr (IsBinaryNode<Interior>) {
       return inner_tree_detail::BinaryNodeOps<Point, DerivedTree, kSkHeight,
                                               kImbaRatio, Leaf, Interior>::
-          template UpdateInnerTreeRecursive<kUT, UpdateParFlag>(
+          template TagNodesForRebuildRecursive<UpdateParFlag>(
               this, idx, tree_nodes, p, std::forward<Func>(func));
     } else if constexpr (IsMultiNode<Interior>) {
       return inner_tree_detail::MultiNodeOps<Point, DerivedTree, kSkHeight,
                                              kImbaRatio, Leaf, Interior>::
-          template UpdateInnerTreeRecursive<kUT, UpdateParFlag>(
+          template TagNodesForRebuildRecursive<UpdateParFlag>(
+              this, idx, tree_nodes, p, std::forward<Func>(func));
+    } else {
+      static_assert(IsBinaryNode<Interior> || IsMultiNode<Interior>);
+    }
+  }
+
+  template <bool UpdateParFlag = true, typename ReturnType>
+    requires IsPointerToNode<ReturnType> || IsNodeBox<ReturnType, Point>
+  ReturnType UpdateAfterDeletion(
+      parlay::sequence<ReturnType> const& tree_nodes) {
+    bool under_rebuild_tree = false;
+    BucketType p = 0;
+    return UpdateAfterDeletionRecursive<UpdateParFlag>(
+        1, tree_nodes, p, [&](bool op) -> bool {
+          return op == 0 ? (under_rebuild_tree = !under_rebuild_tree)
+                         : under_rebuild_tree;
+        });
+  }
+
+  template <bool UpdateParFlag, typename ReturnType, typename Func>
+  ReturnType UpdateAfterDeletionRecursive(
+      BucketType idx, parlay::sequence<ReturnType> const& tree_nodes,
+      BucketType& p, Func&& func) {
+    if constexpr (IsBinaryNode<Interior>) {
+      return inner_tree_detail::BinaryNodeOps<Point, DerivedTree, kSkHeight,
+                                              kImbaRatio, Leaf, Interior>::
+          template UpdateAfterDeletionRecursive<UpdateParFlag>(
+              this, idx, tree_nodes, p, std::forward<Func>(func));
+    } else if constexpr (IsMultiNode<Interior>) {
+      return inner_tree_detail::MultiNodeOps<Point, DerivedTree, kSkHeight,
+                                             kImbaRatio, Leaf, Interior>::
+          template UpdateAfterDeletionRecursive<UpdateParFlag>(
               this, idx, tree_nodes, p, std::forward<Func>(func));
     } else {
       static_assert(IsBinaryNode<Interior> || IsMultiNode<Interior>);

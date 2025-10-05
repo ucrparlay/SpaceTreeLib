@@ -147,8 +147,7 @@ Node* CoverTree<Point, SplitRule, kMD, kSkHeight,
   // NOTE: handling of rebuild
   // WARN: the rebuild node is on top
   // NOTE: retag the inba-nodes and save the bounding boxes
-  [[maybe_unused]] Node* new_node =
-      IT.template UpdateInnerTree<InnerTree::kTagRebuildNode>(tree_nodes);
+  [[maybe_unused]] Node* new_node = IT.template TagNodesForRebuild<>(tree_nodes);
   assert(IT.tags_num == re_num);
 
   parlay::parallel_for(0, IT.tags_num, [&](size_t i) {
@@ -170,7 +169,7 @@ Node* CoverTree<Point, SplitRule, kMD, kSkHeight,
   });  // PERF: allow the parlay decide the granularity to accelerate the
        // small tree rebuild
 
-  return IT.template UpdateInnerTree<InnerTree::kPostDelUpdate>(tree_nodes);
+  return IT.template UpdateAfterDeletion<>(tree_nodes);
 }
 
 }  // namespace psi

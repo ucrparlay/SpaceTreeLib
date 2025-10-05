@@ -5,9 +5,11 @@
 #include "parlay/slice.h"
 
 namespace psi {
-template <typename Point, typename SplitRule, typename LeafAugType, typename InteriorAugType,  uint_fast8_t kSkHeight,
+template <typename Point, typename SplitRule, typename LeafAugType,
+          typename InteriorAugType, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
-void KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight , kImbaRatio>::BatchInsert(Slice A) {
+void KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight,
+            kImbaRatio>::BatchInsert(Slice A) {
   if (this->root_ == nullptr) {  // TODO: may check using explicity tag
     return Build_(A);
   }
@@ -26,10 +28,12 @@ void KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight , kImbaRat
 }
 
 // NOTE: return the updated Node
-template <typename Point, typename SplitRule, typename LeafAugType, typename InteriorAugType,  uint_fast8_t kSkHeight,
+template <typename Point, typename SplitRule, typename LeafAugType,
+          typename InteriorAugType, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
-Node* KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight , kImbaRatio>::BatchInsertRecursive(
-    Node* T, Slice In, Slice Out, DimsType d) {
+Node* KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight,
+             kImbaRatio>::BatchInsertRecursive(Node* T, Slice In, Slice Out,
+                                               DimsType d) {
   size_t n = In.size();
 
   if (n == 0) return T;
@@ -134,7 +138,7 @@ Node* KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight , kImbaRa
       },
       1);
 
-  return IT.template UpdateInnerTree<InnerTree::kUpdatePointer>(tree_nodes);
+  return IT.UpdateInnerTreePointers(tree_nodes);
 }
 
 }  // namespace psi

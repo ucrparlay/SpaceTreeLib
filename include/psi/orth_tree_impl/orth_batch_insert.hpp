@@ -153,7 +153,7 @@ Node* OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight,
       },
       1);
 
-  return IT.template UpdateInnerTree<InnerTree::kUpdatePointer>(tree_nodes);
+  return IT.UpdateInnerTreePointers(tree_nodes);
 }
 }  // namespace psi
 

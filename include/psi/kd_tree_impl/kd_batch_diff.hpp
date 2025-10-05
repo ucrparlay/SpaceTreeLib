@@ -151,8 +151,7 @@ KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight, kImbaRatio>::
       },
       1);
 
-  return IT.template UpdateInnerTree<InnerTree::kUpdatePointerBox, false>(
-      tree_nodes);
+  return IT.template UpdateInnerTreePointersWithBox<false>(tree_nodes);
 }
 
 }  // namespace psi

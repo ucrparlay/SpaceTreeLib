@@ -126,7 +126,7 @@ RTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDiffRecursive(
       },
       1);
 
-  return IT.template UpdateInnerTree<InnerTree::kUpdatePointerBox>(tree_nodes);
+  return IT.template UpdateInnerTreePointersWithBox<>(tree_nodes);
 }
 
 }  // namespace psi

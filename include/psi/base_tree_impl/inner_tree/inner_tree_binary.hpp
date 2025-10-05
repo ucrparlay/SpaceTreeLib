@@ -145,9 +145,57 @@ struct BinaryNodeOps {
     TagOversizedNodesRecursive(self, idx << 1 | 1);
   }
 
-  template <typename InnerTree::UpdateType kUT, bool UpdateParFlag,
-            typename ReturnType, typename Func>
-  static ReturnType UpdateInnerTreeRecursive(
+  template <bool UpdateParFlag, typename ReturnType>
+  static ReturnType UpdateInnerTreePointersRecursive(
+      InnerTree* self, BucketType idx,
+      parlay::sequence<ReturnType> const& tree_nodes, BucketType& p) {
+    using NodeBox = typename BT::NodeBox;
+
+    if (self->tags[idx].second == BT::kBucketNum + 1 ||
+        self->tags[idx].second == BT::kBucketNum + 2) {
+      return tree_nodes[p++];
+    }
+
+    ReturnType const& left = UpdateInnerTreePointersRecursive<UpdateParFlag>(
+        self, idx << 1, tree_nodes, p);
+    ReturnType const& right = UpdateInnerTreePointersRecursive<UpdateParFlag>(
+        self, idx << 1 | 1, tree_nodes, p);
+
+    BT::template UpdateInterior<Interior, UpdateParFlag>(self->tags[idx].first,
+                                                         left, right);
+    if constexpr (IsPointerToNode<ReturnType>) {
+      return self->tags[idx].first;
+    } else {
+      return NodeBox(self->tags[idx].first, Box());
+    }
+  }
+
+  template <bool UpdateParFlag, typename ReturnType>
+  static ReturnType UpdateInnerTreePointersWithBoxRecursive(
+      InnerTree* self, BucketType idx,
+      parlay::sequence<ReturnType> const& tree_nodes, BucketType& p) {
+    using NodeBox = typename BT::NodeBox;
+
+    if (self->tags[idx].second == BT::kBucketNum + 1 ||
+        self->tags[idx].second == BT::kBucketNum + 2) {
+      return tree_nodes[p++];
+    }
+
+    ReturnType const& left =
+        UpdateInnerTreePointersWithBoxRecursive<UpdateParFlag>(self, idx << 1,
+                                                               tree_nodes, p);
+    ReturnType const& right =
+        UpdateInnerTreePointersWithBoxRecursive<UpdateParFlag>(
+            self, idx << 1 | 1, tree_nodes, p);
+
+    BT::template UpdateInterior<Interior, UpdateParFlag>(self->tags[idx].first,
+                                                         left, right);
+    return NodeBox(self->tags[idx].first,
+                   BT::GetBox(left.second, right.second));
+  }
+
+  template <bool UpdateParFlag, typename ReturnType, typename Func>
+  static ReturnType TagNodesForRebuildRecursive(
       InnerTree* self, BucketType idx,
       parlay::sequence<ReturnType> const& tree_nodes, BucketType& p,
       Func&& func) {
@@ -158,54 +206,55 @@ struct BinaryNodeOps {
       return tree_nodes[p++];
     }
 
-    if constexpr (kUT == InnerTree::kPostDelUpdate) {
-      if (self->tags[idx].second == BT::kBucketNum + 3) {
-        func(0);
-        assert(func(1) == true);
-      }
-    }
-
-    ReturnType const& left = UpdateInnerTreeRecursive<kUT, UpdateParFlag>(
+    ReturnType const& left = TagNodesForRebuildRecursive<UpdateParFlag>(
         self, idx << 1, tree_nodes, p, func);
-    ReturnType const& right = UpdateInnerTreeRecursive<kUT, UpdateParFlag>(
+    ReturnType const& right = TagNodesForRebuildRecursive<UpdateParFlag>(
         self, idx << 1 | 1, tree_nodes, p, func);
 
-    if constexpr (kUT == InnerTree::kUpdatePointer) {
+    BT::template UpdateInterior<Interior, UpdateParFlag>(self->tags[idx].first,
+                                                         left, right);
+    auto new_box = BT::GetBox(left.second, right.second);
+    if (self->tags[idx].second == BT::kBucketNum + 3) {
+      func(new_box, idx);
+    }
+    return NodeBox(self->tags[idx].first, std::move(new_box));
+  }
+
+  template <bool UpdateParFlag, typename ReturnType, typename Func>
+  static ReturnType UpdateAfterDeletionRecursive(
+      InnerTree* self, BucketType idx,
+      parlay::sequence<ReturnType> const& tree_nodes, BucketType& p,
+      Func&& func) {
+    using NodeBox = typename BT::NodeBox;
+
+    if (self->tags[idx].second == BT::kBucketNum + 1 ||
+        self->tags[idx].second == BT::kBucketNum + 2) {
+      return tree_nodes[p++];
+    }
+
+    if (self->tags[idx].second == BT::kBucketNum + 3) {
+      func(0);
+      assert(func(1) == true);
+    }
+
+    ReturnType const& left = UpdateAfterDeletionRecursive<UpdateParFlag>(
+        self, idx << 1, tree_nodes, p, func);
+    ReturnType const& right = UpdateAfterDeletionRecursive<UpdateParFlag>(
+        self, idx << 1 | 1, tree_nodes, p, func);
+
+    if (!func(1)) {
       BT::template UpdateInterior<Interior, UpdateParFlag>(
           self->tags[idx].first, left, right);
-      if constexpr (IsPointerToNode<ReturnType>) {
-        return self->tags[idx].first;
-      } else {
-        return NodeBox(self->tags[idx].first, Box());
+      return NodeBox(self->tags[idx].first, Box());
+    } else if (self->tags[idx].second == BT::kBucketNum + 3) {
+      func(0);
+      if (!self->tags[idx].first->is_leaf) {
+        static_cast<Interior*>(self->tags[idx].first)->ResetParallelFlag();
       }
-    } else if constexpr (kUT == InnerTree::kUpdatePointerBox) {
-      BT::template UpdateInterior<Interior, UpdateParFlag>(
-          self->tags[idx].first, left, right);
-      return NodeBox(self->tags[idx].first,
-                     BT::GetBox(left.second, right.second));
-    } else if constexpr (kUT == InnerTree::kTagRebuildNode) {
-      BT::template UpdateInterior<Interior, UpdateParFlag>(
-          self->tags[idx].first, left, right);
-      auto new_box = BT::GetBox(left.second, right.second);
-      if (self->tags[idx].second == BT::kBucketNum + 3) {
-        func(new_box, idx);
-      }
-      return NodeBox(self->tags[idx].first, std::move(new_box));
-    } else if constexpr (kUT == InnerTree::kPostDelUpdate) {
-      if (!func(1)) {
-        BT::template UpdateInterior<Interior, UpdateParFlag>(
-            self->tags[idx].first, left, right);
-        return NodeBox(self->tags[idx].first, Box());
-      } else if (self->tags[idx].second == BT::kBucketNum + 3) {
-        func(0);
-        if (!self->tags[idx].first->is_leaf) {
-          static_cast<Interior*>(self->tags[idx].first)->ResetParallelFlag();
-        }
-        assert(func(1) == false);
-        return NodeBox(self->tags[idx].first, Box());
-      } else {
-        return NodeBox(nullptr, Box());
-      }
+      assert(func(1) == false);
+      return NodeBox(self->tags[idx].first, Box());
+    } else {
+      return NodeBox(nullptr, Box());
     }
   }
 };

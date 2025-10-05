@@ -149,9 +149,29 @@ struct MultiNodeOps {
     }
   }
 
-  template <typename InnerTree::UpdateType kUT, bool UpdateParFlag,
-            typename ReturnType, typename Func>
-  static ReturnType UpdateInnerTreeRecursive(
+
+  template <bool UpdateParFlag, typename ReturnType>
+  static ReturnType UpdateInnerTreePointersRecursive(
+      InnerTree* self, BucketType idx,
+      parlay::sequence<ReturnType> const& tree_nodes, BucketType& p) {
+    if (self->tags[idx].second == BT::kBucketNum + 1 ||
+        self->tags[idx].second == BT::kBucketNum + 2) {
+      return tree_nodes[p++];
+    }
+
+    typename Interior::OrthNodeArr new_nodes;
+    for (BucketType i = 0; i < Interior::GetRegions(); ++i) {
+      new_nodes[i] = UpdateInnerTreePointersRecursive<UpdateParFlag>(
+          self, idx * Interior::GetRegions() + i, tree_nodes, p);
+    }
+
+    BT::template UpdateInterior<Interior, UpdateParFlag>(self->tags[idx].first,
+                                                         new_nodes);
+    return self->tags[idx].first;
+  }
+
+  template <bool UpdateParFlag, typename ReturnType, typename Func>
+  static ReturnType TagNodesForRebuildRecursive(
       InnerTree* self, BucketType idx,
       parlay::sequence<ReturnType> const& tree_nodes, BucketType& p,
       Func&& func) {
@@ -160,45 +180,54 @@ struct MultiNodeOps {
       return tree_nodes[p++];
     }
 
-    if constexpr (kUT == InnerTree::kPostDelUpdate) {
-      if (self->tags[idx].second == BT::kBucketNum + 3) {
-        func(0);
-        assert(func(1) == true);
-      }
+    typename Interior::OrthNodeArr new_nodes;
+    for (BucketType i = 0; i < Interior::GetRegions(); ++i) {
+      new_nodes[i] = TagNodesForRebuildRecursive<UpdateParFlag>(
+          self, idx * Interior::GetRegions() + i, tree_nodes, p, func);
+    }
+
+    BT::template UpdateInterior<Interior, UpdateParFlag>(self->tags[idx].first,
+                                                         new_nodes);
+    if (self->tags[idx].second == BT::kBucketNum + 3) {
+      func(idx);
+    }
+    return self->tags[idx].first;
+  }
+
+  template <bool UpdateParFlag, typename ReturnType, typename Func>
+  static ReturnType UpdateAfterDeletionRecursive(
+      InnerTree* self, BucketType idx,
+      parlay::sequence<ReturnType> const& tree_nodes, BucketType& p,
+      Func&& func) {
+    if (self->tags[idx].second == BT::kBucketNum + 1 ||
+        self->tags[idx].second == BT::kBucketNum + 2) {
+      return tree_nodes[p++];
+    }
+
+    if (self->tags[idx].second == BT::kBucketNum + 3) {
+      func(0);
+      assert(func(1) == true);
     }
 
     typename Interior::OrthNodeArr new_nodes;
     for (BucketType i = 0; i < Interior::GetRegions(); ++i) {
-      new_nodes[i] = UpdateInnerTreeRecursive<kUT, UpdateParFlag>(
+      new_nodes[i] = UpdateAfterDeletionRecursive<UpdateParFlag>(
           self, idx * Interior::GetRegions() + i, tree_nodes, p, func);
     }
 
-    if constexpr (kUT == InnerTree::kUpdatePointer) {
+    if (!func(1)) {
       BT::template UpdateInterior<Interior, UpdateParFlag>(
           self->tags[idx].first, new_nodes);
       return self->tags[idx].first;
-    } else if constexpr (kUT == InnerTree::kTagRebuildNode) {
-      BT::template UpdateInterior<Interior, UpdateParFlag>(
-          self->tags[idx].first, new_nodes);
-      if (self->tags[idx].second == BT::kBucketNum + 3) {
-        func(idx);
+    } else if (self->tags[idx].second == BT::kBucketNum + 3) {
+      func(0);
+      assert(func(1) == false);
+      if (!self->tags[idx].first->is_leaf) {
+        static_cast<Interior*>(self->tags[idx].first)->ResetParallelFlag();
       }
       return self->tags[idx].first;
-    } else if constexpr (kUT == InnerTree::kPostDelUpdate) {
-      if (!func(1)) {
-        BT::template UpdateInterior<Interior, UpdateParFlag>(
-            self->tags[idx].first, new_nodes);
-        return self->tags[idx].first;
-      } else if (self->tags[idx].second == BT::kBucketNum + 3) {
-        func(0);
-        assert(func(1) == false);
-        if (!self->tags[idx].first->is_leaf) {
-          static_cast<Interior*>(self->tags[idx].first)->ResetParallelFlag();
-        }
-        return self->tags[idx].first;
-      } else {
-        return nullptr;
-      }
+    } else {
+      return nullptr;
     }
   }
 };

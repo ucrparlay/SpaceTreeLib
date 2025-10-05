@@ -206,9 +206,7 @@ KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight, kImbaRatio>::
 
   // NOTE: handling of rebuild (in parallel)
   // NOTE: get new box for skeleton root and rebuild nodes
-  Box const new_box =
-      std::get<1>(IT.template UpdateInnerTree<InnerTree::kTagRebuildNode>(
-          tree_nodes, box_seq));
+  Box const new_box = std::get<1>(IT.TagNodesForRebuild(tree_nodes, box_seq));
   assert(IT.tags_num == re_num);
 
   // NOTE: launch the rebuild in parallel
@@ -234,8 +232,7 @@ KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight, kImbaRatio>::
     }
   });  // PERF: let the parlay decide granularity
 
-  auto const new_root = std::get<0>(
-      IT.template UpdateInnerTree<InnerTree::kPostDelUpdate>(tree_nodes));
+  auto const new_root = std::get<0>(IT.UpdateAfterDeletion(tree_nodes));
   return NodeBox(new_root, new_box);
 }
 

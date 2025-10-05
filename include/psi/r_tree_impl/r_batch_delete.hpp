@@ -164,8 +164,7 @@ RTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDeleteRecursive(
   // NOTE: handling of rebuild
   // NOTE: get new box for skeleton root and rebuild nodes
   Box const new_box =
-      std::get<1>(IT.template UpdateInnerTree<InnerTree::kTagRebuildNode>(
-          tree_nodes, box_seq));
+      std::get<1>(IT.template TagNodesForRebuild<>(tree_nodes, box_seq));
   assert(IT.tags_num == re_num);
 
   parlay::parallel_for(0, IT.tags_num, [&](size_t i) {
@@ -189,8 +188,7 @@ RTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDeleteRecursive(
 
   // PARA: op == 0 -> toggle whether under a rebuild tree
   // op == 1 -> query current status
-  auto const new_root = std::get<0>(
-      IT.template UpdateInnerTree<InnerTree::kPostDelUpdate>(tree_nodes));
+  auto const new_root = std::get<0>(IT.template UpdateAfterDeletion<>(tree_nodes));
   return NodeBox(new_root, new_box);
 }
 
