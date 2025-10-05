@@ -98,7 +98,7 @@ Node* OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight,
   assert(IT.tags_num > 0 && IT.tags_num <= BT::kBucketNum);
   BT::template SeievePoints<Interior>(In, Out, n, IT.tags, IT.sums,
                                       IT.tags_num);
-  IT.TagPuffyNodes();
+  IT.TagOversizedNodes();
 
   // PERF: no need to call tag inbalance node here, as the bounding box for
   // orth-tree is fixed

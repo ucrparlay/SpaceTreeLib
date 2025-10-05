@@ -4,10 +4,12 @@
 #include "../kd_tree.h"
 
 namespace psi {
-template <typename Point, typename SplitRule, typename LeafAugType, typename InteriorAugType,  uint_fast8_t kSkHeight,
+template <typename Point, typename SplitRule, typename LeafAugType,
+          typename InteriorAugType, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 template <typename Range>
-void KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight , kImbaRatio>::BatchDiff(Range&& In) {
+void KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight,
+            kImbaRatio>::BatchDiff(Range&& In) {
   static_assert(parlay::is_random_access_range_v<Range>);
   static_assert(
       parlay::is_less_than_comparable_v<parlay::range_reference_type_t<Range>>);
@@ -20,9 +22,11 @@ void KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight , kImbaRat
 }
 
 // NOTE: batch delete suitable for Points that are pratially covered in the tree
-template <typename Point, typename SplitRule, typename LeafAugType, typename InteriorAugType,  uint_fast8_t kSkHeight,
+template <typename Point, typename SplitRule, typename LeafAugType,
+          typename InteriorAugType, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
-void KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight , kImbaRatio>::BatchDiff_(Slice A) {
+void KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight,
+            kImbaRatio>::BatchDiff_(Slice A) {
   Points B = Points::uninitialized(A.size());
   Node* T = this->root_;
   Box box = this->tree_box_;
@@ -55,13 +59,17 @@ void KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight , kImbaRat
 
 // NOTE: only sieve the Points, without rebuilding the tree
 // NOTE: the kdtree needs box since the box will be changed in batch diff
-template <typename Point, typename SplitRule, typename LeafAugType, typename InteriorAugType,  uint_fast8_t kSkHeight,
+template <typename Point, typename SplitRule, typename LeafAugType,
+          typename InteriorAugType, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
-typename KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight , kImbaRatio>::NodeBox
-KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight , kImbaRatio>::BatchDiffRecursive(
-    Node* T,
-    typename KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight , kImbaRatio>::Box const& box,
-    Slice In, Slice Out, DimsType d) {
+typename KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight,
+                kImbaRatio>::NodeBox
+KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight, kImbaRatio>::
+    BatchDiffRecursive(
+        Node* T,
+        typename KdTree<Point, SplitRule, LeafAugType, InteriorAugType,
+                        kSkHeight, kImbaRatio>::Box const& box,
+        Slice In, Slice Out, DimsType d) {
   size_t n = In.size();
 
   if (n == 0) return NodeBox(T, box);
@@ -113,7 +121,7 @@ KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight , kImbaRatio>::
 
   auto tree_nodes = NodeBoxSeq::uninitialized(IT.tags_num);
 
-  IT.TagPuffyNodes();
+  IT.TagOversizedNodes();
 
   parlay::parallel_for(
       0, IT.tags_num,
