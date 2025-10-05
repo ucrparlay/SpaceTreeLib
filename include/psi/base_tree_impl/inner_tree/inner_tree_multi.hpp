@@ -150,10 +150,10 @@ struct MultiNodeOps {
   }
 
 
-  template <bool UpdateParFlag, typename ReturnType>
-  static ReturnType UpdateInnerTreePointersRecursive(
+  template <bool UpdateParFlag, typename NodeOrNodeBox>
+  static NodeOrNodeBox UpdateInnerTreePointersRecursive(
       InnerTree* self, BucketType idx,
-      parlay::sequence<ReturnType> const& tree_nodes, BucketType& p) {
+      parlay::sequence<NodeOrNodeBox> const& tree_nodes, BucketType& p) {
     if (self->tags[idx].second == BT::kBucketNum + 1 ||
         self->tags[idx].second == BT::kBucketNum + 2) {
       return tree_nodes[p++];
@@ -170,10 +170,10 @@ struct MultiNodeOps {
     return self->tags[idx].first;
   }
 
-  template <bool UpdateParFlag, typename ReturnType, typename Func>
-  static ReturnType TagNodesForRebuildRecursive(
+  template <bool UpdateParFlag, typename NodeOrNodeBox, typename Func>
+  static NodeOrNodeBox TagNodesForRebuildRecursive(
       InnerTree* self, BucketType idx,
-      parlay::sequence<ReturnType> const& tree_nodes, BucketType& p,
+      parlay::sequence<NodeOrNodeBox> const& tree_nodes, BucketType& p,
       Func&& func) {
     if (self->tags[idx].second == BT::kBucketNum + 1 ||
         self->tags[idx].second == BT::kBucketNum + 2) {
@@ -194,10 +194,10 @@ struct MultiNodeOps {
     return self->tags[idx].first;
   }
 
-  template <bool UpdateParFlag, typename ReturnType, typename Func>
-  static ReturnType UpdateAfterDeletionRecursive(
+  template <bool UpdateParFlag, typename NodeOrNodeBox, typename Func>
+  static NodeOrNodeBox UpdateAfterDeletionRecursive(
       InnerTree* self, BucketType idx,
-      parlay::sequence<ReturnType> const& tree_nodes, BucketType& p,
+      parlay::sequence<NodeOrNodeBox> const& tree_nodes, BucketType& p,
       Func&& func) {
     if (self->tags[idx].second == BT::kBucketNum + 1 ||
         self->tags[idx].second == BT::kBucketNum + 2) {

@@ -181,17 +181,17 @@ struct BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::InnerTree {
 
   void TagOversizedNodes() { TagOversizedNodesRecursive(1); }
 
-  template <bool UpdateParFlag = true, typename ReturnType>
-    requires IsPointerToNode<ReturnType> || IsNodeBox<ReturnType, Point>
-  ReturnType UpdateInnerTreePointers(
-      parlay::sequence<ReturnType> const& tree_nodes) {
+  template <bool UpdateParFlag = true, typename NodeOrNodeBox>
+    requires IsPointerToNode<NodeOrNodeBox> || IsNodeBox<NodeOrNodeBox, Point>
+  NodeOrNodeBox UpdateInnerTreePointers(
+      parlay::sequence<NodeOrNodeBox> const& tree_nodes) {
     BucketType p = 0;
     return UpdateInnerTreePointersRecursive<UpdateParFlag>(1, tree_nodes, p);
   }
 
-  template <bool UpdateParFlag, typename ReturnType>
-  ReturnType UpdateInnerTreePointersRecursive(
-      BucketType idx, parlay::sequence<ReturnType> const& tree_nodes,
+  template <bool UpdateParFlag, typename NodeOrNodeBox>
+  NodeOrNodeBox UpdateInnerTreePointersRecursive(
+      BucketType idx, parlay::sequence<NodeOrNodeBox> const& tree_nodes,
       BucketType& p) {
     if constexpr (IsBinaryNode<Interior>) {
       return inner_tree_detail::BinaryNodeOps<Point, DerivedTree, kSkHeight,
@@ -208,18 +208,18 @@ struct BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::InnerTree {
     }
   }
 
-  template <bool UpdateParFlag = true, typename ReturnType>
-    requires IsNodeBox<ReturnType, Point>
-  ReturnType UpdateInnerTreePointersWithBox(
-      parlay::sequence<ReturnType> const& tree_nodes) {
+  template <bool UpdateParFlag = true, typename NodeOrNodeBox>
+    requires IsNodeBox<NodeOrNodeBox, Point>
+  NodeOrNodeBox UpdateInnerTreePointersWithBox(
+      parlay::sequence<NodeOrNodeBox> const& tree_nodes) {
     BucketType p = 0;
     return UpdateInnerTreePointersWithBoxRecursive<UpdateParFlag>(1, tree_nodes,
                                                                   p);
   }
 
-  template <bool UpdateParFlag, typename ReturnType>
-  ReturnType UpdateInnerTreePointersWithBoxRecursive(
-      BucketType idx, parlay::sequence<ReturnType> const& tree_nodes,
+  template <bool UpdateParFlag, typename NodeOrNodeBox>
+  NodeOrNodeBox UpdateInnerTreePointersWithBoxRecursive(
+      BucketType idx, parlay::sequence<NodeOrNodeBox> const& tree_nodes,
       BucketType& p) {
     if constexpr (IsBinaryNode<Interior>) {
       return inner_tree_detail::BinaryNodeOps<Point, DerivedTree, kSkHeight,
@@ -236,9 +236,9 @@ struct BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::InnerTree {
     }
   }
 
-  template <bool UpdateParFlag = true, typename ReturnType, typename... Args>
-    requires IsPointerToNode<ReturnType> || IsNodeBox<ReturnType, Point>
-  ReturnType TagNodesForRebuild(parlay::sequence<ReturnType> const& tree_nodes,
+  template <bool UpdateParFlag = true, typename NodeOrNodeBox, typename... Args>
+    requires IsPointerToNode<NodeOrNodeBox> || IsNodeBox<NodeOrNodeBox, Point>
+  NodeOrNodeBox TagNodesForRebuild(parlay::sequence<NodeOrNodeBox> const& tree_nodes,
                                 Args&&... args) {
     this->ResetTagsNum();
 
@@ -259,9 +259,9 @@ struct BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::InnerTree {
                                                       func_2_rebuild_node);
   }
 
-  template <bool UpdateParFlag, typename ReturnType, typename Func>
-  ReturnType TagNodesForRebuildRecursive(
-      BucketType idx, parlay::sequence<ReturnType> const& tree_nodes,
+  template <bool UpdateParFlag, typename NodeOrNodeBox, typename Func>
+  NodeOrNodeBox TagNodesForRebuildRecursive(
+      BucketType idx, parlay::sequence<NodeOrNodeBox> const& tree_nodes,
       BucketType& p, Func&& func) {
     if constexpr (IsBinaryNode<Interior>) {
       return inner_tree_detail::BinaryNodeOps<Point, DerivedTree, kSkHeight,
@@ -278,10 +278,10 @@ struct BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::InnerTree {
     }
   }
 
-  template <bool UpdateParFlag = true, typename ReturnType>
-    requires IsPointerToNode<ReturnType> || IsNodeBox<ReturnType, Point>
-  ReturnType UpdateAfterDeletion(
-      parlay::sequence<ReturnType> const& tree_nodes) {
+  template <bool UpdateParFlag = true, typename NodeOrNodeBox>
+    requires IsPointerToNode<NodeOrNodeBox> || IsNodeBox<NodeOrNodeBox, Point>
+  NodeOrNodeBox UpdateAfterDeletion(
+      parlay::sequence<NodeOrNodeBox> const& tree_nodes) {
     bool under_rebuild_tree = false;
     BucketType p = 0;
     return UpdateAfterDeletionRecursive<UpdateParFlag>(
@@ -291,9 +291,9 @@ struct BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::InnerTree {
         });
   }
 
-  template <bool UpdateParFlag, typename ReturnType, typename Func>
-  ReturnType UpdateAfterDeletionRecursive(
-      BucketType idx, parlay::sequence<ReturnType> const& tree_nodes,
+  template <bool UpdateParFlag, typename NodeOrNodeBox, typename Func>
+  NodeOrNodeBox UpdateAfterDeletionRecursive(
+      BucketType idx, parlay::sequence<NodeOrNodeBox> const& tree_nodes,
       BucketType& p, Func&& func) {
     if constexpr (IsBinaryNode<Interior>) {
       return inner_tree_detail::BinaryNodeOps<Point, DerivedTree, kSkHeight,

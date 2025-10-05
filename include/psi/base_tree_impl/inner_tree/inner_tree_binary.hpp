@@ -145,10 +145,10 @@ struct BinaryNodeOps {
     TagOversizedNodesRecursive(self, idx << 1 | 1);
   }
 
-  template <bool UpdateParFlag, typename ReturnType>
-  static ReturnType UpdateInnerTreePointersRecursive(
+  template <bool UpdateParFlag, typename NodeOrNodeBox>
+  static NodeOrNodeBox UpdateInnerTreePointersRecursive(
       InnerTree* self, BucketType idx,
-      parlay::sequence<ReturnType> const& tree_nodes, BucketType& p) {
+      parlay::sequence<NodeOrNodeBox> const& tree_nodes, BucketType& p) {
     using NodeBox = typename BT::NodeBox;
 
     if (self->tags[idx].second == BT::kBucketNum + 1 ||
@@ -156,24 +156,24 @@ struct BinaryNodeOps {
       return tree_nodes[p++];
     }
 
-    ReturnType const& left = UpdateInnerTreePointersRecursive<UpdateParFlag>(
+    NodeOrNodeBox const& left = UpdateInnerTreePointersRecursive<UpdateParFlag>(
         self, idx << 1, tree_nodes, p);
-    ReturnType const& right = UpdateInnerTreePointersRecursive<UpdateParFlag>(
+    NodeOrNodeBox const& right = UpdateInnerTreePointersRecursive<UpdateParFlag>(
         self, idx << 1 | 1, tree_nodes, p);
 
     BT::template UpdateInterior<Interior, UpdateParFlag>(self->tags[idx].first,
                                                          left, right);
-    if constexpr (IsPointerToNode<ReturnType>) {
+    if constexpr (IsPointerToNode<NodeOrNodeBox>) {
       return self->tags[idx].first;
     } else {
       return NodeBox(self->tags[idx].first, Box());
     }
   }
 
-  template <bool UpdateParFlag, typename ReturnType>
-  static ReturnType UpdateInnerTreePointersWithBoxRecursive(
+  template <bool UpdateParFlag, typename NodeOrNodeBox>
+  static NodeOrNodeBox UpdateInnerTreePointersWithBoxRecursive(
       InnerTree* self, BucketType idx,
-      parlay::sequence<ReturnType> const& tree_nodes, BucketType& p) {
+      parlay::sequence<NodeOrNodeBox> const& tree_nodes, BucketType& p) {
     using NodeBox = typename BT::NodeBox;
 
     if (self->tags[idx].second == BT::kBucketNum + 1 ||
@@ -181,10 +181,10 @@ struct BinaryNodeOps {
       return tree_nodes[p++];
     }
 
-    ReturnType const& left =
+    NodeOrNodeBox const& left =
         UpdateInnerTreePointersWithBoxRecursive<UpdateParFlag>(self, idx << 1,
                                                                tree_nodes, p);
-    ReturnType const& right =
+    NodeOrNodeBox const& right =
         UpdateInnerTreePointersWithBoxRecursive<UpdateParFlag>(
             self, idx << 1 | 1, tree_nodes, p);
 
@@ -194,10 +194,10 @@ struct BinaryNodeOps {
                    BT::GetBox(left.second, right.second));
   }
 
-  template <bool UpdateParFlag, typename ReturnType, typename Func>
-  static ReturnType TagNodesForRebuildRecursive(
+  template <bool UpdateParFlag, typename NodeOrNodeBox, typename Func>
+  static NodeOrNodeBox TagNodesForRebuildRecursive(
       InnerTree* self, BucketType idx,
-      parlay::sequence<ReturnType> const& tree_nodes, BucketType& p,
+      parlay::sequence<NodeOrNodeBox> const& tree_nodes, BucketType& p,
       Func&& func) {
     using NodeBox = typename BT::NodeBox;
 
@@ -206,9 +206,9 @@ struct BinaryNodeOps {
       return tree_nodes[p++];
     }
 
-    ReturnType const& left = TagNodesForRebuildRecursive<UpdateParFlag>(
+    NodeOrNodeBox const& left = TagNodesForRebuildRecursive<UpdateParFlag>(
         self, idx << 1, tree_nodes, p, func);
-    ReturnType const& right = TagNodesForRebuildRecursive<UpdateParFlag>(
+    NodeOrNodeBox const& right = TagNodesForRebuildRecursive<UpdateParFlag>(
         self, idx << 1 | 1, tree_nodes, p, func);
 
     BT::template UpdateInterior<Interior, UpdateParFlag>(self->tags[idx].first,
@@ -220,10 +220,10 @@ struct BinaryNodeOps {
     return NodeBox(self->tags[idx].first, std::move(new_box));
   }
 
-  template <bool UpdateParFlag, typename ReturnType, typename Func>
-  static ReturnType UpdateAfterDeletionRecursive(
+  template <bool UpdateParFlag, typename NodeOrNodeBox, typename Func>
+  static NodeOrNodeBox UpdateAfterDeletionRecursive(
       InnerTree* self, BucketType idx,
-      parlay::sequence<ReturnType> const& tree_nodes, BucketType& p,
+      parlay::sequence<NodeOrNodeBox> const& tree_nodes, BucketType& p,
       Func&& func) {
     using NodeBox = typename BT::NodeBox;
 
@@ -237,9 +237,9 @@ struct BinaryNodeOps {
       assert(func(1) == true);
     }
 
-    ReturnType const& left = UpdateAfterDeletionRecursive<UpdateParFlag>(
+    NodeOrNodeBox const& left = UpdateAfterDeletionRecursive<UpdateParFlag>(
         self, idx << 1, tree_nodes, p, func);
-    ReturnType const& right = UpdateAfterDeletionRecursive<UpdateParFlag>(
+    NodeOrNodeBox const& right = UpdateAfterDeletionRecursive<UpdateParFlag>(
         self, idx << 1 | 1, tree_nodes, p, func);
 
     if (!func(1)) {
