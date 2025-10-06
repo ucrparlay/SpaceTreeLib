@@ -158,8 +158,9 @@ struct BinaryNodeOps {
 
     NodeOrNodeBox const& left = UpdateInnerTreePointersRecursive<UpdateParFlag>(
         self, idx << 1, tree_nodes, p);
-    NodeOrNodeBox const& right = UpdateInnerTreePointersRecursive<UpdateParFlag>(
-        self, idx << 1 | 1, tree_nodes, p);
+    NodeOrNodeBox const& right =
+        UpdateInnerTreePointersRecursive<UpdateParFlag>(self, idx << 1 | 1,
+                                                        tree_nodes, p);
 
     BT::template UpdateInterior<Interior, UpdateParFlag>(self->tags[idx].first,
                                                          left, right);

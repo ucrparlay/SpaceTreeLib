@@ -149,7 +149,6 @@ struct MultiNodeOps {
     }
   }
 
-
   template <bool UpdateParFlag, typename NodeOrNodeBox>
   static NodeOrNodeBox UpdateInnerTreePointersRecursive(
       InnerTree* self, BucketType idx,
