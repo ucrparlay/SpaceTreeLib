@@ -1,6 +1,10 @@
 #ifndef PSI_COVER_BATCH_INSERT_HPP_
 #define PSI_COVER_BATCH_INSERT_HPP_
 
+#define COVERTREE_TEMPLATE template <typename Point, typename SplitRule, \
+    uint_fast8_t kSkHeight, uint_fast8_t kImbaRatio>
+#define COVERTREE_CLASS CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>
+
 #include <algorithm>
 #include <numeric>
 #include <utility>
@@ -11,10 +15,9 @@
 
 namespace psi {
 
-template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
+COVERTREE_TEMPLATE
 template <typename Range>
-void CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchInsert(
+void COVERTREE_CLASS::BatchInsert(
     Range&& In) {
   static_assert(parlay::is_random_access_range_v<Range>);
   static_assert(
@@ -29,9 +32,8 @@ void CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchInsert(
   BatchInsert_(A);
 }
 
-template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
-void CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchInsert_(Slice A) {
+COVERTREE_TEMPLATE
+void COVERTREE_CLASS::BatchInsert_(Slice A) {
   if (this->root_ == nullptr) {
     this->root_ = AllocNormalLeafNode<Slice, Leaf>(A.cut(0, 1));
     this->root_cover_circle_ = CoverCircle{A[0], 0};
@@ -67,8 +69,7 @@ void CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchInsert_(Slice A) {
   return;
 }
 
-template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
+COVERTREE_TEMPLATE
 void CoverTree<Point, SplitRule, kSkHeight,
                kImbaRatio>::ExtendCoverRangeUpwards(CoverCircle& root_cc,
                                                     Point const& p) {
@@ -86,9 +87,8 @@ void CoverTree<Point, SplitRule, kSkHeight,
   return;
 }
 
-template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
-Node* CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::
+COVERTREE_TEMPLATE
+Node* COVERTREE_CLASS::
     ShrinkCoverRangeDownwards(Node* T, CoverCircle const& level_cover_circle) {
   assert(T->is_leaf);
   assert(T->size == BT::kLeaveWrap);
@@ -150,10 +150,9 @@ Node* CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::
 }
 
 // BUG: the return value is always true
-template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
-typename CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::NodeBoolean
-CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::PointInsertRecursive(
+COVERTREE_TEMPLATE
+typename COVERTREE_CLASS::NodeBoolean
+COVERTREE_CLASS::PointInsertRecursive(
     Node* T, Point const& p, CoverCircle const& level_cover_circle) {
   assert(BT::WithinCircle(p, level_cover_circle));
 
@@ -269,4 +268,7 @@ CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::PointInsertRecursive(
 
 }  // namespace psi
 
-#endif  // PSI_COVER_BATCH_INSERT_HPP_
+#undef COVERTREE_TEMPLATE
+#undef COVERTREE_CLASS
+
+#endif

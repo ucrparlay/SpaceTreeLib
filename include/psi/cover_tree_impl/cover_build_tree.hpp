@@ -1,6 +1,10 @@
 #ifndef PSI_COVER_TREE_IMPL_COVER_BUILD_TREE_HPP_
 #define PSI_COVER_TREE_IMPL_COVER_BUILD_TREE_HPP_
 
+#define COVERTREE_TEMPLATE template <typename Point, typename SplitRule, \
+    uint_fast8_t kSkHeight, uint_fast8_t kImbaRatio>
+#define COVERTREE_CLASS CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>
+
 #include <parlay/range.h>
 #include <parlay/slice.h>
 #include <parlay/type_traits.h>
@@ -12,18 +16,16 @@
 
 namespace psi {
 
-template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
-void CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::Build_(Slice A) {
+COVERTREE_TEMPLATE
+void COVERTREE_CLASS::Build_(Slice A) {
   Points B = Points::uninitialized(A.size());
   this->tree_box_ = BT::GetBox(A);
   assert(this->root_ != nullptr);
   return;
 }
 
-template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
-void CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::Build_(
+COVERTREE_TEMPLATE
+void COVERTREE_CLASS::Build_(
     Slice A, Box const& box) {
   assert(BT::WithinBox(BT::GetBox(A), box));
 
@@ -34,10 +36,9 @@ void CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::Build_(
   return;
 }
 
-template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
+COVERTREE_TEMPLATE
 template <typename Range, typename... Args>
-void CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::Build(Range&& In,
+void COVERTREE_CLASS::Build(Range&& In,
                                                                Args&&... args) {
   static_assert(parlay::is_random_access_range_v<Range>);
   static_assert(
@@ -49,4 +50,7 @@ void CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::Build(Range&& In,
 }
 }  // namespace psi
 
-#endif  // PSI_COVER_TREE_IMPL_COVER_BUILD_TREE_HPP_
+#undef COVERTREE_TEMPLATE
+#undef COVERTREE_CLASS
+
+#endif

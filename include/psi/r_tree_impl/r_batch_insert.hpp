@@ -3,10 +3,15 @@
 
 #include "../r_tree.h"
 
+#define RTREE_TEMPLATE template <typename Point, typename SplitRule, \
+    uint_fast8_t kSkHeight, uint_fast8_t kImbaRatio>
+#define RTREE_CLASS RTree<Point, SplitRule, kSkHeight, kImbaRatio>
+
+
 namespace psi {
-template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
-void RTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchInsert(Slice A) {
+RTREE_TEMPLATE
+
+void RTREE_CLASS::BatchInsert(Slice A) {
   // if (this->root_ == nullptr) {  // TODO: may check using explicity tag
   //   return Build_(A);
   // }
@@ -21,9 +26,9 @@ void RTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchInsert(Slice A) {
 }
 
 // NOTE: return the updated Node
-template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
-Node* RTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchInsertRecursive(
+RTREE_TEMPLATE
+
+Node* RTREE_CLASS::BatchInsertRecursive(
     Node* T, Slice In, Slice Out, DimsType d) {
   size_t n = In.size();
 
@@ -116,6 +121,9 @@ Node* RTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchInsertRecursive(
   return IT.template UpdateInnerTreePointers<>(tree_nodes);
 }
 
+
+#undef RTREE_TEMPLATE
+#undef RTREE_CLASS
 }  // namespace psi
 
 #endif  // PSI_R_TREE_IMPL_R_BATCH_INSERT_HPP_

@@ -10,13 +10,18 @@
 #include "psi/dependence/tree_node.h"
 #include "psi/orth_tree.h"
 
+#define ORTHTREE_TEMPLATE                                             \
+  template <typename Point, typename SplitRule, typename LeafAugType, \
+            typename InteriorAugType, uint_fast8_t kMD,               \
+            uint_fast8_t kSkHeight, uint_fast8_t kImbaRatio>
+#define ORTHTREE_CLASS                                                     \
+  OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight, \
+           kImbaRatio>
+
 namespace psi {
-template <typename Point, typename SplitRule, typename LeafAugType,
-          typename InteriorAugType, uint_fast8_t kMD, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
+ORTHTREE_TEMPLATE
 template <typename Range, typename... Args>
-void OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight,
-              kImbaRatio>::Build(Range&& In, Args&&... args) {
+void ORTHTREE_CLASS::Build(Range&& In, Args&&... args) {
   static_assert(parlay::is_random_access_range_v<Range>);
   static_assert(
       parlay::is_less_than_comparable_v<parlay::range_reference_type_t<Range>>);
@@ -30,13 +35,10 @@ void OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight,
 }
 
 // TODO: maybe we don't need this function, it can be directly computed by value
-template <typename Point, typename SplitRule, typename LeafAugType,
-          typename InteriorAugType, uint_fast8_t kMD, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
-void OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight,
-              kImbaRatio>::DivideRotate(HyperPlaneSeq& pivots, DimsType dim,
-                                        BucketType idx, BoxSeq& box_seq,
-                                        Box const& box) {
+ORTHTREE_TEMPLATE
+void ORTHTREE_CLASS::DivideRotate(HyperPlaneSeq& pivots, DimsType dim,
+                                  BucketType idx, BoxSeq& box_seq,
+                                  Box const& box) {
   if (idx > BT::kPivotNum) {
     // WARN: sometimes cut dimension can be -1, never use pivots[idx].first ==
     // -1 to check whether it is in bucket; instead, use idx > PIVOT_NUM
@@ -56,13 +58,10 @@ void OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight,
   return;
 }
 
-template <typename Point, typename SplitRule, typename LeafAugType,
-          typename InteriorAugType, uint_fast8_t kMD, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
-void OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight,
-              kImbaRatio>::SerialSplit(Slice In, DimsType dim, DimsType idx,
-                                       Box const& box,
-                                       parlay::sequence<BallsType>& sums) {
+ORTHTREE_TEMPLATE
+void ORTHTREE_CLASS::SerialSplit(Slice In, DimsType dim, DimsType idx,
+                                 Box const& box,
+                                 parlay::sequence<BallsType>& sums) {
   assert(dim <= BT::kDim);
 
   if (dim == BT::kDim) {
@@ -77,13 +76,9 @@ void OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight,
               box, sums);
 }
 
-template <typename Point, typename SplitRule, typename LeafAugType,
-          typename InteriorAugType, uint_fast8_t kMD, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
-Node* OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight,
-               kImbaRatio>::SerialBuildRecursive(Slice In, Slice Out,
-                                                 Box const& box,
-                                                 bool checked_duplicate) {
+ORTHTREE_TEMPLATE
+Node* ORTHTREE_CLASS::SerialBuildRecursive(Slice In, Slice Out, Box const& box,
+                                           bool checked_duplicate) {
   assert(In.size() == 0 || BT::WithinBox(BT::GetBox(In), box));
   size_t n = In.size();
 
@@ -137,12 +132,8 @@ Node* OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight,
   return AllocInteriorNode<Interior>(tree_nodes, splitter);
 }
 
-template <typename Point, typename SplitRule, typename LeafAugType,
-          typename InteriorAugType, uint_fast8_t kMD, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
-Node* OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight,
-               kImbaRatio>::BuildRecursive(Slice In, Slice Out,
-                                           Box const& box) {
+ORTHTREE_TEMPLATE
+Node* ORTHTREE_CLASS::BuildRecursive(Slice In, Slice Out, Box const& box) {
   // TODO: may ensure the bucket is corresponding the the splitter
   assert(In.size() == 0 || BT::WithinBox(BT::GetBox(In), box));
   size_t n = In.size();
@@ -195,11 +186,8 @@ Node* OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight,
   return BT::template BuildInnerTree<Interior>(1, pivots, tree_nodes);
 }
 
-template <typename Point, typename SplitRule, typename LeafAugType,
-          typename InteriorAugType, uint_fast8_t kMD, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
-void OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight,
-              kImbaRatio>::Build_(Slice A) {
+ORTHTREE_TEMPLATE
+void ORTHTREE_CLASS::Build_(Slice A) {
   Points B = Points::uninitialized(A.size());
   if (!fixed_box) {
     this->tree_box_ = BT::GetBox(A);
@@ -210,11 +198,8 @@ void OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight,
   return;
 }
 
-template <typename Point, typename SplitRule, typename LeafAugType,
-          typename InteriorAugType, uint_fast8_t kMD, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
-void OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight,
-              kImbaRatio>::Build_(Slice A, Box const& box) {
+ORTHTREE_TEMPLATE
+void ORTHTREE_CLASS::Build_(Slice A, Box const& box) {
   assert(BT::WithinBox(BT::GetBox(A), box));
 
   Points B = Points::uninitialized(A.size());
@@ -228,5 +213,8 @@ void OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight,
 }
 
 }  // namespace psi
+
+#undef ORTHTREE_TEMPLATE
+#undef ORTHTREE_CLASS
 
 #endif  // PSI_ORTH_TREE_IMPL_ORTH_BUILD_TREE_HPP_

@@ -3,13 +3,18 @@
 
 #include "../kd_tree.h"
 
+#define KDTREE_TEMPLATE                                               \
+  template <typename Point, typename SplitRule, typename LeafAugType, \
+            typename InteriorAugType, uint_fast8_t kSkHeight,         \
+            uint_fast8_t kImbaRatio>
+#define KDTREE_CLASS \
+  KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight, kImbaRatio>
+
 namespace psi {
-template <typename Point, typename SplitRule, typename LeafAugType,
-          typename InteriorAugType, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
+
+KDTREE_TEMPLATE
 template <typename Range>
-void KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight,
-            kImbaRatio>::BatchDiff(Range&& In) {
+void KDTREE_CLASS::BatchDiff(Range&& In) {
   static_assert(parlay::is_random_access_range_v<Range>);
   static_assert(
       parlay::is_less_than_comparable_v<parlay::range_reference_type_t<Range>>);
@@ -21,23 +26,16 @@ void KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight,
   return;
 }
 
-// NOTE: batch delete suitable for Points that are pratially covered in the tree
-template <typename Point, typename SplitRule, typename LeafAugType,
-          typename InteriorAugType, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
-void KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight,
-            kImbaRatio>::BatchDiff_(Slice A) {
+KDTREE_TEMPLATE
+void KDTREE_CLASS::BatchDiff_(Slice A) {
   Points B = Points::uninitialized(A.size());
   Node* T = this->root_;
   Box box = this->tree_box_;
 
-  // NOTE: diff points from the tree
   DimsType d = T->is_leaf ? 0 : static_cast<Interior*>(T)->split.second;
   std::tie(T, this->tree_box_) =
       BatchDiffRecursive(T, box, A, parlay::make_slice(B), d);
 
-  // NOTE: launch rebuild to either: rebuild the imbalance tree or remove the
-  // sparcy node
   d = T->is_leaf ? 0 : static_cast<Interior*>(T)->split.second;
   auto prepare_rebuild_func = [&](Node* T, DimsType d, Box const& box) {
     DimsType new_dim = split_rule_.NextDimension(d);
@@ -47,9 +45,6 @@ void KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight,
     return std::make_pair(std::move(left_args), std::move(right_args));
   };
 
-  // PERF: in the batch diff, there is no need to set the force parallel flag,
-  // as the size of the tree has been updated in the first time traversal, the
-  // second time only need to follow the size of the current tree
   this->root_ = BT::template RebuildTreeRecursive<Leaf, Interior, false>(
       T, prepare_rebuild_func, this->split_rule_.AllowRebuild(), d,
       this->tree_box_);
@@ -57,19 +52,11 @@ void KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight,
   return;
 }
 
-// NOTE: only sieve the Points, without rebuilding the tree
-// NOTE: the kdtree needs box since the box will be changed in batch diff
-template <typename Point, typename SplitRule, typename LeafAugType,
-          typename InteriorAugType, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
-typename KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight,
-                kImbaRatio>::NodeBox
-KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight, kImbaRatio>::
-    BatchDiffRecursive(
-        Node* T,
-        typename KdTree<Point, SplitRule, LeafAugType, InteriorAugType,
-                        kSkHeight, kImbaRatio>::Box const& box,
-        Slice In, Slice Out, DimsType d) {
+KDTREE_TEMPLATE
+auto KDTREE_CLASS::BatchDiffRecursive(Node* T,
+                                      typename KDTREE_CLASS::Box const& box,
+                                      Slice In, Slice Out, DimsType d)
+    -> NodeBox {
   size_t n = In.size();
 
   if (n == 0) return NodeBox(T, box);
@@ -79,7 +66,6 @@ KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight, kImbaRatio>::
   }
 
   if (In.size() <= BT::kSerialBuildCutoff) {
-    // if (In.size()) {
     Interior* TI = static_cast<Interior*>(T);
     PointsIter split_iter =
         std::ranges::partition(In, [&](Point const& p) {
@@ -102,8 +88,6 @@ KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight, kImbaRatio>::
     assert(T->size == L->size + R->size && TI->split.second >= 0 &&
            TI->is_leaf == false);
 
-    // TODO: replace this one by a lambda that can be pssed to rebuild function
-    // as well
     if (BT::SparcyNode(0, TI->size) ||
         (split_rule_.AllowRebuild() &&
          BT::ImbalanceNode(TI->left->size, TI->size))) {
@@ -125,12 +109,9 @@ KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight, kImbaRatio>::
 
   parlay::parallel_for(
       0, IT.tags_num,
-      // NOTE: i is the index of the tags
       [&](BucketType i) {
         size_t start = 0;
         for (BucketType j = 0; j < i; j++) {
-          // NOTE: should have same effect as using sums_tree
-          // if using sums_tree then it should be sums_tree[rev_tag[j]]
           start += IT.sums[j];
         }
 
@@ -155,5 +136,8 @@ KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight, kImbaRatio>::
 }
 
 }  // namespace psi
+
+#undef KDTREE_TEMPLATE
+#undef KDTREE_CLASS
 
 #endif  // PSI_KD_TREE_IMPL_KD_BATCH_DIFF_HPP_

@@ -1,13 +1,16 @@
 #ifndef PSI_COVER_TREE_IMPL_COVER_INTER_NODE_HPP_
 #define PSI_COVER_TREE_IMPL_COVER_INTER_NODE_HPP_
 
+#define COVERTREE_TEMPLATE template <typename Point, typename SplitRule, \
+    uint_fast8_t kSkHeight, uint_fast8_t kImbaRatio>
+#define COVERTREE_CLASS CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>
+
 #include "../cover_tree.h"
 #include "psi/dependence/tree_node.h"
 
 namespace psi {
-template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
-struct CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::CoverInteriorNode
+COVERTREE_TEMPLATE
+struct COVERTREE_CLASS::CoverInteriorNode
     : DynamicNode<Point, Splitter, AugType> {
   using BaseNode = DynamicNode<Point, Splitter, AugType>;
   using CoverNodeArr = typename BaseNode::NodeArr;
@@ -49,4 +52,7 @@ struct CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::CoverInteriorNode
 
 }  // namespace psi
 
-#endif  // PSI_COVER_TREE_IMPL_COVER_INTER_NODE_HPP_
+#undef COVERTREE_TEMPLATE
+#undef COVERTREE_CLASS
+
+#endif

@@ -5,14 +5,19 @@
 
 #include "../orth_tree.h"
 
+#define ORTHTREE_TEMPLATE                                             \
+  template <typename Point, typename SplitRule, typename LeafAugType, \
+            typename InteriorAugType, uint_fast8_t kMD,               \
+            uint_fast8_t kSkHeight, uint_fast8_t kImbaRatio>
+#define ORTHTREE_CLASS                                                     \
+  OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight, \
+           kImbaRatio>
+
 namespace psi {
 
-template <typename Point, typename SplitRule, typename LeafAugType,
-          typename InteriorAugType, uint_fast8_t kMD, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
+ORTHTREE_TEMPLATE
 template <typename Range>
-void OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight,
-              kImbaRatio>::BatchInsert(Range&& In) {
+void ORTHTREE_CLASS::BatchInsert(Range&& In) {
   static_assert(parlay::is_random_access_range_v<Range>);
   static_assert(
       parlay::is_less_than_comparable_v<parlay::range_reference_type_t<Range>>);
@@ -27,11 +32,8 @@ void OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight,
   BatchInsert_(A);
 }
 
-template <typename Point, typename SplitRule, typename LeafAugType,
-          typename InteriorAugType, uint_fast8_t kMD, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
-void OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight,
-              kImbaRatio>::BatchInsert_(Slice A) {
+ORTHTREE_TEMPLATE
+void ORTHTREE_CLASS::BatchInsert_(Slice A) {
   if (this->root_ == nullptr) {  // TODO: may check using explicity tag
     return Build_(A);
   }
@@ -45,14 +47,10 @@ void OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight,
   return;
 }
 
-template <typename Point, typename SplitRule, typename LeafAugType,
-          typename InteriorAugType, uint_fast8_t kMD, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
-void OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight,
-              kImbaRatio>::SerialSplitSkeleton(Node* T, Slice In, DimsType dim,
-                                               DimsType idx,
-                                               parlay::sequence<BallsType>&
-                                                   sums) {
+ORTHTREE_TEMPLATE
+void ORTHTREE_CLASS::SerialSplitSkeleton(Node* T, Slice In, DimsType dim,
+                                         DimsType idx,
+                                         parlay::sequence<BallsType>& sums) {
   // TODO: change it using the split_rule_.split()
   if (dim == BT::kDim) {
     sums[idx - kNodeRegions] = In.size();
@@ -73,12 +71,9 @@ void OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight,
   return;
 }
 
-template <typename Point, typename SplitRule, typename LeafAugType,
-          typename InteriorAugType, uint_fast8_t kMD, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
-Node* OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight,
-               kImbaRatio>::BatchInsertRecursive(Node* T, Slice In, Slice Out,
-                                                 Box const& box) {
+ORTHTREE_TEMPLATE
+Node* ORTHTREE_CLASS::BatchInsertRecursive(Node* T, Slice In, Slice Out,
+                                           Box const& box) {
   size_t n = In.size();
 
   if (n == 0) return T;
@@ -156,5 +151,8 @@ Node* OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight,
   return IT.UpdateInnerTreePointers(tree_nodes);
 }
 }  // namespace psi
+
+#undef ORTHTREE_TEMPLATE
+#undef ORTHTREE_CLASS
 
 #endif  // PSI_ORTH_BATCH_INSERT_HPP_

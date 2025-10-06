@@ -6,13 +6,18 @@
 #include <parlay/type_traits.h>
 
 #include "../r_tree.h"
+
+#define RTREE_TEMPLATE template <typename Point, typename SplitRule, \
+    uint_fast8_t kSkHeight, uint_fast8_t kImbaRatio>
+#define RTREE_CLASS RTree<Point, SplitRule, kSkHeight, kImbaRatio>
+
 #include "psi/dependence/tree_node.h"
 
 namespace psi {
-template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
+RTREE_TEMPLATE
+
 template <typename Range>
-void RTree<Point, SplitRule, kSkHeight, kImbaRatio>::Build(Range&& In) {
+void RTREE_CLASS::Build(Range&& In) {
   static_assert(parlay::is_random_access_range_v<Range>);
   static_assert(
       parlay::is_less_than_comparable_v<parlay::range_reference_type_t<Range>>);
@@ -23,9 +28,9 @@ void RTree<Point, SplitRule, kSkHeight, kImbaRatio>::Build(Range&& In) {
   Build_(A);
 }
 
-template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
-void RTree<Point, SplitRule, kSkHeight, kImbaRatio>::Build_(Slice A) {
+RTREE_TEMPLATE
+
+void RTREE_CLASS::Build_(Slice A) {
   Points B = Points::uninitialized(A.size());
   this->tree_box_ = BT::GetBox(A.cut(0, A.size()));
   this->root_ = BuildRecursive(A, B.cut(0, A.size()), 0, this->tree_box_);
@@ -35,9 +40,9 @@ void RTree<Point, SplitRule, kSkHeight, kImbaRatio>::Build_(Slice A) {
   return;
 }
 
-template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
-void RTree<Point, SplitRule, kSkHeight, kImbaRatio>::DivideRotate(
+RTREE_TEMPLATE
+
+void RTREE_CLASS::DivideRotate(
     Slice In, HyperPlaneSeq& pivots, DimsType dim, BucketType idx,
     BoxSeq& box_seq, Box const& bx) {
   if (idx > BT::kPivotNum) {
@@ -70,9 +75,9 @@ void RTree<Point, SplitRule, kSkHeight, kImbaRatio>::DivideRotate(
 }
 
 // NOTE: starting at dimesion dim and pick pivots in a rotation manner
-template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
-void RTree<Point, SplitRule, kSkHeight, kImbaRatio>::PickPivots(
+RTREE_TEMPLATE
+
+void RTREE_CLASS::PickPivots(
     Slice In, size_t const& n, HyperPlaneSeq& pivots, DimsType const dim,
     BoxSeq& box_seq, Box const& bx) {
   size_t size = std::min(n, static_cast<size_t>(32 * BT::kBucketNum));
@@ -86,9 +91,9 @@ void RTree<Point, SplitRule, kSkHeight, kImbaRatio>::PickPivots(
   return;
 }
 
-template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
-Node* RTree<Point, SplitRule, kSkHeight, kImbaRatio>::SerialBuildRecursive(
+RTREE_TEMPLATE
+
+Node* RTREE_CLASS::SerialBuildRecursive(
     Slice In, Slice Out, DimsType dim, Box const& bx) {
   size_t n = In.size();
 
@@ -153,9 +158,9 @@ Node* RTree<Point, SplitRule, kSkHeight, kImbaRatio>::SerialBuildRecursive(
       AugType());
 }
 
-template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
-Node* RTree<Point, SplitRule, kSkHeight, kImbaRatio>::BuildRecursive(
+RTREE_TEMPLATE
+
+Node* RTREE_CLASS::BuildRecursive(
     Slice In, Slice Out, DimsType dim, Box const& bx) {
   assert(In.size() == 0 || BT::WithinBox(BT::GetBox(In), bx));
 
@@ -211,6 +216,9 @@ Node* RTree<Point, SplitRule, kSkHeight, kImbaRatio>::BuildRecursive(
   return BT::template BuildInnerTree<Leaf, Interior>(1, pivots, tree_nodes);
 }
 
+
+#undef RTREE_TEMPLATE
+#undef RTREE_CLASS
 }  // namespace psi
 
 #endif  // PSI_R_TREE_IMPL_ORTH_BUILD_TREE_HPP_

@@ -1,6 +1,10 @@
 #ifndef PSI_P_TREE_IMPL_P_BUILD_TREE_HPP_
 #define PSI_P_TREE_IMPL_P_BUILD_TREE_HPP_
 
+#define PTREE_TEMPLATE template <typename Point, typename SplitRule, \
+    uint_fast8_t kSkHeight, uint_fast8_t kImbaRatio>
+#define PTREE_CLASS PTree<Point, SplitRule, kSkHeight, kImbaRatio>
+
 #include <parlay/range.h>
 #include <parlay/slice.h>
 #include <parlay/type_traits.h>
@@ -10,10 +14,9 @@
 #include "psi/dependence/tree_node.h"
 
 namespace psi {
-template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
+PTREE_TEMPLATE
 template <typename Range>
-void PTree<Point, SplitRule, kSkHeight, kImbaRatio>::Build(Range&& In) {
+void PTREE_CLASS::Build(Range&& In) {
   static_assert(parlay::is_random_access_range_v<Range>);
   static_assert(
       parlay::is_less_than_comparable_v<parlay::range_reference_type_t<Range>>);
@@ -24,9 +27,8 @@ void PTree<Point, SplitRule, kSkHeight, kImbaRatio>::Build(Range&& In) {
   Build_(A);
 }
 
-template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
-void PTree<Point, SplitRule, kSkHeight, kImbaRatio>::Build_(Slice A) {
+PTREE_TEMPLATE
+void PTREE_CLASS::Build_(Slice A) {
   size_t n = A.size();
 
   // parlay::parallel_for(0, n, [&](size_t i) {
@@ -82,4 +84,7 @@ void PTree<Point, SplitRule, kSkHeight, kImbaRatio>::Build_(Slice A) {
 
 }  // namespace psi
 
-#endif  // PSI_P_TREE_IMPL_P_BUILD_TREE_HPP_
+#undef PTREE_TEMPLATE
+#undef PTREE_CLASS
+
+#endif

@@ -3,13 +3,18 @@
 
 #include "../r_tree.h"
 
+#define RTREE_TEMPLATE template <typename Point, typename SplitRule, \
+    uint_fast8_t kSkHeight, uint_fast8_t kImbaRatio>
+#define RTREE_CLASS RTree<Point, SplitRule, kSkHeight, kImbaRatio>
+
+
 namespace psi {
 
 // NOTE: default batch delete
-template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
+RTREE_TEMPLATE
+
 template <typename Range>
-void RTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDelete(Range&& In) {
+void RTREE_CLASS::BatchDelete(Range&& In) {
   // static_assert(parlay::is_random_access_range_v<Range>);
   // static_assert(
   //     parlay::is_less_than_comparable_v<parlay::range_reference_type_t<Range>>);
@@ -23,9 +28,9 @@ void RTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDelete(Range&& In) {
 }
 
 // NOTE: assume all Points are fully covered in the tree
-template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
-void RTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDelete_(Slice A) {
+RTREE_TEMPLATE
+
+void RTREE_CLASS::BatchDelete_(Slice A) {
   Points B = Points::uninitialized(A.size());
   Node* T = this->root_;
   Box bx = this->tree_box_;
@@ -38,12 +43,12 @@ void RTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDelete_(Slice A) {
 // NOTE: delete with rebuild, with the assumption that all Points are in the
 // tree
 // WARN: the param d can be only used when rotate cutting is applied
-template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
-typename RTree<Point, SplitRule, kSkHeight, kImbaRatio>::NodeBox
-RTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDeleteRecursive(
+RTREE_TEMPLATE
+
+typename RTREE_CLASS::NodeBox
+RTREE_CLASS::BatchDeleteRecursive(
     Node* T,
-    typename RTree<Point, SplitRule, kSkHeight, kImbaRatio>::Box const& bx,
+    typename RTREE_CLASS::Box const& bx,
     Slice In, Slice Out, DimsType d, bool has_tomb) {
   size_t n = In.size();
 
@@ -192,6 +197,9 @@ RTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDeleteRecursive(
   return NodeBox(new_root, new_box);
 }
 
+
+#undef RTREE_TEMPLATE
+#undef RTREE_CLASS
 }  // namespace psi
 
 #endif  // PSI_R_TREE_IMPL_R_BATCH_DELETE_HPP_

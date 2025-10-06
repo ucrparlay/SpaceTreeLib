@@ -4,12 +4,17 @@
 #include "../orth_tree.h"
 #include "psi/dependence/tree_node.h"
 
+#define ORTHTREE_TEMPLATE                                             \
+  template <typename Point, typename SplitRule, typename LeafAugType, \
+            typename InteriorAugType, uint_fast8_t kMD,               \
+            uint_fast8_t kSkHeight, uint_fast8_t kImbaRatio>
+#define ORTHTREE_CLASS                                                     \
+  OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight, \
+           kImbaRatio>
+
 namespace psi {
-template <typename Point, typename SplitRule, typename LeafAugType,
-          typename InteriorAugType, uint_fast8_t kMD, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
-struct OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight,
-                kImbaRatio>::OrthInteriorNode
+ORTHTREE_TEMPLATE
+struct ORTHTREE_CLASS::OrthInteriorNode
     : MultiNode<Point, kMD, Splitter, InteriorAugType> {
   using BaseNode = MultiNode<Point, kMD, Splitter, InteriorAugType>;
   using OrthNodeArr = typename BaseNode::NodeArr;
@@ -239,5 +244,8 @@ struct OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight,
 };
 
 }  // namespace psi
+
+#undef ORTHTREE_TEMPLATE
+#undef ORTHTREE_CLASS
 
 #endif  // PSI_ORTH_TREE_IMPL_ORTH_INTER_NODE_HPP_

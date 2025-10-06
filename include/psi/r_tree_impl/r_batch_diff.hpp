@@ -3,11 +3,16 @@
 
 #include "../r_tree.h"
 
+#define RTREE_TEMPLATE template <typename Point, typename SplitRule, \
+    uint_fast8_t kSkHeight, uint_fast8_t kImbaRatio>
+#define RTREE_CLASS RTree<Point, SplitRule, kSkHeight, kImbaRatio>
+
+
 namespace psi {
-template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
+RTREE_TEMPLATE
+
 template <typename Range>
-void RTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDiff(Range&& In) {
+void RTREE_CLASS::BatchDiff(Range&& In) {
   // static_assert(parlay::is_random_access_range_v<Range>);
   // static_assert(
   //     parlay::is_less_than_comparable_v<parlay::range_reference_type_t<Range>>);
@@ -21,9 +26,9 @@ void RTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDiff(Range&& In) {
 }
 
 // NOTE: batch delete suitable for Points that are pratially covered in the tree
-template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
-void RTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDiff_(Slice A) {
+RTREE_TEMPLATE
+
+void RTREE_CLASS::BatchDiff_(Slice A) {
   Points B = Points::uninitialized(A.size());
   Node* T = this->root_;
   Box box = this->tree_box_;
@@ -50,12 +55,12 @@ void RTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDiff_(Slice A) {
 
 // NOTE: only sieve the Points, without rebuilding the tree
 // NOTE: the kdtree needs box since the box will be changed in batch diff
-template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
-typename RTree<Point, SplitRule, kSkHeight, kImbaRatio>::NodeBox
-RTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDiffRecursive(
+RTREE_TEMPLATE
+
+typename RTREE_CLASS::NodeBox
+RTREE_CLASS::BatchDiffRecursive(
     Node* T,
-    typename RTree<Point, SplitRule, kSkHeight, kImbaRatio>::Box const& box,
+    typename RTREE_CLASS::Box const& box,
     Slice In, Slice Out, DimsType d) {
   size_t n = In.size();
 
@@ -129,6 +134,9 @@ RTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDiffRecursive(
   return IT.template UpdateInnerTreePointersWithBox<>(tree_nodes);
 }
 
+
+#undef RTREE_TEMPLATE
+#undef RTREE_CLASS
 }  // namespace psi
 
 #endif  // PSI_R_TREE_IMPL_R_BATCH_DIFF_HPP_

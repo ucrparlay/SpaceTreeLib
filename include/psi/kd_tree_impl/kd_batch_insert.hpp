@@ -4,13 +4,18 @@
 #include "../kd_tree.h"
 #include "parlay/slice.h"
 
+#define KDTREE_TEMPLATE                                               \
+  template <typename Point, typename SplitRule, typename LeafAugType, \
+            typename InteriorAugType, uint_fast8_t kSkHeight,         \
+            uint_fast8_t kImbaRatio>
+#define KDTREE_CLASS \
+  KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight, kImbaRatio>
+
 namespace psi {
-template <typename Point, typename SplitRule, typename LeafAugType,
-          typename InteriorAugType, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
-void KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight,
-            kImbaRatio>::BatchInsert(Slice A) {
-  if (this->root_ == nullptr) {  // TODO: may check using explicity tag
+
+KDTREE_TEMPLATE
+void KDTREE_CLASS::BatchInsert(Slice A) {
+  if (this->root_ == nullptr) {
     return Build_(A);
   }
 
@@ -27,13 +32,9 @@ void KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight,
   return;
 }
 
-// NOTE: return the updated Node
-template <typename Point, typename SplitRule, typename LeafAugType,
-          typename InteriorAugType, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
-Node* KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight,
-             kImbaRatio>::BatchInsertRecursive(Node* T, Slice In, Slice Out,
-                                               DimsType d) {
+KDTREE_TEMPLATE
+auto KDTREE_CLASS::BatchInsertRecursive(Node* T, Slice In, Slice Out,
+                                        DimsType d) -> Node* {
   size_t n = In.size();
 
   if (n == 0) return T;
@@ -48,12 +49,7 @@ Node* KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight,
         (TL->is_dummy &&
          parlay::all_of(In, [&](Point const& p) { return p == TL->pts[0]; }))) {
       return BT::template InsertPoints2Leaf<Leaf>(T, In);
-      // auto o = BT::template InsertPoints2Leaf<Leaf>(T, In);
-      // assert(BT::SameBox(BT::template GetBox<Leaf, Interior>(o),
-      //                    BT::template RetriveBox<Leaf, Interior>(o)));
-      // return o;
-    } else {  // PERF: if a nomarl leaf TL cannot handle more duplicates,
-              // leave them here
+    } else {
       return BT::template RebuildWithInsert<Leaf, Interior>(T, prepare_func, In,
                                                             d);
     }
@@ -68,14 +64,12 @@ Node* KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight,
     size_t split_pos = static_cast<PointsIter>(_2ndGroup.begin()) -
                        static_cast<PointsIter>(In.begin());
 
-    // NOTE: rebuild
     if (split_rule_.AllowRebuild() &&
         BT::ImbalanceNode(TI->left->size + split_pos, TI->size + n)) {
       return BT::template RebuildWithInsert<Leaf, Interior>(T, prepare_func, In,
                                                             d);
     }
 
-    // NOTE: continue
     Node *L, *R;
     d = split_rule_.NextDimension(d);
     L = BatchInsertRecursive(TI->left, In.cut(0, split_pos),
@@ -88,7 +82,6 @@ Node* KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight,
     return T;
   }
 
-  // NOTE: assign each Node a tag
   InnerTree IT(*this);
   assert(IT.rev_tag.size() == BT::kBucketNum);
   IT.AssignNodeTag(T, 1);
@@ -120,12 +113,11 @@ Node* KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight,
         }
 
         if (IT.tags[IT.rev_tag[i]].second == BT::kBucketNum + 1) {
-          // NOTE: continue sieve
           tree_nodes[i] = BatchInsertRecursive(
               IT.tags[IT.rev_tag[i]].first,
               Out.cut(s, s + IT.sums_tree[IT.rev_tag[i]]),
               In.cut(s, s + IT.sums_tree[IT.rev_tag[i]]), next_dim);
-        } else {  // NOTE: launch rebuild subtree
+        } else {
           assert(IT.tags[IT.rev_tag[i]].second == BT::kBucketNum + 2);
           assert(IT.tags[IT.rev_tag[i]].first->size +
                      IT.sums_tree[IT.rev_tag[i]] >=
@@ -142,5 +134,8 @@ Node* KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight,
 }
 
 }  // namespace psi
+
+#undef KDTREE_TEMPLATE
+#undef KDTREE_CLASS
 
 #endif  // PSI_KD_TREE_IMPL_KD_BATCH_INSERT_HPP_

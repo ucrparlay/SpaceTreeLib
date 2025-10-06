@@ -1,6 +1,10 @@
 #ifndef PSI_P_TREE_IMPL_P_OVERRIDE_HPP_
 #define PSI_P_TREE_IMPL_P_OVERRIDE_HPP_
 
+#define PTREE_TEMPLATE template <typename Point, typename SplitRule, \
+    uint_fast8_t kSkHeight, uint_fast8_t kImbaRatio>
+#define PTREE_CLASS PTree<Point, SplitRule, kSkHeight, kImbaRatio>
+
 #include <type_traits>
 #include <utility>
 
@@ -28,27 +32,24 @@ auto point_point_sqrdis(Point const& lhs, Point const& rhs) {
          (lhs.pnt[1] - rhs.pnt[1]) * (lhs.pnt[1] - rhs.pnt[1]);
 }
 
-template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
+PTREE_TEMPLATE
 template <typename Range>
-auto PTree<Point, SplitRule, kSkHeight, kImbaRatio>::KNN(
+auto PTREE_CLASS::KNN(
     Node* T, Point const& q, kBoundedQueue<Point, Range>& bq) {
   KNNLogger logger;
   CpamAugMap::template knn<BT>(this->cpam_aug_map_, q, bq, logger);
   return logger;
 }
 
-template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
+PTREE_TEMPLATE
 template <typename Range>
-void PTree<Point, SplitRule, kSkHeight, kImbaRatio>::Flatten(Range&& Out) {
+void PTREE_CLASS::Flatten(Range&& Out) {
   CpamAugMap::entries(parlay::make_slice(Out));
   return;
 }
 
-template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
-auto PTree<Point, SplitRule, kSkHeight, kImbaRatio>::RangeCount(
+PTREE_TEMPLATE
+auto PTREE_CLASS::RangeCount(
     Box const& query_box) {
   RangeQueryLogger logger;
 
@@ -58,10 +59,9 @@ auto PTree<Point, SplitRule, kSkHeight, kImbaRatio>::RangeCount(
   return std::make_pair(size, logger);
 }
 
-template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
+PTREE_TEMPLATE
 template <typename Range>
-auto PTree<Point, SplitRule, kSkHeight, kImbaRatio>::RangeQuery(
+auto PTREE_CLASS::RangeQuery(
     Box const& query_box, Range&& Out) {
   RangeQueryLogger logger;
   size_t cnt = 0;
@@ -70,9 +70,8 @@ auto PTree<Point, SplitRule, kSkHeight, kImbaRatio>::RangeQuery(
   return std::make_pair(cnt, logger);
 }
 
-template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
-constexpr void PTree<Point, SplitRule, kSkHeight, kImbaRatio>::DeleteTree() {
+PTREE_TEMPLATE
+constexpr void PTREE_CLASS::DeleteTree() {
   cpam_aug_map_.clear();
   cpam_aug_map_.root = nullptr;
   return;
@@ -80,4 +79,7 @@ constexpr void PTree<Point, SplitRule, kSkHeight, kImbaRatio>::DeleteTree() {
 
 }  // namespace psi
 
-#endif  // PSI_P_TREE_IMPL_P_OVERRIDE_HPP_
+#undef PTREE_TEMPLATE
+#undef PTREE_CLASS
+
+#endif

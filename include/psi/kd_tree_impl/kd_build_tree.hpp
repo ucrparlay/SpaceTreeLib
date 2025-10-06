@@ -8,13 +8,18 @@
 #include "../kd_tree.h"
 #include "psi/dependence/tree_node.h"
 
+#define KDTREE_TEMPLATE                                               \
+  template <typename Point, typename SplitRule, typename LeafAugType, \
+            typename InteriorAugType, uint_fast8_t kSkHeight,         \
+            uint_fast8_t kImbaRatio>
+#define KDTREE_CLASS \
+  KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight, kImbaRatio>
+
 namespace psi {
-template <typename Point, typename SplitRule, typename LeafAugType,
-          typename InteriorAugType, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
+
+KDTREE_TEMPLATE
 template <typename Range>
-void KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight,
-            kImbaRatio>::Build(Range&& In) {
+void KDTREE_CLASS::Build(Range&& In) {
   static_assert(parlay::is_random_access_range_v<Range>);
   static_assert(
       parlay::is_less_than_comparable_v<parlay::range_reference_type_t<Range>>);
@@ -25,17 +30,11 @@ void KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight,
   Build_(A);
 }
 
-template <typename Point, typename SplitRule, typename LeafAugType,
-          typename InteriorAugType, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
-void KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight,
-            kImbaRatio>::DivideRotate(Slice In, SplitterSeq& pivots,
-                                      DimsType dim, BucketType idx,
-                                      BoxSeq& box_seq, Box const& box) {
+KDTREE_TEMPLATE
+void KDTREE_CLASS::DivideRotate(Slice In, SplitterSeq& pivots, DimsType dim,
+                                BucketType idx, BoxSeq& box_seq,
+                                Box const& box) {
   if (idx > BT::kPivotNum) {
-    // WARN: sometimes cut dimension can be -1
-    //  never use pivots[idx].first to check whether it is in bucket;
-    //  instead, use idx > PIVOT_NUM
     box_seq[idx - BT::kBucketNum] = box;
     pivots[idx] = Splitter(0, idx - BT::kBucketNum);
     return;
@@ -56,31 +55,23 @@ void KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight,
   return;
 }
 
-// NOTE: starting at dimesion dim and pick pivots in a rotation manner
-template <typename Point, typename SplitRule, typename LeafAugType,
-          typename InteriorAugType, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
-void KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight,
-            kImbaRatio>::PickPivots(Slice In, size_t const& n,
-                                    SplitterSeq& pivots, DimsType const dim,
-                                    BoxSeq& box_seq, Box const& bx) {
+KDTREE_TEMPLATE
+void KDTREE_CLASS::PickPivots(Slice In, size_t const& n, SplitterSeq& pivots,
+                              DimsType const dim, BoxSeq& box_seq,
+                              Box const& bx) {
   size_t size = std::min(n, static_cast<size_t>(32 * BT::kBucketNum));
   assert(size <= n);
 
   Points arr = Points::uninitialized(size);
   BT::SamplePoints(In, arr);
 
-  // NOTE: pick pivots
   DivideRotate(arr.cut(0, size), pivots, dim, 1, box_seq, bx);
   return;
 }
 
-template <typename Point, typename SplitRule, typename LeafAugType,
-          typename InteriorAugType, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
-Node* KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight,
-             kImbaRatio>::SerialBuildRecursive(Slice In, Slice Out,
-                                               DimsType dim, Box const& box) {
+KDTREE_TEMPLATE
+auto KDTREE_CLASS::SerialBuildRecursive(Slice In, Slice Out, DimsType dim,
+                                        Box const& box) -> Node* {
   size_t n = In.size();
 
   if (n == 0) return AllocEmptyLeafNode<Slice, Leaf>();
@@ -90,10 +81,10 @@ Node* KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight,
   DimsType d = split_rule_.FindCuttingDimension(box, dim);
   auto [split_iter, split] = split_rule_.SplitInput(In, d, box);
 
-  if (!split.has_value()) {  // NOTE: split fails
+  if (!split.has_value()) {
     if (In.end() == std::ranges::find_if_not(In, [&](Point const& p) {
           return p.SameDimension(In[0]);
-        })) {  // NOTE: check whether all elements are identical
+        })) {
       if constexpr (IsAugPoint<Point>) {
         if constexpr (Point::IsNonTrivialAugmentation()) {
           return AllocFixSizeLeafNode<Slice, Leaf>(
@@ -104,7 +95,7 @@ Node* KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight,
       } else {
         return AllocDummyLeafNode<Slice, Leaf>(In);
       }
-    } else {  // NOTE: current dim d is same but other dims are not
+    } else {
       return split_rule_.HandlingUndivide(*this, In, Out, box, dim);
     }
   }
@@ -130,15 +121,11 @@ Node* KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight,
   return AllocInteriorNode<Interior>(L, R, split.value());
 }
 
-template <typename Point, typename SplitRule, typename LeafAugType,
-          typename InteriorAugType, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
-Node* KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight,
-             kImbaRatio>::BuildRecursive(Slice In, Slice Out, DimsType dim,
-                                         Box const& bx) {
+KDTREE_TEMPLATE
+auto KDTREE_CLASS::BuildRecursive(Slice In, Slice Out, DimsType dim,
+                                  Box const& bx) -> Node* {
   assert(In.size() == 0 || BT::WithinBox(BT::GetBox(In), bx));
 
-  // if (In.size()) {
   if (In.size() <= BT::kSerialBuildCutoff) {
     return SerialBuildRecursive(In, Out, dim, bx);
   }
@@ -150,19 +137,14 @@ Node* KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight,
   PickPivots(In, In.size(), pivots, dim, box_seq, bx);
   BT::Partition(In, Out, In.size(), pivots, sums);
 
-  // NOTE: if random sampling failed to split points, re-partitions using
-  // serail approach
   auto tree_nodes = parlay::sequence<Node*>::uninitialized(BT::kBucketNum);
   auto nodes_map = BucketSeq::uninitialized(BT::kBucketNum);
   BucketType zeros = std::ranges::count(sums, 0), cnt = 0;
 
-  if (zeros == BT::kBucketNum - 1) {  // NOTE: switch to seral
-    // TODO: add parallelsim within this call
-    // see parallel kth element
+  if (zeros == BT::kBucketNum - 1) {
     return SerialBuildRecursive(In, Out, dim, bx);
   }
 
-  // NOTE: alloc empty leaf beforehand to avoid spawn threads
   for (BucketType i = 0; i < BT::kBucketNum; ++i) {
     if (!sums[i]) {
       tree_nodes[i] = AllocEmptyLeafNode<Slice, Leaf>();
@@ -193,11 +175,8 @@ Node* KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight,
   return BT::template BuildInnerTree<Leaf, Interior>(1, pivots, tree_nodes);
 }
 
-template <typename Point, typename SplitRule, typename LeafAugType,
-          typename InteriorAugType, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
-void KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight,
-            kImbaRatio>::Build_(Slice A) {
+KDTREE_TEMPLATE
+void KDTREE_CLASS::Build_(Slice A) {
   Points B = Points::uninitialized(A.size());
   this->tree_box_ = BT::GetBox(A);
   this->root_ = BuildRecursive(A, B.cut(0, A.size()), 0, this->tree_box_);
@@ -206,5 +185,8 @@ void KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight,
 }
 
 }  // namespace psi
+
+#undef KDTREE_TEMPLATE
+#undef KDTREE_CLASS
 
 #endif  // PSI_KD_TREE_IMPL_KD_BUILD_TREE_HPP_

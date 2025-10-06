@@ -3,15 +3,18 @@
 
 #include "../kd_tree.h"
 
+#define KDTREE_TEMPLATE                                               \
+  template <typename Point, typename SplitRule, typename LeafAugType, \
+            typename InteriorAugType, uint_fast8_t kSkHeight,         \
+            uint_fast8_t kImbaRatio>
+#define KDTREE_CLASS \
+  KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight, kImbaRatio>
+
 namespace psi {
 
-// NOTE: default batch delete
-template <typename Point, typename SplitRule, typename LeafAugType,
-          typename InteriorAugType, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
+KDTREE_TEMPLATE
 template <typename Range>
-void KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight,
-            kImbaRatio>::BatchDelete(Range&& In) {
+void KDTREE_CLASS::BatchDelete(Range&& In) {
   static_assert(parlay::is_random_access_range_v<Range>);
   static_assert(
       parlay::is_less_than_comparable_v<parlay::range_reference_type_t<Range>>);
@@ -23,12 +26,8 @@ void KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight,
   return;
 }
 
-// NOTE: assume all Points are fully covered in the tree
-template <typename Point, typename SplitRule, typename LeafAugType,
-          typename InteriorAugType, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
-void KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight,
-            kImbaRatio>::BatchDelete_(Slice A) {
+KDTREE_TEMPLATE
+void KDTREE_CLASS::BatchDelete_(Slice A) {
   Points B = Points::uninitialized(A.size());
   Node* T = this->root_;
   Box box = this->tree_box_;
@@ -38,20 +37,11 @@ void KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight,
   return;
 }
 
-// NOTE: delete with rebuild, with the assumption that all Points are in the
-// tree
-// WARN: the param d can be only used when rotate cutting is applied
-template <typename Point, typename SplitRule, typename LeafAugType,
-          typename InteriorAugType, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
-typename KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight,
-                kImbaRatio>::NodeBox
-KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight, kImbaRatio>::
-    BatchDeleteRecursive(
-        Node* T,
-        typename KdTree<Point, SplitRule, LeafAugType, InteriorAugType,
-                        kSkHeight, kImbaRatio>::Box const& box,
-        Slice In, Slice Out, DimsType d, bool has_tomb) {
+KDTREE_TEMPLATE
+auto KDTREE_CLASS::BatchDeleteRecursive(Node* T,
+                                        typename KDTREE_CLASS::Box const& box,
+                                        Slice In, Slice Out, DimsType d,
+                                        bool has_tomb) -> NodeBox {
   size_t n = In.size();
 
   if (n == 0) {
@@ -65,19 +55,16 @@ KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight, kImbaRatio>::
     }
   }
 
-  // INFO: it can be used to accelerate the whole deletion process
   if (n == T->size) {
-    if (has_tomb) {  // rebuild this subtree
+    if (has_tomb) {
       BT::template DeleteTreeRecursive<Leaf, Interior>(T);
       return NodeBox(AllocEmptyLeafNode<Slice, Leaf>(), BT::GetEmptyBox());
     }
-    // within a rebuild tree
-    if (!T->is_leaf) {  // interior
+    if (!T->is_leaf) {
       auto TI = static_cast<Interior*>(T);
-      TI->ResetAug();  // needs to put before set parallel flag
-      // WARN: only set the flag for root, the remaining tree is still unset
+      TI->ResetAug();
       TI->SetParallelFlag(T->size > BT::kSerialBuildCutoff);
-    } else {  // leaf
+    } else {
       auto TL = static_cast<Leaf*>(T);
       TL->ResetAug();
     }
@@ -87,13 +74,8 @@ KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight, kImbaRatio>::
 
   if (T->is_leaf) {
     return BT::template DeletePoints4Leaf<Leaf, NodeBox>(T, In);
-    // auto o = BT::template DeletePoints4Leaf<Leaf, NodeBox>(T, In);
-    // assert(BT::SameBox(BT::template GetBox<Leaf, Interior>(o.first),
-    //                    BT::template RetriveBox<Leaf, Interior>(o.first)));
-    // return o;
   }
 
-  // if (1) {
   if (In.size() <= BT::kSerialBuildCutoff) {
     Interior* TI = static_cast<Interior*>(T);
     PointsIter split_iter =
@@ -101,8 +83,6 @@ KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight, kImbaRatio>::
           return Num::Lt(p.pnt[TI->split.second], TI->split.first);
         }).begin();
 
-    // NOTE: put the tomb if the remaining points number are below
-    // kThinLeaveWrap (to avoid next insertion exceeds the limit) or inbalance
     bool putTomb =
         has_tomb &&
         (BT::SparcyNode(In.size(), TI->size) ||
@@ -112,7 +92,6 @@ KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight, kImbaRatio>::
     has_tomb = putTomb ? false : has_tomb;
     assert(putTomb ? (!has_tomb) : true);
 
-    // DimsType next_dim = (d + 1) % BT::kDim;
     DimsType next_dim = split_rule_.NextDimension(d);
     BoxCut box_cut(box, TI->split, true);
 
@@ -135,17 +114,11 @@ KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight, kImbaRatio>::
       TI->SetParallelFlag(force_parallel_flag);
     }
 
-    // NOTE: rebuild
     if (putTomb) {
       assert(BT::SparcyNode(0, TI->size) ||
              (split_rule_.AllowRebuild() &&
               BT::ImbalanceNode(TI->left->size, TI->size)));
       auto const new_box = BT::GetBox(Lbox, Rbox);
-      // auto const tree_box = BT::template GetBox<Leaf, Interior>(T);
-      // auto const left_box = BT::template RetriveBox<Leaf,
-      // Interior>(TI->left); auto const right_box = BT::template
-      // RetriveBox<Leaf, Interior>(TI->right); auto const tree_in_box =
-      // BT::template RetriveBox<Leaf, Interior>(T);
       assert(BT::WithinBox(BT::template GetBox<Leaf, Interior>(T), new_box));
       return NodeBox(
           BT::template RebuildSingleTree<Leaf, Interior, false>(T, d, new_box),
@@ -164,7 +137,6 @@ KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight, kImbaRatio>::
   auto tree_nodes = NodeBoxSeq::uninitialized(IT.tags_num);
   auto box_seq = parlay::sequence<Box>::uninitialized(IT.tags_num);
 
-  // enable the force parallel flag in batch deletion
   auto [re_num, tot_re_size] = IT.template TagInbalanceNodeDeletion<true>(
       box_seq, box, has_tomb, [&](BucketType idx) -> bool {
         Interior* TI = static_cast<Interior*>(IT.tags[idx].first);
@@ -176,7 +148,6 @@ KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight, kImbaRatio>::
 
   assert(re_num <= IT.tags_num);
 
-  // NOTE: delete the points in the tree
   parlay::parallel_for(
       0, IT.tags_num,
       [&](decltype(IT.tags_num) i) {
@@ -204,20 +175,17 @@ KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight, kImbaRatio>::
       },
       1);
 
-  // NOTE: handling of rebuild (in parallel)
-  // NOTE: get new box for skeleton root and rebuild nodes
   Box const new_box = std::get<1>(IT.TagNodesForRebuild(tree_nodes, box_seq));
   assert(IT.tags_num == re_num);
 
-  // NOTE: launch the rebuild in parallel
   parlay::parallel_for(0, IT.tags_num, [&](size_t i) {
     assert(IT.tags[IT.rev_tag[i]].second == BT::kBucketNum + 3);
 
-    if (IT.tags[IT.rev_tag[i]].first->size == 0) {  // NOTE: empty
+    if (IT.tags[IT.rev_tag[i]].first->size == 0) {
       BT::template DeleteTreeRecursive<Leaf, Interior, false>(
           IT.tags[IT.rev_tag[i]].first);
       IT.tags[IT.rev_tag[i]].first = AllocEmptyLeafNode<Slice, Leaf>();
-    } else {  // NOTE: rebuild
+    } else {
       assert(BT::WithinBox(
           BT::template GetBox<Leaf, Interior>(IT.tags[IT.rev_tag[i]].first),
           box_seq[i]));
@@ -230,12 +198,15 @@ KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight, kImbaRatio>::
           BT::template RebuildSingleTree<Leaf, Interior, false>(
               IT.tags[IT.rev_tag[i]].first, next_dim, box_seq[i]);
     }
-  });  // PERF: let the parlay decide granularity
+  });
 
   auto const new_root = std::get<0>(IT.UpdateAfterDeletion(tree_nodes));
   return NodeBox(new_root, new_box);
 }
 
 }  // namespace psi
+
+#undef KDTREE_TEMPLATE
+#undef KDTREE_CLASS
 
 #endif  // PSI_KD_TREE_IMPL_KD_BATCH_DELETE_HPP

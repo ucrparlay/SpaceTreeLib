@@ -2,12 +2,17 @@
 #define PSI_R_TREE_IMPL_R_INTER_NODE_HPP_
 
 #include "../r_tree.h"
+
+#define RTREE_TEMPLATE template <typename Point, typename SplitRule, \
+    uint_fast8_t kSkHeight, uint_fast8_t kImbaRatio>
+#define RTREE_CLASS RTree<Point, SplitRule, kSkHeight, kImbaRatio>
+
 #include "psi/dependence/tree_node.h"
 
 namespace psi {
-template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
-struct RTree<Point, SplitRule, kSkHeight, kImbaRatio>::RInteriorNode
+RTREE_TEMPLATE
+
+struct RTREE_CLASS::RInteriorNode
     : BinaryNode<Point, Splitter, AugType> {
   using PT = Point;
   using ST = Splitter;
@@ -32,6 +37,9 @@ struct RTree<Point, SplitRule, kSkHeight, kImbaRatio>::RInteriorNode
   }
 };
 
+
+#undef RTREE_TEMPLATE
+#undef RTREE_CLASS
 }  // namespace psi
 
 #endif  // PSI_R_TREE_IMPL_R_INTER_NODE_HPP_

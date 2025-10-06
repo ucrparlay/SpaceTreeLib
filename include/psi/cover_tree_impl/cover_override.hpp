@@ -1,6 +1,10 @@
 #ifndef PSI_COVER_TREE_IMPL_COVER_OVERRIDE_HPP_
 #define PSI_COVER_TREE_IMPL_COVER_OVERRIDE_HPP_
 
+#define COVERTREE_TEMPLATE template <typename Point, typename SplitRule, \
+    uint_fast8_t kSkHeight, uint_fast8_t kImbaRatio>
+#define COVERTREE_CLASS CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>
+
 #include <tuple>
 #include <type_traits>
 #include <utility>
@@ -9,26 +13,23 @@
 #include "psi/dependence/tree_node.h"
 
 namespace psi {
-template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
+COVERTREE_TEMPLATE
 template <typename Range>
-auto CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::KNN(
+auto COVERTREE_CLASS::KNN(
     Node* T, Point const& q, kBoundedQueue<Point, Range>& bq) {
   KNNLogger logger;
   BT::template KNNCover<Leaf, Interior>(T, q, bq, logger);
   return logger;
 }
 
-template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
+COVERTREE_TEMPLATE
 template <typename Range>
-void CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::Flatten(Range&& Out) {
+void COVERTREE_CLASS::Flatten(Range&& Out) {
   BT::template FlattenRec<Leaf, Interior>(this->root_, parlay::make_slice(Out));
 }
 
-template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
-auto CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::RangeCount(
+COVERTREE_TEMPLATE
+auto COVERTREE_CLASS::RangeCount(
     Box const& bx) {
   RangeQueryLogger logger;
   size_t s = BT::template RangeCountRectangle<Leaf, Interior>(
@@ -38,16 +39,15 @@ auto CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::RangeCount(
 
 // template <typename Point, typename SplitRule,
 //           uint_fast8_t kSkHeight, uint_fast8_t kImbaRatio>
-// auto CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::RangeCount(
+// auto COVERTREE_CLASS::RangeCount(
 //     Circle const& cl) {
 //   return BT::template RangeCountRadius<Leaf, Interior>(this->root_, cl,
 //                                                        this->tree_box_);
 // }
 
-template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
+COVERTREE_TEMPLATE
 template <typename Range>
-auto CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::RangeQuery(
+auto COVERTREE_CLASS::RangeQuery(
     Box const& query_box, Range&& Out) {
   RangeQueryLogger logger;
   size_t s = 0;
@@ -57,13 +57,15 @@ auto CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::RangeQuery(
   return std::make_pair(s, logger);
 }
 
-template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
+COVERTREE_TEMPLATE
 constexpr void
-CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::DeleteTree() {
+COVERTREE_CLASS::DeleteTree() {
   BT::template DeleteTreeWrapper<Leaf, Interior>();
 }
 
 }  // namespace psi
 
-#endif  // PSI_COVER_TREE_IMPL_COVER_OVERRIDE_HPP_
+#undef COVERTREE_TEMPLATE
+#undef COVERTREE_CLASS
+
+#endif
