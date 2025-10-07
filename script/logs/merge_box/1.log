@@ -1,0 +1,126 @@
+Tree: KdTree; AugType: HasBox; Split: MaxStretchDim-ObjectMedian; BDO: 6; Inba: 30; LeafWrap: 1024; Coord: integer; 
+1.in 18.3342 24 24 
+Array-tree: 0.276367 (1511, 15998)  (999992674, 999991750)  
+Pointer-tree: 0.377239 (1511, 15998)  (999992674, 999991750)  
+Par-for: 0.280163 (1511, 15998)  (999992674, 999991750)  
+
+Tree: KdTree; AugType: HasBox; Split: MaxStretchDim-ObjectMedian; BDO: 6; Inba: 30; LeafWrap: 128; Coord: integer; 
+1.in 12.5121 26 24.0203 
+Array-tree: 0.279883 (1511, 15998)  (999992674, 999991750)  
+Pointer-tree: 0.405509 (1511, 15998)  (999992674, 999991750)  
+Par-for: 0.236809 (1511, 15998)  (999992674, 999991750)  
+
+Tree: KdTree; AugType: HasBox; Split: MaxStretchDim-ObjectMedian; BDO: 6; Inba: 30; LeafWrap: 16; Coord: integer; 
+1.in 14.4167 29 26.512 
+Array-tree: 0.438225 (1511, 15998)  (999992674, 999991750)  
+Pointer-tree: 0.501333 (1511, 15998)  (999992674, 999991750)  
+Par-for: 0.286433 (1511, 15998)  (999992674, 999991750)  
+
+Tree: KdTree; AugType: HasBox; Split: MaxStretchDim-ObjectMedian; BDO: 6; Inba: 30; LeafWrap: 32; Coord: integer; 
+1.in 14.8685 28 25.5294 
+Array-tree: 0.359505 (1511, 15998)  (999992674, 999991750)  
+Pointer-tree: 0.426476 (1511, 15998)  (999992674, 999991750)  
+Par-for: 0.302667 (1511, 15998)  (999992674, 999991750)  
+
+Tree: KdTree; AugType: HasBox; Split: MaxStretchDim-ObjectMedian; BDO: 6; Inba: 30; LeafWrap: 512; Coord: integer; 
+1.in 14.1626 24 24 
+Array-tree: 0.278664 (1511, 15998)  (999992674, 999991750)  
+Pointer-tree: 0.429558 (1511, 15998)  (999992674, 999991750)  
+Par-for: 0.2784 (1511, 15998)  (999992674, 999991750)  
+
+Tree: KdTree; AugType: HasBox; Split: MaxStretchDim-ObjectMedian; BDO: 6; Inba: 30; LeafWrap: 64; Coord: integer; 
+1.in 15.0334 27 24.5497 
+Array-tree: 0.266451 (1511, 15998)  (999992674, 999991750)  
+Pointer-tree: 0.377898 (1511, 15998)  (999992674, 999991750)  
+Par-for: 0.249313 (1511, 15998)  (999992674, 999991750)  
+
+Tree: KdTree; AugType: HasBox; Split: MaxStretchDim-ObjectMedian; BDO: 6; Inba: 30; LeafWrap: 1024; Coord: integer; 
+2_sort_by_0.in 18.6535 24 24 
+Array-tree: 0.316814 (0, 0)  (1000000000, 999999999)  
+Pointer-tree: 0.360349 (0, 0)  (1000000000, 999999999)  
+Par-for: 0.240574 (0, 0)  (1000000000, 999999999)  
+
+Tree: KdTree; AugType: HasBox; Split: MaxStretchDim-ObjectMedian; BDO: 6; Inba: 30; LeafWrap: 128; Coord: integer; 
+2_sort_by_0.in 11.8632 26 24.0113 
+Array-tree: 0.25382 (0, 0)  (1000000000, 999999999)  
+Pointer-tree: 0.404147 (0, 0)  (1000000000, 999999999)  
+Par-for: 0.234796 (0, 0)  (1000000000, 999999999)  
+
+Tree: KdTree; AugType: HasBox; Split: MaxStretchDim-ObjectMedian; BDO: 6; Inba: 30; LeafWrap: 16; Coord: integer; 
+2_sort_by_0.in 14.5754 29 26.4979 
+Array-tree: 0.445424 (0, 0)  (1000000000, 999999999)  
+Pointer-tree: 0.497859 (0, 0)  (1000000000, 999999999)  
+Par-for: 0.287525 (0, 0)  (1000000000, 999999999)  
+
+Tree: KdTree; AugType: HasBox; Split: MaxStretchDim-ObjectMedian; BDO: 6; Inba: 30; LeafWrap: 32; Coord: integer; 
+2_sort_by_0.in 13.254 28 25.5197 
+Array-tree: 0.352433 (0, 0)  (1000000000, 999999999)  
+Pointer-tree: 0.426988 (0, 0)  (1000000000, 999999999)  
+Par-for: 0.293145 (0, 0)  (1000000000, 999999999)  
+
+Tree: KdTree; AugType: HasBox; Split: MaxStretchDim-ObjectMedian; BDO: 6; Inba: 30; LeafWrap: 4; Coord: integer; 
+2_sort_by_0.in 16.8082 31 28.378 
+Array-tree: 0.531866 (0, 0)  (1000000000, 999999999)  
+Pointer-tree: 1.11822 (0, 0)  (1000000000, 999999999)  
+Par-for: 0.227072 (0, 0)  (1000000000, 999999999)  
+
+Tree: KdTree; AugType: HasBox; Split: MaxStretchDim-ObjectMedian; BDO: 6; Inba: 30; LeafWrap: 512; Coord: integer; 
+2_sort_by_0.in 12.1245 24 24 
+Array-tree: 0.289646 (0, 0)  (1000000000, 999999999)  
+Pointer-tree: 0.422129 (0, 0)  (1000000000, 999999999)  
+Par-for: 0.244112 (0, 0)  (1000000000, 999999999)  
+
+Tree: KdTree; AugType: HasBox; Split: MaxStretchDim-ObjectMedian; BDO: 6; Inba: 30; LeafWrap: 64; Coord: integer; 
+2_sort_by_0.in 12.0166 27 24.5405 
+Array-tree: 0.27673 (0, 0)  (1000000000, 999999999)  
+Pointer-tree: 0.376383 (0, 0)  (1000000000, 999999999)  
+Par-for: 0.255257 (0, 0)  (1000000000, 999999999)  
+
+Tree: KdTree; AugType: HasBox; Split: MaxStretchDim-ObjectMedian; BDO: 6; Inba: 30; LeafWrap: 1024; Coord: integer; 
+2.in 14.4729 24 24 
+Array-tree: 0.274775 (0, 0)  (1000000000, 999999999)  
+Pointer-tree: 0.374538 (0, 0)  (1000000000, 999999999)  
+Par-for: 0.230311 (0, 0)  (1000000000, 999999999)  
+
+Tree: KdTree; AugType: HasBox; Split: MaxStretchDim-ObjectMedian; BDO: 6; Inba: 30; LeafWrap: 128; Coord: integer; 
+2.in 7.88446 26 24.0175 
+Array-tree: 0.284261 (0, 0)  (1000000000, 999999999)  
+Pointer-tree: 0.501279 (0, 0)  (1000000000, 999999999)  
+Par-for: 0.234249 (0, 0)  (1000000000, 999999999)  
+
+Tree: KdTree; AugType: HasBox; Split: MaxStretchDim-ObjectMedian; BDO: 6; Inba: 30; LeafWrap: 16; Coord: integer; 
+2.in 9.49311 29 26.505 
+Array-tree: 0.391632 (0, 0)  (1000000000, 999999999)  
+Pointer-tree: 0.504911 (0, 0)  (1000000000, 999999999)  
+Par-for: 0.286376 (0, 0)  (1000000000, 999999999)  
+
+Tree: KdTree; AugType: HasBox; Split: MaxStretchDim-ObjectMedian; BDO: 6; Inba: 30; LeafWrap: 2; Coord: integer; 
+2.in 13.0143 32 29.2528 
+Array-tree: 0.85195 (0, 0)  (1000000000, 999999999)  
+Pointer-tree: 1.60507 (0, 0)  (1000000000, 999999999)  
+Par-for: 0.266727 (0, 0)  (1000000000, 999999999)  
+
+Tree: KdTree; AugType: HasBox; Split: MaxStretchDim-ObjectMedian; BDO: 6; Inba: 30; LeafWrap: 32; Coord: integer; 
+2.in 10.556 28 25.5267 
+Array-tree: 0.299339 (0, 0)  (1000000000, 999999999)  
+Pointer-tree: 0.425497 (0, 0)  (1000000000, 999999999)  
+Par-for: 0.276663 (0, 0)  (1000000000, 999999999)  
+
+Tree: KdTree; AugType: HasBox; Split: MaxStretchDim-ObjectMedian; BDO: 6; Inba: 30; LeafWrap: 4; Coord: integer; 
+2.in 12.1494 31 28.3857 
+Array-tree: 0.553149 (0, 0)  (1000000000, 999999999)  
+Pointer-tree: 1.17005 (0, 0)  (1000000000, 999999999)  
+Par-for: 0.228172 (0, 0)  (1000000000, 999999999)  
+
+Tree: KdTree; AugType: HasBox; Split: MaxStretchDim-ObjectMedian; BDO: 6; Inba: 30; LeafWrap: 512; Coord: integer; 
+2.in 8.75975 24 24 
+Array-tree: 0.313489 (0, 0)  (1000000000, 999999999)  
+Pointer-tree: 0.426448 (0, 0)  (1000000000, 999999999)  
+Par-for: 0.247706 (0, 0)  (1000000000, 999999999)  
+
+Tree: KdTree; AugType: HasBox; Split: MaxStretchDim-ObjectMedian; BDO: 6; Inba: 30; LeafWrap: 64; Coord: integer; 
+2.in 10.4537 27 24.5489 
+Array-tree: 0.277608 (0, 0)  (1000000000, 999999999)  
+Pointer-tree: 0.380083 (0, 0)  (1000000000, 999999999)  
+Par-for: 0.242524 (0, 0)  (1000000000, 999999999)  
+

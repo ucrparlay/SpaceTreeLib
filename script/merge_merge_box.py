@@ -12,7 +12,7 @@ from pathlib import Path
 solver = ""
 ratio_map = {}
 input_type = sys.argv[1]
-log_folder_name = "linear_wrap"
+log_folder_name = "merge_box"
 
 subprocess.run(
     f"""
@@ -29,6 +29,17 @@ subprocess.run(
 input_path = "logs/" + log_folder_name + "/" + input_type + ".log"
 store_path = "data/" + log_folder_name + "/" + input_type + ".csv"
 type = ""
+
+solver_num = 3
+
+
+def parse_solvers(lines, index, solver_num, benchmark, leaf_wrap, all_data):
+    for i in range(solver_num):
+        lin_sep = " ".join(lines[index + i].split())
+        lin_sep = lin_sep.split(" ")
+        solver = lin_sep[0].strip(":")
+
+        all_data.append([benchmark, solver, leaf_wrap] + [lin_sep[1]])
 
 
 def to_float(match):
@@ -67,15 +78,8 @@ def combine(P) -> List:
 
         else:
             # parse result
-            solver = "Pointer" if solver == "Array" else "Array"
-            all_data.append(
-                [benchmark, solver, leaf_wrap]
-                + [lin_sep[i] for i in range(0, len(lin_sep), 6)]
-            )
-            # all_data = all_data + \
-            #     [[benchmark, solver, leaf_wrap, lin_sep[0],
-            #         lin_sep[6], lin_sep[12], lin_sep[18], lin_sep[24], lin_sep[30], lin_sep[36]]]
-            index += 1
+            parse_solvers(lines, index, solver_num, benchmark, leaf_wrap, all_data)
+            index += solver_num + 1
 
     return all_data
 
@@ -83,7 +87,7 @@ def combine(P) -> List:
 def post_processing(data):
     # desired order for x[0]
     bench_order = ["Uniform", "Uniform_by_x", "Varden"]
-    tree_order = ["Pointer", "Array"]  # desired order for x[1]
+    tree_order = ["Array-tree", "Pointer-tree", "Par-for"]  # desired order for x[1]
 
     sorted_lst = sorted(
         data,
@@ -97,28 +101,12 @@ def post_processing(data):
 
 
 def csvSetup():
+    os.makedirs(os.path.dirname(store_path), exist_ok=True)
     csv_file_pointer = open(store_path, "w", newline="")
     print(csv_file_pointer.name)
     csv_file_pointer.truncate()
     csv_writer = csv.writer(csv_file_pointer)
-    csv_writer.writerow(
-        [
-            "benchmark",
-            "solver",
-            "leaf_wrap",
-            "InD1",
-            "InD10",
-            "InD100",
-            "InD1000",
-            "OOD1",
-            "OOD10",
-            "OOD100",
-            "OOD1000",
-            "S",
-            "M",
-            "L",
-        ]
-    )
+    csv_writer.writerow(["benchmark", "solver", "leaf_wrap", "time"])
     return csv_writer, csv_file_pointer
 
 
