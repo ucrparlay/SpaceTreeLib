@@ -1,8 +1,9 @@
 #ifndef PSI_COVER_BATCH_INSERT_HPP_
 #define PSI_COVER_BATCH_INSERT_HPP_
 
-#define COVERTREE_TEMPLATE template <typename Point, typename SplitRule, \
-    uint_fast8_t kSkHeight, uint_fast8_t kImbaRatio>
+#define COVERTREE_TEMPLATE                                              \
+  template <typename Point, typename SplitRule, uint_fast8_t kSkHeight, \
+            uint_fast8_t kImbaRatio>
 #define COVERTREE_CLASS CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>
 
 #include <algorithm>
@@ -17,8 +18,7 @@ namespace psi {
 
 COVERTREE_TEMPLATE
 template <typename Range>
-void COVERTREE_CLASS::BatchInsert(
-    Range&& In) {
+void COVERTREE_CLASS::BatchInsert(Range&& In) {
   static_assert(parlay::is_random_access_range_v<Range>);
   static_assert(
       parlay::is_less_than_comparable_v<parlay::range_reference_type_t<Range>>);
@@ -88,8 +88,8 @@ void CoverTree<Point, SplitRule, kSkHeight,
 }
 
 COVERTREE_TEMPLATE
-Node* COVERTREE_CLASS::
-    ShrinkCoverRangeDownwards(Node* T, CoverCircle const& level_cover_circle) {
+Node* COVERTREE_CLASS::ShrinkCoverRangeDownwards(
+    Node* T, CoverCircle const& level_cover_circle) {
   assert(T->is_leaf);
   assert(T->size == BT::kLeaveWrap);
 
@@ -151,8 +151,7 @@ Node* COVERTREE_CLASS::
 
 // BUG: the return value is always true
 COVERTREE_TEMPLATE
-typename COVERTREE_CLASS::NodeBoolean
-COVERTREE_CLASS::PointInsertRecursive(
+typename COVERTREE_CLASS::NodeBoolean COVERTREE_CLASS::PointInsertRecursive(
     Node* T, Point const& p, CoverCircle const& level_cover_circle) {
   assert(BT::WithinCircle(p, level_cover_circle));
 

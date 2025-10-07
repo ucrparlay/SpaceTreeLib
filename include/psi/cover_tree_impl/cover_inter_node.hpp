@@ -1,8 +1,9 @@
 #ifndef PSI_COVER_TREE_IMPL_COVER_INTER_NODE_HPP_
 #define PSI_COVER_TREE_IMPL_COVER_INTER_NODE_HPP_
 
-#define COVERTREE_TEMPLATE template <typename Point, typename SplitRule, \
-    uint_fast8_t kSkHeight, uint_fast8_t kImbaRatio>
+#define COVERTREE_TEMPLATE                                              \
+  template <typename Point, typename SplitRule, uint_fast8_t kSkHeight, \
+            uint_fast8_t kImbaRatio>
 #define COVERTREE_CLASS CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>
 
 #include "../cover_tree.h"

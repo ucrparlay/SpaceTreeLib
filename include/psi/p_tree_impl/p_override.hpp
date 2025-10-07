@@ -1,8 +1,9 @@
 #ifndef PSI_P_TREE_IMPL_P_OVERRIDE_HPP_
 #define PSI_P_TREE_IMPL_P_OVERRIDE_HPP_
 
-#define PTREE_TEMPLATE template <typename Point, typename SplitRule, \
-    uint_fast8_t kSkHeight, uint_fast8_t kImbaRatio>
+#define PTREE_TEMPLATE                                                  \
+  template <typename Point, typename SplitRule, uint_fast8_t kSkHeight, \
+            uint_fast8_t kImbaRatio>
 #define PTREE_CLASS PTree<Point, SplitRule, kSkHeight, kImbaRatio>
 
 #include <type_traits>
@@ -34,8 +35,8 @@ auto point_point_sqrdis(Point const& lhs, Point const& rhs) {
 
 PTREE_TEMPLATE
 template <typename Range>
-auto PTREE_CLASS::KNN(
-    Node* T, Point const& q, kBoundedQueue<Point, Range>& bq) {
+auto PTREE_CLASS::KNN(Node* T, Point const& q,
+                      kBoundedQueue<Point, Range>& bq) {
   KNNLogger logger;
   CpamAugMap::template knn<BT>(this->cpam_aug_map_, q, bq, logger);
   return logger;
@@ -49,8 +50,7 @@ void PTREE_CLASS::Flatten(Range&& Out) {
 }
 
 PTREE_TEMPLATE
-auto PTREE_CLASS::RangeCount(
-    Box const& query_box) {
+auto PTREE_CLASS::RangeCount(Box const& query_box) {
   RangeQueryLogger logger;
 
   auto size = CpamAugMap::template range_count_filter2<BT>(this->cpam_aug_map_,
@@ -61,8 +61,7 @@ auto PTREE_CLASS::RangeCount(
 
 PTREE_TEMPLATE
 template <typename Range>
-auto PTREE_CLASS::RangeQuery(
-    Box const& query_box, Range&& Out) {
+auto PTREE_CLASS::RangeQuery(Box const& query_box, Range&& Out) {
   RangeQueryLogger logger;
   size_t cnt = 0;
   CpamAugMap::template range_report_filter2<BT>(

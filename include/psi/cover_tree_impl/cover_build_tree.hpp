@@ -1,8 +1,9 @@
 #ifndef PSI_COVER_TREE_IMPL_COVER_BUILD_TREE_HPP_
 #define PSI_COVER_TREE_IMPL_COVER_BUILD_TREE_HPP_
 
-#define COVERTREE_TEMPLATE template <typename Point, typename SplitRule, \
-    uint_fast8_t kSkHeight, uint_fast8_t kImbaRatio>
+#define COVERTREE_TEMPLATE                                              \
+  template <typename Point, typename SplitRule, uint_fast8_t kSkHeight, \
+            uint_fast8_t kImbaRatio>
 #define COVERTREE_CLASS CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>
 
 #include <parlay/range.h>
@@ -25,8 +26,7 @@ void COVERTREE_CLASS::Build_(Slice A) {
 }
 
 COVERTREE_TEMPLATE
-void COVERTREE_CLASS::Build_(
-    Slice A, Box const& box) {
+void COVERTREE_CLASS::Build_(Slice A, Box const& box) {
   assert(BT::WithinBox(BT::GetBox(A), box));
 
   Points B = Points::uninitialized(A.size());
@@ -38,8 +38,7 @@ void COVERTREE_CLASS::Build_(
 
 COVERTREE_TEMPLATE
 template <typename Range, typename... Args>
-void COVERTREE_CLASS::Build(Range&& In,
-                                                               Args&&... args) {
+void COVERTREE_CLASS::Build(Range&& In, Args&&... args) {
   static_assert(parlay::is_random_access_range_v<Range>);
   static_assert(
       parlay::is_less_than_comparable_v<parlay::range_reference_type_t<Range>>);
