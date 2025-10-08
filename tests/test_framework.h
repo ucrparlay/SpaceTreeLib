@@ -25,7 +25,6 @@
 #include "psi/kd_tree.h"
 #include "psi/orth_tree.h"
 #include "psi/p_tree.h"
-#include "psi/r_tree.h"
 
 #ifdef CCP
 using Coord = long;
@@ -1682,13 +1681,6 @@ class Wrapper {
     using Point = PointType;
     using SplitRule = SplitRuleType;
     using TreeType = typename psi::CoverTree<Point, SplitRule>;
-  };
-
-  template <class PointType, class SplitRuleType>
-  struct RTreeWrapper {
-    using Point = PointType;
-    using SplitRule = SplitRuleType;
-    using TreeType = typename psi::RTree<Point, SplitRule>;
   };
 
   // NOTE: Apply the dim and split rule
