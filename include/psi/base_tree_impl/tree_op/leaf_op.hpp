@@ -13,13 +13,16 @@
 #include "../../base_tree.h"
 #include "dependence/concepts.h"
 
+#define BASETREE_TEMPLATE                                                 \
+  template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight, \
+            uint_fast8_t kImbaRatio>
+#define BASETREE_CLASS BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>
+
 namespace psi {
 
-template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
+BASETREE_TEMPLATE
 template <typename Leaf, typename Range>
-void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::ExtractPointsInLeaf(
-    Node* T, Range Out) {
+void BASETREE_CLASS::ExtractPointsInLeaf(Node* T, Range Out) {
   Leaf* TL = static_cast<Leaf*>(T);
   if (TL->is_dummy) {
     std::ranges::fill_n(Out.begin(), TL->size, TL->pts[0]);
@@ -29,11 +32,9 @@ void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::ExtractPointsInLeaf(
   return;
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
+BASETREE_TEMPLATE
 template <typename Leaf>
-Node* BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::InsertPoints2Leaf(
-    Node* T, Slice In) {
+Node* BASETREE_CLASS::InsertPoints2Leaf(Node* T, Slice In) {
   Leaf* TL = static_cast<Leaf*>(T);
   if (TL->is_dummy) {
     T->size += In.size();
@@ -54,8 +55,7 @@ Node* BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::InsertPoints2Leaf(
   return T;
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
+BASETREE_TEMPLATE
 template <typename Leaf, typename ReturnType>
 ReturnType BaseTree<Point, DerivedTree, kSkHeight,
                     kImbaRatio>::DeletePoints4Leaf(Node* T, Slice In) {
@@ -114,11 +114,9 @@ ReturnType BaseTree<Point, DerivedTree, kSkHeight,
 
 // NOTE: diff points from the leaf using std::set_difference
 // {1, 2, 5, 5, 5, 9} ∖ {2, 5, 7} == {1, 5, 5, 9}
-template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
+BASETREE_TEMPLATE
 template <typename Leaf, typename ReturnType>
-ReturnType BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::DiffPoints4Leaf(
-    Node* T, Slice In) {
+ReturnType BASETREE_CLASS::DiffPoints4Leaf(Node* T, Slice In) {
   Leaf* TL = static_cast<Leaf*>(T);
 
   if (TL->is_dummy) {
@@ -166,5 +164,8 @@ ReturnType BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::DiffPoints4Leaf(
   }
 }
 }  // namespace psi
+
+#undef BASETREE_TEMPLATE
+#undef BASETREE_CLASS
 
 #endif  // PSI_BASE_TREE_IMPL_LEAF_OP_HPP_

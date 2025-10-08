@@ -6,21 +6,22 @@
 #include "../base_tree.h"
 #include "psi/dependence/concepts.h"
 
+#define BASETREE_TEMPLATE                                                 \
+  template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight, \
+            uint_fast8_t kImbaRatio>
+#define BASETREE_CLASS BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>
+
 namespace psi {
-template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
+BASETREE_TEMPLATE
 template <typename CircleType>
-inline bool BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::LegalCircle(
-    CircleType const& cl) {
+inline bool BASETREE_CLASS::LegalCircle(CircleType const& cl) {
   return Num::Geq(cl.GetRadius(), 0);
 }
 
 // NOTE: point within the circle
-template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
+BASETREE_TEMPLATE
 template <typename CircleType>
-inline bool BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::WithinCircle(
-    Point const& p, CircleType const& cl) {
+inline bool BASETREE_CLASS::WithinCircle(Point const& p, CircleType const& cl) {
   Coord r = 0;
   for (DimsType i = 0; i < kDim; ++i) {
     r +=
@@ -32,11 +33,9 @@ inline bool BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::WithinCircle(
 }
 
 // NOTE: box within the circle
-template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
+BASETREE_TEMPLATE
 template <typename CircleType>
-inline bool BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::WithinCircle(
-    Box const& box, CircleType const& cl) {
+inline bool BASETREE_CLASS::WithinCircle(Box const& box, CircleType const& cl) {
   assert(LegalBox(box));
   assert(LegalCircle(cl));
 
@@ -57,8 +56,7 @@ inline bool BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::WithinCircle(
   return true;
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
+BASETREE_TEMPLATE
 template <typename CircleType>
 inline bool BaseTree<Point, DerivedTree, kSkHeight,
                      kImbaRatio>::CircleIntersectBox(CircleType const& cl,
@@ -82,11 +80,9 @@ inline bool BaseTree<Point, DerivedTree, kSkHeight,
   return true;
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
+BASETREE_TEMPLATE
 template <typename CircleType>
-inline CircleType
-BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::GetCircle(Box const& box) {
+inline CircleType BASETREE_CLASS::GetCircle(Box const& box) {
   assert(LegalBox(box) && box != GetEmptyBox());
 
   Coord r = 0;
@@ -118,19 +114,15 @@ BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::GetCircle(Box const& box) {
   return CircleType{GetBoxCenter(box), CircleType::ComputeRadius(std::sqrt(r))};
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
+BASETREE_TEMPLATE
 template <typename CircleType>
-inline CircleType
-BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::GetCircle(Slice V) {
+inline CircleType BASETREE_CLASS::GetCircle(Slice V) {
   return GetCircle<CircleType>(GetBox(V));
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
+BASETREE_TEMPLATE
 template <typename CircleType>
-inline CircleType
-BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::GetCircle(
+inline CircleType BASETREE_CLASS::GetCircle(
     parlay::sequence<CircleType> const& circle_seq) {
   CircleType circle = circle_seq[0];
   for (size_t i = 1; i < circle_seq.size(); i++) {
@@ -139,8 +131,7 @@ BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::GetCircle(
   return circle;
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
+BASETREE_TEMPLATE
 template <typename CircleType1, typename CircleType2>
 inline bool BaseTree<Point, DerivedTree, kSkHeight,
                      kImbaRatio>::CircleWithinCircle(CircleType1 const& a,
@@ -152,8 +143,7 @@ inline bool BaseTree<Point, DerivedTree, kSkHeight,
              (b.GetRadius() - a.GetRadius()) * (b.GetRadius() - a.GetRadius()));
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
+BASETREE_TEMPLATE
 template <typename CircleType>
 inline CircleType BaseTree<Point, DerivedTree, kSkHeight,
                            kImbaRatio>::GetCircle(CircleType const& a,
@@ -175,8 +165,7 @@ inline CircleType BaseTree<Point, DerivedTree, kSkHeight,
   return CircleType{center, CircleType::ComputeRadius(radius)};
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
+BASETREE_TEMPLATE
 template <typename CircleType>
 inline CircleType BaseTree<Point, DerivedTree, kSkHeight,
                            kImbaRatio>::GetCircle(Point const& p,
@@ -190,5 +179,8 @@ inline CircleType BaseTree<Point, DerivedTree, kSkHeight,
 }
 
 }  // namespace psi
+
+#undef BASETREE_TEMPLATE
+#undef BASETREE_CLASS
 
 #endif  // PSI_BASE_TREE_IMPL_CIRCLE_OP_HPP_

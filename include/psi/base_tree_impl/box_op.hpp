@@ -4,13 +4,16 @@
 #include "../base_tree.h"
 #include "psi/dependence/concepts.h"
 
+#define BASETREE_TEMPLATE                                                 \
+  template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight, \
+            uint_fast8_t kImbaRatio>
+#define BASETREE_CLASS BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>
+
 namespace psi {
 
-template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
-inline typename BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::Coord
-BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::GetBoxMid(DimsType const d,
-                                                               Box const& box) {
+BASETREE_TEMPLATE
+inline typename BASETREE_CLASS::Coord BASETREE_CLASS::GetBoxMid(
+    DimsType const d, Box const& box) {
   // TODO: change to Num::divide2ceil
   if constexpr (std::is_integral_v<Coord>) {
     // NOTE: since the points on the box line will be put in right, therefore
@@ -25,10 +28,8 @@ BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::GetBoxMid(DimsType const d,
   }
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
-inline bool BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::LegalBox(
-    Box const& bx) {
+BASETREE_TEMPLATE
+inline bool BASETREE_CLASS::LegalBox(Box const& bx) {
   // TODO: remove it
   if (bx == GetEmptyBox()) return true;
 

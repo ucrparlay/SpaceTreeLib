@@ -4,12 +4,16 @@
 #include "../base_tree.h"
 #include "dependence/concepts.h"
 
+#define BASETREE_TEMPLATE                                                 \
+  template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight, \
+            uint_fast8_t kImbaRatio>
+#define BASETREE_CLASS BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>
+
 namespace psi {
 
-template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
+BASETREE_TEMPLATE
 template <typename Leaf, typename Interior>
-void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::DeleteTreeWrapper() {
+void BASETREE_CLASS::DeleteTreeWrapper() {
   if (this->root_ == nullptr) {
     return;
   }
@@ -19,11 +23,9 @@ void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::DeleteTreeWrapper() {
   return;
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>  //* delete tree in parallel
-template <typename Leaf, IsBinaryNode Interior, bool granularity>
-void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::DeleteTreeRecursive(
-    Node* T) {
+BASETREE_TEMPLATE  //* delete tree in parallel
+    template <typename Leaf, IsBinaryNode Interior, bool granularity>
+    void BASETREE_CLASS::DeleteTreeRecursive(Node* T) {
   if (T == nullptr) {
     return;
   }
@@ -41,11 +43,9 @@ void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::DeleteTreeRecursive(
   }
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>  //* delete tree in parallel
-template <typename Leaf, IsMultiNode Interior, bool granularity>
-void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::DeleteTreeRecursive(
-    Node* T) {
+BASETREE_TEMPLATE  //* delete tree in parallel
+    template <typename Leaf, IsMultiNode Interior, bool granularity>
+    void BASETREE_CLASS::DeleteTreeRecursive(Node* T) {
   if (T == nullptr) {
     return;
   }
@@ -69,11 +69,9 @@ void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::DeleteTreeRecursive(
   }
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>  //* delete tree in parallel
-template <typename Leaf, IsDynamicNode Interior, bool granularity>
-void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::DeleteTreeRecursive(
-    Node* T) {
+BASETREE_TEMPLATE  //* delete tree in parallel
+    template <typename Leaf, IsDynamicNode Interior, bool granularity>
+    void BASETREE_CLASS::DeleteTreeRecursive(Node* T) {
   if (T == nullptr) {
     return;
   }
@@ -97,5 +95,8 @@ void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::DeleteTreeRecursive(
   }
 }
 }  // namespace psi
+
+#undef BASETREE_TEMPLATE
+#undef BASETREE_CLASS
 
 #endif  // PSI_BASE_TREE_IMPL_DELETE_TREE_HPP_

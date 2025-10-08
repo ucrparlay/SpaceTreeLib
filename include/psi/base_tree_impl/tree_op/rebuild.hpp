@@ -12,14 +12,17 @@
 
 #include "../../base_tree.h"
 
+#define BASETREE_TEMPLATE                                                 \
+  template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight, \
+            uint_fast8_t kImbaRatio>
+#define BASETREE_CLASS BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>
+
 namespace psi {
 
 // NOTE: rebuild the tree
-template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
+BASETREE_TEMPLATE
 template <typename Leaf, typename Interior, bool granularity>
-void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::PrepareRebuild(
-    Node* T, Points& wx, Points& wo) {
+void BASETREE_CLASS::PrepareRebuild(Node* T, Points& wx, Points& wo) {
   wo = Points::uninitialized(T->size);
   wx = Points::uninitialized(T->size);
   FlattenRec<Leaf, Interior, Slice, granularity>(T, parlay::make_slice(wx));
@@ -28,11 +31,9 @@ void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::PrepareRebuild(
 }
 
 // NOTE: rebuild with new input In
-template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
+BASETREE_TEMPLATE
 template <typename Leaf, typename Interior, bool granularity>
-void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::PrepareRebuild(
-    Node* T, Slice In, Points& wx, Points& wo) {
+void BASETREE_CLASS::PrepareRebuild(Node* T, Slice In, Points& wx, Points& wo) {
   wo = Points::uninitialized(T->size + In.size());
   wx = Points::uninitialized(T->size + In.size());
   parlay::parallel_for(0, In.size(), [&](size_t j) { wx[j] = In[j]; });
@@ -42,12 +43,11 @@ void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::PrepareRebuild(
   return;
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
+BASETREE_TEMPLATE
 template <typename Leaf, typename Interior, typename PrepareFunc,
           typename... Args>
-Node* BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::RebuildWithInsert(
-    Node* T, PrepareFunc prepare_func, Slice In, Args&&... args) {
+Node* BASETREE_CLASS::RebuildWithInsert(Node* T, PrepareFunc prepare_func,
+                                        Slice In, Args&&... args) {
   Points w_in, w_out;
   PrepareRebuild<Leaf, Interior>(T, In, w_in, w_out);
   auto additional_arg = prepare_func(T, w_in, w_out);
@@ -62,11 +62,9 @@ Node* BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::RebuildWithInsert(
 // PARA: when granularity set to false, it will disable the default value for
 // granularity size, which is BT::kSerialBuildCutoff; instead, it will check
 // whether the force parallel flag has been enabled
-template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
+BASETREE_TEMPLATE
 template <typename Leaf, typename Interior, bool granularity, typename... Args>
-Node* BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::RebuildSingleTree(
-    Node* T, Args&&... args) {
+Node* BASETREE_CLASS::RebuildSingleTree(Node* T, Args&&... args) {
   Points wx, wo;
   PrepareRebuild<Leaf, Interior, granularity>(T, wx, wo);
   static_assert(std::is_invocable_v<decltype(&DerivedTree::BuildRecursive),
@@ -80,13 +78,12 @@ Node* BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::RebuildSingleTree(
 // tree
 // PARA: if allow_enable_rebuild enabled, this method will re-balance the
 // tree; otherwise, it flattens all sparcy node into leaf nodes
-template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
+BASETREE_TEMPLATE
 template <typename Leaf, IsBinaryNode Interior, bool granularity,
           typename PrepareFunc, typename... Args>
-Node* BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::RebuildTreeRecursive(
-    Node* T, PrepareFunc&& prepare_func, bool const allow_inba_rebuild,
-    Args&&... args) {
+Node* BASETREE_CLASS::RebuildTreeRecursive(Node* T, PrepareFunc&& prepare_func,
+                                           bool const allow_inba_rebuild,
+                                           Args&&... args) {
   if (T->is_leaf) {
     return T;
   }
@@ -129,11 +126,10 @@ Node* BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::RebuildTreeRecursive(
 }
 
 // NOTE: rebuild a multi-node tree
-template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
+BASETREE_TEMPLATE
 template <typename Leaf, IsMultiNode Interior, bool granularity,
           typename PrepareFunc, typename... Args>
-Node* BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::RebuildTreeRecursive(
+Node* BASETREE_CLASS::RebuildTreeRecursive(
     Node* T, PrepareFunc&& prepare_func,
     [[maybe_unused]] bool const allow_inba_rebuild, Args&&... args) {
   if (T->is_leaf) {
@@ -168,5 +164,8 @@ Node* BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::RebuildTreeRecursive(
 }
 
 }  // namespace psi
+
+#undef BASETREE_TEMPLATE
+#undef BASETREE_CLASS
 
 #endif  // PSI_BASE_TREE_IMPL_REBUILD_HPP_

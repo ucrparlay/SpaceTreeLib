@@ -12,10 +12,14 @@
 
 #include "../../base_tree.h"
 
+#define BASETREE_TEMPLATE                                                 \
+  template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight, \
+            uint_fast8_t kImbaRatio>
+#define BASETREE_CLASS BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>
+
 namespace psi {
 
-template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
+BASETREE_TEMPLATE
 template <SupportsForceParallel Interior, bool granularity>
 inline bool BaseTree<Point, DerivedTree, kSkHeight,
                      kImbaRatio>::ForceParallelRecursion(Interior const* TI) {
@@ -23,12 +27,10 @@ inline bool BaseTree<Point, DerivedTree, kSkHeight,
          (!granularity && TI->ForceParallel());
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
+BASETREE_TEMPLATE
 template <typename Leaf, IsBinaryNode Interior, typename Range,
           bool granularity>
-void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::FlattenRec(
-    Node* T, Range Out) {
+void BASETREE_CLASS::FlattenRec(Node* T, Range Out) {
   assert(T->size == Out.size());
 
   if (T->size == 0) return;
@@ -54,11 +56,9 @@ void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::FlattenRec(
   return;
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
+BASETREE_TEMPLATE
 template <typename Leaf, typename Interior, typename Range, bool granularity>
-void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::FlattenRec(Node* T,
-                                                                     Range Out)
+void BASETREE_CLASS::FlattenRec(Node* T, Range Out)
   requires(!IsBinaryNode<Interior>)
 {
   assert(T->size == Out.size());
@@ -95,11 +95,9 @@ void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::FlattenRec(Node* T,
 }
 
 // NOTE: for multi node @T, it only flatten the subtree with id @idx to @Out
-template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
+BASETREE_TEMPLATE
 template <typename Leaf, IsMultiNode Interior, typename Range, bool granularity>
-void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::PartialFlatten(
-    Node* T, Range Out, BucketType idx) {
+void BASETREE_CLASS::PartialFlatten(Node* T, Range Out, BucketType idx) {
   if (idx == 1) {
     assert(T->size == Out.size());
     FlattenRec<Leaf, Interior>(T, Out.cut(0, T->size));
@@ -127,5 +125,8 @@ void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::PartialFlatten(
   return;
 }
 }  // namespace psi
+
+#undef BASETREE_TEMPLATE
+#undef BASETREE_CLASS
 
 #endif  // PSI_BASE_TREE_IMPL_TREE_OP_FLATTEN_HPP_
