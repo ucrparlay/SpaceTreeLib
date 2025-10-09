@@ -70,10 +70,9 @@ message(STATUS "\n\n---------------------------- PARLAY ------------------------
 add_subdirectory(include/parlaylib)
 message(STATUS "---------------------------- END PARLAY -----------------------------\n\n")
 
-message(STATUS "\n\n---------------------------- LIBMORTON -----------------------------")
+# NOTE: set libmorton
 set(BUILD_TESTING OFF CACHE BOOL "Disable the libmorton test")
 add_subdirectory(include/libmorton)
-message(STATUS "---------------------------- END LIBMORTON -----------------------------\n\n")
 
 # NOTE: clear CMAKE_MODULE_PATH to avoid finding parlay's cmake files
 list(REMOVE_ITEM CMAKE_MODULE_PATH "${PARLAY_SOURCE_DIR}/cmake")
@@ -95,6 +94,10 @@ message(STATUS "---------------------------- END PSI ---------------------------
 add_executable(kd_test ${PROJECT_SOURCE_DIR}/tests/kd_test.cpp)
 target_link_libraries(kd_test PUBLIC PSI)
 target_include_directories(kd_test PUBLIC ${PROJECT_SOURCE_DIR}/include)
+
+add_executable(kd_array_test ${PROJECT_SOURCE_DIR}/tests/kd_array_test.cpp)
+target_link_libraries(kd_array_test PUBLIC PSI)
+target_include_directories(kd_array_test PUBLIC ${PROJECT_SOURCE_DIR}/include)
 
 add_executable(p_test ${PROJECT_SOURCE_DIR}/tests/p_test.cpp)
 target_link_libraries(p_test PUBLIC PSI)

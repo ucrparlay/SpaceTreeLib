@@ -1980,3 +1980,281 @@ class Wrapper {
     }
   }
 };
+
+class ArrayWrapper {
+ public:
+  // NOTE: determine the build depth once for the orth tree
+  static consteval uint8_t OrthGetBuildDepthOnce(uint8_t const dim) {
+    if (dim == 2 || dim == 3) {
+      return 6;
+    } else if (dim == 4) {
+      return 8;
+    } else if (dim >= 5 && dim <= 8) {
+      return dim;
+    } else {
+      static_assert("Cannot decide the build tree depth once for this dim");
+      return 0;
+    }
+  }
+
+  template <class BaseTree>
+  struct InteriorAugEmpty {
+    using BT = BaseTree;
+
+    InteriorAugEmpty() { force_par_indicator.reset(); }
+    InteriorAugEmpty(bool) { force_par_indicator.reset(); }
+
+    // use a bool to reload default constructor
+    template <typename Leaf, typename Interior>
+    static bool Create(Node* l, Node* r) {
+      return true;
+    }
+
+    template <typename TreeNodes>
+    static bool Create(TreeNodes const& /*nodes*/) {
+      return true;
+    }
+
+    void SetParallelFlag(bool const flag) {
+      this->force_par_indicator.emplace(flag);
+    }
+
+    void ResetParallelFlag() { this->force_par_indicator.reset(); }
+
+    bool GetParallelFlagIniStatus() {
+      return this->force_par_indicator.has_value();
+    }
+
+    bool ForceParallel(size_t sz) const {
+      return this->force_par_indicator.has_value()
+                 ? this->force_par_indicator.value()
+                 : sz > BT::kSerialBuildCutoff;
+    }
+
+    template <typename Leaf, typename Interior>
+    void Update(Node*, Node*) {
+      return;
+    }
+
+    template <typename TreeNodes>
+    void Update(TreeNodes const& /*nodes*/) {
+      return;
+    }
+
+    void Reset() { this->force_par_indicator.reset(); }
+
+    // NOTE: use a tri-state bool to indicate whether a subtree needs to be
+    // rebuilt. If aug is not INITIALIZED, then it means there is no need to
+    // rebuild; otherwise, the value depends on the initial tree size before
+    // rebuilding.
+    std::optional<bool> force_par_indicator;
+  };
+
+  template <class BaseTree>
+  struct NodeAugBox : public InteriorAugEmpty<BaseTree> {
+    using BT = BaseTree;
+    using Box = BT::Box;
+    using Slice = BT::Slice;
+    using BaseAug = InteriorAugEmpty<BT>;
+
+    NodeAugBox() : BaseAug(), box(BT::GetEmptyBox()) {}
+    NodeAugBox(Box const& _box) : BaseAug(), box(_box) {}
+
+    // binary create
+    template <typename Leaf, typename Interior>
+    static Box Create(Node* l, Node* r) {
+      return BT::GetBox(BT::template RetriveBox<Leaf, Interior>(l),
+                        BT::template RetriveBox<Leaf, Interior>(r));
+    }
+
+    // multi create
+    template <typename Leaf, typename Interior, typename TreeNodes>
+    static Box Create(TreeNodes const& nodes) {
+      Box box = BT::GetEmptyBox();
+      for (auto t : nodes) {
+        box = BT::GetBox(box, BT::template RetriveBox<Leaf, Interior>(t));
+      }
+      return box;
+    }
+
+    Box& GetBox() { return this->box; }
+    Box const& GetBox() const { return this->box; }
+
+    // binary update
+    template <typename Leaf, typename Interior>
+    void Update(Node* l, Node* r) {
+      this->box = this->Create<Leaf, Interior>(l, r);
+      return;
+    }
+
+    // multi update
+    template <typename Leaf, typename Interior, typename TreeNodes>
+    void Update(TreeNodes const& nodes) {
+      this->box = this->Create<Leaf, Interior>(nodes);
+      return;
+    }
+
+    void Reset() {
+      BaseAug::Reset();
+      this->force_par_indicator.reset();
+    }
+
+    Box box;
+  };
+
+  // NOTE: Trees
+  template <class PointType, class SplitRuleType, class NodeAugBox>
+  struct KdTreeWrapper {
+    using Point = PointType;
+    using SplitRule = SplitRuleType;
+    using TreeType =
+        typename psi::array_based::KdTreeArray<Point, SplitRule, NodeAugBox>;
+  };
+
+  // NOTE: Apply the dim and split rule
+  struct AugId {
+    using IdType = int;
+    IdType id;
+
+    bool operator<(AugId const& rhs) const { return id < rhs.id; }
+    bool operator==(AugId const& rhs) const { return id == rhs.id; }
+    friend std::ostream& operator<<(std::ostream& os, AugId const& rhs) {
+      os << rhs.id;
+      return os;
+    }
+  };
+
+  // For the spacial filling curve, we use the AugIdCode to
+  // ensure the id is unique and the code is used to determine the
+  // order of the points in the tree.
+  struct AugIdCode {
+    using IdType = int_fast32_t;
+    using CurveCode = uint64_t;
+
+    AugIdCode() : code(0), id(0) {}
+
+    void SetMember(CurveCode const& val) { code = val; }
+
+    bool operator<(AugIdCode const& rhs) const {
+      return code == rhs.code ? id < rhs.id : code < rhs.code;
+    }
+
+    bool operator==(AugIdCode const& rhs) const {
+      // return code == rhs.code && id == rhs.id;
+      // WARN: code is not important, we only need to ensure the id
+      return id == rhs.id;
+    }
+
+    friend std::ostream& operator<<(std::ostream& os, AugIdCode const& rhs) {
+      os << rhs.code << " " << rhs.id;
+      return os;
+    }
+
+    CurveCode code;
+    IdType id;
+  };
+
+  // NOTE: driven functions
+  template <typename TreeWrapper, typename RunFunc>
+  static void Run(commandLine& P, RunFunc test_func) {
+    char* input_file_path = P.getOptionValue("-p");
+    int K = P.getOptionIntValue("-k", 100);
+    int dims = P.getOptionIntValue("-d", 3);
+    size_t N = P.getOptionLongValue("-n", -1);
+    int tag = P.getOptionIntValue("-t", 1);
+    int rounds = P.getOptionIntValue("-r", 3);
+    int query_type = P.getOptionIntValue("-q", 0);
+    int read_insert_file = P.getOptionIntValue("-i", 1);
+    char* insert_file_path_cml = P.getOptionValue("-I");
+    int summary = P.getOptionIntValue("-s", 0);
+    int tree_type = P.getOptionIntValue("-T", 0);
+    int split_type = P.getOptionIntValue("-l", 0);
+
+    using Point = typename TreeWrapper::Point;
+    using Points = parlay::sequence<Point>;
+    constexpr auto kDim = Point::GetDim();
+
+    PrintTreeParam<TreeWrapper>();
+
+    std::string name, insert_file_path = "";
+    Points wp, wi;
+
+    if (input_file_path != NULL) {  // NOTE: read main Points
+      name = std::string(input_file_path);
+      name = name.substr(name.rfind('/') + 1);
+      std::cout << name << " ";
+      auto [n, d] = read_points<Point>(input_file_path, wp, 0);
+      N = n;
+      assert(d == kDim);
+    }
+
+    if (read_insert_file == 1) {           // NOTE: read points to be inserted
+      if (insert_file_path_cml != NULL) {  // given in commadnline
+        insert_file_path = std::string(insert_file_path_cml);
+        // std::cout << insert_file_path << std::endl;
+      } else {  // determine the name otherwise
+        int id = std::stoi(name.substr(0, name.find_first_of('.')));
+#ifdef CCP
+        id = (id + 1) % 10;  // WARN: MOD graph number used to test
+#else
+        id = (id + 1) % 3;
+#endif  // CCP
+        if (!id) id++;
+        auto pos = std::string(input_file_path).rfind('/') + 1;
+        insert_file_path = std::string(input_file_path).substr(0, pos) +
+                           std::to_string(id) + ".in";
+      }
+      auto [n, d] = read_points<Point>(insert_file_path.c_str(), wi, N);
+      assert(d == kDim);
+    }
+
+    // Apply the test function
+    test_func.template operator()<TreeWrapper, Point>(
+        kDim, wp, wi, N, K, rounds, insert_file_path, tag, query_type, summary);
+  };
+
+  template <typename RunFunc>
+  static void ApplyArrayTree(int const tree_type, int const dim,
+                             int const split_type, commandLine& params,
+                             RunFunc test_func) {
+    auto build_tree_type = [&]<typename Point, typename SplitRule>() {
+      using BT = psi::BaseTree<Point>;
+      if (tree_type == 0) {
+        Run<KdTreeWrapper<Point, SplitRule, NodeAugBox<BT>>>(params, test_func);
+      }
+    };
+
+    // NOTE: pick the split rule
+    auto run_with_split_type = [&]<typename Point>() {
+      if (!(split_type & (1 << 0)) && !(split_type & (1 << 1))) {
+        // NOTE: 0 -> max_stretch + object_mid
+        build_tree_type.template
+        operator()<Point, psi::OrthogonalSplitRule<psi::MaxStretchDim<Point>,
+                                                   psi::ObjectMedian<Point>>>();
+      } else if ((split_type & (1 << 0)) && !(split_type & (1 << 1))) {
+        // NOTE: 1 -> rotate_dim + object_mid
+        build_tree_type.template
+        operator()<Point, psi::OrthogonalSplitRule<psi::RotateDim<Point>,
+                                                   psi::ObjectMedian<Point>>>();
+      } else if (!(split_type & (1 << 0)) && (split_type & (1 << 1))) {
+        // NOTE: 2 -> max_stretch + spatial_median
+        build_tree_type.template operator()<
+            Point, psi::OrthogonalSplitRule<psi::MaxStretchDim<Point>,
+                                            psi::SpatialMedian<Point>>>();
+      } else if ((split_type & (1 << 0)) && (split_type & (1 << 1))) {
+        // NOTE: 3 -> rotate + spatial_median
+        build_tree_type.template operator()<
+            Point, psi::OrthogonalSplitRule<psi::RotateDim<Point>,
+                                            psi::SpatialMedian<Point>>>();
+      } else {
+        std::cout << "Unsupported split type: " << split_type << std::endl;
+      }
+    };
+
+    if (dim == 2) {
+      run_with_split_type.template operator()<AugPoint<Coord, 2, AugIdCode>>();
+    } else if (dim == 3) {
+      run_with_split_type.template operator()<AugPoint<Coord, 3, AugIdCode>>();
+    }
+  }
+};
