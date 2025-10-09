@@ -5,6 +5,7 @@
 #include <type_traits>
 #include <utility>
 
+#include "basic_point.h"
 #include "comparator.h"
 #include "parlay/sequence.h"
 #include "parlay/slice.h"
@@ -19,6 +20,7 @@ class TypeTrait {
  public:
   static constexpr uint_fast8_t const kSkHeight = kSkHeightVal;
   static constexpr uint_fast8_t const kImbaRatio = kImbaRatioVal;
+
   using Point = PointType;
   using BasicPoint = typename Point::BP;
   using TemplatePoint = Point;

@@ -72,8 +72,8 @@ ReturnType BaseTree<TypeTrait, DerivedTree>::DeletePoints4Leaf(Node* T,
       if constexpr (HasBox<typename Leaf::AT>) {
         return NodeBox(T, TL->GetBox());
       } else {
-        return NodeBox(T,
-                       T->size ? Box(TL->pts[0], TL->pts[0]) : GetEmptyBox());
+        return NodeBox(
+            T, T->size ? Box(TL->pts[0], TL->pts[0]) : Geo::GetEmptyBox());
       }
     } else {
       ;
@@ -132,8 +132,8 @@ ReturnType BaseTree<TypeTrait, DerivedTree>::DiffPoints4Leaf(Node* T,
       if constexpr (HasBox<typename Leaf::AT>) {
         return NodeBox(T, TL->GetBox());
       } else {
-        return NodeBox(T,
-                       T->size ? Box(TL->pts[0], TL->pts[0]) : GetEmptyBox());
+        return NodeBox(
+            T, T->size ? Box(TL->pts[0], TL->pts[0]) : Geo::GetEmptyBox());
       }
     } else {
       ;

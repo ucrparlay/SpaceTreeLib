@@ -16,6 +16,7 @@ class OrthTree : public BaseTree<TypeTrait, OrthTree<TypeTrait>> {
   static constexpr size_t kNodeRegions = 1 << kMD;
 
   using BT = BaseTree<TypeTrait, OrthTree<TypeTrait>>;
+  using Geo = GeoBase<TypeTrait>;
 
   using Point = typename BT::Point;
   using BucketType = BT::BucketType;

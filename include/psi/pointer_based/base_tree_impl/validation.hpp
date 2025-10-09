@@ -17,11 +17,11 @@ typename BaseTree<TypeTrait, DerivedTree>::Box
 BaseTree<TypeTrait, DerivedTree>::CheckBox(Node* T, Box const& box) {
   if (T->is_leaf) {
     auto const* TL = static_cast<Leaf const*>(T);
-    auto const node_box = GetBox<Leaf, Interior>(T);
+    auto const node_box = Geo::template GetBox<Leaf, Interior>(T);
     if constexpr (HasBox<typename Leaf::AT>) {  // whether has bb
-      assert(SameBox(node_box, TL->GetBox()));
+      assert(Geo::SameBox(node_box, TL->GetBox()));
     } else {
-      assert(WithinBox(node_box, box));
+      assert(Geo::WithinBox(node_box, box));
     }
     return node_box;
   }
@@ -36,11 +36,11 @@ BaseTree<TypeTrait, DerivedTree>::CheckBox(Node* T, Box const& box) {
     rbox.first.pnt[TI->split.second] = TI->split.first;
     Box const left_return_box = CheckBox<Leaf, Interior>(TI->left, lbox);
     Box const right_return_box = CheckBox<Leaf, Interior>(TI->right, rbox);
-    Box const new_box = GetBox(left_return_box, right_return_box);
+    Box const new_box = Geo::GetBox(left_return_box, right_return_box);
 
-    assert(WithinBox(left_return_box, lbox));
-    assert(WithinBox(right_return_box, rbox));
-    assert(WithinBox(new_box, box));
+    assert(Geo::WithinBox(left_return_box, lbox));
+    assert(Geo::WithinBox(right_return_box, rbox));
+    assert(Geo::WithinBox(new_box, box));
     return new_box;
   } else if constexpr (IsBinaryNode<Interior> &&
                        HasBox<typename Interior::AT>) {  // kd with box
@@ -49,10 +49,11 @@ BaseTree<TypeTrait, DerivedTree>::CheckBox(Node* T, Box const& box) {
     auto right_box = RetriveBox<Leaf, Interior>(TI->right);
     Box const left_return_box = CheckBox<Leaf, Interior>(TI->left, left_box);
     Box const right_return_box = CheckBox<Leaf, Interior>(TI->right, right_box);
-    Box const new_box = GetBox(left_return_box, right_return_box);
-    assert(SameBox(left_return_box, RetriveBox<Leaf, Interior>(TI->left)));
-    assert(SameBox(right_return_box, RetriveBox<Leaf, Interior>(TI->right)));
-    assert(SameBox(new_box, TI->GetBox()));
+    Box const new_box = Geo::GetBox(left_return_box, right_return_box);
+    assert(Geo::SameBox(left_return_box, RetriveBox<Leaf, Interior>(TI->left)));
+    assert(
+        Geo::SameBox(right_return_box, RetriveBox<Leaf, Interior>(TI->right)));
+    assert(Geo::SameBox(new_box, TI->GetBox()));
     return new_box;
   } else if (IsMultiNode<Interior> &&
              !HasBox<typename Interior::AT>) {  // orth without box
@@ -62,10 +63,10 @@ BaseTree<TypeTrait, DerivedTree>::CheckBox(Node* T, Box const& box) {
     for (size_t i = 0; i < TI->tree_nodes.size(); i++) {
       return_box_seq[i] =
           CheckBox<Leaf, Interior>(TI->tree_nodes[i], new_box[i]);
-      assert(WithinBox(return_box_seq[i], new_box[i]));
+      assert(Geo::WithinBox(return_box_seq[i], new_box[i]));
     }
-    auto return_box = GetBox(return_box_seq);
-    assert(WithinBox(return_box, box));
+    auto return_box = Geo::GetBox(return_box_seq);
+    assert(Geo::WithinBox(return_box, box));
     return return_box;
   } else if (IsMultiNode<Interior> &&
              HasBox<typename Interior::AT>) {  // orth with box
@@ -75,11 +76,11 @@ BaseTree<TypeTrait, DerivedTree>::CheckBox(Node* T, Box const& box) {
     for (size_t i = 0; i < TI->tree_nodes.size(); i++) {
       return_box_seq[i] =
           CheckBox<Leaf, Interior>(TI->tree_nodes[i], new_box[i]);
-      assert(SameBox(return_box_seq[i],
-                     RetriveBox<Leaf, Interior>(TI->tree_nodes[i])));
+      assert(Geo::SameBox(return_box_seq[i],
+                          RetriveBox<Leaf, Interior>(TI->tree_nodes[i])));
     }
-    auto return_box = GetBox(return_box_seq);
-    assert(SameBox(return_box, TI->GetBox()));
+    auto return_box = Geo::GetBox(return_box_seq);
+    assert(Geo::SameBox(return_box, TI->GetBox()));
     return return_box;
   } else {
     assert(false);
@@ -115,7 +116,8 @@ BaseTree<TypeTrait, DerivedTree>::CheckCover(
   assert(std::all_of(
       TI->split.begin(), TI->split.end(), [&](auto const& center_i) {
         auto i = &center_i - &TI->split[0];
-        auto tmp_circle = CoverCircle{center_i, level_cover_circle.level - 1};
+        auto tmp_circle =
+            Geo::CoverCircle(center_i, level_cover_circle.level - 1);
         return std::all_of(TI->split.begin() + i + 1, TI->split.end(),
                            [&](auto const& center_j) {
                              // PERF: should be Gt as a point in a boundary
@@ -225,7 +227,7 @@ void BaseTree<TypeTrait, DerivedTree>::Validate() {
 
   // tree property
   if constexpr (IsBinaryNode<Interior> || IsMultiNode<Interior>) {
-    if (LegalBox(CheckBox<Leaf, Interior>(this->root_, this->tree_box_))) {
+    if (Geo::LegalBox(CheckBox<Leaf, Interior>(this->root_, this->tree_box_))) {
       std::cout << "Correct bounding Box\n" << std::flush;
     } else {
       std::cout << "wrong bounding Box\n" << std::flush;

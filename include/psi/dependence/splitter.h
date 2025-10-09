@@ -17,15 +17,15 @@
 
 namespace psi {
 // NOTE: ---------------- Spacial Filling Curver ---------------
-template <typename Point>
+template <typename TypeTrait>
 struct MortonCurve {
-  using BT = BaseTree<Point, MortonCurve<Point>>;
-  using Slice = BT::Slice;
-  using DimsType = BT::DimsType;
-  using Box = BT::Box;
-  using Num = BT::Num;
-  using Coord = BT::Coord;
-  using HyperPlane = BT::HyperPlane;
+  using Point = TypeTrait::Point;
+  using Slice = TypeTrait::Slice;
+  using DimsType = TypeTrait::DimsType;
+  using Box = TypeTrait::Box;
+  using Num = TypeTrait::Num;
+  using Coord = TypeTrait::Coord;
+  using HyperPlane = TypeTrait::HyperPlane;
 
   using CurveCode = typename Point::AT::CurveCode;
 
@@ -63,15 +63,15 @@ struct MortonCurve {
   }
 };
 
-template <typename Point>
+template <typename TypeTrait>
 struct HilbertCurve {
-  using BT = BaseTree<Point, HilbertCurve<Point>>;
-  using Slice = BT::Slice;
-  using DimsType = BT::DimsType;
-  using Box = BT::Box;
-  using Num = BT::Num;
-  using Coord = BT::Coord;
-  using HyperPlane = BT::HyperPlane;
+  using Point = TypeTrait::Point;
+  using Slice = TypeTrait::Slice;
+  using DimsType = TypeTrait::DimsType;
+  using Box = TypeTrait::Box;
+  using Num = TypeTrait::Num;
+  using Coord = TypeTrait::Coord;
+  using HyperPlane = TypeTrait::HyperPlane;
 
   using MortonCurve = MortonCurve<Point>;
   using CurveCode = typename Point::AT::CurveCode;
@@ -392,16 +392,17 @@ struct OrthogonalSplitRule {
                     Box const& input_box, DimsType dim)
     requires(IsBinaryNode<typename Tree::Interior>)
   {
-    assert(Tree::WithinBox(input_box, node_box));
+    using Geo = Tree::Geo;
+    assert(Geo::WithinBox(input_box, node_box));
 
     // Main logic
-    if (Tree::VerticalLineSplitBox(Tree::GetBoxMid(dim, node_box), input_box,
-                                   dim)) {
+    if (Geo::VerticalLineSplitBox(Geo::GetBoxMid(dim, node_box), input_box,
+                                  dim)) {
       return tree.BuildRecursive(In, Out, dim, node_box);
     }
 
     auto cut_dim = dim_rule.FindCuttingDimension(node_box, dim);
-    auto cut_val = Tree::GetBoxMid(cut_dim, node_box);
+    auto cut_val = Geo::GetBoxMid(cut_dim, node_box);
 
     // INFO: Test whether the node_box will remain unchanged after the split.
     // If the mid of box is the same as the box edge, then this time the
@@ -410,19 +411,19 @@ struct OrthogonalSplitRule {
     // algorithm will handle this case
     DimsType dim_cnt = 0;
     while (dim_cnt != Tree::kDim) {
-      if (!Tree::VerticalLineOnBoxEdge(cut_val, node_box, cut_dim)) {
+      if (!Geo::VerticalLineOnBoxEdge(cut_val, node_box, cut_dim)) {
         break;
       }
       cut_dim = dim_rule.NextDimension(cut_dim);
-      cut_val = Tree::GetBoxMid(cut_dim, node_box);
+      cut_val = Geo::GetBoxMid(cut_dim, node_box);
       dim_cnt++;
     }
 
-    if (dim_cnt == Tree::kDim) {  // WARN:this breaks rotation manner
+    if (dim_cnt == Geo::kDim) {  // WARN:this breaks rotation manner
       // NOTE: checks whether the node box is separatable
       return tree.BuildRecursive(In, Out, dim_rule.NextDimension(dim),
                                  node_box);
-    } else if (Tree::VerticalLineSplitBox(cut_val, input_box, cut_dim)) {
+    } else if (Geo::VerticalLineSplitBox(cut_val, input_box, cut_dim)) {
       // NOTE: above while loop may changed to new dim and need to re-check
       // whether it can split the input. This is necessary as the
       // following left/right test assumes the @cut_val does not split box
@@ -438,10 +439,10 @@ struct OrthogonalSplitRule {
     Node* L = DivideSpace(tree, In, Out, box_cut.GetFirstBoxCut(), input_box,
                           dim_rule.NextDimension(cut_dim));
     Node* R = AllocEmptyLeafNode<Slice, typename Tree::Leaf>();
-    assert(Tree::WithinBox(input_box, box_cut.GetBox()));
+    assert(Geo::WithinBox(input_box, box_cut.GetBox()));
 
     if (!split_is_right) {
-      assert(Tree::Num::Leq(Tree::GetBoxMid(cut_dim, node_box),
+      assert(Tree::Num::Leq(Geo::GetBoxMid(cut_dim, node_box),
                             input_box.first[cut_dim]));
       std::ranges::swap(L, R);
     }
@@ -456,19 +457,20 @@ struct OrthogonalSplitRule {
                     Box const& input_box)
     requires(IsMultiNode<typename Tree::Interior>)
   {
-    assert(Tree::WithinBox(input_box, node_box));
+    using Geo = Tree::Geo;
+    assert(Geo::WithinBox(input_box, node_box));
 
     auto nodebox_split = Tree::Interior::ComputeSplitter(node_box);
     for (auto const& split : nodebox_split) {
-      if (Tree::VerticalLineSplitBox(split.first, input_box, split.second)) {
+      if (Geo::VerticalLineSplitBox(split.first, input_box, split.second)) {
         // any point on the split should be put on the right
         return tree.BuildRecursive(In, Out, node_box);
       }
     }
 
     if (std::ranges::all_of(nodebox_split, [&](auto const& split) {
-          return Tree::VerticalLineOnBoxEdge(split.first, node_box,
-                                             split.second);
+          return Geo::VerticalLineOnBoxEdge(split.first, node_box,
+                                            split.second);
         })) {  // NOTE: new box will be same as the old ones
       return tree.BuildRecursive(In, Out, node_box);
     }
@@ -516,16 +518,16 @@ struct OrthogonalSplitRule {
         // TODO: tooo brute force
         return tree.SerialBuildRecursive(
             In, Out, dim_rule.NextDimension(std::forward<Args>(args)...),
-            Tree::GetBox(In));
+            Tree::Geo::GetBox(In));
       } else {
-        return tree.BuildRecursive(In, Out, Tree::GetBox(In));
+        return tree.BuildRecursive(In, Out, Tree::Geo::GetBox(In));
       }
 
     } else if constexpr (IsSpatialMedianSplit<PartitionRule>) {
       // NOTE: in spatial median, we simply reduce the box by half on
       // current dim, then switch to next dim.
       if constexpr (IsRotateDimSplit<DimRule> || IsMaxStretchDim<DimRule>) {
-        return DivideSpace(tree, In, Out, box, Tree::GetBox(In),
+        return DivideSpace(tree, In, Out, box, Tree::Geo::GetBox(In),
                            std::forward<Args>(args)...);
       } else {  // define the behavior of other dim rule
         // static_assert(false);

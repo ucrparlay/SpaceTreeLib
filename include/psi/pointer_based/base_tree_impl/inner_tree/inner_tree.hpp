@@ -21,6 +21,7 @@ template <class TypeTrait, typename DerivedTree>
 template <typename Leaf, typename Interior>
 struct BaseTree<TypeTrait, DerivedTree>::InnerTree {
   using BT = BaseTree<TypeTrait, DerivedTree>;
+  using Geo = GeoBase<TypeTrait>;
 
   InnerTree()
       : tags_num(0),

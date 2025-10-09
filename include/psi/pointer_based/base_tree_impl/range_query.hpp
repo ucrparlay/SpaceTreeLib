@@ -17,11 +17,11 @@ size_t BaseTree<TypeTrait, DerivedTree>::RangeCountRectangleLeaf(
 
   Leaf* TL = static_cast<Leaf*>(T);
   if (TL->is_dummy) {
-    return WithinBox(TL->pts[0], query_box) ? TL->size : 0;
+    return Geo::WithinBox(TL->pts[0], query_box) ? TL->size : 0;
   } else {
     return std::ranges::count_if(
         TL->pts.begin(), TL->pts.begin() + TL->size,
-        [&](auto const& p) { return WithinBox(p, query_box); });
+        [&](auto const& p) { return Geo::WithinBox(p, query_box); });
   }
 }
 
@@ -43,10 +43,10 @@ size_t BaseTree<TypeTrait, DerivedTree>::RangeCountRectangle(
 
   size_t left_cnt, right_cnt;
   auto recurse = [&](Node* Ts, Box const& box, size_t& counter) -> void {
-    if (!BoxIntersectBox(box, query_box)) {
+    if (!Geo::BoxIntersectBox(box, query_box)) {
       logger.skip_box_num++;
       counter = 0;
-    } else if (WithinBox(box, query_box)) {
+    } else if (Geo::WithinBox(box, query_box)) {
       logger.full_box_num++;
       counter = Ts->size;
     } else {
@@ -86,10 +86,10 @@ size_t BaseTree<TypeTrait, DerivedTree>::RangeCountRectangle(
   auto recurse = [&query_box, &logger](Node* Ts, Box const& box,
                                        size_t& counter, DimsType next_dim,
                                        DimsType next_idx) -> void {
-    if (!BoxIntersectBox(box, query_box)) {
+    if (!Geo::BoxIntersectBox(box, query_box)) {
       logger.skip_box_num++;
       counter = 0;
-    } else if (WithinBox(box, query_box)) {
+    } else if (Geo::WithinBox(box, query_box)) {
       logger.full_box_num++;
       // NOTE: when reach leaf, Ts is the children
       counter = static_cast<Interior*>(Ts)->MergeSize(next_idx);
@@ -168,14 +168,14 @@ void BaseTree<TypeTrait, DerivedTree>::RangeQueryLeaf(Node* T, Range Out,
 
   Leaf* TL = static_cast<Leaf*>(T);
   if (TL->is_dummy) {
-    if (WithinBox(TL->pts[0], query_box)) {
+    if (Geo::WithinBox(TL->pts[0], query_box)) {
       std::fill_n(Out.begin() + s, TL->size, TL->pts[0]);
       s += TL->size;
     }
   } else {
     auto result = std::ranges::copy_if(
         TL->pts.begin(), TL->pts.begin() + TL->size, Out.begin() + s,
-        [&](auto const& p) { return WithinBox(p, query_box); });
+        [&](auto const& p) { return Geo::WithinBox(p, query_box); });
     s += std::ranges::distance(Out.begin() + s, result.out);
   }
   return;
@@ -197,10 +197,10 @@ void BaseTree<TypeTrait, DerivedTree>::RangeQuerySerialRecursive(
   Interior* TI = static_cast<Interior*>(T);
 
   auto recurse = [&](Node* Ts, Box const& box) -> void {
-    if (!BoxIntersectBox(box, query_box)) {
+    if (!Geo::BoxIntersectBox(box, query_box)) {
       logger.skip_box_num++;
       return;
-    } else if (WithinBox(box, query_box)) {
+    } else if (Geo::WithinBox(box, query_box)) {
       logger.full_box_num++;
       FlattenRec<Leaf, Interior>(Ts, Out.cut(s, s + Ts->size));
       s += Ts->size;
@@ -244,10 +244,10 @@ void BaseTree<TypeTrait, DerivedTree>::RangeQuerySerialRecursive(
   auto recurse = [&query_box, &s, &Out, &logger](Node* Ts, Box const& box,
                                                  DimsType next_dim,
                                                  BucketType next_idx) -> void {
-    if (!BoxIntersectBox(box, query_box)) {
+    if (!Geo::BoxIntersectBox(box, query_box)) {
       logger.skip_box_num++;
       return;
-    } else if (WithinBox(box, query_box)) {
+    } else if (Geo::WithinBox(box, query_box)) {
       logger.full_box_num++;
       size_t candidate_size = static_cast<Interior*>(Ts)->MergeSize(next_idx);
       PartialFlatten<Leaf, Interior>(Ts, Out.cut(s, s + candidate_size),
@@ -277,8 +277,5 @@ void BaseTree<TypeTrait, DerivedTree>::RangeQuerySerialRecursive(
   return;
 }
 }  // namespace psi
-
- 
- 
 
 #endif  // PSI_BASE_TREE_IMPL_RANGE_QUERY_HPP_

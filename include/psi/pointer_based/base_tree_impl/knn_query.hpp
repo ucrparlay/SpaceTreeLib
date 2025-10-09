@@ -10,136 +10,6 @@
 
 namespace psi {
 
-// NOTE: distance between two Points
-// TODO: change the name to P2PDistanceSquare to avoid ambiguous
-template <class TypeTrait, typename DerivedTree>
-inline typename BaseTree<TypeTrait, DerivedTree>::DisType
-BaseTree<TypeTrait, DerivedTree>::P2PDistanceSquare(Point const& p,
-                                                    Point const& q) {
-  constexpr uint_fast8_t kDim = Point::GetDim();
-  DisType r = 0;
-
-  if constexpr (kDim == 2) {
-    DisType x = static_cast<DisType>(p.pnt[0]) - static_cast<DisType>(q.pnt[0]);
-    DisType y = static_cast<DisType>(p.pnt[1]) - static_cast<DisType>(q.pnt[1]);
-    r = x * x + y * y;
-  } else if constexpr (kDim == 3) {
-    DisType x = static_cast<DisType>(p.pnt[0]) - static_cast<DisType>(q.pnt[0]);
-    DisType y = static_cast<DisType>(p.pnt[1]) - static_cast<DisType>(q.pnt[1]);
-    DisType z = static_cast<DisType>(p.pnt[2]) - static_cast<DisType>(q.pnt[2]);
-    r = x * x + y * y + z * z;
-  } else {
-    for (DimsType i = 0; i < kDim; ++i) {
-      r += (static_cast<DisType>(p.pnt[i]) - static_cast<DisType>(q.pnt[i])) *
-           (static_cast<DisType>(p.pnt[i]) - static_cast<DisType>(q.pnt[i]));
-    }
-  }
-  return r;
-}
-
-// NOTE: Distance between a Point and a Box
-// return 0 when p is inside the box a
-template <class TypeTrait, typename DerivedTree>
-inline typename BaseTree<TypeTrait, DerivedTree>::DisType
-BaseTree<TypeTrait, DerivedTree>::P2BMinDistanceSquare(
-    Point const& p, typename BaseTree<TypeTrait, DerivedTree>::Box const& a) {
-  DisType r = 0;
-  // NOTE: the distance is 0 when p is inside the box
-  for (DimsType i = 0; i < kDim; ++i) {
-    if (Num::Lt(p.pnt[i], a.first.pnt[i])) {
-      r += (static_cast<DisType>(a.first.pnt[i]) -
-            static_cast<DisType>(p.pnt[i])) *
-           (static_cast<DisType>(a.first.pnt[i]) -
-            static_cast<DisType>(p.pnt[i]));
-    } else if (Num::Gt(p.pnt[i], a.second.pnt[i])) {
-      r += (static_cast<DisType>(p.pnt[i]) -
-            static_cast<DisType>(a.second.pnt[i])) *
-           (static_cast<DisType>(p.pnt[i]) -
-            static_cast<DisType>(a.second.pnt[i]));
-    } else {  // will not count the dis if p is inside the box in dimension i
-      ;
-    }
-  }
-  return r;
-}
-
-// NOTE: Max distance between a Point and a Box
-template <class TypeTrait, typename DerivedTree>
-inline typename BaseTree<TypeTrait, DerivedTree>::DisType
-BaseTree<TypeTrait, DerivedTree>::P2BMaxDistanceSquare(
-    Point const& p, typename BaseTree<TypeTrait, DerivedTree>::Box const& a) {
-  DisType r = 0;
-  for (DimsType i = 0; i < kDim; ++i) {
-    if (Num::Lt(p.pnt[i], (a.second.pnt[i] + a.first.pnt[i]) / 2)) {
-      r += (static_cast<DisType>(a.second.pnt[i]) -
-            static_cast<DisType>(p.pnt[i])) *
-           (static_cast<DisType>(a.second.pnt[i]) -
-            static_cast<DisType>(p.pnt[i]));
-    } else {
-      r += (static_cast<DisType>(p.pnt[i]) -
-            static_cast<DisType>(a.first.pnt[i])) *
-           (static_cast<DisType>(p.pnt[i]) -
-            static_cast<DisType>(a.first.pnt[i]));
-    }
-  }
-  return r;
-}
-
-template <class TypeTrait, typename DerivedTree>
-inline double BaseTree<TypeTrait, DerivedTree>::P2CMinDistance(
-    Point const& p, Point const& center, DisType const r) {
-  // return Num_Comparator<double>::Max(
-  //     0.0, std::sqrt(P2PDistanceSquare(p, center)) - static_cast<double>(r));
-  return std::sqrt(P2PDistanceSquare(p, center)) - static_cast<double>(r);
-}
-
-template <class TypeTrait, typename DerivedTree>
-template <typename CircleType>
-inline double BaseTree<TypeTrait, DerivedTree>::P2CMinDistance(
-    Point const& p, CircleType const& cl) {
-  return P2CMinDistance(p, cl.GetCenter(), cl.GetRadius());
-}
-
-// NOTE: early return the partial distance between p and q if it is larger than
-// r else return the distance between p and q
-template <class TypeTrait, typename DerivedTree>
-inline typename BaseTree<TypeTrait, DerivedTree>::DisType
-BaseTree<TypeTrait, DerivedTree>::InterruptibleDistance(Point const& p,
-                                                        Point const& q,
-                                                        DisType up) {
-  DisType r = 0;
-  DimsType i = 0;
-  if (kDim >= 6) {
-    while (1) {
-      r += (static_cast<DisType>(p.pnt[i]) - static_cast<DisType>(q.pnt[i])) *
-           (static_cast<DisType>(p.pnt[i]) - static_cast<DisType>(q.pnt[i]));
-      ++i;
-      r += (static_cast<DisType>(p.pnt[i]) - static_cast<DisType>(q.pnt[i])) *
-           (static_cast<DisType>(p.pnt[i]) - static_cast<DisType>(q.pnt[i]));
-      ++i;
-      r += (static_cast<DisType>(p.pnt[i]) - static_cast<DisType>(q.pnt[i])) *
-           (static_cast<DisType>(p.pnt[i]) - static_cast<DisType>(q.pnt[i]));
-      ++i;
-      r += (static_cast<DisType>(p.pnt[i]) - static_cast<DisType>(q.pnt[i])) *
-           (static_cast<DisType>(p.pnt[i]) - static_cast<DisType>(q.pnt[i]));
-      ++i;
-
-      if (Num_Comparator<DisType>::Gt(r, up)) {
-        return r;
-      }
-      if (i + 4 > kDim) {
-        break;
-      }
-    }
-  }
-  while (i < kDim) {
-    r += (static_cast<DisType>(p.pnt[i]) - static_cast<DisType>(q.pnt[i])) *
-         (static_cast<DisType>(p.pnt[i]) - static_cast<DisType>(q.pnt[i]));
-    ++i;
-  }
-  return r;
-}
-
 // NOTE: KNN search for Point q
 template <class TypeTrait, typename DerivedTree>
 template <typename Leaf, typename Range>
@@ -150,14 +20,14 @@ void BaseTree<TypeTrait, DerivedTree>::KNNLeaf(
   Leaf* TL = static_cast<Leaf*>(T);
   size_t i = 0;
   while (!bq.full() && i < TL->size) {
-    bq.insert(
-        std::make_pair(std::ref(TL->pts[(!TL->is_dummy) * i]),
-                       P2PDistanceSquare(q, TL->pts[(!TL->is_dummy) * i])));
+    bq.insert(std::make_pair(
+        std::ref(TL->pts[(!TL->is_dummy) * i]),
+        Geo::P2PDistanceSquare(q, TL->pts[(!TL->is_dummy) * i])));
     i++;
   }
   while (i < TL->size) {
-    auto r =
-        InterruptibleDistance(q, TL->pts[(!TL->is_dummy) * i], bq.top_value());
+    auto r = Geo::InterruptibleDistance(q, TL->pts[(!TL->is_dummy) * i],
+                                        bq.top_value());
     if (Num::Lt(r, bq.top_value())) {  // PERF: the queue is full, no need to
                                        // insert points with equal distances
       bq.insert(std::make_pair(std::ref(TL->pts[(!TL->is_dummy) * i]), r));
@@ -193,7 +63,7 @@ void BaseTree<TypeTrait, DerivedTree>::KNNBinary(
                             box_cut.GetFirstBoxCut(), logger);
 
   logger.check_box_num++;
-  if (Num::Gt(P2BMinDistanceSquare(q, box_cut.GetSecondBoxCut()),
+  if (Num::Gt(Geo::P2BMinDistanceSquare(q, box_cut.GetSecondBoxCut()),
               bq.top_value()) &&
       bq.full()) {
     logger.skip_box_num++;
@@ -210,7 +80,7 @@ void BaseTree<TypeTrait, DerivedTree>::KNNBinaryBox(
     Node* T, Point const& q, kBoundedQueue<Point, Range>& bq,
     KNNLogger& logger) {
   if (bq.size() &&
-      Num::Gt(P2BMinDistanceSquare(q, RetriveBox<Leaf, Interior>(T)),
+      Num::Gt(Geo::P2BMinDistanceSquare(q, RetriveBox<Leaf, Interior>(T)),
               bq.top_value()) &&
       bq.full()) {
     logger.skip_box_num++;
@@ -226,9 +96,9 @@ void BaseTree<TypeTrait, DerivedTree>::KNNBinaryBox(
   logger.vis_interior_num++;
   Interior* TI = static_cast<Interior*>(T);
   Coord dist_left =
-      P2BMinDistanceSquare(q, RetriveBox<Leaf, Interior>(TI->left));
+      Geo::P2BMinDistanceSquare(q, RetriveBox<Leaf, Interior>(TI->left));
   Coord dist_right =
-      P2BMinDistanceSquare(q, RetriveBox<Leaf, Interior>(TI->right));
+      Geo::P2BMinDistanceSquare(q, RetriveBox<Leaf, Interior>(TI->right));
   bool go_left = Num::Leq(dist_left, dist_right);
 
   KNNBinaryBox<Leaf, Interior>(go_left ? TI->left : TI->right, q, bq, logger);
@@ -285,7 +155,7 @@ void BaseTree<TypeTrait, DerivedTree>::KNNMultiExpand(
 
   // NOTE: compute the other bounding box
   logger.check_box_num++;
-  if (Num::Gt(P2BMinDistanceSquare(q, box_cut.GetSecondBoxCut()),
+  if (Num::Gt(Geo::P2BMinDistanceSquare(q, box_cut.GetSecondBoxCut()),
               bq.top_value()) &&
       bq.full()) {
     logger.skip_box_num++;
@@ -307,7 +177,7 @@ void BaseTree<TypeTrait, DerivedTree>::KNNMultiExpandBox(
   }
 
   if (idx == 1 && bq.size() &&
-      Num::Gt(P2BMinDistanceSquare(q, RetriveBox<Leaf, Interior>(T)),
+      Num::Gt(Geo::P2BMinDistanceSquare(q, RetriveBox<Leaf, Interior>(T)),
               bq.top_value()) &&
       bq.full()) {
     logger.skip_box_num++;
@@ -348,7 +218,7 @@ void BaseTree<TypeTrait, DerivedTree>::KNNMultiExpandBox(
 
   // NOTE: compute the other bounding box
   logger.check_box_num++;
-  if (Num::Gt(P2BMinDistanceSquare(q, second_box), bq.top_value()) &&
+  if (Num::Gt(Geo::P2BMinDistanceSquare(q, second_box), bq.top_value()) &&
       bq.full()) {
     logger.skip_box_num++;
     return;
@@ -369,7 +239,7 @@ void BaseTree<TypeTrait, DerivedTree>::KNNMulti(Node* T, Point const& q,
   }
 
   if (bq.size() &&
-      Num::Gt(P2BMinDistanceSquare(q, RetriveBox<Leaf, Interior>(T)),
+      Num::Gt(Geo::P2BMinDistanceSquare(q, RetriveBox<Leaf, Interior>(T)),
               bq.top_value()) &&
       bq.full()) {
     logger.skip_box_num++;
@@ -388,9 +258,10 @@ void BaseTree<TypeTrait, DerivedTree>::KNNMulti(Node* T, Point const& q,
   std::array<std::pair<Coord, BucketType>, Interior::GetRegions()> dists;
 
   std::ranges::generate(dists, [i = 0, &q, TI]() mutable {
-    auto r = std::make_pair(
-        P2BMinDistanceSquare(q, RetriveBox<Leaf, Interior>(TI->tree_nodes[i])),
-        i);
+    auto r =
+        std::make_pair(Geo::P2BMinDistanceSquare(
+                           q, RetriveBox<Leaf, Interior>(TI->tree_nodes[i])),
+                       i);
     i++;
     return r;
   });
@@ -468,7 +339,7 @@ void BaseTree<TypeTrait, DerivedTree>::KNNMix(Node* T, Point const& q,
   KNNMix<Leaf, BN, MN>(first_node, q, dim, first_idx, bq,
                        box_cut.GetFirstBoxCut(), logger);
   logger.check_box_num++;
-  if (Num::Gt(P2BMinDistanceSquare(q, box_cut.GetSecondBoxCut()),
+  if (Num::Gt(Geo::P2BMinDistanceSquare(q, box_cut.GetSecondBoxCut()),
               bq.top_value()) &&
       bq.full()) {
     logger.skip_box_num++;
@@ -501,8 +372,8 @@ void BaseTree<TypeTrait, DerivedTree>::KNNCover(Node* T, Point const& q,
   auto sorted_idx = parlay::sort(
       parlay::tabulate(TI->tree_nodes.size(), [&](auto i) { return i; }),
       [&](auto const i1, auto const i2) {
-        return Num::Lt(P2PDistanceSquare(q, TI->split[i1]),
-                       P2PDistanceSquare(q, TI->split[i2]));
+        return Num::Lt(Geo::P2PDistanceSquare(q, TI->split[i1]),
+                       Geo::P2PDistanceSquare(q, TI->split[i2]));
       });
 
   KNNCover<Leaf, Interior>(TI->tree_nodes[sorted_idx[0]], q, bq, logger);
@@ -525,14 +396,15 @@ void BaseTree<TypeTrait, DerivedTree>::KNNCover(Node* T, Point const& q,
       // FlattenRec<Leaf, Interior>(TI->tree_nodes[sorted_idx[i]],
       //                            parlay::make_slice(p_seq));
       // for (auto const& p : p_seq) {
-      //   if (P2PDistanceSquare(p, q) <= bq.top_value()) {
+      //   if (Geo::P2PDistanceSquare(p, q) <= bq.top_value()) {
       //     std::cout << p << q
       //               << CoverCircle{TI->split[sorted_idx[i]],
       //                              TI->GetCoverCircle().level - 1}
       //               << " ";
       //     std::cout << "p2cdis: " << p2cdis << " ";
       //     std::cout << "sqrtbqtop: " << sqrtbqtop << " ";
-      //     std::cout << "p2pdis: " << std::sqrt(P2PDistanceSquare(p, q)) << "
+      //     std::cout << "p2pdis: " << std::sqrt(Geo::P2PDistanceSquare(p, q))
+      //     << "
       //     "
       //               << std::flush;
       //     assert(WithinCircle(p, CoverCircle{TI->split[sorted_idx[i]],
@@ -549,8 +421,5 @@ void BaseTree<TypeTrait, DerivedTree>::KNNCover(Node* T, Point const& q,
 }
 
 }  // namespace psi
-
- 
- 
 
 #endif  // PSI_BASE_TREE_IMPL_KNN_QUERY_HPP

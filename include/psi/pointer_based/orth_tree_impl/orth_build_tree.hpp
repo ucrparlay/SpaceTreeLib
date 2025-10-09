@@ -71,7 +71,7 @@ void OrthTree<TypeTrait>::SerialSplit(Slice In, DimsType dim, DimsType idx,
 template <typename TypeTrait>
 Node* OrthTree<TypeTrait>::SerialBuildRecursive(Slice In, Slice Out, Box const& box,
                                            bool checked_duplicate) {
-  assert(In.size() == 0 || BT::WithinBox(BT::GetBox(In), box));
+  assert(In.size() == 0 || Geo::WithinBox(Geo::GetBox(In), box));
   size_t n = In.size();
 
   if (n == 0) {
@@ -127,7 +127,7 @@ Node* OrthTree<TypeTrait>::SerialBuildRecursive(Slice In, Slice Out, Box const& 
 template <typename TypeTrait>
 Node* OrthTree<TypeTrait>::BuildRecursive(Slice In, Slice Out, Box const& box) {
   // TODO: may ensure the bucket is corresponding the the splitter
-  assert(In.size() == 0 || BT::WithinBox(BT::GetBox(In), box));
+  assert(In.size() == 0 || Geo::WithinBox(Geo::GetBox(In), box));
   size_t n = In.size();
 
   // if (In.size()) {
@@ -182,7 +182,7 @@ template <typename TypeTrait>
 void OrthTree<TypeTrait>::Build_(Slice A) {
   Points B = Points::uninitialized(A.size());
   if (!fixed_box) {
-    this->tree_box_ = BT::GetBox(A);
+    this->tree_box_ = Geo::GetBox(A);
     fixed_box = true;
   }
   this->root_ = BuildRecursive(A, B.cut(0, A.size()), this->tree_box_);
@@ -192,7 +192,7 @@ void OrthTree<TypeTrait>::Build_(Slice A) {
 
 template <typename TypeTrait>
 void OrthTree<TypeTrait>::Build_(Slice A, Box const& box) {
-  assert(BT::WithinBox(BT::GetBox(A), box));
+  assert(Geo::WithinBox(Geo::GetBox(A), box));
 
   Points B = Points::uninitialized(A.size());
   if (!fixed_box) {

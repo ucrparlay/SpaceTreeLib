@@ -1,4 +1,5 @@
 #include "data_op.h"
+#include "dependence/type_trait.h"
 #include "test_framework.h"
 
 template <typename InputPoint>
@@ -22,7 +23,8 @@ void RoundDataAndShift(commandLine& P) {
 
   parlay::sequence<InputPoint> wp;
   read_points<InputPoint>(input_path.c_str(), wp, 0);
-  auto bb = psi::BaseTree<InputPoint>::GetBox(parlay::make_slice(wp));
+  auto bb =
+      psi::GeoBase<psi::TypeTrait<InputPoint>>::GetBox(parlay::make_slice(wp));
   std::cout << bb.first << " " << bb.second << std::endl;
 
   // PrintPoints(wp);
@@ -37,7 +39,8 @@ void RoundDataAndShift(commandLine& P) {
     exit(1);
   }
 
-  auto new_bb = psi::BaseTree<OutputPoint>::GetBox(parlay::make_slice(new_wp));
+  auto new_bb = psi::GeoBase<psi::TypeTrait<OutputPoint>>::GetBox(
+      parlay::make_slice(new_wp));
   std::cout << new_bb.first << " " << new_bb.second << std::endl;
 
   std::cout << "Writing... " << std::endl;
@@ -101,11 +104,9 @@ int main(int argc, char* argv[]) {
     } else if (pts_dim == 9) {
       apply.template operator()<psi::AugPoint<CoordType, 9, Wrapper::AugId>>();
     } else if (pts_dim == 12) {
-      apply
-          .template operator()<psi::AugPoint<CoordType, 12, Wrapper::AugId>>();
+      apply.template operator()<psi::AugPoint<CoordType, 12, Wrapper::AugId>>();
     } else if (pts_dim == 16) {
-      apply
-          .template operator()<psi::AugPoint<CoordType, 16, Wrapper::AugId>>();
+      apply.template operator()<psi::AugPoint<CoordType, 16, Wrapper::AugId>>();
     } else {
       throw std::runtime_error("Invalid dimension");
     }

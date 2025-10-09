@@ -19,7 +19,7 @@ void KdTree<TypeTrait>::BatchInsert(Slice A) {
   if constexpr (HasBox<typename Interior::AT>) {
     this->tree_box_ = BT::template RetriveBox<Leaf, Interior>(this->root_);
   } else {
-    this->tree_box_ = BT::GetBox(this->tree_box_, BT::GetBox(A));
+    this->tree_box_ = Geo::GetBox(this->tree_box_, Geo::GetBox(A));
   }
   return;
 }
@@ -32,7 +32,7 @@ auto KdTree<TypeTrait>::BatchInsertRecursive(Node* T, Slice In, Slice Out,
   if (n == 0) return T;
 
   auto prepare_func = [](Node*, Points& wp, Points&) {
-    return BT::GetBox(parlay::make_slice(wp));
+    return Geo::GetBox(parlay::make_slice(wp));
   };
 
   if (T->is_leaf) {

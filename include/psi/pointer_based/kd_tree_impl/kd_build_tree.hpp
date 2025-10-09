@@ -117,7 +117,7 @@ auto KdTree<TypeTrait>::SerialBuildRecursive(Slice In, Slice Out, DimsType dim,
 template <typename TypeTrait>
 auto KdTree<TypeTrait>::BuildRecursive(Slice In, Slice Out, DimsType dim,
                                        Box const& bx) -> Node* {
-  assert(In.size() == 0 || BT::WithinBox(BT::GetBox(In), bx));
+  assert(In.size() == 0 || Geo::WithinBox(Geo::GetBox(In), bx));
 
   if (In.size() <= BT::kSerialBuildCutoff) {
     return SerialBuildRecursive(In, Out, dim, bx);
@@ -171,7 +171,7 @@ auto KdTree<TypeTrait>::BuildRecursive(Slice In, Slice Out, DimsType dim,
 template <typename TypeTrait>
 void KdTree<TypeTrait>::Build_(Slice A) {
   Points B = Points::uninitialized(A.size());
-  this->tree_box_ = BT::GetBox(A);
+  this->tree_box_ = Geo::GetBox(A);
   this->root_ = BuildRecursive(A, B.cut(0, A.size()), 0, this->tree_box_);
   assert(this->root_ != nullptr);
   return;

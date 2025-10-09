@@ -1,14 +1,13 @@
 #ifndef PSI_BASE_TREE_IMPL_BOX_OP_HPP_
 #define PSI_BASE_TREE_IMPL_BOX_OP_HPP_
 
-#include "../base_tree.h"
-#include "dependence/concepts.h"
+#include "dependence/geo_base.h"
 
 namespace psi {
 
-template <class TypeTrait, typename DerivedTree>
-inline typename BaseTree<TypeTrait, DerivedTree>::Coord
-BaseTree<TypeTrait, DerivedTree>::GetBoxMid(DimsType const d, Box const& box) {
+template <class TypeTrait>
+inline typename GeoBase<TypeTrait>::Coord GeoBase<TypeTrait>::GetBoxMid(
+    DimsType const d, Box const& box) {
   // TODO: change to Num::divide2ceil
   if constexpr (std::is_integral_v<Coord>) {
     // NOTE: since the points on the box line will be put in right, therefore
@@ -23,8 +22,8 @@ BaseTree<TypeTrait, DerivedTree>::GetBoxMid(DimsType const d, Box const& box) {
   }
 }
 
-template <class TypeTrait, typename DerivedTree>
-inline bool BaseTree<TypeTrait, DerivedTree>::LegalBox(Box const& bx) {
+template <class TypeTrait>
+inline bool GeoBase<TypeTrait>::LegalBox(Box const& bx) {
   // TODO: remove it
   if (bx == GetEmptyBox()) return true;
 
@@ -45,9 +44,8 @@ inline bool BaseTree<TypeTrait, DerivedTree>::LegalBox(Box const& bx) {
   }
 }
 
-template <class TypeTrait, typename DerivedTree>
-inline bool BaseTree<TypeTrait, DerivedTree>::WithinBox(Box const& a,
-                                                        Box const& b) {
+template <class TypeTrait>
+inline bool GeoBase<TypeTrait>::WithinBox(Box const& a, Box const& b) {
   constexpr uint_fast8_t kDim = Point::GetDim();
   assert(LegalBox(a));
   assert(LegalBox(b));
@@ -75,9 +73,8 @@ inline bool BaseTree<TypeTrait, DerivedTree>::WithinBox(Box const& a,
   }
 }
 
-template <class TypeTrait, typename DerivedTree>
-inline bool BaseTree<TypeTrait, DerivedTree>::SameBox(Box const& a,
-                                                      Box const& b) {
+template <class TypeTrait>
+inline bool GeoBase<TypeTrait>::SameBox(Box const& a, Box const& b) {
   assert(LegalBox(a));
   assert(LegalBox(b));
 
@@ -103,9 +100,8 @@ inline bool BaseTree<TypeTrait, DerivedTree>::SameBox(Box const& a,
   }
 }
 
-template <class TypeTrait, typename DerivedTree>
-inline bool BaseTree<TypeTrait, DerivedTree>::WithinBox(Point const& p,
-                                                        Box const& bx) {
+template <class TypeTrait>
+inline bool GeoBase<TypeTrait>::WithinBox(Point const& p, Box const& bx) {
   assert(LegalBox(bx));
 
   if constexpr (kDim == 2) {
@@ -131,9 +127,8 @@ inline bool BaseTree<TypeTrait, DerivedTree>::WithinBox(Point const& p,
   }
 }
 
-template <class TypeTrait, typename DerivedTree>
-inline bool BaseTree<TypeTrait, DerivedTree>::BoxIntersectBox(Box const& a,
-                                                              Box const& b) {
+template <class TypeTrait>
+inline bool GeoBase<TypeTrait>::BoxIntersectBox(Box const& a, Box const& b) {
   if (!LegalBox(a)) {
     std::cout << a.first << " " << a.second << std::endl;
   }
@@ -162,77 +157,80 @@ inline bool BaseTree<TypeTrait, DerivedTree>::BoxIntersectBox(Box const& a,
   }
 }
 
-template <class TypeTrait, typename DerivedTree>
-inline bool BaseTree<TypeTrait, DerivedTree>::IsBoxLineInDimension(
-    Box const& box, DimsType d) {
+template <class TypeTrait>
+inline bool GeoBase<TypeTrait>::IsBoxLineInDimension(Box const& box,
+                                                     DimsType d) {
   assert(LegalBox(box));
   return Num::Eq(box.first[d], box.second[d]);
 }
 
-template <class TypeTrait, typename DerivedTree>
-inline bool BaseTree<TypeTrait, DerivedTree>::VerticalLineSplitBox(
-    Coord const& line, Box const& box, DimsType d) {
+template <class TypeTrait>
+inline bool GeoBase<TypeTrait>::VerticalLineSplitBox(Coord const& line,
+                                                     Box const& box,
+                                                     DimsType d) {
   assert(LegalBox(box));
   return VerticalLineIntersectBoxExclude(line, box, d) ||
          (VerticalLineOnBoxRightEdge(line, box, d) &&
           !IsBoxLineInDimension(box, d));
 }
 
-template <class TypeTrait, typename DerivedTree>
-inline bool BaseTree<TypeTrait, DerivedTree>::VerticalLineOnBoxLeftEdge(
-    Coord const& line, Box const& box, DimsType d) {
+template <class TypeTrait>
+inline bool GeoBase<TypeTrait>::VerticalLineOnBoxLeftEdge(Coord const& line,
+                                                          Box const& box,
+                                                          DimsType d) {
   assert(LegalBox(box));
   return Num::Eq(line, box.first.pnt[d]);
 }
 
-template <class TypeTrait, typename DerivedTree>
-inline bool BaseTree<TypeTrait, DerivedTree>::VerticalLineOnBoxRightEdge(
-    Coord const& line, Box const& box, DimsType d) {
+template <class TypeTrait>
+inline bool GeoBase<TypeTrait>::VerticalLineOnBoxRightEdge(Coord const& line,
+                                                           Box const& box,
+                                                           DimsType d) {
   assert(LegalBox(box));
   return Num::Eq(line, box.second.pnt[d]);
 }
 
-template <class TypeTrait, typename DerivedTree>
-inline bool BaseTree<TypeTrait, DerivedTree>::VerticalLineOnBoxEdge(
-    Coord const& line, Box const& box, DimsType d) {
+template <class TypeTrait>
+inline bool GeoBase<TypeTrait>::VerticalLineOnBoxEdge(Coord const& line,
+                                                      Box const& box,
+                                                      DimsType d) {
   assert(LegalBox(box));
   return VerticalLineOnBoxLeftEdge(line, box, d) ||
          VerticalLineOnBoxRightEdge(line, box, d);
 }
 
-template <class TypeTrait, typename DerivedTree>
-inline bool BaseTree<TypeTrait, DerivedTree>::VerticalLineIntersectBox(
-    Coord const& line, Box const& box, DimsType d) {
+template <class TypeTrait>
+inline bool GeoBase<TypeTrait>::VerticalLineIntersectBox(Coord const& line,
+                                                         Box const& box,
+                                                         DimsType d) {
   assert(LegalBox(box));
   return Num::Geq(line, box.first.pnt[d]) && Num::Leq(line, box.second.pnt[d]);
 }
 
 // NOTE: if the line @line is one the boundary of the box, then it will be
 // considered as not intersect
-template <class TypeTrait, typename DerivedTree>
-inline bool BaseTree<TypeTrait, DerivedTree>::VerticalLineIntersectBoxExclude(
+template <class TypeTrait>
+inline bool GeoBase<TypeTrait>::VerticalLineIntersectBoxExclude(
     Coord const& line, Box const& box, DimsType d) {
   assert(LegalBox(box));
   return Num::Gt(line, box.first.pnt[d]) && Num::Lt(line, box.second.pnt[d]);
 }
 
-template <class TypeTrait, typename DerivedTree>
-inline typename BaseTree<TypeTrait, DerivedTree>::Box
-BaseTree<TypeTrait, DerivedTree>::GetEmptyBox() {
+template <class TypeTrait>
+inline typename GeoBase<TypeTrait>::Box GeoBase<TypeTrait>::GetEmptyBox() {
   return Box(Point(std::numeric_limits<Coord>::max()),
              Point(std::numeric_limits<Coord>::lowest()));
 }
 
-template <class TypeTrait, typename DerivedTree>
-typename BaseTree<TypeTrait, DerivedTree>::Box
-BaseTree<TypeTrait, DerivedTree>::GetBox(Box const& x, Box const& y) {
+template <class TypeTrait>
+typename GeoBase<TypeTrait>::Box GeoBase<TypeTrait>::GetBox(Box const& x,
+                                                            Box const& y) {
   return Box(x.first.MinCoords(y.first), x.second.MaxCoords(y.second));
 }
 
-template <class TypeTrait, typename DerivedTree>
+template <class TypeTrait>
 template <typename Range>
-typename BaseTree<TypeTrait, DerivedTree>::Box
-BaseTree<TypeTrait, DerivedTree>::GetBox(Range&& In)
+typename GeoBase<TypeTrait>::Box GeoBase<TypeTrait>::GetBox(Range&& In)
   requires(parlay::is_random_access_range_v<Range>)
 {
   if constexpr (std::same_as<
@@ -243,10 +241,10 @@ BaseTree<TypeTrait, DerivedTree>::GetBox(Range&& In)
   }
 }
 
-template <class TypeTrait, typename DerivedTree>
+template <class TypeTrait>
 template <typename SliceType>
-typename BaseTree<TypeTrait, DerivedTree>::Box
-BaseTree<TypeTrait, DerivedTree>::GetBoxFromSlice(SliceType const V) {
+typename GeoBase<TypeTrait>::Box GeoBase<TypeTrait>::GetBoxFromSlice(
+    SliceType const V) {
   if (V.size() == 0) {
     return GetEmptyBox();
   } else {
@@ -262,10 +260,9 @@ BaseTree<TypeTrait, DerivedTree>::GetBoxFromSlice(SliceType const V) {
 
 // NOTE: this function omit the possibility that T contains the bounding box --
 // it will always try to reduce a bounding box in the tree T
-template <class TypeTrait, typename DerivedTree>
+template <class TypeTrait>
 template <typename Leaf, typename Interior>
-typename BaseTree<TypeTrait, DerivedTree>::Box
-BaseTree<TypeTrait, DerivedTree>::GetBox(Node* T) {
+typename GeoBase<TypeTrait>::Box GeoBase<TypeTrait>::GetBox(Node* T) {
   if (T->size == 0) {
     return GetEmptyBox();
   }
@@ -306,9 +303,9 @@ BaseTree<TypeTrait, DerivedTree>::GetBox(Node* T) {
   }
 }
 
-template <class TypeTrait, typename DerivedTree>
-typename BaseTree<TypeTrait, DerivedTree>::Box
-BaseTree<TypeTrait, DerivedTree>::GetBoxFromBoxSeq(BoxSeq const& box_seq) {
+template <class TypeTrait>
+typename GeoBase<TypeTrait>::Box GeoBase<TypeTrait>::GetBoxFromBoxSeq(
+    BoxSeq const& box_seq) {
   return parlay::reduce(
       box_seq, parlay::make_monoid(
                    [&](Box const& x, Box const& y) { return GetBox(x, y); },
@@ -320,9 +317,9 @@ BaseTree<TypeTrait, DerivedTree>::GetBoxFromBoxSeq(BoxSeq const& box_seq) {
   // return std::move(box);
 }
 
-template <class TypeTrait, typename DerivedTree>
-typename BaseTree<TypeTrait, DerivedTree>::Point
-BaseTree<TypeTrait, DerivedTree>::GetBoxCenter(Box const& box) {
+template <class TypeTrait>
+typename GeoBase<TypeTrait>::Point GeoBase<TypeTrait>::GetBoxCenter(
+    Box const& box) {
   Point center;
   if constexpr (kDim == 2) {
     center.pnt[0] = (box.first.pnt[0] + box.second.pnt[0]) / 2;

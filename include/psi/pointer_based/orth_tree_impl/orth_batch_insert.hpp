@@ -18,7 +18,7 @@ void OrthTree<TypeTrait>::BatchInsert(Range&& In) {
   static_assert(BT::kBuildDepthOnce % kMD == 0);
   assert(kMD == BT::kDim);
   // TODO: handling the case that insert box is no in the tree box
-  assert(BT::WithinBox(BT::GetBox(In), this->tree_box_));
+  assert(Geo::WithinBox(Geo::GetBox(In), this->tree_box_));
 
   Slice A = parlay::make_slice(In);
   BatchInsert_(A);
@@ -32,7 +32,7 @@ void OrthTree<TypeTrait>::BatchInsert_(Slice A) {
 
   Points B = Points::uninitialized(A.size());
   Node* T = this->root_;
-  // this->tree_box_ = BT::GetBox(this->tree_box_, BT::GetBox(A));
+  // this->tree_box_ = Geo::GetBox(this->tree_box_, Geo::GetBox(A));
   // PERF: no need to compute bounding box here, checked previously
   this->root_ = BatchInsertRecursive(T, A, B.cut(0, A.size()), this->tree_box_);
   assert(this->root_ != NULL);

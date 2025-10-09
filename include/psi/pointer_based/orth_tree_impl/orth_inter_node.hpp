@@ -61,7 +61,7 @@ struct OrthTree<TypeTrait>::OrthInteriorNode
       auto o = this->tree_nodes[idx - BaseNode::GetRegions()];
       return BT::template RetriveBox<Leaf, Interior>(o);
     }
-    return BT::GetBox(GetBoxByIdRecursive(2 * idx),
+    return Geo::GetBox(GetBoxByIdRecursive(2 * idx),
                       GetBoxByIdRecursive(2 * idx + 1));
   }
 
@@ -83,15 +83,15 @@ struct OrthTree<TypeTrait>::OrthInteriorNode
     ST split;
 
     if constexpr (kMD == 2) {  // for dim = 2
-      split[0] = HyperPlane(BT::GetBoxMid(0, box), 0);
-      split[1] = HyperPlane(BT::GetBoxMid(1, box), 1);
+      split[0] = HyperPlane(Geo::GetBoxMid(0, box), 0);
+      split[1] = HyperPlane(Geo::GetBoxMid(1, box), 1);
     } else if constexpr (kMD == 3) {  // for dim = 3
-      split[0] = HyperPlane(BT::GetBoxMid(0, box), 0);
-      split[1] = HyperPlane(BT::GetBoxMid(1, box), 1);
-      split[2] = HyperPlane(BT::GetBoxMid(2, box), 2);
+      split[0] = HyperPlane(Geo::GetBoxMid(0, box), 0);
+      split[1] = HyperPlane(Geo::GetBoxMid(1, box), 1);
+      split[2] = HyperPlane(Geo::GetBoxMid(2, box), 2);
     } else {
       for (DimsType i = 0; i < kMD; ++i) {  // for dim > 3
-        split[i] = HyperPlane(BT::GetBoxMid(i, box), i);
+        split[i] = HyperPlane(Geo::GetBoxMid(i, box), i);
       }
     }
 

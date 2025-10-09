@@ -20,6 +20,7 @@ template <typename TypeTrait>
 class CpamRaw : public psi::BaseTree<TypeTrait, CpamRaw<TypeTrait>> {
  public:
   using BT = psi::BaseTree<TypeTrait, CpamRaw<TypeTrait>>;
+  using Geo = psi::GeoBase<TypeTrait>;
 
   using SplitRule = typename TypeTrait::SplitRule;
   using Point = typename BT::Point;
@@ -66,12 +67,12 @@ class CpamRaw : public psi::BaseTree<TypeTrait, CpamRaw<TypeTrait>> {
     using aug_t = aug_type;
 
     static inline bool comp(key_t a, key_t b) { return a < b; }
-    static aug_t get_empty() { return make_pair(BT::GetEmptyBox(), 0); }
+    static aug_t get_empty() { return make_pair(Geo::GetEmptyBox(), 0); }
     static aug_t from_entry(key_t k, val_t v) {
       return make_pair(Box(v, v), 1);
     }
     static aug_t combine(aug_t a, aug_t b) {
-      return make_pair(BT::GetBox(a.first, b.first), a.second + b.second);
+      return make_pair(Geo::GetBox(a.first, b.first), a.second + b.second);
     }
   };
 
@@ -178,9 +179,9 @@ class CpamRaw : public psi::BaseTree<TypeTrait, CpamRaw<TypeTrait>> {
   }
 
   int mbr_mbr_relation(Box const& a, Box const& b) {
-    if (!BT::BoxIntersectBox(a, b)) {
+    if (!Geo::BoxIntersectBox(a, b)) {
       return -1;  // disjoint
-    } else if (BT::WithinBox(a, b)) {
+    } else if (Geo::WithinBox(a, b)) {
       return 1;
     } else {
       return 0;  // overlap
@@ -195,7 +196,7 @@ class CpamRaw : public psi::BaseTree<TypeTrait, CpamRaw<TypeTrait>> {
       return mbr_mbr_relation(cur_mbr, query_mbr);
     };
     auto f2 = [&](auto& cur_point) {
-      return BT::WithinBox(cur_point, query_mbr);
+      return Geo::WithinBox(cur_point, query_mbr);
     };
 
     auto res = zmap::range_count_filter2(zCPAM, f, f2);
@@ -247,7 +248,7 @@ class CpamRaw : public psi::BaseTree<TypeTrait, CpamRaw<TypeTrait>> {
   auto KNN(Node* T, Point const& q, psi::kBoundedQueue<Point, Range>& bq) {
     psi::KNNLogger logger;
     // this->knn(this->cpam_aug_map_, q, bq.max_size(), logger.vis_leaf_num);
-    zmap::template knn<BT>(this->cpam_aug_map_, q, bq, logger);
+    zmap::template knn<Geo>(this->cpam_aug_map_, q, bq, logger);
     return logger;
   }
 

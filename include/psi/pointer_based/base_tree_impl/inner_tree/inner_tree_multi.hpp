@@ -12,6 +12,7 @@ template <class TypeTrait, typename DerivedTree, typename Leaf,
   requires IsMultiNode<Interior>
 struct MultiNodeOps {
   using BT = BaseTree<TypeTrait, DerivedTree>;
+  using Geo = GeoBase<TypeTrait>;
   using InnerTree = typename BT::template InnerTree<Leaf, Interior>;
   using Box = typename BT::Box;
   using BoxSeq = typename BT::BoxSeq;

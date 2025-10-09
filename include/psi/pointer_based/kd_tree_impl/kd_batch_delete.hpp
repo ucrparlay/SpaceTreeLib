@@ -38,11 +38,11 @@ auto KdTree<TypeTrait>::BatchDeleteRecursive(
 
   if (n == 0) {
     if constexpr (HasBox<typename Interior::AT> && HasBox<typename Leaf::AT>) {
-      assert(BT::SameBox(BT::template GetBox<Leaf, Interior>(T),
-                         BT::template RetriveBox<Leaf, Interior>(T)));
+      assert(Geo::SameBox(Geo::template GetBox<Leaf, Interior>(T),
+                          BT::template RetriveBox<Leaf, Interior>(T)));
       return NodeBox(T, BT::template RetriveBox<Leaf, Interior>(T));
     } else {
-      assert(BT::WithinBox(BT::template GetBox<Leaf, Interior>(T), box));
+      assert(Geo::WithinBox(Geo::template GetBox<Leaf, Interior>(T), box));
       return NodeBox(T, box);
     }
   }
@@ -50,7 +50,7 @@ auto KdTree<TypeTrait>::BatchDeleteRecursive(
   if (n == T->size) {
     if (has_tomb) {
       BT::template DeleteTreeRecursive<Leaf, Interior>(T);
-      return NodeBox(AllocEmptyLeafNode<Slice, Leaf>(), BT::GetEmptyBox());
+      return NodeBox(AllocEmptyLeafNode<Slice, Leaf>(), Geo::GetEmptyBox());
     }
     if (!T->is_leaf) {
       auto TI = static_cast<Interior*>(T);
@@ -61,7 +61,7 @@ auto KdTree<TypeTrait>::BatchDeleteRecursive(
       TL->ResetAug();
     }
     T->size = 0;
-    return NodeBox(T, BT::GetEmptyBox());
+    return NodeBox(T, Geo::GetEmptyBox());
   }
 
   if (T->is_leaf) {
@@ -110,14 +110,14 @@ auto KdTree<TypeTrait>::BatchDeleteRecursive(
       assert(BT::SparcyNode(0, TI->size) ||
              (split_rule_.AllowRebuild() &&
               BT::ImbalanceNode(TI->left->size, TI->size)));
-      auto const new_box = BT::GetBox(Lbox, Rbox);
-      assert(BT::WithinBox(BT::template GetBox<Leaf, Interior>(T), new_box));
+      auto const new_box = Geo::GetBox(Lbox, Rbox);
+      assert(Geo::WithinBox(Geo::template GetBox<Leaf, Interior>(T), new_box));
       return NodeBox(this->template RebuildSingleTree<Leaf, Interior, false>(
                          T, d, new_box),
                      new_box);
     }
 
-    return NodeBox(T, BT::GetBox(Lbox, Rbox));
+    return NodeBox(T, Geo::GetBox(Lbox, Rbox));
   }
 
   InnerTree IT;
@@ -150,9 +150,9 @@ auto KdTree<TypeTrait>::BatchDeleteRecursive(
 
         assert(IT.sums_tree[IT.rev_tag[i]] == IT.sums[i]);
         assert(IT.tags[IT.rev_tag[i]].first->size >= IT.sums[i]);
-        assert(BT::WithinBox(
-            BT::GetBox(Out.cut(start, start + IT.sums[i])),
-            BT::template GetBox<Leaf, Interior>(IT.tags[IT.rev_tag[i]].first)));
+        assert(Geo::WithinBox(Geo::GetBox(Out.cut(start, start + IT.sums[i])),
+                              Geo::template GetBox<Leaf, Interior>(
+                                  IT.tags[IT.rev_tag[i]].first)));
 
         DimsType next_dim = d, depth = IT.GetDepthByIndex(IT.rev_tag[i]);
         for (BucketType i = 0; i < depth; i++) {
@@ -178,8 +178,8 @@ auto KdTree<TypeTrait>::BatchDeleteRecursive(
           IT.tags[IT.rev_tag[i]].first);
       IT.tags[IT.rev_tag[i]].first = AllocEmptyLeafNode<Slice, Leaf>();
     } else {
-      assert(BT::WithinBox(
-          BT::template GetBox<Leaf, Interior>(IT.tags[IT.rev_tag[i]].first),
+      assert(Geo::WithinBox(
+          Geo::template GetBox<Leaf, Interior>(IT.tags[IT.rev_tag[i]].first),
           box_seq[i]));
 
       DimsType next_dim = d, depth = IT.GetDepthByIndex(IT.rev_tag[i]);

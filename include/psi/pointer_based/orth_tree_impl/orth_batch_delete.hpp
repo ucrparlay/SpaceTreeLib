@@ -92,7 +92,7 @@ Node* OrthTree<TypeTrait>::BatchDeleteRecursive(Node* T, Slice In, Slice Out,
       // NOTE: the box is the one that passed from the top, which should be the
       // correct one associated with this node
       assert(T->size <= BT::kLeaveWrap);
-      assert(BT::WithinBox(BT::template GetBox<Leaf, Interior>(T), box));
+      assert(Geo::WithinBox(Geo::template GetBox<Leaf, Interior>(T), box));
       return BT::template RebuildSingleTree<Leaf, Interior, false>(T, box);
     }
     return T;
@@ -126,9 +126,9 @@ Node* OrthTree<TypeTrait>::BatchDeleteRecursive(Node* T, Slice In, Slice Out,
 
         assert(IT.sums_tree[IT.rev_tag[i]] == IT.sums[i]);
         assert(IT.tags[IT.rev_tag[i]].first->size >= IT.sums[i]);
-        assert(BT::WithinBox(
-            BT::GetBox(Out.cut(start, start + IT.sums[i])),
-            BT::template GetBox<Leaf, Interior>(IT.tags[IT.rev_tag[i]].first)));
+        assert(Geo::WithinBox(
+            Geo::GetBox(Out.cut(start, start + IT.sums[i])),
+            Geo::template GetBox<Leaf, Interior>(IT.tags[IT.rev_tag[i]].first)));
 
         tree_nodes[i] = BatchDeleteRecursive(
             IT.tags[IT.rev_tag[i]].first, Out.cut(start, start + IT.sums[i]),
@@ -151,8 +151,8 @@ Node* OrthTree<TypeTrait>::BatchDeleteRecursive(Node* T, Slice In, Slice Out,
           IT.tags[IT.rev_tag[i]].first);
       IT.tags[IT.rev_tag[i]].first = AllocEmptyLeafNode<Slice, Leaf>();
     } else {  // NOTE: rebuild
-      assert(BT::WithinBox(
-          BT::template GetBox<Leaf, Interior>(IT.tags[IT.rev_tag[i]].first),
+      assert(Geo::WithinBox(
+          Geo::template GetBox<Leaf, Interior>(IT.tags[IT.rev_tag[i]].first),
           IT.GetBoxByRegionIdx(IT.rev_tag[i], box)));
       IT.tags[IT.rev_tag[i]].first =
           BT::template RebuildSingleTree<Leaf, Interior, false>(

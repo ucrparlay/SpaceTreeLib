@@ -505,6 +505,7 @@ template <typename TypeTrait>
 class Zdtree : public psi::BaseTree<TypeTrait, Zdtree<TypeTrait>> {
  public:
   using BT = psi::BaseTree<TypeTrait, Zdtree<TypeTrait>>;
+  using Geo = psi::GeoBase<TypeTrait>;
   using BucketType = typename BT::BucketType;
   using BallsType = typename BT::BallsType;
   using DimsType = typename BT::DimsType;
@@ -533,7 +534,7 @@ class Zdtree : public psi::BaseTree<TypeTrait, Zdtree<TypeTrait>> {
     return;
   }
 
-  geobase::Bounding_Box largest_mbr = BT::GetEmptyBox();
+  geobase::Bounding_Box largest_mbr = Geo::GetEmptyBox();
   // convert to zdtree point format, with storing Z-values
   template <typename Range>
   auto point_convert(Range& In) {

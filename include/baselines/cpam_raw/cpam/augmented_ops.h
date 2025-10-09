@@ -269,8 +269,8 @@ struct augmented_ops : Map {
   static void knn(node* b, auto const& q, kBoundedQueue& bq, Logger& logger) {
     using BT = BaseTree;
     using Point = decltype(q);
-    using Coord = typename BT::TemplatePoint::Coord;
-    using DisType = typename BT::TemplatePoint::DisType;
+    using Coord = typename BT::Point::Coord;
+    using DisType = typename BT::Point::DisType;
 
     if (!b) return;
 

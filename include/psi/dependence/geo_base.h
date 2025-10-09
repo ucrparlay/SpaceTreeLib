@@ -8,20 +8,11 @@
 #include <type_traits>
 
 #include "comparator.h"
+#include "concepts.h"
+#include "tree_node.h"
 #include "type_trait.h"
 
 namespace psi {
-
-//==============================================================================
-// BASE TREE CLASS
-//
-// A template-based spatial tree framework using CRTP (Curiously Recurring
-// Template Pattern) for zero-cost abstraction. Supports orthogonal, k-d,
-// and cover tree implementations.
-//
-// Implementation is split across base_tree_impl/ for maintainability.
-// See REFACTORING_NOTES.md for design rationale.
-//==============================================================================
 
 template <class TypeTrait>
 class GeoBase {
@@ -34,7 +25,11 @@ class GeoBase {
   using Node = typename TypeTrait::Node;
   using Point = typename TypeTrait::Point;
   using Slice = typename TypeTrait::Slice;
+  using Num = typename TypeTrait::Num;
   using DepthType = int;
+
+  static constexpr uint_fast8_t kDim = Point::GetDim();
+  static constexpr uint_fast16_t kSerialBuildCutoff = 1024;
 
   struct NormalCircle {
     Point const& GetCenter() const { return center; }
@@ -189,5 +184,9 @@ class GeoBase {
 };
 
 }  // namespace psi
+
+#include "geo_base_impl/box_op.hpp"       // Section 9
+#include "geo_base_impl/circle_op.hpp"    // Section 10
+#include "geo_base_impl/distance_op.hpp"  // Section 11
 
 #endif  // PSI_TOOLBOX_H

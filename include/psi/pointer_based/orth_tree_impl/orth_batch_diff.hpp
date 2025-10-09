@@ -34,7 +34,7 @@ void OrthTree<TypeTrait>::BatchDiff_(Slice A) {
   auto prepare_func = [&]([[maybe_unused]] Node* T, [[maybe_unused]] size_t i,
                           Box const& box) {
     auto new_box = static_cast<Interior*>(T)->GetBoxByRegionId(i, box);
-    assert(BT::WithinBox(new_box, box));
+    assert(Geo::WithinBox(new_box, box));
     return std::make_tuple(std::move(new_box));
   };
   this->root_ = BT::template RebuildTreeRecursive<Leaf, Interior, false>(

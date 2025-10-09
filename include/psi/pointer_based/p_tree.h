@@ -15,6 +15,7 @@ template <typename TypeTrait>
 class PTree : public BaseTree<TypeTrait, PTree<TypeTrait>> {
  public:
   using BT = BaseTree<TypeTrait, PTree<TypeTrait>>;
+  using Geo = GeoBase<TypeTrait>;
 
   using Point = typename BT::Point;
   using BucketType = typename BT::BucketType;
@@ -84,7 +85,7 @@ class PTree : public BaseTree<TypeTrait, PTree<TypeTrait>> {
     static inline bool comp(key_t const& a, key_t const& b) { return a < b; }
 
     // get an empty aug
-    static aug_t get_empty() { return BT::GetEmptyBox(); }
+    static aug_t get_empty() { return Geo::GetEmptyBox(); }
 
     // WARN: this invoke implicity conversion from Coords to BasicPoint
     static aug_t from_entry(key_t const& k, val_t const& v) {
@@ -92,12 +93,12 @@ class PTree : public BaseTree<TypeTrait, PTree<TypeTrait>> {
     }
 
     static aug_t from_entry_array(entry_t* et, size_t sz) {
-      return BT::GetBox(parlay::slice(et, et + sz));
+      return Geo::GetBox(parlay::slice(et, et + sz));
     }
 
     // combine two aug val to get a new aug
     static aug_t combine(aug_t const& a, aug_t const& b) {
-      return BT::GetBox(a, b);
+      return Geo::GetBox(a, b);
     }
   };
 

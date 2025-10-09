@@ -13,7 +13,7 @@ void BaseTree<TypeTrait, DerivedTree>::DeleteTreeWrapper() {
     return;
   }
   DeleteTreeRecursive<Leaf, Interior>(this->root_);
-  this->tree_box_ = GetEmptyBox();
+  this->tree_box_ = Geo::GetEmptyBox();
   this->root_ = nullptr;
   return;
 }

@@ -77,6 +77,7 @@ template <typename Point, typename Tree, bool SavePoint>
 size_t recurse_box(parlay::slice<Point*, Point*> In, auto& box_seq, int DIM,
                    std::pair<size_t, size_t> range, int& idx, int rec_num,
                    int type) {
+  using Geo = Tree::Geo;
   size_t n = In.size();
   if (idx >= rec_num || n < range.first || n == 0) return 0;
 
@@ -84,10 +85,9 @@ size_t recurse_box(parlay::slice<Point*, Point*> In, auto& box_seq, int DIM,
   bool goon = false;
   if (n <= range.second) {
     if constexpr (SavePoint) {
-      box_seq[idx++] =
-          std::make_pair(Tree::GetBox(In), parlay::to_sequence(In));
+      box_seq[idx++] = std::make_pair(Geo::GetBox(In), parlay::to_sequence(In));
     } else {
-      box_seq[idx++] = std::make_pair(Tree::GetBox(In), In.size());
+      box_seq[idx++] = std::make_pair(Geo::GetBox(In), In.size());
     }
 
     // WARN: Modify the coefficient to make the rectangle size distribute as
@@ -273,6 +273,7 @@ void BatchInsert(Tree& pkd, parlay::sequence<Point> const& WP,
                  double ratio = 1.0) {
   using Points = typename Tree::Points;
   using Box = typename Tree::Box;
+  using Geo = Tree::Geo;
   Points wp = Points::uninitialized(WP.size());
   Points wi = Points::uninitialized(WI.size());
   double loop_late = rounds > 1 ? 0.01 : -100;
@@ -284,10 +285,10 @@ void BatchInsert(Tree& pkd, parlay::sequence<Point> const& WP,
       pkd.Build(parlay::make_slice(wp));
     } else if constexpr (psi::IsOrthTree<Tree>) {
       parlay::copy(WP, wp), parlay::copy(WI, wi);
-      auto box1 = Tree::GetBox(parlay::make_slice(wp));
+      auto box1 = Geo::GetBox(parlay::make_slice(wp));
       auto box2 =
-          Tree::GetBox(wi.cut(0, static_cast<size_t>(wi.size() * ratio)));
-      Box box = Tree::GetBox(box1, box2);
+          Geo::GetBox(wi.cut(0, static_cast<size_t>(wi.size() * ratio)));
+      Box box = Geo::GetBox(box1, box2);
       // std::cout << box1.first << ' ' << box1.second;
       // std::cout << box2.first << ' ' << box2.second;
       // std::cout << box.first << ' ' << box.second << std::endl;
@@ -413,6 +414,7 @@ void BatchInsertByStep(Tree& pkd, parlay::sequence<Point> const& WP,
                        int const remain_divide_ratio = 2) {
   using Points = typename Tree::Points;
   using Box = typename Tree::Box;
+  using Geo = Tree::Geo;
   Points wp = Points::uninitialized(WP.size());
   size_t n = wp.size();
   size_t step = static_cast<size_t>(insert_ratio * n);
@@ -435,7 +437,7 @@ void BatchInsertByStep(Tree& pkd, parlay::sequence<Point> const& WP,
       parlay::copy(WP, wp);
     } else if constexpr (psi::IsOrthTree<Tree>) {
       parlay::copy(WP, wp);
-      auto box = Tree::GetBox(wp.cut(0, n));
+      auto box = Geo::GetBox(wp.cut(0, n));
       pkd.SetBoundingBox(box);
     } else {
       parlay::copy(WP, wp);
@@ -498,7 +500,7 @@ void BatchInsertByStep(Tree& pkd, parlay::sequence<Point> const& WP,
   // WARN: restore status
   prepare_build();
   incre_build(slice_num / remain_divide_ratio);
-  // auto original_box = Tree::GetBox(wp.cut(0, n / remain_divide_ratio));
+  // auto original_box = Geo::GetBox(wp.cut(0, n / remain_divide_ratio));
   // auto tree_box = pkd.GetRootBox();
   // std::cout << original_box.first << ' ' << original_box.second << std::endl;
   // std::cout << tree_box.first << ' ' << tree_box.second << std::endl;
@@ -514,6 +516,7 @@ void BatchDeleteByStep(Tree& pkd, parlay::sequence<Point> const& WP,
                        size_t const remain_divide_ratio = 2) {
   using Points = typename Tree::Points;
   using Box = typename Tree::Box;
+  using Geo = Tree::Geo;
   Points wp = Points::uninitialized(WP.size());
   size_t n = wp.size();
   size_t step = static_cast<size_t>(insert_ratio * n);
@@ -538,7 +541,7 @@ void BatchDeleteByStep(Tree& pkd, parlay::sequence<Point> const& WP,
     if constexpr (psi::IsKdTree<Tree> || psi::IsPTree<Tree>) {
       pkd.Build(parlay::make_slice(wp));
     } else if constexpr (psi::IsOrthTree<Tree>) {
-      auto box = Tree::GetBox(wp.cut(0, n));
+      auto box = Geo::GetBox(wp.cut(0, n));
       pkd.Build(parlay::make_slice(wp), box);
     } else {
       pkd.Build(parlay::make_slice(wp));
@@ -1494,6 +1497,7 @@ class Wrapper {
     using BT = BaseTree;
     using Box = BT::Box;
     using Slice = BT::Slice;
+    using Geo = BT::Geo;
 
     LeafAugEmpty() {};
     LeafAugEmpty(Box const& _box) {};
@@ -1507,21 +1511,22 @@ class Wrapper {
     using BT = BaseTree;
     using Box = BT::Box;
     using Slice = BT::Slice;
+    using Geo = BT::Geo;
 
-    LeafAugBox() : box(BT::GetEmptyBox()) {};
+    LeafAugBox() : box(Geo::GetEmptyBox()) {};
     LeafAugBox(Box const& _box) : box(_box) {};
-    LeafAugBox(Slice In) : box(BT::GetBox(In)) {};
+    LeafAugBox(Slice In) : box(Geo::GetBox(In)) {};
 
     Box& GetBox() { return this->box; }
     Box const& GetBox() const { return this->box; }
 
     void UpdateAug(Slice In) {
-      this->box = BT::GetBox(In);
+      this->box = Geo::GetBox(In);
       return;
     }
 
     void Reset() {
-      this->box = BT::GetEmptyBox();
+      this->box = Geo::GetEmptyBox();
       return;
     }
 
@@ -1531,6 +1536,7 @@ class Wrapper {
   template <class BaseTree>
   struct InteriorAugEmpty {
     using BT = BaseTree;
+    using Geo = BT::Geo;
 
     InteriorAugEmpty() { force_par_indicator.reset(); }
     InteriorAugEmpty(bool) { force_par_indicator.reset(); }
@@ -1588,22 +1594,24 @@ class Wrapper {
     using Slice = BT::Slice;
     using BaseAug = InteriorAugEmpty<BT>;
 
-    InteriorAugBox() : BaseAug(), box(BT::GetEmptyBox()) {}
+    using Geo = BT::Geo;
+
+    InteriorAugBox() : BaseAug(), box(Geo::GetEmptyBox()) {}
     InteriorAugBox(Box const& _box) : BaseAug(), box(_box) {}
 
     // binary create
     template <typename Leaf, typename Interior>
     static Box Create(Node* l, Node* r) {
-      return BT::GetBox(BT::template RetriveBox<Leaf, Interior>(l),
-                        BT::template RetriveBox<Leaf, Interior>(r));
+      return Geo::GetBox(BT::template RetriveBox<Leaf, Interior>(l),
+                         BT::template RetriveBox<Leaf, Interior>(r));
     }
 
     // multi create
     template <typename Leaf, typename Interior, typename TreeNodes>
     static Box Create(TreeNodes const& nodes) {
-      Box box = BT::GetEmptyBox();
+      Box box = Geo::GetEmptyBox();
       for (auto t : nodes) {
-        box = BT::GetBox(box, BT::template RetriveBox<Leaf, Interior>(t));
+        box = Geo::GetBox(box, BT::template RetriveBox<Leaf, Interior>(t));
       }
       return box;
     }
@@ -1845,9 +1853,10 @@ class Wrapper {
     if (dim == 2) {
       // run_with_split_type.template operator()<BasicPoint<Coord, 2>>();
       run_with_split_type.template operator()<AugPoint<Coord, 2, AugId>>();
-    } else if (dim == 3) {
-      run_with_split_type.template operator()<AugPoint<Coord, 3, AugId>>();
     }
+    // else if (dim == 3) {
+    //   run_with_split_type.template operator()<AugPoint<Coord, 3, AugId>>();
+    // }
   }
 
   template <typename RunFunc>
@@ -1869,19 +1878,23 @@ class Wrapper {
     // NOTE: pick the split rule
     auto run_with_split_type = [&]<typename Point>() {
       if (split_type & (1 << 0)) {
-        build_tree_type.template
-        operator()<Point, psi::SpacialFillingCurve<HilbertCurve<Point>>>();
+        build_tree_type.template operator()<
+            Point,
+            psi::SpacialFillingCurve<HilbertCurve<psi::TypeTrait<Point>>>>();
       } else if (split_type & (1 << 1)) {
-        build_tree_type.template
-        operator()<Point, psi::SpacialFillingCurve<MortonCurve<Point>>>();
+        build_tree_type.template operator()<
+            Point,
+            psi::SpacialFillingCurve<MortonCurve<psi::TypeTrait<Point>>>>();
       }
     };
 
     if (dim == 2) {
       run_with_split_type.template operator()<AugPoint<Coord, 2, AugIdCode>>();
-    } else if (dim == 3) {
-      run_with_split_type.template operator()<AugPoint<Coord, 3, AugIdCode>>();
     }
+    // else if (dim == 3) {
+    //   run_with_split_type.template operator()<AugPoint<Coord, 3,
+    //   AugIdCode>>();
+    // }
   }
 
   template <typename RunFunc>
@@ -1910,11 +1923,13 @@ class Wrapper {
     // NOTE: pick the split rule
     auto run_with_split_type = [&]<typename Point>() {
       if (split_type & (1 << 0)) {
-        build_tree_type.template
-        operator()<Point, psi::SpacialFillingCurve<HilbertCurve<Point>>>();
+        build_tree_type.template operator()<
+            Point,
+            psi::SpacialFillingCurve<HilbertCurve<psi::TypeTrait<Point>>>>();
       } else if (split_type & (1 << 1)) {
-        build_tree_type.template
-        operator()<Point, psi::SpacialFillingCurve<MortonCurve<Point>>>();
+        build_tree_type.template operator()<
+            Point,
+            psi::SpacialFillingCurve<MortonCurve<psi::TypeTrait<Point>>>>();
       }
     };
 
@@ -2069,22 +2084,22 @@ class Wrapper {
 //     using Slice = BT::Slice;
 //     using BaseAug = InteriorAugEmpty<BT>;
 //
-//     NodeAugBox() : BaseAug(), box(BT::GetEmptyBox()) {}
+//     NodeAugBox() : BaseAug(), box(Geo::GetEmptyBox()) {}
 //     NodeAugBox(Box const& _box) : BaseAug(), box(_box) {}
 //
 //     // binary create
 //     template <typename Leaf, typename Interior>
 //     static Box Create(Node* l, Node* r) {
-//       return BT::GetBox(BT::template RetriveBox<Leaf, Interior>(l),
+//       return Geo::GetBox(BT::template RetriveBox<Leaf, Interior>(l),
 //                         BT::template RetriveBox<Leaf, Interior>(r));
 //     }
 //
 //     // multi create
 //     template <typename Leaf, typename Interior, typename TreeNodes>
 //     static Box Create(TreeNodes const& nodes) {
-//       Box box = BT::GetEmptyBox();
+//       Box box = Geo::GetEmptyBox();
 //       for (auto t : nodes) {
-//         box = BT::GetBox(box, BT::template RetriveBox<Leaf, Interior>(t));
+//         box = Geo::GetBox(box, BT::template RetriveBox<Leaf, Interior>(t));
 //       }
 //       return box;
 //     }

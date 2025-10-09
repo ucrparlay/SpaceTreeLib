@@ -33,7 +33,7 @@ template <typename Range>
 auto PTree<TypeTrait>::KNN(Node* T, Point const& q,
                            kBoundedQueue<Point, Range>& bq) {
   KNNLogger logger;
-  CpamAugMap::template knn<BT>(this->cpam_aug_map_, q, bq, logger);
+  CpamAugMap::template knn<Geo>(this->cpam_aug_map_, q, bq, logger);
   return logger;
 }
 
@@ -48,8 +48,8 @@ template <typename TypeTrait>
 auto PTree<TypeTrait>::RangeCount(Box const& query_box) {
   RangeQueryLogger logger;
 
-  auto size = CpamAugMap::template range_count_filter2<BT>(this->cpam_aug_map_,
-                                                           query_box, logger);
+  auto size = CpamAugMap::template range_count_filter2<Geo>(this->cpam_aug_map_,
+                                                            query_box, logger);
 
   return std::make_pair(size, logger);
 }
@@ -59,7 +59,7 @@ template <typename Range>
 auto PTree<TypeTrait>::RangeQuery(Box const& query_box, Range&& Out) {
   RangeQueryLogger logger;
   size_t cnt = 0;
-  CpamAugMap::template range_report_filter2<BT>(
+  CpamAugMap::template range_report_filter2<Geo>(
       this->cpam_aug_map_, query_box, cnt, parlay::make_slice(Out), logger);
   return std::make_pair(cnt, logger);
 }

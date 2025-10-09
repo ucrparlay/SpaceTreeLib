@@ -20,14 +20,14 @@ namespace psi {
 COVERTREE_TEMPLATE
 void COVERTREE_CLASS::Build_(Slice A) {
   Points B = Points::uninitialized(A.size());
-  this->tree_box_ = BT::GetBox(A);
+  this->tree_box_ = Geo::GetBox(A);
   assert(this->root_ != nullptr);
   return;
 }
 
 COVERTREE_TEMPLATE
 void COVERTREE_CLASS::Build_(Slice A, Box const& box) {
-  assert(BT::WithinBox(BT::GetBox(A), box));
+  assert(Geo::WithinBox(Geo::GetBox(A), box));
 
   Points B = Points::uninitialized(A.size());
   this->tree_box_ = box;

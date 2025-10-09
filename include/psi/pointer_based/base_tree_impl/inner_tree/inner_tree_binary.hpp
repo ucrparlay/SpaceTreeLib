@@ -11,6 +11,7 @@ template <class TypeTrait, typename DerivedTree, typename Leaf,
   requires IsBinaryNode<Interior>
 struct BinaryNodeOps {
   using BT = BaseTree<TypeTrait, DerivedTree>;
+  using Geo = GeoBase<TypeTrait>;
   using InnerTree = typename BT::template InnerTree<Leaf, Interior>;
   using Box = typename BT::Box;
   using BoxSeq = typename BT::BoxSeq;
@@ -192,7 +193,7 @@ struct BinaryNodeOps {
     BT::template UpdateInterior<Interior, UpdateParFlag>(self->tags[idx].first,
                                                          left, right);
     return NodeBox(self->tags[idx].first,
-                   BT::GetBox(left.second, right.second));
+                   Geo::GetBox(left.second, right.second));
   }
 
   template <bool UpdateParFlag, typename NodeOrNodeBox, typename Func>
@@ -214,7 +215,7 @@ struct BinaryNodeOps {
 
     BT::template UpdateInterior<Interior, UpdateParFlag>(self->tags[idx].first,
                                                          left, right);
-    auto new_box = BT::GetBox(left.second, right.second);
+    auto new_box = Geo::GetBox(left.second, right.second);
     if (self->tags[idx].second == BT::kBucketNum + 3) {
       func(new_box, idx);
     }

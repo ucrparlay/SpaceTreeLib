@@ -57,7 +57,7 @@ void COVERTREE_CLASS::BatchInsert_(Slice A) {
     assert(flag == true);
   }
 
-  std::cout << "bb: " << BT::GetBox(A).first << " " << BT::GetBox(A).second
+  std::cout << "bb: " << Geo::GetBox(A).first << " " << Geo::GetBox(A).second
             << '\n';
   auto input_circle = BT::template GetCircle<typename BT::NormalCircle>(A);
   std::cout << "reduced: " << input_circle << " "

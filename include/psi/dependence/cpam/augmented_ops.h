@@ -245,18 +245,18 @@ struct augmented_ops : Map {
   //   return l + r + flag2;
   // }
 
-  template <class BaseTree, typename Box, typename Logger>
+  template <class GeoBase, typename Box, typename Logger>
   static size_t range_count_filter2(node* b, Box const& query_box,
                                     Logger& logger) {
-    using BT = BaseTree;
+    using Geo = GeoBase;
 
     if (!b) return 0;
 
     auto const& node_box = Map::aug_val_ref(b);
-    if (!BT::BoxIntersectBox(node_box, query_box)) {
+    if (!Geo::BoxIntersectBox(node_box, query_box)) {
       logger.skip_box_num++;
       return 0;
-    } else if (BT::WithinBox(node_box, query_box)) {
+    } else if (Geo::WithinBox(node_box, query_box)) {
       logger.full_box_num++;
       return Map::size(b);  // fully contained
     }
@@ -265,7 +265,7 @@ struct augmented_ops : Map {
       logger.vis_leaf_num++;
       size_t ret = 0;
       auto f_filter = [&](auto const& et) {
-        if (BT::WithinBox(et, query_box)) {
+        if (Geo::WithinBox(et, query_box)) {
           ret++;
         }
       };
@@ -276,20 +276,20 @@ struct augmented_ops : Map {
     logger.vis_interior_num++;
     auto rb = Map::cast_to_regular(b);
 
-    auto l = range_count_filter2<BaseTree>(rb->lc, query_box, logger);
-    auto r = range_count_filter2<BaseTree>(rb->rc, query_box, logger);
+    auto l = range_count_filter2<GeoBase>(rb->lc, query_box, logger);
+    auto r = range_count_filter2<GeoBase>(rb->rc, query_box, logger);
 
     return l + r +
-           static_cast<size_t>(BT::WithinBox(rb->entry.first, query_box) ? 1
+           static_cast<size_t>(Geo::WithinBox(rb->entry.first, query_box) ? 1
                                                                          : 0);
   }
 
   //  F is point-point dis, F2 is point-mbr dis
-  template <class BaseTree, typename F, typename F2, typename Out,
+  template <class GeoBase, typename F, typename F2, typename Out,
             typename Logger>
   static void knn_filter(node* b, ET const q, F const& f, const F2& f2,
                          size_t& k, Out& out, Logger& logger) {
-    using BT = BaseTree;
+    using Geo = GeoBase;
     if (!b) return;
 
     auto pt_check = [&](auto& cur_pt) {
@@ -328,12 +328,12 @@ struct augmented_ops : Map {
     }
     auto go_left = [&]() {
       if (!out.full() || l_dis < out.top().second) {
-        knn_filter<BT>(rb->lc, q, f, f2, k, out, logger);
+        knn_filter<Geo>(rb->lc, q, f, f2, k, out, logger);
       }
     };
     auto go_right = [&]() {
       if (!out.full() || r_dis < out.top().second) {
-        knn_filter<BT>(rb->rc, q, f, f2, k, out, logger);
+        knn_filter<Geo>(rb->rc, q, f, f2, k, out, logger);
       }
     };
 
@@ -346,16 +346,16 @@ struct augmented_ops : Map {
     }
   }
 
-  template <class BaseTree, typename Logger, typename kBoundedQueue>
+  template <class GeoBase, typename Logger, typename kBoundedQueue>
   static void knn(node* b, ET const& q, kBoundedQueue& bq, Logger& logger) {
-    using BT = BaseTree;
+    using Geo = GeoBase;
     using Coord = typename ET::Coord;
     using DisType = typename ET::DisType;
 
     if (!b) return;
 
     if (bq.size() &&
-        BT::P2BMinDistanceSquare(q, Map::aug_val_ref(b)) > bq.top_value() &&
+        Geo::P2BMinDistanceSquare(q, Map::aug_val_ref(b)) > bq.top_value() &&
         bq.full()) {
       logger.skip_box_num++;
       return;
@@ -365,10 +365,10 @@ struct augmented_ops : Map {
       logger.vis_leaf_num++;
       auto f_filter = [&](ET& et) {
         if (!bq.full()) {
-          bq.insert(std::make_pair(std::ref(et), BT::P2PDistanceSquare(q, et)));
+          bq.insert(std::make_pair(std::ref(et), Geo::P2PDistanceSquare(q, et)));
           return;
         }
-        auto r = BT::InterruptibleDistance(q, et, bq.top_value());
+        auto r = Geo::InterruptibleDistance(q, et, bq.top_value());
         if (r <
             bq.top_value()) {  // PERF: remember currently the queue is full; if
                                // r == bq.top(), then it is useless to insert
@@ -384,21 +384,21 @@ struct augmented_ops : Map {
     logger.vis_interior_num++;
     auto rb = Map::cast_to_regular(b);
     DisType d_lc = rb->lc
-                       ? BT::P2BMinDistanceSquare(q, Map::aug_val_ref(rb->lc))
+                       ? Geo::P2BMinDistanceSquare(q, Map::aug_val_ref(rb->lc))
                        : std::numeric_limits<DisType>::max();
     DisType d_rc = rb->rc
-                       ? BT::P2BMinDistanceSquare(q, Map::aug_val_ref(rb->rc))
+                       ? Geo::P2BMinDistanceSquare(q, Map::aug_val_ref(rb->rc))
                        : std::numeric_limits<DisType>::max();
     bool go_left = d_lc <= d_rc;
 
     // check current entry
     // the rb->entry is a <point, aug> pair
-    auto r = BT::InterruptibleDistance(q, rb->entry.first, bq.top_value());
+    auto r = Geo::InterruptibleDistance(q, rb->entry.first, bq.top_value());
     if (!bq.full() || r < bq.top_value()) {
       bq.insert(std::make_pair(std::ref(rb->entry.first), r));
     }
 
-    knn<BT>(go_left ? rb->lc : rb->rc, q, bq, logger);
+    knn<Geo>(go_left ? rb->lc : rb->rc, q, bq, logger);
 
     logger.check_box_num++;
     if (((go_left ? d_rc : d_lc) > bq.top_value()) && bq.full()) {
@@ -406,7 +406,7 @@ struct augmented_ops : Map {
       return;
     }
 
-    knn<BT>(go_left ? rb->rc : rb->lc, q, bq, logger);
+    knn<Geo>(go_left ? rb->rc : rb->lc, q, bq, logger);
 
     return;
   }
@@ -518,18 +518,18 @@ struct augmented_ops : Map {
     return rb->s;
   }
 
-  template <class BaseTree, typename Box, typename Logger, typename Out>
+  template <class GeoBase, typename Box, typename Logger, typename Out>
   static void range_report_filter2(node* b, Box const& query_box, size_t& cnt,
                                    Out out, Logger& logger) {
-    using BT = BaseTree;
+    using Geo = GeoBase;
 
     if (!b) return;
 
     auto const& node_box = Map::aug_val_ref(b);
-    if (!BT::BoxIntersectBox(node_box, query_box)) {
+    if (!Geo::BoxIntersectBox(node_box, query_box)) {
       logger.skip_box_num++;
       return;
-    } else if (BT::WithinBox(node_box, query_box)) {
+    } else if (Geo::WithinBox(node_box, query_box)) {
       logger.full_box_num++;
       cnt += flatten(b, out.cut(cnt, cnt + Map::size(b)));
       return;
@@ -538,7 +538,7 @@ struct augmented_ops : Map {
     if (Map::is_compressed(b)) {  // leaf node
       logger.vis_leaf_num++;
       auto f_filter = [&](auto const& et) {
-        if (BT::WithinBox(et, query_box)) {
+        if (Geo::WithinBox(et, query_box)) {
           out[cnt++] = et;
         }
       };
@@ -549,12 +549,12 @@ struct augmented_ops : Map {
     logger.vis_interior_num++;
     auto rb = Map::cast_to_regular(b);
 
-    if (BT::WithinBox(rb->entry.first, query_box)) {
+    if (Geo::WithinBox(rb->entry.first, query_box)) {
       out[cnt++] = rb->entry.first;
     }
 
-    range_report_filter2<BaseTree>(rb->lc, query_box, cnt, out, logger);
-    range_report_filter2<BaseTree>(rb->rc, query_box, cnt, out, logger);
+    range_report_filter2<GeoBase>(rb->lc, query_box, cnt, out, logger);
+    range_report_filter2<GeoBase>(rb->rc, query_box, cnt, out, logger);
   }
 
   template <class F, typename Out>

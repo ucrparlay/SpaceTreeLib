@@ -86,7 +86,7 @@ auto KdTree<TypeTrait>::BatchDiffRecursive(
       TI->SetParallelFlag(force_parallel_flag);
     }
 
-    return NodeBox(T, BT::GetBox(Lbox, Rbox));
+    return NodeBox(T, Geo::GetBox(Lbox, Rbox));
   }
 
   InnerTree IT;
@@ -112,8 +112,8 @@ auto KdTree<TypeTrait>::BatchDiffRecursive(
           next_dim = split_rule_.NextDimension(next_dim);
         }
 
-        assert(BT::WithinBox(
-            BT::template GetBox<Leaf, Interior>(IT.tags[IT.rev_tag[i]].first),
+        assert(Geo::WithinBox(
+            Geo::template GetBox<Leaf, Interior>(IT.tags[IT.rev_tag[i]].first),
             IT.GetBoxByRegionIdx(IT.rev_tag[i], box)));
 
         tree_nodes[i] =

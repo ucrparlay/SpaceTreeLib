@@ -15,31 +15,32 @@ template <typename TypeTrait>
 class KdTree : public BaseTree<TypeTrait, KdTree<TypeTrait>> {
  public:
   using BT = BaseTree<TypeTrait, KdTree<TypeTrait>>;
+  using Geo = GeoBase<TypeTrait>;
 
-  using Point = typename BT::Point;
-  using BucketType = typename BT::BucketType;
-  using BallsType = typename BT::BallsType;
-  using DimsType = typename BT::DimsType;
-  using BucketSeq = typename BT::BucketSeq;
-  using BallSeq = typename BT::BallSeq;
+  using Point = typename TypeTrait::Point;
+  using BucketType = typename TypeTrait::BucketType;
+  using BallsType = typename TypeTrait::BallsType;
+  using DimsType = typename TypeTrait::DimsType;
+  using BucketSeq = typename TypeTrait::BucketSeq;
+  using BallSeq = typename TypeTrait::BallSeq;
   using Coord = typename Point::Coord;
   using Coords = typename Point::Coords;
   using Num = Num_Comparator<Coord>;
-  using Slice = typename BT::Slice;
-  using Points = typename BT::Points;
-  using PointsIter = typename BT::PointsIter;
-  using Box = typename BT::Box;
-  using BoxSeq = typename BT::BoxSeq;
-  using Circle = typename BT::NormalCircle;
+  using Slice = typename TypeTrait::Slice;
+  using Points = typename TypeTrait::Points;
+  using PointsIter = typename TypeTrait::PointsIter;
+  using Box = typename TypeTrait::Box;
+  using BoxSeq = typename TypeTrait::BoxSeq;
 
-  using HyperPlane = typename BT::HyperPlane;
-  using HyperPlaneSeq = typename BT::HyperPlaneSeq;
-  using NodeTag = typename BT::NodeTag;
-  using NodeTagSeq = typename BT::NodeTagSeq;
-  using NodeBox = typename BT::NodeBox;
-  using NodeBoxSeq = typename BT::NodeBoxSeq;
+  using HyperPlane = typename TypeTrait::HyperPlane;
+  using HyperPlaneSeq = typename TypeTrait::HyperPlaneSeq;
+  using NodeTag = typename TypeTrait::NodeTag;
+  using NodeTagSeq = typename TypeTrait::NodeTagSeq;
+  using NodeBox = typename TypeTrait::NodeBox;
+  using NodeBoxSeq = typename TypeTrait::NodeBoxSeq;
   using Splitter = HyperPlane;
   using SplitterSeq = HyperPlaneSeq;
+  using Circle = BT::NormalCircle;
 
   using SplitRuleType = TypeTrait::SplitRule;
   using SplitRule = typename TypeTrait::SplitRule;

@@ -48,10 +48,10 @@ struct aug_map_ : private map_<_Entry, Join_Tree> {
     return;
   }
 
-  template <class BaseTree, typename Box, typename Logger>
+  template <class GeoBase, typename Box, typename Logger>
   static size_t range_count_filter2(M& m, Box const& query_box,
                                     Logger& logger) {
-    return Tree::template range_count_filter2<BaseTree, Box, Logger>(
+    return Tree::template range_count_filter2<GeoBase, Box, Logger>(
         // m.get_root(), query_box, logger);
         m.root, query_box, logger);
   }
@@ -61,29 +61,29 @@ struct aug_map_ : private map_<_Entry, Join_Tree> {
     return Tree::template flatten<Range>(m.root, out);
   }
 
-  template <class BaseTree, typename Logger, typename kBoundedQueue>
+  template <class GeoBase, typename Logger, typename kBoundedQueue>
   static void knn(M& m, E const& q, kBoundedQueue& bq, Logger& logger) {
     // parlay::internal::timer t;
     // t.start();
     // auto root = m.get_root();
     // logger.generate_box_num += t.total_time();
-    // Tree::template knn<BaseTree>(m.get_root(), q, bq, logger);
-    Tree::template knn<BaseTree>(m.root, q, bq, logger);
+    // Tree::template knn<GeoBase>(m.get_root(), q, bq, logger);
+    Tree::template knn<GeoBase>(m.root, q, bq, logger);
     // GC::decrement(root);
   }
 
-  template <class BaseTree, typename F, typename F2, typename Out,
+  template <class GeoBase, typename F, typename F2, typename Out,
             typename Logger>
   static void knn_filter(M m, E const& q, F const& f, const F2& f2, size_t k,
                          Out& out, Logger& logger) {
-    Tree::template knn_filter<BaseTree>(m.get_root(), q, f, f2, k, out, logger);
+    Tree::template knn_filter<GeoBase>(m.get_root(), q, f, f2, k, out, logger);
     return;
   }
 
-  template <class BaseTree, typename Box, typename Logger, typename Out>
+  template <class GeoBase, typename Box, typename Logger, typename Out>
   static void range_report_filter2(M& m, Box const& query_box, size_t& cnt,
                                    Out&& out, Logger& logger) {
-    Tree::template range_report_filter2<BaseTree>(
+    Tree::template range_report_filter2<GeoBase>(
         // m.get_root(), query_box, cnt, std::forward<Out>(out), logger);
         m.root, query_box, cnt, std::forward<Out>(out), logger);
     return;

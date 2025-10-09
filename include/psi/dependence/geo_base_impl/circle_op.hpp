@@ -3,22 +3,21 @@
 
 #include <cmath>
 
-#include "../../dependence/concepts.h"
-#include "../base_tree.h"
+#include "dependence/concepts.h"
+#include "dependence/geo_base.h"
 
 namespace psi {
-template <class TypeTrait, typename DerivedTree>
+template <class TypeTrait>
 template <typename CircleType>
-inline bool BaseTree<TypeTrait, DerivedTree>::LegalCircle(
-    CircleType const& cl) {
+inline bool GeoBase<TypeTrait>::LegalCircle(CircleType const& cl) {
   return Num::Geq(cl.GetRadius(), 0);
 }
 
 // NOTE: point within the circle
-template <class TypeTrait, typename DerivedTree>
+template <class TypeTrait>
 template <typename CircleType>
-inline bool BaseTree<TypeTrait, DerivedTree>::WithinCircle(
-    Point const& p, CircleType const& cl) {
+inline bool GeoBase<TypeTrait>::WithinCircle(Point const& p,
+                                             CircleType const& cl) {
   Coord r = 0;
   for (DimsType i = 0; i < kDim; ++i) {
     r +=
@@ -30,10 +29,10 @@ inline bool BaseTree<TypeTrait, DerivedTree>::WithinCircle(
 }
 
 // NOTE: box within the circle
-template <class TypeTrait, typename DerivedTree>
+template <class TypeTrait>
 template <typename CircleType>
-inline bool BaseTree<TypeTrait, DerivedTree>::WithinCircle(
-    Box const& box, CircleType const& cl) {
+inline bool GeoBase<TypeTrait>::WithinCircle(Box const& box,
+                                             CircleType const& cl) {
   assert(LegalBox(box));
   assert(LegalCircle(cl));
 
@@ -54,10 +53,10 @@ inline bool BaseTree<TypeTrait, DerivedTree>::WithinCircle(
   return true;
 }
 
-template <class TypeTrait, typename DerivedTree>
+template <class TypeTrait>
 template <typename CircleType>
-inline bool BaseTree<TypeTrait, DerivedTree>::CircleIntersectBox(
-    CircleType const& cl, Box const& box) {
+inline bool GeoBase<TypeTrait>::CircleIntersectBox(CircleType const& cl,
+                                                   Box const& box) {
   assert(LegalBox(box));
   assert(LegalCircle(cl));
   // NOTE: the logical is same as p2b_min_distance > radius
@@ -77,9 +76,9 @@ inline bool BaseTree<TypeTrait, DerivedTree>::CircleIntersectBox(
   return true;
 }
 
-template <class TypeTrait, typename DerivedTree>
+template <class TypeTrait>
 template <typename CircleType>
-inline CircleType BaseTree<TypeTrait, DerivedTree>::GetCircle(Box const& box) {
+inline CircleType GeoBase<TypeTrait>::GetCircle(Box const& box) {
   assert(LegalBox(box) && box != GetEmptyBox());
 
   Coord r = 0;
@@ -111,15 +110,15 @@ inline CircleType BaseTree<TypeTrait, DerivedTree>::GetCircle(Box const& box) {
   return CircleType{GetBoxCenter(box), CircleType::ComputeRadius(std::sqrt(r))};
 }
 
-template <class TypeTrait, typename DerivedTree>
+template <class TypeTrait>
 template <typename CircleType>
-inline CircleType BaseTree<TypeTrait, DerivedTree>::GetCircle(Slice V) {
+inline CircleType GeoBase<TypeTrait>::GetCircle(Slice V) {
   return GetCircle<CircleType>(GetBox(V));
 }
 
-template <class TypeTrait, typename DerivedTree>
+template <class TypeTrait>
 template <typename CircleType>
-inline CircleType BaseTree<TypeTrait, DerivedTree>::GetCircle(
+inline CircleType GeoBase<TypeTrait>::GetCircle(
     parlay::sequence<CircleType> const& circle_seq) {
   CircleType circle = circle_seq[0];
   for (size_t i = 1; i < circle_seq.size(); i++) {
@@ -128,10 +127,10 @@ inline CircleType BaseTree<TypeTrait, DerivedTree>::GetCircle(
   return circle;
 }
 
-template <class TypeTrait, typename DerivedTree>
+template <class TypeTrait>
 template <typename CircleType1, typename CircleType2>
-inline bool BaseTree<TypeTrait, DerivedTree>::CircleWithinCircle(
-    CircleType1 const& a, CircleType2 const& b) {
+inline bool GeoBase<TypeTrait>::CircleWithinCircle(CircleType1 const& a,
+                                                   CircleType2 const& b) {
   assert(LegalCircle(a) && LegalCircle(b));
   return Num::Leq(a.GetRadius(), b.GetRadius()) &&
          Num::Leq(
@@ -139,10 +138,10 @@ inline bool BaseTree<TypeTrait, DerivedTree>::CircleWithinCircle(
              (b.GetRadius() - a.GetRadius()) * (b.GetRadius() - a.GetRadius()));
 }
 
-template <class TypeTrait, typename DerivedTree>
+template <class TypeTrait>
 template <typename CircleType>
-inline CircleType BaseTree<TypeTrait, DerivedTree>::GetCircle(
-    CircleType const& a, CircleType const& b) {
+inline CircleType GeoBase<TypeTrait>::GetCircle(CircleType const& a,
+                                                CircleType const& b) {
   if (CircleWithinCircle(a, b)) {
     return b;
   } else if (CircleWithinCircle(b, a)) {
@@ -160,10 +159,10 @@ inline CircleType BaseTree<TypeTrait, DerivedTree>::GetCircle(
   return CircleType{center, CircleType::ComputeRadius(radius)};
 }
 
-template <class TypeTrait, typename DerivedTree>
+template <class TypeTrait>
 template <typename CircleType>
-inline CircleType BaseTree<TypeTrait, DerivedTree>::GetCircle(
-    Point const& p, CircleType const& cl) {
+inline CircleType GeoBase<TypeTrait>::GetCircle(Point const& p,
+                                                CircleType const& cl) {
   if (PointWithinCircle(p, cl)) {
     return cl;
   }
