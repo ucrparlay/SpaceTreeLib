@@ -9,25 +9,21 @@
 #include "pointer_based/base_tree.h"
 
 // Macro to simplify BinaryNodeOps template usage
-#define BINARY_NODE_OPS                                                       \
-  inner_tree_detail::BinaryNodeOps<Point, DerivedTree, kSkHeight, kImbaRatio, \
-                                   Leaf, Interior>
+#define BINARY_NODE_OPS \
+  inner_tree_detail::BinaryNodeOps<TypeTrait, DerivedTree, Leaf, Interior>
 
 // Macro to simplify MultiNodeOps template usage
-#define MULTI_NODE_OPS                                                       \
-  inner_tree_detail::MultiNodeOps<Point, DerivedTree, kSkHeight, kImbaRatio, \
-                                  Leaf, Interior>
+#define MULTI_NODE_OPS \
+  inner_tree_detail::MultiNodeOps<TypeTrait, DerivedTree, Leaf, Interior>
 
 namespace psi {
-template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
+template <class TypeTrait, typename DerivedTree>
 template <typename Leaf, typename Interior>
-struct BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::InnerTree {
-  using BT = BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>;
+struct BaseTree<TypeTrait, DerivedTree>::InnerTree {
+  using BT = BaseTree<TypeTrait, DerivedTree>;
 
-  InnerTree(BT& _btref)
-      : BTRef(_btref),
-        tags_num(0),
+  InnerTree()
+      : tags_num(0),
         tags(NodeTagSeq::uninitialized(kPivotNum + kBucketNum + 1)),
         sums_tree(parlay::sequence<BallsType>(kPivotNum + kBucketNum + 1)),
         rev_tag(BucketSeq::uninitialized(kBucketNum)) {}
@@ -283,7 +279,6 @@ struct BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::InnerTree {
     rev_tag = BucketSeq::uninitialized(kBucketNum);
   }
 
-  BT& BTRef;
   BucketType tags_num;
   NodeTagSeq tags;
   mutable parlay::sequence<BallsType> sums_tree;

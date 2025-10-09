@@ -12,15 +12,10 @@
 
 #include "../../base_tree.h"
 
-#define BASETREE_TEMPLATE                                                 \
-  template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight, \
-            uint_fast8_t kImbaRatio>
-#define BASETREE_CLASS BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>
-
 namespace psi {
-BASETREE_TEMPLATE
+template <class TypeTrait, typename DerivedTree>
 template <typename Leaf, IsBinaryNode Interior, typename ReturnType>
-ReturnType BASETREE_CLASS::BuildInnerTree(
+ReturnType BaseTree<TypeTrait, DerivedTree>::BuildInnerTree(
     BucketType idx, HyperPlaneSeq const& pivots,
     parlay::sequence<ReturnType> const& tree_nodes) {
   if (idx > kPivotNum) {
@@ -36,9 +31,9 @@ ReturnType BASETREE_CLASS::BuildInnerTree(
   return AllocInteriorNode<Interior>(L, R, pivots[idx]);
 }
 
-BASETREE_TEMPLATE
+template <class TypeTrait, typename DerivedTree>
 template <IsMultiNode Interior>
-Node* BASETREE_CLASS::BuildInnerTree(
+Node* BaseTree<TypeTrait, DerivedTree>::BuildInnerTree(
     BucketType idx, HyperPlaneSeq const& pivots,
     parlay::sequence<Node*> const& tree_nodes) {
   assert(idx < kPivotNum + kBucketNum + 1);
@@ -61,8 +56,5 @@ Node* BASETREE_CLASS::BuildInnerTree(
   return AllocInteriorNode<Interior>(multi_nodes, split);
 }
 }  // namespace psi
-
-#undef BASETREE_TEMPLATE
-#undef BASETREE_CLASS
 
 #endif  // PSI_BASE_TREE_IMPL_TREE_OP_BUILD_INNER_TREE_HPP_

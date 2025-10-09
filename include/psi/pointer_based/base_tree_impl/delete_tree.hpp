@@ -1,19 +1,14 @@
 #ifndef PSI_BASE_TREE_IMPL_DELETE_TREE_HPP_
 #define PSI_BASE_TREE_IMPL_DELETE_TREE_HPP_
 
-#include "../base_tree.h"
 #include "../../dependence/concepts.h"
-
-#define BASETREE_TEMPLATE                                                 \
-  template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight, \
-            uint_fast8_t kImbaRatio>
-#define BASETREE_CLASS BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>
+#include "../base_tree.h"
 
 namespace psi {
 
-BASETREE_TEMPLATE
+template <class TypeTrait, typename DerivedTree>
 template <typename Leaf, typename Interior>
-void BASETREE_CLASS::DeleteTreeWrapper() {
+void BaseTree<TypeTrait, DerivedTree>::DeleteTreeWrapper() {
   if (this->root_ == nullptr) {
     return;
   }
@@ -23,9 +18,9 @@ void BASETREE_CLASS::DeleteTreeWrapper() {
   return;
 }
 
-BASETREE_TEMPLATE  //* delete tree in parallel
-    template <typename Leaf, IsBinaryNode Interior, bool granularity>
-    void BASETREE_CLASS::DeleteTreeRecursive(Node* T) {
+template <class TypeTrait, typename DerivedTree>  //* delete tree in parallel
+template <typename Leaf, IsBinaryNode Interior, bool granularity>
+void BaseTree<TypeTrait, DerivedTree>::DeleteTreeRecursive(Node* T) {
   if (T == nullptr) {
     return;
   }
@@ -43,9 +38,9 @@ BASETREE_TEMPLATE  //* delete tree in parallel
   }
 }
 
-BASETREE_TEMPLATE  //* delete tree in parallel
-    template <typename Leaf, IsMultiNode Interior, bool granularity>
-    void BASETREE_CLASS::DeleteTreeRecursive(Node* T) {
+template <class TypeTrait, typename DerivedTree>  //* delete tree in parallel
+template <typename Leaf, IsMultiNode Interior, bool granularity>
+void BaseTree<TypeTrait, DerivedTree>::DeleteTreeRecursive(Node* T) {
   if (T == nullptr) {
     return;
   }
@@ -69,9 +64,9 @@ BASETREE_TEMPLATE  //* delete tree in parallel
   }
 }
 
-BASETREE_TEMPLATE  //* delete tree in parallel
-    template <typename Leaf, IsDynamicNode Interior, bool granularity>
-    void BASETREE_CLASS::DeleteTreeRecursive(Node* T) {
+template <class TypeTrait, typename DerivedTree>  //* delete tree in parallel
+template <typename Leaf, IsDynamicNode Interior, bool granularity>
+void BaseTree<TypeTrait, DerivedTree>::DeleteTreeRecursive(Node* T) {
   if (T == nullptr) {
     return;
   }
@@ -95,8 +90,5 @@ BASETREE_TEMPLATE  //* delete tree in parallel
   }
 }
 }  // namespace psi
-
-#undef BASETREE_TEMPLATE
-#undef BASETREE_CLASS
 
 #endif  // PSI_BASE_TREE_IMPL_DELETE_TREE_HPP_

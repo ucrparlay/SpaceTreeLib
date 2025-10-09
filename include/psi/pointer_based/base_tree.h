@@ -8,6 +8,7 @@
 #include <type_traits>
 
 #include "dependence/comparator.h"
+#include "dependence/geo_base.h"
 #include "dependence/loggers.h"
 #include "dependence/search_container.h"
 #include "dependence/tree_node.h"
@@ -25,9 +26,8 @@ namespace psi {
 // See REFACTORING_NOTES.md for design rationale.
 //==============================================================================
 
-template <typename Point, typename DerivedTree = void,
-          uint_fast8_t kSkHeight = 6, uint_fast8_t kImbaRatio = 30>
-class BaseTree {
+template <class TypeTrait, typename DerivedTree = void>
+class BaseTree : public GeoBase<TypeTrait> {
  public:
   //============================================================================
   // SECTION 1: TYPE DEFINITIONS & ALIASES
@@ -35,42 +35,42 @@ class BaseTree {
   //============================================================================
 
   // 1.1 Point Types
-  using BasicPoint = Point::BP;
-  using TemplatePoint = Point;
-  using Coord = typename Point::Coord;
-  using Coords = typename Point::Coords;
-  using DisType = typename Point::DisType;
+  using BasicPoint = typename TypeTrait::BasicPoint;
+  using Coord = typename TypeTrait::Coord;
+  using Coords = typename TypeTrait::Coords;
+  using DisType = typename TypeTrait::DisType;
+  using Point = typename TypeTrait::Point;
+  using TemplatePoint = typename TypeTrait::TemplatePoint;
 
   // 1.2 Dimension & Index Types
-  using DimsType = uint_fast8_t;
-  using DepthType = int;
-  using BucketType =
-      std::conditional_t<(kSkHeight > 7), uint_fast16_t, uint_fast8_t>;
-  using BallsType = uint_fast32_t;
-  using IDType = uint_fast32_t;
+  using BallsType = typename TypeTrait::BallsType;
+  using BucketType = typename TypeTrait::BucketType;
+  using DepthType = typename TypeTrait::DepthType;
+  using DimsType = typename TypeTrait::DimsType;
+  using IDType = typename TypeTrait::IDType;
 
   // 1.3 Container Types
-  using Num = Num_Comparator<Coord>;
-  using Slice = parlay::slice<Point*, Point*>;
-  using ConstSlice = parlay::slice<Point const*, Point const*>;
-  using Points = parlay::sequence<Point>;
-  using ConstPoints = parlay::sequence<Point> const;
-  using PointsIter = typename parlay::sequence<Point>::iterator;
-  using BucketSeq = parlay::sequence<BucketType>;
-  using BallSeq = parlay::sequence<BallsType>;
+  using BallSeq = typename TypeTrait::BallSeq;
+  using BucketSeq = typename TypeTrait::BucketSeq;
+  using ConstPoints = typename TypeTrait::ConstPoints;
+  using ConstSlice = typename TypeTrait::ConstSlice;
+  using Num = typename TypeTrait::Num;
+  using Points = typename TypeTrait::Points;
+  using PointsIter = typename TypeTrait::PointsIter;
+  using Slice = typename TypeTrait::Slice;
 
   // 1.4 Spatial Structures
-  using HyperPlane = std::pair<Coord, DimsType>;
-  using HyperPlaneSeq = parlay::sequence<HyperPlane>;
-  using Box = std::pair<BasicPoint, BasicPoint>;
-  using BoxSeq = parlay::sequence<Box>;
+  using Box = typename TypeTrait::Box;
+  using BoxSeq = typename TypeTrait::BoxSeq;
+  using HyperPlane = typename TypeTrait::HyperPlane;
+  using HyperPlaneSeq = typename TypeTrait::HyperPlaneSeq;
 
-  // 1.5 Node Types
-  using NodeBoolean = std::pair<Node*, bool>;
-  using NodeBox = std::pair<Node*, Box>;
-  using NodeBoxSeq = parlay::sequence<NodeBox>;
-  using NodeTag = std::pair<Node*, uint_fast8_t>;
-  using NodeTagSeq = parlay::sequence<NodeTag>;
+  // 1.5 Node & Tree Structures
+  using NodeBoolean = typename TypeTrait::NodeBoolean;
+  using NodeBox = typename TypeTrait::NodeBox;
+  using NodeBoxSeq = typename TypeTrait::NodeBoxSeq;
+  using NodeTag = typename TypeTrait::NodeTag;
+  using NodeTagSeq = typename TypeTrait::NodeTagSeq;
 
   //============================================================================
   // SECTION 2: COMPILE-TIME CONSTANTS
@@ -78,7 +78,7 @@ class BaseTree {
   //============================================================================
 
   static constexpr DimsType const kDim = std::tuple_size_v<Coords>;
-  static constexpr BucketType const kBuildDepthOnce = kSkHeight;
+  static constexpr BucketType const kBuildDepthOnce = TypeTrait::kSkHeight;
   static constexpr BucketType const kPivotNum = (1 << kBuildDepthOnce) - 1;
   static constexpr BucketType const kBucketNum = 1 << kBuildDepthOnce;
 
@@ -110,7 +110,7 @@ class BaseTree {
   static constexpr uint_fast16_t const kSerialBuildCutoff = 1 << 10;
   static constexpr uint_fast8_t const kLog2Base = 10;
   static constexpr uint_fast16_t const kBlockSize = 1 << kLog2Base;
-  static constexpr uint_fast8_t const kInbalanceRatio = kImbaRatio;
+  static constexpr uint_fast8_t const kInbalanceRatio = TypeTrait::kImbaRatio;
 
   //============================================================================
   // SECTION 3: NESTED TYPES

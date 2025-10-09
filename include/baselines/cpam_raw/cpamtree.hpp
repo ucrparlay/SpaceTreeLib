@@ -16,17 +16,13 @@ using parlay::par_do;
 using parlay::par_do_if;
 using parlay::sequence;
 
-template <typename Point, typename SplitRule, uint_fast8_t kSkHeight = 6,
-          uint_fast8_t kImbaRatio = 30>
-class CpamRaw
-    : public psi::BaseTree<Point,
-                            CpamRaw<Point, SplitRule, kSkHeight, kImbaRatio>,
-                            kSkHeight, kImbaRatio> {
+template <typename TypeTrait>
+class CpamRaw : public psi::BaseTree<TypeTrait, CpamRaw<TypeTrait>> {
  public:
-  using BT =
-      psi::BaseTree<Point, CpamRaw<Point, SplitRule, kSkHeight, kImbaRatio>,
-                     kSkHeight, kImbaRatio>;
+  using BT = psi::BaseTree<TypeTrait, CpamRaw<TypeTrait>>;
 
+  using SplitRule = typename TypeTrait::SplitRule;
+  using Point = typename BT::Point;
   using BucketType = typename BT::BucketType;
   using BallsType = typename BT::BallsType;
   using DimsType = typename BT::DimsType;

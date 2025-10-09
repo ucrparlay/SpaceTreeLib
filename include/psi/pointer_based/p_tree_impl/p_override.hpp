@@ -1,17 +1,12 @@
 #ifndef PSI_P_TREE_IMPL_P_OVERRIDE_HPP_
 #define PSI_P_TREE_IMPL_P_OVERRIDE_HPP_
 
-#define PTREE_TEMPLATE                                                  \
-  template <typename Point, typename SplitRule, uint_fast8_t kSkHeight, \
-            uint_fast8_t kImbaRatio>
-#define PTREE_CLASS PTree<Point, SplitRule, kSkHeight, kImbaRatio>
-
 #include <type_traits>
 #include <utility>
 
-#include "../p_tree.h"
 #include "../../dependence/loggers.h"
 #include "../../dependence/tree_node.h"
+#include "../p_tree.h"
 
 namespace psi {
 #define FT long
@@ -33,24 +28,24 @@ auto point_point_sqrdis(Point const& lhs, Point const& rhs) {
          (lhs.pnt[1] - rhs.pnt[1]) * (lhs.pnt[1] - rhs.pnt[1]);
 }
 
-PTREE_TEMPLATE
+template <typename TypeTrait>
 template <typename Range>
-auto PTREE_CLASS::KNN(Node* T, Point const& q,
-                      kBoundedQueue<Point, Range>& bq) {
+auto PTree<TypeTrait>::KNN(Node* T, Point const& q,
+                           kBoundedQueue<Point, Range>& bq) {
   KNNLogger logger;
   CpamAugMap::template knn<BT>(this->cpam_aug_map_, q, bq, logger);
   return logger;
 }
 
-PTREE_TEMPLATE
+template <typename TypeTrait>
 template <typename Range>
-void PTREE_CLASS::Flatten(Range&& Out) {
+void PTree<TypeTrait>::Flatten(Range&& Out) {
   CpamAugMap::entries(parlay::make_slice(Out));
   return;
 }
 
-PTREE_TEMPLATE
-auto PTREE_CLASS::RangeCount(Box const& query_box) {
+template <typename TypeTrait>
+auto PTree<TypeTrait>::RangeCount(Box const& query_box) {
   RangeQueryLogger logger;
 
   auto size = CpamAugMap::template range_count_filter2<BT>(this->cpam_aug_map_,
@@ -59,9 +54,9 @@ auto PTREE_CLASS::RangeCount(Box const& query_box) {
   return std::make_pair(size, logger);
 }
 
-PTREE_TEMPLATE
+template <typename TypeTrait>
 template <typename Range>
-auto PTREE_CLASS::RangeQuery(Box const& query_box, Range&& Out) {
+auto PTree<TypeTrait>::RangeQuery(Box const& query_box, Range&& Out) {
   RangeQueryLogger logger;
   size_t cnt = 0;
   CpamAugMap::template range_report_filter2<BT>(
@@ -69,16 +64,13 @@ auto PTREE_CLASS::RangeQuery(Box const& query_box, Range&& Out) {
   return std::make_pair(cnt, logger);
 }
 
-PTREE_TEMPLATE
-constexpr void PTREE_CLASS::DeleteTree() {
+template <typename TypeTrait>
+constexpr void PTree<TypeTrait>::DeleteTree() {
   cpam_aug_map_.clear();
   cpam_aug_map_.root = nullptr;
   return;
 }
 
 }  // namespace psi
-
-#undef PTREE_TEMPLATE
-#undef PTREE_CLASS
 
 #endif

@@ -5,19 +5,11 @@
 
 #include "../orth_tree.h"
 
-#define ORTHTREE_TEMPLATE                                             \
-  template <typename Point, typename SplitRule, typename LeafAugType, \
-            typename InteriorAugType, uint_fast8_t kMD,               \
-            uint_fast8_t kSkHeight, uint_fast8_t kImbaRatio>
-#define ORTHTREE_CLASS                                                     \
-  OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight, \
-           kImbaRatio>
-
 namespace psi {
 
-ORTHTREE_TEMPLATE
+template <typename TypeTrait>
 template <typename Range>
-void ORTHTREE_CLASS::BatchDiff(Range&& In) {
+void OrthTree<TypeTrait>::BatchDiff(Range&& In) {
   static_assert(parlay::is_random_access_range_v<Range>);
   static_assert(
       parlay::is_less_than_comparable_v<parlay::range_reference_type_t<Range>>);
@@ -30,8 +22,8 @@ void ORTHTREE_CLASS::BatchDiff(Range&& In) {
 }
 
 // NOTE: assume points are partially covered in the tree
-ORTHTREE_TEMPLATE
-void ORTHTREE_CLASS::BatchDiff_(Slice A) {
+template <typename TypeTrait>
+void OrthTree<TypeTrait>::BatchDiff_(Slice A) {
   // NOTE: diff points from the tree
   Points B = Points::uninitialized(A.size());
   this->root_ = BatchDiffRecursive(this->root_, A, parlay::make_slice(B));
@@ -51,8 +43,8 @@ void ORTHTREE_CLASS::BatchDiff_(Slice A) {
 }
 
 // NOTE: the orth does not need box since the box will never change
-ORTHTREE_TEMPLATE
-Node* ORTHTREE_CLASS::BatchDiffRecursive(Node* T, Slice In, Slice Out) {
+template <typename TypeTrait>
+Node* OrthTree<TypeTrait>::BatchDiffRecursive(Node* T, Slice In, Slice Out) {
   size_t n = In.size();
 
   if (n == 0) {
@@ -91,7 +83,7 @@ Node* ORTHTREE_CLASS::BatchDiffRecursive(Node* T, Slice In, Slice Out) {
     return T;
   }
 
-  InnerTree IT(*this);
+  InnerTree IT;
   IT.AssignNodeTag(T, 1);
   assert(IT.tags_num > 0 && IT.tags_num <= BT::kBucketNum);
   BT::template SeievePoints<Interior>(In, Out, n, IT.tags, IT.sums,
@@ -126,8 +118,5 @@ Node* ORTHTREE_CLASS::BatchDiffRecursive(Node* T, Slice In, Slice Out) {
 }
 
 }  // namespace psi
-
-#undef ORTHTREE_TEMPLATE
-#undef ORTHTREE_CLASS
 
 #endif  // PSI_ORTH_TREE_IMPL_ORTH_BATCH_DIFF_HPP_

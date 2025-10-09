@@ -4,22 +4,18 @@
 #include <algorithm>
 #include <utility>
 
+#include "../../dependence/tree_node.h"
 #include "../base_tree.h"
 #include "parlay/primitives.h"
-#include "../../dependence/tree_node.h"
-
-#define BASETREE_TEMPLATE                                                 \
-  template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight, \
-            uint_fast8_t kImbaRatio>
-#define BASETREE_CLASS BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>
 
 namespace psi {
 
 // NOTE: distance between two Points
 // TODO: change the name to P2PDistanceSquare to avoid ambiguous
-BASETREE_TEMPLATE
-inline typename BASETREE_CLASS::DisType BASETREE_CLASS::P2PDistanceSquare(
-    Point const& p, Point const& q) {
+template <class TypeTrait, typename DerivedTree>
+inline typename BaseTree<TypeTrait, DerivedTree>::DisType
+BaseTree<TypeTrait, DerivedTree>::P2PDistanceSquare(Point const& p,
+                                                    Point const& q) {
   constexpr uint_fast8_t kDim = Point::GetDim();
   DisType r = 0;
 
@@ -43,9 +39,10 @@ inline typename BASETREE_CLASS::DisType BASETREE_CLASS::P2PDistanceSquare(
 
 // NOTE: Distance between a Point and a Box
 // return 0 when p is inside the box a
-BASETREE_TEMPLATE
-inline typename BASETREE_CLASS::DisType BASETREE_CLASS::P2BMinDistanceSquare(
-    Point const& p, typename BASETREE_CLASS::Box const& a) {
+template <class TypeTrait, typename DerivedTree>
+inline typename BaseTree<TypeTrait, DerivedTree>::DisType
+BaseTree<TypeTrait, DerivedTree>::P2BMinDistanceSquare(
+    Point const& p, typename BaseTree<TypeTrait, DerivedTree>::Box const& a) {
   DisType r = 0;
   // NOTE: the distance is 0 when p is inside the box
   for (DimsType i = 0; i < kDim; ++i) {
@@ -67,9 +64,10 @@ inline typename BASETREE_CLASS::DisType BASETREE_CLASS::P2BMinDistanceSquare(
 }
 
 // NOTE: Max distance between a Point and a Box
-BASETREE_TEMPLATE
-inline typename BASETREE_CLASS::DisType BASETREE_CLASS::P2BMaxDistanceSquare(
-    Point const& p, typename BASETREE_CLASS::Box const& a) {
+template <class TypeTrait, typename DerivedTree>
+inline typename BaseTree<TypeTrait, DerivedTree>::DisType
+BaseTree<TypeTrait, DerivedTree>::P2BMaxDistanceSquare(
+    Point const& p, typename BaseTree<TypeTrait, DerivedTree>::Box const& a) {
   DisType r = 0;
   for (DimsType i = 0; i < kDim; ++i) {
     if (Num::Lt(p.pnt[i], (a.second.pnt[i] + a.first.pnt[i]) / 2)) {
@@ -87,29 +85,28 @@ inline typename BASETREE_CLASS::DisType BASETREE_CLASS::P2BMaxDistanceSquare(
   return r;
 }
 
-BASETREE_TEMPLATE
-inline double BaseTree<Point, DerivedTree, kSkHeight,
-                       kImbaRatio>::P2CMinDistance(Point const& p,
-                                                   Point const& center,
-                                                   DisType const r) {
+template <class TypeTrait, typename DerivedTree>
+inline double BaseTree<TypeTrait, DerivedTree>::P2CMinDistance(
+    Point const& p, Point const& center, DisType const r) {
   // return Num_Comparator<double>::Max(
   //     0.0, std::sqrt(P2PDistanceSquare(p, center)) - static_cast<double>(r));
   return std::sqrt(P2PDistanceSquare(p, center)) - static_cast<double>(r);
 }
 
-BASETREE_TEMPLATE
+template <class TypeTrait, typename DerivedTree>
 template <typename CircleType>
-inline double BaseTree<Point, DerivedTree, kSkHeight,
-                       kImbaRatio>::P2CMinDistance(Point const& p,
-                                                   CircleType const& cl) {
+inline double BaseTree<TypeTrait, DerivedTree>::P2CMinDistance(
+    Point const& p, CircleType const& cl) {
   return P2CMinDistance(p, cl.GetCenter(), cl.GetRadius());
 }
 
 // NOTE: early return the partial distance between p and q if it is larger than
 // r else return the distance between p and q
-BASETREE_TEMPLATE
-inline typename BASETREE_CLASS::DisType BASETREE_CLASS::InterruptibleDistance(
-    Point const& p, Point const& q, DisType up) {
+template <class TypeTrait, typename DerivedTree>
+inline typename BaseTree<TypeTrait, DerivedTree>::DisType
+BaseTree<TypeTrait, DerivedTree>::InterruptibleDistance(Point const& p,
+                                                        Point const& q,
+                                                        DisType up) {
   DisType r = 0;
   DimsType i = 0;
   if (kDim >= 6) {
@@ -144,10 +141,10 @@ inline typename BASETREE_CLASS::DisType BASETREE_CLASS::InterruptibleDistance(
 }
 
 // NOTE: KNN search for Point q
-BASETREE_TEMPLATE
+template <class TypeTrait, typename DerivedTree>
 template <typename Leaf, typename Range>
-void BASETREE_CLASS::KNNLeaf(Node* T, Point const& q,
-                             kBoundedQueue<Point, Range>& bq) {
+void BaseTree<TypeTrait, DerivedTree>::KNNLeaf(
+    Node* T, Point const& q, kBoundedQueue<Point, Range>& bq) {
   assert(T->is_leaf);
 
   Leaf* TL = static_cast<Leaf*>(T);
@@ -172,13 +169,13 @@ void BASETREE_CLASS::KNNLeaf(Node* T, Point const& q,
   return;
 }
 
-BASETREE_TEMPLATE
+template <class TypeTrait, typename DerivedTree>
 template <typename Leaf, IsBinaryNode Interior, typename Range>
-void BASETREE_CLASS::KNNBinary(Node* T, Point const& q,
-                               kBoundedQueue<Point, Range>& bq,
-                               Box const& node_box, KNNLogger& logger)
+void BaseTree<TypeTrait, DerivedTree>::KNNBinary(
+    Node* T, Point const& q, kBoundedQueue<Point, Range>& bq,
+    Box const& node_box, KNNLogger& logger)
   requires std::same_as<typename Interior::ST,
-                        typename BASETREE_CLASS::HyperPlane>
+                        typename BaseTree<TypeTrait, DerivedTree>::HyperPlane>
 {
   if (T->is_leaf) {
     logger.vis_leaf_num++;
@@ -207,11 +204,11 @@ void BASETREE_CLASS::KNNBinary(Node* T, Point const& q,
   return;
 }
 
-BASETREE_TEMPLATE
+template <class TypeTrait, typename DerivedTree>
 template <typename Leaf, IsBinaryNode Interior, typename Range>
-void BASETREE_CLASS::KNNBinaryBox(Node* T, Point const& q,
-                                  kBoundedQueue<Point, Range>& bq,
-                                  KNNLogger& logger) {
+void BaseTree<TypeTrait, DerivedTree>::KNNBinaryBox(
+    Node* T, Point const& q, kBoundedQueue<Point, Range>& bq,
+    KNNLogger& logger) {
   if (bq.size() &&
       Num::Gt(P2BMinDistanceSquare(q, RetriveBox<Leaf, Interior>(T)),
               bq.top_value()) &&
@@ -246,12 +243,11 @@ void BASETREE_CLASS::KNNBinaryBox(Node* T, Point const& q,
 }
 
 // NOTE: compute knn for multinode as if a binary node
-BASETREE_TEMPLATE
+template <class TypeTrait, typename DerivedTree>
 template <typename Leaf, IsMultiNode Interior, typename Range>
-void BASETREE_CLASS::KNNMultiExpand(Node* T, Point const& q, DimsType dim,
-                                    BucketType idx,
-                                    kBoundedQueue<Point, Range>& bq,
-                                    Box const& node_box, KNNLogger& logger) {
+void BaseTree<TypeTrait, DerivedTree>::KNNMultiExpand(
+    Node* T, Point const& q, DimsType dim, BucketType idx,
+    kBoundedQueue<Point, Range>& bq, Box const& node_box, KNNLogger& logger) {
   if (T->size == 0) {
     return;
   }
@@ -301,12 +297,11 @@ void BASETREE_CLASS::KNNMultiExpand(Node* T, Point const& q, DimsType dim,
 }
 
 // NOTE: compute knn for multinode as if a binary node
-BASETREE_TEMPLATE
+template <class TypeTrait, typename DerivedTree>
 template <typename Leaf, IsMultiNode Interior, typename Range>
-void BASETREE_CLASS::KNNMultiExpandBox(Node* T, Point const& q, DimsType dim,
-                                       BucketType idx,
-                                       kBoundedQueue<Point, Range>& bq,
-                                       KNNLogger& logger) {
+void BaseTree<TypeTrait, DerivedTree>::KNNMultiExpandBox(
+    Node* T, Point const& q, DimsType dim, BucketType idx,
+    kBoundedQueue<Point, Range>& bq, KNNLogger& logger) {
   if (T->size == 0) {
     return;
   }
@@ -364,11 +359,11 @@ void BASETREE_CLASS::KNNMultiExpandBox(Node* T, Point const& q, DimsType dim,
 }
 
 // NOTE: compute KNN for multi-node by computing bounding boxes
-BASETREE_TEMPLATE
+template <class TypeTrait, typename DerivedTree>
 template <typename Leaf, IsMultiNode Interior, typename Range>
-void BASETREE_CLASS::KNNMulti(Node* T, Point const& q,
-                              kBoundedQueue<Point, Range>& bq,
-                              KNNLogger& logger) {
+void BaseTree<TypeTrait, DerivedTree>::KNNMulti(Node* T, Point const& q,
+                                                kBoundedQueue<Point, Range>& bq,
+                                                KNNLogger& logger) {
   if (T->size == 0) {
     return;
   }
@@ -415,11 +410,13 @@ void BASETREE_CLASS::KNNMulti(Node* T, Point const& q,
   return;
 }
 
-BASETREE_TEMPLATE
+template <class TypeTrait, typename DerivedTree>
 template <typename Leaf, IsBinaryNode BN, IsMultiNode MN, typename Range>
-void BASETREE_CLASS::KNNMix(Node* T, Point const& q, DimsType dim,
-                            BucketType idx, kBoundedQueue<Point, Range>& bq,
-                            Box const& node_box, KNNLogger& logger) {
+void BaseTree<TypeTrait, DerivedTree>::KNNMix(Node* T, Point const& q,
+                                              DimsType dim, BucketType idx,
+                                              kBoundedQueue<Point, Range>& bq,
+                                              Box const& node_box,
+                                              KNNLogger& logger) {
   if (T->size == 0) {
     return;
   }
@@ -482,11 +479,11 @@ void BASETREE_CLASS::KNNMix(Node* T, Point const& q, DimsType dim,
   return;
 }
 
-BASETREE_TEMPLATE
+template <class TypeTrait, typename DerivedTree>
 template <typename Leaf, IsDynamicNode Interior, typename Range>
-void BASETREE_CLASS::KNNCover(Node* T, Point const& q,
-                              kBoundedQueue<Point, Range>& bq,
-                              KNNLogger& logger) {
+void BaseTree<TypeTrait, DerivedTree>::KNNCover(Node* T, Point const& q,
+                                                kBoundedQueue<Point, Range>& bq,
+                                                KNNLogger& logger) {
   using CoverCircle = typename Interior::CircleType;
 
   if (T->size == 0) {
@@ -553,7 +550,7 @@ void BASETREE_CLASS::KNNCover(Node* T, Point const& q,
 
 }  // namespace psi
 
-#undef BASETREE_TEMPLATE
-#undef BASETREE_CLASS
+ 
+ 
 
 #endif  // PSI_BASE_TREE_IMPL_KNN_QUERY_HPP

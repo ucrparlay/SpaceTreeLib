@@ -4,21 +4,15 @@
 #include <algorithm>
 #include <utility>
 
-#include "../base_tree.h"
 #include "../../dependence/concepts.h"
-
-#define BASETREE_TEMPLATE                                                 \
-  template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight, \
-            uint_fast8_t kImbaRatio>
-#define BASETREE_CLASS BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>
+#include "../base_tree.h"
 
 namespace psi {
 // NOTE: orthogonal range count in leaf
-BASETREE_TEMPLATE
+template <class TypeTrait, typename DerivedTree>
 template <typename Leaf>
-size_t BaseTree<Point, DerivedTree, kSkHeight,
-                kImbaRatio>::RangeCountRectangleLeaf(Node* T,
-                                                     Box const& query_box) {
+size_t BaseTree<TypeTrait, DerivedTree>::RangeCountRectangleLeaf(
+    Node* T, Box const& query_box) {
   assert(T->is_leaf);
 
   Leaf* TL = static_cast<Leaf*>(T);
@@ -32,11 +26,11 @@ size_t BaseTree<Point, DerivedTree, kSkHeight,
 }
 
 // NOTE: recursive orthogonal range count for bianry node
-BASETREE_TEMPLATE
+template <class TypeTrait, typename DerivedTree>
 template <typename Leaf, IsBinaryNode Interior>
-size_t BASETREE_CLASS::RangeCountRectangle(Node* T, Box const& query_box,
-                                           Box const& node_box,
-                                           RangeQueryLogger& logger) {
+size_t BaseTree<TypeTrait, DerivedTree>::RangeCountRectangle(
+    Node* T, Box const& query_box, Box const& node_box,
+    RangeQueryLogger& logger) {
   if (T->is_leaf) {
     // PERF: no need to check box because we already check it before we
     // recursion
@@ -76,12 +70,11 @@ size_t BASETREE_CLASS::RangeCountRectangle(Node* T, Box const& query_box,
 }
 
 // NOTE: orthogonal range count for multi node
-BASETREE_TEMPLATE
+template <class TypeTrait, typename DerivedTree>
 template <typename Leaf, IsMultiNode Interior>
-size_t BASETREE_CLASS::RangeCountRectangle(Node* T, Box const& query_box,
-                                           Box const& node_box, DimsType dim,
-                                           BucketType idx,
-                                           RangeQueryLogger& logger) {
+size_t BaseTree<TypeTrait, DerivedTree>::RangeCountRectangle(
+    Node* T, Box const& query_box, Box const& node_box, DimsType dim,
+    BucketType idx, RangeQueryLogger& logger) {
   if (T->is_leaf) {
     logger.vis_leaf_num++;
     return RangeCountRectangleLeaf<Leaf>(T, query_box);
@@ -127,9 +120,8 @@ size_t BASETREE_CLASS::RangeCountRectangle(Node* T, Box const& query_box,
 
 // TODO: as range_count_rectangle
 // template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
-//           uint_fast8_t kImbaRatio>
 // template <typename Leaf, IsBinaryNode Interior>
-// size_t BASETREE_CLASS::RangeCountRadius(
+// size_t BaseTree<TypeTrait, DerivedTree>::RangeCountRadius(
 //     Node* T, Circle const& cl, Box const& node_box) {
 //   if (!circle_intersect_box(cl, node_box)) return 0;
 //   if (within_circle(node_box, cl)) return T->size;
@@ -167,10 +159,11 @@ size_t BASETREE_CLASS::RangeCountRectangle(Node* T, Box const& query_box,
 // };
 
 // NOTE: orthogonal range query in leaf
-BASETREE_TEMPLATE
+template <class TypeTrait, typename DerivedTree>
 template <typename Leaf, typename Range>
-void BASETREE_CLASS::RangeQueryLeaf(Node* T, Range Out, size_t& s,
-                                    Box const& query_box) {
+void BaseTree<TypeTrait, DerivedTree>::RangeQueryLeaf(Node* T, Range Out,
+                                                      size_t& s,
+                                                      Box const& query_box) {
   assert(T->is_leaf);
 
   Leaf* TL = static_cast<Leaf*>(T);
@@ -189,14 +182,11 @@ void BASETREE_CLASS::RangeQueryLeaf(Node* T, Range Out, size_t& s,
 }
 
 // NOTE: orthogonal range query recusively
-BASETREE_TEMPLATE
+template <class TypeTrait, typename DerivedTree>
 template <typename Leaf, IsBinaryNode Interior, typename Range>
-void BaseTree<Point, DerivedTree, kSkHeight,
-              kImbaRatio>::RangeQuerySerialRecursive(Node* T, Range Out,
-                                                     size_t& s,
-                                                     Box const& query_box,
-                                                     Box const& node_box,
-                                                     RangeQueryLogger& logger) {
+void BaseTree<TypeTrait, DerivedTree>::RangeQuerySerialRecursive(
+    Node* T, Range Out, size_t& s, Box const& query_box, Box const& node_box,
+    RangeQueryLogger& logger) {
   if (T->is_leaf) {
     logger.vis_leaf_num++;
     RangeQueryLeaf<Leaf>(T, Out, s, query_box);
@@ -237,16 +227,11 @@ void BaseTree<Point, DerivedTree, kSkHeight,
   return;
 }
 
-BASETREE_TEMPLATE
+template <class TypeTrait, typename DerivedTree>
 template <typename Leaf, IsMultiNode Interior, typename Range>
-void BaseTree<Point, DerivedTree, kSkHeight,
-              kImbaRatio>::RangeQuerySerialRecursive(Node* T, Range Out,
-                                                     size_t& s,
-                                                     Box const& query_box,
-                                                     Box const& node_box,
-                                                     DimsType dim,
-                                                     BucketType idx,
-                                                     RangeQueryLogger& logger) {
+void BaseTree<TypeTrait, DerivedTree>::RangeQuerySerialRecursive(
+    Node* T, Range Out, size_t& s, Box const& query_box, Box const& node_box,
+    DimsType dim, BucketType idx, RangeQueryLogger& logger) {
   if (T->is_leaf) {
     logger.vis_leaf_num++;
     RangeQueryLeaf<Leaf>(T, Out, s, query_box);
@@ -293,7 +278,7 @@ void BaseTree<Point, DerivedTree, kSkHeight,
 }
 }  // namespace psi
 
-#undef BASETREE_TEMPLATE
-#undef BASETREE_CLASS
+ 
+ 
 
 #endif  // PSI_BASE_TREE_IMPL_RANGE_QUERY_HPP_

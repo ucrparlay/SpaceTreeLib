@@ -3,20 +3,13 @@
 
 #include <cstddef>
 
-#include "../kd_tree.h"
 #include "../../dependence/tree_node.h"
-
-#define KDTREE_TEMPLATE                                               \
-  template <typename Point, typename SplitRule, typename LeafAugType, \
-            typename InteriorAugType, uint_fast8_t kSkHeight,         \
-            uint_fast8_t kImbaRatio>
-#define KDTREE_CLASS \
-  KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight, kImbaRatio>
+#include "../kd_tree.h"
 
 namespace psi {
 
-KDTREE_TEMPLATE
-struct KDTREE_CLASS::KdInteriorNode
+template <typename TypeTrait>
+struct KdTree<TypeTrait>::KdInteriorNode
     : BinaryNode<Point, Splitter, InteriorAugType> {
   using PT = Point;
   using ST = Splitter;
@@ -101,8 +94,5 @@ struct KDTREE_CLASS::KdInteriorNode
 // };
 
 }  // namespace psi
-
-#undef KDTREE_TEMPLATE
-#undef KDTREE_CLASS
 
 #endif  // PSI_KD_TREE_IMPL_KD_INTER_NODE_HPP_

@@ -6,14 +6,10 @@
 
 #include "../base_tree.h"
 
-#define BASETREE_TEMPLATE                                                 \
-  template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight, \
-            uint_fast8_t kImbaRatio>
-#define BASETREE_CLASS BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>
-
 namespace psi {
-BASETREE_TEMPLATE
-inline void BASETREE_CLASS::SamplePoints(Slice In, Points& arr) {
+template <class TypeTrait, typename DerivedTree>
+inline void BaseTree<TypeTrait, DerivedTree>::SamplePoints(Slice In,
+                                                           Points& arr) {
   auto size = arr.size();
   auto n = In.size();
   auto indexs = parlay::sequence<uint64_t>::uninitialized(size);
@@ -27,9 +23,10 @@ inline void BASETREE_CLASS::SamplePoints(Slice In, Points& arr) {
   return;
 }
 
-BASETREE_TEMPLATE
-inline typename BASETREE_CLASS::BucketType BASETREE_CLASS::FindBucket(
-    Point const& p, HyperPlaneSeq const& pivots) {
+template <class TypeTrait, typename DerivedTree>
+inline typename BaseTree<TypeTrait, DerivedTree>::BucketType
+BaseTree<TypeTrait, DerivedTree>::FindBucket(Point const& p,
+                                             HyperPlaneSeq const& pivots) {
   BucketType k(1);
   while (k <= kPivotNum) {
     k = k * 2 + 1 -
@@ -40,10 +37,10 @@ inline typename BASETREE_CLASS::BucketType BASETREE_CLASS::FindBucket(
   return pivots[k].second;
 }
 
-BASETREE_TEMPLATE
-void BASETREE_CLASS::Partition(Slice A, Slice B, size_t const n,
-                               HyperPlaneSeq const& pivots,
-                               parlay::sequence<BallsType>& sums) {
+template <class TypeTrait, typename DerivedTree>
+void BaseTree<TypeTrait, DerivedTree>::Partition(
+    Slice A, Slice B, size_t const n, HyperPlaneSeq const& pivots,
+    parlay::sequence<BallsType>& sums) {
   size_t num_block = (n + kBlockSize - 1) >> kLog2Base;
   parlay::sequence<parlay::sequence<BallsType>> offset(
       num_block, parlay::sequence<BallsType>(kBucketNum));
@@ -88,9 +85,9 @@ void BASETREE_CLASS::Partition(Slice A, Slice B, size_t const n,
   return;
 }
 
-BASETREE_TEMPLATE
-typename BASETREE_CLASS::PointsIter BASETREE_CLASS::SerialPartition(
-    Slice In, DimsType d) {
+template <class TypeTrait, typename DerivedTree>
+typename BaseTree<TypeTrait, DerivedTree>::PointsIter
+BaseTree<TypeTrait, DerivedTree>::SerialPartition(Slice In, DimsType d) {
   size_t n = In.size();
   std::ranges::nth_element(In.begin(), In.begin() + n / 2, In.end(),
                            [&](Point const& p1, Point const& p2) {
@@ -111,10 +108,11 @@ typename BASETREE_CLASS::PointsIter BASETREE_CLASS::SerialPartition(
 }
 
 // NOTE: retrive the bucket tag of Point p from the skeleton tags
-BASETREE_TEMPLATE
+template <class TypeTrait, typename DerivedTree>
 template <IsBinaryNode Interior>
-typename BASETREE_CLASS::BucketType BASETREE_CLASS::RetriveTag(
-    Point const& p, NodeTagSeq const& tags) {
+typename BaseTree<TypeTrait, DerivedTree>::BucketType
+BaseTree<TypeTrait, DerivedTree>::RetriveTag(Point const& p,
+                                             NodeTagSeq const& tags) {
   BucketType k(1);
   while (k <= kPivotNum && (!tags[k].first->is_leaf)) {
     k = k * 2 + 1 -
@@ -126,10 +124,11 @@ typename BASETREE_CLASS::BucketType BASETREE_CLASS::RetriveTag(
   return tags[k].second;
 }
 
-BASETREE_TEMPLATE
+template <class TypeTrait, typename DerivedTree>
 template <IsMultiNode Interior>
-typename BASETREE_CLASS::BucketType BASETREE_CLASS::RetriveTag(
-    Point const& p, NodeTagSeq const& tags) {
+typename BaseTree<TypeTrait, DerivedTree>::BucketType
+BaseTree<TypeTrait, DerivedTree>::RetriveTag(Point const& p,
+                                             NodeTagSeq const& tags) {
   BucketType k(1);
   while (k <= kPivotNum && (!tags[k].first->is_leaf)) {
     k = static_cast<Interior*>(tags[k].first)->SeievePoint(p, k);
@@ -141,12 +140,11 @@ typename BASETREE_CLASS::BucketType BASETREE_CLASS::RetriveTag(
 // NOTE: seieve Points from range A to range B, using the skeleton tags. The
 // sums is the number of elemenets within each bucket, the tags_num is the total
 // number of buckets in the skeleton
-BASETREE_TEMPLATE
+template <class TypeTrait, typename DerivedTree>
 template <typename Interior>
-void BASETREE_CLASS::SeievePoints(Slice A, Slice B, size_t const n,
-                                  NodeTagSeq const& tags,
-                                  parlay::sequence<BallsType>& sums,
-                                  BucketType const tags_num) {
+void BaseTree<TypeTrait, DerivedTree>::SeievePoints(
+    Slice A, Slice B, size_t const n, NodeTagSeq const& tags,
+    parlay::sequence<BallsType>& sums, BucketType const tags_num) {
   size_t num_block = (n + kBlockSize - 1) >> kLog2Base;
   parlay::sequence<parlay::sequence<BallsType>> offset(
       num_block, parlay::sequence<BallsType>(tags_num));
@@ -189,7 +187,7 @@ void BASETREE_CLASS::SeievePoints(Slice A, Slice B, size_t const n,
 }
 }  // namespace psi
 
-#undef BASETREE_TEMPLATE
-#undef BASETREE_CLASS
+ 
+ 
 
 #endif  // PSI_BASE_TREE_IMPL_POINTS_OP_HPP_

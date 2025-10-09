@@ -4,10 +4,9 @@
 #include "../base_tree.h"
 
 namespace psi {
-template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
-struct BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::BoxCut {
-  using BT = BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>;
+template <class TypeTrait, typename DerivedTree>
+struct BaseTree<TypeTrait, DerivedTree>::BoxCut {
+  using BT = BaseTree<TypeTrait, DerivedTree>;
 
   BoxCut(Box const& box, HyperPlane const& hp, bool go_left)
       : box(box), hp(hp), go_left(go_left) {}

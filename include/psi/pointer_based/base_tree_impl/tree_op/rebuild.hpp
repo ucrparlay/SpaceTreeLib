@@ -12,17 +12,13 @@
 
 #include "../../base_tree.h"
 
-#define BASETREE_TEMPLATE                                                 \
-  template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight, \
-            uint_fast8_t kImbaRatio>
-#define BASETREE_CLASS BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>
-
 namespace psi {
 
 // NOTE: rebuild the tree
-BASETREE_TEMPLATE
+template <class TypeTrait, typename DerivedTree>
 template <typename Leaf, typename Interior, bool granularity>
-void BASETREE_CLASS::PrepareRebuild(Node* T, Points& wx, Points& wo) {
+void BaseTree<TypeTrait, DerivedTree>::PrepareRebuild(Node* T, Points& wx,
+                                                      Points& wo) {
   wo = Points::uninitialized(T->size);
   wx = Points::uninitialized(T->size);
   FlattenRec<Leaf, Interior, Slice, granularity>(T, parlay::make_slice(wx));
@@ -31,9 +27,10 @@ void BASETREE_CLASS::PrepareRebuild(Node* T, Points& wx, Points& wo) {
 }
 
 // NOTE: rebuild with new input In
-BASETREE_TEMPLATE
+template <class TypeTrait, typename DerivedTree>
 template <typename Leaf, typename Interior, bool granularity>
-void BASETREE_CLASS::PrepareRebuild(Node* T, Slice In, Points& wx, Points& wo) {
+void BaseTree<TypeTrait, DerivedTree>::PrepareRebuild(Node* T, Slice In,
+                                                      Points& wx, Points& wo) {
   wo = Points::uninitialized(T->size + In.size());
   wx = Points::uninitialized(T->size + In.size());
   parlay::parallel_for(0, In.size(), [&](size_t j) { wx[j] = In[j]; });
@@ -43,11 +40,11 @@ void BASETREE_CLASS::PrepareRebuild(Node* T, Slice In, Points& wx, Points& wo) {
   return;
 }
 
-BASETREE_TEMPLATE
+template <class TypeTrait, typename DerivedTree>
 template <typename Leaf, typename Interior, typename PrepareFunc,
           typename... Args>
-Node* BASETREE_CLASS::RebuildWithInsert(Node* T, PrepareFunc prepare_func,
-                                        Slice In, Args&&... args) {
+Node* BaseTree<TypeTrait, DerivedTree>::RebuildWithInsert(
+    Node* T, PrepareFunc prepare_func, Slice In, Args&&... args) {
   Points w_in, w_out;
   PrepareRebuild<Leaf, Interior>(T, In, w_in, w_out);
   auto additional_arg = prepare_func(T, w_in, w_out);
@@ -62,9 +59,10 @@ Node* BASETREE_CLASS::RebuildWithInsert(Node* T, PrepareFunc prepare_func,
 // PARA: when granularity set to false, it will disable the default value for
 // granularity size, which is BT::kSerialBuildCutoff; instead, it will check
 // whether the force parallel flag has been enabled
-BASETREE_TEMPLATE
+template <class TypeTrait, typename DerivedTree>
 template <typename Leaf, typename Interior, bool granularity, typename... Args>
-Node* BASETREE_CLASS::RebuildSingleTree(Node* T, Args&&... args) {
+Node* BaseTree<TypeTrait, DerivedTree>::RebuildSingleTree(Node* T,
+                                                          Args&&... args) {
   Points wx, wo;
   PrepareRebuild<Leaf, Interior, granularity>(T, wx, wo);
   static_assert(std::is_invocable_v<decltype(&DerivedTree::BuildRecursive),
@@ -78,12 +76,12 @@ Node* BASETREE_CLASS::RebuildSingleTree(Node* T, Args&&... args) {
 // tree
 // PARA: if allow_enable_rebuild enabled, this method will re-balance the
 // tree; otherwise, it flattens all sparcy node into leaf nodes
-BASETREE_TEMPLATE
+template <class TypeTrait, typename DerivedTree>
 template <typename Leaf, IsBinaryNode Interior, bool granularity,
           typename PrepareFunc, typename... Args>
-Node* BASETREE_CLASS::RebuildTreeRecursive(Node* T, PrepareFunc&& prepare_func,
-                                           bool const allow_inba_rebuild,
-                                           Args&&... args) {
+Node* BaseTree<TypeTrait, DerivedTree>::RebuildTreeRecursive(
+    Node* T, PrepareFunc&& prepare_func, bool const allow_inba_rebuild,
+    Args&&... args) {
   if (T->is_leaf) {
     return T;
   }
@@ -126,10 +124,10 @@ Node* BASETREE_CLASS::RebuildTreeRecursive(Node* T, PrepareFunc&& prepare_func,
 }
 
 // NOTE: rebuild a multi-node tree
-BASETREE_TEMPLATE
+template <class TypeTrait, typename DerivedTree>
 template <typename Leaf, IsMultiNode Interior, bool granularity,
           typename PrepareFunc, typename... Args>
-Node* BASETREE_CLASS::RebuildTreeRecursive(
+Node* BaseTree<TypeTrait, DerivedTree>::RebuildTreeRecursive(
     Node* T, PrepareFunc&& prepare_func,
     [[maybe_unused]] bool const allow_inba_rebuild, Args&&... args) {
   if (T->is_leaf) {
@@ -164,8 +162,5 @@ Node* BASETREE_CLASS::RebuildTreeRecursive(
 }
 
 }  // namespace psi
-
-#undef BASETREE_TEMPLATE
-#undef BASETREE_CLASS
 
 #endif  // PSI_BASE_TREE_IMPL_REBUILD_HPP_

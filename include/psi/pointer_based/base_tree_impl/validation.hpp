@@ -9,16 +9,12 @@
 #include "../base_tree.h"
 #include "parlay/primitives.h"
 
-#define BASETREE_TEMPLATE                                                 \
-  template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight, \
-            uint_fast8_t kImbaRatio>
-#define BASETREE_CLASS BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>
-
 namespace psi {
 
-BASETREE_TEMPLATE
+template <class TypeTrait, typename DerivedTree>
 template <typename Leaf, typename Interior>
-typename BASETREE_CLASS::Box BASETREE_CLASS::CheckBox(Node* T, Box const& box) {
+typename BaseTree<TypeTrait, DerivedTree>::Box
+BaseTree<TypeTrait, DerivedTree>::CheckBox(Node* T, Box const& box) {
   if (T->is_leaf) {
     auto const* TL = static_cast<Leaf const*>(T);
     auto const node_box = GetBox<Leaf, Interior>(T);
@@ -94,9 +90,10 @@ typename BASETREE_CLASS::Box BASETREE_CLASS::CheckBox(Node* T, Box const& box) {
 // 2: separation of nodes per level
 // 3: decrease level per level
 // 4: nesting
-BASETREE_TEMPLATE
+template <class TypeTrait, typename DerivedTree>
 template <typename Leaf, typename Interior>
-typename BASETREE_CLASS::Points BASETREE_CLASS::CheckCover(
+typename BaseTree<TypeTrait, DerivedTree>::Points
+BaseTree<TypeTrait, DerivedTree>::CheckCover(
     Node* T, typename Interior::CircleType const& level_cover_circle) {
   using TreeCircle = typename Interior::CircleType;
 
@@ -148,9 +145,9 @@ typename BASETREE_CLASS::Points BASETREE_CLASS::CheckCover(
   return parlay::flatten(return_points_seq);
 }
 
-BASETREE_TEMPLATE
+template <class TypeTrait, typename DerivedTree>
 template <typename Leaf, typename Interior>
-size_t BASETREE_CLASS::CheckSize(Node* T) {
+size_t BaseTree<TypeTrait, DerivedTree>::CheckSize(Node* T) {
   if (T->is_leaf) {
     // assert(static_cast<Leaf*>(T)->is_dummy ||
     //        static_cast<Leaf*>(T)->size <= kLeaveWrap);
@@ -177,10 +174,10 @@ size_t BASETREE_CLASS::CheckSize(Node* T) {
   }
 }
 
-BASETREE_TEMPLATE
+template <class TypeTrait, typename DerivedTree>
 template <typename Leaf, typename Interior>
-void BaseTree<Point, DerivedTree, kSkHeight,
-              kImbaRatio>::CheckTreeSameSequential(Node* T, int dim) {
+void BaseTree<TypeTrait, DerivedTree>::CheckTreeSameSequential(Node* T,
+                                                               int dim) {
   if (T->is_leaf) {
     // assert( PickRebuildDim( T, kDim ) == dim );
     return;
@@ -213,9 +210,9 @@ void BaseTree<Point, DerivedTree, kSkHeight,
   return;
 }
 
-BASETREE_TEMPLATE
+template <class TypeTrait, typename DerivedTree>
 template <typename Leaf, typename Interior, typename SplitRule>
-void BASETREE_CLASS::Validate() {
+void BaseTree<TypeTrait, DerivedTree>::Validate() {
   std::cout << ">>> begin validate tree\n" << std::flush;
 
   // check size
@@ -275,16 +272,16 @@ void BASETREE_CLASS::Validate() {
   return;
 }
 
-BASETREE_TEMPLATE
+template <class TypeTrait, typename DerivedTree>
 template <typename Leaf, typename Interior>
-size_t BASETREE_CLASS::GetTreeHeight() {
+size_t BaseTree<TypeTrait, DerivedTree>::GetTreeHeight() {
   size_t deep = 0;
   return GetMaxTreeDepth<Leaf, Interior>(this->root_, deep);
 }
 
-BASETREE_TEMPLATE
+template <class TypeTrait, typename DerivedTree>
 template <typename Leaf, typename Interior>
-size_t BASETREE_CLASS::GetMaxTreeDepth(Node* T, size_t deep) {
+size_t BaseTree<TypeTrait, DerivedTree>::GetMaxTreeDepth(Node* T, size_t deep) {
   if (T->is_leaf) {
     return deep;
   }
@@ -306,9 +303,9 @@ size_t BASETREE_CLASS::GetMaxTreeDepth(Node* T, size_t deep) {
   }
 }
 
-BASETREE_TEMPLATE
+template <class TypeTrait, typename DerivedTree>
 template <typename Leaf, typename Interior>
-double BASETREE_CLASS::GetAveTreeHeight() {
+double BaseTree<TypeTrait, DerivedTree>::GetAveTreeHeight() {
   // std::cout << IsBinaryNode<Interior> << std::endl;
   parlay::sequence<size_t> heights(this->root_->size);
   size_t idx = 0;
@@ -321,9 +318,9 @@ double BASETREE_CLASS::GetAveTreeHeight() {
   return double(1.0 * parlay::reduce(heights.cut(0, idx)) / idx);
 }
 
-BASETREE_TEMPLATE
+template <class TypeTrait, typename DerivedTree>
 template <typename Leaf, typename Interior>
-size_t BASETREE_CLASS::CountTreeNodesNum(Node* T) {
+size_t BaseTree<TypeTrait, DerivedTree>::CountTreeNodesNum(Node* T) {
   if (T->is_leaf) {
     return 1;
   }
@@ -343,10 +340,10 @@ size_t BASETREE_CLASS::CountTreeNodesNum(Node* T) {
   }
 }
 
-BASETREE_TEMPLATE
+template <class TypeTrait, typename DerivedTree>
 template <typename Leaf, typename Interior>
-void BASETREE_CLASS::CountTreeHeights(Node* T, size_t deep, size_t& idx,
-                                      parlay::sequence<size_t>& heights) {
+void BaseTree<TypeTrait, DerivedTree>::CountTreeHeights(
+    Node* T, size_t deep, size_t& idx, parlay::sequence<size_t>& heights) {
   if (T->is_leaf) {
     heights[idx++] = deep;
     return;
@@ -368,8 +365,5 @@ void BASETREE_CLASS::CountTreeHeights(Node* T, size_t deep, size_t& idx,
 }
 
 }  // namespace psi
-
-#undef BASETREE_TEMPLATE
-#undef BASETREE_CLASS
 
 #endif  // PSI_BASE_TREE_IMPL_VALIDATION_HPP_

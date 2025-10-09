@@ -10,18 +10,10 @@
 #include "../../dependence/tree_node.h"
 #include "psi/orth_tree.h"
 
-#define ORTHTREE_TEMPLATE                                             \
-  template <typename Point, typename SplitRule, typename LeafAugType, \
-            typename InteriorAugType, uint_fast8_t kMD,               \
-            uint_fast8_t kSkHeight, uint_fast8_t kImbaRatio>
-#define ORTHTREE_CLASS                                                     \
-  OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight, \
-           kImbaRatio>
-
 namespace psi {
-ORTHTREE_TEMPLATE
+template <typename TypeTrait>
 template <typename Range, typename... Args>
-void ORTHTREE_CLASS::Build(Range&& In, Args&&... args) {
+void OrthTree<TypeTrait>::Build(Range&& In, Args&&... args) {
   static_assert(parlay::is_random_access_range_v<Range>);
   static_assert(
       parlay::is_less_than_comparable_v<parlay::range_reference_type_t<Range>>);
@@ -35,8 +27,8 @@ void ORTHTREE_CLASS::Build(Range&& In, Args&&... args) {
 }
 
 // TODO: maybe we don't need this function, it can be directly computed by value
-ORTHTREE_TEMPLATE
-void ORTHTREE_CLASS::DivideRotate(HyperPlaneSeq& pivots, DimsType dim,
+template <typename TypeTrait>
+void OrthTree<TypeTrait>::DivideRotate(HyperPlaneSeq& pivots, DimsType dim,
                                   BucketType idx, BoxSeq& box_seq,
                                   Box const& box) {
   if (idx > BT::kPivotNum) {
@@ -58,8 +50,8 @@ void ORTHTREE_CLASS::DivideRotate(HyperPlaneSeq& pivots, DimsType dim,
   return;
 }
 
-ORTHTREE_TEMPLATE
-void ORTHTREE_CLASS::SerialSplit(Slice In, DimsType dim, DimsType idx,
+template <typename TypeTrait>
+void OrthTree<TypeTrait>::SerialSplit(Slice In, DimsType dim, DimsType idx,
                                  Box const& box,
                                  parlay::sequence<BallsType>& sums) {
   assert(dim <= BT::kDim);
@@ -76,8 +68,8 @@ void ORTHTREE_CLASS::SerialSplit(Slice In, DimsType dim, DimsType idx,
               box, sums);
 }
 
-ORTHTREE_TEMPLATE
-Node* ORTHTREE_CLASS::SerialBuildRecursive(Slice In, Slice Out, Box const& box,
+template <typename TypeTrait>
+Node* OrthTree<TypeTrait>::SerialBuildRecursive(Slice In, Slice Out, Box const& box,
                                            bool checked_duplicate) {
   assert(In.size() == 0 || BT::WithinBox(BT::GetBox(In), box));
   size_t n = In.size();
@@ -132,8 +124,8 @@ Node* ORTHTREE_CLASS::SerialBuildRecursive(Slice In, Slice Out, Box const& box,
   return AllocInteriorNode<Interior>(tree_nodes, splitter);
 }
 
-ORTHTREE_TEMPLATE
-Node* ORTHTREE_CLASS::BuildRecursive(Slice In, Slice Out, Box const& box) {
+template <typename TypeTrait>
+Node* OrthTree<TypeTrait>::BuildRecursive(Slice In, Slice Out, Box const& box) {
   // TODO: may ensure the bucket is corresponding the the splitter
   assert(In.size() == 0 || BT::WithinBox(BT::GetBox(In), box));
   size_t n = In.size();
@@ -186,8 +178,8 @@ Node* ORTHTREE_CLASS::BuildRecursive(Slice In, Slice Out, Box const& box) {
   return BT::template BuildInnerTree<Interior>(1, pivots, tree_nodes);
 }
 
-ORTHTREE_TEMPLATE
-void ORTHTREE_CLASS::Build_(Slice A) {
+template <typename TypeTrait>
+void OrthTree<TypeTrait>::Build_(Slice A) {
   Points B = Points::uninitialized(A.size());
   if (!fixed_box) {
     this->tree_box_ = BT::GetBox(A);
@@ -198,8 +190,8 @@ void ORTHTREE_CLASS::Build_(Slice A) {
   return;
 }
 
-ORTHTREE_TEMPLATE
-void ORTHTREE_CLASS::Build_(Slice A, Box const& box) {
+template <typename TypeTrait>
+void OrthTree<TypeTrait>::Build_(Slice A, Box const& box) {
   assert(BT::WithinBox(BT::GetBox(A), box));
 
   Points B = Points::uninitialized(A.size());
@@ -214,7 +206,7 @@ void ORTHTREE_CLASS::Build_(Slice A, Box const& box) {
 
 }  // namespace psi
 
-#undef ORTHTREE_TEMPLATE
-#undef ORTHTREE_CLASS
+ 
+ 
 
 #endif  // PSI_ORTH_TREE_IMPL_ORTH_BUILD_TREE_HPP_

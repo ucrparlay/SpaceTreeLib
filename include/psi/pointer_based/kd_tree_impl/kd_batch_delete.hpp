@@ -3,18 +3,11 @@
 
 #include "../kd_tree.h"
 
-#define KDTREE_TEMPLATE                                               \
-  template <typename Point, typename SplitRule, typename LeafAugType, \
-            typename InteriorAugType, uint_fast8_t kSkHeight,         \
-            uint_fast8_t kImbaRatio>
-#define KDTREE_CLASS \
-  KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight, kImbaRatio>
-
 namespace psi {
 
-KDTREE_TEMPLATE
+template <typename TypeTrait>
 template <typename Range>
-void KDTREE_CLASS::BatchDelete(Range&& In) {
+void KdTree<TypeTrait>::BatchDelete(Range&& In) {
   static_assert(parlay::is_random_access_range_v<Range>);
   static_assert(
       parlay::is_less_than_comparable_v<parlay::range_reference_type_t<Range>>);
@@ -26,8 +19,8 @@ void KDTREE_CLASS::BatchDelete(Range&& In) {
   return;
 }
 
-KDTREE_TEMPLATE
-void KDTREE_CLASS::BatchDelete_(Slice A) {
+template <typename TypeTrait>
+void KdTree<TypeTrait>::BatchDelete_(Slice A) {
   Points B = Points::uninitialized(A.size());
   Node* T = this->root_;
   Box box = this->tree_box_;
@@ -37,11 +30,10 @@ void KDTREE_CLASS::BatchDelete_(Slice A) {
   return;
 }
 
-KDTREE_TEMPLATE
-auto KDTREE_CLASS::BatchDeleteRecursive(Node* T,
-                                        typename KDTREE_CLASS::Box const& box,
-                                        Slice In, Slice Out, DimsType d,
-                                        bool has_tomb) -> NodeBox {
+template <typename TypeTrait>
+auto KdTree<TypeTrait>::BatchDeleteRecursive(
+    Node* T, typename KdTree<TypeTrait>::Box const& box, Slice In, Slice Out,
+    DimsType d, bool has_tomb) -> NodeBox {
   size_t n = In.size();
 
   if (n == 0) {
@@ -120,15 +112,15 @@ auto KDTREE_CLASS::BatchDeleteRecursive(Node* T,
               BT::ImbalanceNode(TI->left->size, TI->size)));
       auto const new_box = BT::GetBox(Lbox, Rbox);
       assert(BT::WithinBox(BT::template GetBox<Leaf, Interior>(T), new_box));
-      return NodeBox(
-          BT::template RebuildSingleTree<Leaf, Interior, false>(T, d, new_box),
-          new_box);
+      return NodeBox(this->template RebuildSingleTree<Leaf, Interior, false>(
+                         T, d, new_box),
+                     new_box);
     }
 
     return NodeBox(T, BT::GetBox(Lbox, Rbox));
   }
 
-  InnerTree IT(*this);
+  InnerTree IT;
   IT.AssignNodeTag(T, 1);
   assert(IT.tags_num > 0 && IT.tags_num <= BT::kBucketNum);
   BT::template SeievePoints<Interior>(In, Out, n, IT.tags, IT.sums,
@@ -195,7 +187,7 @@ auto KDTREE_CLASS::BatchDeleteRecursive(Node* T,
         next_dim = split_rule_.NextDimension(next_dim);
       }
       IT.tags[IT.rev_tag[i]].first =
-          BT::template RebuildSingleTree<Leaf, Interior, false>(
+          this->template RebuildSingleTree<Leaf, Interior, false>(
               IT.tags[IT.rev_tag[i]].first, next_dim, box_seq[i]);
     }
   });
@@ -205,8 +197,5 @@ auto KDTREE_CLASS::BatchDeleteRecursive(Node* T,
 }
 
 }  // namespace psi
-
-#undef KDTREE_TEMPLATE
-#undef KDTREE_CLASS
 
 #endif  // PSI_KD_TREE_IMPL_KD_BATCH_DELETE_HPP

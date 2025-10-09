@@ -3,6 +3,7 @@
 
 // Backward compatibility header
 // This file forwards to the pointer-based implementation
+// #include "array_based/kd_tree_array.h"
 #include "pointer_based/kd_tree.h"
 
 #endif  // PSI_KD_TREE_FORWARD_H_

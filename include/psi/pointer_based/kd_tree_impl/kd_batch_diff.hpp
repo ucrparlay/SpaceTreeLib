@@ -3,18 +3,11 @@
 
 #include "../kd_tree.h"
 
-#define KDTREE_TEMPLATE                                               \
-  template <typename Point, typename SplitRule, typename LeafAugType, \
-            typename InteriorAugType, uint_fast8_t kSkHeight,         \
-            uint_fast8_t kImbaRatio>
-#define KDTREE_CLASS \
-  KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight, kImbaRatio>
-
 namespace psi {
 
-KDTREE_TEMPLATE
+template <typename TypeTrait>
 template <typename Range>
-void KDTREE_CLASS::BatchDiff(Range&& In) {
+void KdTree<TypeTrait>::BatchDiff(Range&& In) {
   static_assert(parlay::is_random_access_range_v<Range>);
   static_assert(
       parlay::is_less_than_comparable_v<parlay::range_reference_type_t<Range>>);
@@ -26,8 +19,8 @@ void KDTREE_CLASS::BatchDiff(Range&& In) {
   return;
 }
 
-KDTREE_TEMPLATE
-void KDTREE_CLASS::BatchDiff_(Slice A) {
+template <typename TypeTrait>
+void KdTree<TypeTrait>::BatchDiff_(Slice A) {
   Points B = Points::uninitialized(A.size());
   Node* T = this->root_;
   Box box = this->tree_box_;
@@ -52,11 +45,10 @@ void KDTREE_CLASS::BatchDiff_(Slice A) {
   return;
 }
 
-KDTREE_TEMPLATE
-auto KDTREE_CLASS::BatchDiffRecursive(Node* T,
-                                      typename KDTREE_CLASS::Box const& box,
-                                      Slice In, Slice Out, DimsType d)
-    -> NodeBox {
+template <typename TypeTrait>
+auto KdTree<TypeTrait>::BatchDiffRecursive(
+    Node* T, typename KdTree<TypeTrait>::Box const& box, Slice In, Slice Out,
+    DimsType d) -> NodeBox {
   size_t n = In.size();
 
   if (n == 0) return NodeBox(T, box);
@@ -97,7 +89,7 @@ auto KDTREE_CLASS::BatchDiffRecursive(Node* T,
     return NodeBox(T, BT::GetBox(Lbox, Rbox));
   }
 
-  InnerTree IT(*this);
+  InnerTree IT;
   IT.AssignNodeTag(T, 1);
   assert(IT.tags_num > 0 && IT.tags_num <= BT::kBucketNum);
   BT::template SeievePoints<Interior>(In, Out, n, IT.tags, IT.sums,
@@ -136,8 +128,5 @@ auto KDTREE_CLASS::BatchDiffRecursive(Node* T,
 }
 
 }  // namespace psi
-
-#undef KDTREE_TEMPLATE
-#undef KDTREE_CLASS
 
 #endif  // PSI_KD_TREE_IMPL_KD_BATCH_DIFF_HPP_

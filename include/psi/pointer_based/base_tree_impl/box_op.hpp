@@ -2,18 +2,13 @@
 #define PSI_BASE_TREE_IMPL_BOX_OP_HPP_
 
 #include "../base_tree.h"
-#include "../../dependence/concepts.h"
-
-#define BASETREE_TEMPLATE                                                 \
-  template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight, \
-            uint_fast8_t kImbaRatio>
-#define BASETREE_CLASS BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>
+#include "dependence/concepts.h"
 
 namespace psi {
 
-BASETREE_TEMPLATE
-inline typename BASETREE_CLASS::Coord BASETREE_CLASS::GetBoxMid(
-    DimsType const d, Box const& box) {
+template <class TypeTrait, typename DerivedTree>
+inline typename BaseTree<TypeTrait, DerivedTree>::Coord
+BaseTree<TypeTrait, DerivedTree>::GetBoxMid(DimsType const d, Box const& box) {
   // TODO: change to Num::divide2ceil
   if constexpr (std::is_integral_v<Coord>) {
     // NOTE: since the points on the box line will be put in right, therefore
@@ -28,8 +23,8 @@ inline typename BASETREE_CLASS::Coord BASETREE_CLASS::GetBoxMid(
   }
 }
 
-BASETREE_TEMPLATE
-inline bool BASETREE_CLASS::LegalBox(Box const& bx) {
+template <class TypeTrait, typename DerivedTree>
+inline bool BaseTree<TypeTrait, DerivedTree>::LegalBox(Box const& bx) {
   // TODO: remove it
   if (bx == GetEmptyBox()) return true;
 
@@ -50,10 +45,9 @@ inline bool BASETREE_CLASS::LegalBox(Box const& bx) {
   }
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
-inline bool BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::WithinBox(
-    Box const& a, Box const& b) {
+template <class TypeTrait, typename DerivedTree>
+inline bool BaseTree<TypeTrait, DerivedTree>::WithinBox(Box const& a,
+                                                        Box const& b) {
   constexpr uint_fast8_t kDim = Point::GetDim();
   assert(LegalBox(a));
   assert(LegalBox(b));
@@ -81,10 +75,9 @@ inline bool BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::WithinBox(
   }
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
-inline bool BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::SameBox(
-    Box const& a, Box const& b) {
+template <class TypeTrait, typename DerivedTree>
+inline bool BaseTree<TypeTrait, DerivedTree>::SameBox(Box const& a,
+                                                      Box const& b) {
   assert(LegalBox(a));
   assert(LegalBox(b));
 
@@ -110,10 +103,9 @@ inline bool BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::SameBox(
   }
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
-inline bool BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::WithinBox(
-    Point const& p, Box const& bx) {
+template <class TypeTrait, typename DerivedTree>
+inline bool BaseTree<TypeTrait, DerivedTree>::WithinBox(Point const& p,
+                                                        Box const& bx) {
   assert(LegalBox(bx));
 
   if constexpr (kDim == 2) {
@@ -139,10 +131,9 @@ inline bool BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::WithinBox(
   }
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
-inline bool BaseTree<Point, DerivedTree, kSkHeight,
-                     kImbaRatio>::BoxIntersectBox(Box const& a, Box const& b) {
+template <class TypeTrait, typename DerivedTree>
+inline bool BaseTree<TypeTrait, DerivedTree>::BoxIntersectBox(Box const& a,
+                                                              Box const& b) {
   if (!LegalBox(a)) {
     std::cout << a.first << " " << a.second << std::endl;
   }
@@ -171,100 +162,77 @@ inline bool BaseTree<Point, DerivedTree, kSkHeight,
   }
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
-inline bool BaseTree<Point, DerivedTree, kSkHeight,
-                     kImbaRatio>::IsBoxLineInDimension(Box const& box,
-                                                       DimsType d) {
+template <class TypeTrait, typename DerivedTree>
+inline bool BaseTree<TypeTrait, DerivedTree>::IsBoxLineInDimension(
+    Box const& box, DimsType d) {
   assert(LegalBox(box));
   return Num::Eq(box.first[d], box.second[d]);
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
-inline bool BaseTree<Point, DerivedTree, kSkHeight,
-                     kImbaRatio>::VerticalLineSplitBox(Coord const& line,
-                                                       Box const& box,
-                                                       DimsType d) {
+template <class TypeTrait, typename DerivedTree>
+inline bool BaseTree<TypeTrait, DerivedTree>::VerticalLineSplitBox(
+    Coord const& line, Box const& box, DimsType d) {
   assert(LegalBox(box));
   return VerticalLineIntersectBoxExclude(line, box, d) ||
          (VerticalLineOnBoxRightEdge(line, box, d) &&
           !IsBoxLineInDimension(box, d));
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
-inline bool BaseTree<Point, DerivedTree, kSkHeight,
-                     kImbaRatio>::VerticalLineOnBoxLeftEdge(Coord const& line,
-                                                            Box const& box,
-                                                            DimsType d) {
+template <class TypeTrait, typename DerivedTree>
+inline bool BaseTree<TypeTrait, DerivedTree>::VerticalLineOnBoxLeftEdge(
+    Coord const& line, Box const& box, DimsType d) {
   assert(LegalBox(box));
   return Num::Eq(line, box.first.pnt[d]);
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
-inline bool BaseTree<Point, DerivedTree, kSkHeight,
-                     kImbaRatio>::VerticalLineOnBoxRightEdge(Coord const& line,
-                                                             Box const& box,
-                                                             DimsType d) {
+template <class TypeTrait, typename DerivedTree>
+inline bool BaseTree<TypeTrait, DerivedTree>::VerticalLineOnBoxRightEdge(
+    Coord const& line, Box const& box, DimsType d) {
   assert(LegalBox(box));
   return Num::Eq(line, box.second.pnt[d]);
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
-inline bool BaseTree<Point, DerivedTree, kSkHeight,
-                     kImbaRatio>::VerticalLineOnBoxEdge(Coord const& line,
-                                                        Box const& box,
-                                                        DimsType d) {
+template <class TypeTrait, typename DerivedTree>
+inline bool BaseTree<TypeTrait, DerivedTree>::VerticalLineOnBoxEdge(
+    Coord const& line, Box const& box, DimsType d) {
   assert(LegalBox(box));
   return VerticalLineOnBoxLeftEdge(line, box, d) ||
          VerticalLineOnBoxRightEdge(line, box, d);
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
-inline bool BaseTree<Point, DerivedTree, kSkHeight,
-                     kImbaRatio>::VerticalLineIntersectBox(Coord const& line,
-                                                           Box const& box,
-                                                           DimsType d) {
+template <class TypeTrait, typename DerivedTree>
+inline bool BaseTree<TypeTrait, DerivedTree>::VerticalLineIntersectBox(
+    Coord const& line, Box const& box, DimsType d) {
   assert(LegalBox(box));
   return Num::Geq(line, box.first.pnt[d]) && Num::Leq(line, box.second.pnt[d]);
 }
 
 // NOTE: if the line @line is one the boundary of the box, then it will be
 // considered as not intersect
-template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
-inline bool BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::
-    VerticalLineIntersectBoxExclude(Coord const& line, Box const& box,
-                                    DimsType d) {
+template <class TypeTrait, typename DerivedTree>
+inline bool BaseTree<TypeTrait, DerivedTree>::VerticalLineIntersectBoxExclude(
+    Coord const& line, Box const& box, DimsType d) {
   assert(LegalBox(box));
   return Num::Gt(line, box.first.pnt[d]) && Num::Lt(line, box.second.pnt[d]);
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
-inline typename BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::Box
-BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::GetEmptyBox() {
+template <class TypeTrait, typename DerivedTree>
+inline typename BaseTree<TypeTrait, DerivedTree>::Box
+BaseTree<TypeTrait, DerivedTree>::GetEmptyBox() {
   return Box(Point(std::numeric_limits<Coord>::max()),
              Point(std::numeric_limits<Coord>::lowest()));
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
-typename BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::Box
-BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::GetBox(Box const& x,
-                                                            Box const& y) {
+template <class TypeTrait, typename DerivedTree>
+typename BaseTree<TypeTrait, DerivedTree>::Box
+BaseTree<TypeTrait, DerivedTree>::GetBox(Box const& x, Box const& y) {
   return Box(x.first.MinCoords(y.first), x.second.MaxCoords(y.second));
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
+template <class TypeTrait, typename DerivedTree>
 template <typename Range>
-typename BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::Box
-BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::GetBox(Range&& In)
+typename BaseTree<TypeTrait, DerivedTree>::Box
+BaseTree<TypeTrait, DerivedTree>::GetBox(Range&& In)
   requires(parlay::is_random_access_range_v<Range>)
 {
   if constexpr (std::same_as<
@@ -275,12 +243,10 @@ BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::GetBox(Range&& In)
   }
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
+template <class TypeTrait, typename DerivedTree>
 template <typename SliceType>
-typename BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::Box
-BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::GetBoxFromSlice(
-    SliceType const V) {
+typename BaseTree<TypeTrait, DerivedTree>::Box
+BaseTree<TypeTrait, DerivedTree>::GetBoxFromSlice(SliceType const V) {
   if (V.size() == 0) {
     return GetEmptyBox();
   } else {
@@ -296,11 +262,10 @@ BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::GetBoxFromSlice(
 
 // NOTE: this function omit the possibility that T contains the bounding box --
 // it will always try to reduce a bounding box in the tree T
-template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
+template <class TypeTrait, typename DerivedTree>
 template <typename Leaf, typename Interior>
-typename BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::Box
-BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::GetBox(Node* T) {
+typename BaseTree<TypeTrait, DerivedTree>::Box
+BaseTree<TypeTrait, DerivedTree>::GetBox(Node* T) {
   if (T->size == 0) {
     return GetEmptyBox();
   }
@@ -341,11 +306,9 @@ BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::GetBox(Node* T) {
   }
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
-typename BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::Box
-BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::GetBoxFromBoxSeq(
-    BoxSeq const& box_seq) {
+template <class TypeTrait, typename DerivedTree>
+typename BaseTree<TypeTrait, DerivedTree>::Box
+BaseTree<TypeTrait, DerivedTree>::GetBoxFromBoxSeq(BoxSeq const& box_seq) {
   return parlay::reduce(
       box_seq, parlay::make_monoid(
                    [&](Box const& x, Box const& y) { return GetBox(x, y); },
@@ -357,10 +320,9 @@ BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::GetBoxFromBoxSeq(
   // return std::move(box);
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
-Point BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::GetBoxCenter(
-    Box const& box) {
+template <class TypeTrait, typename DerivedTree>
+typename BaseTree<TypeTrait, DerivedTree>::Point
+BaseTree<TypeTrait, DerivedTree>::GetBoxCenter(Box const& box) {
   Point center;
   if constexpr (kDim == 2) {
     center.pnt[0] = (box.first.pnt[0] + box.second.pnt[0]) / 2;

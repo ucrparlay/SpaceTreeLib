@@ -122,15 +122,16 @@ struct SpacialFillingCurve {
 };
 
 // NOTE: ---------------- Orthogonal Split Rule ----------------
-template <typename Point>
+template <typename TypeTrait>
 struct BaseSplitDimRule {
-  using BT = BaseTree<Point, BaseSplitDimRule<Point>>;
-  using Slice = BT::Slice;
-  using DimsType = BT::DimsType;
-  using Box = BT::Box;
-  using Num = BT::Num;
-  using Coord = BT::Coord;
-  using HyperPlane = BT::HyperPlane;
+  using Point = TypeTrait::Point;
+  using Slice = TypeTrait::Slice;
+  using DimsType = TypeTrait::DimsType;
+  using Box = TypeTrait::Box;
+  using Num = TypeTrait::Num;
+  using Coord = TypeTrait::Coord;
+  using HyperPlane = TypeTrait::HyperPlane;
+  using PointsIter = TypeTrait::PointsIter;
 
   constexpr virtual DimsType const FindCuttingDimension(
       Box const& bx, DimsType const dim) const = 0;
@@ -142,16 +143,16 @@ struct BaseSplitDimRule {
   // TODO: the spliiter should deterine how to split as well
 };
 
-template <typename Point>
-struct MaxStretchDim : BaseSplitDimRule<Point> {
-  using BSR = BaseSplitDimRule<Point>;
-  using BT = BSR::BT;
+template <typename TypeTrait>
+struct MaxStretchDim : BaseSplitDimRule<TypeTrait> {
+  using BSR = BaseSplitDimRule<TypeTrait>;
+  using Point = BSR::Point;
   using Slice = BSR::Slice;
   using DimsType = BSR::DimsType;
   using Box = BSR::Box;
   using Coord = BSR::Coord;
   using Num = BSR::Num;
-  using HyperPlane = BT::HyperPlane;
+  using HyperPlane = BSR::HyperPlane;
 
   void MaxStretchTag() {}
   static std::string GetName() { return "MaxStretchDim"; }
@@ -161,7 +162,7 @@ struct MaxStretchDim : BaseSplitDimRule<Point> {
     DimsType d(0);
     Coord diff(bx.second.pnt[0] - bx.first.pnt[0]);
     assert(Num::Geq(diff, 0));
-    for (DimsType i = 1; i < BT::kDim; ++i) {
+    for (DimsType i = 1; i < Point::GetDim(); ++i) {
       if (Num::Gt(bx.second.pnt[i] - bx.first.pnt[i], diff)) {
         diff = bx.second.pnt[i] - bx.first.pnt[i];
         d = i;
@@ -179,17 +180,17 @@ struct MaxStretchDim : BaseSplitDimRule<Point> {
   constexpr DimsType const NextDimension(DimsType) const override { return 0; };
 };
 
-template <typename Point>
-struct RotateDim : BaseSplitDimRule<Point> {
-  using BSR = BaseSplitDimRule<Point>;
-  using BT = BSR::BT;
+template <typename TypeTrait>
+struct RotateDim : BaseSplitDimRule<TypeTrait> {
+  using BSR = BaseSplitDimRule<TypeTrait>;
+  using Point = BSR::Point;
   using Slice = BSR::Slice;
   using DimsType = BSR::DimsType;
   using Box = BSR::Box;
   using Coord = BSR::Coord;
   using Num = BSR::Num;
-  using PointsIter = BT::PointsIter;
-  using HyperPlane = BT::HyperPlane;
+  using PointsIter = BSR::PointsIter;
+  using HyperPlane = BSR::HyperPlane;
 
   void RotateDimTag() {}
   static std::string GetName() { return "RotateDim"; }
@@ -205,20 +206,20 @@ struct RotateDim : BaseSplitDimRule<Point> {
   };
 
   constexpr DimsType const NextDimension(DimsType dim) const override {
-    return (dim + 1) % BT::kDim;
+    return (dim + 1) % Point::GetDim();
   };
 };
 
-template <typename Point>
+template <typename TypeTrait>
 struct BaseSplitPartitionRule {
-  using BT = BaseTree<Point, BaseSplitPartitionRule<Point>>;
-  using Slice = BT::Slice;
-  using DimsType = BT::DimsType;
-  using Box = BT::Box;
-  using Num = BT::Num;
-  using Coord = BT::Coord;
-  using HyperPlane = BT::HyperPlane;
-  using PointsIter = BT::PointsIter;
+  using Point = TypeTrait::Point;
+  using Slice = TypeTrait::Slice;
+  using DimsType = TypeTrait::DimsType;
+  using Box = TypeTrait::Box;
+  using Num = TypeTrait::Num;
+  using Coord = TypeTrait::Coord;
+  using HyperPlane = TypeTrait::HyperPlane;
+  using PointsIter = TypeTrait::PointsIter;
   using IterHyperPair = std::pair<PointsIter, std::optional<HyperPlane>>;
 
   constexpr virtual IterHyperPair const SplitInput(Slice In, DimsType const dim,
@@ -227,10 +228,10 @@ struct BaseSplitPartitionRule {
                                                  Box const& box) const = 0;
 };
 
-template <typename Point>
-struct ObjectMedian : BaseSplitPartitionRule<Point> {
-  using BSR = BaseSplitPartitionRule<Point>;
-  using BT = BSR::BT;
+template <typename TypeTrait>
+struct ObjectMedian : BaseSplitPartitionRule<TypeTrait> {
+  using BSR = BaseSplitPartitionRule<TypeTrait>;
+  using Point = BSR::Point;
   using Slice = BSR::Slice;
   using DimsType = BSR::DimsType;
   using Box = BSR::Box;
@@ -299,10 +300,11 @@ struct ObjectMedian : BaseSplitPartitionRule<Point> {
   }
 };
 
-template <typename Point>
-struct SpatialMedian : BaseSplitPartitionRule<Point> {
-  using BSR = BaseSplitPartitionRule<Point>;
-  using BT = BSR::BT;
+template <typename TypeTrait>
+struct SpatialMedian : BaseSplitPartitionRule<TypeTrait> {
+  using BSR = BaseSplitPartitionRule<TypeTrait>;
+  using GeoBase = psi::GeoBase<TypeTrait>;
+  using Point = BSR::Point;
   using Slice = BSR::Slice;
   using DimsType = BSR::DimsType;
   using Box = BSR::Box;
@@ -320,21 +322,22 @@ struct SpatialMedian : BaseSplitPartitionRule<Point> {
 
   constexpr IterHyperPair const SplitInput(Slice In, DimsType const dim,
                                            Box const& box) const override {
-    auto split_iter = std::ranges::partition(In, [&](Point const& p) {
-                        return Num::Lt(p.pnt[dim], BT::GetBoxMid(dim, box));
-                      }).begin();
+    auto split_iter =
+        std::ranges::partition(In, [&](Point const& p) {
+          return Num::Lt(p.pnt[dim], GeoBase::GetBoxMid(dim, box));
+        }).begin();
     if (split_iter == In.begin() || split_iter == In.end()) {
       return IterHyperPair(split_iter, std::nullopt);
     } else {
       return IterHyperPair(split_iter,
-                           HyperPlane(BT::GetBoxMid(dim, box), dim));
+                           HyperPlane(GeoBase::GetBoxMid(dim, box), dim));
     }
   }
 
   constexpr HyperPlane const SplitSample([[maybe_unused]] Slice In,
                                          DimsType const dim,
                                          Box const& box) const override {
-    return HyperPlane(BT::GetBoxMid(dim, box), dim);
+    return HyperPlane(GeoBase::GetBoxMid(dim, box), dim);
   }
 };
 

@@ -3,25 +3,22 @@
 
 #include <cmath>
 
-#include "../base_tree.h"
 #include "../../dependence/concepts.h"
-
-#define BASETREE_TEMPLATE                                                 \
-  template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight, \
-            uint_fast8_t kImbaRatio>
-#define BASETREE_CLASS BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>
+#include "../base_tree.h"
 
 namespace psi {
-BASETREE_TEMPLATE
+template <class TypeTrait, typename DerivedTree>
 template <typename CircleType>
-inline bool BASETREE_CLASS::LegalCircle(CircleType const& cl) {
+inline bool BaseTree<TypeTrait, DerivedTree>::LegalCircle(
+    CircleType const& cl) {
   return Num::Geq(cl.GetRadius(), 0);
 }
 
 // NOTE: point within the circle
-BASETREE_TEMPLATE
+template <class TypeTrait, typename DerivedTree>
 template <typename CircleType>
-inline bool BASETREE_CLASS::WithinCircle(Point const& p, CircleType const& cl) {
+inline bool BaseTree<TypeTrait, DerivedTree>::WithinCircle(
+    Point const& p, CircleType const& cl) {
   Coord r = 0;
   for (DimsType i = 0; i < kDim; ++i) {
     r +=
@@ -33,9 +30,10 @@ inline bool BASETREE_CLASS::WithinCircle(Point const& p, CircleType const& cl) {
 }
 
 // NOTE: box within the circle
-BASETREE_TEMPLATE
+template <class TypeTrait, typename DerivedTree>
 template <typename CircleType>
-inline bool BASETREE_CLASS::WithinCircle(Box const& box, CircleType const& cl) {
+inline bool BaseTree<TypeTrait, DerivedTree>::WithinCircle(
+    Box const& box, CircleType const& cl) {
   assert(LegalBox(box));
   assert(LegalCircle(cl));
 
@@ -56,11 +54,10 @@ inline bool BASETREE_CLASS::WithinCircle(Box const& box, CircleType const& cl) {
   return true;
 }
 
-BASETREE_TEMPLATE
+template <class TypeTrait, typename DerivedTree>
 template <typename CircleType>
-inline bool BaseTree<Point, DerivedTree, kSkHeight,
-                     kImbaRatio>::CircleIntersectBox(CircleType const& cl,
-                                                     Box const& box) {
+inline bool BaseTree<TypeTrait, DerivedTree>::CircleIntersectBox(
+    CircleType const& cl, Box const& box) {
   assert(LegalBox(box));
   assert(LegalCircle(cl));
   // NOTE: the logical is same as p2b_min_distance > radius
@@ -80,9 +77,9 @@ inline bool BaseTree<Point, DerivedTree, kSkHeight,
   return true;
 }
 
-BASETREE_TEMPLATE
+template <class TypeTrait, typename DerivedTree>
 template <typename CircleType>
-inline CircleType BASETREE_CLASS::GetCircle(Box const& box) {
+inline CircleType BaseTree<TypeTrait, DerivedTree>::GetCircle(Box const& box) {
   assert(LegalBox(box) && box != GetEmptyBox());
 
   Coord r = 0;
@@ -114,15 +111,15 @@ inline CircleType BASETREE_CLASS::GetCircle(Box const& box) {
   return CircleType{GetBoxCenter(box), CircleType::ComputeRadius(std::sqrt(r))};
 }
 
-BASETREE_TEMPLATE
+template <class TypeTrait, typename DerivedTree>
 template <typename CircleType>
-inline CircleType BASETREE_CLASS::GetCircle(Slice V) {
+inline CircleType BaseTree<TypeTrait, DerivedTree>::GetCircle(Slice V) {
   return GetCircle<CircleType>(GetBox(V));
 }
 
-BASETREE_TEMPLATE
+template <class TypeTrait, typename DerivedTree>
 template <typename CircleType>
-inline CircleType BASETREE_CLASS::GetCircle(
+inline CircleType BaseTree<TypeTrait, DerivedTree>::GetCircle(
     parlay::sequence<CircleType> const& circle_seq) {
   CircleType circle = circle_seq[0];
   for (size_t i = 1; i < circle_seq.size(); i++) {
@@ -131,11 +128,10 @@ inline CircleType BASETREE_CLASS::GetCircle(
   return circle;
 }
 
-BASETREE_TEMPLATE
+template <class TypeTrait, typename DerivedTree>
 template <typename CircleType1, typename CircleType2>
-inline bool BaseTree<Point, DerivedTree, kSkHeight,
-                     kImbaRatio>::CircleWithinCircle(CircleType1 const& a,
-                                                     CircleType2 const& b) {
+inline bool BaseTree<TypeTrait, DerivedTree>::CircleWithinCircle(
+    CircleType1 const& a, CircleType2 const& b) {
   assert(LegalCircle(a) && LegalCircle(b));
   return Num::Leq(a.GetRadius(), b.GetRadius()) &&
          Num::Leq(
@@ -143,11 +139,10 @@ inline bool BaseTree<Point, DerivedTree, kSkHeight,
              (b.GetRadius() - a.GetRadius()) * (b.GetRadius() - a.GetRadius()));
 }
 
-BASETREE_TEMPLATE
+template <class TypeTrait, typename DerivedTree>
 template <typename CircleType>
-inline CircleType BaseTree<Point, DerivedTree, kSkHeight,
-                           kImbaRatio>::GetCircle(CircleType const& a,
-                                                  CircleType const& b) {
+inline CircleType BaseTree<TypeTrait, DerivedTree>::GetCircle(
+    CircleType const& a, CircleType const& b) {
   if (CircleWithinCircle(a, b)) {
     return b;
   } else if (CircleWithinCircle(b, a)) {
@@ -165,11 +160,10 @@ inline CircleType BaseTree<Point, DerivedTree, kSkHeight,
   return CircleType{center, CircleType::ComputeRadius(radius)};
 }
 
-BASETREE_TEMPLATE
+template <class TypeTrait, typename DerivedTree>
 template <typename CircleType>
-inline CircleType BaseTree<Point, DerivedTree, kSkHeight,
-                           kImbaRatio>::GetCircle(Point const& p,
-                                                  CircleType const& cl) {
+inline CircleType BaseTree<TypeTrait, DerivedTree>::GetCircle(
+    Point const& p, CircleType const& cl) {
   if (PointWithinCircle(p, cl)) {
     return cl;
   }
@@ -179,8 +173,5 @@ inline CircleType BaseTree<Point, DerivedTree, kSkHeight,
 }
 
 }  // namespace psi
-
-#undef BASETREE_TEMPLATE
-#undef BASETREE_CLASS
 
 #endif  // PSI_BASE_TREE_IMPL_CIRCLE_OP_HPP_

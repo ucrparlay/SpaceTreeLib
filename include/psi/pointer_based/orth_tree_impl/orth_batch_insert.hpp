@@ -5,19 +5,11 @@
 
 #include "../orth_tree.h"
 
-#define ORTHTREE_TEMPLATE                                             \
-  template <typename Point, typename SplitRule, typename LeafAugType, \
-            typename InteriorAugType, uint_fast8_t kMD,               \
-            uint_fast8_t kSkHeight, uint_fast8_t kImbaRatio>
-#define ORTHTREE_CLASS                                                     \
-  OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight, \
-           kImbaRatio>
-
 namespace psi {
 
-ORTHTREE_TEMPLATE
+template <typename TypeTrait>
 template <typename Range>
-void ORTHTREE_CLASS::BatchInsert(Range&& In) {
+void OrthTree<TypeTrait>::BatchInsert(Range&& In) {
   static_assert(parlay::is_random_access_range_v<Range>);
   static_assert(
       parlay::is_less_than_comparable_v<parlay::range_reference_type_t<Range>>);
@@ -32,8 +24,8 @@ void ORTHTREE_CLASS::BatchInsert(Range&& In) {
   BatchInsert_(A);
 }
 
-ORTHTREE_TEMPLATE
-void ORTHTREE_CLASS::BatchInsert_(Slice A) {
+template <typename TypeTrait>
+void OrthTree<TypeTrait>::BatchInsert_(Slice A) {
   if (this->root_ == nullptr) {  // TODO: may check using explicity tag
     return Build_(A);
   }
@@ -47,10 +39,10 @@ void ORTHTREE_CLASS::BatchInsert_(Slice A) {
   return;
 }
 
-ORTHTREE_TEMPLATE
-void ORTHTREE_CLASS::SerialSplitSkeleton(Node* T, Slice In, DimsType dim,
-                                         DimsType idx,
-                                         parlay::sequence<BallsType>& sums) {
+template <typename TypeTrait>
+void OrthTree<TypeTrait>::SerialSplitSkeleton(
+    Node* T, Slice In, DimsType dim, DimsType idx,
+    parlay::sequence<BallsType>& sums) {
   // TODO: change it using the split_rule_.split()
   if (dim == BT::kDim) {
     sums[idx - kNodeRegions] = In.size();
@@ -71,9 +63,9 @@ void ORTHTREE_CLASS::SerialSplitSkeleton(Node* T, Slice In, DimsType dim,
   return;
 }
 
-ORTHTREE_TEMPLATE
-Node* ORTHTREE_CLASS::BatchInsertRecursive(Node* T, Slice In, Slice Out,
-                                           Box const& box) {
+template <typename TypeTrait>
+Node* OrthTree<TypeTrait>::BatchInsertRecursive(Node* T, Slice In, Slice Out,
+                                                Box const& box) {
   size_t n = In.size();
 
   if (n == 0) return T;
@@ -113,7 +105,7 @@ Node* ORTHTREE_CLASS::BatchInsertRecursive(Node* T, Slice In, Slice Out,
   }
 
   // NOTE: assign each Node a tag
-  InnerTree IT(*this);
+  InnerTree IT;
   IT.AssignNodeTag(T, 1);
   assert(IT.tags_num > 0 && IT.tags_num <= BT::kBucketNum);
 
@@ -151,8 +143,5 @@ Node* ORTHTREE_CLASS::BatchInsertRecursive(Node* T, Slice In, Slice Out,
   return IT.UpdateInnerTreePointers(tree_nodes);
 }
 }  // namespace psi
-
-#undef ORTHTREE_TEMPLATE
-#undef ORTHTREE_CLASS
 
 #endif  // PSI_ORTH_BATCH_INSERT_HPP_

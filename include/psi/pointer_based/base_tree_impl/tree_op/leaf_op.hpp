@@ -13,16 +13,11 @@
 #include "dependence/concepts.h"
 #include "pointer_based/base_tree.h"
 
-#define BASETREE_TEMPLATE                                                 \
-  template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight, \
-            uint_fast8_t kImbaRatio>
-#define BASETREE_CLASS BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>
-
 namespace psi {
 
-BASETREE_TEMPLATE
+template <class TypeTrait, typename DerivedTree>
 template <typename Leaf, typename Range>
-void BASETREE_CLASS::ExtractPointsInLeaf(Node* T, Range Out) {
+void BaseTree<TypeTrait, DerivedTree>::ExtractPointsInLeaf(Node* T, Range Out) {
   Leaf* TL = static_cast<Leaf*>(T);
   if (TL->is_dummy) {
     std::ranges::fill_n(Out.begin(), TL->size, TL->pts[0]);
@@ -32,9 +27,9 @@ void BASETREE_CLASS::ExtractPointsInLeaf(Node* T, Range Out) {
   return;
 }
 
-BASETREE_TEMPLATE
+template <class TypeTrait, typename DerivedTree>
 template <typename Leaf>
-Node* BASETREE_CLASS::InsertPoints2Leaf(Node* T, Slice In) {
+Node* BaseTree<TypeTrait, DerivedTree>::InsertPoints2Leaf(Node* T, Slice In) {
   Leaf* TL = static_cast<Leaf*>(T);
   if (TL->is_dummy) {
     T->size += In.size();
@@ -55,10 +50,10 @@ Node* BASETREE_CLASS::InsertPoints2Leaf(Node* T, Slice In) {
   return T;
 }
 
-BASETREE_TEMPLATE
+template <class TypeTrait, typename DerivedTree>
 template <typename Leaf, typename ReturnType>
-ReturnType BaseTree<Point, DerivedTree, kSkHeight,
-                    kImbaRatio>::DeletePoints4Leaf(Node* T, Slice In) {
+ReturnType BaseTree<TypeTrait, DerivedTree>::DeletePoints4Leaf(Node* T,
+                                                               Slice In) {
   assert(T->size >= In.size());
   Leaf* TL = static_cast<Leaf*>(T);
 
@@ -114,9 +109,10 @@ ReturnType BaseTree<Point, DerivedTree, kSkHeight,
 
 // NOTE: diff points from the leaf using std::set_difference
 // {1, 2, 5, 5, 5, 9} ∖ {2, 5, 7} == {1, 5, 5, 9}
-BASETREE_TEMPLATE
+template <class TypeTrait, typename DerivedTree>
 template <typename Leaf, typename ReturnType>
-ReturnType BASETREE_CLASS::DiffPoints4Leaf(Node* T, Slice In) {
+ReturnType BaseTree<TypeTrait, DerivedTree>::DiffPoints4Leaf(Node* T,
+                                                             Slice In) {
   Leaf* TL = static_cast<Leaf*>(T);
 
   if (TL->is_dummy) {
@@ -164,8 +160,5 @@ ReturnType BASETREE_CLASS::DiffPoints4Leaf(Node* T, Slice In) {
   }
 }
 }  // namespace psi
-
-#undef BASETREE_TEMPLATE
-#undef BASETREE_CLASS
 
 #endif  // PSI_BASE_TREE_IMPL_LEAF_OP_HPP_

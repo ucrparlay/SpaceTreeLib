@@ -101,7 +101,7 @@ class Tree {
   size_t leaf_size = 1;
 
   shared_ptr<BaseNode> root;
-  vector<shared_ptr<BaseNode> > multi_version_roots = {};
+  vector<shared_ptr<BaseNode>> multi_version_roots = {};
 
   Tree(size_t _leaf_sz);
 
@@ -501,16 +501,10 @@ auto Tree::collect_records(shared_ptr<BaseNode>& x) {
   return ret;
 }
 
-template <typename Point, typename SplitRule, uint_fast8_t kSkHeight = 6,
-          uint_fast8_t kImbaRatio = 30>
-class Zdtree
-    : public psi::BaseTree<Point,
-                            Zdtree<Point, SplitRule, kSkHeight, kImbaRatio>,
-                            kSkHeight, kImbaRatio> {
+template <typename TypeTrait>
+class Zdtree : public psi::BaseTree<TypeTrait, Zdtree<TypeTrait>> {
  public:
-  using BT =
-      psi::BaseTree<Point, Zdtree<Point, SplitRule, kSkHeight, kImbaRatio>,
-                     kSkHeight, kImbaRatio>;
+  using BT = psi::BaseTree<TypeTrait, Zdtree<TypeTrait>>;
   using BucketType = typename BT::BucketType;
   using BallsType = typename BT::BallsType;
   using DimsType = typename BT::DimsType;

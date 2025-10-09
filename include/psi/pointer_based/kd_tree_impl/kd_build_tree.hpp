@@ -5,21 +5,14 @@
 #include <parlay/slice.h>
 #include <parlay/type_traits.h>
 
-#include "../kd_tree.h"
-#include "../../dependence/tree_node.h"
-
-#define KDTREE_TEMPLATE                                               \
-  template <typename Point, typename SplitRule, typename LeafAugType, \
-            typename InteriorAugType, uint_fast8_t kSkHeight,         \
-            uint_fast8_t kImbaRatio>
-#define KDTREE_CLASS \
-  KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight, kImbaRatio>
+#include "dependence/tree_node.h"
+#include "pointer_based/kd_tree.h"
 
 namespace psi {
 
-KDTREE_TEMPLATE
+template <typename TypeTrait>
 template <typename Range>
-void KDTREE_CLASS::Build(Range&& In) {
+void KdTree<TypeTrait>::Build(Range&& In) {
   static_assert(parlay::is_random_access_range_v<Range>);
   static_assert(
       parlay::is_less_than_comparable_v<parlay::range_reference_type_t<Range>>);
@@ -30,10 +23,10 @@ void KDTREE_CLASS::Build(Range&& In) {
   Build_(A);
 }
 
-KDTREE_TEMPLATE
-void KDTREE_CLASS::DivideRotate(Slice In, SplitterSeq& pivots, DimsType dim,
-                                BucketType idx, BoxSeq& box_seq,
-                                Box const& box) {
+template <typename TypeTrait>
+void KdTree<TypeTrait>::DivideRotate(Slice In, SplitterSeq& pivots,
+                                     DimsType dim, BucketType idx,
+                                     BoxSeq& box_seq, Box const& box) {
   if (idx > BT::kPivotNum) {
     box_seq[idx - BT::kBucketNum] = box;
     pivots[idx] = Splitter(0, idx - BT::kBucketNum);
@@ -55,10 +48,10 @@ void KDTREE_CLASS::DivideRotate(Slice In, SplitterSeq& pivots, DimsType dim,
   return;
 }
 
-KDTREE_TEMPLATE
-void KDTREE_CLASS::PickPivots(Slice In, size_t const& n, SplitterSeq& pivots,
-                              DimsType const dim, BoxSeq& box_seq,
-                              Box const& bx) {
+template <typename TypeTrait>
+void KdTree<TypeTrait>::PickPivots(Slice In, size_t const& n,
+                                   SplitterSeq& pivots, DimsType const dim,
+                                   BoxSeq& box_seq, Box const& bx) {
   size_t size = std::min(n, static_cast<size_t>(32 * BT::kBucketNum));
   assert(size <= n);
 
@@ -69,9 +62,9 @@ void KDTREE_CLASS::PickPivots(Slice In, size_t const& n, SplitterSeq& pivots,
   return;
 }
 
-KDTREE_TEMPLATE
-auto KDTREE_CLASS::SerialBuildRecursive(Slice In, Slice Out, DimsType dim,
-                                        Box const& box) -> Node* {
+template <typename TypeTrait>
+auto KdTree<TypeTrait>::SerialBuildRecursive(Slice In, Slice Out, DimsType dim,
+                                             Box const& box) -> Node* {
   size_t n = In.size();
 
   if (n == 0) return AllocEmptyLeafNode<Slice, Leaf>();
@@ -121,9 +114,9 @@ auto KDTREE_CLASS::SerialBuildRecursive(Slice In, Slice Out, DimsType dim,
   return AllocInteriorNode<Interior>(L, R, split.value());
 }
 
-KDTREE_TEMPLATE
-auto KDTREE_CLASS::BuildRecursive(Slice In, Slice Out, DimsType dim,
-                                  Box const& bx) -> Node* {
+template <typename TypeTrait>
+auto KdTree<TypeTrait>::BuildRecursive(Slice In, Slice Out, DimsType dim,
+                                       Box const& bx) -> Node* {
   assert(In.size() == 0 || BT::WithinBox(BT::GetBox(In), bx));
 
   if (In.size() <= BT::kSerialBuildCutoff) {
@@ -175,8 +168,8 @@ auto KDTREE_CLASS::BuildRecursive(Slice In, Slice Out, DimsType dim,
   return BT::template BuildInnerTree<Leaf, Interior>(1, pivots, tree_nodes);
 }
 
-KDTREE_TEMPLATE
-void KDTREE_CLASS::Build_(Slice A) {
+template <typename TypeTrait>
+void KdTree<TypeTrait>::Build_(Slice A) {
   Points B = Points::uninitialized(A.size());
   this->tree_box_ = BT::GetBox(A);
   this->root_ = BuildRecursive(A, B.cut(0, A.size()), 0, this->tree_box_);
@@ -185,8 +178,5 @@ void KDTREE_CLASS::Build_(Slice A) {
 }
 
 }  // namespace psi
-
-#undef KDTREE_TEMPLATE
-#undef KDTREE_CLASS
 
 #endif  // PSI_KD_TREE_IMPL_KD_BUILD_TREE_HPP_

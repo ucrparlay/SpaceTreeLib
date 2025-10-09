@@ -13,17 +13,12 @@
 #include "dependence/tree_node.h"
 #include "pointer_based/base_tree.h"
 
-#define BASETREE_TEMPLATE                                                 \
-  template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight, \
-            uint_fast8_t kImbaRatio>
-#define BASETREE_CLASS BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>
-
 namespace psi {
 
 // NOTE: expand a multi node into a binary node recursively
-BASETREE_TEMPLATE
+template <class TypeTrait, typename DerivedTree>
 template <IsBinaryNode BN, IsMultiNode MN>
-Node* BASETREE_CLASS::ExpandMultiNode(
+Node* BaseTree<TypeTrait, DerivedTree>::ExpandMultiNode(
     typename MN::ST const& split, BucketType idx, BucketType deep,
     parlay::sequence<Node*> const& tree_nodes) {
   if (idx >= MN::kRegions) {
@@ -38,9 +33,9 @@ Node* BASETREE_CLASS::ExpandMultiNode(
 }
 
 // NOTE: expand a tree with multi-way nodes into one with binary nodes
-BASETREE_TEMPLATE
+template <class TypeTrait, typename DerivedTree>
 template <IsBinaryNode BN, IsMultiNode MN>
-Node* BASETREE_CLASS::Expand2Binary(Node* T)
+Node* BaseTree<TypeTrait, DerivedTree>::Expand2Binary(Node* T)
   requires std::same_as<typename BN::ST, typename MN::ST::value_type>
 {
   if (T->is_leaf) {
@@ -61,12 +56,11 @@ Node* BASETREE_CLASS::Expand2Binary(Node* T)
   return ExpandMultiNode<BN, MN>(split, 1, 0, tree_nodes);
 }
 
-BASETREE_TEMPLATE
+template <class TypeTrait, typename DerivedTree>
 template <IsBinaryNode BN, IsMultiNode MN>
-void BASETREE_CLASS::CompressBinaryNode(Node* bn_proto,
-                                        typename MN::NodeArr& tree_nodes,
-                                        typename MN::ST& split,
-                                        BucketType idx) {
+void BaseTree<TypeTrait, DerivedTree>::CompressBinaryNode(
+    Node* bn_proto, typename MN::NodeArr& tree_nodes, typename MN::ST& split,
+    BucketType idx) {
   if (idx >= MN::GetRegions()) {
     tree_nodes[idx - MN::GetRegions()] = bn_proto;
     return;
@@ -80,9 +74,9 @@ void BASETREE_CLASS::CompressBinaryNode(Node* bn_proto,
   return;
 }
 
-BASETREE_TEMPLATE
+template <class TypeTrait, typename DerivedTree>
 template <IsBinaryNode BN, IsMultiNode MN>
-Node* BASETREE_CLASS::Compress2Multi(Node* T)
+Node* BaseTree<TypeTrait, DerivedTree>::Compress2Multi(Node* T)
   requires std::same_as<typename BN::ST, typename MN::ST::value_type>
 {
   if (T->is_leaf) {
@@ -112,8 +106,5 @@ Node* BASETREE_CLASS::Compress2Multi(Node* T)
 }
 
 }  // namespace psi
-
-#undef BASETREE_TEMPLATE
-#undef BASETREE_CLASS
 
 #endif  // PSI_BASE_TREE_IMPL_COMPRESS_EXPAND_TREE_HPP_

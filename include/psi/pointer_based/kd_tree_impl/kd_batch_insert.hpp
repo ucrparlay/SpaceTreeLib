@@ -3,18 +3,10 @@
 
 #include "../kd_tree.h"
 #include "parlay/slice.h"
-
-#define KDTREE_TEMPLATE                                               \
-  template <typename Point, typename SplitRule, typename LeafAugType, \
-            typename InteriorAugType, uint_fast8_t kSkHeight,         \
-            uint_fast8_t kImbaRatio>
-#define KDTREE_CLASS \
-  KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight, kImbaRatio>
-
 namespace psi {
 
-KDTREE_TEMPLATE
-void KDTREE_CLASS::BatchInsert(Slice A) {
+template <typename TypeTrait>
+void KdTree<TypeTrait>::BatchInsert(Slice A) {
   if (this->root_ == nullptr) {
     return Build_(A);
   }
@@ -32,9 +24,9 @@ void KDTREE_CLASS::BatchInsert(Slice A) {
   return;
 }
 
-KDTREE_TEMPLATE
-auto KDTREE_CLASS::BatchInsertRecursive(Node* T, Slice In, Slice Out,
-                                        DimsType d) -> Node* {
+template <typename TypeTrait>
+auto KdTree<TypeTrait>::BatchInsertRecursive(Node* T, Slice In, Slice Out,
+                                             DimsType d) -> Node* {
   size_t n = In.size();
 
   if (n == 0) return T;
@@ -50,8 +42,8 @@ auto KDTREE_CLASS::BatchInsertRecursive(Node* T, Slice In, Slice Out,
          parlay::all_of(In, [&](Point const& p) { return p == TL->pts[0]; }))) {
       return BT::template InsertPoints2Leaf<Leaf>(T, In);
     } else {
-      return BT::template RebuildWithInsert<Leaf, Interior>(T, prepare_func, In,
-                                                            d);
+      return this->template RebuildWithInsert<Leaf, Interior>(T, prepare_func,
+                                                              In, d);
     }
   }
 
@@ -66,8 +58,8 @@ auto KDTREE_CLASS::BatchInsertRecursive(Node* T, Slice In, Slice Out,
 
     if (split_rule_.AllowRebuild() &&
         BT::ImbalanceNode(TI->left->size + split_pos, TI->size + n)) {
-      return BT::template RebuildWithInsert<Leaf, Interior>(T, prepare_func, In,
-                                                            d);
+      return this->template RebuildWithInsert<Leaf, Interior>(T, prepare_func,
+                                                              In, d);
     }
 
     Node *L, *R;
@@ -82,7 +74,7 @@ auto KDTREE_CLASS::BatchInsertRecursive(Node* T, Slice In, Slice Out,
     return T;
   }
 
-  InnerTree IT(*this);
+  InnerTree IT;
   assert(IT.rev_tag.size() == BT::kBucketNum);
   IT.AssignNodeTag(T, 1);
   assert(IT.tags_num > 0 && IT.tags_num <= BT::kBucketNum);
@@ -123,7 +115,7 @@ auto KDTREE_CLASS::BatchInsertRecursive(Node* T, Slice In, Slice Out,
                      IT.sums_tree[IT.rev_tag[i]] >=
                  0);
 
-          tree_nodes[i] = BT::template RebuildWithInsert<Leaf, Interior>(
+          tree_nodes[i] = this->template RebuildWithInsert<Leaf, Interior>(
               IT.tags[IT.rev_tag[i]].first, prepare_func,
               Out.cut(s, s + IT.sums_tree[IT.rev_tag[i]]), next_dim);
         }
@@ -134,8 +126,5 @@ auto KDTREE_CLASS::BatchInsertRecursive(Node* T, Slice In, Slice Out,
 }
 
 }  // namespace psi
-
-#undef KDTREE_TEMPLATE
-#undef KDTREE_CLASS
 
 #endif  // PSI_KD_TREE_IMPL_KD_BATCH_INSERT_HPP_

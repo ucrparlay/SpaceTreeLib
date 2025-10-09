@@ -6,11 +6,11 @@
 namespace psi {
 namespace inner_tree_detail {
 
-template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio, typename Leaf, typename Interior>
+template <class TypeTrait, typename DerivedTree, typename Leaf,
+          typename Interior>
   requires IsBinaryNode<Interior>
 struct BinaryNodeOps {
-  using BT = BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>;
+  using BT = BaseTree<TypeTrait, DerivedTree>;
   using InnerTree = typename BT::template InnerTree<Leaf, Interior>;
   using Box = typename BT::Box;
   using BoxSeq = typename BT::BoxSeq;

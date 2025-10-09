@@ -6,20 +6,17 @@
 #include <optional>
 #include <utility>
 
-#include "base_tree.h"
 #include "../dependence/cpam/cpam.h"
+#include "base_tree.h"
 
 namespace psi {
 
-template <typename Point, typename SplitRule, uint_fast8_t kSkHeight = 6,
-          uint_fast8_t kImbaRatio = 30>
-class PTree
-    : public BaseTree<Point, PTree<Point, SplitRule, kSkHeight, kImbaRatio>,
-                      kSkHeight, kImbaRatio> {
+template <typename TypeTrait>
+class PTree : public BaseTree<TypeTrait, PTree<TypeTrait>> {
  public:
-  using BT = BaseTree<Point, PTree<Point, SplitRule, kSkHeight, kImbaRatio>,
-                      kSkHeight, kImbaRatio>;
+  using BT = BaseTree<TypeTrait, PTree<TypeTrait>>;
 
+  using Point = typename BT::Point;
   using BucketType = typename BT::BucketType;
   using BallsType = typename BT::BallsType;
   using DimsType = typename BT::DimsType;
@@ -44,6 +41,7 @@ class PTree
   using Splitter = HyperPlane;
   using SplitterSeq = HyperPlaneSeq;
   // using AugType = std::optional<bool>;
+  using SplitRule = typename TypeTrait::SplitRule;
   using SplitRuleType = SplitRule;
 
   // NOTE: for the CPAM

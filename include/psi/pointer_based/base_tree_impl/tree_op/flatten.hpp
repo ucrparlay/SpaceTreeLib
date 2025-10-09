@@ -12,25 +12,20 @@
 
 #include "../../base_tree.h"
 
-#define BASETREE_TEMPLATE                                                 \
-  template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight, \
-            uint_fast8_t kImbaRatio>
-#define BASETREE_CLASS BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>
-
 namespace psi {
 
-BASETREE_TEMPLATE
+template <class TypeTrait, typename DerivedTree>
 template <SupportsForceParallel Interior, bool granularity>
-inline bool BaseTree<Point, DerivedTree, kSkHeight,
-                     kImbaRatio>::ForceParallelRecursion(Interior const* TI) {
+inline bool BaseTree<TypeTrait, DerivedTree>::ForceParallelRecursion(
+    Interior const* TI) {
   return (granularity && TI->size > kSerialBuildCutoff) ||
          (!granularity && TI->ForceParallel());
 }
 
-BASETREE_TEMPLATE
+template <class TypeTrait, typename DerivedTree>
 template <typename Leaf, IsBinaryNode Interior, typename Range,
           bool granularity>
-void BASETREE_CLASS::FlattenRec(Node* T, Range Out) {
+void BaseTree<TypeTrait, DerivedTree>::FlattenRec(Node* T, Range Out) {
   assert(T->size == Out.size());
 
   if (T->size == 0) return;
@@ -56,9 +51,9 @@ void BASETREE_CLASS::FlattenRec(Node* T, Range Out) {
   return;
 }
 
-BASETREE_TEMPLATE
+template <class TypeTrait, typename DerivedTree>
 template <typename Leaf, typename Interior, typename Range, bool granularity>
-void BASETREE_CLASS::FlattenRec(Node* T, Range Out)
+void BaseTree<TypeTrait, DerivedTree>::FlattenRec(Node* T, Range Out)
   requires(!IsBinaryNode<Interior>)
 {
   assert(T->size == Out.size());
@@ -95,9 +90,10 @@ void BASETREE_CLASS::FlattenRec(Node* T, Range Out)
 }
 
 // NOTE: for multi node @T, it only flatten the subtree with id @idx to @Out
-BASETREE_TEMPLATE
+template <class TypeTrait, typename DerivedTree>
 template <typename Leaf, IsMultiNode Interior, typename Range, bool granularity>
-void BASETREE_CLASS::PartialFlatten(Node* T, Range Out, BucketType idx) {
+void BaseTree<TypeTrait, DerivedTree>::PartialFlatten(Node* T, Range Out,
+                                                      BucketType idx) {
   if (idx == 1) {
     assert(T->size == Out.size());
     FlattenRec<Leaf, Interior>(T, Out.cut(0, T->size));
@@ -125,8 +121,5 @@ void BASETREE_CLASS::PartialFlatten(Node* T, Range Out, BucketType idx) {
   return;
 }
 }  // namespace psi
-
-#undef BASETREE_TEMPLATE
-#undef BASETREE_CLASS
 
 #endif  // PSI_BASE_TREE_IMPL_TREE_OP_FLATTEN_HPP_

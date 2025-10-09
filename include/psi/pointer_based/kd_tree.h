@@ -6,24 +6,17 @@
 #include <optional>
 #include <utility>
 
-#include "base_tree.h"
 #include "../dependence/concepts.h"
+#include "base_tree.h"
 
 namespace psi {
 
-template <typename Point, typename SplitRule, typename LeafAugType,
-          typename InteriorAugType, uint_fast8_t kSkHeight = 6,
-          uint_fast8_t kImbaRatio = 30>
-class KdTree : public BaseTree<Point,
-                               KdTree<Point, SplitRule, LeafAugType,
-                                      InteriorAugType, kSkHeight, kImbaRatio>,
-                               kSkHeight, kImbaRatio> {
+template <typename TypeTrait>
+class KdTree : public BaseTree<TypeTrait, KdTree<TypeTrait>> {
  public:
-  using BT = BaseTree<Point,
-                      KdTree<Point, SplitRule, LeafAugType, InteriorAugType,
-                             kSkHeight, kImbaRatio>,
-                      kSkHeight, kImbaRatio>;
+  using BT = BaseTree<TypeTrait, KdTree<TypeTrait>>;
 
+  using Point = typename BT::Point;
   using BucketType = typename BT::BucketType;
   using BallsType = typename BT::BallsType;
   using DimsType = typename BT::DimsType;
@@ -47,7 +40,11 @@ class KdTree : public BaseTree<Point,
   using NodeBoxSeq = typename BT::NodeBoxSeq;
   using Splitter = HyperPlane;
   using SplitterSeq = HyperPlaneSeq;
-  using SplitRuleType = SplitRule;
+
+  using SplitRuleType = TypeTrait::SplitRule;
+  using SplitRule = typename TypeTrait::SplitRule;
+  using LeafAugType = typename TypeTrait::LeafAugType;
+  using InteriorAugType = typename TypeTrait::InteriorAugType;
 
   static constexpr DimsType const kMD = 2;
   using CompressNodeSplitter = std::array<HyperPlane, 1 << kMD>;
