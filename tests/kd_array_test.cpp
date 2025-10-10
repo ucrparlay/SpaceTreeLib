@@ -28,8 +28,7 @@ int main(int argc, char* argv[]) {
 
   };
 
-  ArrayWrapper::ApplyArrayTree(tree_type, dims, split_type, params,
-                               DefaultTestFunc);
+  Wrapper::ApplyArrayTree(tree_type, dims, split_type, params, DefaultTestFunc);
 
   return 0;
 }

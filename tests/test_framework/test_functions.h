@@ -52,9 +52,7 @@ void BuildTree(parlay::sequence<Point> const& WP, int const& rounds, Tree& pkd,
       size_t max_deep = 0;
       std::cout << aveBuild << " ";
       if constexpr (IsKdTree<Tree> || IsOrthTree<Tree>) {
-        std::cout << pkd.template GetMaxTreeDepth<Leaf, Interior>(pkd.GetRoot(),
-                                                                  max_deep)
-                  << " " << pkd.template GetAveTreeHeight<Leaf, Interior>()
+        std::cout << pkd.GetMaxTreeDepth() << " " << pkd.GetAveTreeHeight()
                   << " " << std::flush;
       } else {
         std::cout << "-1 -1"
@@ -414,7 +412,7 @@ void QueryKNN([[maybe_unused]] uint_fast8_t const& Dim,
   using Interior = typename Tree::Interior;
   size_t n = WP.size();
   double loopLate = rounds > 1 ? 0.01 : -0.1;
-  auto* KDParallelRoot = pkd.GetRoot();
+  auto KDParallelRoot = pkd.GetRoot();
 
   Points wp = WP;
 
@@ -445,12 +443,11 @@ void QueryKNN([[maybe_unused]] uint_fast8_t const& Dim,
       [&]() {});
 
   std::cout << aveQuery << " " << std::flush;
-  if (printHeight) {
-    size_t max_deep = 0;
-    std::cout << pkd.template GetMaxTreeDepth<Leaf, Interior>(pkd.GetRoot(),
-                                                              max_deep)
-              << " " << pkd.template GetAveTreeHeight<Leaf, Interior>() << " "
+  if (printHeight && (IsKdTree<Tree> || IsOrthTree<Tree>)) {
+    std::cout << pkd.GetMaxTreeDepth() << " " << pkd.GetAveTreeHeight() << " "
               << std::flush;
+  } else {
+    std::cout << "-1 -1 " << " " << std::flush;
   }
   if (printVisNode) {
     std::cout << static_cast<double>(parlay::reduce(vis_leaf.cut(0, n))) /

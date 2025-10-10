@@ -368,6 +368,15 @@ class Wrapper {
 
   template <class PointType, class SplitRuleType, class LeafAugType,
             class InteriorAugType>
+  struct ArrayTreeWrapper {
+    using Point = PointType;
+    using SplitRule = SplitRuleType;
+    using TreeType = typename psi::array_based::KdTreeArray<psi::TypeTrait<
+        Point, psi::Node, SplitRule, LeafAugType, InteriorAugType>>;
+  };
+
+  template <class PointType, class SplitRuleType, class LeafAugType,
+            class InteriorAugType>
   struct OrthTreeWrapper {
     using Point = PointType;
     using SplitRule = SplitRuleType;
@@ -687,6 +696,55 @@ class Wrapper {
       run_with_split_type.template operator()<AugPoint<Coord, 2, AugIdCode>>();
     } else if (dim == 3) {
       run_with_split_type.template operator()<AugPoint<Coord, 3, AugIdCode>>();
+    }
+  }
+
+  template <typename RunFunc>
+  static void ApplyArrayTree(int const tree_type, int const dim,
+                             int const split_type, commandLine& params,
+                             RunFunc test_func) {
+    auto build_tree_type = [&]<typename Point, typename SplitRule>() {
+      using BT = psi::BaseTree<psi::TypeTrait<Point>>;
+      if (tree_type == 0) {
+        Run<ArrayTreeWrapper<Point, SplitRule, LeafAugBox<BT>,
+                             InteriorAugBox<BT>>>(params, test_func);
+      }
+    };
+
+    // NOTE: pick the split rule
+    // The lsb is the dim rule and the msb is the divide rule
+    auto run_with_split_type = [&]<typename Point>() {
+      if (!(split_type & (1 << 0)) && !(split_type & (1 << 1))) {
+        // NOTE: 0 -> max_stretch + object_mid
+        build_tree_type.template
+        operator()<Point, psi::OrthogonalSplitRule<
+                              psi::MaxStretchDim<psi::TypeTrait<Point>>,
+                              psi::ObjectMedian<psi::TypeTrait<Point>>>>();
+      } else if ((split_type & (1 << 0)) && !(split_type & (1 << 1))) {
+        // NOTE: 1 -> rotate_dim + object_mid
+        build_tree_type.template
+        operator()<Point, psi::OrthogonalSplitRule<
+                              psi::RotateDim<psi::TypeTrait<Point>>,
+                              psi::ObjectMedian<psi::TypeTrait<Point>>>>();
+      } else if (!(split_type & (1 << 0)) && (split_type & (1 << 1))) {
+        // NOTE: 2 -> max_stretch + spatial_median
+        build_tree_type.template
+        operator()<Point, psi::OrthogonalSplitRule<
+                              psi::MaxStretchDim<psi::TypeTrait<Point>>,
+                              psi::SpatialMedian<psi::TypeTrait<Point>>>>();
+      } else if ((split_type & (1 << 0)) && (split_type & (1 << 1))) {
+        // NOTE: 3 -> rotate + spatial_median
+        build_tree_type.template
+        operator()<Point, psi::OrthogonalSplitRule<
+                              psi::RotateDim<psi::TypeTrait<Point>>,
+                              psi::SpatialMedian<psi::TypeTrait<Point>>>>();
+      } else {
+        std::cout << "Unsupported split type: " << split_type << std::endl;
+      }
+    };
+
+    if (dim == 2) {
+      run_with_split_type.template operator()<AugPoint<Coord, 2, AugId>>();
     }
   }
 };

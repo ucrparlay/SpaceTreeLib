@@ -5,58 +5,52 @@
 namespace psi {
 namespace array_based {
 
-#define KDTREEARRAY_TEMPLATE                                          \
-  template <typename Point, typename SplitRule, typename NodeAugType, \
-            uint_fast8_t kInnerNodeLevels, uint_fast8_t kSkHeight,    \
-            uint_fast8_t kImbaRatio>
-
-#define KDTREEARRAY_CLASS                                                 \
-  KdTreeArray<Point, SplitRule, NodeAugType, kInnerNodeLevels, kSkHeight, \
-              kImbaRatio>
-
 //==============================================================================
 // OVERRIDE IMPLEMENTATIONS
 //==============================================================================
 
-KDTREEARRAY_TEMPLATE
-constexpr void KDTREEARRAY_CLASS::DeleteTree() {
+template <typename TypeTrait>
+constexpr void KdTreeArray<TypeTrait>::DeleteTree() {
   throw std::runtime_error("KdTreeArray::DeleteTree not yet implemented");
 }
 
-KDTREEARRAY_TEMPLATE
+template <typename TypeTrait>
 template <typename Range>
-void KDTREEARRAY_CLASS::Flatten(Range&& Out) {
+void KdTreeArray<TypeTrait>::Flatten(Range&& Out) {
   // TODO: Implement
   // Traverse tree and collect all points
   throw std::runtime_error("KdTreeArray::Flatten not yet implemented");
 }
 
-KDTREEARRAY_TEMPLATE
-auto KDTREEARRAY_CLASS::RangeCount(Box const& query_box) {
+template <typename TypeTrait>
+auto KdTreeArray<TypeTrait>::RangeCount(Box const& query_box) {
   // TODO: Implement
   // Count points in range
+  RangeQueryLogger logger;
   throw std::runtime_error("KdTreeArray::RangeCount not yet implemented");
+  size_t size = 0;
+  return std::make_pair(size, logger);
 }
 
-KDTREEARRAY_TEMPLATE
+template <typename TypeTrait>
 template <typename Range>
-auto KDTREEARRAY_CLASS::RangeQuery(Box const& query_box, Range&& Out) {
+auto KdTreeArray<TypeTrait>::RangeQuery(Box const& query_box, Range&& Out) {
   // TODO: Implement
   // Query points in range
+  RangeQueryLogger logger;
   throw std::runtime_error("KdTreeArray::RangeQuery not yet implemented");
+  size_t size = 0;
+  return std::make_pair(size, logger);
 }
 
-KDTREEARRAY_TEMPLATE
+template <typename TypeTrait>
 template <typename Range>
-auto KDTREEARRAY_CLASS::KNN(NodeIndex idx, Point const& q,
-                            kBoundedQueue<Point, Range>& bq) {
-  // TODO: Implement
-  // K-nearest neighbor query using array indices
+auto KdTreeArray<TypeTrait>::KNN(NodeIndex idx, Point const& q,
+                                 kBoundedQueue<Point, Range>& bq) {
+  KNNLogger logger;
   throw std::runtime_error("KdTreeArray::KNN not yet implemented");
+  return logger;
 }
-
-#undef KDTREEARRAY_TEMPLATE
-#undef KDTREEARRAY_CLASS
 
 }  // namespace array_based
 }  // namespace psi

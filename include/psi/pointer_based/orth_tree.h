@@ -148,6 +148,17 @@ class OrthTree : public BaseTree<TypeTrait, OrthTree<TypeTrait>> {
       return "NoBox";
   }
 
+  auto GetMaxTreeDepth() {
+    size_t max_deep = 0;
+    return BT::template GetMaxTreeDepth<Leaf, Interior>(this->root_, max_deep);
+  }
+
+  auto GetAveTreeHeight() {
+    return BT::template GetAveTreeHeight<Leaf, Interior>();
+  }
+
+  auto GetTreeHeight() { return BT::template GetTreeHeight<Leaf, Interior>(); }
+
   SplitRule split_rule_;
   bool fixed_box = false;
   size_t alloc_dummy_num_ = 0;

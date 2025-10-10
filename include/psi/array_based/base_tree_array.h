@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "dependence/comparator.h"
+#include "dependence/geo_base.h"
 #include "dependence/loggers.h"
 #include "dependence/search_container.h"
 #include "dependence/tree_node_array.h"
@@ -26,8 +27,7 @@ namespace array_based {
 // - Lower memory overhead (4 bytes vs 8 bytes per reference)
 //==============================================================================
 
-template <typename Point, typename DerivedTree = void,
-          uint_fast8_t kSkHeight = 6, uint_fast8_t kImbaRatio = 30>
+template <typename TypeTrait, typename DerivedTree = void>
 class BaseTreeArray {
  public:
   //============================================================================
@@ -38,50 +38,55 @@ class BaseTreeArray {
   using NodeIndex = uint32_t;
   static constexpr NodeIndex NULL_INDEX = std::numeric_limits<NodeIndex>::max();
 
-  // 1.2 Point Types (same as pointer-based)
-  using BasicPoint = typename Point::BP;
-  using TemplatePoint = Point;
-  using Coord = typename Point::Coord;
-  using Coords = typename Point::Coords;
-  using DisType = typename Point::DisType;
+  // 1.1 Point Types
+  using BasicPoint = typename TypeTrait::BasicPoint;
+  using Coord = typename TypeTrait::Coord;
+  using Coords = typename TypeTrait::Coords;
+  using DisType = typename TypeTrait::DisType;
+  using Point = typename TypeTrait::Point;
+  using TemplatePoint = typename TypeTrait::TemplatePoint;
 
-  // 1.3 Dimension & Index Types (same as pointer-based)
-  using DimsType = uint_fast8_t;
-  using DepthType = int;
-  using BucketType =
-      std::conditional_t<(kSkHeight > 7), uint_fast16_t, uint_fast8_t>;
-  using BallsType = uint_fast32_t;
-  using IDType = uint_fast32_t;
+  // 1.2 Dimension & Index Types
+  using BallsType = typename TypeTrait::BallsType;
+  using BucketType = typename TypeTrait::BucketType;
+  using DepthType = typename TypeTrait::DepthType;
+  using DimsType = typename TypeTrait::DimsType;
+  using IDType = typename TypeTrait::IDType;
 
-  // 1.4 Container Types
-  using Num = Num_Comparator<Coord>;
-  using Slice = parlay::slice<Point*, Point*>;
-  using ConstSlice = parlay::slice<Point const*, Point const*>;
-  using Points = parlay::sequence<Point>;
-  using ConstPoints = parlay::sequence<Point> const;
-  using PointsIter = typename parlay::sequence<Point>::iterator;
-  using BucketSeq = parlay::sequence<BucketType>;
-  using BallSeq = parlay::sequence<BallsType>;
+  // 1.3 Container Types
+  using BallSeq = typename TypeTrait::BallSeq;
+  using BucketSeq = typename TypeTrait::BucketSeq;
+  using ConstPoints = typename TypeTrait::ConstPoints;
+  using ConstSlice = typename TypeTrait::ConstSlice;
+  using Num = typename TypeTrait::Num;
+  using Points = typename TypeTrait::Points;
+  using PointsIter = typename TypeTrait::PointsIter;
+  using Slice = typename TypeTrait::Slice;
 
-  // 1.5 Spatial Structures
-  using HyperPlane = std::pair<Coord, DimsType>;
-  using HyperPlaneSeq = parlay::sequence<HyperPlane>;
-  using Box = std::pair<BasicPoint, BasicPoint>;
-  using BoxSeq = parlay::sequence<Box>;
+  // 1.4 Spatial Structures
+  using Box = typename TypeTrait::Box;
+  using BoxSeq = typename TypeTrait::BoxSeq;
+  using HyperPlane = typename TypeTrait::HyperPlane;
+  using HyperPlaneSeq = typename TypeTrait::HyperPlaneSeq;
 
-  // 1.6 Node-related Types (using indices instead of pointers)
-  using NodeBoolean = std::pair<NodeIndex, bool>;
-  using NodeBox = std::pair<NodeIndex, Box>;
-  using NodeBoxSeq = parlay::sequence<NodeBox>;
-  using NodeTag = std::pair<NodeIndex, uint_fast8_t>;
-  using NodeTagSeq = parlay::sequence<NodeTag>;
+  // 1.5 Node & Tree Structures
+  using NodeBoolean = typename TypeTrait::NodeBoolean;
+  using NodeBox = typename TypeTrait::NodeBox;
+  using NodeBoxSeq = typename TypeTrait::NodeBoxSeq;
+  using NodeTag = typename TypeTrait::NodeTag;
+  using NodeTagSeq = typename TypeTrait::NodeTagSeq;
+
+  // 1.6 Geometric Base
+  using Geo = GeoBase<TypeTrait>;
+  using NormalCircle = typename Geo::NormalCircle;
+  using CoverCircle = typename Geo::CoverCircle;
 
   //============================================================================
   // SECTION 2: COMPILE-TIME CONSTANTS (same as pointer-based)
   //============================================================================
 
   static constexpr DimsType const kDim = std::tuple_size_v<Coords>;
-  static constexpr BucketType const kBuildDepthOnce = kSkHeight;
+  static constexpr BucketType const kBuildDepthOnce = TypeTrait::kSkHeight;
   static constexpr BucketType const kPivotNum = (1 << kBuildDepthOnce) - 1;
   static constexpr BucketType const kBucketNum = 1 << kBuildDepthOnce;
 
@@ -113,7 +118,7 @@ class BaseTreeArray {
   static constexpr uint_fast16_t const kSerialBuildCutoff = 1 << 10;
   static constexpr uint_fast8_t const kLog2Base = 10;
   static constexpr uint_fast16_t const kBlockSize = 1 << kLog2Base;
-  static constexpr uint_fast8_t const kInbalanceRatio = kImbaRatio;
+  static constexpr uint_fast8_t const kInbalanceRatio = TypeTrait::kImbaRatio;
 
   //============================================================================
   // SECTION 3: VIRTUAL INTERFACE
@@ -129,6 +134,7 @@ class BaseTreeArray {
 
   // Size and statistics
   size_t GetSize() const { return num_points_; }
+  auto GetRoot() const { return root_; }
 
   // Box operations (similar to pointer-based)
   static Box GetEmptyBox() {
@@ -142,11 +148,6 @@ class BaseTreeArray {
   static inline size_t GetImbalanceRatio() {
     return static_cast<size_t>(kInbalanceRatio);
   }
-
-  template <typename Range>
-  static Box GetBox(Range const& In);
-
-  static Box GetBox(Box const& a, Box const& b);
 
  protected:
   //============================================================================
@@ -165,8 +166,5 @@ class BaseTreeArray {
 
 }  // namespace array_based
 }  // namespace psi
-
-// Include implementation files
-#include "base_tree_array_impl/box_op.hpp"
 
 #endif  // PSI_ARRAY_BASED_BASE_TREE_ARRAY_H_

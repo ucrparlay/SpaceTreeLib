@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <functional>
 #include <optional>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -26,23 +27,13 @@ namespace array_based {
 // Trade-off: Batch updates are more expensive (requires reallocation)
 //==============================================================================
 
-template <typename Point, typename SplitRule, typename NodeAugType,
-          uint_fast8_t kInnerNodeLevels = 6, uint_fast8_t kSkHeight = 6,
-          uint_fast8_t kImbaRatio = 30>
-class KdTreeArray
-    : public BaseTreeArray<
-          Point,
-          KdTreeArray<Point, SplitRule, NodeAugType, kSkHeight, kImbaRatio>,
-          kSkHeight, kImbaRatio> {
+template <typename TypeTrait>
+class KdTreeArray : public BaseTreeArray<TypeTrait, KdTreeArray<TypeTrait>> {
  public:
-  static constexpr uint_fast8_t kDim = Point::GetDim();
-  static constexpr uint_fast8_t kSplitterNum = 1 << kInnerNodeLevels - 1;
-  static constexpr uint_fast8_t kNodeRegions = 1 << kInnerNodeLevels;
+  using BT = BaseTreeArray<TypeTrait, KdTreeArray<TypeTrait>>;
+  using Geo = GeoBase<TypeTrait>;
 
-  using BT = BaseTreeArray<
-      Point, KdTreeArray<Point, SplitRule, NodeAugType, kSkHeight, kImbaRatio>,
-      kSkHeight, kImbaRatio>;
-
+  using Point = typename BT::Point;
   using NodeIndex = typename BT::NodeIndex;
   using BucketType = typename BT::BucketType;
   using BallsType = typename BT::BallsType;
@@ -62,13 +53,22 @@ class KdTreeArray
   using HyperPlaneSeq = typename BT::HyperPlaneSeq;
   using Splitter = HyperPlane;
   using SplitterSeq = HyperPlaneSeq;
-  using SplitRuleType = SplitRule;
+  using SplitRule = TypeTrait::SplitRule;
 
-  //============================================================================
-  // STORAGE
-  //============================================================================
+  static constexpr uint_fast8_t kDim = Point::GetDim();
+  static constexpr uint_fast8_t kInnerNodeLevels = TypeTrait::kInnerNodeLevels;
+  static constexpr uint_fast8_t kSplitterNum =
+      1 << TypeTrait::kInnerNodeLevels - 1;
+  static constexpr uint_fast8_t kNodeRegions = 1 << TypeTrait::kInnerNodeLevels;
+
+  using NodeAugType =
+      std::conditional_t<std::same_as<typename TypeTrait::LeafAugType,
+                                      typename TypeTrait::InteriorAugType>,
+                         typename TypeTrait::InteriorAugType, std::monostate>;
 
   using InnerNode = Node<Point, kInnerNodeLevels, SplitterSeq, NodeAugType>;
+  using Leaf = InnerNode;      // Leaf has same structure as InnerNode
+  using Interior = InnerNode;  // Interior has same structure as InnerNode
 
   //============================================================================
   // PUBLIC API (same interface as pointer-based KdTree)
@@ -119,10 +119,11 @@ class KdTreeArray
       return "NoBox";
   }
 
- private:
-  //============================================================================
-  // INTERNAL METHODS (using indices instead of pointers)
-  //============================================================================
+  size_t GetMaxTreeDepth() { return 0; }
+
+  double GetAveTreeHeight() { return 0; }
+
+  size_t GetTreeHeight() { return 0; }
 
   void Build_(Slice In);
 

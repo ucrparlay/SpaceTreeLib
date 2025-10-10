@@ -649,6 +649,10 @@ class Zdtree : public psi::BaseTree<TypeTrait, Zdtree<TypeTrait>> {
 
   constexpr static char const* GetTreeName() { return "ZdTree"; }
   constexpr static char const* CheckHasBox() { return "WithoutBox"; }
+  size_t GetMaxTreeDepth() { return 0; }
+  double GetAveTreeHeight() { return 0; }
+  size_t GetTreeHeight() { return 0; }
+
   Tree tree = Tree(32);
 };
 

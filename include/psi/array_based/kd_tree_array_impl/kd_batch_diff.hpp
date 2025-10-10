@@ -5,28 +5,17 @@
 namespace psi {
 namespace array_based {
 
-#define KDTREEARRAY_TEMPLATE                                          \
-  template <typename Point, typename SplitRule, typename NodeAugType, \
-            uint_fast8_t kInnerNodeLevels, uint_fast8_t kSkHeight,    \
-            uint_fast8_t kImbaRatio>
-
-#define KDTREEARRAY_CLASS                                                 \
-  KdTreeArray<Point, SplitRule, NodeAugType, kInnerNodeLevels, kSkHeight, \
-              kImbaRatio>
 //==============================================================================
 // BATCH DIFF OPERATIONS
 //==============================================================================
 
-KDTREEARRAY_TEMPLATE
+template<typename TypeTrait>
 template <typename Range>
-void KDTREEARRAY_CLASS::BatchDiff(Range&& In) {
+void KdTreeArray<TypeTrait>::BatchDiff(Range&& In) {
   // TODO: Implement
   // Similar to BatchDelete but handles points not in tree
   throw std::runtime_error("KdTreeArray::BatchDiff not yet implemented");
 }
-
-#undef KDTREEARRAY_TEMPLATE
-#undef KDTREEARRAY_CLASS
 
 }  // namespace array_based
 }  // namespace psi

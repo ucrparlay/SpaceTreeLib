@@ -14,12 +14,13 @@ namespace psi {
 
 template <typename PointType, typename NodeType = void,
           typename SplitRuleType = void, typename LeafAug = void,
-          typename InteriorAug = void, uint_fast8_t kSkHeightVal = 6,
-          uint_fast8_t kImbaRatioVal = 30>
+          typename InteriorAug = void, uint_fast8_t kInnerNodeLevelsVal = 6,
+          uint_fast8_t kSkHeightVal = 6, uint_fast8_t kImbaRatioVal = 30>
 class TypeTrait {
  public:
   static constexpr uint_fast8_t const kSkHeight = kSkHeightVal;
   static constexpr uint_fast8_t const kImbaRatio = kImbaRatioVal;
+  static constexpr uint_fast8_t const kInnerNodeLevels = kInnerNodeLevelsVal;
 
   using Point = PointType;
   using BasicPoint = typename Point::BP;

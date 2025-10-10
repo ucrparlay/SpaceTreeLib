@@ -159,7 +159,16 @@ class PTree : public BaseTree<TypeTrait, PTree<TypeTrait>> {
   constexpr static char const* GetTreeName() { return "PTree"; }
   constexpr static char const* CheckHasBox() { return "HasBox"; }
 
-  // TODO: need to hide the basetree assests, e.g., root_
+  auto GetMaxTreeDepth() {
+    size_t max_deep = 0;
+    return BT::template GetMaxTreeDepth<Leaf, Interior>(this->root_, max_deep);
+  }
+
+  auto GetAveTreeHeight() {
+    return BT::template GetAveTreeHeight<Leaf, Interior>();
+  }
+
+  auto GetTreeHeight() { return BT::template GetTreeHeight<Leaf, Interior>(); }
 
   SplitRule space_filling_curve_;
 

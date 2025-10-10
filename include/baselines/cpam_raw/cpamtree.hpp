@@ -273,6 +273,9 @@ class CpamRaw : public psi::BaseTree<TypeTrait, CpamRaw<TypeTrait>> {
   size_t GetSize() const { return cpam_aug_map_.size(); }
   constexpr static char const* GetTreeName() { return "CPAM"; }
   constexpr static char const* CheckHasBox() { return "HasBox"; }
+  size_t GetMaxTreeDepth() { return 0; }
+  double GetAveTreeHeight() { return 0; }
+  size_t GetTreeHeight() { return 0; }
   zmap cpam_aug_map_;
 };
 
