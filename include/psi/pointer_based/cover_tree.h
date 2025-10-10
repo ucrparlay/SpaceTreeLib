@@ -7,6 +7,7 @@
 #include "base_tree.h"
 
 namespace psi {
+namespace pointer_based {
 
 template <typename Point, typename SplitRule, uint_fast8_t kSkHeight = 6,
           uint_fast8_t kImbaRatio = 30>

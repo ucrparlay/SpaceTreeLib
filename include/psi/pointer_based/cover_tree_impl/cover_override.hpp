@@ -14,6 +14,7 @@
 #include "../../dependence/tree_node.h"
 
 namespace psi {
+namespace pointer_based {
 COVERTREE_TEMPLATE
 template <typename Range>
 auto COVERTREE_CLASS::KNN(Node* T, Point const& q,
@@ -61,6 +62,7 @@ constexpr void COVERTREE_CLASS::DeleteTree() {
   BT::template DeleteTreeWrapper<Leaf, Interior>();
 }
 
+}  // namespace pointer_based
 }  // namespace psi
 
 #undef COVERTREE_TEMPLATE

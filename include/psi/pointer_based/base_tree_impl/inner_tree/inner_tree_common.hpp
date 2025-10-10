@@ -6,6 +6,7 @@
 #include "pointer_based/base_tree.h"
 
 namespace psi {
+namespace pointer_based {
 namespace inner_tree_detail {
 
 static constexpr int_fast32_t kInvalidBucket = -1;
@@ -23,6 +24,7 @@ inline BucketType GetTagValue(NodeTagValue tag, BucketType kBucketNum) {
 }
 
 }  // namespace inner_tree_detail
+}  // namespace pointer_based
 }  // namespace psi
 
 #endif  // PSI_POINTER_BASED_BASE_TREE_IMPL_INNER_TREE_INNER_TREE_COMMON_HPP_

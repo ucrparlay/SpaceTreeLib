@@ -9,6 +9,7 @@
 #include "parlay/primitives.h"
 
 namespace psi {
+namespace pointer_based {
 
 // NOTE: KNN search for Point q
 template <class TypeTrait, typename DerivedTree>
@@ -420,6 +421,7 @@ void BaseTree<TypeTrait, DerivedTree>::KNNCover(Node* T, Point const& q,
   return;
 }
 
+}  // namespace pointer_based
 }  // namespace psi
 
 #endif  // PSI_POINTER_BASED_BASE_TREE_IMPL_KNN_QUERY_HPP_

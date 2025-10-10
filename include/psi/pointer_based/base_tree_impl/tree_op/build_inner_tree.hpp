@@ -13,6 +13,7 @@
 #include "../../base_tree.h"
 
 namespace psi {
+namespace pointer_based {
 template <class TypeTrait, typename DerivedTree>
 template <typename Leaf, IsBinaryNode Interior, typename ReturnType>
 ReturnType BaseTree<TypeTrait, DerivedTree>::BuildInnerTree(
@@ -55,6 +56,7 @@ Node* BaseTree<TypeTrait, DerivedTree>::BuildInnerTree(
 
   return AllocInteriorNode<Interior>(multi_nodes, split);
 }
+}  // namespace pointer_based
 }  // namespace psi
 
 #endif  // PSI_POINTER_BASED_BASE_TREE_IMPL_TREE_OP_BUILD_INNER_TREE_HPP_

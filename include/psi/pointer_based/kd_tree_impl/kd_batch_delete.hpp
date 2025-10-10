@@ -4,6 +4,7 @@
 #include "../kd_tree.h"
 
 namespace psi {
+namespace pointer_based {
 
 template <typename TypeTrait>
 template <typename Range>
@@ -196,6 +197,7 @@ auto KdTree<TypeTrait>::BatchDeleteRecursive(
   return NodeBox(new_root, new_box);
 }
 
+}  // namespace pointer_based
 }  // namespace psi
 
 #endif  // PSI_POINTER_BASED_KD_TREE_IMPL_KD_BATCH_DELETE_HPP_

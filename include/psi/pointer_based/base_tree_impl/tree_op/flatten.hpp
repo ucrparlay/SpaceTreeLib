@@ -13,6 +13,7 @@
 #include "../../base_tree.h"
 
 namespace psi {
+namespace pointer_based {
 
 template <class TypeTrait, typename DerivedTree>
 template <SupportsForceParallel Interior, bool granularity>
@@ -120,6 +121,7 @@ void BaseTree<TypeTrait, DerivedTree>::PartialFlatten(Node* T, Range Out,
       });
   return;
 }
+}  // namespace pointer_based
 }  // namespace psi
 
 #endif  // PSI_POINTER_BASED_BASE_TREE_IMPL_TREE_OP_FLATTEN_HPP_

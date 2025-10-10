@@ -15,6 +15,7 @@
 #include "parlay/slice.h"
 
 namespace psi {
+namespace pointer_based {
 
 COVERTREE_TEMPLATE
 template <typename Range>
@@ -265,6 +266,7 @@ typename COVERTREE_CLASS::NodeBoolean COVERTREE_CLASS::PointInsertRecursive(
   return {T, true};
 }
 
+}  // namespace pointer_based
 }  // namespace psi
 
 #undef COVERTREE_TEMPLATE

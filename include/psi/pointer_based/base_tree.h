@@ -14,6 +14,7 @@
 #include "dependence/tree_node.h"
 
 namespace psi {
+namespace pointer_based {
 
 //==============================================================================
 // BASE TREE CLASS
@@ -445,6 +446,7 @@ class BaseTree {
   size_t alloc_node_num_ = 0;
 };
 
+}  // namespace pointer_based
 }  // namespace psi
 
 //==============================================================================

@@ -9,6 +9,7 @@
 #include "pointer_based/kd_tree.h"
 
 namespace psi {
+namespace pointer_based {
 
 template <typename TypeTrait>
 template <typename Range>
@@ -177,6 +178,7 @@ void KdTree<TypeTrait>::Build_(Slice A) {
   return;
 }
 
+}  // namespace pointer_based
 }  // namespace psi
 
 #endif  // PSI_POINTER_BASED_KD_TREE_IMPL_KD_BUILD_TREE_HPP_

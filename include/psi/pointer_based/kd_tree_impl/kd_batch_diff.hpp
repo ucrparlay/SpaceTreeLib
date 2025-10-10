@@ -4,6 +4,7 @@
 #include "../kd_tree.h"
 
 namespace psi {
+namespace pointer_based {
 
 template <typename TypeTrait>
 template <typename Range>
@@ -127,6 +128,7 @@ auto KdTree<TypeTrait>::BatchDiffRecursive(
   return IT.template UpdateInnerTreePointersWithBox<false>(tree_nodes);
 }
 
+}  // namespace pointer_based
 }  // namespace psi
 
 #endif  // PSI_POINTER_BASED_KD_TREE_IMPL_KD_BATCH_DIFF_HPP_

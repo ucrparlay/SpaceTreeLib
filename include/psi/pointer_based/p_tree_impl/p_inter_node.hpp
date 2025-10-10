@@ -4,9 +4,10 @@
 #include "../../dependence/tree_node.h"
 #include "../p_tree.h"
 
-namespace psi {}  // namespace psi
+namespace psi {
+namespace pointer_based {
+// TODO: P-tree interior node implementation
+}  // namespace pointer_based
+}  // namespace psi
 
- 
- 
-
-#endif
+#endif  // PSI_POINTER_BASED_P_TREE_IMPL_P_INTER_NODE_HPP_

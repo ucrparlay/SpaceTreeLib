@@ -8,6 +8,7 @@
 #include "../base_tree.h"
 
 namespace psi {
+namespace pointer_based {
 // NOTE: orthogonal range count in leaf
 template <class TypeTrait, typename DerivedTree>
 template <typename Leaf>
@@ -276,6 +277,7 @@ void BaseTree<TypeTrait, DerivedTree>::RangeQuerySerialRecursive(
 
   return;
 }
+}  // namespace pointer_based
 }  // namespace psi
 
 #endif  // PSI_POINTER_BASED_BASE_TREE_IMPL_RANGE_QUERY_HPP_

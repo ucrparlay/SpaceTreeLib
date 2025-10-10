@@ -6,6 +6,7 @@
 #include "../orth_tree.h"
 
 namespace psi {
+namespace pointer_based {
 
 template <typename TypeTrait>
 template <typename Range>
@@ -117,6 +118,7 @@ Node* OrthTree<TypeTrait>::BatchDiffRecursive(Node* T, Slice In, Slice Out) {
   return IT.template UpdateInnerTreePointers<false>(tree_nodes);
 }
 
+}  // namespace pointer_based
 }  // namespace psi
 
 #endif  // PSI_POINTER_BASED_ORTH_TREE_IMPL_ORTH_BATCH_DIFF_HPP_

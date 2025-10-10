@@ -10,6 +10,7 @@
 #include "base_tree.h"
 
 namespace psi {
+namespace pointer_based {
 
 template <typename TypeTrait>
 class PTree : public BaseTree<TypeTrait, PTree<TypeTrait>> {
@@ -165,6 +166,7 @@ class PTree : public BaseTree<TypeTrait, PTree<TypeTrait>> {
   CpamAugMap cpam_aug_map_;
 };
 
+}  // namespace pointer_based
 }  // namespace psi
 
 #include "p_tree_impl/p_batch_delete.hpp"

@@ -10,6 +10,7 @@
 #include "../orth_tree.h"
 
 namespace psi {
+namespace pointer_based {
 template <typename TypeTrait>
 template <typename Range>
 auto OrthTree<TypeTrait>::KNN(Node* T, Point const& q,
@@ -71,6 +72,7 @@ constexpr void OrthTree<TypeTrait>::DeleteTree() {
   this->fixed_box = false;
 }
 
+}  // namespace pointer_based
 }  // namespace psi
 
  

@@ -9,6 +9,7 @@
 #include "../p_tree.h"
 
 namespace psi {
+namespace pointer_based {
 #define FT long
 
 // return the sqr distance between a point and a mbr
@@ -71,6 +72,7 @@ constexpr void PTree<TypeTrait>::DeleteTree() {
   return;
 }
 
+}  // namespace pointer_based
 }  // namespace psi
 
 #endif

@@ -7,6 +7,7 @@
 #include "base_tree.h"
 
 namespace psi {
+namespace pointer_based {
 
 template <typename TypeTrait>
 class OrthTree : public BaseTree<TypeTrait, OrthTree<TypeTrait>> {
@@ -155,6 +156,7 @@ class OrthTree : public BaseTree<TypeTrait, OrthTree<TypeTrait>> {
   size_t alloc_interior_num_ = 0;
 };
 
+}  // namespace pointer_based
 }  // namespace psi
 
 #include "orth_tree_impl/orth_batch_delete.hpp"

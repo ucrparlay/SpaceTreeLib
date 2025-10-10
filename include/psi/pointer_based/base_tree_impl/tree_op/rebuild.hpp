@@ -13,6 +13,7 @@
 #include "../../base_tree.h"
 
 namespace psi {
+namespace pointer_based {
 
 // NOTE: rebuild the tree
 template <class TypeTrait, typename DerivedTree>
@@ -161,6 +162,7 @@ Node* BaseTree<TypeTrait, DerivedTree>::RebuildTreeRecursive(
   return T;
 }
 
+}  // namespace pointer_based
 }  // namespace psi
 
 #endif  // PSI_POINTER_BASED_BASE_TREE_IMPL_TREE_OP_REBUILD_HPP_

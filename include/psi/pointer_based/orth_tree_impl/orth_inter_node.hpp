@@ -5,6 +5,7 @@
 #include "../orth_tree.h"
 
 namespace psi {
+namespace pointer_based {
 template <typename TypeTrait>
 struct OrthTree<TypeTrait>::OrthInteriorNode
     : MultiNode<Point, kMD, Splitter, InteriorAugType> {
@@ -235,6 +236,7 @@ struct OrthTree<TypeTrait>::OrthInteriorNode
   }
 };
 
+}  // namespace pointer_based
 }  // namespace psi
 
  

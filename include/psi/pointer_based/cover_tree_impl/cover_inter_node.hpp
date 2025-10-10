@@ -10,6 +10,7 @@
 #include "../../dependence/tree_node.h"
 
 namespace psi {
+namespace pointer_based {
 COVERTREE_TEMPLATE
 struct COVERTREE_CLASS::CoverInteriorNode
     : DynamicNode<Point, Splitter, AugType> {
@@ -51,6 +52,7 @@ struct COVERTREE_CLASS::CoverInteriorNode
   }
 };
 
+}  // namespace pointer_based
 }  // namespace psi
 
 #undef COVERTREE_TEMPLATE

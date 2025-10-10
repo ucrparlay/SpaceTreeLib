@@ -4,6 +4,7 @@
 #include "../cover_tree.h"
 
 namespace psi {
+namespace pointer_based {
 
 // NOTE: default batch delete
 template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
@@ -32,6 +33,7 @@ void CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDelete_(Slice A) {
   return;
 }
 
+}  // namespace pointer_based
 }  // namespace psi
 
 #endif  // PSI_POINTER_BASED_COVER_TREE_IMPL_COVER_BATCH_DELETE_HPP_

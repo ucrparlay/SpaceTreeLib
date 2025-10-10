@@ -10,6 +10,7 @@
 #include "parlay/primitives.h"
 
 namespace psi {
+namespace pointer_based {
 
 template <class TypeTrait, typename DerivedTree>
 template <typename Leaf, typename Interior>
@@ -366,6 +367,7 @@ void BaseTree<TypeTrait, DerivedTree>::CountTreeHeights(
   return;
 }
 
+}  // namespace pointer_based
 }  // namespace psi
 
 #endif  // PSI_POINTER_BASED_BASE_TREE_IMPL_VALIDATION_HPP_

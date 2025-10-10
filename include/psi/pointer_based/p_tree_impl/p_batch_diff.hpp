@@ -4,6 +4,7 @@
 #include "../p_tree.h"
 
 namespace psi {
+namespace pointer_based {
 template <typename TypeTrait>
 template <typename Range>
 void PTree<TypeTrait>::BatchDiff(Range&& In) {
@@ -29,6 +30,7 @@ void PTree<TypeTrait>::BatchDiff_(Slice A) {
   return;
 }
 
+}  // namespace pointer_based
 }  // namespace psi
 
  

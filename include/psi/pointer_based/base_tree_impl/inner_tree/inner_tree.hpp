@@ -17,6 +17,7 @@
   inner_tree_detail::MultiNodeOps<TypeTrait, DerivedTree, Leaf, Interior>
 
 namespace psi {
+namespace pointer_based {
 template <class TypeTrait, typename DerivedTree>
 template <typename Leaf, typename Interior>
 struct BaseTree<TypeTrait, DerivedTree>::InnerTree {
@@ -291,6 +292,7 @@ struct BaseTree<TypeTrait, DerivedTree>::InnerTree {
 #undef BINARY_NODE_OPS
 #undef MULTI_NODE_OPS
 
-};  // namespace psi
+}  // namespace pointer_based
+}  // namespace psi
 
 #endif  // PSI_POINTER_BASED_BASE_TREE_IMPL_INNER_TREE_INNER_TREE_HPP_

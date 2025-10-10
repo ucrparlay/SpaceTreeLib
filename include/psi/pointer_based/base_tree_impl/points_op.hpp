@@ -7,6 +7,7 @@
 #include "../base_tree.h"
 
 namespace psi {
+namespace pointer_based {
 template <class TypeTrait, typename DerivedTree>
 inline void BaseTree<TypeTrait, DerivedTree>::SamplePoints(Slice In,
                                                            Points& arr) {
@@ -185,6 +186,7 @@ void BaseTree<TypeTrait, DerivedTree>::SeievePoints(
 
   return;
 }
+}  // namespace pointer_based
 }  // namespace psi
 
  

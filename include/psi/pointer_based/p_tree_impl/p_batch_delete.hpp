@@ -4,6 +4,7 @@
 #include "../p_tree.h"
 
 namespace psi {
+namespace pointer_based {
 
 // NOTE: default batch delete
 template <typename TypeTrait>
@@ -32,6 +33,7 @@ void PTree<TypeTrait>::BatchDelete_(Slice A) {
   return;
 }
 
+}  // namespace pointer_based
 }  // namespace psi
 
  

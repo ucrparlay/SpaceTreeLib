@@ -7,6 +7,7 @@
 #include "../kd_tree.h"
 
 namespace psi {
+namespace pointer_based {
 
 template <typename TypeTrait>
 struct KdTree<TypeTrait>::KdInteriorNode
@@ -93,6 +94,7 @@ struct KdTree<TypeTrait>::KdInteriorNode
 //   }
 // };
 
+}  // namespace pointer_based
 }  // namespace psi
 
 #endif  // PSI_POINTER_BASED_KD_TREE_IMPL_KD_INTER_NODE_HPP_

@@ -14,6 +14,7 @@
 #include "pointer_based/base_tree.h"
 
 namespace psi {
+namespace pointer_based {
 
 template <class TypeTrait, typename DerivedTree>
 template <typename Leaf, typename Range>
@@ -159,6 +160,7 @@ ReturnType BaseTree<TypeTrait, DerivedTree>::DiffPoints4Leaf(Node* T,
     ;
   }
 }
+}  // namespace pointer_based
 }  // namespace psi
 
 #endif  // PSI_POINTER_BASED_BASE_TREE_IMPL_TREE_OP_LEAF_OP_HPP_

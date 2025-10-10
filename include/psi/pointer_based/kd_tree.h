@@ -10,6 +10,7 @@
 #include "base_tree.h"
 
 namespace psi {
+namespace pointer_based {
 
 template <typename TypeTrait>
 class KdTree : public BaseTree<TypeTrait, KdTree<TypeTrait>> {
@@ -146,6 +147,7 @@ class KdTree : public BaseTree<TypeTrait, KdTree<TypeTrait>> {
   SplitRule split_rule_;
 };
 
+}  // namespace pointer_based
 }  // namespace psi
 
 #include "kd_tree_impl/kd_batch_delete.hpp"

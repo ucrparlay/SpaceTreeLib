@@ -4,6 +4,7 @@
 #include "inner_tree_common.hpp"
 
 namespace psi {
+namespace pointer_based {
 namespace inner_tree_detail {
 
 template <class TypeTrait, typename DerivedTree, typename Leaf,
@@ -262,6 +263,7 @@ struct BinaryNodeOps {
 };
 
 }  // namespace inner_tree_detail
+}  // namespace pointer_based
 }  // namespace psi
 
 #endif  // PSI_POINTER_BASED_BASE_TREE_IMPL_INNER_TREE_INNER_TREE_BINARY_HPP_

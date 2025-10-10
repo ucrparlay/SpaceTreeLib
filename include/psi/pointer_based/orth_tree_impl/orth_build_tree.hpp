@@ -11,6 +11,7 @@
 #include "psi/orth_tree.h"
 
 namespace psi {
+namespace pointer_based {
 template <typename TypeTrait>
 template <typename Range, typename... Args>
 void OrthTree<TypeTrait>::Build(Range&& In, Args&&... args) {
@@ -204,6 +205,7 @@ void OrthTree<TypeTrait>::Build_(Slice A, Box const& box) {
   return;
 }
 
+}  // namespace pointer_based
 }  // namespace psi
 
  

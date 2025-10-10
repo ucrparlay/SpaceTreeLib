@@ -5,6 +5,7 @@
 #include "parlay/slice.h"
 
 namespace psi {
+namespace pointer_based {
 template <typename TypeTrait>
 void PTree<TypeTrait>::BatchInsert(Slice A) {
   if (!this->cpam_aug_map_.root ||
@@ -16,6 +17,7 @@ void PTree<TypeTrait>::BatchInsert(Slice A) {
   return;
 }
 
+}  // namespace pointer_based
 }  // namespace psi
 
  

@@ -4,6 +4,7 @@
 #include "../base_tree.h"
 
 namespace psi {
+namespace pointer_based {
 
 template <class TypeTrait, typename DerivedTree>
 inline size_t BaseTree<TypeTrait, DerivedTree>::GetImbalanceRatio() {
@@ -32,6 +33,7 @@ inline bool BaseTree<TypeTrait, DerivedTree>::SparcyNode(size_t const rm,
   // larger insert will break the leaf
   return n - rm < kThinLeaveWrap;
 }
+}  // namespace pointer_based
 }  // namespace psi
 
 #endif  // PSI_POINTER_BASED_BASE_TREE_IMPL_DIMENSINALITY_HPP_

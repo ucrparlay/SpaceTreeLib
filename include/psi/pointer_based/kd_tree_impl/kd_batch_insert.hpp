@@ -4,6 +4,7 @@
 #include "../kd_tree.h"
 #include "parlay/slice.h"
 namespace psi {
+namespace pointer_based {
 
 template <typename TypeTrait>
 void KdTree<TypeTrait>::BatchInsert(Slice A) {
@@ -125,6 +126,7 @@ auto KdTree<TypeTrait>::BatchInsertRecursive(Node* T, Slice In, Slice Out,
   return IT.UpdateInnerTreePointers(tree_nodes);
 }
 
+}  // namespace pointer_based
 }  // namespace psi
 
 #endif  // PSI_POINTER_BASED_KD_TREE_IMPL_KD_BATCH_INSERT_HPP_

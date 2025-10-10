@@ -10,6 +10,7 @@
 #include "parlay/utilities.h"
 
 namespace psi {
+namespace pointer_based {
 template <typename TypeTrait>
 template <typename Range>
 void PTree<TypeTrait>::Build(Range&& In) {
@@ -78,6 +79,7 @@ void PTree<TypeTrait>::Build_(Slice A) {
   return;
 }
 
+}  // namespace pointer_based
 }  // namespace psi
 
  

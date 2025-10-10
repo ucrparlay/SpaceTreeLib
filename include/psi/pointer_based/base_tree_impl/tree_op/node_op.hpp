@@ -13,6 +13,7 @@
 #include "../../base_tree.h"
 
 namespace psi {
+namespace pointer_based {
 template <class TypeTrait, typename DerivedTree>
 template <typename Leaf, typename Interior>
 auto BaseTree<TypeTrait, DerivedTree>::RetriveBox(Node const* node)
@@ -83,6 +84,7 @@ inline void BaseTree<TypeTrait, DerivedTree>::UpdateInterior(
   TI->UpdateAug(new_nodes);
   return;
 }
+}  // namespace pointer_based
 }  // namespace psi
 
 #endif  // PSI_POINTER_BASED_BASE_TREE_IMPL_TREE_OP_NODE_OP_HPP_

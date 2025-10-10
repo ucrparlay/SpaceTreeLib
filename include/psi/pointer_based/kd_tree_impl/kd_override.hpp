@@ -9,6 +9,7 @@
 #include "../kd_tree.h"
 
 namespace psi {
+namespace pointer_based {
 template <typename TypeTrait>
 void KdTree<TypeTrait>::Compress2Multi() {
   this->root_ = BT::template Compress2Multi<KdInteriorNode, CompressInterior>(
@@ -72,6 +73,7 @@ constexpr void KdTree<TypeTrait>::DeleteTree() {
   this->template DeleteTreeWrapper<Leaf, Interior>();
 }
 
+}  // namespace pointer_based
 }  // namespace psi
 
 #endif  // PSI_POINTER_BASED_KD_TREE_IMPL_KD_OVERRIDE_HPP_

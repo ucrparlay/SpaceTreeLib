@@ -16,6 +16,7 @@
 #include "../../dependence/tree_node.h"
 
 namespace psi {
+namespace pointer_based {
 
 COVERTREE_TEMPLATE
 void COVERTREE_CLASS::Build_(Slice A) {
@@ -47,6 +48,7 @@ void COVERTREE_CLASS::Build(Range&& In, Args&&... args) {
 
   BatchInsert(std::forward<Range>(In), std::forward<Args>(args)...);
 }
+}  // namespace pointer_based
 }  // namespace psi
 
 #undef COVERTREE_TEMPLATE

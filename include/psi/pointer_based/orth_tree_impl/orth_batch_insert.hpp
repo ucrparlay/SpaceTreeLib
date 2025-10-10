@@ -6,6 +6,7 @@
 #include "../orth_tree.h"
 
 namespace psi {
+namespace pointer_based {
 
 template <typename TypeTrait>
 template <typename Range>
@@ -142,6 +143,7 @@ Node* OrthTree<TypeTrait>::BatchInsertRecursive(Node* T, Slice In, Slice Out,
 
   return IT.UpdateInnerTreePointers(tree_nodes);
 }
+}  // namespace pointer_based
 }  // namespace psi
 
 #endif  // PSI_POINTER_BASED_ORTH_TREE_IMPL_ORTH_BATCH_INSERT_HPP_

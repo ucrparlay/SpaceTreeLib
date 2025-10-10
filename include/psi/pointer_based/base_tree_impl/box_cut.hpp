@@ -4,6 +4,7 @@
 #include "../base_tree.h"
 
 namespace psi {
+namespace pointer_based {
 template <class TypeTrait, typename DerivedTree>
 struct BaseTree<TypeTrait, DerivedTree>::BoxCut {
   using BT = BaseTree<TypeTrait, DerivedTree>;
@@ -33,6 +34,7 @@ struct BaseTree<TypeTrait, DerivedTree>::BoxCut {
   HyperPlane hp;  // PARA: the split and the cutting dimension
   bool const go_left;
 };
-};  // namespace psi
+}  // namespace pointer_based
+}  // namespace psi
 
 #endif  // PSI_POINTER_BASED_BASE_TREE_IMPL_BOX_CUT_HPP_

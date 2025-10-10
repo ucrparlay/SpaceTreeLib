@@ -5,6 +5,7 @@
 #include "../base_tree.h"
 
 namespace psi {
+namespace pointer_based {
 
 template <class TypeTrait, typename DerivedTree>
 template <typename Leaf, typename Interior>
@@ -89,6 +90,7 @@ void BaseTree<TypeTrait, DerivedTree>::DeleteTreeRecursive(Node* T) {
     FreeNode<Interior>(T);
   }
 }
+}  // namespace pointer_based
 }  // namespace psi
 
 #endif  // PSI_POINTER_BASED_BASE_TREE_IMPL_DELETE_TREE_HPP_
