@@ -1,5 +1,5 @@
-#ifndef PSI_DEPENDENCE_SPLITTER_H
-#define PSI_DEPENDENCE_SPLITTER_H
+#ifndef PSI_DEPENDENCE_SPLITTER_H_
+#define PSI_DEPENDENCE_SPLITTER_H_
 
 #include <concepts>
 #include <cstdint>
@@ -542,4 +542,4 @@ struct OrthogonalSplitRule {
 };
 }  // namespace psi
 
-#endif  // PSI_DEPENDENCE_SPLITTER_H
+#endif  // PSI_DEPENDENCE_SPLITTER_H_

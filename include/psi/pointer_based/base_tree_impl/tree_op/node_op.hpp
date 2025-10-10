@@ -1,5 +1,5 @@
-#ifndef PSI_BASE_TREE_IMPL_TREE_OP_NODE_OP_HPP_
-#define PSI_BASE_TREE_IMPL_TREE_OP_NODE_OP_HPP_
+#ifndef PSI_POINTER_BASED_BASE_TREE_IMPL_TREE_OP_NODE_OP_HPP_
+#define PSI_POINTER_BASED_BASE_TREE_IMPL_TREE_OP_NODE_OP_HPP_
 
 #include <algorithm>
 #include <cassert>
@@ -85,4 +85,4 @@ inline void BaseTree<TypeTrait, DerivedTree>::UpdateInterior(
 }
 }  // namespace psi
 
-#endif  // PSI_BASE_TREE_IMPL_TREE_OP_NODE_OP_HPP_
+#endif  // PSI_POINTER_BASED_BASE_TREE_IMPL_TREE_OP_NODE_OP_HPP_

@@ -1,5 +1,5 @@
-#ifndef PSI_KD_TREE_IMPL_KD_OVERRIDE_HPP_
-#define PSI_KD_TREE_IMPL_KD_OVERRIDE_HPP_
+#ifndef PSI_POINTER_BASED_KD_TREE_IMPL_KD_OVERRIDE_HPP_
+#define PSI_POINTER_BASED_KD_TREE_IMPL_KD_OVERRIDE_HPP_
 
 #include <type_traits>
 #include <utility>
@@ -74,4 +74,4 @@ constexpr void KdTree<TypeTrait>::DeleteTree() {
 
 }  // namespace psi
 
-#endif  // PSI_KD_TREE_IMPL_KD_OVERRIDE_HPP_
+#endif  // PSI_POINTER_BASED_KD_TREE_IMPL_KD_OVERRIDE_HPP_

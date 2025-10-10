@@ -1,5 +1,5 @@
-#ifndef PSI_P_TREE_IMPL_P_BATCH_INSERT_HPP_
-#define PSI_P_TREE_IMPL_P_BATCH_INSERT_HPP_
+#ifndef PSI_POINTER_BASED_P_TREE_IMPL_P_BATCH_INSERT_HPP_
+#define PSI_POINTER_BASED_P_TREE_IMPL_P_BATCH_INSERT_HPP_
 
 #include "../p_tree.h"
 #include "parlay/slice.h"

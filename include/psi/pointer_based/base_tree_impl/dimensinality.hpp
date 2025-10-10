@@ -1,5 +1,5 @@
-#ifndef PSI_BASE_TREE_IMPL_DIMENSIONALITY_HPP_
-#define PSI_BASE_TREE_IMPL_DIMENSIONALITY_HPP_
+#ifndef PSI_POINTER_BASED_BASE_TREE_IMPL_DIMENSINALITY_HPP_
+#define PSI_POINTER_BASED_BASE_TREE_IMPL_DIMENSINALITY_HPP_
 
 #include "../base_tree.h"
 
@@ -34,4 +34,4 @@ inline bool BaseTree<TypeTrait, DerivedTree>::SparcyNode(size_t const rm,
 }
 }  // namespace psi
 
-#endif  // PSI_BASE_TREE_IMPL_DIMENSIONALITY_HPP_
+#endif  // PSI_POINTER_BASED_BASE_TREE_IMPL_DIMENSINALITY_HPP_

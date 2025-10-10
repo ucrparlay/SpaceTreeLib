@@ -2,13 +2,13 @@
 #define PSI_ARRAY_BASED_BASE_TREE_ARRAY_H_
 
 #include <cstdint>
-#include <vector>
 #include <limits>
+#include <vector>
 
-#include "../dependence/comparator.h"
-#include "../dependence/loggers.h"
-#include "../dependence/search_container.h"
-#include "../dependence/tree_node.h"
+#include "dependence/comparator.h"
+#include "dependence/loggers.h"
+#include "dependence/search_container.h"
+#include "dependence/tree_node_array.h"
 
 namespace psi {
 namespace array_based {
@@ -129,15 +129,18 @@ class BaseTreeArray {
 
   // Size and statistics
   size_t GetSize() const { return num_points_; }
-  size_t GetNumNodes() const { return nodes_.size(); }
-  size_t GetMemoryUsage() const {
-    return nodes_.capacity() * sizeof(typename DerivedTree::Node) +
-           leaf_points_.capacity() * sizeof(Point);
-  }
 
   // Box operations (similar to pointer-based)
   static Box GetEmptyBox() {
     return Box(BasicPoint::GetMax(), BasicPoint::GetMin());
+  }
+
+  consteval static auto GetBuildDepthOnce() {
+    return static_cast<int>(kBuildDepthOnce);
+  }
+
+  static inline size_t GetImbalanceRatio() {
+    return static_cast<size_t>(kInbalanceRatio);
   }
 
   template <typename Range>
@@ -150,7 +153,7 @@ class BaseTreeArray {
   // SECTION 5: MEMBER VARIABLES
   //============================================================================
 
-  NodeIndex root_ = NULL_INDEX;           // Root node index
+  NodeIndex root_ = NULL_INDEX;  // Root node index
   parlay::internal::timer timer;
   Box tree_box_;
   size_t num_points_ = 0;

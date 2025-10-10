@@ -1,5 +1,5 @@
-#ifndef PSI_BASE_TREE_IMPL_POINTS_OP_HPP_
-#define PSI_BASE_TREE_IMPL_POINTS_OP_HPP_
+#ifndef PSI_POINTER_BASED_BASE_TREE_IMPL_POINTS_OP_HPP_
+#define PSI_POINTER_BASED_BASE_TREE_IMPL_POINTS_OP_HPP_
 
 #include <algorithm>
 #include <utility>
@@ -190,4 +190,4 @@ void BaseTree<TypeTrait, DerivedTree>::SeievePoints(
  
  
 
-#endif  // PSI_BASE_TREE_IMPL_POINTS_OP_HPP_
+#endif  // PSI_POINTER_BASED_BASE_TREE_IMPL_POINTS_OP_HPP_

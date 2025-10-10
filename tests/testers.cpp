@@ -5,8 +5,9 @@
 template <typename Tree>
 struct InnerNode {
   using Box = typename Tree::Box;
+  using Geo = typename Tree::Geo;
   InnerNode()
-      : box(Tree::GetEmptyBox()), leaf_offset(0), size(0), is_leaf(false) {}
+      : box(Geo::GetEmptyBox()), leaf_offset(0), size(0), is_leaf(false) {}
   InnerNode(Box const& _box, size_t _leaf_offset, size_t _size, bool _is_leaf)
       : box(_box), leaf_offset(_leaf_offset), size(_size), is_leaf(_is_leaf) {}
 
@@ -47,10 +48,11 @@ template <typename Tree, typename Range, typename Box>
 void RangeQueryLinear(size_t idx, auto const& leaf_seq,
                       auto const& inner_tree_seq, Range Out, size_t& s,
                       Box const& query_box, RangeQueryLogger& logger) {
+  using Geo = typename Tree::Geo;
   if (inner_tree_seq[idx].is_leaf) {
     auto const& node = inner_tree_seq[idx];
     for (int i = 0; i < node.size; i++) {
-      if (Tree::WithinBox(leaf_seq[node.leaf_offset + i], query_box)) {
+      if (Geo::WithinBox(leaf_seq[node.leaf_offset + i], query_box)) {
         Out[s++] = leaf_seq[node.leaf_offset + i];
       }
     }
@@ -62,10 +64,10 @@ void RangeQueryLinear(size_t idx, auto const& leaf_seq,
   auto recurse = [&](size_t next_idx) -> void {
     auto next_node = inner_tree_seq[next_idx];
     auto const& box = next_node.box;
-    if (!Tree::BoxIntersectBox(box, query_box)) {
+    if (!Geo::BoxIntersectBox(box, query_box)) {
       logger.skip_box_num++;
       return;
-    } else if (Tree::WithinBox(box, query_box)) {
+    } else if (Geo::WithinBox(box, query_box)) {
       logger.full_box_num++;
       // FlattenRec<Leaf, Interior>(Ts, Out.cut(s, s + Ts->size));
       for (int i = 0; i < next_node.size; i++) {
@@ -88,9 +90,10 @@ template <typename Point, typename Tree, typename Range>
 void KNNLinear(size_t idx, auto& leaf_seq, auto& inner_tree_seq, Point const& q,
                kBoundedQueue<Point, Range>& bq, KNNLogger& logger) {
   using Num = typename Tree::Num;
+  using Geo = typename Tree::Geo;
   auto const& node = inner_tree_seq[idx];
   if (bq.size() &&
-      Num::Gt(Tree::P2BMinDistanceSquare(q, node.box), bq.top_value()) &&
+      Num::Gt(Geo::P2BMinDistanceSquare(q, node.box), bq.top_value()) &&
       bq.full()) {
     logger.skip_box_num++;
     return;
@@ -103,12 +106,12 @@ void KNNLinear(size_t idx, auto& leaf_seq, auto& inner_tree_seq, Point const& q,
     while (!bq.full() && i < node.size) {
       bq.insert(std::make_pair(
           std::ref(leaf_seq[node.leaf_offset + i]),
-          Tree::P2PDistanceSquare(q, leaf_seq[node.leaf_offset + i])));
+          Geo::P2PDistanceSquare(q, leaf_seq[node.leaf_offset + i])));
       i++;
     }
     while (i < node.size) {
-      auto r = Tree::InterruptibleDistance(q, leaf_seq[node.leaf_offset + i],
-                                           bq.top_value());
+      auto r = Geo::InterruptibleDistance(q, leaf_seq[node.leaf_offset + i],
+                                          bq.top_value());
       if (Num::Lt(r, bq.top_value())) {  // PERF: the queue is full, no need to
                                          // insert points with equal distances
         bq.insert(std::make_pair(std::ref(leaf_seq[node.leaf_offset + i]), r));
@@ -123,9 +126,9 @@ void KNNLinear(size_t idx, auto& leaf_seq, auto& inner_tree_seq, Point const& q,
 
   logger.vis_interior_num++;
   // Interior* TI = static_cast<Interior*>(T);
-  Coord dist_left = Tree::P2BMinDistanceSquare(q, inner_tree_seq[idx * 2].box);
+  Coord dist_left = Geo::P2BMinDistanceSquare(q, inner_tree_seq[idx * 2].box);
   Coord dist_right =
-      Tree::P2BMinDistanceSquare(q, inner_tree_seq[idx * 2 + 1].box);
+      Geo::P2BMinDistanceSquare(q, inner_tree_seq[idx * 2 + 1].box);
   bool go_left = Num::Leq(dist_left, dist_right);
 
   KNNLinear<Point, Tree, Range>(go_left ? idx * 2 : idx * 2 + 1, leaf_seq,
@@ -296,10 +299,11 @@ typename Tree::Box ComputeBoundingBox(size_t idx, auto const& leaf_seq,
   using Leaf = typename Tree::Leaf;
   using Interior = typename Tree::Interior;
   using Box = typename Tree::Box;
+  using Geo = typename Tree::Geo;
   if (inner_tree_seq[idx].is_leaf) {
     auto const& node = inner_tree_seq[idx];
     // std::cout << node.leaf_offset << " " << node.size << std::endl;
-    return Tree::GetBox(
+    return Geo::GetBox(
         leaf_seq.cut(node.leaf_offset, node.leaf_offset + node.size));
   }
 
@@ -313,13 +317,14 @@ typename Tree::Box ComputeBoundingBox(size_t idx, auto const& leaf_seq,
         rb = ComputeBoundingBox<Point, Tree>(idx * 2 + 1, leaf_seq,
                                              inner_tree_seq);
       });
-  return Tree::GetBox(lb, rb);
+  return Geo::GetBox(lb, rb);
 }
 
 template <typename Point, typename Tree>
 void TestBoundingBox(auto const& leaf_seq, auto const& inner_tree_seq,
                      int const& kRounds, Tree& tree) {
   using Box = typename Tree::Box;
+  using Geo = typename Tree::Geo;
   size_t n = leaf_seq.size();
   Box base_box, array_box, pointer_box;
 
@@ -335,13 +340,13 @@ void TestBoundingBox(auto const& leaf_seq, auto const& inner_tree_seq,
       kRounds, 0.1, []() {},
       [&]() {
         pointer_box =
-            Tree::template GetBox<typename Tree::Leaf, typename Tree::Interior>(
+            Geo::template GetBox<typename Tree::Leaf, typename Tree::Interior>(
                 tree.GetRoot());
       },
       []() {});
 
   auto base_box_time = time_loop(
-      kRounds, 0.1, []() {}, [&]() { base_box = Tree::GetBox(leaf_seq); },
+      kRounds, 0.1, []() {}, [&]() { base_box = Geo::GetBox(leaf_seq); },
       []() {});
 
   std::cout << "Array-tree: " << array_box_time << " " << array_box.first << " "

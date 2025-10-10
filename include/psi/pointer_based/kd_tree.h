@@ -1,5 +1,5 @@
-#ifndef PSI_KD_TREE_H
-#define PSI_KD_TREE_H
+#ifndef PSI_POINTER_BASED_KD_TREE_H_
+#define PSI_POINTER_BASED_KD_TREE_H_
 
 #include <array>
 #include <functional>
@@ -155,4 +155,4 @@ class KdTree : public BaseTree<TypeTrait, KdTree<TypeTrait>> {
 #include "kd_tree_impl/kd_inter_node.hpp"
 #include "kd_tree_impl/kd_override.hpp"
 
-#endif  // PSI_KD_TREE_H
+#endif  // PSI_POINTER_BASED_KD_TREE_H_

@@ -1,5 +1,5 @@
-#ifndef PSI_COVER_TREE_IMPL_COVER_BATCH_DELETE_HPP_
-#define PSI_COVER_TREE_IMPL_COVER_BATCH_DELETE_HPP_
+#ifndef PSI_POINTER_BASED_COVER_TREE_IMPL_COVER_BATCH_DELETE_HPP_
+#define PSI_POINTER_BASED_COVER_TREE_IMPL_COVER_BATCH_DELETE_HPP_
 
 #include "../cover_tree.h"
 
@@ -34,4 +34,4 @@ void CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDelete_(Slice A) {
 
 }  // namespace psi
 
-#endif  // PSI_COVER_TREE_IMPL_COVER_BATCH_DELETE_HPP_
+#endif  // PSI_POINTER_BASED_COVER_TREE_IMPL_COVER_BATCH_DELETE_HPP_

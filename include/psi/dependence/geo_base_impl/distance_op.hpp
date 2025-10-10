@@ -1,5 +1,5 @@
-#ifndef PSI_BASE_TREE_IMPL_DISTANCE_OP_HPP_
-#define PSI_BASE_TREE_IMPL_DISTANCE_OP_HPP_
+#ifndef PSI_DEPENDENCE_GEO_BASE_IMPL_DISTANCE_OP_HPP_
+#define PSI_DEPENDENCE_GEO_BASE_IMPL_DISTANCE_OP_HPP_
 
 #include <algorithm>
 #include <utility>
@@ -140,4 +140,4 @@ GeoBase<TypeTrait>::InterruptibleDistance(Point const& p,
 
 }  // namespace psi
 
-#endif  // PSI_BASE_TREE_IMPL_DISTANCE_OP_HPP_
+#endif  // PSI_DEPENDENCE_GEO_BASE_IMPL_DISTANCE_OP_HPP_

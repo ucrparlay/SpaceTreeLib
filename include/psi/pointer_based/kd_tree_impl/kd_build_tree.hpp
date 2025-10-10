@@ -1,5 +1,5 @@
-#ifndef PSI_KD_TREE_IMPL_KD_BUILD_TREE_HPP_
-#define PSI_KD_TREE_IMPL_KD_BUILD_TREE_HPP_
+#ifndef PSI_POINTER_BASED_KD_TREE_IMPL_KD_BUILD_TREE_HPP_
+#define PSI_POINTER_BASED_KD_TREE_IMPL_KD_BUILD_TREE_HPP_
 
 #include <parlay/range.h>
 #include <parlay/slice.h>
@@ -179,4 +179,4 @@ void KdTree<TypeTrait>::Build_(Slice A) {
 
 }  // namespace psi
 
-#endif  // PSI_KD_TREE_IMPL_KD_BUILD_TREE_HPP_
+#endif  // PSI_POINTER_BASED_KD_TREE_IMPL_KD_BUILD_TREE_HPP_

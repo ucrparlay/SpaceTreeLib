@@ -1,5 +1,5 @@
-#ifndef PSI_P_TREE_IMPL_P_BUILD_TREE_HPP_
-#define PSI_P_TREE_IMPL_P_BUILD_TREE_HPP_
+#ifndef PSI_POINTER_BASED_P_TREE_IMPL_P_BUILD_TREE_HPP_
+#define PSI_POINTER_BASED_P_TREE_IMPL_P_BUILD_TREE_HPP_
 
 #include <parlay/range.h>
 #include <parlay/slice.h>

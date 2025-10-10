@@ -1,5 +1,5 @@
-#ifndef PSI_BASE_TREE_IMPL_KNN_QUERY_HPP
-#define PSI_BASE_TREE_IMPL_KNN_QUERY_HPP
+#ifndef PSI_POINTER_BASED_BASE_TREE_IMPL_KNN_QUERY_HPP_
+#define PSI_POINTER_BASED_BASE_TREE_IMPL_KNN_QUERY_HPP_
 
 #include <algorithm>
 #include <utility>
@@ -422,4 +422,4 @@ void BaseTree<TypeTrait, DerivedTree>::KNNCover(Node* T, Point const& q,
 
 }  // namespace psi
 
-#endif  // PSI_BASE_TREE_IMPL_KNN_QUERY_HPP
+#endif  // PSI_POINTER_BASED_BASE_TREE_IMPL_KNN_QUERY_HPP_

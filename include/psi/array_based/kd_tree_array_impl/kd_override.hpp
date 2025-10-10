@@ -1,15 +1,17 @@
 #ifndef PSI_ARRAY_BASED_KD_TREE_ARRAY_IMPL_KD_OVERRIDE_HPP_
 #define PSI_ARRAY_BASED_KD_TREE_ARRAY_IMPL_KD_OVERRIDE_HPP_
 
+#include "array_based/kd_tree_array.h"
 namespace psi {
 namespace array_based {
 
 #define KDTREEARRAY_TEMPLATE                                          \
-  template <typename Point, typename SplitRule, typename LeafAugType, \
-            typename InteriorAugType, uint_fast8_t kSkHeight,         \
+  template <typename Point, typename SplitRule, typename NodeAugType, \
+            uint_fast8_t kInnerNodeLevels, uint_fast8_t kSkHeight,    \
             uint_fast8_t kImbaRatio>
-#define KDTREEARRAY_CLASS \
-  KdTreeArray<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight, \
+
+#define KDTREEARRAY_CLASS                                                 \
+  KdTreeArray<Point, SplitRule, NodeAugType, kInnerNodeLevels, kSkHeight, \
               kImbaRatio>
 
 //==============================================================================
@@ -18,12 +20,7 @@ namespace array_based {
 
 KDTREEARRAY_TEMPLATE
 constexpr void KDTREEARRAY_CLASS::DeleteTree() {
-  // Array-based: just clear the vectors
-  nodes_.clear();
-  leaf_points_.clear();
-  this->root_ = BT::NULL_INDEX;
-  this->num_points_ = 0;
-  this->num_nodes_ = 0;
+  throw std::runtime_error("KdTreeArray::DeleteTree not yet implemented");
 }
 
 KDTREEARRAY_TEMPLATE

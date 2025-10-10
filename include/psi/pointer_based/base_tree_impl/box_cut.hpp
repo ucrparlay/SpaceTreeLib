@@ -1,5 +1,5 @@
-#ifndef PSI_BASE_TREE_IMPL_BOX_CUT_HPP_
-#define PSI_BASE_TREE_IMPL_BOX_CUT_HPP_
+#ifndef PSI_POINTER_BASED_BASE_TREE_IMPL_BOX_CUT_HPP_
+#define PSI_POINTER_BASED_BASE_TREE_IMPL_BOX_CUT_HPP_
 
 #include "../base_tree.h"
 
@@ -35,4 +35,4 @@ struct BaseTree<TypeTrait, DerivedTree>::BoxCut {
 };
 };  // namespace psi
 
-#endif  // PSI_BASE_TREE_IMPL_BOX_CUT_HPP_
+#endif  // PSI_POINTER_BASED_BASE_TREE_IMPL_BOX_CUT_HPP_

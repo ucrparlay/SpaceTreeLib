@@ -1,5 +1,5 @@
-#ifndef PSI_ORTH_TREE_IMPL_ORTH_BUILD_TREE_HPP_
-#define PSI_ORTH_TREE_IMPL_ORTH_BUILD_TREE_HPP_
+#ifndef PSI_POINTER_BASED_ORTH_TREE_IMPL_ORTH_BUILD_TREE_HPP_
+#define PSI_POINTER_BASED_ORTH_TREE_IMPL_ORTH_BUILD_TREE_HPP_
 
 #include <parlay/range.h>
 #include <parlay/slice.h>
@@ -209,4 +209,4 @@ void OrthTree<TypeTrait>::Build_(Slice A, Box const& box) {
  
  
 
-#endif  // PSI_ORTH_TREE_IMPL_ORTH_BUILD_TREE_HPP_
+#endif  // PSI_POINTER_BASED_ORTH_TREE_IMPL_ORTH_BUILD_TREE_HPP_

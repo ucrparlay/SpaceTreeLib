@@ -1,5 +1,5 @@
-#ifndef PSI_TOOLBOX_H
-#define PSI_TOOLBOX_H
+#ifndef PSI_DEPENDENCE_GEO_BASE_H_
+#define PSI_DEPENDENCE_GEO_BASE_H_
 
 #include <sys/types.h>
 
@@ -189,4 +189,4 @@ class GeoBase {
 #include "geo_base_impl/circle_op.hpp"    // Section 10
 #include "geo_base_impl/distance_op.hpp"  // Section 11
 
-#endif  // PSI_TOOLBOX_H
+#endif  // PSI_DEPENDENCE_GEO_BASE_H_

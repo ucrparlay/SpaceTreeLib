@@ -1,17 +1,18 @@
 #ifndef PSI_ARRAY_BASED_KD_TREE_ARRAY_IMPL_KD_BATCH_DIFF_HPP_
 #define PSI_ARRAY_BASED_KD_TREE_ARRAY_IMPL_KD_BATCH_DIFF_HPP_
 
+#include "array_based/kd_tree_array.h"
 namespace psi {
 namespace array_based {
 
 #define KDTREEARRAY_TEMPLATE                                          \
-  template <typename Point, typename SplitRule, typename LeafAugType, \
-            typename InteriorAugType, uint_fast8_t kSkHeight,         \
+  template <typename Point, typename SplitRule, typename NodeAugType, \
+            uint_fast8_t kInnerNodeLevels, uint_fast8_t kSkHeight,    \
             uint_fast8_t kImbaRatio>
-#define KDTREEARRAY_CLASS \
-  KdTreeArray<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight, \
-              kImbaRatio>
 
+#define KDTREEARRAY_CLASS                                                 \
+  KdTreeArray<Point, SplitRule, NodeAugType, kInnerNodeLevels, kSkHeight, \
+              kImbaRatio>
 //==============================================================================
 // BATCH DIFF OPERATIONS
 //==============================================================================

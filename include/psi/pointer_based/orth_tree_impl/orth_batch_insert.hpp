@@ -1,5 +1,5 @@
-#ifndef PSI_ORTH_BATCH_INSERT_HPP_
-#define PSI_ORTH_BATCH_INSERT_HPP_
+#ifndef PSI_POINTER_BASED_ORTH_TREE_IMPL_ORTH_BATCH_INSERT_HPP_
+#define PSI_POINTER_BASED_ORTH_TREE_IMPL_ORTH_BATCH_INSERT_HPP_
 
 #include <utility>
 
@@ -144,4 +144,4 @@ Node* OrthTree<TypeTrait>::BatchInsertRecursive(Node* T, Slice In, Slice Out,
 }
 }  // namespace psi
 
-#endif  // PSI_ORTH_BATCH_INSERT_HPP_
+#endif  // PSI_POINTER_BASED_ORTH_TREE_IMPL_ORTH_BATCH_INSERT_HPP_

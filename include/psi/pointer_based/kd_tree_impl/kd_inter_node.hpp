@@ -1,5 +1,5 @@
-#ifndef PSI_KD_TREE_IMPL_KD_INTER_NODE_HPP_
-#define PSI_KD_TREE_IMPL_KD_INTER_NODE_HPP_
+#ifndef PSI_POINTER_BASED_KD_TREE_IMPL_KD_INTER_NODE_HPP_
+#define PSI_POINTER_BASED_KD_TREE_IMPL_KD_INTER_NODE_HPP_
 
 #include <cstddef>
 
@@ -95,4 +95,4 @@ struct KdTree<TypeTrait>::KdInteriorNode
 
 }  // namespace psi
 
-#endif  // PSI_KD_TREE_IMPL_KD_INTER_NODE_HPP_
+#endif  // PSI_POINTER_BASED_KD_TREE_IMPL_KD_INTER_NODE_HPP_

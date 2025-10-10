@@ -1,5 +1,5 @@
-#ifndef PSI_TYPE_TRAIT_H_
-#define PSI_TYPE_TRAIT_H_
+#ifndef PSI_DEPENDENCE_TYPE_TRAIT_H_
+#define PSI_DEPENDENCE_TYPE_TRAIT_H_
 
 #include <cstdint>
 #include <type_traits>
@@ -63,4 +63,4 @@ class TypeTrait {
 
 }  // namespace psi
 
-#endif  // PSI_TYPE_TRAIT_H_
+#endif  // PSI_DEPENDENCE_TYPE_TRAIT_H_

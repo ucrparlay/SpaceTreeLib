@@ -1,5 +1,5 @@
-#ifndef PSI_KD_TREE_IMPL_KD_BATCH_INSERT_HPP_
-#define PSI_KD_TREE_IMPL_KD_BATCH_INSERT_HPP_
+#ifndef PSI_POINTER_BASED_KD_TREE_IMPL_KD_BATCH_INSERT_HPP_
+#define PSI_POINTER_BASED_KD_TREE_IMPL_KD_BATCH_INSERT_HPP_
 
 #include "../kd_tree.h"
 #include "parlay/slice.h"
@@ -127,4 +127,4 @@ auto KdTree<TypeTrait>::BatchInsertRecursive(Node* T, Slice In, Slice Out,
 
 }  // namespace psi
 
-#endif  // PSI_KD_TREE_IMPL_KD_BATCH_INSERT_HPP_
+#endif  // PSI_POINTER_BASED_KD_TREE_IMPL_KD_BATCH_INSERT_HPP_

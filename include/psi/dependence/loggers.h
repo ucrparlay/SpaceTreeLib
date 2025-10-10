@@ -1,5 +1,5 @@
-#ifndef PSI_DEPENDENCE_LOGGERS_H
-#define PSI_DEPENDENCE_LOGGERS_H
+#ifndef PSI_DEPENDENCE_LOGGERS_H_
+#define PSI_DEPENDENCE_LOGGERS_H_
 
 #include <cstddef>
 

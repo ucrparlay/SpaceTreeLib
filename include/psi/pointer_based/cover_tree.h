@@ -1,5 +1,5 @@
-#ifndef PSI_COVER_TREE_H
-#define PSI_COVER_TREE_H
+#ifndef PSI_POINTER_BASED_COVER_TREE_H_
+#define PSI_POINTER_BASED_COVER_TREE_H_
 
 #include <functional>
 #include <utility>
@@ -165,4 +165,4 @@ class CoverTree
 #include "cover_tree_impl/cover_inter_node.hpp"
 #include "cover_tree_impl/cover_override.hpp"
 
-#endif  // PSI_COVER_TREE_H
+#endif  // PSI_POINTER_BASED_COVER_TREE_H_

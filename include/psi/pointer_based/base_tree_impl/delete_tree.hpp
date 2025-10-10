@@ -1,5 +1,5 @@
-#ifndef PSI_BASE_TREE_IMPL_DELETE_TREE_HPP_
-#define PSI_BASE_TREE_IMPL_DELETE_TREE_HPP_
+#ifndef PSI_POINTER_BASED_BASE_TREE_IMPL_DELETE_TREE_HPP_
+#define PSI_POINTER_BASED_BASE_TREE_IMPL_DELETE_TREE_HPP_
 
 #include "../../dependence/concepts.h"
 #include "../base_tree.h"
@@ -91,4 +91,4 @@ void BaseTree<TypeTrait, DerivedTree>::DeleteTreeRecursive(Node* T) {
 }
 }  // namespace psi
 
-#endif  // PSI_BASE_TREE_IMPL_DELETE_TREE_HPP_
+#endif  // PSI_POINTER_BASED_BASE_TREE_IMPL_DELETE_TREE_HPP_

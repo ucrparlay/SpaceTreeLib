@@ -1,5 +1,5 @@
-#ifndef PSI_BASE_TREE_IMPL_TREE_OP_FLATTEN_HPP_
-#define PSI_BASE_TREE_IMPL_TREE_OP_FLATTEN_HPP_
+#ifndef PSI_POINTER_BASED_BASE_TREE_IMPL_TREE_OP_FLATTEN_HPP_
+#define PSI_POINTER_BASED_BASE_TREE_IMPL_TREE_OP_FLATTEN_HPP_
 
 #include <algorithm>
 #include <cassert>
@@ -122,4 +122,4 @@ void BaseTree<TypeTrait, DerivedTree>::PartialFlatten(Node* T, Range Out,
 }
 }  // namespace psi
 
-#endif  // PSI_BASE_TREE_IMPL_TREE_OP_FLATTEN_HPP_
+#endif  // PSI_POINTER_BASED_BASE_TREE_IMPL_TREE_OP_FLATTEN_HPP_

@@ -1,5 +1,5 @@
-#ifndef PSI_ORTH_TREE_IMPL_ORTH_BATCH_DELETE_HPP_
-#define PSI_ORTH_TREE_IMPL_ORTH_BATCH_DELETE_HPP_
+#ifndef PSI_POINTER_BASED_ORTH_TREE_IMPL_ORTH_BATCH_DELETE_HPP_
+#define PSI_POINTER_BASED_ORTH_TREE_IMPL_ORTH_BATCH_DELETE_HPP_
 
 #include "../orth_tree.h"
 
@@ -167,4 +167,4 @@ Node* OrthTree<TypeTrait>::BatchDeleteRecursive(Node* T, Slice In, Slice Out,
 
 }  // namespace psi
 
-#endif  // PSI_ORTH_TREE_IMPL_ORTH_BATCH_DELETE_HPP_
+#endif  // PSI_POINTER_BASED_ORTH_TREE_IMPL_ORTH_BATCH_DELETE_HPP_

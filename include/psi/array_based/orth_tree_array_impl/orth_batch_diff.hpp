@@ -1,5 +1,5 @@
-#ifndef PSI_ARRAY_BASED_ORTH_TREE_ARRAY_IMPL_orth_batch_diff_HPP_
-#define PSI_ARRAY_BASED_ORTH_TREE_ARRAY_IMPL_orth_batch_diff_HPP_
+#ifndef PSI_ARRAY_BASED_ORTH_TREE_ARRAY_IMPL_ORTH_BATCH_DIFF_HPP_
+#define PSI_ARRAY_BASED_ORTH_TREE_ARRAY_IMPL_ORTH_BATCH_DIFF_HPP_
 
 namespace psi {
 namespace array_based {
@@ -10,4 +10,4 @@ namespace array_based {
 }  // namespace array_based
 }  // namespace psi
 
-#endif  // PSI_ARRAY_BASED_ORTH_TREE_ARRAY_IMPL_orth_batch_diff_HPP_
+#endif  // PSI_ARRAY_BASED_ORTH_TREE_ARRAY_IMPL_ORTH_BATCH_DIFF_HPP_

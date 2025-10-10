@@ -1,5 +1,5 @@
-#ifndef PSI_DEPENDENCE_TREE_NODE_H_
-#define PSI_DEPENDENCE_TREE_NODE_H_
+#ifndef PSI_DEPENDENCE_TREE_NODE_ARRAY_H_
+#define PSI_DEPENDENCE_TREE_NODE_ARRAY_H_
 
 #include <parlay/slice.h>
 
@@ -57,4 +57,4 @@ struct Node {
 }  // namespace array_based
 }  // namespace psi
 
-#endif  // PSI_DEPENDENCE_TREE_NODE_H_
+#endif  // PSI_DEPENDENCE_TREE_NODE_ARRAY_H_

@@ -1,5 +1,5 @@
-#ifndef PSI_P_TREE_H
-#define PSI_P_TREE_H
+#ifndef PSI_POINTER_BASED_P_TREE_H_
+#define PSI_POINTER_BASED_P_TREE_H_
 
 #include <array>
 #include <functional>
@@ -174,4 +174,4 @@ class PTree : public BaseTree<TypeTrait, PTree<TypeTrait>> {
 #include "p_tree_impl/p_inter_node.hpp"
 #include "p_tree_impl/p_override.hpp"
 
-#endif  // PSI_P_TREE_H
+#endif  // PSI_POINTER_BASED_P_TREE_H_

@@ -1,5 +1,5 @@
-#ifndef PSI_KD_TREE_IMPL_KD_BATCH_DELETE_HPP
-#define PSI_KD_TREE_IMPL_KD_BATCH_DELETE_HPP
+#ifndef PSI_POINTER_BASED_KD_TREE_IMPL_KD_BATCH_DELETE_HPP_
+#define PSI_POINTER_BASED_KD_TREE_IMPL_KD_BATCH_DELETE_HPP_
 
 #include "../kd_tree.h"
 
@@ -198,4 +198,4 @@ auto KdTree<TypeTrait>::BatchDeleteRecursive(
 
 }  // namespace psi
 
-#endif  // PSI_KD_TREE_IMPL_KD_BATCH_DELETE_HPP
+#endif  // PSI_POINTER_BASED_KD_TREE_IMPL_KD_BATCH_DELETE_HPP_

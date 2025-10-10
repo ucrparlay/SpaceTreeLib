@@ -1,5 +1,5 @@
-#ifndef PSI_COVER_TREE_IMPL_COVER_OVERRIDE_HPP_
-#define PSI_COVER_TREE_IMPL_COVER_OVERRIDE_HPP_
+#ifndef PSI_POINTER_BASED_COVER_TREE_IMPL_COVER_OVERRIDE_HPP_
+#define PSI_POINTER_BASED_COVER_TREE_IMPL_COVER_OVERRIDE_HPP_
 
 #define COVERTREE_TEMPLATE                                              \
   template <typename Point, typename SplitRule, uint_fast8_t kSkHeight, \

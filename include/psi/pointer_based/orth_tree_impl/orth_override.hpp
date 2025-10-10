@@ -1,5 +1,5 @@
-#ifndef PSI_ORTH_TREE_IMPL_ORTH_OVERRIDE_HPP_
-#define PSI_ORTH_TREE_IMPL_ORTH_OVERRIDE_HPP_
+#ifndef PSI_POINTER_BASED_ORTH_TREE_IMPL_ORTH_OVERRIDE_HPP_
+#define PSI_POINTER_BASED_ORTH_TREE_IMPL_ORTH_OVERRIDE_HPP_
 
 #include <tuple>
 #include <type_traits>
@@ -76,4 +76,4 @@ constexpr void OrthTree<TypeTrait>::DeleteTree() {
  
  
 
-#endif  // PSI_ORTH_TREE_IMPL_ORTH_OVERRIDE_HPP_
+#endif  // PSI_POINTER_BASED_ORTH_TREE_IMPL_ORTH_OVERRIDE_HPP_

@@ -2,13 +2,14 @@
 #define PSI_ARRAY_BASED_KD_TREE_ARRAY_H_
 
 #include <array>
-#include <vector>
+#include <cstdint>
 #include <functional>
 #include <optional>
 #include <utility>
+#include <vector>
 
 #include "base_tree_array.h"
-#include "../dependence/concepts.h"
+#include "dependence/concepts.h"
 
 namespace psi {
 namespace array_based {
@@ -25,19 +26,22 @@ namespace array_based {
 // Trade-off: Batch updates are more expensive (requires reallocation)
 //==============================================================================
 
-template <typename Point, typename SplitRule, typename LeafAugType,
-          typename InteriorAugType, uint_fast8_t kSkHeight = 6,
+template <typename Point, typename SplitRule, typename NodeAugType,
+          uint_fast8_t kInnerNodeLevels = 6, uint_fast8_t kSkHeight = 6,
           uint_fast8_t kImbaRatio = 30>
-class KdTreeArray : public BaseTreeArray<Point,
-                                         KdTreeArray<Point, SplitRule, 
-                                                     LeafAugType, InteriorAugType,
-                                                     kSkHeight, kImbaRatio>,
-                                         kSkHeight, kImbaRatio> {
+class KdTreeArray
+    : public BaseTreeArray<
+          Point,
+          KdTreeArray<Point, SplitRule, NodeAugType, kSkHeight, kImbaRatio>,
+          kSkHeight, kImbaRatio> {
  public:
-  using BT = BaseTreeArray<Point,
-                           KdTreeArray<Point, SplitRule, LeafAugType, 
-                                       InteriorAugType, kSkHeight, kImbaRatio>,
-                           kSkHeight, kImbaRatio>;
+  static constexpr uint_fast8_t kDim = Point::GetDim();
+  static constexpr uint_fast8_t kSplitterNum = 1 << kInnerNodeLevels - 1;
+  static constexpr uint_fast8_t kNodeRegions = 1 << kInnerNodeLevels;
+
+  using BT = BaseTreeArray<
+      Point, KdTreeArray<Point, SplitRule, NodeAugType, kSkHeight, kImbaRatio>,
+      kSkHeight, kImbaRatio>;
 
   using NodeIndex = typename BT::NodeIndex;
   using BucketType = typename BT::BucketType;
@@ -53,7 +57,6 @@ class KdTreeArray : public BaseTreeArray<Point,
   using PointsIter = typename BT::PointsIter;
   using Box = typename BT::Box;
   using BoxSeq = typename BT::BoxSeq;
-  using Circle = typename BT::NormalCircle;
 
   using HyperPlane = typename BT::HyperPlane;
   using HyperPlaneSeq = typename BT::HyperPlaneSeq;
@@ -62,36 +65,10 @@ class KdTreeArray : public BaseTreeArray<Point,
   using SplitRuleType = SplitRule;
 
   //============================================================================
-  // ARRAY-BASED NODE STRUCTURES
-  //============================================================================
-
-  // Compact node representation (binary tree)
-  struct CompactNode {
-    NodeIndex left;              // 4 bytes (vs 8 for pointer)
-    NodeIndex right;             // 4 bytes
-    HyperPlane split;            // Splitting hyperplane
-    InteriorAugType aug;         // Augmentation data
-    uint32_t size;               // Subtree size
-    uint8_t is_leaf;             // Leaf flag
-    
-    // For leaf nodes: reference to points in leaf_points_ array
-    uint32_t leaf_start_idx;     // Start index in leaf_points_
-    uint32_t leaf_count;         // Number of points in leaf
-    
-    CompactNode() 
-        : left(BT::NULL_INDEX), right(BT::NULL_INDEX),
-          size(0), is_leaf(false), 
-          leaf_start_idx(0), leaf_count(0) {}
-  };
-
-  using Node = CompactNode;
-
-  //============================================================================
   // STORAGE
   //============================================================================
 
-  std::vector<CompactNode> nodes_;       // All nodes (interior + leaf metadata)
-  std::vector<Point> leaf_points_;       // All leaf points (contiguous)
+  using InnerNode = Node<Point, kInnerNodeLevels, SplitterSeq, NodeAugType>;
 
   //============================================================================
   // PUBLIC API (same interface as pointer-based KdTree)
@@ -136,7 +113,7 @@ class KdTreeArray : public BaseTreeArray<Point,
   constexpr static char const* GetTreeName() { return "KdTreeArray"; }
 
   constexpr static char const* CheckHasBox() {
-    if constexpr (HasBox<InteriorAugType>)
+    if constexpr (HasBox<NodeAugType>)
       return "HasBox";
     else
       return "NoBox";
@@ -151,27 +128,18 @@ class KdTreeArray : public BaseTreeArray<Point,
 
   NodeIndex BuildRecursive(Slice In, Slice Out, DimsType dim, Box const& bx);
 
-  NodeIndex SerialBuildRecursive(Slice In, Slice Out, DimsType dim, 
-                                  Box const& bx);
+  NodeIndex SerialBuildRecursive(Slice In, Slice Out, DimsType dim,
+                                 Box const& bx);
 
-  void DivideRotate(Slice In, SplitterSeq& pivots, DimsType dim, 
-                    BucketType idx, BoxSeq& box_seq, Box const& bx);
+  void DivideRotate(Slice In, SplitterSeq& pivots, DimsType dim, BucketType idx,
+                    BoxSeq& box_seq, Box const& bx);
 
   void PickPivots(Slice In, size_t const& n, SplitterSeq& pivots,
                   DimsType const dim, BoxSeq& box_seq, Box const& bx);
 
-  // Node allocation helpers
-  NodeIndex AllocNode();
-  NodeIndex AllocLeafNode(Slice In);
-  void FreeNode(NodeIndex idx);
+  parlay::sequence<InnerNode> inner_tree_seq_;
 
-  // Node access helpers
-  CompactNode& GetNode(NodeIndex idx) { return nodes_[idx]; }
-  CompactNode const& GetNode(NodeIndex idx) const { return nodes_[idx]; }
-  
-  bool IsLeaf(NodeIndex idx) const { 
-    return idx != BT::NULL_INDEX && nodes_[idx].is_leaf; 
-  }
+  parlay::sequence<Point> leaf_seq_;
 
   SplitRule split_rule_;
 };
@@ -180,10 +148,10 @@ class KdTreeArray : public BaseTreeArray<Point,
 }  // namespace psi
 
 // Include implementation files
-#include "kd_tree_array_impl/kd_build_tree.hpp"
-#include "kd_tree_array_impl/kd_batch_insert.hpp"
 #include "kd_tree_array_impl/kd_batch_delete.hpp"
 #include "kd_tree_array_impl/kd_batch_diff.hpp"
+#include "kd_tree_array_impl/kd_batch_insert.hpp"
+#include "kd_tree_array_impl/kd_build_tree.hpp"
 #include "kd_tree_array_impl/kd_override.hpp"
 
 #endif  // PSI_ARRAY_BASED_KD_TREE_ARRAY_H_

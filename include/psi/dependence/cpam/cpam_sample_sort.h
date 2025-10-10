@@ -5,8 +5,8 @@
 // Proc. ACM symposium on Parallelism in algorithms and architectures (SPAA),
 // 2010
 
-#ifndef CPAM_SAMPLE_SORT_H
-#define CPAM_SAMPLE_SORT_H
+#ifndef PSI_DEPENDENCE_CPAM_CPAM_SAMPLE_SORT_H_
+#define PSI_DEPENDENCE_CPAM_CPAM_SAMPLE_SORT_H_
 
 #include <cassert>
 #include <concepts>
@@ -240,4 +240,4 @@ auto cpam_sample_sort(slice<InputIterator, InputIterator> A,
 }  // namespace internal
 
 }  // namespace parlay
-#endif  // CPAM_SAMPLE_SORT_H
+#endif  // PSI_DEPENDENCE_CPAM_CPAM_SAMPLE_SORT_H_

@@ -1,6 +1,6 @@
 
-#ifndef DOVETAIL_INTERNAL_INTEGER_SORT_H_
-#define DOVETAIL_INTERNAL_INTEGER_SORT_H_
+#ifndef PSI_DEPENDENCE_CPAM_DOVETAIL_INTERNAL_DOVETAIL_INTERNAL_INTEGER_SORT_H_
+#define PSI_DEPENDENCE_CPAM_DOVETAIL_INTERNAL_DOVETAIL_INTERNAL_INTEGER_SORT_H_
 
 #include <algorithm>
 #include <cassert>
@@ -424,4 +424,4 @@ auto integer_sort_with_counts(slice<Iterator, Iterator> In, Get_Key const& g,
 }  // namespace internal
 }  // namespace parlay
 
-#endif  // DOVETAIL_INTERNAL_INTEGER_SORT_H_
+#endif  // PSI_DEPENDENCE_CPAM_DOVETAIL_INTERNAL_DOVETAIL_INTERNAL_INTEGER_SORT_H_

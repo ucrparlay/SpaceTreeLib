@@ -1,5 +1,5 @@
-#ifndef PSI_COVER_TREE_IMPL_COVER_BATCH_DIFF_HPP_
-#define PSI_COVER_TREE_IMPL_COVER_BATCH_DIFF_HPP_
+#ifndef PSI_POINTER_BASED_COVER_TREE_IMPL_COVER_BATCH_DIFF_HPP_
+#define PSI_POINTER_BASED_COVER_TREE_IMPL_COVER_BATCH_DIFF_HPP_
 
 #include <tuple>
 
@@ -24,4 +24,4 @@ void CoverTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDiff(Range&& In) {
 
 }  // namespace psi
 
-#endif  // PSI_COVER_TREE_IMPL_COVER_BATCH_DIFF_HPP_
+#endif  // PSI_POINTER_BASED_COVER_TREE_IMPL_COVER_BATCH_DIFF_HPP_

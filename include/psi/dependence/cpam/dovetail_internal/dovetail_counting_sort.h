@@ -1,6 +1,6 @@
 
-#ifndef DOVETAIL_COUNTING_SORT_H_
-#define DOVETAIL_COUNTING_SORT_H_
+#ifndef PSI_DEPENDENCE_CPAM_DOVETAIL_INTERNAL_DOVETAIL_COUNTING_SORT_H_
+#define PSI_DEPENDENCE_CPAM_DOVETAIL_INTERNAL_DOVETAIL_COUNTING_SORT_H_
 
 #include <algorithm>
 #include <cassert>
@@ -377,4 +377,4 @@ auto count_sort_inplace(slice<InIterator, InIterator> In, KeyS const& Keys,
 }  // namespace internal
 }  // namespace parlay
 
-#endif  // DOVETAIL_COUNTING_SORT_H_
+#endif  // PSI_DEPENDENCE_CPAM_DOVETAIL_INTERNAL_DOVETAIL_COUNTING_SORT_H_

@@ -1,5 +1,5 @@
-#ifndef PSI_BASE_TREE_IMPL_REBUILD_HPP_
-#define PSI_BASE_TREE_IMPL_REBUILD_HPP_
+#ifndef PSI_POINTER_BASED_BASE_TREE_IMPL_TREE_OP_REBUILD_HPP_
+#define PSI_POINTER_BASED_BASE_TREE_IMPL_TREE_OP_REBUILD_HPP_
 
 #include <algorithm>
 #include <cassert>
@@ -163,4 +163,4 @@ Node* BaseTree<TypeTrait, DerivedTree>::RebuildTreeRecursive(
 
 }  // namespace psi
 
-#endif  // PSI_BASE_TREE_IMPL_REBUILD_HPP_
+#endif  // PSI_POINTER_BASED_BASE_TREE_IMPL_TREE_OP_REBUILD_HPP_

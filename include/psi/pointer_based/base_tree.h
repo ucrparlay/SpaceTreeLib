@@ -1,5 +1,5 @@
-#ifndef PSI_BASE_TREE_H_
-#define PSI_BASE_TREE_H_
+#ifndef PSI_POINTER_BASED_BASE_TREE_H_
+#define PSI_POINTER_BASED_BASE_TREE_H_
 
 #include <sys/types.h>
 
@@ -467,4 +467,4 @@ class BaseTree {
 #include "base_tree_impl/tree_op/rebuild.hpp"               // Section 6
 #include "base_tree_impl/validation.hpp"                    // Section 7, 8
 
-#endif  // PSI_BASE_TREE_H_
+#endif  // PSI_POINTER_BASED_BASE_TREE_H_

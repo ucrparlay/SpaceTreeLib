@@ -1,6 +1,6 @@
 
-#ifndef OUR_INTEGER_SORT_H_
-#define OUR_INTEGER_SORT_H_
+#ifndef PSI_DEPENDENCE_CPAM_DEVOTAIL_INTEGER_SORT_H_
+#define PSI_DEPENDENCE_CPAM_DEVOTAIL_INTEGER_SORT_H_
 
 #include "dovetail_internal/dovetail_counting_sort.h"
 #include "dovetail_internal/dovetail_internal_integer_sort.h"
@@ -493,4 +493,4 @@ void integer_sort_inplace2(slice<Iterator, Iterator> In, GetKey const& g) {
 }  // namespace cpam
 }  // namespace parlay
 
-#endif  // OUR_INTEGER_SORT_H_
+#endif  // PSI_DEPENDENCE_CPAM_DEVOTAIL_INTEGER_SORT_H_

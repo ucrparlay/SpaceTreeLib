@@ -1,5 +1,5 @@
-#ifndef PSI_ORTH_TREE_IMPL_ORTH_BATCH_DIFF_HPP_
-#define PSI_ORTH_TREE_IMPL_ORTH_BATCH_DIFF_HPP_
+#ifndef PSI_POINTER_BASED_ORTH_TREE_IMPL_ORTH_BATCH_DIFF_HPP_
+#define PSI_POINTER_BASED_ORTH_TREE_IMPL_ORTH_BATCH_DIFF_HPP_
 
 #include <tuple>
 
@@ -119,4 +119,4 @@ Node* OrthTree<TypeTrait>::BatchDiffRecursive(Node* T, Slice In, Slice Out) {
 
 }  // namespace psi
 
-#endif  // PSI_ORTH_TREE_IMPL_ORTH_BATCH_DIFF_HPP_
+#endif  // PSI_POINTER_BASED_ORTH_TREE_IMPL_ORTH_BATCH_DIFF_HPP_

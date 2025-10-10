@@ -1,5 +1,5 @@
-#ifndef PSI_BASE_TREE_IMPL_INNER_TREE_MULTI_HPP_
-#define PSI_BASE_TREE_IMPL_INNER_TREE_MULTI_HPP_
+#ifndef PSI_POINTER_BASED_BASE_TREE_IMPL_INNER_TREE_INNER_TREE_MULTI_HPP_
+#define PSI_POINTER_BASED_BASE_TREE_IMPL_INNER_TREE_INNER_TREE_MULTI_HPP_
 
 #include "dependence/concepts.h"
 #include "inner_tree_common.hpp"
@@ -235,4 +235,4 @@ struct MultiNodeOps {
 }  // namespace inner_tree_detail
 }  // namespace psi
 
-#endif  // PSI_BASE_TREE_IMPL_INNER_TREE_MULTI_HPP_
+#endif  // PSI_POINTER_BASED_BASE_TREE_IMPL_INNER_TREE_INNER_TREE_MULTI_HPP_

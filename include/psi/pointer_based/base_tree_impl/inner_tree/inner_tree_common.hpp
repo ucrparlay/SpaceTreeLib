@@ -1,5 +1,5 @@
-#ifndef PSI_BASE_TREE_IMPL_INNER_TREE_COMMON_HPP_
-#define PSI_BASE_TREE_IMPL_INNER_TREE_COMMON_HPP_
+#ifndef PSI_POINTER_BASED_BASE_TREE_IMPL_INNER_TREE_INNER_TREE_COMMON_HPP_
+#define PSI_POINTER_BASED_BASE_TREE_IMPL_INNER_TREE_INNER_TREE_COMMON_HPP_
 
 #include <cstdint>
 
@@ -25,4 +25,4 @@ inline BucketType GetTagValue(NodeTagValue tag, BucketType kBucketNum) {
 }  // namespace inner_tree_detail
 }  // namespace psi
 
-#endif  // PSI_BASE_TREE_IMPL_INNER_TREE_COMMON_HPP_
+#endif  // PSI_POINTER_BASED_BASE_TREE_IMPL_INNER_TREE_INNER_TREE_COMMON_HPP_

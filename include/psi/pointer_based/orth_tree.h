@@ -1,5 +1,5 @@
-#ifndef PSI_ORTH_TREE_H
-#define PSI_ORTH_TREE_H
+#ifndef PSI_POINTER_BASED_ORTH_TREE_H_
+#define PSI_POINTER_BASED_ORTH_TREE_H_
 
 #include <functional>
 #include <utility>
@@ -164,4 +164,4 @@ class OrthTree : public BaseTree<TypeTrait, OrthTree<TypeTrait>> {
 #include "orth_tree_impl/orth_inter_node.hpp"
 #include "orth_tree_impl/orth_override.hpp"
 
-#endif  // PSI_ORTH_TREE_H
+#endif  // PSI_POINTER_BASED_ORTH_TREE_H_

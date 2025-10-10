@@ -1,5 +1,5 @@
-#ifndef PSI_KD_TREE_IMPL_KD_BATCH_DIFF_HPP_
-#define PSI_KD_TREE_IMPL_KD_BATCH_DIFF_HPP_
+#ifndef PSI_POINTER_BASED_KD_TREE_IMPL_KD_BATCH_DIFF_HPP_
+#define PSI_POINTER_BASED_KD_TREE_IMPL_KD_BATCH_DIFF_HPP_
 
 #include "../kd_tree.h"
 
@@ -129,4 +129,4 @@ auto KdTree<TypeTrait>::BatchDiffRecursive(
 
 }  // namespace psi
 
-#endif  // PSI_KD_TREE_IMPL_KD_BATCH_DIFF_HPP_
+#endif  // PSI_POINTER_BASED_KD_TREE_IMPL_KD_BATCH_DIFF_HPP_

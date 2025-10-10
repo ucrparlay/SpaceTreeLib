@@ -1,5 +1,5 @@
-#ifndef PSI_ORTH_TREE_IMPL_ORTH_INTER_NODE_HPP_
-#define PSI_ORTH_TREE_IMPL_ORTH_INTER_NODE_HPP_
+#ifndef PSI_POINTER_BASED_ORTH_TREE_IMPL_ORTH_INTER_NODE_HPP_
+#define PSI_POINTER_BASED_ORTH_TREE_IMPL_ORTH_INTER_NODE_HPP_
 
 #include "../../dependence/tree_node.h"
 #include "../orth_tree.h"
@@ -240,4 +240,4 @@ struct OrthTree<TypeTrait>::OrthInteriorNode
  
  
 
-#endif  // PSI_ORTH_TREE_IMPL_ORTH_INTER_NODE_HPP_
+#endif  // PSI_POINTER_BASED_ORTH_TREE_IMPL_ORTH_INTER_NODE_HPP_

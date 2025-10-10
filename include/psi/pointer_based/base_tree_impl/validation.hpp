@@ -1,5 +1,5 @@
-#ifndef PSI_BASE_TREE_IMPL_VALIDATION_HPP_
-#define PSI_BASE_TREE_IMPL_VALIDATION_HPP_
+#ifndef PSI_POINTER_BASED_BASE_TREE_IMPL_VALIDATION_HPP_
+#define PSI_POINTER_BASED_BASE_TREE_IMPL_VALIDATION_HPP_
 
 #include <parlay/parallel.h>
 
@@ -368,4 +368,4 @@ void BaseTree<TypeTrait, DerivedTree>::CountTreeHeights(
 
 }  // namespace psi
 
-#endif  // PSI_BASE_TREE_IMPL_VALIDATION_HPP_
+#endif  // PSI_POINTER_BASED_BASE_TREE_IMPL_VALIDATION_HPP_

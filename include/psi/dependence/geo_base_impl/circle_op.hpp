@@ -1,5 +1,5 @@
-#ifndef PSI_BASE_TREE_IMPL_CIRCLE_OP_HPP_
-#define PSI_BASE_TREE_IMPL_CIRCLE_OP_HPP_
+#ifndef PSI_DEPENDENCE_GEO_BASE_IMPL_CIRCLE_OP_HPP_
+#define PSI_DEPENDENCE_GEO_BASE_IMPL_CIRCLE_OP_HPP_
 
 #include <cmath>
 
@@ -173,4 +173,4 @@ inline CircleType GeoBase<TypeTrait>::GetCircle(Point const& p,
 
 }  // namespace psi
 
-#endif  // PSI_BASE_TREE_IMPL_CIRCLE_OP_HPP_
+#endif  // PSI_DEPENDENCE_GEO_BASE_IMPL_CIRCLE_OP_HPP_
