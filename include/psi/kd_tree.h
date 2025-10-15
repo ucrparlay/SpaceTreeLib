@@ -9,6 +9,7 @@
 
 // Backward compatibility: alias pointer_based types into psi namespace
 namespace psi {
+using array_based::KdTreeArray;
 using pointer_based::KdTree;
 
 }  // namespace psi

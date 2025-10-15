@@ -26,6 +26,7 @@ class GeoBase {
   using Point = typename TypeTrait::Point;
   using Slice = typename TypeTrait::Slice;
   using Num = typename TypeTrait::Num;
+  using HyperPlane = typename TypeTrait::HyperPlane;
   using DepthType = int;
 
   static constexpr uint_fast8_t kDim = Point::GetDim();
@@ -77,8 +78,36 @@ class GeoBase {
     DepthType level;
   };
 
+  struct BoxCut {
+    BoxCut(Box const& box, HyperPlane const& hp, bool go_left)
+        : box(box), hp(hp), go_left(go_left) {}
+
+    inline Box const& GetFirstBoxCut() {
+      mod_dim =
+          go_left ? &box.second.pnt[hp.second] : &box.first.pnt[hp.second];
+      std::ranges::swap(hp.first, *mod_dim);
+      return box;
+    }
+
+    inline Box const& GetSecondBoxCut() {
+      std::ranges::swap(hp.first, *mod_dim);
+      mod_dim =
+          go_left ? &box.first.pnt[hp.second] : &box.second.pnt[hp.second];
+      *mod_dim = hp.first;
+      return box;
+    }
+
+    inline Box const& GetBox() const { return box; }
+
+    inline HyperPlane const& GetHyperPlane() const { return hp; }
+
+    Box box;
+    Coord* mod_dim;
+    HyperPlane hp;  // PARA: the split and the cutting dimension
+    bool const go_left;
+  };
   //============================================================================
-  // SECTION 9: GEOMETRY UTILITIES - BOX OPERATIONS
+  // SECTION 1: GEOMETRY UTILITIES - BOX OPERATIONS
   // Implementation: base_tree_impl/box_op.hpp
   //============================================================================
 
@@ -122,7 +151,7 @@ class GeoBase {
   static Box GetBox(Node* T);
 
   //============================================================================
-  // SECTION 10: GEOMETRY UTILITIES - CIRCLE OPERATIONS
+  // SECTION 2: GEOMETRY UTILITIES - CIRCLE OPERATIONS
   // Implementation: base_tree_impl/circle_op.hpp
   //============================================================================
 
@@ -163,7 +192,7 @@ class GeoBase {
       parlay::sequence<CircleType> const& circle_seq);
 
   //============================================================================
-  // SECTION 11: GEOMETRY UTILITIES - DISTANCE METRICS
+  // SECTION 3: GEOMETRY UTILITIES - DISTANCE METRICS
   // Implementation: base_tree_impl/knn_query.hpp
   //============================================================================
 

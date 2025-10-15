@@ -125,7 +125,7 @@ class BaseTree {
   template <typename Leaf, typename Interior>
   struct InnerTree;
 
-  struct BoxCut;
+  using BoxCut = Geo::BoxCut;
 
   //============================================================================
   // SECTION 4: PUBLIC API - CONSTRUCTION & LIFECYCLE
@@ -454,7 +454,6 @@ class BaseTree {
 // Each file implements methods for a specific section above
 //==============================================================================
 
-#include "base_tree_impl/box_cut.hpp"                       // Section 16
 #include "base_tree_impl/delete_tree.hpp"                   // Section 4
 #include "base_tree_impl/dimensinality.hpp"                 // Section 16
 #include "base_tree_impl/inner_tree/inner_tree.hpp"         // Section 3, 12

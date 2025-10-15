@@ -80,6 +80,7 @@ class BaseTreeArray {
   using Geo = GeoBase<TypeTrait>;
   using NormalCircle = typename Geo::NormalCircle;
   using CoverCircle = typename Geo::CoverCircle;
+  using BoxCut = typename Geo::BoxCut;
 
   //============================================================================
   // SECTION 2: COMPILE-TIME CONSTANTS (same as pointer-based)
