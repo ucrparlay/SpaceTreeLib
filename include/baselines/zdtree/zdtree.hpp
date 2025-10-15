@@ -526,8 +526,8 @@ class Zdtree : public psi::BaseTree<TypeTrait, Zdtree<TypeTrait>> {
   using NodeTagSeq = typename BT::NodeTagSeq;
   using NodeBox = typename BT::NodeBox;
   using NodeBoxSeq = typename BT::NodeBoxSeq;
-  using Leaf = psi::Node;
-  using Interior = psi::Node;
+  using Leaf = psi::pointer_based::Node;
+  using Interior = psi::pointer_based::Node;
 
   void DeleteTree() {
     tree.clear();

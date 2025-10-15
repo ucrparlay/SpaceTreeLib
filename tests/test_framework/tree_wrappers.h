@@ -361,9 +361,9 @@ class Wrapper {
   struct KdTreeWrapper {
     using Point = PointType;
     using SplitRule = SplitRuleType;
-    using TreeType =
-        typename psi::KdTree<psi::TypeTrait<Point, psi::Node, SplitRule,
-                                            LeafAugType, InteriorAugType>>;
+    using TreeType = typename psi::KdTree<
+        psi::TypeTrait<Point, psi::pointer_based::Node, SplitRule, LeafAugType,
+                       InteriorAugType>>;
   };
 
   template <class PointType, class SplitRuleType, class LeafAugType,
@@ -371,8 +371,9 @@ class Wrapper {
   struct ArrayTreeWrapper {
     using Point = PointType;
     using SplitRule = SplitRuleType;
-    using TreeType = typename psi::array_based::KdTreeArray<psi::TypeTrait<
-        Point, psi::Node, SplitRule, LeafAugType, InteriorAugType>>;
+    using TreeType = typename psi::array_based::KdTreeArray<
+        psi::TypeTrait<Point, psi::pointer_based::Node, SplitRule, LeafAugType,
+                       InteriorAugType>>;
   };
 
   template <class PointType, class SplitRuleType, class LeafAugType,
@@ -380,25 +381,26 @@ class Wrapper {
   struct OrthTreeWrapper {
     using Point = PointType;
     using SplitRule = SplitRuleType;
-    using TreeType = typename psi::OrthTree<psi::TypeTrait<
-        Point, psi::Node, SplitRule, LeafAugType, InteriorAugType,
-        Point::GetDim(), OrthGetBuildDepthOnce(Point::GetDim())>>;
+    using TreeType = typename psi::OrthTree<
+        psi::TypeTrait<Point, psi::pointer_based::Node, SplitRule, LeafAugType,
+                       InteriorAugType, Point::GetDim(),
+                       OrthGetBuildDepthOnce(Point::GetDim())>>;
   };
 
   template <class PointType, class SplitRuleType>
   struct PTreeWrapper {
     using Point = PointType;
     using SplitRule = SplitRuleType;
-    using TreeType =
-        typename psi::PTree<psi::TypeTrait<Point, psi::Node, SplitRule>>;
+    using TreeType = typename psi::PTree<
+        psi::TypeTrait<Point, psi::pointer_based::Node, SplitRule>>;
   };
 
   template <class PointType, class SplitRuleType>
   struct CpamRawWrapper {
     using Point = PointType;
     using SplitRule = SplitRuleType;
-    using TreeType =
-        typename CPAMTree::CpamRaw<psi::TypeTrait<Point, psi::Node, SplitRule>>;
+    using TreeType = typename CPAMTree::CpamRaw<
+        psi::TypeTrait<Point, psi::pointer_based::Node, SplitRule>>;
   };
 
   /* Zdtree Wrapper */
@@ -406,8 +408,8 @@ class Wrapper {
   struct ZdTreeWrapper {
     using Point = PointType;
     using SplitRule = SplitRuleType;
-    using TreeType =
-        typename ZD::Zdtree<psi::TypeTrait<Point, psi::Node, SplitRule>>;
+    using TreeType = typename ZD::Zdtree<
+        psi::TypeTrait<Point, psi::pointer_based::Node, SplitRule>>;
   };
 
   // NOTE: Apply the dim and split rule

@@ -10,6 +10,7 @@
 #include "comparator.h"
 #include "concepts.h"
 #include "tree_node.h"
+#include "tree_node_array.h"
 #include "type_trait.h"
 
 namespace psi {

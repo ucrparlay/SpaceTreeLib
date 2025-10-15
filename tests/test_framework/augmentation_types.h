@@ -4,7 +4,7 @@
 
 #include "psi/base_tree.h"
 
-using psi::Node;
+using psi::pointer_based::Node;
 
 // Augmentation types for leaves and interior nodes
 

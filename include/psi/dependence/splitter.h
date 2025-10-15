@@ -388,9 +388,10 @@ struct OrthogonalSplitRule {
   // NOTE: divide the space until the split cut the input box
   // INFO: divide the space for binary node
   template <typename Tree, typename Slice, typename DimsType, typename Box>
-  Node* DivideSpace(Tree& tree, Slice In, Slice Out, Box const& node_box,
-                    Box const& input_box, DimsType dim)
-    requires(IsBinaryNode<typename Tree::Interior>)
+  psi::pointer_based::Node* DivideSpace(Tree& tree, Slice In, Slice Out,
+                                        Box const& node_box,
+                                        Box const& input_box, DimsType dim)
+    requires(psi::pointer_based::IsBinaryNode<typename Tree::Interior>)
   {
     using Geo = Tree::Geo;
     assert(Geo::WithinBox(input_box, node_box));
@@ -436,9 +437,11 @@ struct OrthogonalSplitRule {
     typename Tree::BoxCut box_cut(
         node_box, typename Tree::Splitter(cut_val, cut_dim), split_is_right);
 
-    Node* L = DivideSpace(tree, In, Out, box_cut.GetFirstBoxCut(), input_box,
-                          dim_rule.NextDimension(cut_dim));
-    Node* R = AllocEmptyLeafNode<Slice, typename Tree::Leaf>();
+    pointer_based::Node* L =
+        DivideSpace(tree, In, Out, box_cut.GetFirstBoxCut(), input_box,
+                    dim_rule.NextDimension(cut_dim));
+    pointer_based::Node* R =
+        pointer_based::AllocEmptyLeafNode<Slice, typename Tree::Leaf>();
     assert(Geo::WithinBox(input_box, box_cut.GetBox()));
 
     if (!split_is_right) {
@@ -453,9 +456,10 @@ struct OrthogonalSplitRule {
 
   // INFO: divide the space for multi node
   template <typename Tree, typename Slice, typename Box>
-  Node* DivideSpace(Tree& tree, Slice In, Slice Out, Box const& node_box,
-                    Box const& input_box)
-    requires(IsMultiNode<typename Tree::Interior>)
+  psi::pointer_based::Node* DivideSpace(Tree& tree, Slice In, Slice Out,
+                                        Box const& node_box,
+                                        Box const& input_box)
+    requires(psi::pointer_based::IsMultiNode<typename Tree::Interior>)
   {
     using Geo = Tree::Geo;
     assert(Geo::WithinBox(input_box, node_box));
@@ -494,12 +498,13 @@ struct OrthogonalSplitRule {
     typename Tree::Interior::NodeArr tree_nodes;
     for (typename Tree::Interior::BucketType i = 0;
          i < Tree::Interior::GetRegions(); i++) {
-      tree_nodes[i] = pivot_region_id == i
-                          ? DivideSpace(tree, In, Out,
-                                        Tree::Interior::GetBoxByRegionId(
-                                            i, nodebox_split, node_box),
-                                        input_box)
-                          : AllocEmptyLeafNode<Slice, typename Tree::Leaf>();
+      tree_nodes[i] =
+          pivot_region_id == i
+              ? DivideSpace(tree, In, Out,
+                            Tree::Interior::GetBoxByRegionId(i, nodebox_split,
+                                                             node_box),
+                            input_box)
+              : pointer_based::AllocEmptyLeafNode<Slice, typename Tree::Leaf>();
     }
 
     return AllocInteriorNode<typename Tree::Interior>(tree_nodes,
@@ -514,7 +519,7 @@ struct OrthogonalSplitRule {
       // NOTE: in object median, if current dimension is not divideable, then
       // switch to another dimension then continue. This works since unless all
       // points are same, otherwise we can always slice some points out.
-      if constexpr (IsBinaryNode<typename Tree::Interior>) {
+      if constexpr (psi::pointer_based::IsBinaryNode<typename Tree::Interior>) {
         // TODO: tooo brute force
         return tree.SerialBuildRecursive(
             In, Out, dim_rule.NextDimension(std::forward<Args>(args)...),

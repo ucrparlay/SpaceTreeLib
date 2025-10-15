@@ -11,7 +11,6 @@
 namespace psi {
 using array_based::KdTreeArray;
 using pointer_based::KdTree;
-
 }  // namespace psi
 
 #endif  // PSI_KD_TREE_H_

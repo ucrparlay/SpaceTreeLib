@@ -54,6 +54,7 @@ class KdTreeArray : public BaseTreeArray<TypeTrait, KdTreeArray<TypeTrait>> {
   using Splitter = HyperPlane;
   using SplitterSeq = HyperPlaneSeq;
   using SplitRule = TypeTrait::SplitRule;
+  using BoxCut = BT::BoxCut;
 
   static constexpr uint_fast8_t kDim = Point::GetDim();
   static constexpr uint_fast8_t kInnerNodeLevels = TypeTrait::kInnerNodeLevels;
@@ -127,10 +128,9 @@ class KdTreeArray : public BaseTreeArray<TypeTrait, KdTreeArray<TypeTrait>> {
 
   void Build_(Slice In);
 
-  NodeIndex BuildRecursive(Slice In, Slice Out, DimsType dim, Box const& bx);
+  void BuildRecursive(Slice In, Slice Out, DimsType dim, Box const& bx);
 
-  NodeIndex SerialBuildRecursive(Slice In, Slice Out, DimsType dim,
-                                 Box const& bx);
+  void SerialBuildRecursive(Slice In, Slice Out, DimsType dim, Box const& bx);
 
   void DivideRotate(Slice In, SplitterSeq& pivots, DimsType dim, BucketType idx,
                     BoxSeq& box_seq, Box const& bx);

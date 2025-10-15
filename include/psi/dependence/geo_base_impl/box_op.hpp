@@ -277,7 +277,7 @@ typename GeoBase<TypeTrait>::Box GeoBase<TypeTrait>::GetBox(Node* T) {
     // return nb;
   }
   Interior* TI = static_cast<Interior*>(T);
-  if constexpr (IsBinaryNode<Interior>) {
+  if constexpr (psi::pointer_based::IsBinaryNode<Interior>) {
     Box left_box, right_box;
     parlay::par_do_if(
         T->size > kSerialBuildCutoff,
@@ -286,7 +286,7 @@ typename GeoBase<TypeTrait>::Box GeoBase<TypeTrait>::GetBox(Node* T) {
     // Box const& left_box = GetBox<Leaf, Interior>(TI->left);
     // Box const& right_box = GetBox<Leaf, Interior>(TI->right);
     return GetBox(left_box, right_box);
-  } else if constexpr (IsMultiNode<Interior>) {
+  } else if constexpr (psi::pointer_based::IsMultiNode<Interior>) {
     BoxSeq return_box_seq(Interior::GetRegions());
     parlay::parallel_for(
         0, Interior::GetRegions(),

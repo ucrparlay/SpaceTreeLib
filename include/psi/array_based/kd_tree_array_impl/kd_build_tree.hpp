@@ -27,29 +27,69 @@ template <typename TypeTrait>
 void KdTreeArray<TypeTrait>::Build_(Slice A) {
   Points B = Points::uninitialized(A.size());
   this->tree_box_ = Geo::GetBox(A);
-  this->root_ = BuildRecursive(A, B.cut(0, A.size()), 0, this->tree_box_);
+  BuildRecursive(A, B.cut(0, A.size()), 0, this->tree_box_);
   assert(this->root_ != BT::NULL_INDEX);
   return;
 }
 
 template <typename TypeTrait>
-auto KdTreeArray<TypeTrait>::BuildRecursive(Slice In, Slice Out, DimsType dim,
-                                            Box const& bx) -> NodeIndex {
+void KdTreeArray<TypeTrait>::BuildRecursive(Slice In, Slice Out, DimsType dim,
+                                            Box const& bx) {
   // TODO: Implement
   // Recursive build using array indices
   // Similar to pointer-based version but returns NodeIndex
-
-  return BT::NULL_INDEX;
 }
 
 template <typename TypeTrait>
-auto KdTreeArray<TypeTrait>::SerialBuildRecursive(Slice In, Slice Out,
-                                                  DimsType dim, Box const& bx)
-    -> NodeIndex {
-  // TODO: Implement
-  // Serial build for small subtrees
+void KdTreeArray<TypeTrait>::SerialBuildRecursive(Slice In, Slice Out,
+                                                  DimsType dim,
+                                                  Box const& box) {
+  size_t n = In.size();
 
-  return BT::NULL_INDEX;
+  if (n == 0) return AllocEmptyLeafNode<Slice, Leaf>();
+
+  if (n <= BT::kLeaveWrap) return AllocNormalLeafNode<Slice, Leaf>(In);
+
+  DimsType d = split_rule_.FindCuttingDimension(box, dim);
+  auto [split_iter, split] = split_rule_.SplitInput(In, d, box);
+
+  if (!split.has_value()) {
+    if (In.end() == std::ranges::find_if_not(In, [&](Point const& p) {
+          return p.SameDimension(In[0]);
+        })) {
+      if constexpr (IsAugPoint<Point>) {
+        if constexpr (Point::IsNonTrivialAugmentation()) {
+          return AllocFixSizeLeafNode<Slice, Leaf>(
+              In, std::max(In.size(), static_cast<size_t>(BT::kLeaveWrap)));
+        } else {
+          return AllocDummyLeafNode<Slice, Leaf>(In);
+        }
+      } else {
+        return AllocDummyLeafNode<Slice, Leaf>(In);
+      }
+    } else {
+      return split_rule_.HandlingUndivide(*this, In, Out, box, dim);
+    }
+  }
+
+  assert(std::ranges::all_of(In.begin(), split_iter, [&](Point& p) {
+    return Num::Lt(p.pnt[split.value().second], split.value().first);
+  }));
+  assert(std::ranges::all_of(split_iter, In.end(), [&](Point& p) {
+    return Num::Geq(p.pnt[split.value().second], split.value().first);
+  }));
+
+  BoxCut box_cut(box, split.value(), true);
+
+  d = split_rule_.NextDimension(d);
+
+  SerialBuildRecursive(In.cut(0, split_iter - In.begin()),
+                       Out.cut(0, split_iter - In.begin()), d,
+                       box_cut.GetFirstBoxCut());
+  SerialBuildRecursive(In.cut(split_iter - In.begin(), n),
+                       Out.cut(split_iter - In.begin(), n), d,
+                       box_cut.GetSecondBoxCut());
+  // return AllocInteriorNode<Interior>(L, R, split.value());
 }
 
 template <typename TypeTrait>
