@@ -19,7 +19,7 @@
 #include "parlay/utilities.h"
 
 namespace psi {
-namespace array_based {
+namespace array_view {
 //============================================================================
 // ARRAY-BASED NODE STRUCTURES
 //============================================================================
@@ -54,7 +54,7 @@ struct Node {
   bool is_leaf;
 };
 
-}  // namespace array_based
+}  // namespace array_view
 }  // namespace psi
 
 #endif  // PSI_DEPENDENCE_TREE_NODE_ARRAY_H_

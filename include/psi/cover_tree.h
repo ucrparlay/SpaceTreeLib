@@ -3,11 +3,11 @@
 
 // Backward compatibility header
 // This file forwards to the pointer-based implementation
-#include "pointer_based/cover_tree.h"
+#include "pointer_view/cover_tree.h"
 
-// Backward compatibility: alias pointer_based types into psi namespace
+// Backward compatibility: alias pointer_view types into psi namespace
 namespace psi {
-using pointer_based::CoverTree;
+using pointer_view::CoverTree;
 }  // namespace psi
 
 #endif  // PSI_COVER_TREE_H_

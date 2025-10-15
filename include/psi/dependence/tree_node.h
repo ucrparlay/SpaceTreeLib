@@ -19,7 +19,7 @@
 #include "parlay/utilities.h"
 
 namespace psi {
-namespace pointer_based {
+namespace pointer_view {
 
 struct AllocNormalLeafTag {};
 struct AllocDummyLeafTag {};
@@ -361,13 +361,13 @@ static void FreeNode(Node* T) {
 
 // Define some alias for concept check
 template <typename T>
-concept IsBinaryNode = CheckBinaryNode<T, psi::pointer_based::BinaryNode>;
+concept IsBinaryNode = CheckBinaryNode<T, psi::pointer_view::BinaryNode>;
 
 template <typename T>
-concept IsMultiNode = CheckMultiNode<T, psi::pointer_based::MultiNode>;
+concept IsMultiNode = CheckMultiNode<T, psi::pointer_view::MultiNode>;
 
 template <typename T>
-concept IsDynamicNode = CheckDynamicNode<T, psi::pointer_based::DynamicNode>;
+concept IsDynamicNode = CheckDynamicNode<T, psi::pointer_view::DynamicNode>;
 
 // TODO: may remove below from inner tree
 template <typename T>
@@ -379,7 +379,7 @@ concept IsNodeBox = requires {
                IsBox<typename T::second_type, Point>;
 };
 
-}  // namespace pointer_based
+}  // namespace pointer_view
 }  // namespace psi
 
 #endif  // PSI_DEPENDENCE_TREE_NODE_H_

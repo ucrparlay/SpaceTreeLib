@@ -1,0 +1,78 @@
+#ifndef PSI_POINTER_VIEW_P_TREE_IMPL_P_OVERRIDE_HPP_
+#define PSI_POINTER_VIEW_P_TREE_IMPL_P_OVERRIDE_HPP_
+
+#include <type_traits>
+#include <utility>
+
+#include "../../dependence/loggers.h"
+#include "../../dependence/tree_node.h"
+#include "../p_tree.h"
+
+namespace psi {
+namespace pointer_view {
+#define FT long
+
+// return the sqr distance between a point and a mbr
+template <class Point, class MBR>
+auto point_mbr_sqrdis(Point p, MBR& mbr) {
+  FT dx = max(max(mbr.first[0] - p[0], (FT)0.0),
+              max(p[0] - mbr.second[0], (FT)0.0));
+  FT dy = max(max(mbr.first[1] - p[1], (FT)0.0),
+              max(p[1] - mbr.second[1], (FT)0.0));
+  return dx * dx + dy * dy;
+}
+
+// return the sqr distance between two points
+template <class Point>
+auto point_point_sqrdis(Point const& lhs, Point const& rhs) {
+  return (lhs.pnt[0] - rhs.pnt[0]) * (lhs.pnt[0] - rhs.pnt[0]) +
+         (lhs.pnt[1] - rhs.pnt[1]) * (lhs.pnt[1] - rhs.pnt[1]);
+}
+
+template <typename TypeTrait>
+template <typename Range>
+auto PTree<TypeTrait>::KNN(Node* T, Point const& q,
+                           kBoundedQueue<Point, Range>& bq) {
+  KNNLogger logger;
+  CpamAugMap::template knn<Geo>(this->cpam_aug_map_, q, bq, logger);
+  return logger;
+}
+
+template <typename TypeTrait>
+template <typename Range>
+void PTree<TypeTrait>::Flatten(Range&& Out) {
+  CpamAugMap::entries(parlay::make_slice(Out));
+  return;
+}
+
+template <typename TypeTrait>
+auto PTree<TypeTrait>::RangeCount(Box const& query_box) {
+  RangeQueryLogger logger;
+
+  auto size = CpamAugMap::template range_count_filter2<Geo>(this->cpam_aug_map_,
+                                                            query_box, logger);
+
+  return std::make_pair(size, logger);
+}
+
+template <typename TypeTrait>
+template <typename Range>
+auto PTree<TypeTrait>::RangeQuery(Box const& query_box, Range&& Out) {
+  RangeQueryLogger logger;
+  size_t cnt = 0;
+  CpamAugMap::template range_report_filter2<Geo>(
+      this->cpam_aug_map_, query_box, cnt, parlay::make_slice(Out), logger);
+  return std::make_pair(cnt, logger);
+}
+
+template <typename TypeTrait>
+constexpr void PTree<TypeTrait>::DeleteTree() {
+  cpam_aug_map_.clear();
+  cpam_aug_map_.root = nullptr;
+  return;
+}
+
+}  // namespace pointer_view
+}  // namespace psi
+
+#endif

@@ -4,13 +4,13 @@
 // Backward compatibility header
 // This file forwards to the pointer-based implementation
 
-#include "array_based/kd_tree_array.h"
-#include "pointer_based/kd_tree.h"
+#include "array_view/kd_tree_array.h"
+#include "pointer_view/kd_tree.h"
 
-// Backward compatibility: alias pointer_based types into psi namespace
+// Backward compatibility: alias pointer_view types into psi namespace
 namespace psi {
-using array_based::KdTreeArray;
-using pointer_based::KdTree;
+using array_view::KdTreeArray;
+using pointer_view::KdTree;
 }  // namespace psi
 
 #endif  // PSI_KD_TREE_H_

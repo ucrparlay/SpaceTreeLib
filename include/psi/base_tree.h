@@ -3,11 +3,11 @@
 
 // Backward compatibility header
 // This file forwards to the pointer-based implementation
-#include "pointer_based/base_tree.h"
+#include "pointer_view/base_tree.h"
 
-// Backward compatibility: alias pointer_based types into psi namespace
+// Backward compatibility: alias pointer_view types into psi namespace
 namespace psi {
-using pointer_based::BaseTree;
+using pointer_view::BaseTree;
 }  // namespace psi
 
 #endif  // PSI_BASE_TREE_H_

@@ -1,0 +1,39 @@
+#ifndef PSI_POINTER_VIEW_P_TREE_IMPL_P_BATCH_DIFF_HPP_
+#define PSI_POINTER_VIEW_P_TREE_IMPL_P_BATCH_DIFF_HPP_
+
+#include "../p_tree.h"
+
+namespace psi {
+namespace pointer_view {
+template <typename TypeTrait>
+template <typename Range>
+void PTree<TypeTrait>::BatchDiff(Range&& In) {
+  static_assert(parlay::is_random_access_range_v<Range>);
+  static_assert(
+      parlay::is_less_than_comparable_v<parlay::range_reference_type_t<Range>>);
+  static_assert(std::is_constructible_v<parlay::range_value_type_t<Range>,
+                                        parlay::range_reference_type_t<Range>>);
+
+  Slice A = parlay::make_slice(In);
+  BatchDiff_(A);
+  return;
+}
+
+// NOTE: batch delete suitable for Points that are pratially covered in the tree
+template <typename TypeTrait>
+void PTree<TypeTrait>::BatchDiff_(Slice A) {
+  if (!this->cpam_aug_map_.root) {
+    return;
+  }
+  this->cpam_aug_map_ =
+      CpamAugMap::multi_diff(std::move(this->cpam_aug_map_), A);
+  return;
+}
+
+}  // namespace pointer_view
+}  // namespace psi
+
+ 
+ 
+
+#endif
