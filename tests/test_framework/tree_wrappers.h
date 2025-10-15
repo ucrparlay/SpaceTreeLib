@@ -382,7 +382,7 @@ class Wrapper {
     using SplitRule = SplitRuleType;
     using TreeType = typename psi::OrthTree<psi::TypeTrait<
         Point, psi::Node, SplitRule, LeafAugType, InteriorAugType,
-        OrthGetBuildDepthOnce(Point::GetDim())>>;
+        Point::GetDim(), OrthGetBuildDepthOnce(Point::GetDim())>>;
   };
 
   template <class PointType, class SplitRuleType>
