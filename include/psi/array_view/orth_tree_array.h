@@ -133,9 +133,9 @@ class OrthTreeArray
   void Build_(Slice In);
   void Build_(Slice In, Box const& box);
 
-  NodeIndex BuildRecursive(Slice In, Slice Out, Box const& bx);
+  NodeIndex BuildRecursive(Slice In, Slice Out, Box const& box);
 
-  NodeIndex SerialBuildRecursive(Slice In, Slice Out, Box const& bx,
+  NodeIndex SerialBuildRecursive(Slice In, Slice Out, Box const& box,
                                  bool checked_duplicate);
 
   // Node allocation

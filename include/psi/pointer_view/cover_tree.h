@@ -132,11 +132,11 @@ class CoverTree
                     BoxSeq& box_seq, Box const& box);
 
   void PickPivots(Slice In, size_t const& n, HyperPlaneSeq& pivots,
-                  DimsType const dim, BoxSeq& box_seq, Box const& bx);
+                  DimsType const dim, BoxSeq& box_seq, Box const& box);
 
-  Node* BuildRecursive(Slice In, Slice Out, Box const& bx);
+  Node* BuildRecursive(Slice In, Slice Out, Box const& box);
 
-  Node* SerialBuildRecursive(Slice In, Slice Out, Box const& bx,
+  Node* SerialBuildRecursive(Slice In, Slice Out, Box const& box,
                              bool checked_duplicate);
 
   void BatchInsert_(Slice In);

@@ -112,11 +112,11 @@ class GeoBase {
   // Implementation: base_tree_impl/box_op.hpp
   //============================================================================
 
-  static inline Coord GetBoxMid(DimsType const d, Box const& bx);
-  static inline bool LegalBox(Box const& bx);
+  static inline Coord GetBoxMid(DimsType const d, Box const& box);
+  static inline bool LegalBox(Box const& box);
   static inline bool WithinBox(Box const& a, Box const& b);
   static inline bool SameBox(Box const& a, Box const& b);
-  static inline bool WithinBox(Point const& p, Box const& bx);
+  static inline bool WithinBox(Point const& p, Box const& box);
   static inline bool BoxIntersectBox(Box const& a, Box const& b);
   static inline bool IsBoxLineInDimension(Box const& box, DimsType d);
   static inline bool VerticalLineSplitBox(Coord const& l, Box const& box,

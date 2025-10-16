@@ -95,7 +95,7 @@ class KdTree : public BaseTree<TypeTrait, KdTree<TypeTrait>> {
 
   void BatchDelete_(Slice In);
 
-  NodeBox BatchDeleteRecursive(Node* T, Box const& bx, Slice In, Slice Out,
+  NodeBox BatchDeleteRecursive(Node* T, Box const& box, Slice In, Slice Out,
                                DimsType d, bool has_tomb);
 
   // NOTE: batch diff
@@ -107,7 +107,7 @@ class KdTree : public BaseTree<TypeTrait, KdTree<TypeTrait>> {
 
   // TODO: add bounding Box for batch delete recursive as well
   // WARN: fix the possible in partial deletion as well
-  NodeBox BatchDiffRecursive(Node* T, Box const& bx, Slice In, Slice Out,
+  NodeBox BatchDiffRecursive(Node* T, Box const& box, Slice In, Slice Out,
                              DimsType d);
 
   template <typename Range>
@@ -124,14 +124,14 @@ class KdTree : public BaseTree<TypeTrait, KdTree<TypeTrait>> {
   auto RangeQuery(Box const& query_box, Range&& Out);
 
   void DivideRotate(Slice In, SplitterSeq& pivots, DimsType dim, BucketType idx,
-                    BoxSeq& box_seq, Box const& bx);
+                    BoxSeq& box_seq, Box const& box);
 
   void PickPivots(Slice In, size_t const& n, SplitterSeq& pivots,
-                  DimsType const dim, BoxSeq& box_seq, Box const& bx);
+                  DimsType const dim, BoxSeq& box_seq, Box const& box);
 
-  Node* BuildRecursive(Slice In, Slice Out, DimsType dim, Box const& bx);
+  Node* BuildRecursive(Slice In, Slice Out, DimsType dim, Box const& box);
 
-  Node* SerialBuildRecursive(Slice In, Slice Out, DimsType dim, Box const& bx);
+  Node* SerialBuildRecursive(Slice In, Slice Out, DimsType dim, Box const& box);
 
   void Build_(Slice In);
 

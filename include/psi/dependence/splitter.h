@@ -134,7 +134,7 @@ struct BaseSplitDimRule {
   using PointsIter = TypeTrait::PointsIter;
 
   constexpr virtual DimsType const FindCuttingDimension(
-      Box const& bx, DimsType const dim) const = 0;
+      Box const& box, DimsType const dim) const = 0;
 
   constexpr virtual DimsType const FindRebuildDimension(
       DimsType const dim) const = 0;
@@ -157,14 +157,14 @@ struct MaxStretchDim : BaseSplitDimRule<TypeTrait> {
   void MaxStretchTag() {}
   static std::string GetName() { return "MaxStretchDim"; }
 
-  constexpr DimsType const FindCuttingDimension(Box const& bx,
+  constexpr DimsType const FindCuttingDimension(Box const& box,
                                                 DimsType) const override {
     DimsType d(0);
-    Coord diff(bx.second.pnt[0] - bx.first.pnt[0]);
+    Coord diff(box.second.pnt[0] - box.first.pnt[0]);
     assert(Num::Geq(diff, 0));
     for (DimsType i = 1; i < Point::GetDim(); ++i) {
-      if (Num::Gt(bx.second.pnt[i] - bx.first.pnt[i], diff)) {
-        diff = bx.second.pnt[i] - bx.first.pnt[i];
+      if (Num::Gt(box.second.pnt[i] - box.first.pnt[i], diff)) {
+        diff = box.second.pnt[i] - box.first.pnt[i];
         d = i;
       }
     }
@@ -196,7 +196,7 @@ struct RotateDim : BaseSplitDimRule<TypeTrait> {
   static std::string GetName() { return "RotateDim"; }
 
   constexpr DimsType const FindCuttingDimension(
-      [[maybe_unused]] Box const& bx, DimsType const dim) const override {
+      [[maybe_unused]] Box const& box, DimsType const dim) const override {
     return dim;
   };
 
