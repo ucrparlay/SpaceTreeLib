@@ -189,7 +189,4 @@ void BaseTree<TypeTrait, DerivedTree>::SeievePoints(
 }  // namespace pointer_view
 }  // namespace psi
 
- 
- 
-
 #endif  // PSI_POINTER_VIEW_BASE_TREE_IMPL_POINTS_OP_HPP_

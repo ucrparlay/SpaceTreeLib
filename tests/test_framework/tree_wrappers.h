@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <iostream>
 #include <string>
 
@@ -366,14 +367,13 @@ class Wrapper {
                        InteriorAugType>>;
   };
 
-  template <class PointType, class SplitRuleType, class LeafAugType,
-            class InteriorAugType>
+  template <class PointType, class SplitRuleType, class InteriorAugType>
   struct ArrayTreeWrapper {
     using Point = PointType;
     using SplitRule = SplitRuleType;
-    using TreeType = typename psi::array_view::KdTreeArray<
-        psi::TypeTrait<Point, psi::pointer_view::Node, SplitRule, LeafAugType,
-                       InteriorAugType>>;
+    using TreeType = typename psi::array_view::KdTreeArray<psi::TypeTrait<
+        Point, uint32_t, SplitRule, InteriorAugType, InteriorAugType>>;
+    // BUG: using uint32_t as the node type
   };
 
   template <class PointType, class SplitRuleType, class LeafAugType,
@@ -707,8 +707,8 @@ class Wrapper {
     auto build_tree_type = [&]<typename Point, typename SplitRule>() {
       using BT = psi::BaseTree<psi::TypeTrait<Point>>;
       if (tree_type == 0) {
-        Run<ArrayTreeWrapper<Point, SplitRule, LeafAugBox<BT>,
-                             InteriorAugBox<BT>>>(params, test_func);
+        Run<ArrayTreeWrapper<Point, SplitRule, NodeAugBox<BT>>>(params,
+                                                                test_func);
       }
     };
 

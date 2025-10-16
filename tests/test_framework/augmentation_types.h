@@ -1,6 +1,7 @@
 #pragma once
 
 #include <optional>
+#include <utility>
 
 #include "psi/base_tree.h"
 
@@ -157,6 +158,99 @@ struct InteriorAugBox : public InteriorAugEmpty<BaseTree> {
   Box box;
 };
 
+// NOTE: array
+template <class BaseTree>
+struct NodeAugEmpty {
+  using BT = BaseTree;
+  using Geo = BT::Geo;
+  using Slice = BT::Slice;
+
+  NodeAugEmpty() { force_par_indicator.reset(); }
+  NodeAugEmpty(bool) { force_par_indicator.reset(); }
+  NodeAugEmpty(Slice) { force_par_indicator.reset(); }
+
+  // use a bool to reload default constructor
+  static bool Create(Slice In) { return true; }
+
+  template <typename InnerSeq, typename NodeIndex>
+  static bool Create(InnerSeq& inner_tree_seq, NodeIndex inner_offset) {
+    return true;
+  }
+
+  template <typename InnerSeq, typename NodeIndex>
+  void Update(InnerSeq& inner_tree_seq, NodeIndex inner_offset) {
+    return;
+  }
+
+  void Update(auto new_box) { return; }
+
+  void SetParallelFlag(bool const flag) {
+    this->force_par_indicator.emplace(flag);
+  }
+
+  void ResetParallelFlag() { this->force_par_indicator.reset(); }
+
+  bool GetParallelFlagIniStatus() {
+    return this->force_par_indicator.has_value();
+  }
+
+  bool ForceParallel(size_t sz) const {
+    return this->force_par_indicator.has_value()
+               ? this->force_par_indicator.value()
+               : sz > BT::kSerialBuildCutoff;
+  }
+
+  void Reset() { this->force_par_indicator.reset(); }
+
+  // NOTE: use a tri-state bool to indicate whether a subtree needs to be
+  // rebuilt. If aug is not INITIALIZED, then it means there is no need to
+  // rebuild; otherwise, the value depends on the initial tree size before
+  // rebuilding.
+  std::optional<bool> force_par_indicator;
+};
+
+// NOTE: for array based augmentation
+template <class BaseTree>
+struct NodeAugBox : public NodeAugEmpty<BaseTree> {
+  using BT = BaseTree;
+  using Box = BT::Box;
+  using Slice = BT::Slice;
+  using BaseAug = NodeAugEmpty<BT>;
+  using Geo = BT::Geo;
+
+  NodeAugBox() : BaseAug(), box(Geo::GetEmptyBox()) {}
+
+  NodeAugBox(Box const& _box) : BaseAug(), box(_box) {}
+
+  NodeAugBox(Slice In) : BaseAug(In), box(Geo::GetBox(In)) {}
+
+  Box& GetBox() { return this->box; }
+
+  Box const& GetBox() const { return this->box; }
+
+  static Box Create(Slice In) { return Geo::GetBox(In); }
+
+  template <typename InnerSeq, typename NodeIndex>
+  static Box Create(InnerSeq& inner_tree_seq, NodeIndex inner_offset) {
+    return Geo::GetBox(inner_tree_seq[inner_offset * 2].GetBox(),
+                       inner_tree_seq[inner_offset * 2 + 1].GetBox());
+  }
+
+  template <typename InnerSeq, typename NodeIndex>
+  void Update(InnerSeq& inner_tree_seq, NodeIndex inner_offset) {
+    this->box = this->Create(inner_tree_seq, inner_offset);
+    return;
+  }
+
+  void Update(auto new_box) {
+    this->box = BT::Geo::GetBox(this->box, std::forward(new_box));
+  }
+
+  // TODO: get a better name
+  void Reset() { BaseAug::Reset(); }
+
+  Box box;
+};
 // For testing purposes
 template <typename BaseTree>
 struct InteriorTester : InteriorAugBox<BaseTree> {

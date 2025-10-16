@@ -67,7 +67,8 @@ class KdTreeArray : public BaseTreeArray<TypeTrait, KdTreeArray<TypeTrait>> {
                                       typename TypeTrait::InteriorAugType>,
                          typename TypeTrait::InteriorAugType, std::monostate>;
 
-  using InnerNode = Node<Point, kInnerNodeLevels, SplitterSeq, NodeAugType>;
+  using InnerNode = ArrayNode<Point, kInnerNodeLevels, HyperPlane, NodeAugType,
+                              BT::kLeaveWrap, parlay::move_assign_tag>;
   using Leaf = InnerNode;      // Leaf has same structure as InnerNode
   using Interior = InnerNode;  // Interior has same structure as InnerNode
 
@@ -128,15 +129,16 @@ class KdTreeArray : public BaseTreeArray<TypeTrait, KdTreeArray<TypeTrait>> {
 
   void Build_(Slice In);
 
-  void BuildRecursive(Slice In, Slice Out, DimsType dim, Box const& bx);
+  void BuildRecursive(Slice In, Slice Out, DimsType dim, Box const& box);
 
-  void SerialBuildRecursive(Slice In, Slice Out, DimsType dim, Box const& bx);
+  void SerialBuildRecursive(Slice In, Slice Out, DimsType dim, Box const& box,
+                            NodeIndex inner_offset, NodeIndex leaf_offset);
 
   void DivideRotate(Slice In, SplitterSeq& pivots, DimsType dim, BucketType idx,
-                    BoxSeq& box_seq, Box const& bx);
+                    BoxSeq& box_seq, Box const& box);
 
   void PickPivots(Slice In, size_t const& n, SplitterSeq& pivots,
-                  DimsType const dim, BoxSeq& box_seq, Box const& bx);
+                  DimsType const dim, BoxSeq& box_seq, Box const& box);
 
   parlay::sequence<InnerNode> inner_tree_seq_;
 

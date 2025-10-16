@@ -42,32 +42,36 @@ void KdTreeArray<TypeTrait>::BuildRecursive(Slice In, Slice Out, DimsType dim,
 
 template <typename TypeTrait>
 void KdTreeArray<TypeTrait>::SerialBuildRecursive(Slice In, Slice Out,
-                                                  DimsType dim,
-                                                  Box const& box) {
+                                                  DimsType dim, Box const& box,
+                                                  NodeIndex inner_offset,
+                                                  NodeIndex leaf_offset) {
   size_t n = In.size();
 
-  if (n == 0) return AllocEmptyLeafNode<Slice, Leaf>();
+  if (n == 0) {
+    return AnnoteEmptyLeaf(inner_tree_seq_, inner_offset, leaf_offset);
+  }
 
-  if (n <= BT::kLeaveWrap) return AllocNormalLeafNode<Slice, Leaf>(In);
+  if (n <= BT::kLeaveWrap) {
+    return AnnoteLeaf(inner_tree_seq_, leaf_seq_, In, inner_offset, leaf_offset,
+                      BT::kLeaveWrap);
+  }
 
-  DimsType d = split_rule_.FindCuttingDimension(box, dim);
-  auto [split_iter, split] = split_rule_.SplitInput(In, d, box);
+  DimsType next_dim = split_rule_.FindCuttingDimension(box, dim);
+  auto [split_iter, split] = split_rule_.SplitInput(In, next_dim, box);
 
   if (!split.has_value()) {
     if (In.end() == std::ranges::find_if_not(In, [&](Point const& p) {
           return p.SameDimension(In[0]);
-        })) {
-      if constexpr (IsAugPoint<Point>) {
-        if constexpr (Point::IsNonTrivialAugmentation()) {
-          return AllocFixSizeLeafNode<Slice, Leaf>(
-              In, std::max(In.size(), static_cast<size_t>(BT::kLeaveWrap)));
-        } else {
-          return AllocDummyLeafNode<Slice, Leaf>(In);
-        }
-      } else {
-        return AllocDummyLeafNode<Slice, Leaf>(In);
+        })) {  // dimensions for all points are identical
+      if constexpr (IsAugPoint<Point> && Point::IsNonTrivialAugmentation()) {
+        return AnnoteLeaf(
+            inner_tree_seq_, leaf_seq_, In, inner_offset, leaf_offset,
+            std::max(In.size(), static_cast<size_t>(BT::kLeaveWrap)));
+      } else {  // the points is identified by only the coordinates
+        return AnnoteDummyLeaf(inner_tree_seq_, leaf_seq_, In, inner_offset,
+                               leaf_offset);
       }
-    } else {
+    } else {  // current dimension is same for all points
       return split_rule_.HandlingUndivide(*this, In, Out, box, dim);
     }
   }
@@ -81,15 +85,17 @@ void KdTreeArray<TypeTrait>::SerialBuildRecursive(Slice In, Slice Out,
 
   BoxCut box_cut(box, split.value(), true);
 
-  d = split_rule_.NextDimension(d);
+  next_dim = split_rule_.NextDimension(next_dim);
 
-  SerialBuildRecursive(In.cut(0, split_iter - In.begin()),
-                       Out.cut(0, split_iter - In.begin()), d,
-                       box_cut.GetFirstBoxCut());
-  SerialBuildRecursive(In.cut(split_iter - In.begin(), n),
-                       Out.cut(split_iter - In.begin(), n), d,
-                       box_cut.GetSecondBoxCut());
-  // return AllocInteriorNode<Interior>(L, R, split.value());
+  auto split_pos = split_iter - In.begin();
+  SerialBuildRecursive(In.cut(0, split_pos), Out.cut(0, split_pos), next_dim,
+                       box_cut.GetFirstBoxCut(), inner_offset * 2, leaf_offset);
+  SerialBuildRecursive(In.cut(split_pos, n), Out.cut(split_pos, n), next_dim,
+                       box_cut.GetSecondBoxCut(), inner_offset * 2 + 1,
+                       leaf_offset + split_pos);
+  AnnoteInterior(inner_tree_seq_, inner_offset, leaf_offset, In.size(),
+                 split.value());
+  return;
 }
 
 template <typename TypeTrait>
