@@ -159,11 +159,11 @@ struct OrthTree<TypeTrait>::OrthInteriorNode
     BucketType n = box_seq.size();
     assert(n - n / 2 == n / 2);
 
-    std::for_each_n(box_seq.begin(), n / 2, [&](auto& bx) {
-      bx.second.pnt[split[deep].second] = split[deep].first;
+    std::for_each_n(box_seq.begin(), n / 2, [&](auto& box) {
+      box.second.pnt[split[deep].second] = split[deep].first;
     });
-    std::for_each_n(box_seq.begin() + n / 2, n - n / 2, [&](auto& bx) {
-      bx.first.pnt[split[deep].second] = split[deep].first;
+    std::for_each_n(box_seq.begin() + n / 2, n - n / 2, [&](auto& box) {
+      box.first.pnt[split[deep].second] = split[deep].first;
     });
 
     ComputeSubregionsRec(box_seq.cut(0, n / 2), split, deep + 1);

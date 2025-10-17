@@ -28,15 +28,15 @@ struct MultiNodeOps {
     assert(BT::kDim ==
            static_cast<BucketType>(std::log2(Interior::GetRegions())));
 
-    Box bx(box);
+    Box new_box(box);
     BucketType h = InnerTree::GetDepthByIndex(idx);
     for (BucketType i = h, new_idx = 1; i > 0; i -= BT::kDim) {
       BucketType local_id = (idx >> (i - BT::kDim)) & ((1 << BT::kDim) - 1);
       auto TI = static_cast<Interior*>(self->tags[new_idx].first);
-      TI->ModifyBoxById(local_id, bx);
+      TI->ModifyBoxById(local_id, new_box);
       new_idx = new_idx << BT::kDim | local_id;
     }
-    return bx;
+    return new_box;
   }
 
   static void AssignNodeTag(InnerTree* self, Node* T, BucketType idx) {

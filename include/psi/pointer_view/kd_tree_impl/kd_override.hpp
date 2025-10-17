@@ -40,10 +40,10 @@ void KdTree<TypeTrait>::Flatten(Range&& Out) {
 }
 
 template <typename TypeTrait>
-auto KdTree<TypeTrait>::RangeCount(Box const& bx) {
+auto KdTree<TypeTrait>::RangeCount(Box const& box) {
   RangeQueryLogger logger;
   size_t size = BT::template RangeCountRectangle<Leaf, Interior>(
-      this->root_, bx, this->tree_box_, logger);
+      this->root_, box, this->tree_box_, logger);
   return std::make_pair(size, logger);
 }
 

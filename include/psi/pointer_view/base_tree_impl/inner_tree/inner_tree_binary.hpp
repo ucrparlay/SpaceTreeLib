@@ -24,17 +24,17 @@ struct BinaryNodeOps {
 
   static Box GetBoxByRegionIdx(InnerTree* self, int const idx, Box const& box) {
     assert(InnerTree::GetDepthByIndex(10) == 3);
-    Box bx(box);
+    Box new_box(box);
     int h = InnerTree::GetDepthByIndex(idx);
     for (int i = h - 1, new_idx = 1; i >= 0; i--) {
       int local_id = (idx >> i) & 1;
       auto TI = static_cast<Interior*>(self->tags[new_idx].first);
-      auto& target = local_id ? bx.first : bx.second;
+      auto& target = local_id ? new_box.first : new_box.second;
       target.pnt[TI->split.second] = TI->split.first;
       new_idx = new_idx << 1 | local_id;
       assert(new_idx <= idx);
     }
-    return bx;
+    return new_box;
   }
 
   static void AssignNodeTag(InnerTree* self, Node* T, BucketType idx) {

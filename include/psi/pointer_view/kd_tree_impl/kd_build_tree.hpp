@@ -52,14 +52,14 @@ void KdTree<TypeTrait>::DivideRotate(Slice In, SplitterSeq& pivots,
 template <typename TypeTrait>
 void KdTree<TypeTrait>::PickPivots(Slice In, size_t const& n,
                                    SplitterSeq& pivots, DimsType const dim,
-                                   BoxSeq& box_seq, Box const& bx) {
+                                   BoxSeq& box_seq, Box const& box) {
   size_t size = std::min(n, static_cast<size_t>(32 * BT::kBucketNum));
   assert(size <= n);
 
   Points arr = Points::uninitialized(size);
   BT::SamplePoints(In, arr);
 
-  DivideRotate(arr.cut(0, size), pivots, dim, 1, box_seq, bx);
+  DivideRotate(arr.cut(0, size), pivots, dim, 1, box_seq, box);
   return;
 }
 
@@ -117,18 +117,18 @@ auto KdTree<TypeTrait>::SerialBuildRecursive(Slice In, Slice Out, DimsType dim,
 
 template <typename TypeTrait>
 auto KdTree<TypeTrait>::BuildRecursive(Slice In, Slice Out, DimsType dim,
-                                       Box const& bx) -> Node* {
-  assert(In.size() == 0 || Geo::WithinBox(Geo::GetBox(In), bx));
+                                       Box const& box) -> Node* {
+  assert(In.size() == 0 || Geo::WithinBox(Geo::GetBox(In), box));
 
   if (In.size() <= BT::kSerialBuildCutoff) {
-    return SerialBuildRecursive(In, Out, dim, bx);
+    return SerialBuildRecursive(In, Out, dim, box);
   }
 
   auto pivots = SplitterSeq::uninitialized(BT::kPivotNum + BT::kBucketNum + 1);
   auto box_seq = BoxSeq::uninitialized(BT::kBucketNum);
   parlay::sequence<BallsType> sums;
 
-  PickPivots(In, In.size(), pivots, dim, box_seq, bx);
+  PickPivots(In, In.size(), pivots, dim, box_seq, box);
   BT::Partition(In, Out, In.size(), pivots, sums);
 
   auto tree_nodes = parlay::sequence<Node*>::uninitialized(BT::kBucketNum);
@@ -136,7 +136,7 @@ auto KdTree<TypeTrait>::BuildRecursive(Slice In, Slice Out, DimsType dim,
   BucketType zeros = std::ranges::count(sums, 0), cnt = 0;
 
   if (zeros == BT::kBucketNum - 1) {
-    return SerialBuildRecursive(In, Out, dim, bx);
+    return SerialBuildRecursive(In, Out, dim, box);
   }
 
   for (BucketType i = 0; i < BT::kBucketNum; ++i) {

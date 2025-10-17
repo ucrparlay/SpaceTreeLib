@@ -31,10 +31,10 @@ void COVERTREE_CLASS::Flatten(Range&& Out) {
 }
 
 COVERTREE_TEMPLATE
-auto COVERTREE_CLASS::RangeCount(Box const& bx) {
+auto COVERTREE_CLASS::RangeCount(Box const& box) {
   RangeQueryLogger logger;
   size_t s = BT::template RangeCountRectangle<Leaf, Interior>(
-      this->root_, bx, this->tree_box_, 0, 1, logger);
+      this->root_, box, this->tree_box_, 0, 1, logger);
   return std::make_pair(s, logger);
 }
 

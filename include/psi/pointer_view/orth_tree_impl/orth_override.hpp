@@ -39,10 +39,10 @@ void OrthTree<TypeTrait>::Flatten(Range&& Out) {
 }
 
 template <typename TypeTrait>
-auto OrthTree<TypeTrait>::RangeCount(Box const& bx) {
+auto OrthTree<TypeTrait>::RangeCount(Box const& box) {
   RangeQueryLogger logger;
   size_t s = BT::template RangeCountRectangle<Leaf, Interior>(
-      this->root_, bx, this->tree_box_, 0, 1, logger);
+      this->root_, box, this->tree_box_, 0, 1, logger);
   return std::make_pair(s, logger);
 }
 
