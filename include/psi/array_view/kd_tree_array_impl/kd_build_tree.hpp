@@ -2,6 +2,7 @@
 #define PSI_ARRAY_VIEW_KD_TREE_ARRAY_IMPL_KD_BUILD_TREE_HPP_
 
 #include "array_view/kd_tree_array.h"
+#include "dependence/tree_node_array.h"
 
 namespace psi {
 namespace array_view {
@@ -25,19 +26,23 @@ void KdTreeArray<TypeTrait>::Build(Range&& In) {
 
 template <typename TypeTrait>
 void KdTreeArray<TypeTrait>::Build_(Slice A) {
+  assert(inner_tree_seq_.size() && leaf_seq_.size());
   Points B = Points::uninitialized(A.size());
   this->tree_box_ = Geo::GetBox(A);
   BuildRecursive(A, B.cut(0, A.size()), 0, this->tree_box_);
-  assert(this->root_ != BT::NULL_INDEX);
   return;
 }
 
 template <typename TypeTrait>
 void KdTreeArray<TypeTrait>::BuildRecursive(Slice In, Slice Out, DimsType dim,
-                                            Box const& bx) {
+                                            Box const& box) {
   // TODO: Implement
   // Recursive build using array indices
   // Similar to pointer-based version but returns NodeIndex
+  std::cout << "here" << std::endl;
+  SerialBuildRecursive(In, Out, dim, box, 1, 0);
+  std::cout << static_cast<int>(InnerNode::GetRegions()) << std::endl;
+  std::cout << array_view::IsBinaryNode<InnerNode> << std::endl;
 }
 
 template <typename TypeTrait>
@@ -48,12 +53,13 @@ void KdTreeArray<TypeTrait>::SerialBuildRecursive(Slice In, Slice Out,
   size_t n = In.size();
 
   if (n == 0) {
-    return AnnoteEmptyLeaf(inner_tree_seq_, inner_offset, leaf_offset);
+    AnnoteEmptyLeaf(inner_tree_seq_, inner_offset, leaf_offset);
+    return;
   }
 
   if (n <= BT::kLeaveWrap) {
-    return AnnoteLeaf(inner_tree_seq_, leaf_seq_, In, inner_offset, leaf_offset,
-                      BT::kLeaveWrap);
+    AnnoteLeaf(inner_tree_seq_, leaf_seq_, In, inner_offset, leaf_offset);
+    return;
   }
 
   DimsType next_dim = split_rule_.FindCuttingDimension(box, dim);
@@ -64,15 +70,15 @@ void KdTreeArray<TypeTrait>::SerialBuildRecursive(Slice In, Slice Out,
           return p.SameDimension(In[0]);
         })) {  // dimensions for all points are identical
       if constexpr (IsAugPoint<Point> && Point::IsNonTrivialAugmentation()) {
-        return AnnoteLeaf(
-            inner_tree_seq_, leaf_seq_, In, inner_offset, leaf_offset,
-            std::max(In.size(), static_cast<size_t>(BT::kLeaveWrap)));
+        AnnoteLeaf(inner_tree_seq_, leaf_seq_, In, inner_offset, leaf_offset);
+        return;
       } else {  // the points is identified by only the coordinates
-        return AnnoteDummyLeaf(inner_tree_seq_, leaf_seq_, In, inner_offset,
-                               leaf_offset);
+        AnnoteDummyLeaf(inner_tree_seq_, leaf_seq_, In, inner_offset,
+                        leaf_offset);
+        return;
       }
     } else {  // current dimension is same for all points
-      return split_rule_.HandlingUndivide(*this, In, Out, box, dim);
+      // return split_rule_.HandlingUndivide(*this, In, Out, box, dim);
     }
   }
 
@@ -93,15 +99,15 @@ void KdTreeArray<TypeTrait>::SerialBuildRecursive(Slice In, Slice Out,
   SerialBuildRecursive(In.cut(split_pos, n), Out.cut(split_pos, n), next_dim,
                        box_cut.GetSecondBoxCut(), inner_offset * 2 + 1,
                        leaf_offset + split_pos);
-  AnnoteInterior(inner_tree_seq_, inner_offset, leaf_offset, In.size(),
-                 split.value());
+  AnnoteInterior(inner_tree_seq_, inner_offset, leaf_offset,
+                 static_cast<NodeIndex>(In.size()), split.value());
   return;
 }
 
 template <typename TypeTrait>
 void KdTreeArray<TypeTrait>::PickPivots(Slice In, size_t const& n,
                                         SplitterSeq& pivots, DimsType const dim,
-                                        BoxSeq& box_seq, Box const& bx) {
+                                        BoxSeq& box_seq, Box const& box) {
   // TODO: Implement
   // Pivot selection logic (can reuse from pointer-based)
 }
@@ -109,7 +115,7 @@ void KdTreeArray<TypeTrait>::PickPivots(Slice In, size_t const& n,
 template <typename TypeTrait>
 void KdTreeArray<TypeTrait>::DivideRotate(Slice In, SplitterSeq& pivots,
                                           DimsType dim, BucketType idx,
-                                          BoxSeq& box_seq, Box const& bx) {
+                                          BoxSeq& box_seq, Box const& box) {
   // TODO: Implement
   // Partitioning logic (can reuse from pointer-based)
 }

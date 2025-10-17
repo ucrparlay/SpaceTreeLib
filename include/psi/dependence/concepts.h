@@ -16,6 +16,54 @@ namespace psi {
 // template<typename T>
 // concept IsPair = is_pair<T>::value;
 
+namespace pointer_view {
+// NOTE: define the what is a binary node
+template <typename T,
+          template <typename, typename, typename> typename BinaryNodeT>
+concept CheckBinaryNode = std::is_base_of_v<
+    BinaryNodeT<typename T::PT, typename T::ST, typename T::AT>, T>;
+
+// NOTE: helper for decide a multi-way node
+template <
+    typename T,
+    template <typename, uint_fast8_t, typename, typename> typename MultiNodeT,
+    uint_fast8_t... Ns>
+concept IsMultiNodeHelper =
+    (std::is_base_of_v<
+         MultiNodeT<typename T::PT, Ns, typename T::ST, typename T::AT>, T> ||
+     ...);
+
+// NOTE: define the what is a multi-way node
+template <typename T, template <typename, uint_fast8_t, typename,
+                                typename> typename MultiNodeT>
+concept CheckMultiNode =
+    IsMultiNodeHelper<T, MultiNodeT, 2, 3, 4, 5, 6, 7, 8, 9, 10>;
+
+// NOTE: define the what is a dynamic node
+template <typename T,
+          template <typename, typename, typename> typename DynamicNodeT>
+concept CheckDynamicNode = std::is_base_of_v<
+    DynamicNodeT<typename T::PT, typename T::ST, typename T::AT>, T>;
+}  // namespace pointer_view
+
+// NOTE: check whether a array_based node is a bianry or multi
+namespace array_view {
+// NOTE: define the what is a binary node
+template <typename T>
+concept CheckBinaryNode = requires {
+  { T::GetRegions() } -> std::convertible_to<uint_fast8_t>;
+  requires T::GetRegions() == 2;
+};
+
+// NOTE: define the what is a multi-way node
+template <typename T>
+concept CheckMultiNode = requires {
+  { T::GetRegions() } -> std::convertible_to<uint_fast8_t>;
+  requires T::GetRegions() > 2;
+};
+
+}  // namespace array_view
+
 template <typename T>
 concept IsPointer = std::is_pointer_v<T>;
 
@@ -87,40 +135,11 @@ ReturnType InvokeWithOptionalArg(Func&& func, Arg&& arg) {
   }
 }
 
-// NOTE: define the what is a binary node
-template <typename T,
-          template <typename, typename, typename> typename BinaryNodeT>
-concept CheckBinaryNode = std::is_base_of_v<
-    BinaryNodeT<typename T::PT, typename T::ST, typename T::AT>, T>;
-
-// NOTE: helper for decide a multi-way node
-template <
-    typename T,
-    template <typename, uint_fast8_t, typename, typename> typename MultiNodeT,
-    uint_fast8_t... Ns>
-concept IsMultiNodeHelper =
-    (std::is_base_of_v<
-         MultiNodeT<typename T::PT, Ns, typename T::ST, typename T::AT>, T> ||
-     ...);
-
-// NOTE: define the what is a multi-way node
-template <typename T, template <typename, uint_fast8_t, typename,
-                                typename> typename MultiNodeT>
-concept CheckMultiNode =
-    IsMultiNodeHelper<T, MultiNodeT, 2, 3, 4, 5, 6, 7, 8, 9, 10>;
-
-// NOTE: define the what is a dynamic node
-template <typename T,
-          template <typename, typename, typename> typename DynamicNodeT>
-concept CheckDynamicNode = std::is_base_of_v<
-    DynamicNodeT<typename T::PT, typename T::ST, typename T::AT>, T>;
-
 // NOTE: tag aug point
 template <typename T>
 concept IsAugPoint = requires(T t) {
   { t.AugPointTag() } -> std::same_as<void>;
 };
-
 // NOTE: tag contain bounding box
 template <typename T>
 concept HasBox = requires(T t) {

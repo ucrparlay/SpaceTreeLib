@@ -519,7 +519,8 @@ struct OrthogonalSplitRule {
       // NOTE: in object median, if current dimension is not divideable, then
       // switch to another dimension then continue. This works since unless all
       // points are same, otherwise we can always slice some points out.
-      if constexpr (psi::pointer_view::IsBinaryNode<typename Tree::Interior>) {
+      if constexpr (psi::pointer_view::IsBinaryNode<typename Tree::Interior> ||
+                    psi::array_view::IsBinaryNode<typename Tree::Interior>) {
         // TODO: tooo brute force
         return tree.SerialBuildRecursive(
             In, Out, dim_rule.NextDimension(std::forward<Args>(args)...),

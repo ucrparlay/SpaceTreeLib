@@ -67,14 +67,22 @@ class KdTreeArray : public BaseTreeArray<TypeTrait, KdTreeArray<TypeTrait>> {
                                       typename TypeTrait::InteriorAugType>,
                          typename TypeTrait::InteriorAugType, std::monostate>;
 
-  using InnerNode = ArrayNode<Point, kInnerNodeLevels, HyperPlane, NodeAugType,
-                              BT::kLeaveWrap, parlay::move_assign_tag>;
+  using InnerNode =
+      ArrayNode<Point, kInnerNodeLevels, HyperPlane, NodeAugType,
+                BT::kLeaveWrap, NodeIndex, parlay::move_assign_tag>;
   using Leaf = InnerNode;      // Leaf has same structure as InnerNode
   using Interior = InnerNode;  // Interior has same structure as InnerNode
 
   //============================================================================
   // PUBLIC API (same interface as pointer-based KdTree)
   //============================================================================
+
+  KdTreeArray(SplitRule const& sr = SplitRule()) : split_rule_(sr) {}
+
+  KdTreeArray(NodeIndex size, SplitRule const& sr = SplitRule())
+      : inner_tree_seq_(decltype(inner_tree_seq_)::uninitialized(size)),
+        leaf_seq_(decltype(leaf_seq_)::uninitialized(4 * size)),
+        split_rule_(sr) {}
 
   void KdTreeArrayTag() {}
 

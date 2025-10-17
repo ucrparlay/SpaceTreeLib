@@ -25,18 +25,21 @@ namespace array_view {
 //============================================================================
 
 template <typename Point, uint_fast8_t kLevels, typename SplitType,
-          typename AugType, uint_fast8_t kLeafWrap, typename PointAssignTagType>
+          typename AugType, uint_fast8_t kLeafWrap, typename NodeIndexType,
+          typename PointAssignTagType>
 struct ArrayNode {
   using Coord = typename Point::Coord;
   using Num = Num_Comparator<Coord>;
   using ST = SplitType;
   using AT = AugType;
-  using NodeIndex = uint32_t;  // TODO: use the one in the type_traits
+  using NodeIndex = NodeIndexType;
   using PointAssignTag = PointAssignTagType;
 
   // TODO: Add how to access its children
 
-  static consteval auto GetRegions() { return 1 << kLevels; }
+  static consteval auto GetRegions() {
+    return static_cast<uint_fast8_t>(1) << kLevels;
+  }
 
   static consteval auto GetLevels() { return kLevels; }
 
@@ -59,8 +62,24 @@ struct ArrayNode {
         is_leaf(_is_leaf),
         is_dummy(_is_dummy) {}
 
-  void Update(NodeIndex _size, NodeIndex _leaf_offset, ST const& _split,
-              AT const& _aug, bool _is_leaf) {}
+  template <typename InnerSeq>
+  auto UpdateAug(InnerSeq& inner_tree_seq, NodeIndex inner_offset) {
+    return this->aug.Update(inner_tree_seq, inner_offset);
+  }
+
+  auto GetBox()
+    requires HasBox<AT>
+  {
+    return this->aug.GetBox();
+  }
+
+  auto GetBox() const
+    requires HasBox<AT>
+  {
+    return this->aug.GetBox();
+  }
+
+  auto ResetAug() { return this->aug.Reset(); }
 
   // NOTE: up tp 4 billion 2-d points in 1.5 TB memory
   NodeIndex size;         // Number of points in the subtree
@@ -100,7 +119,7 @@ void AnnoteLeaf(InnerSeq& inner_tree_seq, LeafSeq& leaf_seq, InputSlice In,
 
   for (int i = 0; i < In.size(); i++) {
     parlay::assign_dispatch(leaf_seq[leaf_offset + i], In[i],
-                            Node::PointAssignTag());
+                            typename Node::PointAssignTag());
   }
   return;
 }
@@ -120,12 +139,12 @@ void AnnoteDummyLeaf(InnerSeq& inner_tree_seq, LeafSeq& leaf_seq, InputSlice In,
   inner_tree_seq[inner_offset].aug = Node::AT::Create(In.cut(0, 1));
 
   // ignore aug and split for leaf
-  parlay::assign_dispatch(leaf_seq[leaf_offset], In[0], Node::PointAssignTag());
+  parlay::assign_dispatch(leaf_seq[leaf_offset], In[0],
+                          typename Node::PointAssignTag());
   return;
 }
 
-template <typename InnerSeq, typename NodeIndex, typename SplitType,
-          typename AugType>
+template <typename InnerSeq, typename NodeIndex, typename SplitType>
 void AnnoteInterior(InnerSeq& inner_tree_seq, NodeIndex inner_offset,
                     NodeIndex leaf_offset, NodeIndex size,
                     SplitType const split) {
@@ -141,6 +160,13 @@ void AnnoteInterior(InnerSeq& inner_tree_seq, NodeIndex inner_offset,
 
   return;
 }
+
+// Define some alias for concept check
+template <typename Node>
+concept IsBinaryNode = CheckBinaryNode<Node>;
+
+template <typename Node>
+concept IsMultiNode = CheckMultiNode<Node>;
 
 }  // namespace array_view
 }  // namespace psi

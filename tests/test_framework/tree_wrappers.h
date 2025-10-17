@@ -55,8 +55,9 @@ static auto constexpr DefaultTestFunc = []<class TreeDesc, typename Point>(
   using Tree = TreeDesc::TreeType;
   using Points = typename Tree::Points;
 
-  Tree tree;
+  Tree tree(wp.size());
   constexpr bool kTestTime = true;
+  BuildTree<Point, Tree, kTestTime, 0>(wp, kRounds, tree);
 
   // NOTE: batch insert
   if (kTag & (1 << 0)) {
@@ -372,7 +373,7 @@ class Wrapper {
     using Point = PointType;
     using SplitRule = SplitRuleType;
     using TreeType = typename psi::array_view::KdTreeArray<psi::TypeTrait<
-        Point, uint32_t, SplitRule, InteriorAugType, InteriorAugType>>;
+        Point, uint32_t, SplitRule, InteriorAugType, InteriorAugType, 1>>;
     // BUG: using uint32_t as the node type
   };
 

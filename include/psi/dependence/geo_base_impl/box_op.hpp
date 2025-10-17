@@ -23,20 +23,20 @@ inline typename GeoBase<TypeTrait>::Coord GeoBase<TypeTrait>::GetBoxMid(
 }
 
 template <class TypeTrait>
-inline bool GeoBase<TypeTrait>::LegalBox(Box const& bx) {
+inline bool GeoBase<TypeTrait>::LegalBox(Box const& box) {
   // TODO: remove it
-  if (bx == GetEmptyBox()) return true;
+  if (box == GetEmptyBox()) return true;
 
   if constexpr (kDim == 2) {
-    return !Num::Gt(bx.first.pnt[0], bx.second.pnt[0]) &&
-           !Num::Gt(bx.first.pnt[1], bx.second.pnt[1]);
+    return !Num::Gt(box.first.pnt[0], box.second.pnt[0]) &&
+           !Num::Gt(box.first.pnt[1], box.second.pnt[1]);
   } else if constexpr (kDim == 3) {
-    return !Num::Gt(bx.first.pnt[0], bx.second.pnt[0]) &&
-           !Num::Gt(bx.first.pnt[1], bx.second.pnt[1]) &&
-           !Num::Gt(bx.first.pnt[2], bx.second.pnt[2]);
+    return !Num::Gt(box.first.pnt[0], box.second.pnt[0]) &&
+           !Num::Gt(box.first.pnt[1], box.second.pnt[1]) &&
+           !Num::Gt(box.first.pnt[2], box.second.pnt[2]);
   } else {
     for (DimsType i = 0; i < kDim; ++i) {
-      if (Num::Gt(bx.first.pnt[i], bx.second.pnt[i])) {
+      if (Num::Gt(box.first.pnt[i], box.second.pnt[i])) {
         return false;
       }
     }
@@ -101,25 +101,25 @@ inline bool GeoBase<TypeTrait>::SameBox(Box const& a, Box const& b) {
 }
 
 template <class TypeTrait>
-inline bool GeoBase<TypeTrait>::WithinBox(Point const& p, Box const& bx) {
-  assert(LegalBox(bx));
+inline bool GeoBase<TypeTrait>::WithinBox(Point const& p, Box const& box) {
+  assert(LegalBox(box));
 
   if constexpr (kDim == 2) {
-    return !Num::Lt(p.pnt[0], bx.first.pnt[0]) &&
-           !Num::Lt(p.pnt[1], bx.first.pnt[1]) &&
-           !Num::Gt(p.pnt[0], bx.second.pnt[0]) &&
-           !Num::Gt(p.pnt[1], bx.second.pnt[1]);
+    return !Num::Lt(p.pnt[0], box.first.pnt[0]) &&
+           !Num::Lt(p.pnt[1], box.first.pnt[1]) &&
+           !Num::Gt(p.pnt[0], box.second.pnt[0]) &&
+           !Num::Gt(p.pnt[1], box.second.pnt[1]);
   } else if constexpr (kDim == 3) {
-    return !Num::Lt(p.pnt[0], bx.first.pnt[0]) &&
-           !Num::Lt(p.pnt[1], bx.first.pnt[1]) &&
-           !Num::Lt(p.pnt[2], bx.first.pnt[2]) &&
-           !Num::Gt(p.pnt[0], bx.second.pnt[0]) &&
-           !Num::Gt(p.pnt[1], bx.second.pnt[1]) &&
-           !Num::Gt(p.pnt[2], bx.second.pnt[2]);
+    return !Num::Lt(p.pnt[0], box.first.pnt[0]) &&
+           !Num::Lt(p.pnt[1], box.first.pnt[1]) &&
+           !Num::Lt(p.pnt[2], box.first.pnt[2]) &&
+           !Num::Gt(p.pnt[0], box.second.pnt[0]) &&
+           !Num::Gt(p.pnt[1], box.second.pnt[1]) &&
+           !Num::Gt(p.pnt[2], box.second.pnt[2]);
   } else {
     for (DimsType i = 0; i < kDim; ++i) {
-      if (Num::Lt(p.pnt[i], bx.first.pnt[i]) ||
-          Num::Gt(p.pnt[i], bx.second.pnt[i])) {
+      if (Num::Lt(p.pnt[i], box.first.pnt[i]) ||
+          Num::Gt(p.pnt[i], box.second.pnt[i])) {
         return false;
       }
     }
