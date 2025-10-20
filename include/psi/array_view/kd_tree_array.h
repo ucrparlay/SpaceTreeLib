@@ -139,7 +139,7 @@ class KdTreeArray : public BaseTreeArray<TypeTrait, KdTreeArray<TypeTrait>> {
 
   void BuildRecursive(Slice In, Slice Out, DimsType dim, Box const& box);
 
-  void SerialBuildRecursive(Slice In, Slice Out, DimsType dim, Box const& box,
+  void SerialBuildRecursive(Slice In, Slice Out, Box const& box, DimsType dim,
                             NodeIndex inner_offset, NodeIndex leaf_offset);
 
   void DivideRotate(Slice In, SplitterSeq& pivots, DimsType dim, BucketType idx,

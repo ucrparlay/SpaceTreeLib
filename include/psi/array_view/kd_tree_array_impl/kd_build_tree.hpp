@@ -39,15 +39,12 @@ void KdTreeArray<TypeTrait>::BuildRecursive(Slice In, Slice Out, DimsType dim,
   // TODO: Implement
   // Recursive build using array indices
   // Similar to pointer-based version but returns NodeIndex
-  std::cout << "here" << std::endl;
-  SerialBuildRecursive(In, Out, dim, box, 1, 0);
-  std::cout << static_cast<int>(InnerNode::GetRegions()) << std::endl;
-  std::cout << array_view::IsBinaryNode<InnerNode> << std::endl;
+  SerialBuildRecursive(In, Out, box, dim, 1, 0);
 }
 
 template <typename TypeTrait>
 void KdTreeArray<TypeTrait>::SerialBuildRecursive(Slice In, Slice Out,
-                                                  DimsType dim, Box const& box,
+                                                  Box const& box, DimsType dim,
                                                   NodeIndex inner_offset,
                                                   NodeIndex leaf_offset) {
   size_t n = In.size();
@@ -78,7 +75,8 @@ void KdTreeArray<TypeTrait>::SerialBuildRecursive(Slice In, Slice Out,
         return;
       }
     } else {  // current dimension is same for all points
-      // return split_rule_.HandlingUndivide(*this, In, Out, box, dim);
+      return split_rule_.HandlingUndivide(*this, In, Out, box, dim,
+                                          inner_offset, leaf_offset);
     }
   }
 
@@ -94,11 +92,12 @@ void KdTreeArray<TypeTrait>::SerialBuildRecursive(Slice In, Slice Out,
   next_dim = split_rule_.NextDimension(next_dim);
 
   auto split_pos = split_iter - In.begin();
-  SerialBuildRecursive(In.cut(0, split_pos), Out.cut(0, split_pos), next_dim,
-                       box_cut.GetFirstBoxCut(), inner_offset * 2, leaf_offset);
-  SerialBuildRecursive(In.cut(split_pos, n), Out.cut(split_pos, n), next_dim,
-                       box_cut.GetSecondBoxCut(), inner_offset * 2 + 1,
-                       leaf_offset + split_pos);
+  SerialBuildRecursive(In.cut(0, split_pos), Out.cut(0, split_pos),
+                       box_cut.GetFirstBoxCut(), next_dim, inner_offset * 2,
+                       leaf_offset);
+  SerialBuildRecursive(In.cut(split_pos, n), Out.cut(split_pos, n),
+                       box_cut.GetSecondBoxCut(), next_dim,
+                       inner_offset * 2 + 1, leaf_offset + split_pos);
   AnnoteInterior(inner_tree_seq_, inner_offset, leaf_offset,
                  static_cast<NodeIndex>(In.size()), split.value());
   return;

@@ -64,8 +64,9 @@ void KdTree<TypeTrait>::PickPivots(Slice In, size_t const& n,
 }
 
 template <typename TypeTrait>
-auto KdTree<TypeTrait>::SerialBuildRecursive(Slice In, Slice Out, DimsType dim,
-                                             Box const& box) -> Node* {
+auto KdTree<TypeTrait>::SerialBuildRecursive(Slice In, Slice Out,
+                                             Box const& box, DimsType dim)
+    -> Node* {
   size_t n = In.size();
 
   if (n == 0) return AllocEmptyLeafNode<Slice, Leaf>();
@@ -107,11 +108,11 @@ auto KdTree<TypeTrait>::SerialBuildRecursive(Slice In, Slice Out, DimsType dim,
   Node *L, *R;
 
   L = SerialBuildRecursive(In.cut(0, split_iter - In.begin()),
-                           Out.cut(0, split_iter - In.begin()), d,
-                           box_cut.GetFirstBoxCut());
+                           Out.cut(0, split_iter - In.begin()),
+                           box_cut.GetFirstBoxCut(), d);
   R = SerialBuildRecursive(In.cut(split_iter - In.begin(), n),
-                           Out.cut(split_iter - In.begin(), n), d,
-                           box_cut.GetSecondBoxCut());
+                           Out.cut(split_iter - In.begin(), n),
+                           box_cut.GetSecondBoxCut(), d);
   return AllocInteriorNode<Interior>(L, R, split.value());
 }
 
@@ -121,7 +122,7 @@ auto KdTree<TypeTrait>::BuildRecursive(Slice In, Slice Out, DimsType dim,
   assert(In.size() == 0 || Geo::WithinBox(Geo::GetBox(In), box));
 
   if (In.size() <= BT::kSerialBuildCutoff) {
-    return SerialBuildRecursive(In, Out, dim, box);
+    return SerialBuildRecursive(In, Out, box, dim);
   }
 
   auto pivots = SplitterSeq::uninitialized(BT::kPivotNum + BT::kBucketNum + 1);
@@ -136,7 +137,7 @@ auto KdTree<TypeTrait>::BuildRecursive(Slice In, Slice Out, DimsType dim,
   BucketType zeros = std::ranges::count(sums, 0), cnt = 0;
 
   if (zeros == BT::kBucketNum - 1) {
-    return SerialBuildRecursive(In, Out, dim, box);
+    return SerialBuildRecursive(In, Out, box, dim);
   }
 
   for (BucketType i = 0; i < BT::kBucketNum; ++i) {

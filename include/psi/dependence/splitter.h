@@ -389,8 +389,8 @@ struct OrthogonalSplitRule {
   // INFO: divide the space for binary node
   template <typename Tree, typename Slice, typename DimsType, typename Box>
   psi::pointer_view::Node* DivideSpace(Tree& tree, Slice In, Slice Out,
-                                       Box const& node_box,
-                                       Box const& input_box, DimsType dim)
+                                       Box const& node_box, DimsType dim,
+                                       Box const& input_box)
     requires(psi::pointer_view::IsBinaryNode<typename Tree::Interior>)
   {
     using Geo = Tree::Geo;
@@ -438,8 +438,8 @@ struct OrthogonalSplitRule {
         node_box, typename Tree::Splitter(cut_val, cut_dim), split_is_right);
 
     pointer_view::Node* L =
-        DivideSpace(tree, In, Out, box_cut.GetFirstBoxCut(), input_box,
-                    dim_rule.NextDimension(cut_dim));
+        DivideSpace(tree, In, Out, box_cut.GetFirstBoxCut(),
+                    dim_rule.NextDimension(cut_dim), input_box);
     pointer_view::Node* R =
         pointer_view::AllocEmptyLeafNode<Slice, typename Tree::Leaf>();
     assert(Geo::WithinBox(input_box, box_cut.GetBox()));
@@ -455,9 +455,9 @@ struct OrthogonalSplitRule {
   }
 
   // INFO: divide the space for multi node
-  template <typename Tree, typename Slice, typename Box>
+  template <typename Tree, typename Slice, typename Box, typename DimsType>
   psi::pointer_view::Node* DivideSpace(Tree& tree, Slice In, Slice Out,
-                                       Box const& node_box,
+                                       Box const& node_box, DimsType,
                                        Box const& input_box)
     requires(psi::pointer_view::IsMultiNode<typename Tree::Interior>)
   {
@@ -503,6 +503,7 @@ struct OrthogonalSplitRule {
               ? DivideSpace(tree, In, Out,
                             Tree::Interior::GetBoxByRegionId(i, nodebox_split,
                                                              node_box),
+                            DimsType(0),  // a random value for next_dim
                             input_box)
               : pointer_view::AllocEmptyLeafNode<Slice, typename Tree::Leaf>();
     }
@@ -512,9 +513,10 @@ struct OrthogonalSplitRule {
   }
 
   // NOTE: cannot divide the points on @dim, while the points are not the same
-  template <typename Tree, typename Slice, typename Box, typename... Args>
+  template <typename Tree, typename Slice, typename Box, typename DimsType,
+            typename... Args>
   auto HandlingUndivide(Tree& tree, Slice In, Slice Out, Box const& box,
-                        Args&&... args) {
+                        DimsType dim, Args&&... args) {
     if constexpr (IsObjectMedianSplit<PartitionRule>) {
       // NOTE: in object median, if current dimension is not divideable, then
       // switch to another dimension then continue. This works since unless all
@@ -522,18 +524,19 @@ struct OrthogonalSplitRule {
       if constexpr (psi::pointer_view::IsBinaryNode<typename Tree::Interior> ||
                     psi::array_view::IsBinaryNode<typename Tree::Interior>) {
         // TODO: tooo brute force
-        return tree.SerialBuildRecursive(
-            In, Out, dim_rule.NextDimension(std::forward<Args>(args)...),
-            Tree::Geo::GetBox(In));
+        return tree.SerialBuildRecursive(In, Out, Tree::Geo::GetBox(In),
+                                         dim_rule.NextDimension(dim),
+                                         std::forward<Args>(args)...);
       } else {
-        return tree.BuildRecursive(In, Out, Tree::Geo::GetBox(In));
+        return tree.BuildRecursive(In, Out, Tree::Geo::GetBox(In),
+                                   std::forward<Args>(args)...);
       }
 
     } else if constexpr (IsSpatialMedianSplit<PartitionRule>) {
       // NOTE: in spatial median, we simply reduce the box by half on
       // current dim, then switch to next dim.
       if constexpr (IsRotateDimSplit<DimRule> || IsMaxStretchDim<DimRule>) {
-        return DivideSpace(tree, In, Out, box, Tree::Geo::GetBox(In),
+        return DivideSpace(tree, In, Out, box, dim, Tree::Geo::GetBox(In),
                            std::forward<Args>(args)...);
       } else {  // define the behavior of other dim rule
         // static_assert(false);

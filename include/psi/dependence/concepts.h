@@ -48,14 +48,14 @@ concept CheckDynamicNode = std::is_base_of_v<
 
 // NOTE: check whether a array_based node is a bianry or multi
 namespace array_view {
-// NOTE: define the what is a binary node
+// NOTE: define what is a binary node
 template <typename T>
 concept CheckBinaryNode = requires {
   { T::GetRegions() } -> std::convertible_to<uint_fast8_t>;
   requires T::GetRegions() == 2;
 };
 
-// NOTE: define the what is a multi-way node
+// NOTE: define what is a multi-way node
 template <typename T>
 concept CheckMultiNode = requires {
   { T::GetRegions() } -> std::convertible_to<uint_fast8_t>;

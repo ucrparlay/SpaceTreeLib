@@ -55,7 +55,7 @@ static auto constexpr DefaultTestFunc = []<class TreeDesc, typename Point>(
   using Tree = TreeDesc::TreeType;
   using Points = typename Tree::Points;
 
-  Tree tree(wp.size());
+  Tree tree;
   constexpr bool kTestTime = true;
   BuildTree<Point, Tree, kTestTime, 0>(wp, kRounds, tree);
 

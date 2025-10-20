@@ -30,8 +30,8 @@ void OrthTree<TypeTrait>::Build(Range&& In, Args&&... args) {
 // TODO: maybe we don't need this function, it can be directly computed by value
 template <typename TypeTrait>
 void OrthTree<TypeTrait>::DivideRotate(HyperPlaneSeq& pivots, DimsType dim,
-                                  BucketType idx, BoxSeq& box_seq,
-                                  Box const& box) {
+                                       BucketType idx, BoxSeq& box_seq,
+                                       Box const& box) {
   if (idx > BT::kPivotNum) {
     // WARN: sometimes cut dimension can be -1, never use pivots[idx].first ==
     // -1 to check whether it is in bucket; instead, use idx > PIVOT_NUM
@@ -53,8 +53,8 @@ void OrthTree<TypeTrait>::DivideRotate(HyperPlaneSeq& pivots, DimsType dim,
 
 template <typename TypeTrait>
 void OrthTree<TypeTrait>::SerialSplit(Slice In, DimsType dim, DimsType idx,
-                                 Box const& box,
-                                 parlay::sequence<BallsType>& sums) {
+                                      Box const& box,
+                                      parlay::sequence<BallsType>& sums) {
   assert(dim <= BT::kDim);
 
   if (dim == BT::kDim) {
@@ -70,8 +70,9 @@ void OrthTree<TypeTrait>::SerialSplit(Slice In, DimsType dim, DimsType idx,
 }
 
 template <typename TypeTrait>
-Node* OrthTree<TypeTrait>::SerialBuildRecursive(Slice In, Slice Out, Box const& box,
-                                           bool checked_duplicate) {
+Node* OrthTree<TypeTrait>::SerialBuildRecursive(Slice In, Slice Out,
+                                                Box const& box,
+                                                bool checked_duplicate) {
   assert(In.size() == 0 || Geo::WithinBox(Geo::GetBox(In), box));
   size_t n = In.size();
 
@@ -107,7 +108,7 @@ Node* OrthTree<TypeTrait>::SerialBuildRecursive(Slice In, Slice Out, Box const& 
         return AllocDummyLeafNode<Slice, Leaf>(In);
       }
     } else {
-      return split_rule_.HandlingUndivide(*this, In, Out, box);
+      return split_rule_.HandlingUndivide(*this, In, Out, box, DimsType(0));
     }
   }
 
@@ -207,8 +208,5 @@ void OrthTree<TypeTrait>::Build_(Slice A, Box const& box) {
 
 }  // namespace pointer_view
 }  // namespace psi
-
- 
- 
 
 #endif  // PSI_POINTER_VIEW_ORTH_TREE_IMPL_ORTH_BUILD_TREE_HPP_

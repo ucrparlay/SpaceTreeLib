@@ -131,7 +131,7 @@ class KdTree : public BaseTree<TypeTrait, KdTree<TypeTrait>> {
 
   Node* BuildRecursive(Slice In, Slice Out, DimsType dim, Box const& box);
 
-  Node* SerialBuildRecursive(Slice In, Slice Out, DimsType dim, Box const& box);
+  Node* SerialBuildRecursive(Slice In, Slice Out, Box const& box, DimsType dim);
 
   void Build_(Slice In);
 
