@@ -450,8 +450,79 @@ struct OrthogonalSplitRule {
       std::ranges::swap(L, R);
     }
 
-    return AllocInteriorNode<typename Tree::Interior>(L, R,
-                                                      box_cut.GetHyperPlane());
+    return pointer_view::AllocInteriorNode<typename Tree::Interior>(
+        L, R, box_cut.GetHyperPlane());
+  }
+
+  template <typename Tree, typename Slice, typename DimsType, typename Box,
+            typename NodeIndex>
+  auto DivideSpace(Tree& tree, Slice In, Slice Out, Box const& node_box,
+                   DimsType dim, Box const& input_box, NodeIndex inner_offset,
+                   NodeIndex leaf_offset)
+    requires(psi::array_view::IsBinaryNode<typename Tree::Interior>)
+  {
+    using Geo = Tree::Geo;
+    assert(Geo::WithinBox(input_box, node_box));
+
+    // Main logic
+    if (Geo::VerticalLineSplitBox(Geo::GetBoxMid(dim, node_box), input_box,
+                                  dim)) {
+      return tree.BuildRecursive(In, Out, dim, node_box);
+    }
+
+    auto cut_dim = dim_rule.FindCuttingDimension(node_box, dim);
+    auto cut_val = Geo::GetBoxMid(cut_dim, node_box);
+
+    // INFO: Test whether the node_box will remain unchanged after the split.
+    // If the mid of box is the same as the box edge, then this time the
+    // recursion will usless, the worst case is that all the mid on all
+    // dimension is on the box edge, i.e., (0,1), (0,1), then a correct split
+    // algorithm will handle this case
+    DimsType dim_cnt = 0;
+    while (dim_cnt != Tree::kDim) {
+      if (!Geo::VerticalLineOnBoxEdge(cut_val, node_box, cut_dim)) {
+        break;
+      }
+      cut_dim = dim_rule.NextDimension(cut_dim);
+      cut_val = Geo::GetBoxMid(cut_dim, node_box);
+      dim_cnt++;
+    }
+
+    if (dim_cnt == Geo::kDim) {  // WARN:this breaks rotation manner
+      // NOTE: checks whether the node box is separatable
+      return tree.BuildRecursive(In, Out, dim_rule.NextDimension(dim),
+                                 node_box);
+    } else if (Geo::VerticalLineSplitBox(cut_val, input_box, cut_dim)) {
+      // NOTE: above while loop may changed to new dim and need to re-check
+      // whether it can split the input. This is necessary as the
+      // following left/right test assumes the @cut_val does not split box
+      return tree.BuildRecursive(In, Out, cut_dim, node_box);
+    }
+
+    bool split_is_right = Tree::Num::Gt(cut_val, input_box.second[cut_dim]);
+    assert(split_is_right || Tree::Num::Leq(cut_val, input_box.first[cut_dim]));
+
+    typename Tree::BoxCut box_cut(
+        node_box, typename Tree::Splitter(cut_val, cut_dim), split_is_right);
+
+    throw std::runtime_error("Not implemented yet");
+
+    return;
+    // array_view::Node* L =
+    //     DivideSpace(tree, In, Out, box_cut.GetFirstBoxCut(),
+    //                 dim_rule.NextDimension(cut_dim), input_box);
+    // pointer_view::Node* R =
+    //     pointer_view::AllocEmptyLeafNode<Slice, typename Tree::Leaf>();
+    // assert(Geo::WithinBox(input_box, box_cut.GetBox()));
+    //
+    // if (!split_is_right) {
+    //   assert(Tree::Num::Leq(Geo::GetBoxMid(cut_dim, node_box),
+    //                         input_box.first[cut_dim]));
+    //   std::ranges::swap(L, R);
+    // }
+    //
+    // return pointer_view::AllocInteriorNode<typename Tree::Interior>(
+    //     L, R, box_cut.GetHyperPlane());
   }
 
   // INFO: divide the space for multi node
@@ -508,8 +579,8 @@ struct OrthogonalSplitRule {
               : pointer_view::AllocEmptyLeafNode<Slice, typename Tree::Leaf>();
     }
 
-    return AllocInteriorNode<typename Tree::Interior>(tree_nodes,
-                                                      nodebox_split);
+    return pointer_view::AllocInteriorNode<typename Tree::Interior>(
+        tree_nodes, nodebox_split);
   }
 
   // NOTE: cannot divide the points on @dim, while the points are not the same
