@@ -619,8 +619,8 @@ class Wrapper {
       } else if (tree_type == 4) {
         ;  // for boost
       } else if (tree_type == 5) {
-        Run<ZdTreeWrapper<typename ZD::geobase::Point, SplitRule>>(params,
-                                                                   test_func);
+        // Run<ZdTreeWrapper<typename ZD::geobase::Point, SplitRule>>(params,
+        //                                                            test_func);
       } else {
         std::cout << "Unsupported tree type: " << tree_type << std::endl;
       }

@@ -1,5 +1,61 @@
 #include "test_framework.h"
 
+template <typename Point, typename Tree, bool printHeight = 0,
+          bool printVisNode = 1>
+void QueryKNNLinear(Tree& tree, uint_fast8_t const& Dim,
+                    parlay::sequence<Point> const& WP, int const& rounds,
+                    Typename* kdknn, int const K) {
+  using Points = typename Tree::Points;
+  using Coord = typename Point::Coord;
+  using DisType = typename Point::DisType;
+  using nn_pair = std::pair<std::reference_wrapper<Point>, DisType>;
+  using Leaf = typename Tree::Leaf;
+  using Interior = typename Tree::Interior;
+  size_t n = WP.size();
+
+  // Points wp = WP;
+  Points wp = parlay::random_shuffle(WP);
+
+  // parlay::sequence<size_t> vis_leaf(n), vis_inter(n), gen_box(n),
+  // check_box(n),
+  //     skip_box(n);
+
+  double aveQuery = time_loop(
+      rounds, 0.1, [&]() {},
+      [&]() {
+        parlay::parallel_for(0, n, [&](size_t i) {
+          tree.find(wp[i]);
+          // vis_leaf[i] = vis_leaf_num;
+          // vis_inter[i] = vis_inter_num;
+          // gen_box[i] = gen_box_num;
+          // check_box[i] = check_box_num;
+          // skip_box[i] = skip_box_num;
+          // }
+        });
+      },
+      [&]() {});
+
+  std::cout << aveQuery << " " << std::flush;
+  // if (printVisNode) {
+  //   std::cout << static_cast<double>(parlay::reduce(vis_leaf.cut(0, n))) /
+  //                    static_cast<double>(n)
+  //             << " " << std::flush;
+  //   std::cout << static_cast<double>(parlay::reduce(vis_inter.cut(0, n))) /
+  //                    static_cast<double>(n)
+  //             << " " << std::flush;
+  //   std::cout << static_cast<double>(parlay::reduce(gen_box.cut(0, n))) /
+  //                    static_cast<double>(n)
+  //             << " " << std::flush;
+  //   std::cout << static_cast<double>(parlay::reduce(check_box.cut(0, n))) /
+  //                    static_cast<double>(n)
+  //             << " " << std::flush;
+  //   std::cout << static_cast<double>(parlay::reduce(skip_box.cut(0, n))) /
+  //                    static_cast<double>(n)
+  //             << " " << std::flush;
+  // }
+
+  return;
+}
 int main(int argc, char* argv[]) {
   commandLine params(
       argc, argv,
@@ -25,10 +81,16 @@ int main(int argc, char* argv[]) {
                        int const& K, int const& kRounds,
                        string const& kInsertFile, int const& kTag,
                        int const& kQueryType, int const kSummary) {
+    using Tree = TreeDesc::TreeType;
+    using Points = typename Tree::Points;
+    using Box = typename Tree::Box;
+    Tree tree;
 
+    constexpr bool kTestTime = true;
+    BuildTree<Point, Tree, kTestTime, 2>(wp, kRounds, tree);
   };
 
-  Wrapper::ApplyBaselines(tree_type, dims, split_type, params, DefaultTestFunc);
+  Wrapper::ApplyBaselines(tree_type, dims, split_type, params, test_func);
 
   return 0;
 }

@@ -142,6 +142,10 @@ class CpamRaw : public psi::BaseTree<TypeTrait, CpamRaw<TypeTrait>> {
     // t2.total();
     // auto vals = zmap::values(m1);
     // return std::make_tuple(m1, SFC_time);
+
+#ifdef RANDOM_LEAF
+    zmap::shuffle_leaf_points(m1);
+#endif  // RANDOM_LEAF
     return std::move(m1);
   }
 
@@ -212,6 +216,12 @@ class CpamRaw : public psi::BaseTree<TypeTrait, CpamRaw<TypeTrait>> {
     // zmap::range_report_filter(tree, f, ret, out);
     zmap::range_report_filter2(tree, f, ret, out);
     return ret;
+  }
+
+  template <class K>
+  auto find(K const& key) {
+    auto v = zmap::find(key);
+    return v;
   }
 
   //	return size of interior nodes and sizeof leaf nodes size, respectively

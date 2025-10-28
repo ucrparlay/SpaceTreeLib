@@ -65,6 +65,8 @@ struct aug_map_ : private map_<_Entry, Join_Tree> {
     return;
   }
 
+  static void shuffle_leaf_points(M& m) { Tree::shuffle_leaf_points(m.root); }
+
   template <class BaseTree, typename Logger, typename kBoundedQueue>
   static void knn(M& m, auto const& q, kBoundedQueue& bq, Logger& logger) {
     // parlay::internal::timer t;
