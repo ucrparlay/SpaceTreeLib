@@ -1,20 +1,25 @@
+#include "parlay/primitives.h"
 #include "test_framework.h"
 
 template <typename Point, typename Tree, bool printHeight = 0,
           bool printVisNode = 1>
-void QueryKNNLinear(Tree& tree, uint_fast8_t const& Dim,
-                    parlay::sequence<Point> const& WP, int const& rounds,
-                    Typename* kdknn, int const K) {
+void QueryFind(Tree& tree, uint_fast8_t const& Dim,
+               parlay::sequence<Point> const& WP, int const& rounds,
+               Typename* kdknn, int const K) {
   using Points = typename Tree::Points;
   using Coord = typename Point::Coord;
   using DisType = typename Point::DisType;
   using nn_pair = std::pair<std::reference_wrapper<Point>, DisType>;
   using Leaf = typename Tree::Leaf;
   using Interior = typename Tree::Interior;
+  using SplitRule = typename Tree::SplitRule;
   size_t n = WP.size();
 
   // Points wp = WP;
   Points wp = parlay::random_shuffle(WP);
+  auto wp_id = parlay::tabulate(n, [&](size_t i) {
+    return std::make_pair(SplitRule::Encode(wp[i]), wp[i].GetAug().id);
+  });
 
   // parlay::sequence<size_t> vis_leaf(n), vis_inter(n), gen_box(n),
   // check_box(n),
@@ -23,15 +28,7 @@ void QueryKNNLinear(Tree& tree, uint_fast8_t const& Dim,
   double aveQuery = time_loop(
       rounds, 0.1, [&]() {},
       [&]() {
-        parlay::parallel_for(0, n, [&](size_t i) {
-          tree.find(wp[i]);
-          // vis_leaf[i] = vis_leaf_num;
-          // vis_inter[i] = vis_inter_num;
-          // gen_box[i] = gen_box_num;
-          // check_box[i] = check_box_num;
-          // skip_box[i] = skip_box_num;
-          // }
-        });
+        parlay::parallel_for(0, n, [&](size_t i) { tree.find(wp_id[i]); });
       },
       [&]() {});
 
@@ -85,9 +82,13 @@ int main(int argc, char* argv[]) {
     using Points = typename Tree::Points;
     using Box = typename Tree::Box;
     Tree tree;
-
     constexpr bool kTestTime = true;
+
+    // std::cout << "begin build tree: ";
     BuildTree<Point, Tree, kTestTime, 2>(wp, kRounds, tree);
+    // std::cout << "begin query find: ";
+    QueryFind<Point, Tree, 0, 1>(tree, kDim, wp, kRounds,
+                                 static_cast<Typename*>(nullptr), K);
   };
 
   Wrapper::ApplyBaselines(tree_type, dims, split_type, params, test_func);

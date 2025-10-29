@@ -220,7 +220,10 @@ class CpamRaw : public psi::BaseTree<TypeTrait, CpamRaw<TypeTrait>> {
 
   template <class K>
   auto find(K const& key) {
-    auto v = zmap::find(key);
+    auto v = cpam_aug_map_.find(key);
+    if (v == std::nullopt) {
+      throw std::runtime_error("Key not found");
+    }
     return v;
   }
 
