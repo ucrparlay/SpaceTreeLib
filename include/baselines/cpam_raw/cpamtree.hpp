@@ -76,7 +76,7 @@ class CpamRaw : public psi::BaseTree<TypeTrait, CpamRaw<TypeTrait>> {
     }
   };
 
-  using zmap = cpam::aug_map<entry, 40>;
+  using zmap = cpam::aug_map<entry, BT::kLeaveWrap>;
   using par = std::tuple<typename entry::key_t, typename entry::val_t>;
 
   using Leaf = zmap::Tree::node;
