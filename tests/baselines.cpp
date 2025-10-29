@@ -1,3 +1,4 @@
+#include "parlay/parallel.h"
 #include "parlay/primitives.h"
 #include "test_framework.h"
 
@@ -21,9 +22,32 @@ void QueryFind(Tree& tree, uint_fast8_t const& Dim,
     return std::make_pair(SplitRule::Encode(wp[i]), wp[i].GetAug().id);
   });
 
-  // parlay::sequence<size_t> vis_leaf(n), vis_inter(n), gen_box(n),
-  // check_box(n),
-  //     skip_box(n);
+  double aveQuery = time_loop(
+      rounds, 0.1, [&]() {},
+      [&]() {
+        parlay::parallel_for(0, n, [&](size_t i) { tree.find(wp_id[i]); });
+      },
+      [&]() {});
+
+  std::cout << aveQuery << " " << std::flush;
+
+  return;
+}
+template <typename Point, typename Tree>
+void OneDimensionalFind(Tree& tree, uint_fast8_t const& Dim,
+                        parlay::sequence<Point> const& WP, int const& rounds) {
+  using Points = typename Tree::Points;
+  using Coord = typename Point::Coord;
+  using DisType = typename Point::DisType;
+  using nn_pair = std::pair<std::reference_wrapper<Point>, DisType>;
+  using Leaf = typename Tree::Leaf;
+  using Interior = typename Tree::Interior;
+  using SplitRule = typename Tree::SplitRule;
+  size_t n = WP.size();
+
+  Points wp = WP;
+  // Points wp = parlay::random_shuffle(WP);
+  auto wp_id = parlay::tabulate(n, [&](size_t i) { return wp[i].aug.id; });
 
   double aveQuery = time_loop(
       rounds, 0.1, [&]() {},
@@ -33,26 +57,10 @@ void QueryFind(Tree& tree, uint_fast8_t const& Dim,
       [&]() {});
 
   std::cout << aveQuery << " " << std::flush;
-  // if (printVisNode) {
-  //   std::cout << static_cast<double>(parlay::reduce(vis_leaf.cut(0, n))) /
-  //                    static_cast<double>(n)
-  //             << " " << std::flush;
-  //   std::cout << static_cast<double>(parlay::reduce(vis_inter.cut(0, n))) /
-  //                    static_cast<double>(n)
-  //             << " " << std::flush;
-  //   std::cout << static_cast<double>(parlay::reduce(gen_box.cut(0, n))) /
-  //                    static_cast<double>(n)
-  //             << " " << std::flush;
-  //   std::cout << static_cast<double>(parlay::reduce(check_box.cut(0, n))) /
-  //                    static_cast<double>(n)
-  //             << " " << std::flush;
-  //   std::cout << static_cast<double>(parlay::reduce(skip_box.cut(0, n))) /
-  //                    static_cast<double>(n)
-  //             << " " << std::flush;
-  // }
 
   return;
 }
+
 int main(int argc, char* argv[]) {
   commandLine params(
       argc, argv,
@@ -83,12 +91,19 @@ int main(int argc, char* argv[]) {
     using Box = typename Tree::Box;
     Tree tree;
     constexpr bool kTestTime = true;
+    auto new_wp =
+        parlay::random_shuffle(parlay::tabulate(wp.size(), [&](size_t i) {
+          Point pt = wp[i];
+          pt.pnt[0] = i;
+          return pt;
+        }));
 
     // std::cout << "begin build tree: ";
-    BuildTree<Point, Tree, kTestTime, 2>(wp, kRounds, tree);
+    BuildTree<Point, Tree, kTestTime, 2>(new_wp, kRounds, tree);
     // std::cout << "begin query find: ";
-    QueryFind<Point, Tree, 0, 1>(tree, kDim, wp, kRounds,
-                                 static_cast<Typename*>(nullptr), K);
+    // QueryFind<Point, Tree, 0, 1>(tree, kDim, wp, kRounds,
+    //                              static_cast<Typename*>(nullptr), K);
+    OneDimensionalFind<Point, Tree>(tree, kDim, new_wp, kRounds);
   };
 
   Wrapper::ApplyBaselines(tree_type, dims, split_type, params, test_func);

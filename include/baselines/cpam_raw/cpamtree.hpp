@@ -46,10 +46,11 @@ class CpamRaw : public psi::BaseTree<TypeTrait, CpamRaw<TypeTrait>> {
   using NodeBoxSeq = typename BT::NodeBoxSeq;
 
   // begin of CPAM_RAW definition
-  using key_type =
-      pair<unsigned long long, unsigned long long>;  // morton_id, id
-  using val_type = Point;
-  using aug_type = pair<Box, size_t>;
+  // using key_type = pair<unsigned long long, unsigned long long>;  //
+  // morton_id, id
+  using key_type = unsigned long long;  // morton_id, id
+  using val_type = unsigned long long;
+  using aug_type = std::monostate;
 
   typedef pair<Point, int64_t> nn_pair;
 
@@ -67,13 +68,9 @@ class CpamRaw : public psi::BaseTree<TypeTrait, CpamRaw<TypeTrait>> {
     using aug_t = aug_type;
 
     static inline bool comp(key_t a, key_t b) { return a < b; }
-    static aug_t get_empty() { return make_pair(Geo::GetEmptyBox(), 0); }
-    static aug_t from_entry(key_t k, val_t v) {
-      return make_pair(Box(v, v), 1);
-    }
-    static aug_t combine(aug_t a, aug_t b) {
-      return make_pair(Geo::GetBox(a.first, b.first), a.second + b.second);
-    }
+    static aug_t get_empty() { return std::monostate{}; }
+    static aug_t from_entry(key_t k, val_t v) { return std::monostate{}; }
+    static aug_t combine(aug_t a, aug_t b) { return std::monostate{}; }
   };
 
   using zmap = cpam::aug_map<entry, BT::kLeaveWrap>;
@@ -111,8 +108,8 @@ class CpamRaw : public psi::BaseTree<TypeTrait, CpamRaw<TypeTrait>> {
     size_t n = P.size();
 
     // parlay::internal::timer t("SFC time", true);
-    parlay::parallel_for(
-        0, n, [&](int i) { P[i].aug.code = SplitRule::Encode(P[i]); });
+    // parlay::parallel_for(
+    //     0, n, [&](int i) { P[i].aug.code = SplitRule::Encode(P[i]); });
     // t.stop();
     // t.total();
     // auto SFC_time = t.total_time();
@@ -121,7 +118,8 @@ class CpamRaw : public psi::BaseTree<TypeTrait, CpamRaw<TypeTrait>> {
     // parlay::internal::timer t1("Create entry time", true);
     parlay::sequence<par> entries(n);
     parlay::parallel_for(0, n, [&](int i) {
-      entries[i] = {{P[i].aug.code, P[i].aug.id}, P[i]};
+      // entries[i] = {{P[i].aug.code, P[i].aug.id}, P[i]};
+      entries[i] = {P[i].aug.id, P[i][0]};
       // entries[i] = {P[i]->id, P[i]};
       // h_values[i] = P[i].morton_id;
       // h_values2[i] = P[i].morton_id;

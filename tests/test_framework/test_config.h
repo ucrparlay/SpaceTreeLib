@@ -8,7 +8,7 @@
 using Coord = long;
 // using Coord = double;
 #else
-using Coord = long;
+using Coord = unsigned long long;
 // using Coord = double;
 #endif  // CCP
 

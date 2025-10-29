@@ -9,13 +9,13 @@ declare -a random_seq=("ON" "OFF")
 # declare -a leaf_wrap=(512 1024)
 
 tag=0
-dim=2
+dim=1
 k=10
 summary=0
 read_file=0
 queryType=0
 
-log_path="logs/random_seq"
+log_path="logs/random_seq_pair"
 mkdir -p "${log_path}"
 
 # make -C ../build/ testers
@@ -44,7 +44,7 @@ for random in "${random_seq[@]}"; do
             input="${origin_paths[${j}]}"
             echo ${input}
 
-            ${commands[${i}]} "${exe}" -p "${input}" -k ${k} -t ${tag} -d 2 -r 3 -q 0 -i 0 -s 0 -T ${tree} -l ${split} 2>&1 | tee -a "${dest}"
+            ${commands[${i}]} "${exe}" -p "${input}" -k ${k} -t ${tag} -d 1 -r 3 -q 0 -i 0 -s 0 -T ${tree} -l ${split} 2>&1 | tee -a "${dest}"
         done
     done
 done

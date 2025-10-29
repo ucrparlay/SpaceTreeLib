@@ -8,6 +8,7 @@
 #include "augmentation_types.h"
 #include "baselines/cpam_raw/cpamtree.hpp"
 #include "baselines/zdtree/zdtree.hpp"
+#include "dependence/basic_point.h"
 #include "dependence/concepts.h"
 #include "parlay/internal/group_by.h"
 #include "psi/dependence/splitter.h"
@@ -415,6 +416,7 @@ class Wrapper {
   // NOTE: Apply the dim and split rule
   struct AugId {
     using IdType = int;
+    using CurveCode = uint64_t;
     IdType id;
 
     bool operator<(AugId const& rhs) const { return id < rhs.id; }
@@ -639,7 +641,9 @@ class Wrapper {
       }
     };
 
-    if (dim == 2) {
+    if (dim == 1) {
+      run_with_split_type.template operator()<AugPoint<Coord, 1, AugId>>();
+    } else if (dim == 2) {
       run_with_split_type.template operator()<AugPoint<Coord, 2, AugIdCode>>();
     } else if (dim == 3) {
       if (tree_type == 4) {

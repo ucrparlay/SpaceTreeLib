@@ -35,7 +35,9 @@ int main(int argc, char* argv[]) {
   for (int i = 0; i < file_num; i++) {
     std::string newpath = path + toString(i + 1) + ".in";
     std::cout << newpath << std::endl;
-    if (pts_dim == 2) {
+    if (pts_dim == 1) {
+      generate.operator()<psi::BasicPoint<Axis, 1>>(newpath);
+    } else if (pts_dim == 2) {
       generate.operator()<psi::BasicPoint<Axis, 2>>(newpath);
     } else if (pts_dim == 3) {
       generate.operator()<psi::BasicPoint<Axis, 3>>(newpath);
