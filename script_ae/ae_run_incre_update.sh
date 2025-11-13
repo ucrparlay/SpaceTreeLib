@@ -18,6 +18,7 @@ summary=0
 read_file=0
 round=3
 log_path="logs/incre_update"
+queryType=$((2#0)) # 1110000
 mkdir -p "${log_path}"
 
 make -C ../build/ kd_test p_test baselines boost_rtree
@@ -38,7 +39,7 @@ for dim in "${Dims[@]}"; do
                 splits=(3)
             elif [[ ${tree} -eq 2 ]]; then
                 solver="p_test"
-                splits=(1)
+                splits=(1 2)
             elif [[ ${tree} -eq 3 ]]; then
                 solver="baselines"
                 splits=(1 2)

@@ -3,7 +3,7 @@ set -o xtrace
 
 DATA_PREFIX="${1:-/data/legacy/data3/zmen002/kdtree}"
 
-DataPath="${DATA_PREFIX}/geometry/round_small_coord"
+DataPath="${DATA_PREFIX}/geometry"
 declare -A file2Dims
 file2Dims["Cosmo50_round_no_dup"]="3"
 file2Dims["GeoLifeNoScale_round_no_dup"]="3"

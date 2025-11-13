@@ -21,9 +21,9 @@ option(CILKPLUS "" OFF)
 option(OPENCILK "" OFF)
 option(SERIAL "" OFF)
 option(STDALLOC "" OFF)
-option(CGAL "" ON)
+option(CGAL "" OFF)
 option(MEMCHECK "" OFF)
-option(JEMA "" ON)
+option(JEMA "" OFF)
 option(CCP "" OFF)
 
 
