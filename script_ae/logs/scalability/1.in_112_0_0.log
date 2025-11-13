@@ -1,0 +1,3 @@
+Tree: KdTree; AugType: HasBox; Split: MaxStretchDim-ObjectMedian; BDO: 6; Inba: 30; Coord: integer; 
+1.in 
+6.05009 0.107061 0.0717145 

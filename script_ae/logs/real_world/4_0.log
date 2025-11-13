@@ -1,0 +1,93 @@
+Tree: KdTree; AugType: HasBox; Split: MaxStretchDim-ObjectMedian; BDO: 6; Inba: 30; Coord: integer; 
+Cosmo50_round_no_dup.in 
+## incre insert full: 414.37966 
+in-dis-skewed knn time: 1.07552 1.98454 9.15340 
+out-dis-skewed knn time: 1.06160 1.86570 8.22137 
+in-dis-uniform knn time: 1.08094 1.86183 7.84196 
+out-dis-uniform knn time: 1.06496 1.85309 7.40505 
+range count time: 0.00576 0.06794 5.42728 
+range query time: 0.00914 0.08175 39.23099 
+## incre insert half: 192.80533 
+in-dis-skewed knn time: 0.78519 1.08504 6.44761 
+out-dis-skewed knn time: 0.78428 1.08544 6.42085 
+in-dis-uniform knn time: 0.78507 1.08683 6.16468 
+out-dis-uniform knn time: 0.78643 1.08621 5.95303 
+range count time: 0.00420 0.03440 1.58298 
+range query time: 0.00489 0.04166 19.93688 
+## build tree half: 46.33007 
+in-dis-skewed knn time: 0.18000 0.27351 4.77393 
+out-dis-skewed knn time: 0.20233 0.27650 4.03903 
+in-dis-uniform knn time: 0.19667 0.27593 4.45164 
+out-dis-uniform knn time: 0.19567 0.27563 3.79038 
+range count time: 0.00073 0.00776 0.97651 
+range query time: 0.00044 0.01624 19.25171 
+## incre delete half: 1482.67162 
+in-dis-skewed knn time: 0.18720 0.26815 10.49558 
+out-dis-skewed knn time: 0.19900 0.26912 9.05255 
+in-dis-uniform knn time: 0.19790 0.27613 7.43613 
+out-dis-uniform knn time: 0.19142 0.26950 6.63043 
+range count time: 0.00288 0.00745 1.20694 
+range query time: 0.00044 0.01635 15.00214 
+
+Tree: KdTree; AugType: HasBox; Split: MaxStretchDim-ObjectMedian; BDO: 6; Inba: 30; Coord: integer; 
+GeoLifeNoScale_round_no_dup.in 
+## incre insert full: 0.21316 
+in-dis-skewed knn time: 0.00011 0.00022 0.00056 
+out-dis-skewed knn time: 0.00012 0.00013 0.00048 
+in-dis-uniform knn time: 0.00011 0.00013 0.00042 
+out-dis-uniform knn time: 0.00012 0.00013 0.00038 
+range count time: 0.00182 0.00773 0.15767 
+range query time: 0.00143 0.01991 14.05669 
+## incre insert half: 0.08711 
+in-dis-skewed knn time: 0.00011 0.00015 0.00062 
+out-dis-skewed knn time: 0.00012 0.00015 0.00036 
+in-dis-uniform knn time: 0.00011 0.00015 0.00039 
+out-dis-uniform knn time: 0.00011 0.00015 0.00033 
+range count time: 0.00216 0.00430 0.08407 
+range query time: 0.00090 0.00479 8.04968 
+## build tree half: 0.01584 
+in-dis-skewed knn time: 0.00045 0.00015 0.00075 
+out-dis-skewed knn time: 0.00013 0.00077 0.00079 
+in-dis-uniform knn time: 0.00013 0.00019 0.00079 
+out-dis-uniform knn time: 0.00014 0.00014 0.00080 
+range count time: 0.00275 0.00518 0.11639 
+range query time: 0.00028 0.00568 7.82929 
+## incre delete half: 0.06398 
+in-dis-skewed knn time: 0.00011 0.00078 0.00049 
+out-dis-skewed knn time: 0.00011 0.00013 0.00032 
+in-dis-uniform knn time: 0.00011 0.00024 0.00080 
+out-dis-uniform knn time: 0.00011 0.00012 0.00072 
+range count time: 0.00245 0.00446 0.11601 
+range query time: 0.00024 0.00465 7.77198 
+
+Tree: KdTree; AugType: HasBox; Split: MaxStretchDim-ObjectMedian; BDO: 6; Inba: 30; Coord: integer; 
+osm_round_no_dup.in 
+## incre insert full: 666.00575 
+in-dis-skewed knn time: 0.74654 4.55989 43.70464 
+out-dis-skewed knn time: 0.71715 1.43478 38.69334 
+in-dis-uniform knn time: 0.71794 1.44035 34.05138 
+out-dis-uniform knn time: 0.71810 1.40751 30.50152 
+range count time: 0.00068 0.02493 1.36239 
+range query time: 0.00241 0.08340 14.92224 
+## incre insert half: 311.52587 
+in-dis-skewed knn time: 0.64592 1.23052 20.41868 
+out-dis-skewed knn time: 0.66215 1.25049 19.27539 
+in-dis-uniform knn time: 0.66497 1.24285 17.62644 
+out-dis-uniform knn time: 0.66185 1.23920 16.29302 
+range count time: 0.00058 0.00916 0.56202 
+range query time: 0.00036 0.01317 10.11778 
+## build tree half: 98.11833 
+in-dis-skewed knn time: 0.40841 0.48403 9.95005 
+out-dis-skewed knn time: 0.39440 0.48296 8.94717 
+in-dis-uniform knn time: 0.39125 0.48172 7.17961 
+out-dis-uniform knn time: 0.38828 0.46754 5.68446 
+range count time: 0.00053 0.00194 0.43528 
+range query time: 0.00026 0.00854 8.34709 
+## incre delete half: 264.16213 
+in-dis-skewed knn time: 0.37668 0.47254 4.69209 
+out-dis-skewed knn time: 0.38003 0.48085 4.06288 
+in-dis-uniform knn time: 0.36861 0.47122 3.56856 
+out-dis-uniform knn time: 0.38727 0.47349 3.25682 
+range count time: 0.00265 0.00277 0.51644 
+range query time: 0.00693 0.02345 7.49948 
+

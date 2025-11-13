@@ -1,0 +1,11 @@
+solver,split,benchType,nodes,dims,build,max-depth,ave-depth
+kdtree,MaxStr/Obj,uniform_bigint,1000M,2,3.7931,28.0,25.52565
+kdtree,Rot/SpaMid,uniform_bigint,1000M,2,3.42511,27.0,25.4646
+orth,Rot/SpaMid,uniform_bigint,1000M,2,3.28506,14.0,13.0001
+cpam,Hilbert,uniform_bigint,1000M,2,3.33476,-1.0,-1.0
+cpam,Morton,uniform_bigint,1000M,2,3.02285,-1.0,-1.0
+kdtree,MaxStr/Obj,ss_varden_bigint,1000M,2,6.24112,28.0,25.52885
+kdtree,Rot/SpaMid,ss_varden_bigint,1000M,2,11.62185,56.5,47.8486
+orth,Rot/SpaMid,ss_varden_bigint,1000M,2,11.52315,28.5,24.2519
+cpam,Hilbert,ss_varden_bigint,1000M,2,3.08875,-1.0,-1.0
+cpam,Morton,ss_varden_bigint,1000M,2,2.95609,-1.0,-1.0

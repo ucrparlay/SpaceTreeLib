@@ -115,6 +115,12 @@ add_executable(data_washer ${PROJECT_SOURCE_DIR}/tests/data_wash.cpp)
 target_link_libraries(data_washer PUBLIC PSI)
 target_include_directories(data_washer PUBLIC ${PROJECT_SOURCE_DIR}/include)
 
+find_package(Boost REQUIRED)
+add_executable(boost_rtree ${PROJECT_SOURCE_DIR}/tests/boost_rtree.cpp)
+target_link_libraries(boost_rtree PUBLIC PSI ${Boost_LIBRARIES})
+target_include_directories(boost_rtree PUBLIC ${PROJECT_SOURCE_DIR}/include ${Boost_INCLUDE_DIRS})
+target_compile_options(boost_rtree PRIVATE -DBOOST_MATH_DISABLE_FLOAT128 -DBOOST_CSTDFLOAT_NO_LIBQUADMATH_SUPPORT)
+
 # CGAL
 if(CGAL)
 	message(STATUS "\n\n---------------------------- CGAL -----------------------------")
@@ -154,11 +160,6 @@ if(CGAL)
 	target_link_libraries(p_ccp PUBLIC PSI CGAL::CGAL CGAL::TBB_support)
 	target_include_directories(p_ccp PUBLIC ${PROJECT_SOURCE_DIR}/include)
 
-	find_package(Boost REQUIRED)
-	add_executable(boost_rtree ${PROJECT_SOURCE_DIR}/tests/boost_rtree.cpp)
-	target_link_libraries(boost_rtree PUBLIC PSI ${Boost_LIBRARIES})
-	target_include_directories(boost_rtree PUBLIC ${PROJECT_SOURCE_DIR}/include ${Boost_INCLUDE_DIRS})
-	target_compile_options(boost_rtree PRIVATE -DBOOST_MATH_DISABLE_FLOAT128 -DBOOST_CSTDFLOAT_NO_LIBQUADMATH_SUPPORT)
 
 	message(STATUS "\n\n---------------------------- END CGAL -----------------------------")
 endif()
