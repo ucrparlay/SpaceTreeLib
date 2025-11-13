@@ -2,15 +2,17 @@
 set -o xtrace
 
 DATA_PREFIX="${1:-/data/zmen002/kdtree}"
+NODE_SIZE="${2:-1000000000}"
+DIMENSION="${3:-2}"
 
 # /usr/bin/drop_caches
 
-Node=(1000000000)
+Node=("${NODE_SIZE}")
 Tree=(0 1 2 3 4)
 # Tree=(3)
-Dims=(2)
+Dims=("${DIMENSION}")
 # Type=(1)
-# paths=("${DATA_PREFIX}/ss_varden_bigint/1000000000_2/1.in" "${DATA_PREFIX}/uniform_bigint/1000000000_2/2_sort_by_0.in" "${DATA_PREFIX}/uniform_bigint/1000000000_2/2.in")
+# paths=("${DATA_PREFIX}/ss_varden_bigint/${NODE_SIZE}_2/1.in" "${DATA_PREFIX}/uniform_bigint/${NODE_SIZE}_2/2_sort_by_0.in" "${DATA_PREFIX}/uniform_bigint/${NODE_SIZE}_2/2.in")
 
 k=10
 insNum=0
@@ -23,8 +25,8 @@ mkdir -p "${log_path}"
 
 make -C ../build/ kd_test p_test baselines boost_rtree
 
-dim=2
-paths=("${DATA_PREFIX}/ss_varden_bigint/1000000000_$((dim))/1.in" "${DATA_PREFIX}/uniform_bigint/1000000000_${dim}/2_sort_by_0.in" "${DATA_PREFIX}/uniform_bigint/1000000000_${dim}/2.in")
+dim="${DIMENSION}"
+paths=("${DATA_PREFIX}/ss_varden_bigint/${NODE_SIZE}_$((dim))/1.in" "${DATA_PREFIX}/uniform_bigint/${NODE_SIZE}_${dim}/2_sort_by_0.in" "${DATA_PREFIX}/uniform_bigint/${NODE_SIZE}_${dim}/2.in")
 for tree in "${Tree[@]}"; do
     if [[ ${tree} -eq 0 ]]; then
         solver="kd_test"

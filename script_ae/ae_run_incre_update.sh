@@ -2,12 +2,14 @@
 set -o xtrace
 
 DATA_PREFIX="${1:-/data/zmen002/kdtree}"
+NODE_SIZE="${2:-1000000000}"
+DIMENSION="${3:-2}"
 
 # /usr/bin/drop_caches
 
-Node=(1000000000)
+Node=("${NODE_SIZE}")
 Tree=(0 1 2 3 4 5) # 0: pkd_tree, 1: porth, 2: spac_tree, 3: cpam, 4: boost_rtree, 5: zdtree
-Dims=(2)
+Dims=("${DIMENSION}")
 Type=(0 1) # 0: incre_insert, 1: incre_delete
 
 k=10
@@ -22,9 +24,9 @@ make -C ../build/ kd_test p_test baselines boost_rtree
 
 for dim in "${Dims[@]}"; do
     if [[ ${dim} -eq 2 ]]; then
-        paths=("${DATA_PREFIX}/ss_varden_bigint/1000000000_$((dim))/1.in" "${DATA_PREFIX}/uniform_bigint/1000000000_${dim}/2_sort_by_0.in" "${DATA_PREFIX}/uniform_bigint/1000000000_${dim}/2.in")
+        paths=("${DATA_PREFIX}/ss_varden_bigint/${NODE_SIZE}_$((dim))/1.in" "${DATA_PREFIX}/uniform_bigint/${NODE_SIZE}_${dim}/2_sort_by_0.in" "${DATA_PREFIX}/uniform_bigint/${NODE_SIZE}_${dim}/2.in")
     elif [[ ${dim} -eq 3 ]]; then
-        paths=("${DATA_PREFIX}/ss_varden/1000000000_$((dim))/1.in" "${DATA_PREFIX}/uniform/1000000000_${dim}/2_sort_by_0.in" "${DATA_PREFIX}/uniform/1000000000_${dim}/2.in")
+        paths=("${DATA_PREFIX}/ss_varden/${NODE_SIZE}_$((dim))/1.in" "${DATA_PREFIX}/uniform/${NODE_SIZE}_${dim}/2_sort_by_0.in" "${DATA_PREFIX}/uniform/${NODE_SIZE}_${dim}/2.in")
     fi
     for query_type in "${Type[@]}"; do
         for tree in "${Tree[@]}"; do
