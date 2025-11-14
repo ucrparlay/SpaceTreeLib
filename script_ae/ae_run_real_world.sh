@@ -16,7 +16,7 @@ readFile=0
 summary=0
 queryType=$((2#0)) # 1110000
 # queryType=1 # 1110000
-Tree=(0 1 2 3 4)
+Tree=(0 1 2 3 4 5)
 # Tree=(4)
 
 for tree in "${Tree[@]}"; do
@@ -35,6 +35,9 @@ for tree in "${Tree[@]}"; do
     elif [[ ${tree} -eq 4 ]]; then
         solver="boost_rtree"
         splits=(0)
+    elif [[ ${tree} -eq 5 ]]; then
+        solver="baselines"
+        splits=(2)
     else
         solver="baselines"
         splits=(0)
