@@ -1,0 +1,62 @@
+#!/bin/bash
+set -o xtrace
+
+DATA_PREFIX="${1:-/data/zmen002/kdtree}"
+NODE_SIZE="${2:-1000000000}"
+DIMENSION="${3:-3}"
+
+# /usr/bin/drop_caches
+
+Node=("${NODE_SIZE}")
+Tree=(0 1 2) # 0: pkd_tree, 1: porth, 2: spac_tree, 3: cpam, 4: boost_rtree, 5: zdtree
+Dims=("${DIMENSION}")
+Type=(0 1) # 0: incre_insert, 1: incre_delete
+
+k=10
+insNum=0
+summary=0
+read_file=0
+round=3
+log_path="logs/incre_update_3d"
+queryType=$((2#0)) # 1110000
+mkdir -p "${log_path}"
+
+make -C ../build/ kd_test p_test baselines boost_rtree
+
+for dim in "${Dims[@]}"; do
+    paths=("${DATA_PREFIX}/ss_varden/${NODE_SIZE}_$((dim))/1.in" "${DATA_PREFIX}/uniform/${NODE_SIZE}_${dim}/2_sort_by_0.in" "${DATA_PREFIX}/uniform/${NODE_SIZE}_${dim}/2.in")
+    for query_type in "${Type[@]}"; do
+        for tree in "${Tree[@]}"; do
+            if [[ ${tree} -eq 0 ]]; then
+                solver="kd_test"
+                splits=(0)
+            elif [[ ${tree} -eq 1 ]]; then
+                solver="kd_test"
+                splits=(3)
+            elif [[ ${tree} -eq 2 ]]; then
+                solver="p_test"
+                splits=(1)
+            else
+                echo "ERROR: Invalid tree type ${tree}"
+                exit 1
+            fi
+
+            for split in "${splits[@]}"; do
+                if [[ ${query_type} -eq 0 ]]; then
+                    tag=$((2#1000)) # 1110000
+                    dest="${log_path}/incre_insert_${dim}_${tree}_${split}.log"
+                else
+                    tag=$((2#10000)) # 1110000
+                    dest="${log_path}/incre_delete_${dim}_${tree}_${split}.log"
+                fi
+                : >"${dest}"
+                echo ">>>${dest}"
+                exe="../build/${solver}"
+
+                for path in "${paths[@]}"; do
+                    numactl -i all ${exe} -p ${path} -r ${round} -k ${k} -i ${read_file} -s ${summary} -t ${tag} -d ${dim} -q ${queryType} -T ${tree} -l ${split} 2>&1 | tee -a "${dest}"
+                done
+            done
+        done
+    done
+done

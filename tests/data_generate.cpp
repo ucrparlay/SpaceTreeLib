@@ -13,13 +13,16 @@ int main(int argc, char* argv[]) {
   pts_dim = P.getOptionIntValue("-d", 2);
   file_num = P.getOptionIntValue("-file_num", 2);
   varden = P.getOptionIntValue("-varden", 0);
+  kValueUB = P.getOptionIntValue("-axis_max", 1'000'000'000);
+
   std::cout << "pts_num: " << pts_num << " pts_dim: " << pts_dim
             << " file_num: " << file_num << " varden: " << varden << std::endl;
 
   // NOTE: ../kdtree/
   path += std::string(*path.rbegin() == '/' ? "" : "/") +
-          std::string(varden ? "ss_varden_bigint/" : "uniform_bigint/");
-  // std::string(varden ? "ss_varden/" : "uniform/");
+          (kValueUB <= 1'000'000
+               ? std::string(varden ? "ss_varden/" : "uniform/")
+               : std::string(varden ? "ss_varden_bigint/" : "uniform_bigint/"));
   std::filesystem::create_directory(path);
 
   path += toString(pts_num) + "_" + toString(pts_dim) + "/";
