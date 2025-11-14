@@ -39,7 +39,7 @@ queryType=0
 log_path="logs/scalability"
 mkdir -p "${log_path}"
 
-Tree=(0 1 2 3)
+Tree=(0 1 2 3 5)
 make -C ../build/ kd_test p_test baselines
 
 origin_paths=("${DATA_PREFIX}/ss_varden_bigint/${NODE_SIZE}_$((dim))/1.in" "${DATA_PREFIX}/uniform_bigint/${NODE_SIZE}_${dim}/2_sort_by_0.in" "${DATA_PREFIX}/uniform_bigint/${NODE_SIZE}_${dim}/2.in")
@@ -57,9 +57,12 @@ for tree in "${Tree[@]}"; do
     elif [[ ${tree} -eq 3 ]]; then
         solver="baselines"
         splits=(1)
-    else
+    elif [[ ${tree} -eq 5 ]]; then
         solver="baselines"
-        splits=(1)
+        splits=(2)
+    else
+        echo "ERROR: Invalid tree type ${tree}"
+        exit 1
     fi
 
     for split in "${splits[@]}"; do
