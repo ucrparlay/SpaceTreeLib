@@ -59,8 +59,8 @@ gen_one_row <- function(insert_t, delete_t, bench) {
   # return(bt)
 }
 
-insert_t <- read.csv("data/incre_update/insert_3.csv")
-delete_t <- read.csv("data/incre_update/delete_3.csv")
+insert_t <- read.csv("data/incre_update/incre_insert.csv")
+delete_t <- read.csv("data/incre_update/incre_delete.csv")
 # insert_t <- read.csv("data/insert_3.csv")
 # delete_t <- read.csv("data/delete_3.csv")
 insert_t <- wash_name(insert_t)
