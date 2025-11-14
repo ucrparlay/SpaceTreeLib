@@ -8,7 +8,7 @@ DIMENSION="${3:-2}"
 # /usr/bin/drop_caches
 
 Node=("${NODE_SIZE}")
-Tree=(0 1 2 3 4)
+Tree=(0 1 2 3 4 5)
 # Tree=(3)
 Dims=("${DIMENSION}")
 # Type=(1)
