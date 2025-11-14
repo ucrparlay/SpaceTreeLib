@@ -15,7 +15,7 @@ printf "\n \n =================GENERATE DATA================= \n \n "
 ./ae_data_generate.sh "${DATA_PREFIX}" "${NODE_SIZE}" "${DIMENSION}"
 
 printf "\n \n =================RUN INCRE UPDATE================= \n \n "
-./ae_run_incre_update.sh "${DATA_PREFIX}" "${NODE_SIZE}" "${DIMENSION}"
+# ./ae_run_incre_update.sh "${DATA_PREFIX}" "${NODE_SIZE}" "${DIMENSION}"
 
 printf "\n \n =================RUN RANGE QUERY WITH LOG================= \n \n "
 # ./ae_run_range_query_with_log.sh "${DATA_PREFIX}" "${NODE_SIZE}" "${DIMENSION}"
@@ -24,4 +24,9 @@ printf "\n \n =================RUN REAL WORLD================= \n \n "
 # ./ae_run_real_world.sh "${DATA_PREFIX}" "${NODE_SIZE}" "${DIMENSION}"
 
 printf "\n \n =================RUN SCALABILITY================= \n \n "
-# ./ae_scalability.sh "${DATA_PREFIX}" "${NODE_SIZE}" "${DIMENSION}"
+./ae_scalability.sh "${DATA_PREFIX}" "${NODE_SIZE}" "${DIMENSION}"
+
+printf "\n \n =================MERGE INCRE UPDATE================= \n \n "
+python3 merge_incre.py incre_insert
+python3 merge_incre.py incre_delete
+python3 merge_range_query.py
