@@ -9,6 +9,7 @@
 
 #include "baselines/cpam_raw/cpamtree.hpp"
 #include "baselines/zdtree/zdtree.hpp"
+#include "baselines/zdtree_3d/zdtree_3d.hpp"
 #include "common/geometryIO.h"
 #include "common/parse_command_line.h"
 #include "common/time_loop.h"
@@ -1124,7 +1125,9 @@ std::pair<size_t, int> read_points(char const* iFile,
       if constexpr (std::is_same_v<Point,
                                    BasicPoint<Coord, a_sample_point.size()>>) {
         ;
-      } else if constexpr (std::is_same_v<Point, typename ZD::geobase::Point>) {
+      } else if constexpr (std::is_same_v<Point, typename ZD::geobase::Point> ||
+                           std::is_same_v<Point,
+                                          typename ZD3D::geobase::Point>) {
         wp[i].id = i + id_offset;
       } else {
         wp[i].aug.id = i + id_offset;
@@ -1644,8 +1647,8 @@ class Wrapper {
     using SplitRule = SplitRuleType;
     using TreeType =
         typename psi::OrthTree<Point, SplitRule, LeafAugType, InteriorAugType,
-                                Point::GetDim(),
-                                OrthGetBuildDepthOnce(Point::GetDim())>;
+                               Point::GetDim(),
+                               OrthGetBuildDepthOnce(Point::GetDim())>;
   };
 
   template <class PointType, class SplitRuleType>
@@ -1668,6 +1671,14 @@ class Wrapper {
     using Point = PointType;
     using SplitRule = SplitRuleType;
     using TreeType = typename ZD::Zdtree<Point, SplitRule>;
+  };
+
+  // For zdtree_3d
+  template <class PointType, class SplitRuleType>
+  struct ZdTree3DWrapper {
+    using Point = PointType;
+    using SplitRule = SplitRuleType;
+    using TreeType = typename ZD3D::Zdtree<Point, SplitRule>;
   };
 
   template <class PointType, class SplitRuleType>
@@ -1812,24 +1823,24 @@ class Wrapper {
     auto run_with_split_type = [&]<typename Point>() {
       if (!(split_type & (1 << 0)) && !(split_type & (1 << 1))) {
         // NOTE: 0 -> max_stretch + object_mid
-        build_tree_type.template operator()<
-            Point, psi::OrthogonalSplitRule<psi::MaxStretchDim<Point>,
-                                             psi::ObjectMedian<Point>>>();
+        build_tree_type.template
+        operator()<Point, psi::OrthogonalSplitRule<psi::MaxStretchDim<Point>,
+                                                   psi::ObjectMedian<Point>>>();
       } else if ((split_type & (1 << 0)) && !(split_type & (1 << 1))) {
         // NOTE: 1 -> rotate_dim + object_mid
-        build_tree_type.template operator()<
-            Point, psi::OrthogonalSplitRule<psi::RotateDim<Point>,
-                                             psi::ObjectMedian<Point>>>();
+        build_tree_type.template
+        operator()<Point, psi::OrthogonalSplitRule<psi::RotateDim<Point>,
+                                                   psi::ObjectMedian<Point>>>();
       } else if (!(split_type & (1 << 0)) && (split_type & (1 << 1))) {
         // NOTE: 2 -> max_stretch + spatial_median
         build_tree_type.template operator()<
             Point, psi::OrthogonalSplitRule<psi::MaxStretchDim<Point>,
-                                             psi::SpatialMedian<Point>>>();
+                                            psi::SpatialMedian<Point>>>();
       } else if ((split_type & (1 << 0)) && (split_type & (1 << 1))) {
         // NOTE: 3 -> rotate + spatial_median
         build_tree_type.template operator()<
             Point, psi::OrthogonalSplitRule<psi::RotateDim<Point>,
-                                             psi::SpatialMedian<Point>>>();
+                                            psi::SpatialMedian<Point>>>();
       } else {
         std::cout << "Unsupported split type: " << split_type << std::endl;
       }
@@ -1893,8 +1904,15 @@ class Wrapper {
       } else if (tree_type == 4) {
         ;  // for boost
       } else if (tree_type == 5) {
-        Run<ZdTreeWrapper<typename ZD::geobase::Point, SplitRule>>(params,
-                                                                   test_func);
+        if (dim == 2) {
+          Run<ZdTreeWrapper<typename ZD::geobase::Point, SplitRule>>(params,
+                                                                     test_func);
+        } else if (dim == 3) {
+          Run<ZdTree3DWrapper<typename ZD3D::geobase::Point, SplitRule>>(
+              params, test_func);
+        } else {
+          std::cout << "Zdtree only supports 2D and 3D data." << std::endl;
+        }
       } else {
         std::cout << "Unsupported tree type: " << tree_type << std::endl;
       }
