@@ -8,6 +8,9 @@
 /docs
 /script/backup_data
 /script/plots
+/script_ae/logs
+/script_ae/data
+/script_ae/plots
 run_transfer.sh
 transfer.sh
 Rplots.pdf
