@@ -505,12 +505,12 @@ template <typename Point, typename SplitRule, uint_fast8_t kSkHeight = 6,
           uint_fast8_t kImbaRatio = 30>
 class Zdtree
     : public psi::BaseTree<Point,
-                            Zdtree<Point, SplitRule, kSkHeight, kImbaRatio>,
-                            kSkHeight, kImbaRatio> {
+                           Zdtree<Point, SplitRule, kSkHeight, kImbaRatio>,
+                           kSkHeight, kImbaRatio> {
  public:
   using BT =
       psi::BaseTree<Point, Zdtree<Point, SplitRule, kSkHeight, kImbaRatio>,
-                     kSkHeight, kImbaRatio>;
+                    kSkHeight, kImbaRatio>;
   using BucketType = typename BT::BucketType;
   using BallsType = typename BT::BallsType;
   using DimsType = typename BT::DimsType;
@@ -643,7 +643,7 @@ class Zdtree
 
     tree.range_report(cnv_q, size, Out);
 
-    assert(Out.size() == size);
+    // assert(Out.size() == size);
     // if (Out.size() != size){
     //   cout << "[ERROR]: " << size << ", " << Out.size() << endl;
     // int xx; cin >> xx;

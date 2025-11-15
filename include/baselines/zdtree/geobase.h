@@ -9,6 +9,8 @@
 
 #include "parlay/internal/integer_sort.h"
 #include "parlay/internal/merge.h"
+#include "parlay/monoid.h"
+#include "parlay/primitives.h"
 #include "psi/dependence/comparator.h"
 #include "psi/dependence/space_filling_curve/hilbert.h"
 

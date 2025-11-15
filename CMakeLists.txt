@@ -127,6 +127,10 @@ add_executable(p_tree_example ${PROJECT_SOURCE_DIR}/example/p_tree_main.cpp)
 target_link_libraries(p_tree_example PUBLIC PSI)
 target_include_directories(p_tree_example PUBLIC ${PROJECT_SOURCE_DIR}/include ${PROJECT_SOURCE_DIR}/example)
 
+add_executable(cpam_example ${PROJECT_SOURCE_DIR}/example/cpam_main.cpp)
+target_link_libraries(cpam_example PUBLIC PSI)
+target_include_directories(cpam_example PUBLIC ${PROJECT_SOURCE_DIR}/include ${PROJECT_SOURCE_DIR}/example)
+
 find_package(Boost REQUIRED)
 add_executable(boost_rtree ${PROJECT_SOURCE_DIR}/tests/boost_rtree.cpp)
 target_link_libraries(boost_rtree PUBLIC PSI ${Boost_LIBRARIES})
