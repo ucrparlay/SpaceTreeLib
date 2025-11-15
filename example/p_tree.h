@@ -101,7 +101,8 @@ void run_example() {
   tree.KNN(root, query_point, bq);
 
   std::cout << "Found " << K
-            << " nearest neighbors to point (500, 500):" << std::endl;
+            << " nearest neighbors to point (500, 500) (unsorted):"
+            << std::endl;
   for (int i = 0; i < std::min(3, K); i++) {
     auto& [pt, dist] = knn_result[i];
     std::cout << "  Point " << pt.get().aug.id << " at (" << pt.get()[0] << ", "

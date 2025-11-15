@@ -31,3 +31,7 @@ jobs:
     - name: Build Docker image
       run: |
         docker build -t psi-ae:test .
+    
+    - name: Run example tests
+      run: |
+        docker run --rm psi-ae:test ./example/run_examples.sh
