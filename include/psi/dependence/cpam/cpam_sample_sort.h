@@ -113,6 +113,10 @@ void seq_sort_(slice<InIterator, InIterator> In,
       static_assert(false, "Unsupported output type");
     }
   }
+  // for (size_t j = 0; j < l; j++) {
+  //   std::cout << In[j].aug.code << " ";
+  // }
+
   seq_sort_inplace(Out, less, stable);
 }
 

@@ -203,6 +203,8 @@ void run_example() {
       points;  // WARN: Important! The input array will be changed during build.
 
   // Calculate bounding box for the points
+  // NOTE: This is not necessary, unless you want to specify a certain bounding
+  // box for the tree.
   typename Tree::Box bounding_box = Tree::GetBox(parlay::make_slice(points));
 
   std::cout << "Bounding box: [(" << bounding_box.first[0] << ", "
