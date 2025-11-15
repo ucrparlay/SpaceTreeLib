@@ -119,6 +119,10 @@ add_executable(kd_tree_example ${PROJECT_SOURCE_DIR}/example/kd_tree_main.cpp)
 target_link_libraries(kd_tree_example PUBLIC PSI)
 target_include_directories(kd_tree_example PUBLIC ${PROJECT_SOURCE_DIR}/include ${PROJECT_SOURCE_DIR}/example)
 
+add_executable(orth_tree_example ${PROJECT_SOURCE_DIR}/example/orth_tree_main.cpp)
+target_link_libraries(orth_tree_example PUBLIC PSI)
+target_include_directories(orth_tree_example PUBLIC ${PROJECT_SOURCE_DIR}/include ${PROJECT_SOURCE_DIR}/example)
+
 find_package(Boost REQUIRED)
 add_executable(boost_rtree ${PROJECT_SOURCE_DIR}/tests/boost_rtree.cpp)
 target_link_libraries(boost_rtree PUBLIC PSI ${Boost_LIBRARIES})
