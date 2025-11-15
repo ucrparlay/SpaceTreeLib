@@ -3,6 +3,7 @@
 !*.*
 !*/
 !Makefile
+!Dockerfile
 /.cache
 /docs
 /script/backup_data
