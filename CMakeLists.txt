@@ -115,6 +115,10 @@ add_executable(data_washer ${PROJECT_SOURCE_DIR}/tests/data_wash.cpp)
 target_link_libraries(data_washer PUBLIC PSI)
 target_include_directories(data_washer PUBLIC ${PROJECT_SOURCE_DIR}/include)
 
+add_executable(kd_tree_example ${PROJECT_SOURCE_DIR}/example/kd_tree_main.cpp)
+target_link_libraries(kd_tree_example PUBLIC PSI)
+target_include_directories(kd_tree_example PUBLIC ${PROJECT_SOURCE_DIR}/include ${PROJECT_SOURCE_DIR}/example)
+
 find_package(Boost REQUIRED)
 add_executable(boost_rtree ${PROJECT_SOURCE_DIR}/tests/boost_rtree.cpp)
 target_link_libraries(boost_rtree PUBLIC PSI ${Boost_LIBRARIES})
