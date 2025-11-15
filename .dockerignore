@@ -1,0 +1,40 @@
+# Build artifacts
+build/
+*.o
+*.a
+*.so
+*.dylib
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Git
+.git/
+.gitignore
+.gitmodules
+
+# Cache and temporary files
+.cache/
+*.log
+__pycache__/
+*.pyc
+*.pyo
+
+# Data and results (will be generated)
+script_ae/logs/
+script_ae/data/
+script_ae/plots/
+/data/
+
+# Environment files
+.env
+.env.local
+
+# Documentation
+*.md
+!README.md

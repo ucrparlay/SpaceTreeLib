@@ -1,0 +1,91 @@
+# Makefile for Docker-based Artifact Evaluation
+# This provides convenient targets for running experiments
+
+.PHONY: help docker-build docker-quick docker-full docker-shell docker-clean \
+        docker-compose-up docker-compose-down docker-compose-shell
+
+# Default target
+help:
+	@echo "PSI Artifact Evaluation - Docker Targets"
+	@echo ""
+	@echo "Make targets:"
+	@echo "  docker-build          Build the Docker image"
+	@echo "  docker-quick          Run quick test (NODE_SIZE=100000)"
+	@echo "  docker-full           Run full evaluation (NODE_SIZE=1000000000)"
+	@echo "  docker-shell          Open interactive shell in container"
+	@echo "  docker-clean          Remove Docker image and containers"
+	@echo ""
+	@echo "Docker Compose targets:"
+	@echo "  docker-compose-up     Start container with docker-compose"
+	@echo "  docker-compose-down   Stop and remove containers"
+	@echo "  docker-compose-shell  Open shell in running container"
+	@echo ""
+	@echo "Native build targets:"
+	@echo "  build                 Build project natively (requires dependencies)"
+	@echo "  test                  Run tests"
+	@echo "  clean                 Clean build artifacts"
+	@echo ""
+	@echo "Documentation: See doc/ folder for guides"
+	@echo "  - doc/QUICKREF.md - Quick command reference"
+	@echo "  - doc/DOCKER.md - Detailed Docker instructions"
+	@echo "  - doc/ARTIFACT_EVALUATION.md - Complete evaluation guide"
+	@echo ""
+	@echo "For more options, use: ./docker-run.sh help"
+
+# Docker targets
+docker-build:
+	@echo "Building Docker image..."
+	./docker-run.sh build
+
+docker-quick:
+	@echo "Running quick test..."
+	./docker-run.sh quick
+
+docker-full:
+	@echo "Running full artifact evaluation..."
+	@echo "This may take several hours!"
+	./docker-run.sh full
+
+docker-shell:
+	@echo "Opening interactive shell..."
+	./docker-run.sh run
+
+docker-clean:
+	@echo "Cleaning up Docker resources..."
+	./docker-run.sh clean
+
+# Docker Compose targets
+docker-compose-up:
+	@echo "Starting container with docker-compose..."
+	docker-compose up -d
+	@echo "Container started. Use 'make docker-compose-shell' to access it."
+
+docker-compose-down:
+	@echo "Stopping containers..."
+	docker-compose down
+
+docker-compose-shell:
+	@echo "Opening shell in running container..."
+	docker-compose exec psi-ae bash
+
+# Native build targets (for non-Docker builds)
+build:
+	@echo "Building project..."
+	@mkdir -p build
+	@cd build && cmake -DDEBUG=OFF -DCGAL=OFF -DJEMA=OFF .. && make -j
+
+test: build
+	@echo "Running tests..."
+	@cd build && ctest
+
+clean:
+	@echo "Cleaning build artifacts..."
+	@rm -rf build
+	@rm -rf script_ae/logs/*
+	@rm -rf script_ae/data/*
+	@rm -rf script_ae/plots/*
+
+# Create result directories
+setup-dirs:
+	@mkdir -p results logs plots
+	@echo "Created directories: results/, logs/, plots/"

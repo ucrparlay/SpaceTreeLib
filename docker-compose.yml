@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  psi-ae:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: psi-ae:latest
+    container_name: psi-artifact-evaluation
+    
+    # Add capabilities for numactl
+    cap_add:
+      - SYS_NICE
+    
+    # Environment variables (can be overridden with .env file or -e flag)
+    environment:
+      - DATA_PREFIX=${DATA_PREFIX:-/data}
+      - NODE_SIZE=${NODE_SIZE:-1000000000}
+    
+    # Volume mounts for persistence
+    volumes:
+      - ./script_ae/data:/workspace/SpaceTreeLib/script_ae/data
+      - ./script_ae/logs:/workspace/SpaceTreeLib/script_ae/logs
+      - ./script_ae/plots:/workspace/SpaceTreeLib/script_ae/plots
+      # Mount user-specified data directory from host
+      - ${DATA_MOUNT_PATH:-/tmp/psi-data}:${DATA_PREFIX:-/data}
+    
+    # Keep container running
+    stdin_open: true
+    tty: true
+    
+    # Working directory
+    working_dir: /workspace/SpaceTreeLib/script_ae
+    
+    # Override default command
+    command: /bin/bash

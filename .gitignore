@@ -9,6 +9,7 @@
 /script/plots
 run_transfer.sh
 transfer.sh
+Rplots.pdf
 
 # Debug files
 # *.log

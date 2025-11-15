@@ -1,5 +1,34 @@
 # PSI: A library for Parallel Spatial Indexes
 
+## Docker Setup (Recommended for Artifact Evaluation)
+
+**Hardware Requirements:**
+- **Memory**: 512GB RAM for full experiments
+- **CPU**: All available cores
+- **Disk**: 100GB+ free space
+
+**Quick Start:**
+```bash
+# Build the Docker image
+./docker-run.sh build
+
+# Run experiments (specify where to store generated data)
+./docker-run.sh run --data-path /mnt/large-disk/data
+
+# Or run full evaluation
+./docker-run.sh full --data-path /mnt/large-disk/data
+```
+
+**Parameters:**
+- `--data-path PATH` - Host directory for generated datasets (required)
+- `--node-size SIZE` - Number of data points (default: 1000000000)
+- `--memory SIZE` - Memory limit (e.g., 512g)
+- `--cpus NUM` - CPU limit (default: all cores)
+
+**Results:** Found in `results/`, `logs/`, `plots/` directories on host.
+
+**Documentation:** See [doc/](doc/) folder for complete guides.
+
 ## Requirements
 
 Necessary:
