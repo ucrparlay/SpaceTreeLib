@@ -46,13 +46,13 @@ for tree in "${Tree[@]}"; do
     fi
 
     for split in "${splits[@]}"; do
-        for j in "${!origin_paths[@]}"; do
-            file="${origin_paths[${j}]##*/}"
-            dest="${log_path}/${tree}_${split}.log"
-            : >"${dest}"
-            echo ">>>${dest}"
-            exe="../build/${solver}"
+        file="${origin_paths[${j}]##*/}"
+        dest="${log_path}/${tree}_${split}.log"
+        : >"${dest}"
+        echo ">>>${dest}"
+        exe="../build/${solver}"
 
+        for j in "${!origin_paths[@]}"; do
             input="${origin_paths[${j}]}"
             insert="${insert_paths[${j}]}"
             echo ${input}
