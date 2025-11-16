@@ -10,7 +10,7 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 # Default values
-IMAGE_NAME="psi-ae:latest"
+IMAGE_NAME="ghcr.io/ucrparlay/spacetreelib:latest"
 CONTAINER_NAME="psi-artifact-evaluation"
 NODE_SIZE="1000000000"
 
@@ -34,6 +34,7 @@ Usage: $0 [COMMAND] [OPTIONS]
 
 Commands:
     build       Build the Docker image
+    pull        Pull the Docker image from GitHub Container Registry
     run         Run the container interactively
     full        Run full artifact evaluation (NODE_SIZE=1000000000)
     shell       Start a bash shell in the container
@@ -49,6 +50,7 @@ Options:
 
 Examples:
     $0 build
+    $0 pull
     $0 run --data-path /mnt/large-disk/experiments
     $0 run --data-path /home/user/data --node-size 100000
     $0 full --data-path /mnt/ssd/experiments --node-size 1000000000 --memory 512g
@@ -78,6 +80,13 @@ build_image() {
     print_info "Building Docker image: $IMAGE_NAME"
     docker build -t "$IMAGE_NAME" .
     print_info "Build complete!"
+}
+
+# Function to pull the image
+pull_image() {
+    print_info "Pulling Docker image from GitHub Container Registry: $IMAGE_NAME"
+    docker pull "$IMAGE_NAME"
+    print_info "Pull complete!"
 }
 
 # Function to create host directories for volume mounts
@@ -278,6 +287,9 @@ done
 case $COMMAND in
 build)
     build_image
+    ;;
+pull)
+    pull_image
     ;;
 run)
     NODE_SIZE_TO_USE="${CUSTOM_NODE_SIZE:-$NODE_SIZE}"
