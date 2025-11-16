@@ -5,12 +5,12 @@ PSI is a high performance parallel library for a collection of spatial indexes, 
 - 📝 Provide strong theoretical guarantees for the running time, parallelism and I/O (cache) efficiency;
 - 🛠️ Easy to adapt, integrate and deploy.
 
-## Manuals
+## Docs
 - [Quick Start](docs/QUICK_START.md)
 - [User Manual](docs/MANUAL.md)
 - [Docker](docs/QUICK_DOCKER_REFERENCES.md)
 - [Artifact Evaluation](docs/ARTIFACT_EVALUATION.md)
-- [How to pick the tree 🧐](docs/TREE_ANSWER.md)
+- [How to Pick the Tree 🧐](docs/TREE_ANSWER.md)
 
 ## Citation
 If you use our code, please cite our papers:
