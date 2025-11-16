@@ -5,11 +5,7 @@ PSI is a high performance parallel library for a collection of spatial indexes, 
 - 📝 Provide strong theoretical guarantees for the running time, parallelism and I/O (cache) efficiency;
 - 🛠️ Easy to adapt, integrate and deploy.
 
-## When you need a spatial trees...
-
-<iframe src="docs/what-tree-you-need.pdf" width="100%" height="600" style="border:none;">
-  <a href="docs/what-tree-you-need.pdf">Download the manual (PDF)</a>
-</iframe>
+![If you need a spatial tree 🧐](docs/what-tree-you-need.jpg)
 
 ## Manuals
 - [Quick Start](docs/QUICK_START.md)
