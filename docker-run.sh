@@ -237,9 +237,11 @@ cleanup() {
     docker container prune -f
 
     # Remove image
-    if docker images | grep -q "$IMAGE_NAME"; then
+    if docker images --format "{{.Repository}}:{{.Tag}}" | grep -q "^${IMAGE_NAME}$"; then
         docker rmi "$IMAGE_NAME"
         print_info "Removed image: $IMAGE_NAME"
+    else
+        print_warn "Image not found: $IMAGE_NAME"
     fi
 
     print_info "Cleanup complete!"

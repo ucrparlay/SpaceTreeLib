@@ -1,16 +1,54 @@
 # Docker Quick Reference
 
-## Build and Run
+## Quick Start - Using Pre-built Image (Recommended)
+
+The easiest way to use PSI is to pull the pre-built Docker image from GitHub Container Registry:
 
 ```bash
-# 1. Build image
-./docker-run.sh build
+# 1. Pull the pre-built image (no build needed!)
+./docker-run.sh pull
 
 # 2. Run experiments (requires --data-path)
-./docker-run.sh run --data-path /mnt/large-disk/data
+./docker-run.sh run --data-path /mnt/large-disk/data --node-size 1000000
 
 # 3. Full evaluation
 ./docker-run.sh full --data-path /mnt/large-disk/data
+```
+
+## Alternative - Build Locally
+
+If you want to modify the code or can't access the pre-built image:
+
+```bash
+# 1. Build image locally
+./docker-run.sh build
+
+# 2. Run experiments
+./docker-run.sh run --data-path /mnt/large-disk/data
+```
+
+## Manual Docker Commands
+
+You can also use Docker directly without the helper script:
+
+```bash
+# Pull the image
+docker pull ghcr.io/ucrparlay/spacetreelib:latest
+
+# Run interactively
+docker run -it --rm \
+  -v /ssd1:/ssd1 \
+  -e DATA_PREFIX=/ssd1/ \
+  -e NODE_SIZE=1000000 \
+  ghcr.io/ucrparlay/spacetreelib:latest
+
+# Run with custom settings
+docker run -it --rm \
+  --cap-add=SYS_NICE \
+  -v $(pwd)/script_ae/logs:/workspace/SpaceTreeLib/script_ae/logs \
+  -e DATA_PREFIX=/data \
+  -e NODE_SIZE=1000000000 \
+  ghcr.io/ucrparlay/spacetreelib:latest
 ```
 
 ## Parameters
@@ -65,12 +103,15 @@ docker-compose down
 ## Cleanup
 
 ```bash
-# Remove image
+# Remove container and image
 ./docker-run.sh clean
+
+# Or manually remove the image
+docker rmi ghcr.io/ucrparlay/spacetreelib:latest
 
 # Remove generated data
 rm -rf /your/data/path/*
-rm -rf results/ logs/ plots/
+rm -rf script_ae/data/ script_ae/logs/ script_ae/plots/
 ```
 
 ## Hardware Requirements
@@ -85,10 +126,16 @@ rm -rf results/ logs/ plots/
 **Fixed:** Container runs with `--cap-add=SYS_NICE`
 
 **Issue:** Files not visible on host  
-**Solution:** Check mounted directories (data/, logs/, plots/)
+**Solution:** Check mounted directories (script_ae/data/, script_ae/logs/, script_ae/plots/)
 
 **Issue:** Out of memory  
 **Solution:** Reduce `--node-size` or increase system RAM
 
 **Issue:** Script changes not reflected  
-**Solution:** Rebuild image with `./docker-run.sh build`
+**Solution:** Rebuild image with `./docker-run.sh build` or pull latest with `./docker-run.sh pull`
+
+**Issue:** Cannot pull image (permission denied)  
+**Solution:** The package may be private. Ask repository admin to make it public in GitHub package settings, or authenticate with:
+```bash
+echo YOUR_GITHUB_TOKEN | docker login ghcr.io -u YOUR_USERNAME --password-stdin
+```
