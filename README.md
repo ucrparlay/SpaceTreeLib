@@ -1,15 +1,21 @@
-# PSI: A library for Parallel Spatial Indexes
-PSI is a parallel library for a collection of parallel spatial indexes, e.g., Kd-trees, Quad/Oct-trees and R-trees, which are:
-- Blazing fast 🚀,
-- Fully parallel 🔀,
-- Provide strong theoretical guarantee for the running time, parallelism and I/O (cache) efficiency 📝,
-- Easy to adapt, integrate and deploy 🛠️. 
+# PSI: A parallel library for Parallel Spatial Indexes
+PSI is a high performance parallel library for a collection of spatial indexes, e.g., Kd-trees, Quad/Oct-trees and R-trees, which are:
+- 🚀 Blazing fast;
+- 🔀 Fully parallel;
+- 📝 Provide strong theoretical guarantees for the running time, parallelism and I/O (cache) efficiency;
+- 🛠️ Easy to adapt, integrate and deploy.
+
+## When you need a spatial trees...
+
+<iframe src="docs/what-tree-you-need.pdf" width="100%" height="600" style="border:none;">
+  <a href="docs/what-tree-you-need.pdf">Download the manual (PDF)</a>
+</iframe>
 
 ## Manuals
-- [Quick Start](doc/QUICK_START.md)
-- [User Manual](doc/MANUAL.md)
-- [Docker](doc/QUICK_DOCKER_REFERENCES.md)
-- [Artifact Evaluation](doc/ARTIFACT_EVALUATION.md)
+- [Quick Start](docs/QUICK_START.md)
+- [User Manual](docs/MANUAL.md)
+- [Docker](docs/QUICK_DOCKER_REFERENCES.md)
+- [Artifact Evaluation](docs/ARTIFACT_EVALUATION.md)
 
 ## Citation
 If you use our code, please cite our papers:

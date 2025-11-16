@@ -57,10 +57,10 @@ Note: --data-path specifies where on the HOST machine the generated data will be
       This directory must have sufficient space (100GB+ for full experiments).
 
 Documentation:
-    See doc/ folder for detailed guides:
-    - doc/QUICKREF.md - Quick command reference
-    - doc/DOCKER.md - Detailed Docker instructions
-    - doc/ARTIFACT_EVALUATION.md - Complete evaluation guide
+    See docs/ folder for detailed guides:
+    - docs/QUICKREF.md - Quick command reference
+    - docs/DOCKER.md - Detailed Docker instructions
+    - docs/ARTIFACT_EVALUATION.md - Complete evaluation guide
 
 EOF
 }
