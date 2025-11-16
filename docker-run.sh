@@ -174,7 +174,7 @@ run_full_eval() {
 
     local docker_args=(
         "--cap-add=SYS_NICE"
-        "-u" "$(id -u):$(id -g)"
+        # "-u" "$(id -u):$(id -g)"
 
         "-it"
         "--rm"
