@@ -8,10 +8,10 @@
 **Quick Start:**
 ```bash
 # Build the Docker image
-./docker-run.sh build
+./docker-run.sh pull
 
-# Run experiments (specify where to store generated data)
-./docker-run.sh run --data-path /mnt/large-disk/data
+# Run experiments (specify where to store generated data and the synthetic benchmark size)
+./docker-run.sh run --data-path /mnt/large-disk/data --node-size 1000000
 
 # Or run full evaluation
 ./docker-run.sh full --data-path /mnt/large-disk/data
@@ -23,6 +23,6 @@
 - `--memory SIZE` - Memory limit (e.g., 512g), generally you don't want to explicitly set this value
 - `--cpus NUM` - CPU limit (default: all cores), generally you don't want set it as well.
 
-**Results:** Found in `data/`, `logs/`, `plots/` directories on host.
+**Results:** Found in `script_ae/data/`, `script_ae/logs/`, `script_ae/plots/` directories on host.
 
-**Documentation:** See [doc/](doc/) folder for complete guides.
+**Documentation:** See [docker reference](docs/DOCKER_QUICK_REFERENCE.md) for complete guides to use docker.
