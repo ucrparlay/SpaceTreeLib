@@ -25,8 +25,8 @@
 ## Examples
 
 ```bash
-# Full experiments with 512GB RAM
-./docker-run.sh full --data-path /mnt/ssd/data --memory 512g
+# Full experiments
+./docker-run.sh full --data-path /mnt/ssd/data
 
 # Custom dataset size
 ./docker-run.sh run --data-path /data --node-size 100000

@@ -14,6 +14,7 @@
 
 namespace kd_tree_example {
 
+// Type for each coordinate
 using Coord = long;
 
 // Define augmentation structure for points (stores an ID)
@@ -39,18 +40,23 @@ using BT = psi::BaseTree<Point>;
 // WARN: All functions must be defined
 template <class BaseTree>
 struct LeafAugBox {
-  using Box = typename BaseTree::Box;
-  using Slice = typename BaseTree::Slice;
+  using Box = typename BaseTree::Box;      // The bounding box type
+  using Slice = typename BaseTree::Slice;  // parallel data container, similar
+                                           // to std::ranges
 
+  // Constructors
   LeafAugBox() : box(BaseTree::GetEmptyBox()) {}
   LeafAugBox(Box const& _box) : box(_box) {}
   LeafAugBox(Slice In) : box(BaseTree::GetBox(In)) {}
 
+  // Return the bounding box
   Box& GetBox() { return this->box; }
   Box const& GetBox() const { return this->box; }
 
+  // Update the augmentation information
   void UpdateAug(Slice In) { this->box = BaseTree::GetBox(In); }
 
+  // Reset the augmentation information
   void Reset() { this->box = BaseTree::GetEmptyBox(); }
 
   Box box;
@@ -62,43 +68,52 @@ template <class BaseTree>
 struct InteriorAugBox {
   using Box = typename BaseTree::Box;
 
+  // Constructors
   InteriorAugBox() : box(BaseTree::GetEmptyBox()) {
     force_par_indicator.reset();
   }
   InteriorAugBox(Box const& _box) : box(_box) { force_par_indicator.reset(); }
 
-  // Binary create
+  // Get the bounding box
+  Box& GetBox() { return this->box; }
+  Box const& GetBox() const { return this->box; }
+
+  // Given two child nodes, create the augmentation value (bounding box) for
+  // the interior node
   template <typename Leaf, typename Interior>
   static Box Create(psi::Node* l, psi::Node* r) {
     return BaseTree::GetBox(BaseTree::template RetriveBox<Leaf, Interior>(l),
                             BaseTree::template RetriveBox<Leaf, Interior>(r));
   }
 
-  Box& GetBox() { return this->box; }
-  Box const& GetBox() const { return this->box; }
-
-  // Binary update
+  // Update the augmentation information for the interior node
   template <typename Leaf, typename Interior>
   void Update(psi::Node* l, psi::Node* r) {
     this->box = Create<Leaf, Interior>(l, r);
   }
 
+  // Below are required to ensure the granularity of parallelism
+  // Mark this node to be update in parallel or not in following operations
   void SetParallelFlag(bool const flag) {
     this->force_par_indicator.emplace(flag);
   }
 
+  // Reset the parallel flag
   void ResetParallelFlag() { this->force_par_indicator.reset(); }
 
+  // Get the initial status of the parallel flag
   bool GetParallelFlagIniStatus() {
     return this->force_par_indicator.has_value();
   }
 
+  // Whether to force parallel update for this node
   bool ForceParallel(size_t sz) const {
     return this->force_par_indicator.has_value()
                ? this->force_par_indicator.value()
                : sz > BaseTree::kSerialBuildCutoff;
   }
 
+  // Reset the augmentation information and parallel flag
   void Reset() {
     this->force_par_indicator.reset();
     this->box = BaseTree::GetEmptyBox();
