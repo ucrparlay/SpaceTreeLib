@@ -13,6 +13,7 @@
 run_transfer.sh
 transfer.sh
 Rplots.pdf
+.DS_Store
 
 # Debug files
 # *.log
