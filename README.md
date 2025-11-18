@@ -1,4 +1,4 @@
-# PSI: A parallel library for Parallel Spatial Indexes
+# PSI: A library for Parallel Spatial Indexes
 PSI is a high-performance parallel library for a collection of spatial indexes, e.g., Kd-trees, Quad/Oct-trees, and R-trees, which are:
 - 🚀 Blazing fast;
 - 🔀 Fully parallel;
