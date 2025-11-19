@@ -25,4 +25,4 @@
 
 **Results:** Found in `script_ae/data/`, `script_ae/logs/`, `script_ae/plots/` directories on host.
 
-**Documentation:** See [docker reference](docs/DOCKER_QUICK_REFERENCE.md) for complete guides to use docker.
+**Documentation:** See [docker reference](DOCKER_QUICK_REFERENCE.md) for complete guides to use docker.
