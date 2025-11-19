@@ -9,7 +9,7 @@ Thanks for AI, there is a generally good [wiki](https://deepwiki.com/ucrparlay/S
 Any contribution is welcomed 🤗!
 
 ## File Organization
-```{bash}
+```bash
 include/
 ├── baselines
 │   ├── boost_rtree
@@ -44,7 +44,7 @@ We will take the **Pkd-tree** as an example, other trees are similar.
 All source files for examples can be found in the [example/](../example/).
 
 Everything start with the definition of the `Point`:
-```{c++}
+```c++
 // Type for each coordinate
 using Coord = long;
 
@@ -67,7 +67,7 @@ using Point = psi::AugPoint<Coord, 2, AugId>;
 ```
 
 With `Point`, we can now use all functionalities provided in `Basetree`, e.g.,
-```{c++}
+```c++
 using BT = psi::BaseTree<Point>;
 auto box = BT::GetBox(input); // demo code, to get the bounding box for the input
 ```
@@ -76,7 +76,7 @@ You want to augment some info on the tree nodes, both the leaf nodes, and the in
 <details>
 <summary>click to expand</summary>
 
-```{c++}
+```c++
 // Leaf augmentation: stores bounding box
 // WARN: All functions must be defined
 template <class BaseTree>
@@ -167,7 +167,7 @@ struct InteriorAugBox {
 </details>
 
 Of course, as a spatial partition tree, we can choose how to split the space:
-```{c++}
+```c++
 // Define split rule: max stretch dimension + object median
 using SplitRule = psi::OrthogonalSplitRule<psi::MaxStretchDim<Point>,
                                            psi::ObjectMedian<Point>>;
@@ -178,7 +178,7 @@ using AnotherSplitRule =
 ```
 
 Now we can define the tree type with all building blocks above:
-```{c++}
+```c++
 // Define KdTree type
 using Tree = psi::KdTree<Point, SplitRule, LeafAugBox<BT>, InteriorAugBox<BT>>;
 Tree tree;
@@ -186,20 +186,20 @@ Tree tree;
 
 Then we can use the tree as follows:
 - Build the tree:
-```{c++}
+```c++
 Points points;
 auto points_copy = points;
 tree.Build(points_copy);
 ```
 - Batch Insert:
-```{c++}
+```c++
 Points insert_points;
 auto insert_copy = insert_points;
 tree.BatchInsert(insert_copy);
 ```
 
 - Batch Delete (assumes all points to be deleted are in the tree, use `BatchDiff` if you are not sure):
-```{c++}
+```c++
 Points delete_points;
 auto delete_copy = delete_points;
 tree.BatchDelete(delete_copy);
@@ -207,7 +207,7 @@ tree.BatchDelete(delete_copy);
 ```
 
 - KNN query
-```{c++}
+```c++
 int K = 10; // K for KNN
 Point query_point; // Points to be queried
 
@@ -222,7 +222,7 @@ tree.KNN(root, query_point, bq); // do the query
 ```
 
 - Range count and Range query
-```{c++}
+```c++
 typename Tree::Box query_box; // a pair of point
 Points range_result(n);  // Allocate max possible size
 auto [count, logger] =
@@ -235,7 +235,7 @@ A comprehensive example can be found [here](../example/kd_tree.h).
 PSI also shipped a parallel data_generator for two distribution of points, namely, the `Uniform` (uniformly spread across a cube) and `Varden` (very skewed).
 
 Usage:
-```{bash}
+```bash
 # In the build
 make data_generator
 ./data_generator -p [output_path] -d [dimension] -n [points_num] -file_num [files_num] -varden [0:uniform, 1:varden] 

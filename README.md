@@ -14,7 +14,7 @@ PSI is a high-performance parallel library for a collection of spatial indexes, 
 
 ## Citation
 If you use our code, please cite our papers:
-```{tex}
+```tex
 @article{men2025parallel,
   title={Parallel kd-tree with Batch Updates},
   author={Men, Ziyang and Shen, Zheqi and Gu, Yan and Sun, Yihan},

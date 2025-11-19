@@ -26,26 +26,26 @@ Try:
 
 1. Clone the repository.
 
-```{bash}
+```bash
 git clone git@github.com:ucrparlay/SpaceTreeLib.git
 cd SpaceTreeLib
 ```
 
 2. Initialize the submodule:
 
-```{bash}
+```bash
 git submodule update --init
 ```
 
 3. Compilation (with `Release` and `jemalloc` disabled)
-```{bash}
+```bash
 mkdir build && cd build
 cmake -DDEBUG=OFF -DJEMA=OFF ..
 make -j
 ```
 
 4. Run some toy examples:
-```{bash}
+```bash
 ./example/run_examples.sh
 ```
 
