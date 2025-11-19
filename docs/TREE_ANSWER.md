@@ -1,7 +1,9 @@
 # How to pick the tree?
-The answer is all about the operation you need.
+
+¯\_(ツ)_/¯ The answer is all about the operation you need: whether it is **update-heavy** or **query-heavy**.
 
 ![tree answer](what-tree-you-need.jpg)
+
 
 Baselines:
 - [Pkd-tree](https://dl.acm.org/doi/abs/10.1145/3709712): the SOTA parallel kd-tree;
