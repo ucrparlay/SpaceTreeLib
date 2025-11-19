@@ -21,12 +21,10 @@
 #include "parlay/random.h"
 #include "parlay/slice.h"
 #include "psi/base_tree.h"
-#include "psi/cover_tree.h"
 #include "psi/dependence/splitter.h"
 #include "psi/kd_tree.h"
 #include "psi/orth_tree.h"
 #include "psi/p_tree.h"
-#include "psi/r_tree.h"
 
 #ifdef CCP
 using Coord = long;
@@ -1679,20 +1677,6 @@ class Wrapper {
     using Point = PointType;
     using SplitRule = SplitRuleType;
     using TreeType = typename ZD3D::Zdtree<Point, SplitRule>;
-  };
-
-  template <class PointType, class SplitRuleType>
-  struct CoverTreeWrapper {
-    using Point = PointType;
-    using SplitRule = SplitRuleType;
-    using TreeType = typename psi::CoverTree<Point, SplitRule>;
-  };
-
-  template <class PointType, class SplitRuleType>
-  struct RTreeWrapper {
-    using Point = PointType;
-    using SplitRule = SplitRuleType;
-    using TreeType = typename psi::RTree<Point, SplitRule>;
   };
 
   // NOTE: Apply the dim and split rule

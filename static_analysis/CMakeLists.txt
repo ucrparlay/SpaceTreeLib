@@ -43,13 +43,6 @@ configure_danalysis(
     ${PSI_INCLUDE_DIR}/base_tree.h
     ${PSI_INCLUDE_DIR}/kd_tree.h
     ${PSI_INCLUDE_DIR}/orth_tree.h
-    ${PSI_INCLUDE_DIR}/r_tree.h
-    ${PSI_INCLUDE_DIR}/r_tree_impl/r_batch_delete.hpp
-    ${PSI_INCLUDE_DIR}/r_tree_impl/r_batch_diff.hpp
-    ${PSI_INCLUDE_DIR}/r_tree_impl/r_batch_insert.hpp
-    ${PSI_INCLUDE_DIR}/r_tree_impl/r_build_tree.hpp
-    ${PSI_INCLUDE_DIR}/r_tree_impl/r_inter_node.hpp
-    ${PSI_INCLUDE_DIR}/r_tree_impl/r_override.hpp
   IGNORE_DEFINITIONS
     PARLAY_CILK
     PARLAY_CILKPLUS
