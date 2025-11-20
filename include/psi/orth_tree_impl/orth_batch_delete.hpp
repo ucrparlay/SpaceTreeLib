@@ -52,6 +52,7 @@ Node* OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight,
 
   // INFO: delete the whole tree directly if its size equals to the input size,
   // can be used to accelerate the whole deletion process
+#ifndef DISABLE_BATCH_DELETE_SIZE_OPT
   if (n == T->size) {
     if (has_tomb) {
       BT::template DeleteTreeRecursive<Leaf, Interior>(T);
@@ -64,6 +65,7 @@ Node* OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight,
     T->size = 0;
     return T;
   }
+#endif
 
   if (T->is_leaf) {
     return BT::template DeletePoints4Leaf<Leaf, Node*>(T, In);
@@ -159,8 +161,15 @@ Node* OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight,
     assert(IT.tags[IT.rev_tag[i]].second == BT::kBucketNum + 3);
 
     if (IT.tags[IT.rev_tag[i]].first->size == 0) {  // NOTE: empty
+
+#ifndef DISABLE_BATCH_DELETE_SIZE_OPT
       BT::template DeleteTreeRecursive<Leaf, Interior, false>(
           IT.tags[IT.rev_tag[i]].first);
+#else
+      BT::template DeleteTreeRecursive<Leaf, Interior, true>(
+          IT.tags[IT.rev_tag[i]].first);
+#endif
+
       IT.tags[IT.rev_tag[i]].first = AllocEmptyLeafNode<Slice, Leaf>();
     } else {  // NOTE: rebuild
       assert(BT::WithinBox(
