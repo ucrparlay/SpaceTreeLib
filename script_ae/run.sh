@@ -58,7 +58,7 @@ Rscript plot_fig5_range_query_scatter.R
 Rscript plot_fig7_real_world.R
 Rscript plot_fig8_batch_updates.R
 Rscript plot_fig9_scalability.R
-Rscript plot_fig10_3D_summary.R
+Rscript plot_fig10_3d_summary.R
 
 printf "\n \n =================CLEAN DATA================= \n \n "
 rm -rf "${DATA_PREFIX}/ss_varden_bigint"
