@@ -39,11 +39,13 @@ Commands:
     full        Run full artifact evaluation (NODE_SIZE=1000000000)
     shell       Start a bash shell in the container
     stop        Stop the running container
-    clean       Remove container and image
+    clean       Remove container, image, and generated files
     help        Show this help message
 
 Options:
-    --data-path PATH    Set the HOST path where data will be stored (required for data generation)
+    --data-path PATH    Set the HOST path where data will be stored (required for data generation/cleanup)
+    --download-real-world-data     Download real-world data on host (default: true)
+    --no-download-real-world-data  Skip downloading real-world data
     --node-size SIZE    Set the node size (default: 1000000000)
     --cpus NUM          Limit CPU cores (default: all available)
     --memory SIZE       Memory limit (e.g., 16g, default: no limit)
@@ -95,12 +97,33 @@ create_host_dirs() {
     print_info "Created host directories: script_ae/data, script_ae/logs, script_ae/plots"
 }
 
+# Function to download real-world data on host
+download_data_host() {
+    local data_path=$1
+
+    print_info "Downloading real-world data on HOST..."
+
+    # Resolve absolute path for data_path
+    if command -v realpath &> /dev/null; then
+        data_path=$(realpath "$data_path")
+    else
+        data_path=$(cd "$data_path" && pwd)
+    fi
+
+    print_info "Running download script..."
+    (
+        cd script_ae
+        ./ae_download_real_word_data.sh "$data_path"
+    )
+}
+
 # Function to run container
 run_container() {
     local node_size=$1
     local cpus=$2
     local memory=$3
     local data_path=$4
+    local should_download=$5
 
     if [ -z "$data_path" ]; then
         print_error "Data path is required. Use --data-path to specify where data will be stored on the host."
@@ -112,6 +135,13 @@ run_container() {
     mkdir -p "$data_path"
 
     create_host_dirs
+    
+    if [ "$should_download" = "true" ]; then
+        download_data_host "$data_path"
+    else
+        print_warn "Skipping real-world data download."
+        print_warn "Missing data may cause issues in subsequent scripts!"
+    fi
 
     local container_data_path="/data"
 
@@ -155,6 +185,7 @@ run_full_eval() {
     local memory=$2
     local data_path=$3
     local node_size=$4
+    local should_download=$5
 
     if [ -z "$data_path" ]; then
         print_error "Data path is required. Use --data-path to specify where data will be stored on the host."
@@ -169,6 +200,13 @@ run_full_eval() {
     mkdir -p "$data_path"
 
     create_host_dirs
+    
+    if [ "$should_download" = "true" ]; then
+        download_data_host "$data_path"
+    else
+        print_warn "Skipping real-world data download."
+        print_warn "Missing data may cause issues in subsequent scripts!"
+    fi
 
     local container_data_path="/data"
 
@@ -226,11 +264,60 @@ stop_container() {
 
 # Function to clean up
 cleanup() {
+    local data_path=$1
     print_info "Cleaning up Docker resources..."
 
     # Stop container if running
     if docker ps | grep -q "$CONTAINER_NAME"; then
         docker stop "$CONTAINER_NAME"
+    fi
+
+    # Use Docker to remove files (to handle root permissions)
+    print_info "Removing generated files using Docker..."
+    
+    local mounts="-v $(pwd)/script_ae:/workspace/script_ae"
+    local cmd="rm -rf /workspace/script_ae/data /workspace/script_ae/logs /workspace/script_ae/plots"
+
+    if [ -n "$data_path" ]; then
+        # Only mount if data_path exists to avoid docker creating it as root
+        if [ -d "$data_path" ]; then
+             # Use realpath for the mount
+            if command -v realpath &> /dev/null; then
+                local abs_data_path=$(realpath "$data_path")
+            else
+                local abs_data_path=$(cd "$data_path" && pwd)
+            fi
+            mounts="$mounts -v $abs_data_path:/workspace/host_data"
+            cmd="$cmd && rm -rf /workspace/host_data/geometry"
+            print_info "Also removing real-world data in: $data_path/geometry"
+        fi
+    fi
+    
+    # Determine which image to use for cleanup
+    local clean_image=""
+    if docker image inspect "$IMAGE_NAME" >/dev/null 2>&1; then
+        clean_image="$IMAGE_NAME"
+    elif docker image inspect "alpine:latest" >/dev/null 2>&1; then
+        clean_image="alpine:latest"
+    elif docker image inspect "ubuntu:latest" >/dev/null 2>&1; then
+        clean_image="ubuntu:latest"
+    fi
+
+    if [ -n "$clean_image" ]; then
+        print_info "Using image '$clean_image' for cleanup..."
+        # Use bash if available, otherwise sh (for alpine)
+        local shell_cmd="/bin/bash"
+        if [[ "$clean_image" == *"alpine"* ]]; then
+            shell_cmd="/bin/sh"
+        fi
+        
+        docker run --rm $mounts "$clean_image" "$shell_cmd" -c "$cmd"
+    else
+        print_warn "No suitable Docker image found for cleanup. Attempting local removal (may fail if files are root-owned)..."
+        rm -rf script_ae/data script_ae/logs script_ae/plots
+        if [ -n "$data_path" ] && [ -d "$data_path/geometry" ]; then
+            rm -rf "$data_path/geometry"
+        fi
     fi
 
     # Remove stopped containers
@@ -258,12 +345,21 @@ CPUS=""
 MEMORY=""
 CUSTOM_NODE_SIZE=""
 CUSTOM_DATA_PATH=""
+DOWNLOAD_DATA="true"
 
 while [[ $# -gt 0 ]]; do
     case $1 in
     --data-path)
         CUSTOM_DATA_PATH="$2"
         shift 2
+        ;;
+    --download-real-world-data)
+        DOWNLOAD_DATA="true"
+        shift
+        ;;
+    --no-download-real-world-data)
+        DOWNLOAD_DATA="false"
+        shift
         ;;
     --node-size)
         CUSTOM_NODE_SIZE="$2"
@@ -295,11 +391,11 @@ pull)
     ;;
 run)
     NODE_SIZE_TO_USE="${CUSTOM_NODE_SIZE:-$NODE_SIZE}"
-    run_container "$NODE_SIZE_TO_USE" "$CPUS" "$MEMORY" "$CUSTOM_DATA_PATH"
+    run_container "$NODE_SIZE_TO_USE" "$CPUS" "$MEMORY" "$CUSTOM_DATA_PATH" "$DOWNLOAD_DATA"
     ;;
 full)
     NODE_SIZE_TO_USE="${CUSTOM_NODE_SIZE:-$NODE_SIZE}"
-    run_full_eval "$CPUS" "$MEMORY" "$CUSTOM_DATA_PATH" "$NODE_SIZE_TO_USE"
+    run_full_eval "$CPUS" "$MEMORY" "$CUSTOM_DATA_PATH" "$NODE_SIZE_TO_USE" "$DOWNLOAD_DATA"
     ;;
 shell)
     open_shell
@@ -308,7 +404,7 @@ stop)
     stop_container
     ;;
 clean)
-    cleanup
+    cleanup "$CUSTOM_DATA_PATH"
     ;;
 help | --help | -h)
     usage

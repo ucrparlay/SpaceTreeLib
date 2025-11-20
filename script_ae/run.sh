@@ -65,6 +65,5 @@ rm -rf "${DATA_PREFIX}/ss_varden_bigint"
 rm -rf "${DATA_PREFIX}/uniform_bigint"
 rm -rf "${DATA_PREFIX}/ss_varden"
 rm -rf "${DATA_PREFIX}/uniform"
-rm -rf "${DATA_PREFIX}/geometry"
 
 printf "\n \n =================DONE! HAVE A GOOD DAY!================= \n \n "
