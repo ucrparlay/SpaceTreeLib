@@ -56,6 +56,8 @@ docker run -it --rm \
 | Option | Description | Default |
 |--------|-------------|---------|
 | `--data-path PATH` | Host directory for datasets (required) | - |
+| `--download-real-world-data` | Download real-world data on host | `true` |
+| `--no-download-real-world-data` | Skip downloading real-world data | - |
 | `--node-size SIZE` | Number of data points | 1000000000 |
 | `--memory SIZE` | Memory limit (e.g., 512g) | No limit |
 | `--cpus NUM` | CPU cores limit | All cores |
@@ -103,15 +105,14 @@ docker-compose down
 ## Cleanup
 
 ```bash
-# Remove container and image
+# Remove container, image, and generated files in script_ae/
 ./docker-run.sh clean
+
+# Remove container, image, generated files AND real-world data in --data-path
+./docker-run.sh clean --data-path /your/data/path
 
 # Or manually remove the image
 docker rmi ghcr.io/ucrparlay/spacetreelib:latest
-
-# Remove generated data
-rm -rf /your/data/path/*
-rm -rf script_ae/data/ script_ae/logs/ script_ae/plots/
 ```
 
 ## Hardware Requirements

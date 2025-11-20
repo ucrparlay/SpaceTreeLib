@@ -19,6 +19,8 @@
 
 **Parameters:**
 - `--data-path PATH` - Host directory for generated datasets (required)
+- `--download-real-world-data` - Download real-world data on host (default: true)
+- `--no-download-real-world-data` - Skip downloading real-world data
 - `--node-size SIZE` - Number of data points (default: 1'000'000'000, aka. 1 billion)
 - `--memory SIZE` - Memory limit (e.g., 512g), generally you don't want to explicitly set this value
 - `--cpus NUM` - CPU limit (default: all cores), generally you don't want set it as well.
