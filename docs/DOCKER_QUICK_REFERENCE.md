@@ -133,10 +133,4 @@ docker rmi ghcr.io/ucrparlay/spacetreelib:latest
 **Solution:** Reduce `--node-size` or increase system RAM
 
 **Issue:** Script changes not reflected  
-**Solution:** Rebuild image with `./docker-run.sh build` or pull latest with `./docker-run.sh pull`
-
-**Issue:** Cannot pull image (permission denied)  
-**Solution:** The package may be private. Ask repository admin to make it public in GitHub package settings, or authenticate with:
-```bash
-echo YOUR_GITHUB_TOKEN | docker login ghcr.io -u YOUR_USERNAME --password-stdin
-```
+**Solution:** Rebuild image with `./docker-run.sh build`
