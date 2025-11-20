@@ -104,7 +104,7 @@ download_data_host() {
     print_info "Downloading real-world data on HOST..."
 
     # Resolve absolute path for data_path
-    if command -v realpath &> /dev/null; then
+    if command -v realpath &>/dev/null; then
         data_path=$(realpath "$data_path")
     else
         data_path=$(cd "$data_path" && pwd)
@@ -135,7 +135,7 @@ run_container() {
     mkdir -p "$data_path"
 
     create_host_dirs
-    
+
     if [ "$should_download" = "true" ]; then
         download_data_host "$data_path"
     else
@@ -200,7 +200,7 @@ run_full_eval() {
     mkdir -p "$data_path"
 
     create_host_dirs
-    
+
     if [ "$should_download" = "true" ]; then
         download_data_host "$data_path"
     else
@@ -274,15 +274,15 @@ cleanup() {
 
     # Use Docker to remove files (to handle root permissions)
     print_info "Removing generated files using Docker..."
-    
+
     local mounts="-v $(pwd)/script_ae:/workspace/script_ae"
     local cmd="rm -rf /workspace/script_ae/data /workspace/script_ae/logs /workspace/script_ae/plots"
 
     if [ -n "$data_path" ]; then
         # Only mount if data_path exists to avoid docker creating it as root
         if [ -d "$data_path" ]; then
-             # Use realpath for the mount
-            if command -v realpath &> /dev/null; then
+            # Use realpath for the mount
+            if command -v realpath &>/dev/null; then
                 local abs_data_path=$(realpath "$data_path")
             else
                 local abs_data_path=$(cd "$data_path" && pwd)
@@ -292,32 +292,10 @@ cleanup() {
             print_info "Also removing real-world data in: $data_path/geometry"
         fi
     fi
-    
-    # Determine which image to use for cleanup
-    local clean_image=""
-    if docker image inspect "$IMAGE_NAME" >/dev/null 2>&1; then
-        clean_image="$IMAGE_NAME"
-    elif docker image inspect "alpine:latest" >/dev/null 2>&1; then
-        clean_image="alpine:latest"
-    elif docker image inspect "ubuntu:latest" >/dev/null 2>&1; then
-        clean_image="ubuntu:latest"
-    fi
 
-    if [ -n "$clean_image" ]; then
-        print_info "Using image '$clean_image' for cleanup..."
-        # Use bash if available, otherwise sh (for alpine)
-        local shell_cmd="/bin/bash"
-        if [[ "$clean_image" == *"alpine"* ]]; then
-            shell_cmd="/bin/sh"
-        fi
-        
-        docker run --rm $mounts "$clean_image" "$shell_cmd" -c "$cmd"
-    else
-        print_warn "No suitable Docker image found for cleanup. Attempting local removal (may fail if files are root-owned)..."
-        rm -rf script_ae/data script_ae/logs script_ae/plots
-        if [ -n "$data_path" ] && [ -d "$data_path/geometry" ]; then
-            rm -rf "$data_path/geometry"
-        fi
+    rm -rf script_ae/data script_ae/logs script_ae/plots
+    if [ -n "$data_path" ] && [ -d "$data_path/geometry" ]; then
+        rm -rf "$data_path/geometry"
     fi
 
     # Remove stopped containers
