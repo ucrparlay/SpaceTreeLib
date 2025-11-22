@@ -1,5 +1,5 @@
 #!/bin/bash
-#
+
 set -o xtrace
 
 DATA_PREFIX="${1:-/data/zmen002/kdtree}"
