@@ -109,7 +109,7 @@ axisSize <- 13
 legendSize <- 13
 faxisSize <- 14
 
-t <- read.csv("data/incre_update/insert_2.csv")
+t <- read.csv("data/incre_update/incre_insert.csv")
 t <- wash_name(t)
 # sapply(t, typeof) // check column type
 gs_ids <- plot(t, "Uniform_by_x", "Sweepline-IND", 0.0001, "IDS", titleSize, axisSize, legendSize)
