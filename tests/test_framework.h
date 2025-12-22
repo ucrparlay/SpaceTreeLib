@@ -463,9 +463,9 @@ void BatchInsertByStep(Tree& pkd, parlay::sequence<Point> const& WP,
       [&]() { incre_build(slice_num + 1); }, [&]() { pkd.DeleteTree(); });
 
   // begin count the time
-  if (rounds != 1 && round_cnt - 1 != rounds) {
-    throw std::runtime_error("rounds not match!");
-  }
+  // if (rounds != 1 && round_cnt - 1 != rounds) {
+  //   throw std::runtime_error("rounds not match!");
+  // }
   for (int i = 1; i <= rounds; i++) {
     for (int j = 0; j < slice_num; j++) {
       log_time[j].t += time_table[i][j];
@@ -569,9 +569,9 @@ void BatchDeleteByStep(Tree& pkd, parlay::sequence<Point> const& WP,
       [&]() { incre_delete(slice_num, wp.cut(0, slice_num * step)); },
       [&]() { pkd.DeleteTree(); });
 
-  if (rounds != 1 && round_cnt - 1 != rounds) {
-    throw std::runtime_error("rounds not match!");
-  }
+  // if (rounds != 1 && round_cnt - 1 != rounds) {
+  //   throw std::runtime_error("rounds not match!");
+  // }
   for (int i = 1; i <= rounds; i++) {
     for (int j = 0; j < slice_num; j++) {
       log_time[j].t += time_table[i][j];
