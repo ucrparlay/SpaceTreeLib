@@ -5,9 +5,29 @@
 #include "parlay/slice.h"
 
 namespace psi {
-template <typename Point, typename SplitRule, typename LeafAugType, typename InteriorAugType,  uint_fast8_t kSkHeight,
+template <typename Point, typename SplitRule, typename LeafAugType,
+          typename InteriorAugType, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
-void KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight , kImbaRatio>::BatchInsert(Slice A) {
+template <typename Range>
+void KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight,
+            kImbaRatio>::BatchInsert(Range&& In) {
+  static_assert(parlay::is_random_access_range_v<Range>);
+  static_assert(
+      parlay::is_less_than_comparable_v<parlay::range_reference_type_t<Range>>);
+  static_assert(std::is_constructible_v<parlay::range_value_type_t<Range>,
+                                        parlay::range_reference_type_t<Range>>);
+
+  auto aux = Points::uninitialized(parlay::size(In));
+  parlay::copy(In, parlay::make_slice(aux));
+  Slice A = parlay::make_slice(aux);
+  BatchInsert_(A);
+}
+
+template <typename Point, typename SplitRule, typename LeafAugType,
+          typename InteriorAugType, uint_fast8_t kSkHeight,
+          uint_fast8_t kImbaRatio>
+void KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight,
+            kImbaRatio>::BatchInsert_(Slice A) {
   if (this->root_ == nullptr) {  // TODO: may check using explicity tag
     return Build_(A);
   }
@@ -26,10 +46,12 @@ void KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight , kImbaRat
 }
 
 // NOTE: return the updated Node
-template <typename Point, typename SplitRule, typename LeafAugType, typename InteriorAugType,  uint_fast8_t kSkHeight,
+template <typename Point, typename SplitRule, typename LeafAugType,
+          typename InteriorAugType, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
-Node* KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight , kImbaRatio>::BatchInsertRecursive(
-    Node* T, Slice In, Slice Out, DimsType d) {
+Node* KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight,
+             kImbaRatio>::BatchInsertRecursive(Node* T, Slice In, Slice Out,
+                                               DimsType d) {
   size_t n = In.size();
 
   if (n == 0) return T;

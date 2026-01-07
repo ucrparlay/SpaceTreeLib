@@ -25,7 +25,9 @@ void OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight,
   static_assert(BT::kBuildDepthOnce % kMD == 0);
   assert(kMD == BT::kDim);
 
-  Slice A = parlay::make_slice(In);
+  auto aux = Points::uninitialized(parlay::size(In));
+  parlay::copy(In, parlay::make_slice(aux));
+  Slice A = parlay::make_slice(aux);
   Build_(A, std::forward<Args>(args)...);
 }
 

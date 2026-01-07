@@ -23,7 +23,9 @@ void OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight,
   // TODO: handling the case that insert box is no in the tree box
   assert(BT::WithinBox(BT::GetBox(In), this->tree_box_));
 
-  Slice A = parlay::make_slice(In);
+  auto aux = Points::uninitialized(parlay::size(In));
+  parlay::copy(In, parlay::make_slice(aux));
+  Slice A = parlay::make_slice(aux);
   BatchInsert_(A);
 }
 

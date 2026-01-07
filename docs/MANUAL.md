@@ -188,22 +188,19 @@ Then we can use the tree as follows:
 - Build the tree:
 ```c++
 Points points;
-auto points_copy = points;
-tree.Build(points_copy);
+tree.Build(points);
 ```
 - Batch Insert:
 ```c++
 Points insert_points;
-auto insert_copy = insert_points;
-tree.BatchInsert(insert_copy);
+tree.BatchInsert(insert_points);
 ```
 
 - Batch Delete (assumes all points to be deleted are in the tree, use `BatchDiff` if you are not sure):
 ```c++
 Points delete_points;
-auto delete_copy = delete_points;
-tree.BatchDelete(delete_copy);
-// tree.BatchDiff(delete_copy);
+tree.BatchDelete(delete_points);
+// tree.BatchDiff(delete_points);
 ```
 
 - KNN query

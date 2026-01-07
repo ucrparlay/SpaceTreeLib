@@ -20,7 +20,9 @@ void OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight,
   static_assert(std::is_constructible_v<parlay::range_value_type_t<Range>,
                                         parlay::range_reference_type_t<Range>>);
 
-  Slice A = parlay::make_slice(In);
+  auto aux = Points::uninitialized(parlay::size(In));
+  parlay::copy(In, parlay::make_slice(aux));
+  Slice A = parlay::make_slice(aux);
   BatchDiff_(A);
   return;
 }

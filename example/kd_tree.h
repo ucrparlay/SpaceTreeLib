@@ -150,9 +150,7 @@ void run_example() {
 
   // 2. Build the KdTree
   Tree tree;
-  auto points_copy =
-      points;  // WARN: Important! The input array will be changed during build.
-  tree.Build(parlay::make_slice(points_copy));
+  tree.Build(parlay::make_slice(points));
   std::cout << "Built KdTree with " << n << " points" << std::endl;
 
   // 3. K-Nearest Neighbors query
@@ -203,16 +201,14 @@ void run_example() {
     new_points[i].aug.id = n + i;
   });
 
-  Points insert_copy(new_points);  // same as build
-  tree.BatchInsert(parlay::make_slice(insert_copy));
+  tree.BatchInsert(parlay::make_slice(new_points));
   std::cout << "Inserted " << insert_count << " new points" << std::endl;
 
   // 6. Batch delete some points
   size_t delete_count = 50;
   Points points_to_delete = points.subseq(0, delete_count);
 
-  Points delete_copy(points_to_delete);  // same as build
-  tree.BatchDelete(parlay::make_slice(delete_copy));
+  tree.BatchDelete(parlay::make_slice(points_to_delete));
   std::cout << "Deleted " << delete_count << " points" << std::endl;
 
   // 7. Clean up

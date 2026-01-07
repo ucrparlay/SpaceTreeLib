@@ -84,7 +84,10 @@ class KdTree : public BaseTree<Point,
 
   constexpr void DeleteTree() override;
 
-  void BatchInsert(Slice In);
+  template <typename Range>
+  void BatchInsert(Range&& In);
+
+  void BatchInsert_(Slice In);
 
   Node* BatchInsertRecursive(Node* T, Slice In, Slice Out, DimsType d);
 

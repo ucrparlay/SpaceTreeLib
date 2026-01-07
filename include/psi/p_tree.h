@@ -124,7 +124,8 @@ class PTree
 
   constexpr void DeleteTree() override;
 
-  void BatchInsert(Slice In);
+  template <typename Range>
+  void BatchInsert(Range&& In);
 
   void BatchInsert_(Slice In);
 

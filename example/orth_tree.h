@@ -199,8 +199,6 @@ void run_example() {
   // 2. Build the OrthTree
   // OrthTree requires a bounding box to be specified
   Tree tree;
-  auto points_copy =
-      points;  // WARN: Important! The input array will be changed during build.
 
   // Calculate bounding box for the points
   // NOTE: This is not necessary, unless you want to specify a certain bounding
@@ -211,7 +209,7 @@ void run_example() {
             << bounding_box.first[1] << "), (" << bounding_box.second[0] << ", "
             << bounding_box.second[1] << ")]" << std::endl;
 
-  tree.Build(parlay::make_slice(points_copy), bounding_box);
+  tree.Build(parlay::make_slice(points), bounding_box);
   std::cout << "Built OrthTree (quadtree) with " << n << " points" << std::endl;
 
   // 3. K-Nearest Neighbors query
@@ -262,16 +260,14 @@ void run_example() {
     new_points[i].aug.id = n + i;
   });
 
-  Points insert_copy(new_points);  // same as build
-  tree.BatchInsert(parlay::make_slice(insert_copy));
+  tree.BatchInsert(parlay::make_slice(new_points));
   std::cout << "Inserted " << insert_count << " new points" << std::endl;
 
   // 6. Batch delete some points
   size_t delete_count = 50;
   Points points_to_delete = points.subseq(0, delete_count);
 
-  Points delete_copy(points_to_delete);  // same as build
-  tree.BatchDelete(parlay::make_slice(delete_copy));
+  tree.BatchDelete(parlay::make_slice(points_to_delete));
   std::cout << "Deleted " << delete_count << " points" << std::endl;
 
   // 7. Clean up
