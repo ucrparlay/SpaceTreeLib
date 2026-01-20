@@ -16,7 +16,7 @@ PSI is a high-performance parallel library for a collection of spatial indexes, 
 ## Citation
 If you use our code, please cite our papers:
 ```tex
-@inproceedings{men2026parallel,
+@inproceedings{men2026dynamic,
     author = {Men, Ziyang and Huang, Bo and Gu, Yan and Sun, Yihan},
     title = {Parallel Dynamic Spatial Indexes},
     year = {2026},
