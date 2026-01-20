@@ -16,17 +16,24 @@ PSI is a high-performance parallel library for a collection of spatial indexes, 
 ## Citation
 If you use our code, please cite our papers:
 ```tex
-@article{men2025parallel,
-  title={Parallel kd-tree with Batch Updates},
-  author={Men, Ziyang and Shen, Zheqi and Gu, Yan and Sun, Yihan},
-  journal={Proceedings of the ACM on Management of Data},
-  volume={3},
-  number={1},
-  pages={1--26},
-  year={2025},
-  publisher={ACM New York, NY, USA}
+@inproceedings{men2026parallel,
+    author = {Men, Ziyang and Huang, Bo and Gu, Yan and Sun, Yihan},
+    title = {Parallel Dynamic Spatial Indexes},
+    year = {2026},
+    publisher = {Association for Computing Machinery},
+    address = {New York, NY, USA},
+    booktitle = {Proceedings of the 31st ACM SIGPLAN Symposium on Principles and Practice of Parallel Programming},
+    location = {Sydney, Australia},
+    series = {PPoPP '26},
+    doi = {10.1145/3774934.3786412}
 }
-  
+
+@article{men2026parallel,
+  title={Parallel Dynamic Spatial Indexes},
+  author={Men, Ziyang and Huang, Bo and Gu, Yan and Sun, Yihan},
+  journal={arXiv preprint arXiv:2601.05347},
+  year={2026}
+}
 ```
 
 Have a good day! ☀️
