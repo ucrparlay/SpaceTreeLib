@@ -28,11 +28,15 @@ If you use our code, please cite our papers:
     doi = {10.1145/3774934.3786412}
 }
 
-@article{men2026parallel,
-  title={Parallel Dynamic Spatial Indexes},
-  author={Men, Ziyang and Huang, Bo and Gu, Yan and Sun, Yihan},
-  journal={arXiv preprint arXiv:2601.05347},
-  year={2026}
+@article{men2025parallel,
+  title={Parallel kd-tree with Batch Updates},
+  author={Men, Ziyang and Shen, Zheqi and Gu, Yan and Sun, Yihan},
+  journal={Proceedings of the ACM on Management of Data},
+  volume={3},
+  number={1},
+  pages={1--26},
+  year={2025},
+  publisher={ACM New York, NY, USA}
 }
 ```
 
