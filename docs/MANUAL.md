@@ -72,7 +72,7 @@ using BT = psi::BaseTree<Point>;
 auto box = BT::GetBox(input); // demo code, to get the bounding box for the input
 ```
 
-You want to augment some info on the tree nodes, both the leaf nodes, and the interior nodes, you can define the augmentation in this way:
+If you want to augment some info on the tree nodes, such as the leaf nodes and the interior nodes, you can define the augmentation in this way:
 <details>
 <summary>click to expand</summary>
 
