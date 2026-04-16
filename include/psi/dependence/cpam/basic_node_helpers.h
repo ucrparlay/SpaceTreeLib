@@ -13,8 +13,13 @@ static inline const ET& get_entry_indentity(T* arr, size_t pos) {
   if constexpr (std::same_as<T, ET>) {
     return arr[pos];
   } else {
-    // assert((*arr[pos].second).aug.code != 0);
-    return *arr[pos].second;
+    if constexpr (std::is_pointer_v<typename T::second_type>) {
+      return *arr[pos].second;
+    } else {
+      static_assert(std::is_integral_v<typename T::second_type>,
+                    "Pair-like payload must be pointer or integral pointer.");
+      return *reinterpret_cast<ET*>(static_cast<uintptr_t>(arr[pos].second));
+    }
   }
 }
 
@@ -23,8 +28,13 @@ static inline const ET& get_entry_indentity(T const& val) {
   if constexpr (std::same_as<T, ET>) {
     return val;
   } else {
-    // assert((*val.second).aug.code != 0);
-    return *val.second;
+    if constexpr (std::is_pointer_v<typename T::second_type>) {
+      return *val.second;
+    } else {
+      static_assert(std::is_integral_v<typename T::second_type>,
+                    "Pair-like payload must be pointer or integral pointer.");
+      return *reinterpret_cast<ET*>(static_cast<uintptr_t>(val.second));
+    }
   }
 }
 
@@ -85,7 +95,7 @@ static typename Node::node* four_compressed_nodes(
       auto c_r =
           Node::make_single_compressed_node(start + lc_size + 1, rc_size);
 
-      auto e = Node::make_regular_node(start[lc_size]);
+      auto e = Node::make_regular_node(get_entry_indentity<ET>(start[lc_size]));
       e->lc = c_l;
       e->rc = c_r;
       Node::update(e);

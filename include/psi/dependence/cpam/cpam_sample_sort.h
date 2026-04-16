@@ -11,8 +11,10 @@
 #include <cassert>
 #include <concepts>
 #include <cstdio>
+#include <cstdint>
 #include <iterator>
 #include <limits>
+#include <utility>
 #include <type_traits>
 
 #include "parlay/delayed_sequence.h"
@@ -22,14 +24,199 @@
 #include "parlay/internal/transpose.h"
 #include "parlay/internal/uninitialized_sequence.h"
 #include "parlay/parallel.h"
+#include "parlay/primitives.h"
 #include "parlay/relocation.h"
 #include "parlay/sequence.h"
 #include "parlay/slice.h"
 #include "parlay/utilities.h"
 
+#if __has_include("SIMD-Sample-Sort/src/modules/utils/KVPair.hpp")
+#include "SIMD-Sample-Sort/src/modules/utils/KVPair.hpp"
+#define PSI_CPAM_HAS_KVPAIR 1
+#else
+#define PSI_CPAM_HAS_KVPAIR 0
+#endif
+
+#ifndef PSI_USE_SIMD_SAMPLE_SORT
+#define PSI_USE_SIMD_SAMPLE_SORT 0
+#endif
+
+#ifndef PSI_CPAM_PRECOMPUTE_CODE_SORT
+#define PSI_CPAM_PRECOMPUTE_CODE_SORT 0
+#endif
+
+#if PSI_USE_SIMD_SAMPLE_SORT
+#if PSI_CPAM_HAS_KVPAIR && \
+    __has_include("SIMD-Sample-Sort/src/two_pass/two_pass_simd.hpp")
+#include "SIMD-Sample-Sort/src/two_pass/two_pass_simd.hpp"
+#define PSI_CPAM_HAS_SIMD_SAMPLE_SORT 1
+#else
+#define PSI_CPAM_HAS_SIMD_SAMPLE_SORT 0
+#endif
+#else
+#define PSI_CPAM_HAS_SIMD_SAMPLE_SORT 0
+#endif
+
 namespace parlay {
 namespace internal {
 namespace cpam {
+
+template <typename T>
+struct is_std_pair : std::false_type {};
+
+template <typename A, typename B>
+struct is_std_pair<std::pair<A, B>> : std::true_type {};
+
+template <typename T>
+inline constexpr bool is_std_pair_v = is_std_pair<T>::value;
+
+template <typename T>
+inline constexpr bool simd_sample_sort_pair_compatible_v = false;
+
+template <typename K, typename V>
+inline constexpr bool simd_sample_sort_pair_compatible_v<std::pair<K, V>> =
+    std::is_pointer_v<V>;
+
+template <typename K, typename V>
+inline constexpr bool simd_sample_sort_pair_compatible_v<parlay::KVPair<K, V>> =
+    std::is_integral_v<V>;
+
+template <typename T>
+concept HasCurveCodeMember = requires(T t) {
+  typename T::CurveCode;
+  { t.code } -> std::convertible_to<typename T::CurveCode>;
+  { t.SetMember(std::declval<typename T::CurveCode const&>()) };
+};
+
+template <typename T>
+struct is_materializable_curve_pair : std::false_type {};
+
+template <typename K, typename V>
+struct is_materializable_curve_pair<std::pair<K, V>>
+    : std::bool_constant<std::is_pointer_v<V> && HasCurveCodeMember<K>> {};
+
+template <typename K, typename V>
+struct is_materializable_curve_pair<parlay::KVPair<K, V>>
+    : std::bool_constant<std::is_integral_v<V> &&
+                         std::is_same_v<K, uint64_t>> {};
+
+template <typename T>
+inline constexpr bool is_materializable_curve_pair_v =
+    is_materializable_curve_pair<T>::value;
+
+template <typename T>
+inline constexpr bool dependent_false_v = false;
+
+template <typename OutputType, typename InputType>
+inline OutputType make_cpam_output_entry(InputType& in) {
+  if constexpr (std::same_as<OutputType, InputType>) {
+    return in;
+  } else if constexpr (std::same_as<OutputType, typename InputType::AT>) {
+    return in.aug;
+  } else if constexpr (requires {
+                         typename OutputType::first_type;
+                         typename OutputType::second_type;
+                       } &&
+                       std::same_as<typename OutputType::first_type,
+                                    typename InputType::AT>) {
+    return OutputType{in.aug, &in};
+  } else if constexpr (requires {
+                         typename OutputType::first_type;
+                         typename OutputType::second_type;
+                       } &&
+                       std::is_integral_v<typename OutputType::first_type> &&
+                       std::is_integral_v<typename OutputType::second_type>) {
+    return OutputType{
+        static_cast<typename OutputType::first_type>(in.aug.code),
+        static_cast<typename OutputType::second_type>(
+            reinterpret_cast<uintptr_t>(&in))};
+  } else {
+    static_assert(dependent_false_v<OutputType>, "Unsupported output type");
+  }
+}
+
+#if PSI_CPAM_HAS_SIMD_SAMPLE_SORT
+template <typename filling_curve_t, typename key_entry_pointer,
+          typename InputIterator>
+auto cpam_sample_sort_simd_pair(slice<InputIterator, InputIterator> A,
+                                bool stable = false) {
+  using key_type = typename key_entry_pointer::first_type;
+  using value_ptr_type = typename key_entry_pointer::second_type;
+  static_assert(std::is_integral_v<key_type>,
+                "SIMD CPAM adapter expects integral key storage.");
+  static_assert(std::is_integral_v<value_ptr_type>,
+                "SIMD CPAM adapter expects integral payload storage.");
+
+  sequence<key_entry_pointer> tmp =
+      sequence<key_entry_pointer>::uninitialized(A.size());
+  parallel_for(0, A.size(), [&](size_t i) {
+    auto const code = filling_curve_t::Encode(A[i]);
+    A[i].SetAugMember(code);
+    tmp[i] = key_entry_pointer{
+        static_cast<key_type>(code),
+        static_cast<value_ptr_type>(reinterpret_cast<uintptr_t>(&A[i]))};
+  });
+
+  parlay::internal::ScratchBuffer<key_entry_pointer> scratch(tmp.size());
+  auto tmp_slice = parlay::make_slice(tmp.begin(), tmp.end());
+  auto scratch_slice =
+      parlay::make_slice(scratch.data(), scratch.data() + tmp.size());
+
+  if (tmp.size() < (std::numeric_limits<unsigned int>::max)()) {
+    if (stable) {
+      parlay::internal_simd::sample_sort_inplace_<false, true, 0, unsigned int>(
+          tmp_slice, scratch_slice, true);
+    } else {
+      parlay::internal_simd::sample_sort_inplace_<false, false, 0,
+                                                  unsigned int>(
+          tmp_slice, scratch_slice, true);
+    }
+  } else {
+    if (stable) {
+      parlay::internal_simd::sample_sort_inplace_<false, true, 0, size_t>(
+          tmp_slice, scratch_slice, true);
+    } else {
+      parlay::internal_simd::sample_sort_inplace_<false, false, 0, size_t>(
+          tmp_slice, scratch_slice, true);
+    }
+  }
+  return tmp;
+}
+#endif
+
+template <typename filling_curve_t, typename key_entry_pointer,
+          typename InputIterator>
+auto cpam_sample_sort_materialized_pair(slice<InputIterator, InputIterator> A,
+                                        bool stable = false) {
+  using key_type = typename key_entry_pointer::first_type;
+  using value_ptr_type = typename key_entry_pointer::second_type;
+
+  static_assert(std::is_integral_v<key_type>,
+                "Materialized CPAM sort expects integral key storage.");
+  static_assert(std::is_integral_v<value_ptr_type>,
+                "Materialized CPAM sort expects integral payload storage.");
+
+  sequence<key_entry_pointer> tmp =
+      sequence<key_entry_pointer>::uninitialized(A.size());
+  parallel_for(0, A.size(), [&](size_t i) {
+    auto const code = filling_curve_t::Encode(A[i]);
+    A[i].SetAugMember(code);
+    tmp[i] = key_entry_pointer{
+        static_cast<key_type>(code),
+        static_cast<value_ptr_type>(reinterpret_cast<uintptr_t>(&A[i]))};
+  });
+
+  auto less_by_code = [&](auto const& a, auto const& b) {
+    return a.first < b.first;
+  };
+  auto tmp_slice = parlay::make_slice(tmp.begin(), tmp.end());
+  if (stable) {
+    bucket_sort(tmp_slice, less_by_code, true);
+  } else {
+    quicksort(tmp.begin(), tmp.size(), less_by_code);
+  }
+  return tmp;
+}
 
 // the following parameters can be tuned
 constexpr size_t const QUICKSORT_THRESHOLD = 16384;
@@ -98,20 +285,7 @@ void seq_sort_(slice<InIterator, InIterator> In,
   for (size_t j = 0; j < l; j++) {
     // assign_dispatch(Out[j], In[j], assignment_tag());
     In[j].SetAugMember(filling_curve_t::Encode(In[j]));
-
-    if constexpr (std::same_as<OutputType, InputType>) {
-      // NOTE: output is same as input
-      Out[j] = In[j];
-    } else if constexpr (std::same_as<OutputType, typename InputType::AT>) {
-      // NOTE: output is same as augtype(Key)
-      Out[j] = In[j].aug;
-    } else if constexpr (std::same_as<typename OutputType::first_type,
-                                      typename InputType::AT>) {
-      // NOTE: this assumes the output is a pair
-      Out[j] = std::make_pair(In[j].aug, &In[j]);
-    } else {
-      static_assert(false, "Unsupported output type");
-    }
+    Out[j] = make_cpam_output_entry<OutputType>(In[j]);
   }
   // for (size_t j = 0; j < l; j++) {
   //   std::cout << In[j].aug.code << " ";
@@ -164,19 +338,7 @@ void sample_sort_(slice<InIterator, InIterator> In,
         output_value_type>::from_function(sample_set_size, [&](size_t i) {
       auto pt = &In[hash64(i) % n];
       pt->SetAugMember(filling_curve_t::Encode(*pt));
-
-      if constexpr (std::same_as<output_value_type, value_type>) {
-        return *pt;
-      } else if constexpr (std::same_as<output_value_type,
-                                        typename value_type::AT>) {
-        return pt->aug;
-      } else if constexpr (std::same_as<typename output_value_type::first_type,
-                                        typename value_type::AT>) {
-        // NOTE: this assumes the output is a pair
-        return std::make_pair(pt->aug, pt);
-      } else {
-        static_assert(false, "Unsupported output type");
-      }
+      return make_cpam_output_entry<output_value_type>(*pt);
     });
     // sort the samples
     quicksort(sample_set.begin(), sample_set_size, less);
@@ -229,6 +391,23 @@ auto cpam_sample_sort(slice<InputIterator, InputIterator> A,
                       Compare const& less, bool stable = false) {
   using input_value_type =
       typename slice<InputIterator, InputIterator>::value_type;
+  (void)sizeof(input_value_type);
+  (void)less;
+
+#if PSI_CPAM_HAS_SIMD_SAMPLE_SORT
+  if constexpr (is_materializable_curve_pair_v<key_entry_pointer> &&
+                simd_sample_sort_pair_compatible_v<key_entry_pointer>) {
+    return cpam_sample_sort_simd_pair<filling_curve_t, key_entry_pointer>(
+        A, stable);
+  }
+#endif
+
+#if PSI_CPAM_PRECOMPUTE_CODE_SORT
+  if constexpr (is_materializable_curve_pair_v<key_entry_pointer>) {
+    return cpam_sample_sort_materialized_pair<filling_curve_t,
+                                              key_entry_pointer>(A, stable);
+  }
+#endif
 
   sequence<key_entry_pointer> R =
       sequence<key_entry_pointer>::uninitialized(A.size());

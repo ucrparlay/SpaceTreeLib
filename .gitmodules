@@ -4,3 +4,6 @@
 [submodule "include/libmorton"]
 	path = include/libmorton
 	url = https://github.com/Forceflow/libmorton
+[submodule "include/SIMD-Sample-Sort"]
+	path = include/SIMD-Sample-Sort
+	url = https://github.com/seanxpw/SIMD-Sample-Sort

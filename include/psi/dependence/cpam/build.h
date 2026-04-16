@@ -42,8 +42,11 @@ struct build {
         parlay::internal::cpam::cpam_sample_sort<filling_curve_t, output_type>(
             parlay::make_slice(A.begin(), A.end()),
             [&](auto const& a, auto const& b) {
-              if constexpr (std::same_as<output_type, std::pair<K, ET*>>) {
-                // NOTE: using pair when build or insert
+              if constexpr (requires {
+                              typename output_type::first_type;
+                              typename output_type::second_type;
+                            }) {
+                // NOTE: pair-like output used when build or insert
                 return a.first < b.first;
               } else if constexpr (std::same_as<output_type, K>) {
                 return a < b;

@@ -70,6 +70,75 @@ inline size_t get_random_index(size_t a, size_t b, [[maybe_unused]] int seed) {
   return size_t((rand() % (b - a)) + a);
 }
 
+template <typename Point>
+concept HasAugId = requires(Point p) { p.aug.id; };
+
+template <typename Point>
+concept HasCurveCodeAug = requires {
+  typename Point::AT::CurveCode;
+};
+
+template <typename Point>
+inline bool PointLessByCoords(Point const& a, Point const& b) {
+  if constexpr (IsAugPoint<Point>) {
+    using BP = typename Point::BP;
+    return static_cast<BP const&>(a) < static_cast<BP const&>(b);
+  } else {
+    return a < b;
+  }
+}
+
+template <typename Point>
+inline bool PointEqByCoords(Point const& a, Point const& b) {
+  if constexpr (IsAugPoint<Point>) {
+    using BP = typename Point::BP;
+    return static_cast<BP const&>(a) == static_cast<BP const&>(b);
+  } else {
+    return a == b;
+  }
+}
+
+template <typename Point>
+inline bool PointLessForCheck(Point const& a, Point const& b) {
+  if (PointLessByCoords(a, b)) return true;
+  if (PointLessByCoords(b, a)) return false;
+  if constexpr (HasAugId<Point>) {
+    return a.aug.id < b.aug.id;
+  } else if constexpr (IsAugPoint<Point>) {
+    return a.aug < b.aug;
+  } else {
+    return false;
+  }
+}
+
+template <typename Point>
+inline void AssignPointIdIfPresent(Point& p, size_t id) {
+  if constexpr (HasAugId<Point>) {
+    p.aug.id = static_cast<decltype(p.aug.id)>(id);
+  }
+}
+
+template <typename Point>
+auto RemoveDuplicateCoords(parlay::sequence<Point> pts) {
+  auto order = parlay::tabulate(pts.size(), [&](size_t i) { return i; });
+  auto sorted_idx = parlay::sort(std::move(order), [&](size_t a, size_t b) {
+    if (PointLessByCoords(pts[a], pts[b])) return true;
+    if (PointLessByCoords(pts[b], pts[a])) return false;
+    return a < b;
+  });
+
+  auto keep = parlay::sequence<bool>(pts.size(), true);
+  for (size_t i = 1; i < sorted_idx.size(); ++i) {
+    size_t prev = sorted_idx[i - 1];
+    size_t curr = sorted_idx[i];
+    if (PointEqByCoords(pts[prev], pts[curr])) {
+      keep[curr] = false;
+    }
+  }
+
+  return parlay::pack(std::move(pts), std::move(keep));
+}
+
 template <typename Point, typename Tree, bool SavePoint>
 size_t recurse_box(parlay::slice<Point*, Point*> In, auto& box_seq, int DIM,
                    std::pair<size_t, size_t> range, int& idx, int rec_num,
@@ -360,7 +429,7 @@ void BatchDiff(Tree& pkd, parlay::sequence<Point> const& WP, int const& rounds,
       return WP[i];
     } else {
       Point p = WP[i];
-      if constexpr (IsAugPoint<Point>) {
+      if constexpr (HasAugId<Point>) {
         p.aug.id = -1 * p.aug.id - 1;
       } else {
         std::transform(p.pnt.begin(), p.pnt.end(), p.pnt.begin(),
@@ -807,11 +876,13 @@ void RangeQuery(parlay::sequence<Point> const& wp, Tree& pkd, int const& rounds,
     //     << query_box_seq[i].first.first << query_box_seq[i].first.second
     //     << std::endl;
     parlay::sort_inplace(
-        Out.cut(offset[i], offset[i + 1]),
-        [&](auto const& a, auto const& b) { return a.aug.id < b.aug.id; });
+        Out.cut(offset[i], offset[i + 1]), [&](auto const& a, auto const& b) {
+          return PointLessForCheck(a, b);
+        });
     parlay::sort_inplace(
-        query_box_seq[i].second,
-        [&](auto const& a, auto const& b) { return a.aug.id < b.aug.id; });
+        query_box_seq[i].second, [&](auto const& a, auto const& b) {
+          return PointLessForCheck(a, b);
+        });
     for (size_t j = 0; j < query_box_seq[i].second.size(); j++) {
       if (Out[offset[i] + j] != query_box_seq[i].second.at(j)) {
         std::cout << "wrong" << query_box_seq[i].first.first
@@ -1128,7 +1199,7 @@ std::pair<size_t, int> read_points(char const* iFile,
                                           typename ZD3D::geobase::Point>) {
         wp[i].id = i + id_offset;
       } else {
-        wp[i].aug.id = i + id_offset;
+        AssignPointIdIfPresent(wp[i], i + id_offset);
       }
     }
   });
@@ -1170,6 +1241,14 @@ static auto constexpr DefaultTestFunc = []<class TreeDesc, typename Point>(
 
   Tree tree;
   constexpr bool kTestTime = true;
+
+  // Build-only mode: no update tag and no query type selected.
+  if (kTag == 0 && kQueryType == 0) {
+    BuildTree<Point, Tree, kTestTime>(wp, kRounds, tree);
+    std::cout << "\n" << std::flush;
+    tree.DeleteTree();
+    return;
+  }
 
   // std::cout << "Called Build" << std::endl;
   // BuildTree<Point, Tree, kTestTime, 2>(wp, kRounds, tree);
@@ -1722,6 +1801,26 @@ class Wrapper {
     IdType id;
   };
 
+  struct AugCode {
+    using IdType = int_fast32_t;
+    using CurveCode = uint64_t;
+
+    AugCode() : code(0) {}
+
+    void SetMember(CurveCode const& val) { code = val; }
+
+    bool operator<(AugCode const& rhs) const { return code < rhs.code; }
+
+    bool operator==(AugCode const& rhs) const { return code == rhs.code; }
+
+    friend std::ostream& operator<<(std::ostream& os, AugCode const& rhs) {
+      os << rhs.code;
+      return os;
+    }
+
+    CurveCode code;
+  };
+
   // NOTE: driven functions
   template <typename TreeWrapper, typename RunFunc>
   static void Run(commandLine& P, RunFunc test_func) {
@@ -1754,6 +1853,11 @@ class Wrapper {
       auto [n, d] = read_points<Point>(input_file_path, wp, 0);
       N = n;
       assert(d == kDim);
+      if constexpr (IsPTree<typename TreeWrapper::TreeType> &&
+                    HasCurveCodeAug<Point> && !HasAugId<Point>) {
+        wp = RemoveDuplicateCoords(std::move(wp));
+        N = wp.size();
+      }
     }
 
     if (read_insert_file == 1) {           // NOTE: read points to be inserted
@@ -1774,6 +1878,10 @@ class Wrapper {
       }
       auto [n, d] = read_points<Point>(insert_file_path.c_str(), wi, N);
       assert(d == kDim);
+      if constexpr (IsPTree<typename TreeWrapper::TreeType> &&
+                    HasCurveCodeAug<Point> && !HasAugId<Point>) {
+        wi = RemoveDuplicateCoords(std::move(wi));
+      }
     }
 
     // Apply the test function
@@ -1866,9 +1974,9 @@ class Wrapper {
     };
 
     if (dim == 2) {
-      run_with_split_type.template operator()<AugPoint<Coord, 2, AugIdCode>>();
+      run_with_split_type.template operator()<AugPoint<Coord, 2, AugCode>>();
     } else if (dim == 3) {
-      run_with_split_type.template operator()<AugPoint<Coord, 3, AugIdCode>>();
+      run_with_split_type.template operator()<AugPoint<Coord, 3, AugCode>>();
     }
   }
 

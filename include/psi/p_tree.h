@@ -63,7 +63,8 @@ class PTree
     using entry_t = Point;
 
     using filling_curve_t = SplitRule;
-    using key_entry_pointer = std::pair<typename Point::AT, entry_t*>;
+    using key_entry_pointer =
+        parlay::KVPair<typename Point::AT::CurveCode, uint64_t>;
     // using entry_t_ref_v = Point*;
     using entry_t_ref_wrapper_v = std::reference_wrapper<Point>;
 
