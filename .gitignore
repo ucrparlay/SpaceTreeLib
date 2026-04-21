@@ -60,6 +60,7 @@ Rplots.pdf
 # test files
 *.in
 build/
+build-simd/
 .vscode
 external/
 
