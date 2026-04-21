@@ -301,7 +301,12 @@ Meaning:
 
 ## Current 1e9 Morton Results
 
-First, here are the latest measurements for the current `simd-pretouch-lazybindcode-sort` route.
+The most useful current comparison point is now:
+
+- the new packed `32/32/64` `PTree` benchmark layout
+- `USE_LIBMORTON_SIMD_ENCODE=ON`
+- `USE_CPAM_HWY_MORTON_PREPARE=OFF`
+- i.e. packed `uint32_t` points + libmorton encode + SIMD sample sort
 
 Command used:
 
@@ -319,39 +324,38 @@ numactl -i all ./build-simd/p_test \
 
 Interpretation:
 
-- the first `[CPAM build]` line is the warmup run
+- the first `[CPAM build]` line of each invocation is the warmup run
 - the last three `[CPAM build]` lines are the measured runs
-- the final scalar printed by `p_test` is the average of the measured runs in
-  the build-only harness
-
-Measured averages over the last three runs:
+- there are two full invocations here
+- the `CPAM build` figures below average all 6 measured runs together
+- the final `build-only` scalar is the average of the last line from the two invocations
 
 | Route | Fill / sort stage | Build stage | CPAM total | build-only average |
 | --- | ---: | ---: | ---: | ---: |
-| Legacy (`legacy-interleaved-fill-sort`) | `1.542110 + 1.568069 + 1.534770`, average `1.548316s` (`sort+fill`) | `0.680652 + 0.680876 + 0.679833`, average `0.680454s` | `2.228770s` | `2.562340s` |
-| SIMD (`simd-pretouch-lazybindcode-sort`) | `0.024810s touch + 1.346630s sort` | `0.680346s` | `2.051785s` | `2.436810s` |
+| Legacy (`legacy-interleaved-fill-sort`) | `1.521280s` (`sort+fill`) | `0.649931s` | `2.171211s` | `2.410875s` |
+| SIMD (`simd-pretouch-lazybindcode-sort`) | `0.024925s touch + 1.383927s sort` | `0.650262s` | `2.059114s` | `2.355120s` |
 
-For the SIMD route specifically:
+For the SIMD route specifically, these are the 6-run averages:
 
 - `touch`
-  `(0.025256 + 0.024774 + 0.024400) / 3 = 0.024810s`
+  `(0.025928 + 0.024467 + 0.024788 + 0.025040 + 0.025074 + 0.024253) / 6 = 0.024925s`
 - `sort`
-  `(1.423008 + 1.310194 + 1.306687) / 3 = 1.346630s`
+  `(1.556230 + 1.271636 + 1.369777 + 1.349076 + 1.376792 + 1.380050) / 6 = 1.383927s`
 - `build`
-  `(0.679280 + 0.680391 + 0.681366) / 3 = 0.680346s`
+  `(0.649538 + 0.650479 + 0.650805 + 0.649829 + 0.650996 + 0.649924) / 6 = 0.650262s`
 - `CPAM total`
-  `0.024810 + 1.346630 + 0.680346 = 2.051785s`
+  `2.059114s`
 
 Observed differences:
 
 - `[CPAM build] total`
-  improved from `2.228770s` to `2.051785s`, a gain of `0.176985s`
-  (`1.086x`, about `7.94%` faster)
+  improved from `2.171211s` to `2.059114s`, a gain of `0.112097s`
+  (`1.054x`, about `5.16%` faster)
 - final build-only scalar
-  improved from `2.562340s` to `2.436810s`, a gain of `0.125530s`
-  (`1.052x`, about `4.90%` faster)
+  improved from `2.410875s` to `2.355120s`, a gain of `0.055755s`
+  (`1.024x`, about `2.31%` faster)
 
-### Why `[CPAM build]` improves by about `0.1s`, but the final scalar improves by much less
+### Why `[CPAM build]` improves by about `0.11s`, but the final scalar improves by much less
 
 This is expected because the two timers measure different scopes.
 
@@ -389,13 +393,25 @@ So the final build-only scalar also includes:
 That work is paid by both the legacy and SIMD routes and is not part of the
 `[CPAM build]` trace, which dilutes the speedup seen in the CPAM-core numbers.
 
-You can see that directly from your measurements:
+You can see that directly from the new packed-layout measurements:
 
-- SIMD extra outer cost: `2.436810 - 2.051785 = 0.385025s`
-- Legacy extra outer cost: `2.562340 - 2.228770 = 0.333570s`
+- SIMD extra outer cost: `2.355120 - 2.059114 = 0.296006s`
+- Legacy extra outer cost: `2.410875 - 2.171211 = 0.239664s`
 
-That `~0.33s` to `~0.41s` band is the outer `PTree::Build(...)` wrapper cost plus
-normal run-to-run noise. So:
+So part of the CPAM-core win is diluted by:
+
+- the outer `PTree::Build(...)` `aux` allocation and full-copy step
+- other fixed wrapper / allocator costs
+- and runtime noise on the order of a few tens of milliseconds
+
+More precisely, this is not really “SIMD has a much slower tail”. The actual
+tree-build kernel is essentially unchanged:
+
+- SIMD build stage: `0.650262s`
+- Legacy build stage: `0.649931s`
+
+The gap is mainly that the end-to-end wrapper cost outside the `[CPAM build]`
+scope is larger than the CPAM-core improvement you are measuring. So:
 
 - use `[CPAM build]` to judge the SIMD sort / CPAM-core improvement
 - use the final scalar to judge end-to-end `tree.Build(...)` improvement
