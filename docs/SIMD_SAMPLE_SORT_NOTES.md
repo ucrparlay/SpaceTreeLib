@@ -188,6 +188,21 @@ Where:
 - `USE_LIBMORTON_SIMD_ENCODE=ON` uses libmorton's default public encode entry points
 - `USE_LIBMORTON_SIMD_ENCODE=OFF` falls back to the previous explicit `m2D_e_for / m3D_e_for_ET` path
 
+If you want to explicitly enable the new Highway 2D prepare route, there is a separate experimental option:
+
+```bash
+cmake -S . -B build-simd \
+  -DUSE_SIMD_SAMPLE_SORT=ON \
+  -DUSE_CPAM_HWY_MORTON_PREPARE=ON
+```
+
+Where:
+
+- `USE_CPAM_HWY_MORTON_PREPARE=OFF`
+  default. Uses the original tile/range `for`-loop path that calls `filling_curve_t::Encode`.
+- `USE_CPAM_HWY_MORTON_PREPARE=ON`
+  enables the Highway 2D materialization fast path when the packed `PTree` 2D layout requirements are met.
+
 If you only want the relevant binaries:
 
 ```bash

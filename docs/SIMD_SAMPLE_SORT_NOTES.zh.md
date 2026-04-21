@@ -207,6 +207,21 @@ cmake -S . -B build-simd \
 - `USE_LIBMORTON_SIMD_ENCODE=OFF`
   退回之前显式指定的 `m2D_e_for / m3D_e_for_ET`
 
+如果你想显式打开新的 Highway 2D prepare 路线，还有一个单独的实验开关：
+
+```bash
+cmake -S . -B build-simd \
+  -DUSE_SIMD_SAMPLE_SORT=ON \
+  -DUSE_CPAM_HWY_MORTON_PREPARE=ON
+```
+
+其中：
+
+- `USE_CPAM_HWY_MORTON_PREPARE=OFF`
+  默认值。回到“tile/range 里直接 `for` 循环调用 `filling_curve_t::Encode`”这条路线。
+- `USE_CPAM_HWY_MORTON_PREPARE=ON`
+  在满足 `PTree 2D + uint32/u32/u64 紧布局` 条件时，启用 Highway 的 2D materialize fast path。
+
 如果你只关心这次要用到的两个可执行文件，也可以只编译它们：
 
 ```bash

@@ -51,6 +51,10 @@
 #define PSI_PRINT_CPAM_BUILD_TIMING 0
 #endif
 
+#ifndef PSI_USE_CPAM_HWY_MORTON_PREPARE
+#define PSI_USE_CPAM_HWY_MORTON_PREPARE 0
+#endif
+
 #if PSI_USE_SIMD_SAMPLE_SORT
 #if PSI_CPAM_HAS_KVPAIR && \
     __has_include("SIMD-Sample-Sort/src/two_pass/two_pass_simd.hpp")
@@ -339,7 +343,7 @@ struct CpamLazyCurveCodePrepare {
   input_value_type* input_base;
   key_entry_pointer* tmp_base;
   static constexpr bool kHasHWY2DPath =
-#if PSI_CPAM_HAS_SIMD_SAMPLE_SORT
+#if PSI_CPAM_HAS_SIMD_SAMPLE_SORT && PSI_USE_CPAM_HWY_MORTON_PREPARE
       cpam_hwy_morton_2d_fastpath_v<input_value_type, key_entry_pointer>;
 #else
       false;
