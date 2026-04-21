@@ -245,11 +245,105 @@ inline void cpam_set_curve_entry_key(Entry& entry, Code const& code) {
   }
 }
 
+#if PSI_CPAM_HAS_SIMD_SAMPLE_SORT
+template <typename Point, typename Entry>
+inline constexpr bool cpam_hwy_morton_2d_fastpath_v =
+    std::is_same_v<typename Point::Coord, uint32_t> &&
+    (Point::GetDim() == 2) &&
+    std::is_same_v<typename Point::AT::CurveCode, uint64_t> &&
+    std::is_integral_v<typename Entry::first_type> &&
+    std::is_integral_v<typename Entry::second_type> &&
+    (sizeof(Entry) == sizeof(uint64_t) * 2) &&
+    (sizeof(Point) == sizeof(uint32_t) * 2 + sizeof(uint64_t));
+
+template <class D>
+HWY_INLINE hn::Vec<D> cpam_hwy_part1by1_u32(D d, hn::Vec<D> v) {
+  const auto m32 = hn::Set(d, uint64_t{0x00000000FFFFFFFFull});
+  const auto m16 = hn::Set(d, uint64_t{0x0000FFFF0000FFFFull});
+  const auto m8 = hn::Set(d, uint64_t{0x00FF00FF00FF00FFull});
+  const auto m4 = hn::Set(d, uint64_t{0x0F0F0F0F0F0F0F0Full});
+  const auto m2 = hn::Set(d, uint64_t{0x3333333333333333ull});
+  const auto m1 = hn::Set(d, uint64_t{0x5555555555555555ull});
+
+  v = hn::And(v, m32);
+  v = hn::And(hn::Or(v, hn::ShiftLeft<16>(v)), m16);
+  v = hn::And(hn::Or(v, hn::ShiftLeft<8>(v)), m8);
+  v = hn::And(hn::Or(v, hn::ShiftLeft<4>(v)), m4);
+  v = hn::And(hn::Or(v, hn::ShiftLeft<2>(v)), m2);
+  v = hn::And(hn::Or(v, hn::ShiftLeft<1>(v)), m1);
+  return v;
+}
+
+template <typename filling_curve_t, typename Point, typename Entry>
+inline void cpam_prepare_range_hwy_morton_2d(Point* point_base,
+                                             Entry* entry_base,
+                                             size_t count) {
+  using U64 = uint64_t;
+  const hn::ScalableTag<U64> d;
+  constexpr size_t kPointWords = sizeof(Point) / sizeof(U64);
+  constexpr size_t kEntryWords = sizeof(Entry) / sizeof(U64);
+  constexpr size_t kPointStrideShift = 4;  // sizeof(Point) == 16
+  constexpr size_t kPrefetchDistance = 4;
+
+  static_assert(kPointWords == 2,
+                "HWY Morton fast path expects packed 2-word points.");
+  static_assert(kEntryWords == 2,
+                "HWY Morton fast path expects packed 2-word entries.");
+
+  auto* point_words = reinterpret_cast<U64*>(point_base);
+  auto* entry_words = reinterpret_cast<U64*>(entry_base);
+  const size_t lanes = hn::Lanes(d);
+  const auto low32 = hn::Set(d, uint64_t{0x00000000FFFFFFFFull});
+  const auto lane_offsets = hn::ShiftLeft<kPointStrideShift>(hn::Iota(d, U64{0}));
+
+  size_t i = 0;
+  for (; i + lanes <= count; i += lanes) {
+    if (i + kPrefetchDistance * lanes < count) {
+      hwy::Prefetch(point_words + kPointWords * (i + kPrefetchDistance * lanes));
+      hwy::Prefetch(entry_words + kEntryWords * (i + kPrefetchDistance * lanes));
+    }
+
+    auto packed_xy = hn::Zero(d);
+    auto old_code = hn::Zero(d);
+    hn::LoadInterleaved2(d, point_words + kPointWords * i, packed_xy, old_code);
+    (void)old_code;
+
+    const auto x = hn::And(packed_xy, low32);
+    const auto y = hn::ShiftRight<32>(packed_xy);
+    const auto code =
+        hn::Or(cpam_hwy_part1by1_u32(d, x),
+               hn::ShiftLeft<1>(cpam_hwy_part1by1_u32(d, y)));
+
+    hn::StoreInterleaved2(packed_xy, code, d, point_words + kPointWords * i);
+
+    const auto payload_base =
+        hn::Set(d, static_cast<U64>(reinterpret_cast<uintptr_t>(point_base + i)));
+    const auto payload = hn::Add(payload_base, lane_offsets);
+    hn::StoreInterleaved2(code, payload, d, entry_words + kEntryWords * i);
+  }
+
+  for (; i < count; ++i) {
+    auto& entry = entry_base[i];
+    auto* point = point_base + i;
+    auto const code = filling_curve_t::Encode(*point);
+    point->SetAugMember(code);
+    cpam_set_curve_entry_key(entry, code);
+    cpam_set_curve_entry_payload(entry, point);
+  }
+}
+#endif
+
 template <typename filling_curve_t, typename key_entry_pointer,
           typename input_value_type>
 struct CpamLazyCurveCodePrepare {
   input_value_type* input_base;
   key_entry_pointer* tmp_base;
+  static constexpr bool kHasHWY2DPath =
+#if PSI_CPAM_HAS_SIMD_SAMPLE_SORT
+      cpam_hwy_morton_2d_fastpath_v<input_value_type, key_entry_pointer>;
+#else
+      false;
+#endif
 
   void prepare_entry(key_entry_pointer& entry) const {
     size_t idx = static_cast<size_t>(&entry - tmp_base);
@@ -262,6 +356,19 @@ struct CpamLazyCurveCodePrepare {
 
   template <typename SliceT>
   void prepare_range(SliceT s) const {
+    if (s.size() == 0) return;
+
+#if PSI_CPAM_HAS_SIMD_SAMPLE_SORT
+    if constexpr (kHasHWY2DPath) {
+      auto* entry_base = &s[0];
+      size_t const idx = static_cast<size_t>(entry_base - tmp_base);
+      cpam_prepare_range_hwy_morton_2d<filling_curve_t, input_value_type,
+                                       key_entry_pointer>(input_base + idx,
+                                                          entry_base, s.size());
+      return;
+    }
+#endif
+
     for (size_t i = 0; i < s.size(); ++i) {
       prepare_entry(s[i]);
     }
@@ -320,7 +427,12 @@ auto cpam_sample_sort_simd_pair(slice<InputIterator, InputIterator> A,
     }
   }
   double sort_seconds = cpam_now_seconds() - sort_start;
-  cpam_set_build_trace("simd-pretouch-lazybindcode-sort", touch_seconds,
+  cpam_set_build_trace(
+      CpamLazyCurveCodePrepare<filling_curve_t, key_entry_pointer,
+                               input_value_type>::kHasHWY2DPath
+          ? "simd-pretouch-hwy2d-lazybindcode-sort"
+          : "simd-pretouch-lazybindcode-sort",
+      touch_seconds,
                        fill_seconds, sort_seconds, true, A.size());
   return tmp;
 }

@@ -52,6 +52,57 @@ So if you want a step model:
 
 This distinction matters for performance. A design that first binds every payload pointer across the whole array and only later computes codes would add another full memory pass, which is less faithful to the legacy route and usually less attractive for bandwidth-bound build workloads.
 
+## New Highway 2D Materialization Fast Path
+
+With the current benchmark setup, the default 2D `PTree` path now uses the packed
+`uint32_t x + uint32_t y + uint64_t code` layout. On top of that, the CPAM sort
+adapter now includes a 2D Morton-specific Highway fast path in
+[include/psi/dependence/cpam/cpam_sample_sort.h](/home/xwang605/SpaceTreeLib/include/psi/dependence/cpam/cpam_sample_sort.h:247).
+
+This path is intentionally narrow and only activates when all of the following hold:
+
+- `Point::Coord == uint32_t`
+- `Point::GetDim() == 2`
+- `Point::AT::CurveCode == uint64_t`
+- `sizeof(Point) == 16`
+- `sizeof(key_entry_pointer) == 16`
+
+So this is a benchmark-oriented fast path, not a generic implementation for all point types.
+
+The implementation uses the packed layout directly:
+
+- each point is treated as two interleaved `uint64_t` words
+  - word 0: packed `(x, y)` with `x` in the low 32 bits and `y` in the high 32 bits
+  - word 1: `code`
+- `prepare_range(...)` then materializes a lane-full chunk at once:
+  1. load packed `(x, y)` words
+  2. compute Morton codes with a vectorized `part1by1` / magic-bits sequence
+  3. write the point `code` field back
+  4. write the sortable `(key=code, payload=point_address)` entries into `tmp`
+
+This fast path does not change the recursive SIMD sample-sort structure in
+`two_pass_simd.hpp`. It only plugs into the existing `prepare callback` layer:
+
+- `sample` preparation remains scalar via `prepare_entry(...)`
+- range-oriented preparation before tile-local sorts and top-level base cases uses the Highway `prepare_range(...)`
+
+That keeps the change localized while still letting us test whether tile-level batched materialization pays off.
+
+If this path is active, the `CPAM build` route label becomes:
+
+```text
+simd-pretouch-hwy2d-lazybindcode-sort
+```
+
+Otherwise it falls back to the existing:
+
+```text
+simd-pretouch-lazybindcode-sort
+```
+
+At this point the code path is implemented, but the document does not yet include
+new benchmark results for it; those still need to be measured on the new packed layout.
+
 ## CPAM Build Adaptation
 
 Because the payload is now stored as an integerized address, CPAM build helpers were updated to reconstruct entries through a shared accessor:
@@ -67,6 +118,10 @@ That keeps the rest of the tree build logic mostly unchanged while allowing both
 The benchmark harness in [tests/test_framework.h](/home/xwang605/SpaceTreeLib/tests/test_framework.h:73) was also adjusted to fit the new sort/build path:
 
 - `AugCode` now stores only the filling-curve code, not a point id.
+- The default `PTree` benchmark path now uses `uint32_t` coordinates.
+  For 2D this makes the physical point layout `uint32_t x + uint32_t y + uint64_t code`,
+  which better matches the effective `32/32/64` Morton-input model than the previous
+  `long/long/uint64_t` benchmark layout.
 - Input and insert sets for `PTree` are deduplicated by coordinates before building.
 - Verification helpers were changed so checks do not rely on `aug.id` being present.
 - A new build-only mode was added, and it now uses a dedicated helper for pure
@@ -80,6 +135,15 @@ if (kTag == 0 && kQueryType == 0) {
 ```
 
 This means `-t 0 -q 0` now runs tree construction only.
+
+The related code is in [tests/test_framework.h](/home/xwang605/SpaceTreeLib/tests/test_framework.h:1899) and
+[tests/test_framework.h](/home/xwang605/SpaceTreeLib/tests/test_framework.h:2061):
+
+- unsigned benchmark coordinates now go through explicit range-checked parsing
+- the `PTree` benchmark point type for 2D/3D now uses `AugPoint<uint32_t, dim, AugCode>`
+
+That means the legacy path, the current SIMD lazy-materialization path, and any future
+Highway tile-materialization path will all be compared on the same tighter point layout.
 
 The important detail is that `BenchmarkBuildOnly(...)` no longer reuses the
 generic `BuildTree(...)` flow. `BuildTree(...)` was designed for downstream
@@ -250,27 +314,27 @@ Measured averages over the last three runs:
 | Route | Fill / sort stage | Build stage | CPAM total | build-only average |
 | --- | ---: | ---: | ---: | ---: |
 | Legacy (`legacy-interleaved-fill-sort`) | `1.542110 + 1.568069 + 1.534770`, average `1.548316s` (`sort+fill`) | `0.680652 + 0.680876 + 0.679833`, average `0.680454s` | `2.228770s` | `2.562340s` |
-| SIMD (`simd-pretouch-lazybindcode-sort`) | `0.024936s touch + 1.407575s sort` | `0.679865s` | `2.112376s` | `2.520500s` |
+| SIMD (`simd-pretouch-lazybindcode-sort`) | `0.024810s touch + 1.346630s sort` | `0.680346s` | `2.051785s` | `2.436810s` |
 
 For the SIMD route specifically:
 
 - `touch`
-  `(0.025261 + 0.024571 + 0.024977) / 3 = 0.024936s`
+  `(0.025256 + 0.024774 + 0.024400) / 3 = 0.024810s`
 - `sort`
-  `(1.412487 + 1.409046 + 1.401192) / 3 = 1.407575s`
+  `(1.423008 + 1.310194 + 1.306687) / 3 = 1.346630s`
 - `build`
-  `(0.680112 + 0.679673 + 0.679811) / 3 = 0.679865s`
+  `(0.679280 + 0.680391 + 0.681366) / 3 = 0.680346s`
 - `CPAM total`
-  `0.024936 + 1.407575 + 0.679865 = 2.112376s`
+  `0.024810 + 1.346630 + 0.680346 = 2.051785s`
 
 Observed differences:
 
 - `[CPAM build] total`
-  improved from `2.228770s` to `2.112376s`, a gain of `0.116394s`
-  (`1.055x`, about `5.22%` faster)
+  improved from `2.228770s` to `2.051785s`, a gain of `0.176985s`
+  (`1.086x`, about `7.94%` faster)
 - final build-only scalar
-  improved from `2.562340s` to `2.520500s`, a gain of `0.041840s`
-  (`1.017x`, about `1.63%` faster)
+  improved from `2.562340s` to `2.436810s`, a gain of `0.125530s`
+  (`1.052x`, about `4.90%` faster)
 
 ### Why `[CPAM build]` improves by about `0.1s`, but the final scalar improves by much less
 
@@ -312,7 +376,7 @@ That work is paid by both the legacy and SIMD routes and is not part of the
 
 You can see that directly from your measurements:
 
-- SIMD extra outer cost: `2.520500 - 2.112376 = 0.408124s`
+- SIMD extra outer cost: `2.436810 - 2.051785 = 0.385025s`
 - Legacy extra outer cost: `2.562340 - 2.228770 = 0.333570s`
 
 That `~0.33s` to `~0.41s` band is the outer `PTree::Build(...)` wrapper cost plus

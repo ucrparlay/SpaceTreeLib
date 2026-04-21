@@ -6,6 +6,7 @@
 #include <iomanip>
 #include <ios>
 #include <iostream>
+#include <limits>
 
 #include "baselines/cpam_raw/cpamtree.hpp"
 #include "baselines/zdtree/zdtree.hpp"
@@ -1264,9 +1265,18 @@ std::pair<size_t, int> read_points(char const* iFile,
   assert(pts.size() % Dim == 0);
   size_t n = pts.size() / Dim;
   auto a = parlay::tabulate(Dim * n, [&](size_t i) -> Coord {
-    if constexpr (std::is_integral_v<Coord>)
-      return std::stol(pts[i]);
-    else if (std::is_floating_point_v<Coord>)
+    if constexpr (std::is_integral_v<Coord>) {
+      if constexpr (std::is_unsigned_v<Coord>) {
+        auto const parsed = std::stoull(pts[i], nullptr, 10);
+        assert(parsed <= std::numeric_limits<Coord>::max());
+        return static_cast<Coord>(parsed);
+      } else {
+        auto const parsed = std::stoll(pts[i], nullptr, 10);
+        assert(parsed >= std::numeric_limits<Coord>::min());
+        assert(parsed <= std::numeric_limits<Coord>::max());
+        return static_cast<Coord>(parsed);
+      }
+    } else if (std::is_floating_point_v<Coord>)
       return std::stod(pts[i]);
   });
   wp.resize(N);
@@ -1902,6 +1912,13 @@ class Wrapper {
     CurveCode code;
   };
 
+  using PTreeBenchCoord = uint32_t;
+  using PTreeBenchPoint2D = AugPoint<PTreeBenchCoord, 2, AugCode>;
+  using PTreeBenchPoint3D = AugPoint<PTreeBenchCoord, 3, AugCode>;
+
+  static_assert(sizeof(PTreeBenchPoint2D) == sizeof(uint32_t) * 2 + sizeof(uint64_t),
+                "PTree 2D benchmark point should use packed 32/32/64 layout.");
+
   // NOTE: driven functions
   template <typename TreeWrapper, typename RunFunc>
   static void Run(commandLine& P, RunFunc test_func) {
@@ -2055,9 +2072,9 @@ class Wrapper {
     };
 
     if (dim == 2) {
-      run_with_split_type.template operator()<AugPoint<Coord, 2, AugCode>>();
+      run_with_split_type.template operator()<PTreeBenchPoint2D>();
     } else if (dim == 3) {
-      run_with_split_type.template operator()<AugPoint<Coord, 3, AugCode>>();
+      run_with_split_type.template operator()<PTreeBenchPoint3D>();
     }
   }
 

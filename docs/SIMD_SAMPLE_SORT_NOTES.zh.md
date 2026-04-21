@@ -65,6 +65,59 @@ using key_entry_pointer =
 `legacy-interleaved-fill-sort` 的访存方式。如果先全局把所有 payload 绑定一遍，再 later
 计算 code，通常会多出一遍完整的大数组写流量，不够像原版，也往往不利于性能。
 
+## 新增的 Highway 2D materialize fast path
+
+在当前这版代码里，`PTree` 的 2D benchmark 默认已经切到 `uint32_t x + uint32_t y + uint64_t code`
+这套 `32/32/64` 布局。基于这个布局，`cpam_sample_sort` 额外加了一条仅针对 2D Morton 的
+Highway fast path，位置在
+[include/psi/dependence/cpam/cpam_sample_sort.h](/home/xwang605/SpaceTreeLib/include/psi/dependence/cpam/cpam_sample_sort.h:247)。
+
+这条路径只在下面这些条件同时满足时才会启用：
+
+- `Point::Coord == uint32_t`
+- `Point::GetDim() == 2`
+- `Point::AT::CurveCode == uint64_t`
+- `sizeof(Point) == 16`
+- `sizeof(key_entry_pointer) == 16`
+
+也就是说，它是一个很明确的“benchmark 场景专用 fast path”，不是对所有 `Point` 都生效的泛化实现。
+
+实现思路是：
+
+- 当前点数组在内存里就是交错的两列 `uint64_t word`
+  - 第 0 列：打包后的 `(x, y)`，低 32 位是 `x`，高 32 位是 `y`
+  - 第 1 列：`code`
+- Highway 路径会在 `prepare_range(...)` 里按 lane 批量做：
+  1. 取一批 packed `(x, y)`
+  2. 用向量化的 `part1by1` / magic-bits 方式展开成 Morton code
+  3. 回写 point 的 `code`
+  4. 一次性写好 `tmp` 里的 `(key=code, payload=point_address)`
+
+这里故意没有去改 `two_pass_simd.hpp` 的主排序流程，而是继续复用它已有的 `prepare callback` 机制：
+
+- `sample` 阶段仍然走标量 `prepare_entry(...)`
+- `tile local sort` 和顶层 base-case 这种区间准备阶段，才走 Highway 的 `prepare_range(...)`
+
+这样做的原因是：
+
+- 改动面最小
+- 不会破坏现有 SIMD sample sort 的递归结构
+- 很适合先验证“tile 级批量 materialize”本身到底能不能带来收益
+
+如果触发了这条路径，`CPAM build` 的 route 会显示成：
+
+```text
+simd-pretouch-hwy2d-lazybindcode-sort
+```
+
+如果条件不满足，则仍然退回现有的：
+
+```text
+simd-pretouch-lazybindcode-sort
+```
+
+目前这里只实现了代码路径，还没有把新的 benchmark 数字写进文档；后续需要在新布局上重新测试。
+
 ## 为什么 CPAM build 也要一起改
 
 因为现在 payload 不再直接是 `Point*`，而是整数化后的地址，所以 CPAM build 里凡是“从排序结果里恢复原始 entry”的地方都要一起适配。
@@ -82,9 +135,20 @@ using key_entry_pointer =
 [tests/test_framework.h](/home/xwang605/SpaceTreeLib/tests/test_framework.h:73) 里也做了几项重要配套：
 
 - 新增 `AugCode`，只保存 curve code，不再依赖 `id`
+- `PTree` 的 benchmark 入口现在默认使用 `uint32_t` 坐标
+  - 2D 点的物理布局因此变成 `uint32_t x + uint32_t y + uint64_t code`
+  - 也就是更贴近 Morton 实际使用的 `32/32/64` 模式，而不是之前的 `long/long/uint64_t`
 - 为 `PTree` 输入增加按坐标去重逻辑，避免重复坐标影响构建
 - 校验逻辑不再默认要求 `aug.id` 存在
 - 新增 build-only 模式，并且现在专门走一个纯 build benchmark helper
+
+这个改动放在 [tests/test_framework.h](/home/xwang605/SpaceTreeLib/tests/test_framework.h:1899) 和
+[tests/test_framework.h](/home/xwang605/SpaceTreeLib/tests/test_framework.h:2061)：
+
+- benchmark 读点时，`unsigned` 坐标会走显式范围检查后再转换
+- `PTree` 的 2D/3D benchmark 点类型改成了 `AugPoint<uint32_t, dim, AugCode>`
+
+这样 legacy 路线、当前 SIMD 路线，以及后续要加的 Highway materialize 路线，都会基于同一套更紧凑、也更符合 Morton encode 语义的点布局做比较。
 
 你现在加的 build-only 逻辑在 [tests/test_framework.h](/home/xwang605/SpaceTreeLib/tests/test_framework.h:1245)：
 
@@ -276,27 +340,27 @@ numactl -i all ./build-simd/p_test \
 | 路线 | fill / sort 阶段 | build 阶段 | CPAM total | build-only 平均值 |
 | --- | ---: | ---: | ---: | ---: |
 | 原版 (`legacy-interleaved-fill-sort`) | `1.542110 + 1.568069 + 1.534770` 平均 `1.548316s` (`sort+fill`) | `0.680652 + 0.680876 + 0.679833` 平均 `0.680454s` | `2.228770s` | `2.562340s` |
-| SIMD (`simd-pretouch-lazybindcode-sort`) | `0.024936s touch + 1.407575s sort` | `0.679865s` | `2.112376s` | `2.520500s` |
+| SIMD (`simd-pretouch-lazybindcode-sort`) | `0.024810s touch + 1.346630s sort` | `0.680346s` | `2.051785s` | `2.436810s` |
 
 这里 SIMD 路线里的 `touch` 和 `sort` 分别是：
 
 - `touch`
-  `(0.025261 + 0.024571 + 0.024977) / 3 = 0.024936s`
+  `(0.025256 + 0.024774 + 0.024400) / 3 = 0.024810s`
 - `sort`
-  `(1.412487 + 1.409046 + 1.401192) / 3 = 1.407575s`
+  `(1.423008 + 1.310194 + 1.306687) / 3 = 1.346630s`
 - `build`
-  `(0.680112 + 0.679673 + 0.679811) / 3 = 0.679865s`
+  `(0.679280 + 0.680391 + 0.681366) / 3 = 0.680346s`
 - `CPAM total`
-  `0.024936 + 1.407575 + 0.679865 = 2.112376s`
+  `0.024810 + 1.346630 + 0.680346 = 2.051785s`
 
 差异可以总结成：
 
 - `[CPAM build] total`
-  从 `2.228770s` 降到 `2.112376s`，快了 `0.116394s`
-  (`1.055x`，提升约 `5.22%`)
+  从 `2.228770s` 降到 `2.051785s`，快了 `0.176985s`
+  (`1.086x`，提升约 `7.94%`)
 - `build-only` 最后一行标量
-  从 `2.562340s` 降到 `2.520500s`，快了 `0.041840s`
-  (`1.017x`，提升约 `1.63%`)
+  从 `2.562340s` 降到 `2.436810s`，快了 `0.125530s`
+  (`1.052x`，提升约 `4.90%`)
 
 ### 为什么 `[CPAM build]` 能快 0.1 秒，但最后标量只快 0.04 秒
 
@@ -338,7 +402,7 @@ Build_(A);
 
 从你这组数据也能直接看出来：
 
-- SIMD: `2.520500 - 2.112376 = 0.408124s`
+- SIMD: `2.436810 - 2.051785 = 0.385025s`
 - Legacy: `2.562340 - 2.228770 = 0.333570s`
 
 这大约 `0.33s ~ 0.41s` 的区间，就是 `PTree::Build(...)` 外层包装开销和一些运行时噪声。
