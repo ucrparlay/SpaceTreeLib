@@ -249,10 +249,7 @@ PARLAY_NUM_THREADS=192 numactl -i all ./build-simd/p_test \
 
 ## 当前 1e9 Morton 的实测结果
 
-下面这组表格是较早一版 `simd-precompute-fill-sort` 路线的结果，保留它主要是为了记录
-“先分离 fill/sort” 时的历史口径。当前代码已经进一步改成
-`simd-pretouch-lazybindcode-sort`，所以如果你现在重新跑 benchmark，`route` 名字和
-`fill/sort` 含义都会和下面这张表略有不同，建议重新测一轮。
+先放当前代码，也就是 `simd-pretouch-lazybindcode-sort` 这版的最新结果。
 
 测试命令：
 
@@ -275,6 +272,83 @@ numactl -i all ./build-simd/p_test \
 - `p_test` 最后一行打印的标量，是 build-only harness 对正式轮次求出来的平均值
 
 对后 3 轮求平均后，结果如下：
+
+| 路线 | fill / sort 阶段 | build 阶段 | CPAM total | build-only 平均值 |
+| --- | ---: | ---: | ---: | ---: |
+| 原版 (`legacy-interleaved-fill-sort`) | `1.542110 + 1.568069 + 1.534770` 平均 `1.548316s` (`sort+fill`) | `0.680652 + 0.680876 + 0.679833` 平均 `0.680454s` | `2.228770s` | `2.562340s` |
+| SIMD (`simd-pretouch-lazybindcode-sort`) | `0.024936s touch + 1.407575s sort` | `0.679865s` | `2.112376s` | `2.520500s` |
+
+这里 SIMD 路线里的 `touch` 和 `sort` 分别是：
+
+- `touch`
+  `(0.025261 + 0.024571 + 0.024977) / 3 = 0.024936s`
+- `sort`
+  `(1.412487 + 1.409046 + 1.401192) / 3 = 1.407575s`
+- `build`
+  `(0.680112 + 0.679673 + 0.679811) / 3 = 0.679865s`
+- `CPAM total`
+  `0.024936 + 1.407575 + 0.679865 = 2.112376s`
+
+差异可以总结成：
+
+- `[CPAM build] total`
+  从 `2.228770s` 降到 `2.112376s`，快了 `0.116394s`
+  (`1.055x`，提升约 `5.22%`)
+- `build-only` 最后一行标量
+  从 `2.562340s` 降到 `2.520500s`，快了 `0.041840s`
+  (`1.017x`，提升约 `1.63%`)
+
+### 为什么 `[CPAM build]` 能快 0.1 秒，但最后标量只快 0.04 秒
+
+这个不是计时器坏了，而是**两种打印口径不一样**。
+
+`[CPAM build]` 这行是在 [map.h](/home/xwang605/SpaceTreeLib/include/psi/dependence/cpam/map.h:364)
+里面打的，它覆盖的是：
+
+1. `Build::sort_remove_duplicates(SS)` 里的 sort 路径
+2. `Tree::multi_insert_sorted(...)` 的 CPAM build 路径
+
+也就是说，它主要反映的是 **CPAM 内核这段**。
+
+但 `p_test` 最后一行的标量来自 [tests/test_framework.h](/home/xwang605/SpaceTreeLib/tests/test_framework.h:366)：
+
+```cpp
+t.start();
+pkd.Build(wp.cut(0, n));
+total_build += t.next_time();
+```
+
+这里计的是**整个 `pkd.Build(...)`**。对 `PTree` 来说，`Build(...)` 外面还有一层：
+[p_build_tree.hpp](/home/xwang605/SpaceTreeLib/include/psi/p_tree_impl/p_build_tree.hpp:23)
+
+```cpp
+auto aux = Points::uninitialized(parlay::size(In));
+parlay::copy(In, parlay::make_slice(aux));
+Slice A = parlay::make_slice(aux);
+Build_(A);
+```
+
+也就是说，最后那个 build-only 标量还额外包含：
+
+- 一次 `aux` 大数组分配
+- 一次把输入整体拷贝到 `aux` 的 full copy
+
+这部分开销在 SIMD 和 legacy 两条 CPAM 路线上基本都要付，而且不在 `[CPAM build]`
+打印里，所以会把 CPAM 内核里的收益“稀释”掉。
+
+从你这组数据也能直接看出来：
+
+- SIMD: `2.520500 - 2.112376 = 0.408124s`
+- Legacy: `2.562340 - 2.228770 = 0.333570s`
+
+这大约 `0.33s ~ 0.41s` 的区间，就是 `PTree::Build(...)` 外层包装开销和一些运行时噪声。
+所以：
+
+- 如果你想看“SIMD sort / CPAM build 核心路径到底快了多少”，看 `[CPAM build]`
+- 如果你想看“用户调用一次 `tree.Build(...)` 端到端到底快了多少”，看最后那个标量
+
+下面这组表格是更早一版 `simd-precompute-fill-sort` 路线的历史结果，保留它主要是为了记录
+“先分离 fill/sort” 时的旧口径。
 
 | 路线 | fill / sort 阶段 | build 阶段 | CPAM total |
 | --- | ---: | ---: | ---: |

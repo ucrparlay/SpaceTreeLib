@@ -245,6 +245,29 @@ inline void cpam_set_curve_entry_key(Entry& entry, Code const& code) {
   }
 }
 
+template <typename filling_curve_t, typename key_entry_pointer,
+          typename input_value_type>
+struct CpamLazyCurveCodePrepare {
+  input_value_type* input_base;
+  key_entry_pointer* tmp_base;
+
+  void prepare_entry(key_entry_pointer& entry) const {
+    size_t idx = static_cast<size_t>(&entry - tmp_base);
+    auto* point = input_base + idx;
+    auto const code = filling_curve_t::Encode(*point);
+    point->SetAugMember(code);
+    cpam_set_curve_entry_key(entry, code);
+    cpam_set_curve_entry_payload(entry, point);
+  }
+
+  template <typename SliceT>
+  void prepare_range(SliceT s) const {
+    for (size_t i = 0; i < s.size(); ++i) {
+      prepare_entry(s[i]);
+    }
+  }
+};
+
 #if PSI_CPAM_HAS_SIMD_SAMPLE_SORT
 template <typename filling_curve_t, typename key_entry_pointer,
           typename InputIterator>
@@ -266,29 +289,8 @@ auto cpam_sample_sort_simd_pair(slice<InputIterator, InputIterator> A,
   double touch_seconds = cpam_now_seconds() - touch_start;
   double fill_seconds = 0.0;
 
-  struct LazyCurveCodePrepare {
-    input_value_type* input_base;
-    key_entry_pointer* tmp_base;
-
-    void prepare_entry(key_entry_pointer& entry) const {
-      size_t idx = static_cast<size_t>(&entry - tmp_base);
-      auto* point = input_base + idx;
-      auto const code = filling_curve_t::Encode(*point);
-      point->SetAugMember(code);
-      cpam_set_curve_entry_key(entry, code);
-      cpam_set_curve_entry_payload(entry, point);
-    }
-
-    template <typename SliceT>
-    void prepare_range(SliceT s) const {
-      parallel_for(
-          0, s.size(),
-          [&](size_t i) { prepare_entry(s[i]); },
-          1024);
-    }
-  };
-
-  LazyCurveCodePrepare lazy_prepare{
+  CpamLazyCurveCodePrepare<filling_curve_t, key_entry_pointer, input_value_type>
+      lazy_prepare{
       .input_base = A.begin(),
       .tmp_base = tmp.begin(),
   };

@@ -222,7 +222,7 @@ Meaning:
 
 ## Current 1e9 Morton Results
 
-The table below is retained as a historical result for the earlier `simd-precompute-fill-sort` route. The current implementation has since moved to `simd-pretouch-lazybindcode-sort`, so if you rerun benchmarks now the route name and the meaning of `fill/sort` will differ slightly. A fresh measurement is recommended.
+First, here are the latest measurements for the current `simd-pretouch-lazybindcode-sort` route.
 
 Command used:
 
@@ -246,6 +246,82 @@ Interpretation:
   the build-only harness
 
 Measured averages over the last three runs:
+
+| Route | Fill / sort stage | Build stage | CPAM total | build-only average |
+| --- | ---: | ---: | ---: | ---: |
+| Legacy (`legacy-interleaved-fill-sort`) | `1.542110 + 1.568069 + 1.534770`, average `1.548316s` (`sort+fill`) | `0.680652 + 0.680876 + 0.679833`, average `0.680454s` | `2.228770s` | `2.562340s` |
+| SIMD (`simd-pretouch-lazybindcode-sort`) | `0.024936s touch + 1.407575s sort` | `0.679865s` | `2.112376s` | `2.520500s` |
+
+For the SIMD route specifically:
+
+- `touch`
+  `(0.025261 + 0.024571 + 0.024977) / 3 = 0.024936s`
+- `sort`
+  `(1.412487 + 1.409046 + 1.401192) / 3 = 1.407575s`
+- `build`
+  `(0.680112 + 0.679673 + 0.679811) / 3 = 0.679865s`
+- `CPAM total`
+  `0.024936 + 1.407575 + 0.679865 = 2.112376s`
+
+Observed differences:
+
+- `[CPAM build] total`
+  improved from `2.228770s` to `2.112376s`, a gain of `0.116394s`
+  (`1.055x`, about `5.22%` faster)
+- final build-only scalar
+  improved from `2.562340s` to `2.520500s`, a gain of `0.041840s`
+  (`1.017x`, about `1.63%` faster)
+
+### Why `[CPAM build]` improves by about `0.1s`, but the final scalar improves by much less
+
+This is expected because the two timers measure different scopes.
+
+The `[CPAM build]` line is emitted inside [map.h](/home/xwang605/SpaceTreeLib/include/psi/dependence/cpam/map.h:364). It covers:
+
+1. the sort path inside `Build::sort_remove_duplicates(SS)`
+2. the CPAM tree-construction path in `Tree::multi_insert_sorted(...)`
+
+So it is mostly a **CPAM-core timing**.
+
+The final scalar printed by `p_test` comes from [tests/test_framework.h](/home/xwang605/SpaceTreeLib/tests/test_framework.h:366):
+
+```cpp
+t.start();
+pkd.Build(wp.cut(0, n));
+total_build += t.next_time();
+```
+
+That measures the whole `pkd.Build(...)` call. For `PTree`, the outer wrapper in
+[p_build_tree.hpp](/home/xwang605/SpaceTreeLib/include/psi/p_tree_impl/p_build_tree.hpp:23)
+does extra work before entering the CPAM core:
+
+```cpp
+auto aux = Points::uninitialized(parlay::size(In));
+parlay::copy(In, parlay::make_slice(aux));
+Slice A = parlay::make_slice(aux);
+Build_(A);
+```
+
+So the final build-only scalar also includes:
+
+- one large `aux` allocation
+- one full-array copy from the input into `aux`
+
+That work is paid by both the legacy and SIMD routes and is not part of the
+`[CPAM build]` trace, which dilutes the speedup seen in the CPAM-core numbers.
+
+You can see that directly from your measurements:
+
+- SIMD extra outer cost: `2.520500 - 2.112376 = 0.408124s`
+- Legacy extra outer cost: `2.562340 - 2.228770 = 0.333570s`
+
+That `~0.33s` to `~0.41s` band is the outer `PTree::Build(...)` wrapper cost plus
+normal run-to-run noise. So:
+
+- use `[CPAM build]` to judge the SIMD sort / CPAM-core improvement
+- use the final scalar to judge end-to-end `tree.Build(...)` improvement
+
+The table below is retained as a historical result for the earlier `simd-precompute-fill-sort` route. It is still useful as a record of the old "separate fill and sort" measurement style.
 
 | Route | Fill / sort stage | Build stage | CPAM total |
 | --- | ---: | ---: | ---: |
