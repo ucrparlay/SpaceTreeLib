@@ -358,6 +358,7 @@ class map_ {
   template <class Seq>
   static M multi_insert(M m, Seq const& SS) {
     auto replace = [](V const& a, V const& b) { return b; };
+    bool const build_from_empty = (m.size() == 0);
     // parlay::sequence<E> A = Build::sort_remove_duplicates(SS);
     // timer t("");
     auto A = Build::sort_remove_duplicates(SS);
@@ -368,8 +369,38 @@ class map_ {
     //    M(Tree::uniont(m.get_root(), A_m.get_root(), replace)); t.next("union
     //    time");
     // std::cout << A.size() << std::endl;
+#if PSI_PRINT_CPAM_BUILD_TIMING
+    timer build_timer("", false);
+    if (build_from_empty) build_timer.start();
+#endif
     auto x =
         M(Tree::multi_insert_sorted(m.get_root(), A.data(), A.size(), replace));
+    double build_seconds = 0.0;
+
+#if PSI_PRINT_CPAM_BUILD_TIMING
+    build_seconds = build_from_empty ? build_timer.stop() : 0.0;
+    if (build_from_empty) {
+      auto const& trace = parlay::internal::cpam::cpam_build_trace();
+      std::ios::fmtflags cout_settings = std::cout.flags();
+      auto old_precision = std::cout.precision();
+      std::cout << std::fixed << std::setprecision(6);
+      std::cout << "[CPAM build] route=" << trace.route << " n="
+                << trace.input_size << " ";
+      if (trace.has_separate_fill) {
+        std::cout << "fill=" << trace.fill_seconds << " sort="
+                  << trace.sort_seconds << " build=" << build_seconds
+                  << " total="
+                  << (trace.fill_seconds + trace.sort_seconds + build_seconds);
+      } else {
+        std::cout << "fill=interleaved-with-sort sort+fill="
+                  << trace.sort_seconds << " build=" << build_seconds
+                  << " total=" << (trace.sort_seconds + build_seconds);
+      }
+      std::cout << std::endl;
+      std::cout.flags(cout_settings);
+      std::cout.precision(old_precision);
+    }
+#endif
     // auto x = M(Tree::multi_insert_sorted_simple(m.get_root(), A.data(),
     //                                             A.size(), replace));
     // t.next("insert to tree");

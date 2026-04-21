@@ -27,6 +27,7 @@ option(JEMA "" OFF)
 option(CCP "" OFF)
 option(DISABLE_BATCH_DELETE_SIZE_OPT "" OFF)
 option(USE_SIMD_SAMPLE_SORT "" OFF)
+option(PRINT_CPAM_BUILD_TIMING "" OFF)
 
 
 if(CILKPLUS)
@@ -88,16 +89,28 @@ set(PSI_INCLUDE_DIR "${PSI_SOURCE_DIR}/include/psi")
 target_link_libraries(PSI INTERFACE parlay libmorton)
 target_include_directories(PSI INTERFACE $<BUILD_INTERFACE:${PSI_INCLUDE_DIR}>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
+if(PRINT_CPAM_BUILD_TIMING)
+  target_compile_definitions(PSI INTERFACE PSI_PRINT_CPAM_BUILD_TIMING=1)
+endif()
 if(USE_SIMD_SAMPLE_SORT)
   set(HWY_ENABLE_CONTRIB ON CACHE BOOL "" FORCE)
   set(HWY_ENABLE_EXAMPLES OFF CACHE BOOL "" FORCE)
   set(HWY_ENABLE_INSTALL OFF CACHE BOOL "" FORCE)
   set(HWY_ENABLE_TESTS OFF CACHE BOOL "" FORCE)
-  add_subdirectory(${PROJECT_SOURCE_DIR}/include/highway
+  add_compile_definitions(PSI_USE_SIMD_SAMPLE_SORT=1)
+  include_directories(
+    ${PROJECT_SOURCE_DIR}/include/SIMD-Sample-Sort/external/highway
+    ${PROJECT_SOURCE_DIR}/include/SIMD-Sample-Sort
+  )
+  add_subdirectory(${PROJECT_SOURCE_DIR}/include/SIMD-Sample-Sort/external/highway
                    ${CMAKE_BINARY_DIR}/highway
                    EXCLUDE_FROM_ALL)
   target_compile_definitions(PSI INTERFACE PSI_USE_SIMD_SAMPLE_SORT=1)
-  target_include_directories(PSI INTERFACE ${PROJECT_SOURCE_DIR}/include/highway)
+  target_include_directories(
+    PSI INTERFACE
+    ${PROJECT_SOURCE_DIR}/include/SIMD-Sample-Sort/external/highway
+    ${PROJECT_SOURCE_DIR}/include/SIMD-Sample-Sort
+  )
   target_link_libraries(PSI INTERFACE hwy hwy_contrib)
 endif()
 

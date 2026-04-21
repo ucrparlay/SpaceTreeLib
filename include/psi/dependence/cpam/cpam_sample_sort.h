@@ -9,6 +9,7 @@
 #define CPAM_SAMPLE_SORT_H
 
 #include <cassert>
+#include <chrono>
 #include <concepts>
 #include <cstdio>
 #include <cstdint>
@@ -45,6 +46,10 @@
 #define PSI_CPAM_PRECOMPUTE_CODE_SORT 0
 #endif
 
+#ifndef PSI_PRINT_CPAM_BUILD_TIMING
+#define PSI_PRINT_CPAM_BUILD_TIMING 0
+#endif
+
 #if PSI_USE_SIMD_SAMPLE_SORT
 #if PSI_CPAM_HAS_KVPAIR && \
     __has_include("SIMD-Sample-Sort/src/two_pass/two_pass_simd.hpp")
@@ -60,6 +65,59 @@
 namespace parlay {
 namespace internal {
 namespace cpam {
+
+#if PSI_PRINT_CPAM_BUILD_TIMING
+struct CpamBuildTrace {
+  const char* route = "unknown";
+  double fill_seconds = -1.0;
+  double sort_seconds = 0.0;
+  bool has_separate_fill = false;
+  size_t input_size = 0;
+};
+
+inline double cpam_now_seconds() {
+  using clock = std::chrono::steady_clock;
+  return std::chrono::duration<double>(clock::now().time_since_epoch()).count();
+}
+
+inline CpamBuildTrace& cpam_build_trace() {
+  static thread_local CpamBuildTrace trace;
+  return trace;
+}
+
+inline void cpam_set_build_trace(const char* route, double fill_seconds,
+                                 double sort_seconds, bool has_separate_fill,
+                                 size_t input_size) {
+  cpam_build_trace() = CpamBuildTrace{
+      .route = route,
+      .fill_seconds = fill_seconds,
+      .sort_seconds = sort_seconds,
+      .has_separate_fill = has_separate_fill,
+      .input_size = input_size,
+  };
+}
+#else
+struct CpamBuildTrace {
+  const char* route = "timing-disabled";
+  double fill_seconds = -1.0;
+  double sort_seconds = 0.0;
+  bool has_separate_fill = false;
+  size_t input_size = 0;
+};
+
+inline double cpam_now_seconds() { return 0.0; }
+
+inline CpamBuildTrace& cpam_build_trace() {
+  static thread_local CpamBuildTrace trace;
+  return trace;
+}
+
+inline void cpam_set_build_trace([[maybe_unused]] const char* route,
+                                 [[maybe_unused]] double fill_seconds,
+                                 [[maybe_unused]] double sort_seconds,
+                                 [[maybe_unused]] bool has_separate_fill,
+                                 [[maybe_unused]] size_t input_size) {}
+#endif
 
 template <typename T>
 struct is_std_pair : std::false_type {};
@@ -147,6 +205,7 @@ auto cpam_sample_sort_simd_pair(slice<InputIterator, InputIterator> A,
   static_assert(std::is_integral_v<value_ptr_type>,
                 "SIMD CPAM adapter expects integral payload storage.");
 
+  double fill_start = cpam_now_seconds();
   sequence<key_entry_pointer> tmp =
       sequence<key_entry_pointer>::uninitialized(A.size());
   parallel_for(0, A.size(), [&](size_t i) {
@@ -156,7 +215,9 @@ auto cpam_sample_sort_simd_pair(slice<InputIterator, InputIterator> A,
         static_cast<key_type>(code),
         static_cast<value_ptr_type>(reinterpret_cast<uintptr_t>(&A[i]))};
   });
+  double fill_seconds = cpam_now_seconds() - fill_start;
 
+  double sort_start = cpam_now_seconds();
   parlay::internal::ScratchBuffer<key_entry_pointer> scratch(tmp.size());
   auto tmp_slice = parlay::make_slice(tmp.begin(), tmp.end());
   auto scratch_slice =
@@ -180,6 +241,9 @@ auto cpam_sample_sort_simd_pair(slice<InputIterator, InputIterator> A,
           tmp_slice, scratch_slice, true);
     }
   }
+  double sort_seconds = cpam_now_seconds() - sort_start;
+  cpam_set_build_trace("simd-precompute-fill-sort", fill_seconds, sort_seconds,
+                       true, A.size());
   return tmp;
 }
 #endif
@@ -196,6 +260,7 @@ auto cpam_sample_sort_materialized_pair(slice<InputIterator, InputIterator> A,
   static_assert(std::is_integral_v<value_ptr_type>,
                 "Materialized CPAM sort expects integral payload storage.");
 
+  double fill_start = cpam_now_seconds();
   sequence<key_entry_pointer> tmp =
       sequence<key_entry_pointer>::uninitialized(A.size());
   parallel_for(0, A.size(), [&](size_t i) {
@@ -205,16 +270,21 @@ auto cpam_sample_sort_materialized_pair(slice<InputIterator, InputIterator> A,
         static_cast<key_type>(code),
         static_cast<value_ptr_type>(reinterpret_cast<uintptr_t>(&A[i]))};
   });
+  double fill_seconds = cpam_now_seconds() - fill_start;
 
   auto less_by_code = [&](auto const& a, auto const& b) {
     return a.first < b.first;
   };
   auto tmp_slice = parlay::make_slice(tmp.begin(), tmp.end());
+  double sort_start = cpam_now_seconds();
   if (stable) {
     bucket_sort(tmp_slice, less_by_code, true);
   } else {
     quicksort(tmp.begin(), tmp.size(), less_by_code);
   }
+  double sort_seconds = cpam_now_seconds() - sort_start;
+  cpam_set_build_trace("scalar-precompute-fill-sort", fill_seconds,
+                       sort_seconds, true, A.size());
   return tmp;
 }
 
@@ -411,11 +481,15 @@ auto cpam_sample_sort(slice<InputIterator, InputIterator> A,
 
   sequence<key_entry_pointer> R =
       sequence<key_entry_pointer>::uninitialized(A.size());
+  double sort_start = cpam_now_seconds();
   if (A.size() < (std::numeric_limits<unsigned int>::max)()) {
     sample_sort_<filling_curve_t, unsigned int>(A, make_slice(R), less, stable);
   } else {
     sample_sort_<filling_curve_t, size_t>(A, make_slice(R), less, stable);
   }
+  double sort_seconds = cpam_now_seconds() - sort_start;
+  cpam_set_build_trace("legacy-interleaved-fill-sort", -1.0, sort_seconds,
+                       false, A.size());
   return R;
 }
 
