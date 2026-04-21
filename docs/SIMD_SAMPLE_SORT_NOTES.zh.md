@@ -23,7 +23,7 @@ using key_entry_pointer =
 [include/psi/dependence/cpam/cpam_sample_sort.h](/home/xwang605/SpaceTreeLib/include/psi/dependence/cpam/cpam_sample_sort.h:33) 现在新增了几层适配：
 
 1. 通过 `PSI_USE_SIMD_SAMPLE_SORT` 判断是否启用 SIMD 排序。
-2. 排序前先预计算 filling-curve code，并生成 `(code, address)` 数组。
+2. 输出条目统一成紧凑的 `(curve_code, address)` 形式。
 3. 如果 SIMD 路径没开，仍然可以退回原来的 CPAM sort 流程。
 
 重点新增逻辑：
@@ -31,23 +31,39 @@ using key_entry_pointer =
 - `make_cpam_output_entry(...)`
   统一处理多种输出类型，包括原始 entry、augmentation key、传统 pair，以及新的整型 KVPair。
 - `cpam_sample_sort_simd_pair(...)`
-  先物化 `(curve_code, address)`，再调用 SIMD sample sort。
+  现在不再先全局预计算整段 `code`。它会先准备 `tmp` 缓冲区，然后通过一个
+  `LazyCurveCodePrepare` callback，在 SIMD sample sort 的顶层流程里按需：
+  1. 绑定 payload 指针
+  2. 计算 Morton code
+  3. 回写排序 key
 - `cpam_sample_sort_materialized_pair(...)`
   提供一个非 SIMD 的“先物化 code 再排序”的后备路径。
+- [include/SIMD-Sample-Sort/src/two_pass/two_pass_simd.hpp](/home/xwang605/SpaceTreeLib/include/SIMD-Sample-Sort/src/two_pass/two_pass_simd.hpp:112)
+  新增了 `prepare callback` 机制。这个 callback 只在 `Depth == 0` 生效：
+  sample 阶段和 tile local sort 之前会触发一次，递归下去之后不再重复算 code。
 
-从性能视角看，这次改动本质上是把原来“排序时不断处理复杂对象”的过程，改成“先把可比较的整数 key 准备好，再对紧凑记录排序”。
+从性能视角看，这次改动的关键已经不再是“先整段 precompute code，再 sort”，而是：
+
+- legacy 路径：`fill code` 本来就是穿插在 sample sort 过程中做的
+- 当前 SIMD 路径：也改成尽量贴近这种模式，在顶层 sample/tile 流程里懒绑定
+  payload 并计算 code，而不是额外做一遍完整的大数组 `fill` pass
 
 更准确地说，两条路线现在可以这样理解：
 
 - `SIMD ON`
-  是先单独做 `fill code + materialize KV`，然后单独做 SIMD sort，最后再 build tree。
+  是 `tmp` 先做 first-touch，然后在顶层 sample/tile 处理中懒执行
+  `bind payload + compute code`，再走 SIMD sample sort，最后 build tree。
 - `SIMD OFF`
   走的是原来的 CPAM sample sort 路线，`fill code` 不是一个完全独立的阶段，而是穿插在 sample sort 过程中完成的。
 
 所以如果硬拆步骤：
 
-- `SIMD ON`：`fill -> sort -> build`
+- `SIMD ON`：更接近 `touch -> lazy(bind+code)+sort -> build`
 - `SIMD OFF`：更接近 `fill+sort(interleaved) -> build`
+
+这里要特别说明一点：当前 SIMD 路径之所以这样改，是为了更贴近原版
+`legacy-interleaved-fill-sort` 的访存方式。如果先全局把所有 payload 绑定一遍，再 later
+计算 code，通常会多出一遍完整的大数组写流量，不够像原版，也往往不利于性能。
 
 ## 为什么 CPAM build 也要一起改
 
@@ -111,6 +127,21 @@ cmake -S . -B build-simd \
   -DPRINT_CPAM_BUILD_TIMING=ON
 cmake --build build-simd -j --target p_test data_generator
 ```
+
+如果你想切换 Morton encode 的实现路径，当前也支持一个单独的 CMake 开关：
+
+```bash
+cmake -S . -B build-simd \
+  -DUSE_SIMD_SAMPLE_SORT=ON \
+  -DUSE_LIBMORTON_SIMD_ENCODE=ON
+```
+
+其中：
+
+- `USE_LIBMORTON_SIMD_ENCODE=ON`
+  使用 libmorton 的默认 encode 入口
+- `USE_LIBMORTON_SIMD_ENCODE=OFF`
+  退回之前显式指定的 `m2D_e_for / m3D_e_for_ET`
 
 如果你只关心这次要用到的两个可执行文件，也可以只编译它们：
 
@@ -190,7 +221,7 @@ PARLAY_NUM_THREADS=192 numactl -i all ./build-simd/p_test \
 打开 `-DPRINT_CPAM_BUILD_TIMING=ON` 之后，从空树建 `PTree` 时会额外打印一行：
 
 ```text
-[CPAM build] route=simd-precompute-fill-sort n=... fill=... sort=... build=... total=...
+[CPAM build] route=simd-pretouch-lazybindcode-sort n=... touch=... fill=0.000000 sort=... build=... total=...
 ```
 
 或者：
@@ -203,16 +234,25 @@ PARLAY_NUM_THREADS=192 numactl -i all ./build-simd/p_test \
 
 - `route`
   标明当前走的是哪条 sort/build 路线
+- `touch`
+  只在新的 SIMD 路线下单独打印，表示 `tmp` 的并行 first-touch / 预热时间
 - `fill`
-  只在 SIMD / precompute 路线下单独存在
+  现在更多表示“独立预处理 pass”的时间。对当前 `lazybindcode` 路线来说，这个值通常是 `0`
+  或接近 `0`，因为 payload 绑定和 code 计算已经并入 sort 顶层流程了。
 - `sort`
-  纯排序时间
+  对当前 SIMD lazy 路线来说，这里面除了纯排序内核，也包含顶层 sample/tile 阶段内的
+  `bind payload + compute code`
 - `sort+fill`
   旧路线里 fill 和 sort 无法完全拆开，所以合并打印
 - `build`
   从排好序的结果继续建树的时间
 
 ## 当前 1e9 Morton 的实测结果
+
+下面这组表格是较早一版 `simd-precompute-fill-sort` 路线的结果，保留它主要是为了记录
+“先分离 fill/sort” 时的历史口径。当前代码已经进一步改成
+`simd-pretouch-lazybindcode-sort`，所以如果你现在重新跑 benchmark，`route` 名字和
+`fill/sort` 含义都会和下面这张表略有不同，建议重新测一轮。
 
 测试命令：
 

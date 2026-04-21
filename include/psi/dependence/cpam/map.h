@@ -387,10 +387,14 @@ class map_ {
       std::cout << "[CPAM build] route=" << trace.route << " n="
                 << trace.input_size << " ";
       if (trace.has_separate_fill) {
+        double pre_build_seconds = trace.fill_seconds + trace.sort_seconds;
+        if (trace.touch_seconds >= 0.0) {
+          pre_build_seconds += trace.touch_seconds;
+          std::cout << "touch=" << trace.touch_seconds << " ";
+        }
         std::cout << "fill=" << trace.fill_seconds << " sort="
                   << trace.sort_seconds << " build=" << build_seconds
-                  << " total="
-                  << (trace.fill_seconds + trace.sort_seconds + build_seconds);
+                  << " total=" << (pre_build_seconds + build_seconds);
       } else {
         std::cout << "fill=interleaved-with-sort sort+fill="
                   << trace.sort_seconds << " build=" << build_seconds

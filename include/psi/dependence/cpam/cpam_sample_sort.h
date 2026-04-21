@@ -15,6 +15,7 @@
 #include <cstdint>
 #include <iterator>
 #include <limits>
+#include <unistd.h>
 #include <utility>
 #include <type_traits>
 
@@ -69,6 +70,7 @@ namespace cpam {
 #if PSI_PRINT_CPAM_BUILD_TIMING
 struct CpamBuildTrace {
   const char* route = "unknown";
+  double touch_seconds = -1.0;
   double fill_seconds = -1.0;
   double sort_seconds = 0.0;
   bool has_separate_fill = false;
@@ -85,11 +87,12 @@ inline CpamBuildTrace& cpam_build_trace() {
   return trace;
 }
 
-inline void cpam_set_build_trace(const char* route, double fill_seconds,
-                                 double sort_seconds, bool has_separate_fill,
-                                 size_t input_size) {
+inline void cpam_set_build_trace(const char* route, double touch_seconds,
+                                 double fill_seconds, double sort_seconds,
+                                 bool has_separate_fill, size_t input_size) {
   cpam_build_trace() = CpamBuildTrace{
       .route = route,
+      .touch_seconds = touch_seconds,
       .fill_seconds = fill_seconds,
       .sort_seconds = sort_seconds,
       .has_separate_fill = has_separate_fill,
@@ -99,6 +102,7 @@ inline void cpam_set_build_trace(const char* route, double fill_seconds,
 #else
 struct CpamBuildTrace {
   const char* route = "timing-disabled";
+  double touch_seconds = -1.0;
   double fill_seconds = -1.0;
   double sort_seconds = 0.0;
   bool has_separate_fill = false;
@@ -113,11 +117,36 @@ inline CpamBuildTrace& cpam_build_trace() {
 }
 
 inline void cpam_set_build_trace([[maybe_unused]] const char* route,
+                                 [[maybe_unused]] double touch_seconds,
                                  [[maybe_unused]] double fill_seconds,
                                  [[maybe_unused]] double sort_seconds,
                                  [[maybe_unused]] bool has_separate_fill,
                                  [[maybe_unused]] size_t input_size) {}
 #endif
+
+template <typename T>
+inline void cpam_parallel_first_touch(T* buffer, size_t n) {
+  if (buffer == nullptr || n == 0) return;
+
+  long ps = ::sysconf(_SC_PAGESIZE);
+  const size_t page_size = (ps > 0) ? static_cast<size_t>(ps) : 4096ull;
+  const size_t total_bytes = n * sizeof(T);
+  const size_t pages = (total_bytes + page_size - 1) / page_size;
+  const size_t workers = std::max<size_t>(1, static_cast<size_t>(parlay::num_workers()));
+  auto* bytes = reinterpret_cast<unsigned char*>(buffer);
+
+  parlay::parallel_for(
+      0, workers,
+      [&](size_t w) {
+        size_t p0 = (pages * w) / workers;
+        size_t p1 = (pages * (w + 1)) / workers;
+        for (size_t p = p0; p < p1; ++p) {
+          size_t offset = p * page_size;
+          if (offset < total_bytes) bytes[offset] = 0;
+        }
+      },
+      1);
+}
 
 template <typename T>
 struct is_std_pair : std::false_type {};
@@ -193,11 +222,36 @@ inline OutputType make_cpam_output_entry(InputType& in) {
   }
 }
 
+template <typename Entry, typename InputType>
+inline void cpam_set_curve_entry_payload(Entry& entry, InputType* payload) {
+  if constexpr (std::is_pointer_v<typename Entry::second_type>) {
+    entry.second = payload;
+  } else if constexpr (std::is_integral_v<typename Entry::second_type>) {
+    entry.second = static_cast<typename Entry::second_type>(
+        reinterpret_cast<uintptr_t>(payload));
+  } else {
+    static_assert(dependent_false_v<Entry>, "Unsupported curve entry payload");
+  }
+}
+
+template <typename Entry, typename Code>
+inline void cpam_set_curve_entry_key(Entry& entry, Code const& code) {
+  if constexpr (std::is_integral_v<typename Entry::first_type>) {
+    entry.first = static_cast<typename Entry::first_type>(code);
+  } else if constexpr (requires { entry.first.SetMember(code); }) {
+    entry.first.SetMember(code);
+  } else {
+    static_assert(dependent_false_v<Entry>, "Unsupported curve entry key");
+  }
+}
+
 #if PSI_CPAM_HAS_SIMD_SAMPLE_SORT
 template <typename filling_curve_t, typename key_entry_pointer,
           typename InputIterator>
 auto cpam_sample_sort_simd_pair(slice<InputIterator, InputIterator> A,
                                 bool stable = false) {
+  using input_value_type =
+      typename slice<InputIterator, InputIterator>::value_type;
   using key_type = typename key_entry_pointer::first_type;
   using value_ptr_type = typename key_entry_pointer::second_type;
   static_assert(std::is_integral_v<key_type>,
@@ -205,17 +259,39 @@ auto cpam_sample_sort_simd_pair(slice<InputIterator, InputIterator> A,
   static_assert(std::is_integral_v<value_ptr_type>,
                 "SIMD CPAM adapter expects integral payload storage.");
 
-  double fill_start = cpam_now_seconds();
   sequence<key_entry_pointer> tmp =
       sequence<key_entry_pointer>::uninitialized(A.size());
-  parallel_for(0, A.size(), [&](size_t i) {
-    auto const code = filling_curve_t::Encode(A[i]);
-    A[i].SetAugMember(code);
-    tmp[i] = key_entry_pointer{
-        static_cast<key_type>(code),
-        static_cast<value_ptr_type>(reinterpret_cast<uintptr_t>(&A[i]))};
-  });
-  double fill_seconds = cpam_now_seconds() - fill_start;
+  double touch_start = cpam_now_seconds();
+  cpam_parallel_first_touch(tmp.begin(), tmp.size());
+  double touch_seconds = cpam_now_seconds() - touch_start;
+  double fill_seconds = 0.0;
+
+  struct LazyCurveCodePrepare {
+    input_value_type* input_base;
+    key_entry_pointer* tmp_base;
+
+    void prepare_entry(key_entry_pointer& entry) const {
+      size_t idx = static_cast<size_t>(&entry - tmp_base);
+      auto* point = input_base + idx;
+      auto const code = filling_curve_t::Encode(*point);
+      point->SetAugMember(code);
+      cpam_set_curve_entry_key(entry, code);
+      cpam_set_curve_entry_payload(entry, point);
+    }
+
+    template <typename SliceT>
+    void prepare_range(SliceT s) const {
+      parallel_for(
+          0, s.size(),
+          [&](size_t i) { prepare_entry(s[i]); },
+          1024);
+    }
+  };
+
+  LazyCurveCodePrepare lazy_prepare{
+      .input_base = A.begin(),
+      .tmp_base = tmp.begin(),
+  };
 
   double sort_start = cpam_now_seconds();
   parlay::internal::ScratchBuffer<key_entry_pointer> scratch(tmp.size());
@@ -226,24 +302,24 @@ auto cpam_sample_sort_simd_pair(slice<InputIterator, InputIterator> A,
   if (tmp.size() < (std::numeric_limits<unsigned int>::max)()) {
     if (stable) {
       parlay::internal_simd::sample_sort_inplace_<false, true, 0, unsigned int>(
-          tmp_slice, scratch_slice, true);
+          tmp_slice, scratch_slice, true, lazy_prepare);
     } else {
       parlay::internal_simd::sample_sort_inplace_<false, false, 0,
                                                   unsigned int>(
-          tmp_slice, scratch_slice, true);
+          tmp_slice, scratch_slice, true, lazy_prepare);
     }
   } else {
     if (stable) {
       parlay::internal_simd::sample_sort_inplace_<false, true, 0, size_t>(
-          tmp_slice, scratch_slice, true);
+          tmp_slice, scratch_slice, true, lazy_prepare);
     } else {
       parlay::internal_simd::sample_sort_inplace_<false, false, 0, size_t>(
-          tmp_slice, scratch_slice, true);
+          tmp_slice, scratch_slice, true, lazy_prepare);
     }
   }
   double sort_seconds = cpam_now_seconds() - sort_start;
-  cpam_set_build_trace("simd-precompute-fill-sort", fill_seconds, sort_seconds,
-                       true, A.size());
+  cpam_set_build_trace("simd-pretouch-lazybindcode-sort", touch_seconds,
+                       fill_seconds, sort_seconds, true, A.size());
   return tmp;
 }
 #endif
@@ -283,7 +359,7 @@ auto cpam_sample_sort_materialized_pair(slice<InputIterator, InputIterator> A,
     quicksort(tmp.begin(), tmp.size(), less_by_code);
   }
   double sort_seconds = cpam_now_seconds() - sort_start;
-  cpam_set_build_trace("scalar-precompute-fill-sort", fill_seconds,
+  cpam_set_build_trace("scalar-precompute-fill-sort", -1.0, fill_seconds,
                        sort_seconds, true, A.size());
   return tmp;
 }
@@ -488,8 +564,8 @@ auto cpam_sample_sort(slice<InputIterator, InputIterator> A,
     sample_sort_<filling_curve_t, size_t>(A, make_slice(R), less, stable);
   }
   double sort_seconds = cpam_now_seconds() - sort_start;
-  cpam_set_build_trace("legacy-interleaved-fill-sort", -1.0, sort_seconds,
-                       false, A.size());
+  cpam_set_build_trace("legacy-interleaved-fill-sort", -1.0, -1.0,
+                       sort_seconds, false, A.size());
   return R;
 }
 

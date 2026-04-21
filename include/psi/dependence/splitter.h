@@ -15,6 +15,10 @@
 #include "space_filling_curve/hilbert.h"
 #include "space_filling_curve/hilbert_high_dim.h"
 
+#ifndef PSI_USE_LIBMORTON_SIMD_ENCODE
+#define PSI_USE_LIBMORTON_SIMD_ENCODE 1
+#endif
+
 namespace psi {
 // NOTE: ---------------- Spacial Filling Curver ---------------
 template <typename Point>
@@ -35,10 +39,36 @@ struct MortonCurve {
   static auto Encode(Point const& p) {
     assert(std::is_integral_v<Coord>);
     if constexpr (Point::GetDim() == 2) {
+#if PSI_USE_LIBMORTON_SIMD_ENCODE
+      if constexpr (sizeof(CurveCode) <= 4) {
+        return static_cast<CurveCode>(libmorton::morton2D_32_encode(
+            static_cast<uint_fast16_t>(p.pnt[0]),
+            static_cast<uint_fast16_t>(p.pnt[1])));
+      } else {
+        return static_cast<CurveCode>(libmorton::morton2D_64_encode(
+            static_cast<uint_fast32_t>(p.pnt[0]),
+            static_cast<uint_fast32_t>(p.pnt[1])));
+      }
+#else
       return libmorton::m2D_e_for<CurveCode, uint32_t>(p.pnt[0], p.pnt[1]);
+#endif
     } else if constexpr (Point::GetDim() == 3) {
+#if PSI_USE_LIBMORTON_SIMD_ENCODE
+      if constexpr (sizeof(CurveCode) <= 4) {
+        return static_cast<CurveCode>(libmorton::morton3D_32_encode(
+            static_cast<uint_fast16_t>(p.pnt[0]),
+            static_cast<uint_fast16_t>(p.pnt[1]),
+            static_cast<uint_fast16_t>(p.pnt[2])));
+      } else {
+        return static_cast<CurveCode>(libmorton::morton3D_64_encode(
+            static_cast<uint_fast32_t>(p.pnt[0]),
+            static_cast<uint_fast32_t>(p.pnt[1]),
+            static_cast<uint_fast32_t>(p.pnt[2])));
+      }
+#else
       return libmorton::m3D_e_for_ET<CurveCode, uint32_t>(p.pnt[0], p.pnt[1],
                                                           p.pnt[2]);
+#endif
     } else {
       static_assert("MortonCurve only supports 2D and 3D points");
     }

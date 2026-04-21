@@ -23,28 +23,34 @@ This enables the CPAM sort path to work directly on integer keys and integer pay
 The sort adapter in [include/psi/dependence/cpam/cpam_sample_sort.h](/home/xwang605/SpaceTreeLib/include/psi/dependence/cpam/cpam_sample_sort.h:33) now does three things:
 
 1. Detects whether SIMD sample sort is available through `PSI_USE_SIMD_SAMPLE_SORT`.
-2. Materializes `(curve_code, address)` pairs before sorting.
+2. Uses a compact `(curve_code, address)` sortable representation.
 3. Falls back to the original CPAM sample sort path if the SIMD path is not enabled.
 
 Key additions:
 
 - `make_cpam_output_entry(...)` generalizes output generation for plain entries, augmentation keys, pointer pairs, and integral key-value pairs.
-- `cpam_sample_sort_simd_pair(...)` precomputes filling-curve codes and sorts the materialized array with the SIMD implementation.
+- `cpam_sample_sort_simd_pair(...)` no longer performs a full-array eager code-materialization pass. Instead it prepares the `tmp` buffer and uses a `LazyCurveCodePrepare` callback to bind the payload pointer, compute the Morton code, and write the sortable key on demand inside the top-level SIMD sample-sort flow.
 - `cpam_sample_sort_materialized_pair(...)` provides a non-SIMD precomputed fallback for the same compact representation.
+- [include/SIMD-Sample-Sort/src/two_pass/two_pass_simd.hpp](/home/xwang605/SpaceTreeLib/include/SIMD-Sample-Sort/src/two_pass/two_pass_simd.hpp:112) now exposes a `prepare` callback hook. It is only used at `Depth == 0`: once for sampling and once before tile-local sorts. Recursive levels then reuse already materialized entries instead of recomputing codes.
 
-In short, the branch changes the cost structure from "compute/compare richer objects during sort" to "precompute sortable integer keys once, then sort compact records".
+The important nuance now is that the SIMD route is no longer modeled as "fill everything, then sort everything". It is intentionally closer to the legacy CPAM path:
+
+- legacy route: filling-curve code generation is interleaved with the sample-sort process
+- current SIMD route: payload binding and code generation are also interleaved into the top-level sample/tile processing, rather than paying for one extra full-array prefill pass
 
 More precisely, the two routes are:
 
 - `SIMD ON`
-  `fill code + materialize KV -> SIMD sort -> build`
+  closer to `touch tmp -> lazy(bind payload + compute code) inside top-level sample/tile processing -> SIMD sort -> build`
 - `SIMD OFF`
   the legacy CPAM sample-sort path, where code filling is interleaved with the sort rather than separated as a clean standalone phase
 
 So if you want a step model:
 
-- `SIMD ON`: `fill -> sort -> build`
+- `SIMD ON`: closer to `touch -> lazy(bind+code)+sort -> build`
 - `SIMD OFF`: closer to `fill+sort(interleaved) -> build`
+
+This distinction matters for performance. A design that first binds every payload pointer across the whole array and only later computes codes would add another full memory pass, which is less faithful to the legacy route and usually less attractive for bandwidth-bound build workloads.
 
 ## CPAM Build Adaptation
 
@@ -104,6 +110,19 @@ cmake -S . -B build-simd \
   -DPRINT_CPAM_BUILD_TIMING=ON
 cmake --build build-simd -j --target p_test data_generator
 ```
+
+If you also want to switch the Morton encode path, there is now a dedicated CMake option:
+
+```bash
+cmake -S . -B build-simd \
+  -DUSE_SIMD_SAMPLE_SORT=ON \
+  -DUSE_LIBMORTON_SIMD_ENCODE=ON
+```
+
+Where:
+
+- `USE_LIBMORTON_SIMD_ENCODE=ON` uses libmorton's default public encode entry points
+- `USE_LIBMORTON_SIMD_ENCODE=OFF` falls back to the previous explicit `m2D_e_for / m3D_e_for_ET` path
 
 If you only want the relevant binaries:
 
@@ -183,7 +202,7 @@ Parameter notes:
 With `-DPRINT_CPAM_BUILD_TIMING=ON`, building a `PTree` from an empty map prints an extra line such as:
 
 ```text
-[CPAM build] route=simd-precompute-fill-sort n=... fill=... sort=... build=... total=...
+[CPAM build] route=simd-pretouch-lazybindcode-sort n=... touch=... fill=0.000000 sort=... build=... total=...
 ```
 
 or:
@@ -195,12 +214,15 @@ or:
 Meaning:
 
 - `route` identifies the path used
-- `fill` exists as a separate phase only for the SIMD / precompute route
-- `sort` is pure sorting time
+- `touch` is the parallel first-touch / page-warming time for the SIMD `tmp` buffer
+- `fill` now mostly represents an independent preprocessing pass. For the current `lazybindcode` SIMD route this is expected to be `0` or near `0`, because payload binding and code generation have been moved into the sort flow itself
+- `sort` is no longer just the pure sort kernel on the current SIMD route; it also includes the top-level lazy payload binding and Morton-code generation work
 - `sort+fill` is used for the legacy route because those two are intertwined
 - `build` is the tree-construction phase after sorting
 
 ## Current 1e9 Morton Results
+
+The table below is retained as a historical result for the earlier `simd-precompute-fill-sort` route. The current implementation has since moved to `simd-pretouch-lazybindcode-sort`, so if you rerun benchmarks now the route name and the meaning of `fill/sort` will differ slightly. A fresh measurement is recommended.
 
 Command used:
 
