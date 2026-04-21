@@ -68,19 +68,31 @@ using key_entry_pointer =
 - 新增 `AugCode`，只保存 curve code，不再依赖 `id`
 - 为 `PTree` 输入增加按坐标去重逻辑，避免重复坐标影响构建
 - 校验逻辑不再默认要求 `aug.id` 存在
-- 新增 build-only 模式
+- 新增 build-only 模式，并且现在专门走一个纯 build benchmark helper
 
 你现在加的 build-only 逻辑在 [tests/test_framework.h](/home/xwang605/SpaceTreeLib/tests/test_framework.h:1245)：
 
 ```cpp
 if (kTag == 0 && kQueryType == 0) {
-  BuildTree<Point, Tree, kTestTime>(wp, kRounds, tree);
-  tree.DeleteTree();
+  BenchmarkBuildOnly<Point, Tree>(wp, tree, kRounds);
   return;
 }
 ```
 
 也就是说，现在只要传 `-t 0 -q 0`，框架就只会建树，不再进入 update 或 query 路径。
+
+这里最关键的一点是：build-only 不再复用通用的 `BuildTree(...)`。因为
+`BuildTree(...)` 原本是给后续 insert/query 流程服务的，计时结束后还会额外
+再建一次树，把状态留给后续步骤。对于纯 build benchmark，这会让日志里多出
+一条“不属于统计口径本身”的 build。
+
+现在 `BenchmarkBuildOnly(...)` 的语义是：
+
+1. 先做 1 次 warmup `build + delete`
+2. 再做 3 次正式的 `build + delete`
+3. 只统计后面 3 次的平均值
+
+这样就和“先丢掉第一轮，再平均后三轮”的预期一致了。
 
 ## 开启 SIMD sort 的编译命令
 
@@ -199,6 +211,85 @@ PARLAY_NUM_THREADS=192 numactl -i all ./build-simd/p_test \
   旧路线里 fill 和 sort 无法完全拆开，所以合并打印
 - `build`
   从排好序的结果继续建树的时间
+
+## 当前 1e9 Morton 的实测结果
+
+测试命令：
+
+```bash
+numactl -i all ./build-simd/p_test \
+  -p /tmp/psi-data/uniform_bigint/1000000000_2/1.in \
+  -d 2 \
+  -r 1 \
+  -t 0 \
+  -q 0 \
+  -i 0 \
+  -T 2 \
+  -l 2
+```
+
+口径说明：
+
+- 第 1 条 `[CPAM build]` 是 warmup
+- 后 3 条 `[CPAM build]` 是正式统计轮次
+- `p_test` 最后一行打印的标量，是 build-only harness 对正式轮次求出来的平均值
+
+对后 3 轮求平均后，结果如下：
+
+| 路线 | fill / sort 阶段 | build 阶段 | CPAM total |
+| --- | ---: | ---: | ---: |
+| 原版 (`legacy-interleaved-fill-sort`) | `1.811655s` (`sort+fill`) | `0.692736s` | `2.504391s` |
+| SIMD (`simd-precompute-fill-sort`) | `0.356934s fill + 1.145278s sort = 1.502212s` | `0.685634s` | `2.187846s` |
+
+差异可以直接总结成：
+
+- `fill+sort` 快了 `0.309443s`，从 `1.811655s` 降到 `1.502212s`
+  (`1.206x`，提升 `17.08%`)
+- `build` 只快了 `0.007102s`，从 `0.692736s` 到 `0.685634s`
+  (约 `1.03%`，基本可以视为持平)
+- CPAM `total` 快了 `0.316546s`，从 `2.504391s` 到 `2.187846s`
+  (`1.145x`，提升 `12.64%`)
+
+所以现在这条 SIMD 路线的优势，几乎都集中在建树前的准备阶段，也就是
+`fill + materialize + sort`；真正的 tree build kernel 本身，目前几乎没变快。
+
+如果看 `p_test` 最后一行的 build-only 平均值：
+
+- 原版：`2.85636`
+- SIMD：`2.63982`
+
+也就是端到端的 build-only 平均值快了 `0.21654s`
+(`1.082x`，提升 `7.58%`)。这个提升比 `[CPAM build]` 里的 `total` 更小，是因为
+它还混入了 trace 之外的 framework 开销。
+
+## 当前分支改动总览
+
+到目前为止，这个 branch 的改动可以归成 5 组：
+
+1. CPAM sort / data-path 改动
+   - `PTree` 改成物化 `(CurveCode, address)` 形式
+   - 新增 SIMD sample sort 适配层
+   - 新增非 SIMD 的 materialized fallback
+   - 新增 route / timing trace
+2. CPAM build 兼容性改动
+   - 让构建阶段同时支持传统指针 payload 和整数化地址 payload
+3. 测试框架改动
+   - `AugCode`
+   - 坐标去重
+   - 不再依赖 `aug.id` 的校验逻辑
+   - 独立的 build-only benchmark 流程
+4. 构建与集成改动
+   - `USE_SIMD_SAMPLE_SORT`
+   - `PRINT_CPAM_BUILD_TIMING`
+   - `include/SIMD-Sample-Sort` / Highway 集成
+   - `.gitignore` 忽略 `build-simd/`
+5. 文档改动
+   - 这份说明
+   - 英文说明
+   - README 链接
+
+目前最重要的结论是：这个分支已经证明 SIMD 路线在“排序/准备阶段”有真实收益，
+但在“实际 CPAM build 阶段”还几乎没有收益。所以下一步优化目标已经很明确了。
 
 ## 实际使用提醒
 

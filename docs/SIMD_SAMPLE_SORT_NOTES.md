@@ -63,17 +63,29 @@ The benchmark harness in [tests/test_framework.h](/home/xwang605/SpaceTreeLib/te
 - `AugCode` now stores only the filling-curve code, not a point id.
 - Input and insert sets for `PTree` are deduplicated by coordinates before building.
 - Verification helpers were changed so checks do not rely on `aug.id` being present.
-- A new build-only mode was added:
+- A new build-only mode was added, and it now uses a dedicated helper for pure
+  build benchmarking:
 
 ```cpp
 if (kTag == 0 && kQueryType == 0) {
-  BuildTree<Point, Tree, kTestTime>(wp, kRounds, tree);
-  tree.DeleteTree();
+  BenchmarkBuildOnly<Point, Tree>(wp, tree, kRounds);
   return;
 }
 ```
 
 This means `-t 0 -q 0` now runs tree construction only.
+
+The important detail is that `BenchmarkBuildOnly(...)` no longer reuses the
+generic `BuildTree(...)` flow. `BuildTree(...)` was designed for downstream
+insert/query tests and therefore performed an extra non-measured build after
+timing. For the build-only path we now run:
+
+1. one warmup `build + delete`
+2. three measured `build + delete` iterations
+3. report the average of the measured iterations only
+
+So the build-only path now matches the intended "drop the first run and average
+the next three" workflow.
 
 ## Build Command
 
@@ -187,6 +199,89 @@ Meaning:
 - `sort` is pure sorting time
 - `sort+fill` is used for the legacy route because those two are intertwined
 - `build` is the tree-construction phase after sorting
+
+## Current 1e9 Morton Results
+
+Command used:
+
+```bash
+numactl -i all ./build-simd/p_test \
+  -p /tmp/psi-data/uniform_bigint/1000000000_2/1.in \
+  -d 2 \
+  -r 1 \
+  -t 0 \
+  -q 0 \
+  -i 0 \
+  -T 2 \
+  -l 2
+```
+
+Interpretation:
+
+- the first `[CPAM build]` line is the warmup run
+- the last three `[CPAM build]` lines are the measured runs
+- the final scalar printed by `p_test` is the average of the measured runs in
+  the build-only harness
+
+Measured averages over the last three runs:
+
+| Route | Fill / sort stage | Build stage | CPAM total |
+| --- | ---: | ---: | ---: |
+| Legacy (`legacy-interleaved-fill-sort`) | `1.811655s` (`sort+fill`) | `0.692736s` | `2.504391s` |
+| SIMD (`simd-precompute-fill-sort`) | `0.356934s fill + 1.145278s sort = 1.502212s` | `0.685634s` | `2.187846s` |
+
+Observed differences:
+
+- `fill+sort` improved by `0.309443s`, from `1.811655s` to `1.502212s`
+  (`1.206x`, `17.08%` faster)
+- `build` improved by only `0.007102s`, from `0.692736s` to `0.685634s`
+  (`1.03%` faster, effectively flat)
+- CPAM `total` improved by `0.316546s`, from `2.504391s` to `2.187846s`
+  (`1.145x`, `12.64%` faster)
+
+So the SIMD branch is not really accelerating the tree-construction kernel
+itself. The gain is concentrated in the pre-build preparation path: code fill,
+materialization, and sorting.
+
+For the final scalar printed by the harness:
+
+- legacy build-only average: `2.85636`
+- SIMD build-only average: `2.63982`
+
+That is an end-to-end build-only improvement of `0.21654s`
+(`1.082x`, `7.58%` faster). This number is smaller than the CPAM-stage speedup
+because it also includes framework overhead outside the `[CPAM build]` trace.
+
+## Branch Summary
+
+At this point the branch changes fall into five buckets:
+
+1. CPAM sort/data-path changes
+   - materialized `(CurveCode, address)` representation for `PTree`
+   - SIMD sample sort adapter and a scalar materialized fallback
+   - route/timing tracing for empty-map builds
+2. CPAM build compatibility changes
+   - helper updates so both pointer payloads and integerized-address payloads
+     can be reconstructed during build
+3. Test harness changes
+   - `AugCode`
+   - coordinate dedup for `PTree`
+   - verification helpers that no longer require `aug.id`
+   - dedicated build-only benchmark flow with explicit warmup semantics
+4. Build/config integration
+   - `USE_SIMD_SAMPLE_SORT`
+   - `PRINT_CPAM_BUILD_TIMING`
+   - Highway integration under `include/SIMD-Sample-Sort`
+   - `.gitignore` updated to ignore `build-simd/`
+5. Documentation
+   - this note
+   - the Chinese companion note
+   - README links
+
+The most important current conclusion is: the branch already demonstrates a
+real SIMD-path win in the sort/preparation stage, but almost no win yet in the
+actual CPAM tree build stage. That makes the next optimization target much
+clearer.
 
 ## Practical Note
 

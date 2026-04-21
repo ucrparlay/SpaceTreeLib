@@ -332,6 +332,88 @@ void BuildTree(parlay::sequence<Point> const& WP, int const& rounds, Tree& pkd,
   return;
 }
 
+template <typename Point, typename Tree, int kPrint = 1>
+void BenchmarkBuildOnly(parlay::sequence<Point> const& WP, Tree& pkd,
+                        int const& rounds) {
+  using Points = typename Tree::Points;
+  using Leaf = typename Tree::Leaf;
+  using Interior = typename Tree::Interior;
+
+  // Match the intended workflow for pure build benchmarks:
+  // one warmup build+delete, then report the average of the next rounds.
+  int const warmup_rounds = 1;
+  int const measured_rounds = std::max(rounds, 3);
+  size_t n = WP.size();
+  Points wp = Points::uninitialized(n);
+
+  auto prepare_input = [&]() { parlay::copy(WP.cut(0, n), wp.cut(0, n)); };
+
+  double total_build = 0.0;
+  double ave_tree_height = -1.0;
+  size_t max_tree_depth = 0;
+
+  pkd.DeleteTree();
+
+  for (int i = 0; i < warmup_rounds; ++i) {
+    prepare_input();
+    pkd.Build(wp.cut(0, n));
+    pkd.DeleteTree();
+  }
+
+  for (int i = 0; i < measured_rounds; ++i) {
+    prepare_input();
+
+    parlay::internal::timer t;
+    t.start();
+    pkd.Build(wp.cut(0, n));
+    total_build += t.next_time();
+
+    if (i + 1 == measured_rounds) {
+      if constexpr (IsKdTree<Tree> || IsOrthTree<Tree>) {
+        if constexpr (kPrint == 1) {
+          ave_tree_height = pkd.template GetAveTreeHeight<Leaf, Interior>();
+        } else if constexpr (kPrint == 2) {
+          max_tree_depth =
+              pkd.template GetMaxTreeDepth<Leaf, Interior>(pkd.GetRoot(),
+                                                           max_tree_depth);
+          ave_tree_height = pkd.template GetAveTreeHeight<Leaf, Interior>();
+        }
+      }
+    }
+
+    pkd.DeleteTree();
+  }
+
+  double aveBuild = total_build / measured_rounds;
+
+  if constexpr (kPrint == 0) {
+    std::cout << aveBuild << " " << std::flush;
+  } else if constexpr (kPrint == 1) {
+    std::cout << aveBuild << " " << std::flush;
+    if constexpr (IsKdTree<Tree> || IsOrthTree<Tree>) {
+      std::cout << ave_tree_height << " " << std::flush;
+    } else {
+      std::cout << "-1"
+                << " " << std::flush;
+    }
+  } else if constexpr (kPrint == 2) {
+    std::cout << aveBuild << " ";
+    if constexpr (IsKdTree<Tree> || IsOrthTree<Tree>) {
+      std::cout << max_tree_depth << " " << ave_tree_height << " "
+                << std::flush;
+    } else {
+      std::cout << "-1 -1"
+                << " " << std::flush;
+    }
+  } else if constexpr (kPrint == 3) {
+    puts("# Insert");
+    std::cout << "## " << 1 << std::endl;
+    std::cout << "median: (1, " << aveBuild << ")-> min: (1, " << aveBuild
+              << ")-> max: (1, " << aveBuild << ")-> tot: " << aveBuild
+              << "-> avg: " << aveBuild << std::endl;
+  }
+}
+
 template <typename Point, typename Tree, bool kTestTime = true,
           bool kSerial = false>
 void BatchInsert(Tree& pkd, parlay::sequence<Point> const& WP,
@@ -1244,9 +1326,8 @@ static auto constexpr DefaultTestFunc = []<class TreeDesc, typename Point>(
 
   // Build-only mode: no update tag and no query type selected.
   if (kTag == 0 && kQueryType == 0) {
-    BuildTree<Point, Tree, kTestTime>(wp, kRounds, tree);
+    BenchmarkBuildOnly<Point, Tree>(wp, tree, kRounds);
     std::cout << "\n" << std::flush;
-    tree.DeleteTree();
     return;
   }
 
