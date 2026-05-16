@@ -84,8 +84,10 @@ message(STATUS "\n\n---------------------------- PSI ---------------------------
 # NOTE: PSI
 add_library(PSI INTERFACE)
 set(PSI_INCLUDE_DIR "${PSI_SOURCE_DIR}/include/psi")
+set(PSI_HIGHWAY_INCLUDE_DIR "${PSI_SOURCE_DIR}/include/highway")
 target_link_libraries(PSI INTERFACE parlay libmorton)
 target_include_directories(PSI INTERFACE $<BUILD_INTERFACE:${PSI_INCLUDE_DIR}>
+  $<BUILD_INTERFACE:${PSI_HIGHWAY_INCLUDE_DIR}>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 
 add_subdirectory(static_analysis)
@@ -102,6 +104,10 @@ target_include_directories(p_test PUBLIC ${PROJECT_SOURCE_DIR}/include)
 add_executable(baselines ${PROJECT_SOURCE_DIR}/tests/baselines.cpp)
 target_link_libraries(baselines PUBLIC PSI)
 target_include_directories(baselines PUBLIC ${PROJECT_SOURCE_DIR}/include)
+
+add_executable(partition_test ${PROJECT_SOURCE_DIR}/tests/partition_test.cpp)
+target_link_libraries(partition_test PUBLIC PSI)
+target_include_directories(partition_test PUBLIC ${PROJECT_SOURCE_DIR}/include)
 
 if(JEMA)
 	target_link_libraries(kd_test PUBLIC libjemalloc.so)
@@ -129,6 +135,10 @@ target_include_directories(orth_tree_example PUBLIC ${PROJECT_SOURCE_DIR}/includ
 add_executable(p_tree_example ${PROJECT_SOURCE_DIR}/example/p_tree_main.cpp)
 target_link_libraries(p_tree_example PUBLIC PSI)
 target_include_directories(p_tree_example PUBLIC ${PROJECT_SOURCE_DIR}/include ${PROJECT_SOURCE_DIR}/example)
+
+add_executable(partition_example ${PROJECT_SOURCE_DIR}/example/partition_main.cpp)
+target_link_libraries(partition_example PUBLIC PSI)
+target_include_directories(partition_example PUBLIC ${PROJECT_SOURCE_DIR}/include ${PROJECT_SOURCE_DIR}/example)
 
 find_package(Boost REQUIRED)
 add_executable(boost_rtree ${PROJECT_SOURCE_DIR}/tests/boost_rtree.cpp)
