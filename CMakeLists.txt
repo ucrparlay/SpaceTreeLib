@@ -38,10 +38,15 @@ elseif(OPENCILK)
 	add_compile_options(-DPARLAY_OPENCILK -DCILK -fopencilk)
 elseif(SERIAL)
 	add_compile_options(-DPARLAY_SEQUENTIAL)
-elseif(DISABLE_BATCH_DELETE_SIZE_OPT)
-	add_compile_options(-DDISABLE_BATCH_DELETE_SIZE_OPT)
 else()
 	add_compile_options(-pthread)
+endif()
+
+# NOTE: this ablation switch is orthogonal to the parallel backend. It used to
+# sit in the elseif chain above, which silently dropped -pthread whenever it
+# was enabled -- so any A/B measurement of it also differed in that flag.
+if(DISABLE_BATCH_DELETE_SIZE_OPT)
+	add_compile_options(-DDISABLE_BATCH_DELETE_SIZE_OPT)
 endif()
 
 if(DEBUG)
