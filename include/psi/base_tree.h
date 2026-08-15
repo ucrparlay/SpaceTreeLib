@@ -64,10 +64,10 @@ public:
 	static constexpr BucketType const kBucketNum = 1 << kBuildDepthOnce;
 
 	// NOTE: tree structure
-	static constexpr uint_fast8_t const kLeaveWrap = 32;
-	static constexpr uint_fast8_t const kThinLeaveWrap = 24;
-	// static constexpr uint_fast8_t const kLeaveWrap = 8;
-	// static constexpr uint_fast8_t const kThinLeaveWrap = 4;
+	static constexpr uint_fast8_t const kLeafCapacity = 32;
+	static constexpr uint_fast8_t const kSparseLeafThreshold = 24;
+	// static constexpr uint_fast8_t const kLeafCapacity = 8;
+	// static constexpr uint_fast8_t const kSparseLeafThreshold = 4;
 	static constexpr uint_fast16_t const kSerialBuildCutoff = 1 << 10;
 
 	// NOTE: block param in Partition
@@ -75,7 +75,7 @@ public:
 	static constexpr uint_fast16_t const kBlockSize = 1 << kLog2Base;
 
 	// NOTE: reconstruct weight threshold
-	static constexpr uint_fast8_t const kInbalanceRatio = kImbaRatio;
+	static constexpr uint_fast8_t const kImbalanceRatio = kImbaRatio;
 
 	// NOTE: array based inner tree for batch insertion and deletion
 	template <typename Leaf, typename Interior>
@@ -87,7 +87,7 @@ public:
 	// NOTE: get the imbalance ratio
 	static inline size_t GetImbalanceRatio();
 	static inline bool ImbalanceNode(size_t const l, size_t const n);
-	static inline bool SparcyNode(size_t const l, size_t const n);
+	static inline bool SparseNode(size_t const l, size_t const n);
 
 	// NOTE: Box operations
 	static inline Coord GetBoxMid(DimsType const d, Box const &bx);
@@ -111,7 +111,7 @@ public:
 							   Box const &box,
 							   DimsType d);
 	template <typename Leaf, typename Interior>
-	static inline auto RetriveBox(Node const *T)
+	static inline auto RetrieveBox(Node const *T)
 		requires(HasBox<typename Leaf::AT> &&
 			 HasBox<typename Interior::AT>);
 
@@ -274,18 +274,18 @@ public:
 	static RT DiffPoints4Leaf(Node *T, Slice In);
 
 	template <IsBinaryNode Interior>
-	static inline BucketType RetriveTag(Point const &p,
-					    NodeTagSeq const &tags);
+	static inline BucketType RetrieveTag(Point const &p,
+					     NodeTagSeq const &tags);
 
 	template <IsMultiNode Interior>
-	static inline BucketType RetriveTag(Point const &p,
-					    NodeTagSeq const &tags);
+	static inline BucketType RetrieveTag(Point const &p,
+					     NodeTagSeq const &tags);
 
 	template <typename Interior>
-	static void SeievePoints(Slice A, Slice B, size_t const n,
-				 NodeTagSeq const &tags,
-				 parlay::sequence<BallsType> &sums,
-				 BucketType const tags_num);
+	static void SievePoints(Slice A, Slice B, size_t const n,
+				NodeTagSeq const &tags,
+				parlay::sequence<BallsType> &sums,
+				BucketType const tags_num);
 
 	template <typename Leaf, typename Interior, typename PrepareFunc,
 		  typename... Args>
@@ -528,7 +528,7 @@ protected:
 #include "base_tree_impl/box_op.hpp"
 #include "base_tree_impl/circle_op.hpp"
 #include "base_tree_impl/delete_tree.hpp"
-#include "base_tree_impl/dimensinality.hpp"
+#include "base_tree_impl/dimensionality.hpp"
 #include "base_tree_impl/inner_tree.hpp"
 #include "base_tree_impl/knn_query.hpp"
 #include "base_tree_impl/points_op.hpp"

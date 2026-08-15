@@ -103,7 +103,7 @@ Node *OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight,
 		return AllocEmptyLeafNode<Slice, Leaf>();
 	}
 
-	if (n <= BT::kLeaveWrap) {
+	if (n <= BT::kLeafCapacity) {
 		return AllocNormalLeafNode<Slice, Leaf>(In);
 	}
 
@@ -129,7 +129,7 @@ Node *OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight,
 						std::max(
 							In.size(),
 							static_cast<size_t>(
-								BT::kLeaveWrap)));
+								BT::kLeafCapacity)));
 				} else {
 					return AllocDummyLeafNode<Slice, Leaf>(
 						In);
@@ -140,8 +140,7 @@ Node *OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight,
 				return AllocDummyLeafNode<Slice, Leaf>(In);
 			}
 		} else {
-			return split_rule_.HandlingUndivide(*this, In, Out,
-							    box);
+			return split_rule_.HandleUndivided(*this, In, Out, box);
 		}
 	}
 

@@ -94,12 +94,12 @@ void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::Partition(
 	return;
 }
 
-// NOTE: retrive the bucket tag of Point p from the skeleton tags
+// NOTE: retrieve the bucket tag of Point p from the skeleton tags
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
 	  uint_fast8_t kImbaRatio>
 template <IsBinaryNode Interior>
 typename BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::BucketType
-BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::RetriveTag(
+BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::RetrieveTag(
 	Point const &p, NodeTagSeq const &tags)
 {
 	BucketType k(1);
@@ -119,24 +119,24 @@ template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
 	  uint_fast8_t kImbaRatio>
 template <IsMultiNode Interior>
 typename BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::BucketType
-BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::RetriveTag(
+BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::RetrieveTag(
 	Point const &p, NodeTagSeq const &tags)
 {
 	BucketType k(1);
 	while (k <= kPivotNum && (!tags[k].first->is_leaf)) {
-		k = static_cast<Interior *>(tags[k].first)->SeievePoint(p, k);
+		k = static_cast<Interior *>(tags[k].first)->SievePoint(p, k);
 	}
 	assert(tags[k].second < kBucketNum);
 	return tags[k].second;
 }
 
-// NOTE: seieve Points from range A to range B, using the skeleton tags. The
+// NOTE: sieve Points from range A to range B, using the skeleton tags. The
 // sums is the number of elemenets within each bucket, the tags_num is the total
 // number of buckets in the skeleton
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
 	  uint_fast8_t kImbaRatio>
 template <typename Interior>
-void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::SeievePoints(
+void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::SievePoints(
 	Slice A, Slice B, size_t const n, NodeTagSeq const &tags,
 	parlay::sequence<BallsType> &sums, BucketType const tags_num)
 {
@@ -148,7 +148,7 @@ void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::SeievePoints(
 	parlay::parallel_for(0, num_block, [&](size_t i) {
 		for (size_t j = i << kLog2Base;
 		     j < std::min((i + 1) << kLog2Base, n); j++) {
-			auto k = RetriveTag<Interior>(A[j], tags);
+			auto k = RetrieveTag<Interior>(A[j], tags);
 			offset[i][k]++;
 		}
 	});
@@ -173,7 +173,7 @@ void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::SeievePoints(
 		v[tags_num - 1] = tot + ((i << kLog2Base) - s_offset);
 		for (size_t j = i << kLog2Base;
 		     j < std::min((i + 1) << kLog2Base, n); j++) {
-			auto k = RetriveTag<Interior>(A[j], tags);
+			auto k = RetrieveTag<Interior>(A[j], tags);
 			B[v[k]++] = A[j];
 		}
 	});

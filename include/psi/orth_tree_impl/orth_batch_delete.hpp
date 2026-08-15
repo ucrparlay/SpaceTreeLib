@@ -88,7 +88,7 @@ Node *OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight,
 		assert(std::cmp_equal(
 			std::accumulate(sums.begin(), sums.end(), 0), n));
 
-		bool putTomb = has_tomb && (BT::SparcyNode(In.size(), T->size));
+		bool putTomb = has_tomb && (BT::SparseNode(In.size(), T->size));
 		has_tomb = putTomb ? false : has_tomb;
 		assert(putTomb ? (!has_tomb) : true);
 
@@ -119,7 +119,7 @@ Node *OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight,
 			// NOTE: the box is the one that passed from the top,
 			// which should be the correct one associated with this
 			// node
-			assert(T->size <= BT::kLeaveWrap);
+			assert(T->size <= BT::kLeafCapacity);
 			assert(BT::WithinBox(
 				BT::template GetBox<Leaf, Interior>(T), box));
 			return BT::template RebuildSingleTree<Leaf, Interior,
@@ -131,15 +131,15 @@ Node *OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight,
 	InnerTree IT;
 	IT.AssignNodeTag(T, 1);
 	assert(IT.tags_num > 0 && IT.tags_num <= BT::kBucketNum);
-	BT::template SeievePoints<Interior>(In, Out, n, IT.tags, IT.sums,
-					    IT.tags_num);
+	BT::template SievePoints<Interior>(In, Out, n, IT.tags, IT.sums,
+					   IT.tags_num);
 
 	BoxSeq box_seq(IT.tags_num); // PARA: the box for bucket nodes
 	[[maybe_unused]] auto [re_num, tot_re_size] =
-		IT.template TagInbalanceNodeDeletion<true>(
+		IT.template TagImbalanceNodeDeletion<true>(
 			box_seq, box, has_tomb, [&](BucketType idx) -> bool {
-				// NOTE: only the sparcy node will be rebuilt
-				return BT::SparcyNode(IT.sums_tree[idx],
+				// NOTE: only the sparse node will be rebuilt
+				return BT::SparseNode(IT.sums_tree[idx],
 						      IT.tags[idx].first->size);
 			});
 

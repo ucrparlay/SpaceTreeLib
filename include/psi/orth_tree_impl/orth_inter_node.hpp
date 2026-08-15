@@ -77,7 +77,7 @@ struct OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight,
 	{
 		if (idx >= BaseNode::GetRegions()) {
 			auto o = this->tree_nodes[idx - BaseNode::GetRegions()];
-			return BT::template RetriveBox<Leaf, Interior>(o);
+			return BT::template RetrieveBox<Leaf, Interior>(o);
 		}
 		return BT::GetBox(GetBoxByIdRecursive(2 * idx),
 				  GetBoxByIdRecursive(2 * idx + 1));
@@ -136,8 +136,8 @@ struct OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight,
 
 	// NOTE: given an idx in the tree skeleton, modify its value its
 	// position in left or right of the splitter
-	static BucketType SeievePoint(Point const &p, const ST &split,
-				      BucketType idx)
+	static BucketType SievePoint(Point const &p, const ST &split,
+				     BucketType idx)
 	{
 		if constexpr (kMD == 2) { // for dim = 2
 			idx = 2 * idx + 1 -
@@ -167,9 +167,9 @@ struct OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight,
 		return idx;
 	}
 
-	BucketType SeievePoint(Point const &p, BucketType idx)
+	BucketType SievePoint(Point const &p, BucketType idx)
 	{
-		return SeievePoint(p, this->split, idx);
+		return SievePoint(p, this->split, idx);
 	}
 
 	// NOTE: Given a box, produce new sub-boxes equivalent to modify the

@@ -181,7 +181,7 @@ struct InteriorAugBox : public InteriorAugEmpty<BaseTree> {
 		for (auto t : nodes) {
 			box = BT::GetBox(
 				box,
-				BT::template RetriveBox<Leaf, Interior>(t));
+				BT::template RetrieveBox<Leaf, Interior>(t));
 		}
 		return box;
 	}

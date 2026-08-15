@@ -68,9 +68,9 @@ size_t BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::RangeCountRectangle(
 		recurse(TI->right, box_cut.GetSecondBoxCut(), right_cnt);
 	} else if constexpr (HasBox<typename Interior::AT>) { // use bounding
 							      // box
-		recurse(TI->left, RetriveBox<Leaf, Interior>(TI->left),
+		recurse(TI->left, RetrieveBox<Leaf, Interior>(TI->left),
 			left_cnt);
-		recurse(TI->right, RetriveBox<Leaf, Interior>(TI->right),
+		recurse(TI->right, RetrieveBox<Leaf, Interior>(TI->right),
 			right_cnt);
 	} else {
 		assert(0);
@@ -243,8 +243,8 @@ void BaseTree<Point, DerivedTree, kSkHeight,
 		recurse(TI->right, box_cut.GetSecondBoxCut());
 	} else if constexpr (HasBox<typename Interior::AT>) { // use bounding
 							      // box
-		recurse(TI->left, RetriveBox<Leaf, Interior>(TI->left));
-		recurse(TI->right, RetriveBox<Leaf, Interior>(TI->right));
+		recurse(TI->left, RetrieveBox<Leaf, Interior>(TI->left));
+		recurse(TI->right, RetrieveBox<Leaf, Interior>(TI->right));
 	} else {
 		assert(0);
 	}

@@ -28,7 +28,7 @@ struct BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::InnerTree {
 		if (T->is_leaf) {
 			Leaf *TI = static_cast<Leaf *>(T);
 			assert(T->size <= TI->pts.size() &&
-			       T->size <= kLeaveWrap);
+			       T->size <= kLeafCapacity);
 			return true;
 		}
 		Interior *TI = static_cast<Interior *>(T);
@@ -125,7 +125,7 @@ struct BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::InnerTree {
 	}
 
 	// NOTE: reduce sums is travsersal of the skeleton with counting the
-	// points seieved onto every node, it is good to determine whether we
+	// points sieved onto every node, it is good to determine whether we
 	// need forcing parallel in the following operations, e.g.,
 	// flatten/rebuild the tree.
 	void ReduceSums(BucketType idx)
@@ -207,7 +207,7 @@ struct BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::InnerTree {
 	}
 
 	template <typename... Args>
-	void TagInbalanceNode(Args &&...args)
+	void TagImbalanceNode(Args &&...args)
 	{
 		ReduceSums(1);
 		ResetTagsNum();
@@ -298,11 +298,11 @@ struct BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::InnerTree {
 	// the *bucket* Node whose ancestor has been rebuilt has tag
 	// kBucketNum+2 the *bucket* Node whose ancestor has not been ... has
 	// kBucketNum+1 otherwise, it's kBucketNum
-	// TODO: maybe we can make tagInbalance node and
-	// tagInbalancedNodeDeletion together
+	// TODO: maybe we can make tagImbalance node and
+	// tagImbalancedNodeDeletion together
 
 	template <bool kSetParallelFlag, typename... Args>
-	auto TagInbalanceNodeDeletion(Args &&...args)
+	auto TagImbalanceNodeDeletion(Args &&...args)
 	{
 		ReduceSums(1);
 		ResetTagsNum();

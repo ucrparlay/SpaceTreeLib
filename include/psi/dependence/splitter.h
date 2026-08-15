@@ -25,7 +25,7 @@
 
 namespace psi
 {
-// NOTE: ---------------- Spacial Filling Curver ---------------
+// NOTE: ---------------- Spatial filling curve ---------------
 template <typename Point>
 struct MortonCurve {
 	using BT = BaseTree<Point, MortonCurve<Point>>;
@@ -134,7 +134,7 @@ struct HilbertCurve {
 };
 
 template <typename Curve>
-struct SpacialFillingCurve {
+struct SpatialFillingCurve {
 	using CurveCode = typename Curve::CurveCode;
 
 	static std::string GetSplitName()
@@ -628,8 +628,8 @@ struct OrthogonalSplitRule {
 	// NOTE: cannot divide the points on @dim, while the points are not the
 	// same
 	template <typename Tree, typename Slice, typename Box, typename... Args>
-	auto HandlingUndivide(Tree &tree, Slice In, Slice Out, Box const &box,
-			      Args &&...args)
+	auto HandleUndivided(Tree &tree, Slice In, Slice Out, Box const &box,
+			     Args &&...args)
 	{
 		if constexpr (IsObjectMedianSplit<PartitionRule>) {
 			// NOTE: in object median, if current dimension is not

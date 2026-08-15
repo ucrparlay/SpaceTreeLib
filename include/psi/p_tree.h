@@ -129,7 +129,7 @@ public:
 		}
 	};
 
-	// using CpamAugMap = cpam::aug_map<CpamEntry, BT::kLeaveWrap>;
+	// using CpamAugMap = cpam::aug_map<CpamEntry, BT::kLeafCapacity>;
 	using CpamAugMap = cpam::aug_map<CpamEntry, 40>;
 	using CpamMap = CpamAugMap::Map;
 

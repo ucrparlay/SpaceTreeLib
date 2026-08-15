@@ -101,7 +101,7 @@ Node *OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight,
 		BT::template UpdateInterior<Interior>(T, new_nodes);
 		assert(T->is_leaf == false);
 
-		if (BT::SparcyNode(0, TI->size)) {
+		if (BT::SparseNode(0, TI->size)) {
 			TI->SetParallelFlag(force_parallel_flag);
 		}
 
@@ -111,11 +111,11 @@ Node *OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight,
 	InnerTree IT;
 	IT.AssignNodeTag(T, 1);
 	assert(IT.tags_num > 0 && IT.tags_num <= BT::kBucketNum);
-	BT::template SeievePoints<Interior>(In, Out, n, IT.tags, IT.sums,
-					    IT.tags_num);
+	BT::template SievePoints<Interior>(In, Out, n, IT.tags, IT.sums,
+					   IT.tags_num);
 	IT.TagPuffyNodes();
 
-	// PERF: no need to call tag inbalance node here, as the bounding box
+	// PERF: no need to call tag imbalance node here, as the bounding box
 	// for orth-tree is fixed
 
 	auto tree_nodes = parlay::sequence<Node *>::uninitialized(IT.tags_num);

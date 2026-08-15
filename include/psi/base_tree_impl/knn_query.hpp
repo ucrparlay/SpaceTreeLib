@@ -255,7 +255,7 @@ void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::KNNBinaryBox(
 	KNNLogger &logger)
 {
 	if (bq.size() &&
-	    Num::Gt(P2BMinDistanceSquare(q, RetriveBox<Leaf, Interior>(T)),
+	    Num::Gt(P2BMinDistanceSquare(q, RetrieveBox<Leaf, Interior>(T)),
 		    bq.top_value()) &&
 	    bq.full()) {
 		logger.skip_box_num++;
@@ -271,9 +271,9 @@ void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::KNNBinaryBox(
 	logger.vis_interior_num++;
 	Interior *TI = static_cast<Interior *>(T);
 	Coord dist_left =
-		P2BMinDistanceSquare(q, RetriveBox<Leaf, Interior>(TI->left));
+		P2BMinDistanceSquare(q, RetrieveBox<Leaf, Interior>(TI->left));
 	Coord dist_right =
-		P2BMinDistanceSquare(q, RetriveBox<Leaf, Interior>(TI->right));
+		P2BMinDistanceSquare(q, RetrieveBox<Leaf, Interior>(TI->right));
 	bool go_left = Num::Leq(dist_left, dist_right);
 
 	KNNBinaryBox<Leaf, Interior>(go_left ? TI->left : TI->right, q, bq,
@@ -365,7 +365,7 @@ void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::KNNMultiExpandBox(
 	}
 
 	if (idx == 1 && bq.size() &&
-	    Num::Gt(P2BMinDistanceSquare(q, RetriveBox<Leaf, Interior>(T)),
+	    Num::Gt(P2BMinDistanceSquare(q, RetrieveBox<Leaf, Interior>(T)),
 		    bq.top_value()) &&
 	    bq.full()) {
 		logger.skip_box_num++;
@@ -399,7 +399,7 @@ void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::KNNMultiExpandBox(
 		first_idx = second_idx = 1;
 	}
 	auto second_box = second_node->is_leaf
-				  ? RetriveBox<Leaf, Interior>(second_node)
+				  ? RetrieveBox<Leaf, Interior>(second_node)
 				  : static_cast<Interior *>(second_node)
 					    ->GetBoxById(second_idx);
 
@@ -433,7 +433,7 @@ void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::KNNMulti(
 	}
 
 	if (bq.size() &&
-	    Num::Gt(P2BMinDistanceSquare(q, RetriveBox<Leaf, Interior>(T)),
+	    Num::Gt(P2BMinDistanceSquare(q, RetrieveBox<Leaf, Interior>(T)),
 		    bq.top_value()) &&
 	    bq.full()) {
 		logger.skip_box_num++;
@@ -453,7 +453,7 @@ void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::KNNMulti(
 
 	std::ranges::generate(dists, [i = 0, &q, TI]() mutable {
 		auto r = std::make_pair(
-			P2BMinDistanceSquare(q, RetriveBox<Leaf, Interior>(
+			P2BMinDistanceSquare(q, RetrieveBox<Leaf, Interior>(
 							TI->tree_nodes[i])),
 			i);
 		i++;

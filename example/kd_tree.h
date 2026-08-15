@@ -120,8 +120,8 @@ struct InteriorAugBox {
 	static Box Create(psi::Node *l, psi::Node *r)
 	{
 		return BaseTree::GetBox(
-			BaseTree::template RetriveBox<Leaf, Interior>(l),
-			BaseTree::template RetriveBox<Leaf, Interior>(r));
+			BaseTree::template RetrieveBox<Leaf, Interior>(l),
+			BaseTree::template RetrieveBox<Leaf, Interior>(r));
 	}
 
 	// Update the augmentation information for the interior node

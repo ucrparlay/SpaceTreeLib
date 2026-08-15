@@ -8,7 +8,7 @@ configure_danalysis(
   FILES
     ${PSI_INCLUDE_DIR}/base_tree_impl/box_cut.hpp
     ${PSI_INCLUDE_DIR}/base_tree_impl/delete_tree.hpp
-    ${PSI_INCLUDE_DIR}/base_tree_impl/dimensinality.hpp
+    ${PSI_INCLUDE_DIR}/base_tree_impl/dimensionality.hpp
     ${PSI_INCLUDE_DIR}/base_tree_impl/box_op.hpp
     ${PSI_INCLUDE_DIR}/base_tree_impl/inner_tree.hpp
     ${PSI_INCLUDE_DIR}/base_tree_impl/knn_query.hpp

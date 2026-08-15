@@ -46,7 +46,7 @@ void KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight,
 		BatchDiffRecursive(T, box, A, parlay::make_slice(B), d);
 
 	// NOTE: launch rebuild to either: rebuild the imbalance tree or remove
-	// the sparcy node
+	// the sparse node
 	d = T->is_leaf ? 0 : static_cast<Interior *>(T)->split.second;
 	auto prepare_rebuild_func = [&](Node *T, DimsType d, Box const &box) {
 		DimsType new_dim = split_rule_.NextDimension(d);
@@ -122,7 +122,7 @@ KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight, kImbaRatio>::
 
 		// TODO: replace this one by a lambda that can be pssed to
 		// rebuild function as well
-		if (BT::SparcyNode(0, TI->size) ||
+		if (BT::SparseNode(0, TI->size) ||
 		    (split_rule_.AllowRebuild() &&
 		     BT::ImbalanceNode(TI->left->size, TI->size))) {
 			TI->SetParallelFlag(force_parallel_flag);
@@ -134,8 +134,8 @@ KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight, kImbaRatio>::
 	InnerTree IT;
 	IT.AssignNodeTag(T, 1);
 	assert(IT.tags_num > 0 && IT.tags_num <= BT::kBucketNum);
-	BT::template SeievePoints<Interior>(In, Out, n, IT.tags, IT.sums,
-					    IT.tags_num);
+	BT::template SievePoints<Interior>(In, Out, n, IT.tags, IT.sums,
+					   IT.tags_num);
 
 	auto tree_nodes = NodeBoxSeq::uninitialized(IT.tags_num);
 

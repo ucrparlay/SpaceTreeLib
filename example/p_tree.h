@@ -59,10 +59,10 @@ using Points = parlay::sequence<Point>;
 using BT = psi::BaseTree<Point>;
 
 // Define split rule using space-filling curve (Morton curve in this example)
-using SplitRule = psi::SpacialFillingCurve<psi::MortonCurve<Point>>;
+using SplitRule = psi::SpatialFillingCurve<psi::MortonCurve<Point>>;
 
 // Alternative: HilbertCurve<Point>
-using AnotherSplitRule = psi::SpacialFillingCurve<psi::HilbertCurve<Point>>;
+using AnotherSplitRule = psi::SpatialFillingCurve<psi::HilbertCurve<Point>>;
 
 // Define PTree type
 // PTree doesn't use LeafAug/InteriorAug like KdTree/OrthTree

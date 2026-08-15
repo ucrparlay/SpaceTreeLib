@@ -54,7 +54,7 @@ public:
 	struct OrthInteriorNode;
 
 	using SplitRuleType = SplitRule;
-	using Leaf = LeafNode<Point, Slice, BT::kLeaveWrap, LeafAugType,
+	using Leaf = LeafNode<Point, Slice, BT::kLeafCapacity, LeafAugType,
 			      parlay::move_assign_tag>;
 	using Interior = OrthInteriorNode;
 	using OrthNodeArr = Interior::OrthNodeArr;

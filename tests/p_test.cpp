@@ -30,7 +30,7 @@ int main(int argc, char *argv[])
 
 		};
 
-	Wrapper::ApplySpacialFillingCurve(tree_type, dims, split_type, params,
+	Wrapper::ApplySpatialFillingCurve(tree_type, dims, split_type, params,
 					  DefaultTestFunc);
 
 	return 0;

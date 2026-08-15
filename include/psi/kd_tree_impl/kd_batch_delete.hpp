@@ -71,9 +71,9 @@ KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight, kImbaRatio>::
 			      HasBox<typename Leaf::AT>) {
 			assert(BT::SameBox(
 				BT::template GetBox<Leaf, Interior>(T),
-				BT::template RetriveBox<Leaf, Interior>(T)));
+				BT::template RetrieveBox<Leaf, Interior>(T)));
 			return NodeBox(
-				T, BT::template RetriveBox<Leaf, Interior>(T));
+				T, BT::template RetrieveBox<Leaf, Interior>(T));
 		} else {
 			assert(BT::WithinBox(
 				BT::template GetBox<Leaf, Interior>(T), box));
@@ -110,7 +110,7 @@ KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight, kImbaRatio>::
 		// auto o = BT::template DeletePoints4Leaf<Leaf, NodeBox>(T,
 		// In); assert(BT::SameBox(BT::template GetBox<Leaf,
 		// Interior>(o.first),
-		//                    BT::template RetriveBox<Leaf,
+		//                    BT::template RetrieveBox<Leaf,
 		//                    Interior>(o.first)));
 		// return o;
 	}
@@ -125,11 +125,11 @@ KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight, kImbaRatio>::
 			}).begin();
 
 		// NOTE: put the tomb if the remaining points number are below
-		// kThinLeaveWrap (to avoid next insertion exceeds the limit) or
-		// inbalance
+		// kSparseLeafThreshold (to avoid next insertion exceeds the
+		// limit) or imbalance
 		bool putTomb =
 			has_tomb &&
-			(BT::SparcyNode(In.size(), TI->size) ||
+			(BT::SparseNode(In.size(), TI->size) ||
 			 (split_rule_.AllowRebuild() &&
 			  BT::ImbalanceNode(TI->left->size -
 						    (split_iter - In.begin()),
@@ -166,16 +166,16 @@ KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight, kImbaRatio>::
 
 		// NOTE: rebuild
 		if (putTomb) {
-			assert(BT::SparcyNode(0, TI->size) ||
+			assert(BT::SparseNode(0, TI->size) ||
 			       (split_rule_.AllowRebuild() &&
 				BT::ImbalanceNode(TI->left->size, TI->size)));
 			auto const new_box = BT::GetBox(Lbox, Rbox);
 			// auto const tree_box = BT::template GetBox<Leaf,
 			// Interior>(T); auto const left_box = BT::template
-			// RetriveBox<Leaf, Interior>(TI->left); auto const
-			// right_box = BT::template RetriveBox<Leaf,
+			// RetrieveBox<Leaf, Interior>(TI->left); auto const
+			// right_box = BT::template RetrieveBox<Leaf,
 			// Interior>(TI->right); auto const tree_in_box =
-			// BT::template RetriveBox<Leaf, Interior>(T);
+			// BT::template RetrieveBox<Leaf, Interior>(T);
 			assert(BT::WithinBox(
 				BT::template GetBox<Leaf, Interior>(T),
 				new_box));
@@ -192,8 +192,8 @@ KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight, kImbaRatio>::
 	InnerTree IT;
 	IT.AssignNodeTag(T, 1);
 	assert(IT.tags_num > 0 && IT.tags_num <= BT::kBucketNum);
-	BT::template SeievePoints<Interior>(In, Out, n, IT.tags, IT.sums,
-					    IT.tags_num);
+	BT::template SievePoints<Interior>(In, Out, n, IT.tags, IT.sums,
+					   IT.tags_num);
 
 	auto tree_nodes = NodeBoxSeq::uninitialized(IT.tags_num);
 	auto box_seq = parlay::sequence<Box>::uninitialized(IT.tags_num);
@@ -201,11 +201,11 @@ KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight, kImbaRatio>::
 	// enable the force parallel flag in batch deletion
 	/* Results are used by asserts only, but the call tags the skeleton. */
 	[[maybe_unused]] auto [re_num, tot_re_size] =
-		IT.template TagInbalanceNodeDeletion<true>(
+		IT.template TagImbalanceNodeDeletion<true>(
 			box_seq, box, has_tomb, [&](BucketType idx) -> bool {
 				Interior *TI = static_cast<Interior *>(
 					IT.tags[idx].first);
-				return BT::SparcyNode(IT.sums_tree[idx],
+				return BT::SparseNode(IT.sums_tree[idx],
 						      TI->size) ||
 				       (split_rule_.AllowRebuild() &&
 					BT::ImbalanceNode(

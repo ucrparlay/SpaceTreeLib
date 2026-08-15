@@ -318,7 +318,7 @@ int main(int argc, char *argv[])
 			delete[] kdknn;
 	};
 
-	Wrapper::ApplySpacialFillingCurve(tree_type, dim, split_type, params,
+	Wrapper::ApplySpatialFillingCurve(tree_type, dim, split_type, params,
 					  run);
 
 	puts("\nok");

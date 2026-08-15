@@ -1797,8 +1797,8 @@ public:
 		static Box Create(Node *l, Node *r)
 		{
 			return BT::GetBox(
-				BT::template RetriveBox<Leaf, Interior>(l),
-				BT::template RetriveBox<Leaf, Interior>(r));
+				BT::template RetrieveBox<Leaf, Interior>(l),
+				BT::template RetrieveBox<Leaf, Interior>(r));
 		}
 
 		// multi create
@@ -1809,8 +1809,8 @@ public:
 			for (auto t : nodes) {
 				box = BT::GetBox(
 					box,
-					BT::template RetriveBox<Leaf, Interior>(
-						t));
+					BT::template RetrieveBox<Leaf,
+								 Interior>(t));
 			}
 			return box;
 		}
@@ -1923,7 +1923,7 @@ public:
 		}
 	};
 
-	// For the spacial filling curve, we use the AugIdCode to
+	// For the spatial filling curve, we use the AugIdCode to
 	// ensure the id is unique and the code is used to determine the
 	// order of the points in the tree.
 	struct AugIdCode {
@@ -2117,7 +2117,7 @@ public:
 	}
 
 	template <typename RunFunc>
-	static void ApplySpacialFillingCurve(int const tree_type, int const dim,
+	static void ApplySpatialFillingCurve(int const tree_type, int const dim,
 					     int const split_type,
 					     commandLine &params,
 					     RunFunc test_func)
@@ -2145,11 +2145,11 @@ public:
 		auto run_with_split_type = [&]<typename Point>() {
 			if (split_type & (1 << 0)) {
 				build_tree_type.template operator()<
-					Point, psi::SpacialFillingCurve<
+					Point, psi::SpatialFillingCurve<
 						       HilbertCurve<Point>>>();
 			} else if (split_type & (1 << 1)) {
 				build_tree_type.template operator()<
-					Point, psi::SpacialFillingCurve<
+					Point, psi::SpatialFillingCurve<
 						       MortonCurve<Point>>>();
 			}
 		};
@@ -2209,11 +2209,11 @@ public:
 		auto run_with_split_type = [&]<typename Point>() {
 			if (split_type & (1 << 0)) {
 				build_tree_type.template operator()<
-					Point, psi::SpacialFillingCurve<
+					Point, psi::SpatialFillingCurve<
 						       HilbertCurve<Point>>>();
 			} else if (split_type & (1 << 1)) {
 				build_tree_type.template operator()<
-					Point, psi::SpacialFillingCurve<
+					Point, psi::SpatialFillingCurve<
 						       MortonCurve<Point>>>();
 			}
 		};

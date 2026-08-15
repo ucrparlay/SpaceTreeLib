@@ -45,10 +45,10 @@ BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::InsertPoints2Leaf(Node *T,
 		return T;
 	}
 
-	assert(T->size + In.size() <= kLeaveWrap);
+	assert(T->size + In.size() <= kLeafCapacity);
 	if (TL->pts.size() == 0) {
 		assert(TL->size == 0);
-		TL->pts = Points::uninitialized(kLeaveWrap);
+		TL->pts = Points::uninitialized(kLeafCapacity);
 	}
 	for (size_t i = 0; i < In.size(); i++) {
 		TL->pts[TL->size + i] = In[i];
@@ -74,7 +74,7 @@ BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::DeletePoints4Leaf(Node *T,
 		TL->size -= In.size(); // WARN: this assumes that In\in T
 		if (TL->size == 0) {
 			TL->is_dummy = false;
-			TL->pts = Points::uninitialized(kLeaveWrap);
+			TL->pts = Points::uninitialized(kLeafCapacity);
 			TL->ResetAug();
 		}
 
@@ -138,7 +138,7 @@ BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::DiffPoints4Leaf(Node *T,
 		if (TL->size == 0) { // set points to normal leaf when all
 				     // points in dummy node has been deleted
 			TL->is_dummy = false;
-			TL->pts = Points::uninitialized(kLeaveWrap);
+			TL->pts = Points::uninitialized(kLeafCapacity);
 			TL->ResetAug();
 		}
 

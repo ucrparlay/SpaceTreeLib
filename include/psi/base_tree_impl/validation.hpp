@@ -51,17 +51,17 @@ BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::CheckBox(Node *T,
 	} else if constexpr (IsBinaryNode<Interior> &&
 			     HasBox<typename Interior::AT>) { // kd with box
 		// std::cout << " has box " << std::endl;
-		auto left_box = RetriveBox<Leaf, Interior>(TI->left);
-		auto right_box = RetriveBox<Leaf, Interior>(TI->right);
+		auto left_box = RetrieveBox<Leaf, Interior>(TI->left);
+		auto right_box = RetrieveBox<Leaf, Interior>(TI->right);
 		Box const left_return_box =
 			CheckBox<Leaf, Interior>(TI->left, left_box);
 		Box const right_return_box =
 			CheckBox<Leaf, Interior>(TI->right, right_box);
 		Box const new_box = GetBox(left_return_box, right_return_box);
 		assert(SameBox(left_return_box,
-			       RetriveBox<Leaf, Interior>(TI->left)));
+			       RetrieveBox<Leaf, Interior>(TI->left)));
 		assert(SameBox(right_return_box,
-			       RetriveBox<Leaf, Interior>(TI->right)));
+			       RetrieveBox<Leaf, Interior>(TI->right)));
 		assert(SameBox(new_box, TI->GetBox()));
 		return new_box;
 	} else if (IsMultiNode<Interior> &&
@@ -85,9 +85,9 @@ BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::CheckBox(Node *T,
 		for (size_t i = 0; i < TI->tree_nodes.size(); i++) {
 			return_box_seq[i] = CheckBox<Leaf, Interior>(
 				TI->tree_nodes[i], new_box[i]);
-			assert(SameBox(
-				return_box_seq[i],
-				RetriveBox<Leaf, Interior>(TI->tree_nodes[i])));
+			assert(SameBox(return_box_seq[i],
+				       RetrieveBox<Leaf, Interior>(
+					       TI->tree_nodes[i])));
 		}
 		auto return_box = GetBox(return_box_seq);
 		assert(SameBox(return_box, TI->GetBox()));
@@ -173,7 +173,7 @@ size_t BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::CheckSize(Node *T)
 {
 	if (T->is_leaf) {
 		// assert(static_cast<Leaf*>(T)->is_dummy ||
-		//        static_cast<Leaf*>(T)->size <= kLeaveWrap);
+		//        static_cast<Leaf*>(T)->size <= kLeafCapacity);
 		return T->size;
 	}
 	if constexpr (IsBinaryNode<Interior>) {
@@ -284,7 +284,7 @@ void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::Validate()
 		}
 	} else if constexpr (IsDynamicNode<Interior>) {
 		// BUG: below is wrong, the leaf cover circle should centered at
-		// one node. Cannot compute it, but to retrive from the tree
+		// one node. Cannot compute it, but to retrieve from the tree
 		auto root_cover_circle =
 			this->root_->is_leaf
 				? GetCircle<typename Interior::CircleType>(

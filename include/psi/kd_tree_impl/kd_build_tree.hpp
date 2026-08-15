@@ -94,7 +94,7 @@ Node *KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight,
 	if (n == 0)
 		return AllocEmptyLeafNode<Slice, Leaf>();
 
-	if (n <= BT::kLeaveWrap)
+	if (n <= BT::kLeafCapacity)
 		return AllocNormalLeafNode<Slice, Leaf>(In);
 
 	DimsType d = split_rule_.FindCuttingDimension(box, dim);
@@ -114,7 +114,7 @@ Node *KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight,
 						std::max(
 							In.size(),
 							static_cast<size_t>(
-								BT::kLeaveWrap)));
+								BT::kLeafCapacity)));
 				} else {
 					return AllocDummyLeafNode<Slice, Leaf>(
 						In);
@@ -123,8 +123,8 @@ Node *KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight,
 				return AllocDummyLeafNode<Slice, Leaf>(In);
 			}
 		} else { // NOTE: current dim d is same but other dims are not
-			return split_rule_.HandlingUndivide(*this, In, Out, box,
-							    dim);
+			return split_rule_.HandleUndivided(*this, In, Out, box,
+							   dim);
 		}
 	}
 

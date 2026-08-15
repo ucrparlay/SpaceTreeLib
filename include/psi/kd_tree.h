@@ -49,7 +49,7 @@ public:
 
 	static constexpr DimsType const kMD = 2;
 
-	using Leaf = LeafNode<Point, Slice, BT::kLeaveWrap, LeafAugType,
+	using Leaf = LeafNode<Point, Slice, BT::kLeafCapacity, LeafAugType,
 			      parlay::move_assign_tag>;
 	struct KdInteriorNode;
 	using Interior = KdInteriorNode;

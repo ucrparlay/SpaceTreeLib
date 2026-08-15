@@ -11,11 +11,11 @@ template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
 inline size_t
 BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::GetImbalanceRatio()
 {
-	return static_cast<size_t>(kInbalanceRatio);
-	// if (auto const env_p = std::getenv("kInbalanceRatio")) {
+	return static_cast<size_t>(kImbalanceRatio);
+	// if (auto const env_p = std::getenv("kImbalanceRatio")) {
 	//   return static_cast<size_t>(std::stoi(env_p));
 	// } else {
-	//   return static_cast<size_t>(kInbalanceRatio);
+	//   return static_cast<size_t>(kImbalanceRatio);
 	// }
 }
 
@@ -36,12 +36,12 @@ inline bool BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::ImbalanceNode(
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
 	  uint_fast8_t kImbaRatio>
 inline bool
-BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::SparcyNode(size_t const rm,
+BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::SparseNode(size_t const rm,
 								size_t const n)
 {
 	// PERF: to avoid the case that the new leaf is about 32 and then next
 	// slight larger insert will break the leaf
-	return n - rm < kThinLeaveWrap;
+	return n - rm < kSparseLeafThreshold;
 }
 } // namespace psi
 

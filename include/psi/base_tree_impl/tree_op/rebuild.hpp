@@ -87,7 +87,7 @@ Node *BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::RebuildSingleTree(
 // NOTE: traverse a tree, if it satisfy the condition, then rebuild a binary
 // tree
 // PARA: if allow_enable_rebuild enabled, this method will re-balance the
-// tree; otherwise, it flattens all sparcy node into leaf nodes
+// tree; otherwise, it flattens all sparse node into leaf nodes
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
 	  uint_fast8_t kImbaRatio>
 template <typename Leaf, IsBinaryNode Interior, bool granularity,
@@ -101,8 +101,8 @@ Node *BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::RebuildTreeRecursive(
 	}
 
 	Interior *TI = static_cast<Interior *>(T);
-	// NOTE: rebuild the tree if it is sparcy or imbalance
-	if (SparcyNode(0, TI->size) ||
+	// NOTE: rebuild the tree if it is sparse or imbalance
+	if (SparseNode(0, TI->size) ||
 	    (allow_inba_rebuild && ImbalanceNode(TI->left->size, TI->size))) {
 		return RebuildSingleTree<Leaf, Interior, granularity>(
 			T, std::forward<Args>(args)...);
@@ -159,7 +159,7 @@ Node *BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::RebuildTreeRecursive(
 	}
 
 	Interior *TI = static_cast<Interior *>(T);
-	if (SparcyNode(0, TI->size)) {
+	if (SparseNode(0, TI->size)) {
 		return RebuildSingleTree<Leaf, Interior, granularity>(
 			T, std::forward<Args>(args)...);
 	}

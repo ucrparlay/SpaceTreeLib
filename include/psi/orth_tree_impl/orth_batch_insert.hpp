@@ -98,7 +98,7 @@ Node *OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight,
 		// NOTE: insert the points to normal leaf if the capacity
 		// allows; or check if the leaf is dummy and contains same
 		// points as inputs
-		if ((!TL->is_dummy && n + T->size <= BT::kLeaveWrap) ||
+		if ((!TL->is_dummy && n + T->size <= BT::kLeafCapacity) ||
 		    (TL->is_dummy && parlay::all_of(In, [&](Point const &p) {
 			     return p == TL->pts[0];
 		     }))) {
@@ -139,17 +139,17 @@ Node *OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight,
 	IT.AssignNodeTag(T, 1);
 	assert(IT.tags_num > 0 && IT.tags_num <= BT::kBucketNum);
 
-	BT::template SeievePoints<Interior>(In, Out, n, IT.tags, IT.sums,
-					    IT.tags_num);
+	BT::template SievePoints<Interior>(In, Out, n, IT.tags, IT.sums,
+					   IT.tags_num);
 
 	// NOTE: no need to tag imbalance node in orth tree as it never rebuilds
 	// the tree, used to remap the bucket node tag to kBucketNum+1 and
 	// compute the bounding boxes NOTE: we pass has_tomb as true, to make
-	// the leaf set to kBucketNum+1 IT.TagInbalanceNode([]() -> bool {
+	// the leaf set to kBucketNum+1 IT.TagImbalanceNode([]() -> bool {
 	// return false; });
 	BoxSeq box_seq(IT.tags_num); // PARA: the box for bucket nodes
 	[[maybe_unused]] auto [re_num, tot_re_size] =
-		IT.template TagInbalanceNodeDeletion<false>(
+		IT.template TagImbalanceNodeDeletion<false>(
 			box_seq, box, true,
 			[&](BucketType) -> bool { return false; });
 

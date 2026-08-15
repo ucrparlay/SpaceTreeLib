@@ -43,7 +43,7 @@ void KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight,
 	assert(this->root_ != nullptr);
 	if constexpr (HasBox<typename Interior::AT>) {
 		this->tree_box_ =
-			BT::template RetriveBox<Leaf, Interior>(this->root_);
+			BT::template RetrieveBox<Leaf, Interior>(this->root_);
 	} else {
 		this->tree_box_ = BT::GetBox(this->tree_box_, BT::GetBox(A));
 	}
@@ -69,7 +69,7 @@ Node *KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight,
 
 	if (T->is_leaf) {
 		Leaf *TL = static_cast<Leaf *>(T);
-		if ((!TL->is_dummy && n + T->size <= BT::kLeaveWrap) ||
+		if ((!TL->is_dummy && n + T->size <= BT::kLeafCapacity) ||
 		    (TL->is_dummy && parlay::all_of(In, [&](Point const &p) {
 			     return p == TL->pts[0];
 		     }))) {
@@ -77,7 +77,7 @@ Node *KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight,
 			// auto o = BT::template InsertPoints2Leaf<Leaf>(T, In);
 			// assert(BT::SameBox(BT::template GetBox<Leaf,
 			// Interior>(o),
-			//                    BT::template RetriveBox<Leaf,
+			//                    BT::template RetrieveBox<Leaf,
 			//                    Interior>(o)));
 			// return o;
 		} else { // PERF: if a nomarl leaf TL cannot handle more
@@ -124,10 +124,10 @@ Node *KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight,
 	IT.AssignNodeTag(T, 1);
 	assert(IT.tags_num > 0 && IT.tags_num <= BT::kBucketNum);
 
-	BT::template SeievePoints<Interior>(In, Out, n, IT.tags, IT.sums,
-					    IT.tags_num);
+	BT::template SievePoints<Interior>(In, Out, n, IT.tags, IT.sums,
+					   IT.tags_num);
 
-	IT.TagInbalanceNode([&]([[maybe_unused]] BucketType idx) -> bool {
+	IT.TagImbalanceNode([&]([[maybe_unused]] BucketType idx) -> bool {
 		auto const TI = static_cast<Interior *>(IT.tags[idx].first);
 		return split_rule_.AllowRebuild() &&
 		       BT::ImbalanceNode(TI->left->size +

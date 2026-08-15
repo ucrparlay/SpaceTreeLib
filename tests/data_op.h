@@ -248,7 +248,7 @@ public:
 	}
 
 	size_t
-	RadisuByVincinity([[maybe_unused]] size_t const prev_restart) noexcept
+	RadiusByVicinity([[maybe_unused]] size_t const prev_restart) noexcept
 	{
 		if constexpr (kSameDensity) {
 			return 100;
@@ -263,7 +263,7 @@ public:
 		if constexpr (kSameDensity) {
 			return 50 * Point::GetDim();
 		} else {
-			return RadisuByVincinity(prev_restart) *
+			return RadiusByVicinity(prev_restart) *
 			       Point::GetDim() / 2;
 		}
 	}
@@ -334,7 +334,7 @@ public:
 						: gen_num - i * SpreaderSize();
 				return UniformGenerator<Point>::WithinSphere(
 					sz, shift_pts[i].first,
-					RadisuByVincinity(cur_restart_idx));
+					RadiusByVicinity(cur_restart_idx));
 			}));
 
 		assert(pts.size() == gen_num);
