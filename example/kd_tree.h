@@ -45,130 +45,8 @@ using Points = parlay::sequence<Point>;
 using BT = psi::BaseTree<Point>;
 
 // Leaf augmentation: stores bounding box
-// WARN: All functions must be defined
-template <class BaseTree>
-struct LeafAugBox {
-	using Box = typename BaseTree::Box;	// The bounding box type
-	using Slice = typename BaseTree::Slice; // parallel data container,
-						// similar to std::ranges
-
-	// Constructors
-	LeafAugBox() : box(BaseTree::GetEmptyBox())
-	{
-	}
-	LeafAugBox(Box const &_box) : box(_box)
-	{
-	}
-	LeafAugBox(Slice In) : box(BaseTree::GetBox(In))
-	{
-	}
-
-	// Return the bounding box
-	Box &GetBox()
-	{
-		return this->box;
-	}
-	Box const &GetBox() const
-	{
-		return this->box;
-	}
-
-	// Update the augmentation information
-	void UpdateAug(Slice In)
-	{
-		this->box = BaseTree::GetBox(In);
-	}
-
-	// Reset the augmentation information
-	void Reset()
-	{
-		this->box = BaseTree::GetEmptyBox();
-	}
-
-	Box box;
-};
 
 // Interior node augmentation: stores bounding box and parallel build flag
-// WARN: All functions must be defined
-template <class BaseTree>
-struct InteriorAugBox {
-	using Box = typename BaseTree::Box;
-
-	// Constructors
-	InteriorAugBox() : box(BaseTree::GetEmptyBox())
-	{
-		force_par_indicator.reset();
-	}
-	InteriorAugBox(Box const &_box) : box(_box)
-	{
-		force_par_indicator.reset();
-	}
-
-	// Get the bounding box
-	Box &GetBox()
-	{
-		return this->box;
-	}
-	Box const &GetBox() const
-	{
-		return this->box;
-	}
-
-	// Given two child nodes, create the augmentation value (bounding box)
-	// for the interior node
-	template <typename Leaf, typename Interior>
-	static Box Create(psi::Node *l, psi::Node *r)
-	{
-		return BaseTree::GetBox(
-			BaseTree::template RetrieveBox<Leaf, Interior>(l),
-			BaseTree::template RetrieveBox<Leaf, Interior>(r));
-	}
-
-	// Update the augmentation information for the interior node
-	template <typename Leaf, typename Interior>
-	void Update(psi::Node *l, psi::Node *r)
-	{
-		this->box = Create<Leaf, Interior>(l, r);
-	}
-
-	// Below are required to ensure the granularity of parallelism
-	// Mark this node to be update in parallel or not in following
-	// operations
-	void SetParallelFlag(bool const flag)
-	{
-		this->force_par_indicator.emplace(flag);
-	}
-
-	// Reset the parallel flag
-	void ResetParallelFlag()
-	{
-		this->force_par_indicator.reset();
-	}
-
-	// Get the initial status of the parallel flag
-	bool GetParallelFlagIniStatus()
-	{
-		return this->force_par_indicator.has_value();
-	}
-
-	// Whether to force parallel update for this node
-	bool ForceParallel(size_t sz) const
-	{
-		return this->force_par_indicator.has_value()
-			       ? this->force_par_indicator.value()
-			       : sz > BaseTree::kSerialBuildCutoff;
-	}
-
-	// Reset the augmentation information and parallel flag
-	void Reset()
-	{
-		this->force_par_indicator.reset();
-		this->box = BaseTree::GetEmptyBox();
-	}
-
-	Box box;
-	std::optional<bool> force_par_indicator;
-};
 
 // Define split rule: max stretch dimension + object median
 using SplitRule = psi::OrthogonalSplitRule<psi::MaxStretchDim<Point>,
@@ -179,7 +57,7 @@ using AnotherSplitRule = psi::OrthogonalSplitRule<psi::RotateDim<Point>,
 						  psi::SpatialMedian<Point>>;
 
 // Define KdTree type
-using Tree = psi::KdTree<Point, SplitRule, LeafAugBox<BT>, InteriorAugBox<BT>>;
+using Tree = psi::KdTree<Point, SplitRule>;
 
 void run_example()
 {

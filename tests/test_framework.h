@@ -1653,202 +1653,6 @@ public:
 		}
 	}
 
-	template <class BaseTree>
-	struct LeafAugEmpty {
-		using BT = BaseTree;
-		using Box = BT::Box;
-		using Slice = BT::Slice;
-
-		LeafAugEmpty() {};
-		LeafAugEmpty(Box const &_box) {};
-		LeafAugEmpty(Slice In) {};
-		void UpdateAug(Slice In)
-		{
-			return;
-		}
-		void Reset()
-		{
-			return;
-		}
-	};
-
-	template <class BaseTree>
-	struct LeafAugBox {
-		using BT = BaseTree;
-		using Box = BT::Box;
-		using Slice = BT::Slice;
-
-		LeafAugBox() : box(BT::GetEmptyBox()) {};
-		LeafAugBox(Box const &_box) : box(_box) {};
-		LeafAugBox(Slice In) : box(BT::GetBox(In)) {};
-
-		Box &GetBox()
-		{
-			return this->box;
-		}
-		Box const &GetBox() const
-		{
-			return this->box;
-		}
-
-		void UpdateAug(Slice In)
-		{
-			this->box = BT::GetBox(In);
-			return;
-		}
-
-		void Reset()
-		{
-			this->box = BT::GetEmptyBox();
-			return;
-		}
-
-		Box box;
-	};
-
-	template <class BaseTree>
-	struct InteriorAugEmpty {
-		using BT = BaseTree;
-
-		InteriorAugEmpty()
-		{
-			force_par_indicator.reset();
-		}
-		InteriorAugEmpty(bool)
-		{
-			force_par_indicator.reset();
-		}
-
-		// use a bool to reload default constructor
-		template <typename Leaf, typename Interior>
-		static bool Create(Node *l, Node *r)
-		{
-			return true;
-		}
-
-		template <typename TreeNodes>
-		static bool Create(TreeNodes const & /*nodes*/)
-		{
-			return true;
-		}
-
-		void SetParallelFlag(bool const flag)
-		{
-			this->force_par_indicator.emplace(flag);
-		}
-
-		void ResetParallelFlag()
-		{
-			this->force_par_indicator.reset();
-		}
-
-		bool GetParallelFlagIniStatus()
-		{
-			return this->force_par_indicator.has_value();
-		}
-
-		bool ForceParallel(size_t sz) const
-		{
-			return this->force_par_indicator.has_value()
-				       ? this->force_par_indicator.value()
-				       : sz > BT::kSerialBuildCutoff;
-		}
-
-		template <typename Leaf, typename Interior>
-		void Update(Node *, Node *)
-		{
-			return;
-		}
-
-		template <typename TreeNodes>
-		void Update(TreeNodes const & /*nodes*/)
-		{
-			return;
-		}
-
-		void Reset()
-		{
-			this->force_par_indicator.reset();
-		}
-
-		// NOTE: use a tri-state bool to indicate whether a subtree
-		// needs to be rebuilt. If aug is not INITIALIZED, then it means
-		// there is no need to rebuild; otherwise, the value depends on
-		// the initial tree size before rebuilding.
-		std::optional<bool> force_par_indicator;
-	};
-
-	template <class BaseTree>
-	struct InteriorAugBox : public InteriorAugEmpty<BaseTree> {
-		using BT = BaseTree;
-		using Box = BT::Box;
-		using Slice = BT::Slice;
-		using BaseAug = InteriorAugEmpty<BT>;
-
-		InteriorAugBox() : BaseAug(), box(BT::GetEmptyBox())
-		{
-		}
-		InteriorAugBox(Box const &_box) : BaseAug(), box(_box)
-		{
-		}
-
-		// binary create
-		template <typename Leaf, typename Interior>
-		static Box Create(Node *l, Node *r)
-		{
-			return BT::GetBox(
-				BT::template RetrieveBox<Leaf, Interior>(l),
-				BT::template RetrieveBox<Leaf, Interior>(r));
-		}
-
-		// multi create
-		template <typename Leaf, typename Interior, typename TreeNodes>
-		static Box Create(TreeNodes const &nodes)
-		{
-			Box box = BT::GetEmptyBox();
-			for (auto t : nodes) {
-				box = BT::GetBox(
-					box,
-					BT::template RetrieveBox<Leaf,
-								 Interior>(t));
-			}
-			return box;
-		}
-
-		Box &GetBox()
-		{
-			return this->box;
-		}
-		Box const &GetBox() const
-		{
-			return this->box;
-		}
-
-		// binary update
-		template <typename Leaf, typename Interior>
-		void Update(Node *l, Node *r)
-		{
-			this->box = this->Create<Leaf, Interior>(l, r);
-			return;
-		}
-
-		// multi update
-		template <typename Leaf, typename Interior, typename TreeNodes>
-		void Update(TreeNodes const &nodes)
-		{
-			this->box = this->Create<Leaf, Interior>(nodes);
-			return;
-		}
-
-		void Reset()
-		{
-			BaseAug::Reset();
-			this->force_par_indicator.reset();
-		}
-
-		Box box;
-	};
-
 	// NOTE: Trees
 	template <class PointType, class SplitRuleType, class LeafAugType,
 		  class InteriorAugType>
@@ -2045,21 +1849,21 @@ public:
 			using BT = psi::BaseTree<Point>;
 			if (tree_type == 0) {
 				// Run<KdTreeWrapper<Point, SplitRule,
-				// LeafAugEmpty<BT>,
-				// InteriorAugEmpty<BT>>>(params, test_func);
+				// psi::BoxLeafAug<BT>,
+				// psi::BoxInteriorAug<BT>>>(params, test_func);
 				Run<KdTreeWrapper<Point, SplitRule,
-						  LeafAugBox<BT>,
-						  InteriorAugBox<BT>>>(
+						  psi::BoxLeafAug<BT>,
+						  psi::BoxInteriorAug<BT>>>(
 					params, test_func);
 			} else if (tree_type == 1) {
 				Run<OrthTreeWrapper<Point, SplitRule,
-						    LeafAugBox<BT>,
-						    InteriorAugBox<BT>>>(
+						    psi::BoxLeafAug<BT>,
+						    psi::BoxInteriorAug<BT>>>(
 					params, test_func);
 			} else if (tree_type == 4) { // NOTE: for boost
 				Run<KdTreeWrapper<Point, SplitRule,
-						  LeafAugBox<BT>,
-						  InteriorAugBox<BT>>>(
+						  psi::BoxLeafAug<BT>,
+						  psi::BoxInteriorAug<BT>>>(
 					params, test_func);
 			}
 		};

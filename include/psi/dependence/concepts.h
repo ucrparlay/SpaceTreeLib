@@ -122,10 +122,14 @@ concept IsAugPoint = requires(T t) {
 	{ t.AugPointTag() } -> std::same_as<void>;
 };
 
-// NOTE: tag contain bounding box
+/*
+ * Carries a bounding box. Tests GetBox(), which is what the library calls; a
+ * member named box is not enough, and used to be the whole test, so an
+ * augmentation that renamed it silently fell back to the hyperplane paths.
+ */
 template <typename T>
-concept HasBox = requires(T t) {
-	{ t.box };
+concept HasBox = requires(T const &t) {
+	{ t.GetBox() };
 };
 
 // NOTE: tag a orth tree
@@ -168,11 +172,6 @@ concept IsMaxStretchDim = requires(T t) {
 template <typename T>
 concept IsRotateDimSplit = requires(T t) {
 	{ t.RotateDimTag() } -> std::same_as<void>;
-};
-
-struct FullCoveredTag {
-};
-struct PartialCoverTag {
 };
 
 } // namespace psi

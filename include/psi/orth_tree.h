@@ -5,13 +5,16 @@
 #include <utility>
 
 #include "base_tree.h"
+#include "dependence/augmentation.h"
 
 namespace psi
 {
 
-template <typename Point, typename SplitRule, typename LeafAugType,
-	  typename InteriorAugType, uint_fast8_t kMD = 2,
-	  uint_fast8_t kSkHeight = 6, uint_fast8_t kImbaRatio = 30>
+template <typename Point, typename SplitRule,
+	  typename LeafAugType = BoxLeafAug<BaseTree<Point>>,
+	  typename InteriorAugType = BoxInteriorAug<BaseTree<Point>>,
+	  uint_fast8_t kMD = 2, uint_fast8_t kSkHeight = 6,
+	  uint_fast8_t kImbaRatio = 30>
 class OrthTree
     : public BaseTree<Point,
 		      OrthTree<Point, SplitRule, LeafAugType, InteriorAugType,
