@@ -254,13 +254,13 @@ void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::Validate()
 {
 	std::cout << ">>> begin validate tree\n" << std::flush;
 
-	// check size
-	if (CheckSize<Leaf, Interior>(this->root_) == this->root_->size) {
-		std::cout << "Correct size\n" << std::flush;
-	} else {
-		std::cout << "wrong tree size\n" << std::flush;
-		abort();
-	}
+	/*
+	 * CheckSize returns T->size on every path, so comparing it against
+	 * root_->size could never fail. The real work is the assert inside it,
+	 * which is why this only means anything in a debug build.
+	 */
+	CheckSize<Leaf, Interior>(this->root_);
+	std::cout << "Correct size\n" << std::flush;
 
 	// tree property
 	if constexpr (IsBinaryNode<Interior> || IsMultiNode<Interior>) {

@@ -186,10 +186,12 @@ void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::RangeQueryLeaf(
 	Leaf *TL = static_cast<Leaf *>(T);
 	if (TL->is_dummy) {
 		if (WithinBox(TL->pts[0], query_box)) {
+			assert(s + TL->size <= Out.size());
 			std::fill_n(Out.begin() + s, TL->size, TL->pts[0]);
 			s += TL->size;
 		}
 	} else {
+		assert(s + TL->size <= Out.size());
 		auto result = std::ranges::copy_if(
 			TL->pts.begin(), TL->pts.begin() + TL->size,
 			Out.begin() + s,
@@ -225,6 +227,7 @@ void BaseTree<Point, DerivedTree, kSkHeight,
 			return;
 		} else if (WithinBox(box, query_box)) {
 			logger.full_box_num++;
+			assert(s + Ts->size <= Out.size());
 			FlattenRec<Leaf, Interior>(Ts,
 						   Out.cut(s, s + Ts->size));
 			s += Ts->size;
@@ -284,6 +287,7 @@ void BaseTree<Point, DerivedTree, kSkHeight,
 			size_t candidate_size =
 				static_cast<Interior *>(Ts)->MergeSize(
 					next_idx);
+			assert(s + candidate_size <= Out.size());
 			PartialFlatten<Leaf, Interior>(
 				Ts, Out.cut(s, s + candidate_size), next_idx);
 			s += candidate_size;
