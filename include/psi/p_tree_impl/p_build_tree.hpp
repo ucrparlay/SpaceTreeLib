@@ -29,8 +29,6 @@ void PTree<Point, SplitRule, kSkHeight, kImbaRatio>::Build(Range&& In) {
 template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 void PTree<Point, SplitRule, kSkHeight, kImbaRatio>::Build_(Slice A) {
-  size_t n = A.size();
-
   // parlay::parallel_for(0, n, [&](size_t i) {
   //   P[i].morton_id = uRse_hilbert ? P[i].overlap_bits() :
   //   P[i].interleave_bits();

@@ -2,6 +2,7 @@
 #define PSI_DEPENDENCE_CONCEPTS_H_
 
 #include <concepts>
+#include <cstdint>
 #include <type_traits>
 #include <utility>
 #include <variant>

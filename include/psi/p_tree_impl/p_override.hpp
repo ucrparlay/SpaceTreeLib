@@ -32,7 +32,7 @@ template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 template <typename Range>
 auto PTree<Point, SplitRule, kSkHeight, kImbaRatio>::KNN(
-    Node* T, Point const& q, kBoundedQueue<Point, Range>& bq) {
+    Node*, Point const& q, kBoundedQueue<Point, Range>& bq) {
   KNNLogger logger;
   CpamAugMap::template knn<BT>(this->cpam_aug_map_, q, bq, logger);
   return logger;

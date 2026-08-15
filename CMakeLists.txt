@@ -14,7 +14,11 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON) # works
 # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --gcc-toolchain=/opt/rh/gcc-toolset-14/root/usr/")
 # add_compile_options(-Wall -Wextra -Wshadow -Wconversion -Wunused -Wsign-conversion -Wfloat-equal -Wpedantic -Wuninitialized -Wformat -Wformat-security -Wmissing-braces -Wparentheses -Wsequence-point -Wswitch -Wswitch-enum -Wstrict-aliasing -Wdeprecated-declarations -Wreturn-type -Wunused-result)
 # add_compile_options(-Wall -Wextra -Werror)
-add_compile_options(-w)
+# NOTE: warnings are scoped per-target below, not globally.
+# The three example targets instantiate all three trees, so -Wall -Wextra on
+# them covers the whole library. tests/ and the baselines carry -w until they
+# are cleaned separately (they contribute ~109 out-of-scope warning sites).
+set(PSI_WARNINGS -Wall -Wextra)
 
 option(DEBUG "" OFF)
 option(CILKPLUS "" OFF)
@@ -136,6 +140,9 @@ target_link_libraries(boost_rtree PUBLIC PSI ${Boost_LIBRARIES})
 target_include_directories(boost_rtree PUBLIC ${PROJECT_SOURCE_DIR}/include ${Boost_INCLUDE_DIRS})
 target_compile_options(boost_rtree PRIVATE -DBOOST_MATH_DISABLE_FLOAT128 -DBOOST_CSTDFLOAT_NO_LIBQUADMATH_SUPPORT)
 
+# NOTE: the warning policy is applied at the very bottom of this file, after
+# every target (including the CGAL-only kd_ccp / p_ccp) has been declared.
+
 # CGAL
 if(CGAL)
 	message(STATUS "\n\n---------------------------- CGAL -----------------------------")
@@ -178,6 +185,34 @@ if(CGAL)
 
 	message(STATUS "\n\n---------------------------- END CGAL -----------------------------")
 endif()
+
+# NOTE: warning policy. Applied here, after every target exists -- kd_ccp and
+# p_ccp are declared inside the if(CGAL) block above, so an earlier foreach
+# would silently skip them and they would inherit no warning flag at all.
+#
+# The three examples instantiate KdTree, OrthTree and PTree between them, so
+# they are where library warnings surface. They are NOT warning-free: ~40
+# warnings remain, all from vendored code that constraint forbids touching
+# (space_filling_curve/hilbert.c 18, dependence/cpam 15, and libstdc++ headers
+# inlined from cpam 7). Zero come from base_tree_impl/, kd_tree_impl/,
+# orth_tree_impl/ or p_tree_impl/. Do NOT add -Werror here until hilbert.c is
+# moved out of splitter.h and the vendored roots are marked SYSTEM.
+#
+# Everything else stays quiet: tests/ alone accounts for ~79 warning sites that
+# are not library code. Escalating past -Wall -Wextra (see the commented-out
+# list near the top of this file) costs ~104 sites concentrated in the frozen
+# index arithmetic; that is a separate, separately-measured job.
+foreach(psi_warn_target kd_tree_example orth_tree_example p_tree_example)
+	if(TARGET ${psi_warn_target})
+		target_compile_options(${psi_warn_target} PRIVATE ${PSI_WARNINGS})
+	endif()
+endforeach()
+foreach(psi_quiet_target kd_test p_test baselines boost_rtree
+                         data_washer data_generator kd_ccp p_ccp)
+	if(TARGET ${psi_quiet_target})
+		target_compile_options(${psi_quiet_target} PRIVATE -w)
+	endif()
+endforeach()
 
 file(GLOB_RECURSE all_files
   ${PROJECT_SOURCE_DIR}/include/psi/*

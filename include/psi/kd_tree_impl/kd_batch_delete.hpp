@@ -169,14 +169,16 @@ KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight, kImbaRatio>::
   auto box_seq = parlay::sequence<Box>::uninitialized(IT.tags_num);
 
   // enable the force parallel flag in batch deletion
-  auto [re_num, tot_re_size] = IT.template TagInbalanceNodeDeletion<true>(
-      box_seq, box, has_tomb, [&](BucketType idx) -> bool {
-        Interior* TI = static_cast<Interior*>(IT.tags[idx].first);
-        return BT::SparcyNode(IT.sums_tree[idx], TI->size) ||
-               (split_rule_.AllowRebuild() &&
-                BT::ImbalanceNode(TI->left->size - IT.sums_tree[idx << 1],
-                                  TI->size - IT.sums_tree[idx]));
-      });
+  /* Results are used by asserts only, but the call tags the skeleton. */
+  [[maybe_unused]] auto [re_num, tot_re_size] =
+      IT.template TagInbalanceNodeDeletion<true>(
+          box_seq, box, has_tomb, [&](BucketType idx) -> bool {
+            Interior* TI = static_cast<Interior*>(IT.tags[idx].first);
+            return BT::SparcyNode(IT.sums_tree[idx], TI->size) ||
+                   (split_rule_.AllowRebuild() &&
+                    BT::ImbalanceNode(TI->left->size - IT.sums_tree[idx << 1],
+                                      TI->size - IT.sums_tree[idx]));
+          });
 
   assert(re_num <= IT.tags_num);
 

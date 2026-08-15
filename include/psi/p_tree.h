@@ -89,9 +89,7 @@ class PTree
     static aug_t get_empty() { return BT::GetEmptyBox(); }
 
     // WARN: this invoke implicity conversion from Coords to BasicPoint
-    static aug_t from_entry(key_t const& k, val_t const& v) {
-      return Box(v, v);
-    }
+    static aug_t from_entry(key_t const&, val_t const& v) { return Box(v, v); }
 
     static aug_t from_entry_array(entry_t* et, size_t sz) {
       return BT::GetBox(parlay::slice(et, et + sz));

@@ -73,7 +73,6 @@ struct HilbertCurve {
   using Coord = BT::Coord;
   using HyperPlane = BT::HyperPlane;
 
-  using MortonCurve = MortonCurve<Point>;
   using CurveCode = typename Point::AT::CurveCode;
 
   void HilbertTag() {}

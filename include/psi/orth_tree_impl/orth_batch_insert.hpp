@@ -135,7 +135,7 @@ Node* OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight,
   BoxSeq box_seq(IT.tags_num);  // PARA: the box for bucket nodes
   [[maybe_unused]] auto [re_num, tot_re_size] =
       IT.template TagInbalanceNodeDeletion<false>(
-          box_seq, box, true, [&](BucketType idx) -> bool { return false; });
+          box_seq, box, true, [&](BucketType) -> bool { return false; });
 
   auto tree_nodes = parlay::sequence<Node*>::uninitialized(IT.tags_num);
 
