@@ -96,8 +96,12 @@ struct aug_node
 
 	static AT const &aug_val_ref(node *a)
 	{
-		if (a == NULL)
-			return Entry::get_empty();
+		if (a == NULL) {
+			/* get_empty() returns by value; a reference bound to
+			 * it dies with the return statement. */
+			static AT const empty = Entry::get_empty();
+			return empty;
+		}
 		if (basic::is_regular(a))
 			return (basic::cast_to_regular(a)->entry).second;
 		auto c = (aug_compressed_node *)a;
@@ -316,10 +320,11 @@ struct aug_node
 	{
 		assert(s <= 2 * B);
 
-		// size_t encoded_size = AugEntryEncoder::encoded_size(e, s);
-		ET *arr;
-		// size_t encoded_size = AugEntryEncoder::encoded_size(arr, s);
-		size_t encoded_size = AugEntryEncoder::encoded_size(arr, 2 * B);
+		/* Sized for 2 * B entries so a later append fits in place,
+		 * though only s are written below. default_entry_encoder
+		 * ignores the pointer; a compressing one would need e. */
+		size_t encoded_size = AugEntryEncoder::encoded_size(
+			static_cast<ET *>(nullptr), 2 * B);
 		size_t node_size = sizeof(aug_compressed_node) + encoded_size;
 		aug_compressed_node *c_node = (aug_compressed_node *)
 			utils::new_array_no_init<uint8_t>(node_size);
