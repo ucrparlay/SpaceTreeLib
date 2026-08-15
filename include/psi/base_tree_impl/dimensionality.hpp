@@ -26,11 +26,15 @@ inline bool BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::ImbalanceNode(
 {
 	if (n == 0)
 		return true;
-	return Num::Gt(
-		static_cast<size_t>(std::abs(100.0 * static_cast<double>(l) /
-						     static_cast<double>(n) -
-					     50.0)),
-		GetImbalanceRatio());
+	/*
+	 * Compare in double. The old form cast to size_t first, so an
+	 * imbalance in (30, 31) truncated to 30 and never fired, and it went
+	 * through Num_Comparator<Coord>, which exists for coordinates and
+	 * carries an epsilon when Coord is floating point.
+	 */
+	double const off =
+		100.0 * static_cast<double>(l) / static_cast<double>(n) - 50.0;
+	return std::abs(off) > static_cast<double>(GetImbalanceRatio());
 }
 
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
