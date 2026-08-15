@@ -219,8 +219,16 @@ foreach(psi_quiet_target kd_test p_test baselines boost_rtree
 	endif()
 endforeach()
 
-file(GLOB_RECURSE all_files
-  ${PROJECT_SOURCE_DIR}/include/psi/*
+# Project-owned sources only. include/parlaylib, include/libmorton and
+# include/highway are submodules and must never be reformatted.
+file(GLOB_RECURSE all_files CONFIGURE_DEPENDS
+  ${PROJECT_SOURCE_DIR}/include/psi/*.h
+  ${PROJECT_SOURCE_DIR}/include/psi/*.hpp
+  ${PROJECT_SOURCE_DIR}/include/psi/*.c
+  ${PROJECT_SOURCE_DIR}/tests/*.h
+  ${PROJECT_SOURCE_DIR}/tests/*.cpp
+  ${PROJECT_SOURCE_DIR}/example/*.h
+  ${PROJECT_SOURCE_DIR}/example/*.cpp
 )
 
 

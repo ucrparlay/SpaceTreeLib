@@ -6,60 +6,76 @@
 #include "../kd_tree.h"
 #include "psi/dependence/tree_node.h"
 
-namespace psi {
+namespace psi
+{
 
 template <typename Point, typename SplitRule, typename LeafAugType,
-          typename InteriorAugType, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
+	  typename InteriorAugType, uint_fast8_t kSkHeight,
+	  uint_fast8_t kImbaRatio>
 struct KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight,
-              kImbaRatio>::KdInteriorNode
+	      kImbaRatio>::KdInteriorNode
     : BinaryNode<Point, Splitter, InteriorAugType> {
-  using PT = Point;
-  using ST = Splitter;
-  using AT = InteriorAugType;
+	using PT = Point;
+	using ST = Splitter;
+	using AT = InteriorAugType;
 
-  KdInteriorNode(Node* _left, Node* _right, const ST& _split)
-      : BinaryNode<Point, Splitter, AT>(
-            _left, _right, _split,
-            AT(AT::template Create<Leaf, Interior>(_left, _right))) {}
+	KdInteriorNode(Node *_left, Node *_right, const ST &_split)
+	    : BinaryNode<Point, Splitter, AT>(
+		      _left, _right, _split,
+		      AT(AT::template Create<Leaf, Interior>(_left, _right)))
+	{
+	}
 
-  KdInteriorNode(Node* _left, Node* _right, const ST& _split, const AT& _aug)
-      : BinaryNode<Point, Splitter, AT>(_left, _right, _split, _aug) {}
+	KdInteriorNode(Node *_left, Node *_right, const ST &_split,
+		       const AT &_aug)
+	    : BinaryNode<Point, Splitter, AT>(_left, _right, _split, _aug)
+	{
+	}
 
-  // Adding a virtual destructor makes Node polymorphic
-  virtual ~KdInteriorNode() = default;
+	// Adding a virtual destructor makes Node polymorphic
+	virtual ~KdInteriorNode() = default;
 
-  inline void SetParallelFlag(bool const flag) {
-    this->aug.SetParallelFlag(flag);
-  }
+	inline void SetParallelFlag(bool const flag)
+	{
+		this->aug.SetParallelFlag(flag);
+	}
 
-  inline void ResetParallelFlag() { this->aug.ResetParallelFlag(); }
+	inline void ResetParallelFlag()
+	{
+		this->aug.ResetParallelFlag();
+	}
 
-  inline bool GetParallelFlagIniStatus() {
-    return this->aug.GetParallelFlagIniStatus();
-  }
+	inline bool GetParallelFlagIniStatus()
+	{
+		return this->aug.GetParallelFlagIniStatus();
+	}
 
-  inline bool ForceParallel() const {
-    return this->aug.ForceParallel(this->size);
-  }
+	inline bool ForceParallel() const
+	{
+		return this->aug.ForceParallel(this->size);
+	}
 
-  auto UpdateAug(Node* l, Node* r) {
-    return this->aug.template Update<Leaf, Interior>(l, r);
-  }
+	auto UpdateAug(Node *l, Node *r)
+	{
+		return this->aug.template Update<Leaf, Interior>(l, r);
+	}
 
-  auto GetBox()
-    requires HasBox<AT>
-  {
-    return this->aug.GetBox();
-  }
+	auto GetBox()
+		requires HasBox<AT>
+	{
+		return this->aug.GetBox();
+	}
 
-  auto GetBox() const
-    requires HasBox<AT>
-  {
-    return this->aug.GetBox();
-  }
+	auto GetBox() const
+		requires HasBox<AT>
+	{
+		return this->aug.GetBox();
+	}
 
-  auto ResetAug() { return this->aug.Reset(); }
+	auto ResetAug()
+	{
+		return this->aug.Reset();
+	}
 };
 
 // template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
@@ -96,6 +112,6 @@ struct KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight,
 //   }
 // };
 
-}  // namespace psi
+} // namespace psi
 
-#endif  // PSI_KD_TREE_IMPL_KD_INTER_NODE_HPP_
+#endif // PSI_KD_TREE_IMPL_KD_INTER_NODE_HPP_

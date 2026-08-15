@@ -8,76 +8,86 @@
 #include "psi/dependence/loggers.h"
 #include "psi/dependence/tree_node.h"
 
-namespace psi {
+namespace psi
+{
 #define FT long
 
 // return the sqr distance between a point and a mbr
 template <class Point, class MBR>
-auto point_mbr_sqrdis(Point p, MBR& mbr) {
-  FT dx = max(max(mbr.first[0] - p[0], (FT)0.0),
-              max(p[0] - mbr.second[0], (FT)0.0));
-  FT dy = max(max(mbr.first[1] - p[1], (FT)0.0),
-              max(p[1] - mbr.second[1], (FT)0.0));
-  return dx * dx + dy * dy;
+auto point_mbr_sqrdis(Point p, MBR &mbr)
+{
+	FT dx = max(max(mbr.first[0] - p[0], (FT)0.0),
+		    max(p[0] - mbr.second[0], (FT)0.0));
+	FT dy = max(max(mbr.first[1] - p[1], (FT)0.0),
+		    max(p[1] - mbr.second[1], (FT)0.0));
+	return dx * dx + dy * dy;
 }
 
 // return the sqr distance between two points
 template <class Point>
-auto point_point_sqrdis(Point const& lhs, Point const& rhs) {
-  return (lhs.pnt[0] - rhs.pnt[0]) * (lhs.pnt[0] - rhs.pnt[0]) +
-         (lhs.pnt[1] - rhs.pnt[1]) * (lhs.pnt[1] - rhs.pnt[1]);
+auto point_point_sqrdis(Point const &lhs, Point const &rhs)
+{
+	return (lhs.pnt[0] - rhs.pnt[0]) * (lhs.pnt[0] - rhs.pnt[0]) +
+	       (lhs.pnt[1] - rhs.pnt[1]) * (lhs.pnt[1] - rhs.pnt[1]);
 }
 
 template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
+	  uint_fast8_t kImbaRatio>
 template <typename Range>
 auto PTree<Point, SplitRule, kSkHeight, kImbaRatio>::KNN(
-    Node*, Point const& q, kBoundedQueue<Point, Range>& bq) {
-  KNNLogger logger;
-  CpamAugMap::template knn<BT>(this->cpam_aug_map_, q, bq, logger);
-  return logger;
+	Node *, Point const &q, kBoundedQueue<Point, Range> &bq)
+{
+	KNNLogger logger;
+	CpamAugMap::template knn<BT>(this->cpam_aug_map_, q, bq, logger);
+	return logger;
 }
 
 template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
+	  uint_fast8_t kImbaRatio>
 template <typename Range>
-void PTree<Point, SplitRule, kSkHeight, kImbaRatio>::Flatten(Range&& Out) {
-  assert(this->cpam_aug_map_.size() == Out.size());
-  CpamAugMap::entries(this->cpam_aug_map_, parlay::make_slice(Out).begin());
+void PTree<Point, SplitRule, kSkHeight, kImbaRatio>::Flatten(Range &&Out)
+{
+	assert(this->cpam_aug_map_.size() == Out.size());
+	CpamAugMap::entries(this->cpam_aug_map_,
+			    parlay::make_slice(Out).begin());
 }
 
 template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
+	  uint_fast8_t kImbaRatio>
 auto PTree<Point, SplitRule, kSkHeight, kImbaRatio>::RangeCount(
-    Box const& query_box) {
-  RangeQueryLogger logger;
+	Box const &query_box)
+{
+	RangeQueryLogger logger;
 
-  auto size = CpamAugMap::template range_count_filter2<BT>(this->cpam_aug_map_,
-                                                           query_box, logger);
+	auto size = CpamAugMap::template range_count_filter2<BT>(
+		this->cpam_aug_map_, query_box, logger);
 
-  return std::make_pair(size, logger);
+	return std::make_pair(size, logger);
 }
 
 template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
+	  uint_fast8_t kImbaRatio>
 template <typename Range>
 auto PTree<Point, SplitRule, kSkHeight, kImbaRatio>::RangeQuery(
-    Box const& query_box, Range&& Out) {
-  RangeQueryLogger logger;
-  size_t cnt = 0;
-  CpamAugMap::template range_report_filter2<BT>(
-      this->cpam_aug_map_, query_box, cnt, parlay::make_slice(Out), logger);
-  return std::make_pair(cnt, logger);
+	Box const &query_box, Range &&Out)
+{
+	RangeQueryLogger logger;
+	size_t cnt = 0;
+	CpamAugMap::template range_report_filter2<BT>(
+		this->cpam_aug_map_, query_box, cnt, parlay::make_slice(Out),
+		logger);
+	return std::make_pair(cnt, logger);
 }
 
 template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
-          uint_fast8_t kImbaRatio>
-constexpr void PTree<Point, SplitRule, kSkHeight, kImbaRatio>::DeleteTree() {
-  cpam_aug_map_.clear();
-  cpam_aug_map_.root = nullptr;
-  return;
+	  uint_fast8_t kImbaRatio>
+constexpr void PTree<Point, SplitRule, kSkHeight, kImbaRatio>::DeleteTree()
+{
+	cpam_aug_map_.clear();
+	cpam_aug_map_.root = nullptr;
+	return;
 }
 
-}  // namespace psi
+} // namespace psi
 
-#endif  // PSI_P_TREE_IMPL_P_OVERRIDE_HPP_
+#endif // PSI_P_TREE_IMPL_P_OVERRIDE_HPP_
