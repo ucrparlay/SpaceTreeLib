@@ -17,7 +17,7 @@ namespace psi
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
 	  uint_fast8_t kImbaRatio>
 template <typename Leaf, typename Interior>
-auto BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::RetrieveBox(
+decltype(auto) BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::RetrieveBox(
 	Node const *node)
 	requires(HasBox<typename Leaf::AT> && HasBox<typename Interior::AT>)
 {

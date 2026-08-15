@@ -111,7 +111,7 @@ public:
 							   Box const &box,
 							   DimsType d);
 	template <typename Leaf, typename Interior>
-	static inline auto RetrieveBox(Node const *T)
+	static inline decltype(auto) RetrieveBox(Node const *T)
 		requires(HasBox<typename Leaf::AT> &&
 			 HasBox<typename Interior::AT>);
 

@@ -20,7 +20,8 @@ void PTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchInsert_(Slice A)
 {
 	if (!this->cpam_aug_map_.root ||
 	    !CpamAugMap::size(this->cpam_aug_map_.root)) {
-		return Build(std::forward<Slice>(A));
+		/* Build_ , not Build: A is already tree owned storage. */
+		return Build_(A);
 	}
 	this->cpam_aug_map_ =
 		CpamAugMap::multi_insert(std::move(this->cpam_aug_map_), A);

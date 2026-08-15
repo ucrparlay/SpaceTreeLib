@@ -60,13 +60,13 @@ struct OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight,
 		return this->aug.template Update<Leaf, Interior>(tree_nodes);
 	}
 
-	auto GetBox()
+	decltype(auto) GetBox()
 		requires HasBox<AT>
 	{
 		return this->aug.GetBox();
 	}
 
-	auto GetBox() const
+	decltype(auto) GetBox() const
 		requires HasBox<AT>
 	{
 		return this->aug.GetBox();

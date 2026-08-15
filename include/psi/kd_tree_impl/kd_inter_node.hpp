@@ -60,13 +60,13 @@ struct KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight,
 		return this->aug.template Update<Leaf, Interior>(l, r);
 	}
 
-	auto GetBox()
+	decltype(auto) GetBox()
 		requires HasBox<AT>
 	{
 		return this->aug.GetBox();
 	}
 
-	auto GetBox() const
+	decltype(auto) GetBox() const
 		requires HasBox<AT>
 	{
 		return this->aug.GetBox();

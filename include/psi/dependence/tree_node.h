@@ -88,13 +88,13 @@ struct LeafNode : Node {
 		return pts.substr(0, this->size);
 	}
 
-	auto GetBox()
+	decltype(auto) GetBox()
 		requires(NodeHasNonTrivialAug<AT> && HasBox<AT>)
 	{
 		return aug.GetBox();
 	}
 
-	auto GetBox() const
+	decltype(auto) GetBox() const
 		requires(NodeHasNonTrivialAug<AT> && HasBox<AT>)
 	{
 		return aug.GetBox();
