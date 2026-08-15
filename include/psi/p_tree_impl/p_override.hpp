@@ -42,8 +42,8 @@ template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
           uint_fast8_t kImbaRatio>
 template <typename Range>
 void PTree<Point, SplitRule, kSkHeight, kImbaRatio>::Flatten(Range&& Out) {
-  CpamAugMap::entries(parlay::make_slice(Out));
-  return;
+  assert(this->cpam_aug_map_.size() == Out.size());
+  CpamAugMap::entries(this->cpam_aug_map_, parlay::make_slice(Out).begin());
 }
 
 template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,

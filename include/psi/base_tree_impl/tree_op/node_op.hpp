@@ -82,8 +82,9 @@ inline void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::UpdateInterior(
   if constexpr (UpdateParFlag) {
     TI->ResetParallelFlag();
   }
+  /* size_t init: a plain 0 makes the accumulator int and truncates. */
   TI->size = std::accumulate(
-      new_nodes.begin(), new_nodes.end(), 0,
+      new_nodes.begin(), new_nodes.end(), size_t{0},
       [](size_t acc, Node* n) -> size_t { return acc + n->size; });
   TI->tree_nodes = new_nodes;
   TI->UpdateAug(new_nodes);

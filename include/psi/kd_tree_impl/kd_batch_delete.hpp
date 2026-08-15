@@ -31,6 +31,11 @@ template <typename Point, typename SplitRule, typename LeafAugType,
           uint_fast8_t kImbaRatio>
 void KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight,
             kImbaRatio>::BatchDelete_(Slice A) {
+  if (this->root_ == nullptr) {
+    assert(A.size() == 0);
+    return;
+  }
+
   Points B = Points::uninitialized(A.size());
   Node* T = this->root_;
   Box box = this->tree_box_;

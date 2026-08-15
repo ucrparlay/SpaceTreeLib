@@ -18,6 +18,7 @@ auto OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight,
               kImbaRatio>::KNN(Node* T, Point const& q,
                                kBoundedQueue<Point, Range>& bq) {
   KNNLogger logger;
+  if (T == nullptr) return logger;
   // BT::template KNNMulti<Leaf, Interior>(T, q, DIM, bq, this->tree_box_,
   //                                       vis_node_num, generate_box_num,
   //                                       check_box_num);
@@ -40,6 +41,10 @@ template <typename Point, typename SplitRule, typename LeafAugType,
 template <typename Range>
 void OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight,
               kImbaRatio>::Flatten(Range&& Out) {
+  if (this->root_ == nullptr) {
+    assert(Out.size() == 0);
+    return;
+  }
   BT::template FlattenRec<Leaf, Interior>(this->root_, parlay::make_slice(Out));
 }
 
@@ -49,6 +54,7 @@ template <typename Point, typename SplitRule, typename LeafAugType,
 auto OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight,
               kImbaRatio>::RangeCount(Box const& bx) {
   RangeQueryLogger logger;
+  if (this->root_ == nullptr) return std::make_pair(size_t{0}, logger);
   size_t s = BT::template RangeCountRectangle<Leaf, Interior>(
       this->root_, bx, this->tree_box_, 0, 1, logger);
   return std::make_pair(s, logger);
@@ -71,6 +77,7 @@ auto OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight,
               kImbaRatio>::RangeQuery(Box const& query_box, Range&& Out) {
   RangeQueryLogger logger;
   size_t s = 0;
+  if (this->root_ == nullptr) return std::make_pair(s, logger);
   BT::template RangeQuerySerialRecursive<Leaf, Interior>(
       this->root_, parlay::make_slice(Out), s, query_box, this->tree_box_, 0, 1,
       logger);

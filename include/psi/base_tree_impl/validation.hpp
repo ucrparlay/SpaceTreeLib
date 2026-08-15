@@ -84,7 +84,9 @@ BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::CheckBox(Node* T,
     assert(SameBox(return_box, TI->GetBox()));
     return return_box;
   } else {
-    assert(false);
+    static_assert(IsBinaryNode<Interior> || IsMultiNode<Interior>,
+                  "CheckBox supports only binary and multi-way interior nodes");
+    return GetEmptyBox();
   }
 }
 

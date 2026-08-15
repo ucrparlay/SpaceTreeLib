@@ -87,26 +87,13 @@ inline bool BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::SameBox(
   assert(LegalBox(a));
   assert(LegalBox(b));
 
-  if constexpr (kDim == 2) {
-    return Num::Eq(a.first.pnt[0], b.first.pnt[0]) &&
-           Num::Eq(a.first.pnt[1], b.first.pnt[1]) &&
-           Num::Eq(a.second.pnt[0], b.second.pnt[0]) &&
-           Num::Eq(a.second.pnt[1], b.second.pnt[1]);
-  } else if constexpr (kDim == 3) {
-    return Num::Eq(a.first.pnt[0], b.first.pnt[0]) &&
-           Num::Eq(a.first.pnt[1], b.first.pnt[1]) &&
-           Num::Eq(a.first.pnt[2], b.first.pnt[2]) &&
-           Num::Eq(a.second.pnt[0], b.second.pnt[0]) &&
-           Num::Eq(a.second.pnt[1], b.second.pnt[1]) &&
-           Num::Eq(a.second.pnt[2], b.second.pnt[2]);
-    for (DimsType i = 0; i < kDim; ++i) {
-      if (!Num::Eq(a.first.pnt[i], b.first.pnt[i]) ||
-          !Num::Eq(a.second.pnt[i], b.second.pnt[i])) {
-        return false;
-      }
+  for (DimsType i = 0; i < kDim; ++i) {
+    if (!Num::Eq(a.first.pnt[i], b.first.pnt[i]) ||
+        !Num::Eq(a.second.pnt[i], b.second.pnt[i])) {
+      return false;
     }
-    return true;
   }
+  return true;
 }
 
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
@@ -308,7 +295,9 @@ BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::GetBox(Node* T) {
     }
     return GetBox(return_box_seq);
   } else {
-    assert(false);
+    static_assert(IsBinaryNode<Interior> || IsMultiNode<Interior>,
+                  "GetBox supports only binary and multi-way interior nodes");
+    return GetEmptyBox();
   }
 }
 

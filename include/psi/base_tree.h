@@ -500,7 +500,8 @@ class BaseTree {
  protected:
   Node* root_ = nullptr;
   parlay::internal::timer timer;
-  Box tree_box_;
+  /* Empty box is the identity for GetBox(); BasicPoint() leaves junk. */
+  Box tree_box_ = GetEmptyBox();
   size_t delete_node_num_ = 0;
   size_t alloc_node_num_ = 0;
 };

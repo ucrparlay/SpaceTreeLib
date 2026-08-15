@@ -31,6 +31,11 @@ template <typename Point, typename SplitRule, typename LeafAugType,
           uint_fast8_t kImbaRatio>
 void OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight,
               kImbaRatio>::BatchDelete_(Slice A) {
+  if (this->root_ == nullptr) {
+    assert(A.size() == 0);
+    return;
+  }
+
   Points B = Points::uninitialized(A.size());
   this->root_ = BatchDeleteRecursive(this->root_, A, parlay::make_slice(B),
                                      this->tree_box_, 1);
