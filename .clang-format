@@ -23,7 +23,10 @@ AlignAfterOpenBracket: Align
 AlignEscapedNewlines: Left
 AlwaysBreakTemplateDeclarations: Yes
 SpaceAfterCStyleCast: false
-SortIncludes: CaseSensitive
+# Off, as in the kernel's own .clang-format. Include order is load bearing
+# here: cpam_raw/cpam/cpam.h is a hand ordered dependency chain, and
+# base_tree.h pulls its impl headers in after the class body.
+SortIncludes: false
 
 AccessModifierOffset: -8
 

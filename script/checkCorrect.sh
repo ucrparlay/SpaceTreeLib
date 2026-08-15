@@ -6,7 +6,7 @@ Nodes=(1000000 5000000 8000000 10000000 50000000)
 
 # NOTE: parameters
 tester="p_ccp"
-# tester="kd_ccp"
+tester="kd_ccp"
 
 make -C ../build ${tester}
 
@@ -25,8 +25,6 @@ elif [[ ${tester} == "kd_ccp" ]]; then
 fi
 K=100
 count=1 # count the number of ok in the output
-# queryTypes=$((2#110))
-# trees=(2)
 
 # NOTE: log path
 resFile="Correct.out"
