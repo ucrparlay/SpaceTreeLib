@@ -35,7 +35,7 @@ template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
 	  uint_fast8_t kImbaRatio>
 template <typename Range>
 auto PTree<Point, SplitRule, kSkHeight, kImbaRatio>::KNN(
-	Node *, Point const &q, kBoundedQueue<Point, Range> &bq)
+	Point const &q, kBoundedQueue<Point, Range> &bq)
 {
 	KNNLogger logger;
 	CpamAugMap::template knn<BT>(this->cpam_aug_map_, q, bq, logger);
@@ -45,7 +45,7 @@ auto PTree<Point, SplitRule, kSkHeight, kImbaRatio>::KNN(
 template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
 	  uint_fast8_t kImbaRatio>
 template <typename Range>
-void PTree<Point, SplitRule, kSkHeight, kImbaRatio>::Flatten(Range &&Out)
+void PTree<Point, SplitRule, kSkHeight, kImbaRatio>::Flatten(Range &&Out) const
 {
 	assert(this->cpam_aug_map_.size() == Out.size());
 	CpamAugMap::entries(this->cpam_aug_map_,

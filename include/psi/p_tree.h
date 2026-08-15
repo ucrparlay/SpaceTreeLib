@@ -141,6 +141,13 @@ public:
 	using Interior = CpamAugMap::Tree::node;
 
 	// NOTE: general tree structure
+	/* DeleteTreeWrapper is idempotent, so an explicit DeleteTree()
+	 * before this stays correct. */
+	~PTree() override
+	{
+		DeleteTree();
+	}
+
 	void PTreeTag();
 
 	template <typename Range>
@@ -159,10 +166,11 @@ public:
 	void BatchDiff(Range &&In);
 
 	template <typename Range>
-	void Flatten(Range &&Out);
+	void Flatten(Range &&Out) const;
 
 	template <typename Range>
-	auto KNN(Node *T, Point const &q, kBoundedQueue<Point, Range> &bq);
+	/* Not const: cpam takes the map by non-const reference. */
+	auto KNN(Point const &q, kBoundedQueue<Point, Range> &bq);
 
 	auto RangeCount(Box const &query_box);
 

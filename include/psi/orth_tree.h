@@ -91,6 +91,13 @@ public:
 	/* The split rule calls BuildRecursive back; see DivideSpace. */
 	friend SplitRule;
 
+	/* DeleteTreeWrapper is idempotent, so an explicit DeleteTree()
+	 * before this stays correct. */
+	~OrthTree() override
+	{
+		DeleteTree();
+	}
+
 	void OrthTreeTag();
 
 	template <typename Range, typename... Args>
@@ -109,15 +116,15 @@ public:
 	void BatchDiff(Range &&In);
 
 	template <typename Range>
-	void Flatten(Range &&Out);
+	void Flatten(Range &&Out) const;
 
 	template <typename Range>
-	auto KNN(Node *T, Point const &q, kBoundedQueue<Point, Range> &bq);
+	auto KNN(Point const &q, kBoundedQueue<Point, Range> &bq) const;
 
-	auto RangeCount(Box const &query_box);
+	auto RangeCount(Box const &query_box) const;
 
 	template <typename Range>
-	auto RangeQuery(Box const &query_box, Range &&Out);
+	auto RangeQuery(Box const &query_box, Range &&Out) const;
 
 	constexpr void DeleteTree() override;
 

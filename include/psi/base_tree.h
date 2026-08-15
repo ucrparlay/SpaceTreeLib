@@ -343,6 +343,12 @@ public:
 	template <SupportsForceParallel Interior, bool granularity>
 	inline static bool ForceParallelRecursion(Interior const *T);
 
+	/*
+	 * Needed because DeleteTree is virtual. The derived destructor does the
+	 * freeing; calling a pure virtual from here would be too late.
+	 */
+	virtual ~BaseTree() = default;
+
 	constexpr virtual void DeleteTree() = 0;
 
 	template <typename Leaf, typename Interior>
@@ -520,17 +526,17 @@ public:
 		this->root_ = root;
 	}
 
-	Node *GetRoot()
+	Node *GetRoot() const
 	{
 		return this->root_;
 	}
 
-	size_t GetSize()
+	size_t GetSize() const
 	{
 		return this->root_ ? this->root_->size : 0;
 	}
 
-	Box GetRootBox()
+	Box GetRootBox() const
 	{
 		return this->tree_box_;
 	}

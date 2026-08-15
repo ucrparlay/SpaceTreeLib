@@ -16,25 +16,27 @@ template <typename Point, typename SplitRule, typename LeafAugType,
 	  uint_fast8_t kImbaRatio>
 template <typename Range>
 auto OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight,
-	      kImbaRatio>::KNN(Node *T, Point const &q,
-			       kBoundedQueue<Point, Range> &bq)
+	      kImbaRatio>::KNN(Point const &q,
+			       kBoundedQueue<Point, Range> &bq) const
 {
 	KNNLogger logger;
-	if (T == nullptr)
+	if (this->root_ == nullptr)
 		return logger;
-	// BT::template KNNMulti<Leaf, Interior>(T, q, DIM, bq, this->tree_box_,
+	// BT::template KNNMulti<Leaf, Interior>(this->root_, q, DIM, bq,
+	// this->tree_box_,
 	//                                       vis_node_num, generate_box_num,
 	//                                       check_box_num);
 	// BT::template KNNBinary<Leaf, KdInteriorNode>(T, q, DIM, bq,
 	// this->tree_box_,
 	//                                              logger);
 	if constexpr (HasBox<typename Interior::AT>) {
-		BT::template KNNMulti<Leaf, Interior>(T, q, bq, logger);
+		BT::template KNNMulti<Leaf, Interior>(this->root_, q, bq,
+						      logger);
 		// BT::template KNNMultiExpandBox<Leaf, Interior>(T, q, 0, 1,
 		// bq, logger);
 	} else {
 		BT::template KNNMultiExpand<Leaf, Interior>(
-			T, q, 0, 1, bq, this->tree_box_, logger);
+			this->root_, q, 0, 1, bq, this->tree_box_, logger);
 	}
 	return logger;
 }
@@ -44,7 +46,7 @@ template <typename Point, typename SplitRule, typename LeafAugType,
 	  uint_fast8_t kImbaRatio>
 template <typename Range>
 void OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight,
-	      kImbaRatio>::Flatten(Range &&Out)
+	      kImbaRatio>::Flatten(Range &&Out) const
 {
 	if (this->root_ == nullptr) {
 		assert(Out.size() == 0);
@@ -58,7 +60,7 @@ template <typename Point, typename SplitRule, typename LeafAugType,
 	  typename InteriorAugType, uint_fast8_t kMD, uint_fast8_t kSkHeight,
 	  uint_fast8_t kImbaRatio>
 auto OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight,
-	      kImbaRatio>::RangeCount(Box const &bx)
+	      kImbaRatio>::RangeCount(Box const &bx) const
 {
 	RangeQueryLogger logger;
 	if (this->root_ == nullptr)
@@ -82,7 +84,7 @@ template <typename Point, typename SplitRule, typename LeafAugType,
 	  uint_fast8_t kImbaRatio>
 template <typename Range>
 auto OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight,
-	      kImbaRatio>::RangeQuery(Box const &query_box, Range &&Out)
+	      kImbaRatio>::RangeQuery(Box const &query_box, Range &&Out) const
 {
 	RangeQueryLogger logger;
 	size_t s = 0;

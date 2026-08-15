@@ -693,9 +693,21 @@ void queryKNN([[maybe_unused]] uint_fast8_t const &Dim,
 			// }
 			parlay::parallel_for(0, n, [&](size_t i) {
 				// for (size_t i = 0; i < n; i++) {
+				/* The baseline trees still take the root; the
+				 * psi trees dropped it, every caller was
+				 * passing GetRoot(). */
+				auto knn_log = [&]() {
+					if constexpr (psi::IsKdTree<Tree> ||
+						      psi::IsOrthTree<Tree> ||
+						      psi::IsPTree<Tree>) {
+						return pkd.KNN(wp[i], bq[i]);
+					} else {
+						return pkd.KNN(KDParallelRoot,
+							       wp[i], bq[i]);
+					}
+				}();
 				auto [vis_leaf_num, vis_inter_num, gen_box_num,
-				      check_box_num, skip_box_num] =
-					pkd.KNN(KDParallelRoot, wp[i], bq[i]);
+				      check_box_num, skip_box_num] = knn_log;
 				kdknn[i] = bq[i].top().second;
 				vis_leaf[i] = vis_leaf_num;
 				vis_inter[i] = vis_inter_num;

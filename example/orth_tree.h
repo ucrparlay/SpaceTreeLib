@@ -122,8 +122,7 @@ void run_example()
 					     nn_pair(std::ref(points[0]), 0));
 	psi::kBoundedQueue<Point, nn_pair> bq(parlay::make_slice(knn_result));
 
-	auto *root = tree.GetRoot();
-	tree.KNN(root, query_point, bq);
+	tree.KNN(query_point, bq);
 
 	std::cout << "Found " << K
 		  << " nearest neighbors to point (500, 500) (unsorted):"
