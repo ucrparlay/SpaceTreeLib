@@ -31,6 +31,21 @@ public:
 				  InteriorAugType, kMD, kSkHeight, kImbaRatio>,
 			 kSkHeight, kImbaRatio>;
 
+	static_assert(
+		LeafAugmentation<LeafAugType, typename BT::Slice>,
+		"LeafAugType needs A(), A(Slice), UpdateAug(Slice), Reset()");
+	static_assert(InteriorAugmentation<InteriorAugType>,
+		      "InteriorAugType needs SetParallelFlag(bool), "
+		      "ResetParallelFlag(), GetParallelFlagIniStatus(), "
+		      "ForceParallel(size_t)");
+	/*
+	 * DivideRotate hands SplitSample a null slice, which only SpatialMedian
+	 * ignores. ObjectMedian dereferences it and the build segfaults.
+	 */
+	static_assert(
+		IsSpatialMedianSplit<typename SplitRule::PartitionRuleType>,
+		"OrthTree needs a SpatialMedian partition rule");
+
 	using BucketType = BT::BucketType;
 	using BallsType = BT::BallsType;
 	using BucketSeq = BT::BucketSeq;

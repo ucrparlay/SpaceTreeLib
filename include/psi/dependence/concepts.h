@@ -2,6 +2,7 @@
 #define PSI_DEPENDENCE_CONCEPTS_H_
 
 #include <concepts>
+#include <cstddef>
 #include <cstdint>
 #include <type_traits>
 #include <utility>
@@ -157,6 +158,27 @@ concept IsObjectMedianSplit = requires(T t) {
 template <typename T>
 concept IsSpatialMedianSplit = requires(T t) {
 	{ t.SpatialMedianTag() } -> std::same_as<void>;
+};
+
+/*
+ * What KdTree and OrthTree require of a user supplied augmentation. Create and
+ * Update are not here: they take the very Interior type that holds the
+ * augmentation, which is not nameable at the point these are checked.
+ */
+template <typename A, typename Slice>
+concept LeafAugmentation = requires(A a, Slice In) {
+	A();
+	A(In);
+	a.UpdateAug(In);
+	a.Reset();
+};
+
+template <typename A>
+concept InteriorAugmentation = requires(A a, bool flag, size_t n) {
+	a.SetParallelFlag(flag);
+	a.ResetParallelFlag();
+	{ a.GetParallelFlagIniStatus() } -> std::convertible_to<bool>;
+	{ a.ForceParallel(n) } -> std::convertible_to<bool>;
 };
 
 template <typename T>

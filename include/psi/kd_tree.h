@@ -28,6 +28,14 @@ public:
 				   InteriorAugType, kSkHeight, kImbaRatio>,
 			    kSkHeight, kImbaRatio>;
 
+	static_assert(
+		LeafAugmentation<LeafAugType, typename BT::Slice>,
+		"LeafAugType needs A(), A(Slice), UpdateAug(Slice), Reset()");
+	static_assert(InteriorAugmentation<InteriorAugType>,
+		      "InteriorAugType needs SetParallelFlag(bool), "
+		      "ResetParallelFlag(), GetParallelFlagIniStatus(), "
+		      "ForceParallel(size_t)");
+
 	using BucketType = typename BT::BucketType;
 	using BallsType = typename BT::BallsType;
 	using DimsType = typename BT::DimsType;

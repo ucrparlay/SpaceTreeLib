@@ -1856,10 +1856,24 @@ public:
 						  psi::BoxInteriorAug<BT>>>(
 					params, test_func);
 			} else if (tree_type == 1) {
-				Run<OrthTreeWrapper<Point, SplitRule,
-						    psi::BoxLeafAug<BT>,
-						    psi::BoxInteriorAug<BT>>>(
-					params, test_func);
+				/* OrthTree needs SpatialMedian; see the
+				 * static_assert in orth_tree.h. Asking for
+				 * ObjectMedian used to segfault during build.
+				 */
+				if constexpr (
+					psi::IsSpatialMedianSplit<
+						typename SplitRule::
+							PartitionRuleType>) {
+					Run<OrthTreeWrapper<
+						Point, SplitRule,
+						psi::BoxLeafAug<BT>,
+						psi::BoxInteriorAug<BT>>>(
+						params, test_func);
+				} else {
+					std::cout
+						<< "OrthTree needs a "
+						   "SpatialMedian split rule\n";
+				}
 			} else if (tree_type == 4) { // NOTE: for boost
 				Run<KdTreeWrapper<Point, SplitRule,
 						  psi::BoxLeafAug<BT>,
