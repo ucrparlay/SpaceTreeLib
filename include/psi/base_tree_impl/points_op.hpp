@@ -94,33 +94,6 @@ void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::Partition(
 	return;
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
-	  uint_fast8_t kImbaRatio>
-typename BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::PointsIter
-BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::SerialPartition(Slice In,
-								     DimsType d)
-{
-	size_t n = In.size();
-	std::ranges::nth_element(In.begin(), In.begin() + n / 2, In.end(),
-				 [&](Point const &p1, Point const &p2) {
-					 return Num::Lt(p1.pnt[d], p2.pnt[d]);
-				 });
-
-	std::ranges::subrange _2ndGroup = std::ranges::partition(
-		In.begin(), In.begin() + n / 2, [&](Point const &p) {
-			return Num::Lt(p.pnt[d], In[n / 2].pnt[d]);
-		});
-
-	if (_2ndGroup.begin() ==
-	    In.begin()) { // NOTE: handle duplicated medians
-		_2ndGroup = std::ranges::partition(
-			In.begin() + n / 2, In.end(), [&](Point const &p) {
-				return Num::Eq(p.pnt[d], In[n / 2].pnt[d]);
-			}); // NOTE: now all duplicated median is on the left
-	}
-	return _2ndGroup.begin();
-}
-
 // NOTE: retrive the bucket tag of Point p from the skeleton tags
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
 	  uint_fast8_t kImbaRatio>

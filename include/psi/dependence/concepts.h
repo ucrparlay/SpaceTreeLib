@@ -18,9 +18,6 @@ namespace psi
 // template<typename T>
 // concept IsPair = is_pair<T>::value;
 
-template <typename T>
-concept IsPointer = std::is_pointer_v<T>;
-
 template <typename T, typename Node>
 concept CheckPointerToNode = std::is_pointer_v<T> &&
 			     std::is_base_of_v<Node, std::remove_pointer_t<T>>;
@@ -44,10 +41,6 @@ concept IsBox = requires {
 template <typename T>
 concept NodeHasNonTrivialAug =
 	(!std::is_empty_v<T>) && (!std::same_as<T, std::monostate>);
-
-// NOTE:  Concept to check if a type is present in a parameter pack
-template <typename T, typename... Args>
-concept ContainsType = (std::same_as<T, Args> || ...);
 
 // NOTE:: Helper function to find and return the variable of the specified type
 template <typename T, typename First, typename... Rest>
@@ -147,21 +140,19 @@ concept IsKdTree = requires(T t) {
 	{ t.KdTreeTag() } -> std::same_as<void>;
 };
 
-// NOTE: tag a rtree
-template <typename T>
-concept IsRTree = requires(T t) {
-	{ t.RTreeTag() } -> std::same_as<void>;
-};
-
-// NOTE: tag a rtree
-template <typename T>
-concept IsCoverTree = requires(T t) {
-	{ t.CoverTreeTag() } -> std::same_as<void>;
-};
-
 template <typename T>
 concept IsPTree = requires(T t) {
 	{ t.PTreeTag() } -> std::same_as<void>;
+};
+
+template <typename T>
+concept IsObjectMedianSplit = requires(T t) {
+	{ t.ObjectMedianTag() } -> std::same_as<void>;
+};
+
+template <typename T>
+concept IsSpatialMedianSplit = requires(T t) {
+	{ t.SpatialMedianTag() } -> std::same_as<void>;
 };
 
 template <typename T>
@@ -179,25 +170,6 @@ concept IsRotateDimSplit = requires(T t) {
 	{ t.RotateDimTag() } -> std::same_as<void>;
 };
 
-template <typename T>
-concept IsObjectMedianSplit = requires(T t) {
-	{ t.ObjectMedianTag() } -> std::same_as<void>;
-};
-
-template <typename T>
-concept IsSpatialMedianSplit = requires(T t) {
-	{ t.SpatialMedianTag() } -> std::same_as<void>;
-};
-
-template <typename T>
-concept IsHilbertCode = requires(T t) {
-	{ t.HilbertTag() } -> std::same_as<void>;
-};
-
-template <typename T>
-concept IsMortonCode = requires(T t) {
-	{ t.MortonTag() } -> std::same_as<void>;
-};
 struct FullCoveredTag {
 };
 struct PartialCoverTag {

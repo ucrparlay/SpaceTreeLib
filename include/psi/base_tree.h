@@ -1,8 +1,6 @@
 #ifndef PSI_BASE_TREE_H_
 #define PSI_BASE_TREE_H_
 
-#include <sys/types.h>
-
 #include <cstdint>
 #include <cstdio>
 #include <type_traits>
@@ -49,14 +47,12 @@ public:
 	using Box = std::pair<BasicPoint, BasicPoint>;
 	using BoxSeq = parlay::sequence<Box>;
 
-	using NodeBoolean = std::pair<Node *, bool>;
 	using NodeBox = std::pair<Node *, Box>;
 	using NodeBoxSeq = parlay::sequence<NodeBox>;
 	using NodeTag = std::pair<Node *, uint_fast8_t>;
 	using NodeTagSeq = parlay::sequence<NodeTag>;
 
 	// TODO: use the one provided in aug
-	using IDType = uint_fast32_t;
 
 	// NOTE: Const variables
 	// NOTE: uint32t handle up to 4e9 at least
@@ -70,10 +66,8 @@ public:
 	// NOTE: tree structure
 	static constexpr uint_fast8_t const kLeaveWrap = 32;
 	static constexpr uint_fast8_t const kThinLeaveWrap = 24;
-	static constexpr uint_fast8_t const kSlimLeaveWrap = 8;
 	// static constexpr uint_fast8_t const kLeaveWrap = 8;
 	// static constexpr uint_fast8_t const kThinLeaveWrap = 4;
-	// static constexpr uint_fast8_t const kSlimLeaveWrap = 4;
 	static constexpr uint_fast16_t const kSerialBuildCutoff = 1 << 10;
 
 	// NOTE: block param in Partition
@@ -320,8 +314,6 @@ public:
 	static Node *BuildInnerTree(BucketType idx, HyperPlaneSeq const &pivots,
 				    parlay::sequence<Node *> const &tree_nodes);
 
-	static PointsIter SerialPartition(Slice In, DimsType d);
-
 	// NOTE: delete tree
 	template <SupportsForceParallel Interior, bool granularity>
 	inline static bool ForceParallelRecursion(Interior const *T);
@@ -360,12 +352,6 @@ public:
 	static inline DisType InterruptibleDistance(Point const &p,
 						    Point const &q, DisType up);
 
-	// NOTE: get the split for a node
-	template <typename Leaf, typename Interior>
-	static inline typename Interior::ST const &GetSplit(Node const *node)
-		requires std::same_as<typename BaseTree::Box,
-				      typename Interior::ST>;
-
 	// NOTE: searech knn in the leaf
 	template <typename Leaf, typename Range>
 	static void KNNLeaf(Node *T, Point const &q,
@@ -401,13 +387,6 @@ public:
 	static void KNNMulti(Node *T, Point const &q,
 			     kBoundedQueue<Point, Range> &bq,
 			     KNNLogger &logger);
-
-	// NOTE: search knn in the mix of binary and multi node
-	template <typename Leaf, IsBinaryNode BN, IsMultiNode MN,
-		  typename Range>
-	static void KNNMix(Node *T, Point const &q, DimsType dim,
-			   BucketType idx, kBoundedQueue<Point, Range> &bq,
-			   Box const &node_box, KNNLogger &logger);
 
 	// NOTE: search knn in the cover node
 	// TODO: change type of interior
@@ -476,31 +455,6 @@ public:
 		  bool granularity = true>
 	static void PartialFlatten(Node *T, Range Out, BucketType idx);
 
-	// NOTE: expand a multi node into a binary node
-	template <IsBinaryNode BN, IsMultiNode MN>
-	static Node *
-	ExpandMultiNode(typename MN::ST const &split, BucketType idx,
-			BucketType deep,
-			parlay::sequence<Node *> const &tree_nodes);
-
-	// NOTE: expand a multi-way tree into a binary tree
-	template <IsBinaryNode BN, IsMultiNode MN>
-	static Node *Expand2Binary(Node *T)
-		requires std::same_as<typename BN::ST,
-				      typename MN::ST::value_type>;
-
-	// NOTE: compress several level of bianry node into a multi node
-	template <IsBinaryNode BN, IsMultiNode MN>
-	static void CompressBinaryNode(Node *bn_proto,
-				       typename MN::NodeArr &tree_nodes,
-				       typename MN::ST &split, BucketType idx);
-
-	// NOTE: compress a binary tree into a multi-way tree
-	template <IsBinaryNode BN, IsMultiNode MN>
-	static Node *Compress2Multi(Node *T)
-		requires std::same_as<typename BN::ST,
-				      typename MN::ST::value_type>;
-
 	// NOTE: validations
 	template <typename Leaf, typename Interior>
 	Box CheckBox(Node *T, Box const &box);
@@ -566,8 +520,6 @@ protected:
 	parlay::internal::timer timer;
 	/* Empty box is the identity for GetBox(); BasicPoint() leaves junk. */
 	Box tree_box_ = GetEmptyBox();
-	size_t delete_node_num_ = 0;
-	size_t alloc_node_num_ = 0;
 };
 
 } // namespace psi
@@ -582,7 +534,6 @@ protected:
 #include "base_tree_impl/points_op.hpp"
 #include "base_tree_impl/range_query.hpp"
 #include "base_tree_impl/tree_op/build_inner_tree.hpp"
-#include "base_tree_impl/tree_op/compress_expand_tree.hpp"
 #include "base_tree_impl/tree_op/flatten.hpp"
 #include "base_tree_impl/tree_op/leaf_op.hpp"
 #include "base_tree_impl/tree_op/node_op.hpp"

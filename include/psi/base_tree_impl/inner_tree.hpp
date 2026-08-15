@@ -13,8 +13,8 @@ template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
 template <typename Leaf, typename Interior>
 struct BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::InnerTree {
 	using BT = BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>;
-	InnerTree(BT &_btref)
-	    : BTRef(_btref), tags_num(0),
+	InnerTree()
+	    : tags_num(0),
 	      tags(NodeTagSeq::uninitialized(kPivotNum + kBucketNum + 1)),
 	      sums_tree(
 		      parlay::sequence<BallsType>(kPivotNum + kBucketNum + 1)),
@@ -47,18 +47,6 @@ struct BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::InnerTree {
 				      IsMultiNode<Interior>);
 		}
 		return true;
-	}
-
-	inline BucketType GetNodeIdx(BucketType idx, Node *T)
-	{
-		if (tags[idx].first == T)
-			return idx;
-		if (idx > kPivotNum || tags[idx].first->is_leaf)
-			return -1;
-		auto pos = GetNodeIdx(idx << 1, T);
-		if (pos != -1)
-			return pos;
-		return GetNodeIdx(idx << 1 | 1, T);
 	}
 
 	// NOTE: cores
@@ -140,7 +128,7 @@ struct BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::InnerTree {
 	// points seieved onto every node, it is good to determine whether we
 	// need forcing parallel in the following operations, e.g.,
 	// flatten/rebuild the tree.
-	void ReduceSums(BucketType idx) const
+	void ReduceSums(BucketType idx)
 	{
 		if (idx > kPivotNum || tags[idx].first->is_leaf) {
 			assert(tags[idx].second < kBucketNum);
@@ -602,21 +590,11 @@ struct BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::InnerTree {
 		}
 	}
 
-	void Reset()
-	{
-		ResetTagsNum();
-		tags = NodeTagSeq::uninitialized(kPivotNum + kBucketNum + 1);
-		sums_tree =
-			parlay::sequence<BallsType>(kPivotNum + kBucketNum + 1);
-		rev_tag = BucketSeq::uninitialized(kBucketNum);
-	}
-
 	// NOTE: variables
-	BT &BTRef;
 	BucketType tags_num;
 	NodeTagSeq tags; // PARA: Assign each node a tag, aka skeleton
-	mutable parlay::sequence<BallsType> sums_tree;
-	mutable BucketSeq rev_tag; // PARA: maps tag to the position in skeleton
+	parlay::sequence<BallsType> sums_tree;
+	BucketSeq rev_tag; // PARA: maps tag to the position in skeleton
 	parlay::sequence<BallsType> sums;
 };
 }; // namespace psi

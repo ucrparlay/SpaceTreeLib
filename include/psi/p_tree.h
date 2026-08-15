@@ -36,7 +36,6 @@ public:
 	using BallsType = typename BT::BallsType;
 	using DimsType = typename BT::DimsType;
 	using BucketSeq = typename BT::BucketSeq;
-	using BallSeq = typename BT::BallSeq;
 	using Coord = typename Point::Coord;
 	using Coords = typename Point::Coords;
 	using Num = Num_Comparator<Coord>;
@@ -45,12 +44,9 @@ public:
 	using PointsIter = typename BT::PointsIter;
 	using Box = typename BT::Box;
 	using BoxSeq = typename BT::BoxSeq;
-	using Circle = typename BT::NormalCircle;
 
 	using HyperPlane = typename BT::HyperPlane;
 	using HyperPlaneSeq = typename BT::HyperPlaneSeq;
-	using NodeTag = typename BT::NodeTag;
-	using NodeTagSeq = typename BT::NodeTagSeq;
 	using NodeBox = typename BT::NodeBox;
 	using NodeBoxSeq = typename BT::NodeBoxSeq;
 	using Splitter = HyperPlane;

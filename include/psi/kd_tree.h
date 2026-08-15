@@ -30,7 +30,6 @@ public:
 	using BallsType = typename BT::BallsType;
 	using DimsType = typename BT::DimsType;
 	using BucketSeq = typename BT::BucketSeq;
-	using BallSeq = typename BT::BallSeq;
 	using Coord = typename Point::Coord;
 	using Coords = typename Point::Coords;
 	using Num = Num_Comparator<Coord>;
@@ -39,12 +38,9 @@ public:
 	using PointsIter = typename BT::PointsIter;
 	using Box = typename BT::Box;
 	using BoxSeq = typename BT::BoxSeq;
-	using Circle = typename BT::NormalCircle;
 
 	using HyperPlane = typename BT::HyperPlane;
 	using HyperPlaneSeq = typename BT::HyperPlaneSeq;
-	using NodeTag = typename BT::NodeTag;
-	using NodeTagSeq = typename BT::NodeTagSeq;
 	using NodeBox = typename BT::NodeBox;
 	using NodeBoxSeq = typename BT::NodeBoxSeq;
 	using Splitter = HyperPlane;
@@ -52,17 +48,11 @@ public:
 	using SplitRuleType = SplitRule;
 
 	static constexpr DimsType const kMD = 2;
-	using CompressNodeSplitter = std::array<HyperPlane, 1 << kMD>;
-
-	template <uint_fast8_t kMD>
-	struct KdCompressionNode;
 
 	using Leaf = LeafNode<Point, Slice, BT::kLeaveWrap, LeafAugType,
 			      parlay::move_assign_tag>;
 	struct KdInteriorNode;
 	using Interior = KdInteriorNode;
-
-	using CompressInterior = KdCompressionNode<kMD>;
 
 	using InnerTree = typename BT::template InnerTree<Leaf, Interior>;
 	using BoxCut = typename BT::BoxCut;
@@ -79,7 +69,6 @@ public:
 	void KdTreeTag();
 
 	// NOTE: functions
-	void Compress2Multi();
 
 	template <typename Range>
 	void Build(Range &&In);
@@ -123,8 +112,6 @@ public:
 	auto KNN(Node *T, Point const &q, kBoundedQueue<Point, Range> &bq);
 
 	auto RangeCount(Box const &query_box);
-
-	auto RangeCount(Circle const &cl);
 
 	template <typename Range>
 	auto RangeQuery(Box const &query_box, Range &&Out);

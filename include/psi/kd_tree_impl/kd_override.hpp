@@ -13,18 +13,6 @@ namespace psi
 template <typename Point, typename SplitRule, typename LeafAugType,
 	  typename InteriorAugType, uint_fast8_t kSkHeight,
 	  uint_fast8_t kImbaRatio>
-void KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight,
-	    kImbaRatio>::Compress2Multi()
-{
-	this->root_ =
-		BT::template Compress2Multi<KdInteriorNode, CompressInterior>(
-			this->root_);
-	return;
-}
-
-template <typename Point, typename SplitRule, typename LeafAugType,
-	  typename InteriorAugType, uint_fast8_t kSkHeight,
-	  uint_fast8_t kImbaRatio>
 template <typename Range>
 auto KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight,
 	    kImbaRatio>::KNN(Node *T, Point const &q,
@@ -33,8 +21,6 @@ auto KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight,
 	KNNLogger logger;
 	if (T == nullptr)
 		return logger;
-	// BT::template KNNMix<Leaf, KdInteriorNode, CompressInterior>(
-	//     T, q, 0, 1, bq, this->tree_box_, logger);
 	if constexpr (HasBox<typename Interior::AT>) {
 		BT::template KNNBinaryBox<Leaf, Interior>(T, q, bq, logger);
 	} else {

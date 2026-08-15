@@ -4,7 +4,6 @@
 #include <parlay/parallel.h>
 
 #include <concepts>
-#include <cwchar>
 
 #include "../base_tree.h"
 #include "parlay/primitives.h"

@@ -25,19 +25,6 @@ auto BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::RetriveBox(
 			     : static_cast<Interior const *>(node)->GetBox();
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
-	  uint_fast8_t kImbaRatio>
-template <typename Leaf, typename Interior>
-typename Interior::ST const &
-BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::GetSplit(Node const *node)
-	requires std::same_as<typename BaseTree<Point, DerivedTree, kSkHeight,
-						kImbaRatio>::Box,
-			      typename Interior::ST>
-{
-	return node->is_leaf ? static_cast<Leaf const *>(node)->GetSplit()
-			     : static_cast<Interior const *>(node)->GetSplit();
-}
-
 // NOTE: update the info of T by new children L and R
 template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
 	  uint_fast8_t kImbaRatio>

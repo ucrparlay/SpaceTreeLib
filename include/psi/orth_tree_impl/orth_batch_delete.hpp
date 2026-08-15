@@ -128,7 +128,7 @@ Node *OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight,
 		return T;
 	}
 
-	InnerTree IT(*this);
+	InnerTree IT;
 	IT.AssignNodeTag(T, 1);
 	assert(IT.tags_num > 0 && IT.tags_num <= BT::kBucketNum);
 	BT::template SeievePoints<Interior>(In, Out, n, IT.tags, IT.sums,

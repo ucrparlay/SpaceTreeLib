@@ -31,7 +31,6 @@ public:
 	using BucketType = BT::BucketType;
 	using BallsType = BT::BallsType;
 	using BucketSeq = BT::BucketSeq;
-	using BallSeq = BT::BallSeq;
 	using DimsType = BT::DimsType;
 	using Coord = typename Point::Coord;
 	using Coords = typename Point::Coords;
@@ -47,7 +46,6 @@ public:
 	using HyperPlaneSeq = BT::HyperPlaneSeq;
 	using Splitter = std::array<HyperPlane, kSplitterNum>;
 	using SplitterSeq = parlay::sequence<Splitter>;
-	using NodeTagSeq = BT::NodeTagSeq;
 	using NodeBoxSeq = BT::NodeBoxSeq;
 	using NodeBox = BT::NodeBox;
 	// using AugType = std::optional<bool>;

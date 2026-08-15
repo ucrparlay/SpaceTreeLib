@@ -15,7 +15,6 @@ configure_danalysis(
     ${PSI_INCLUDE_DIR}/base_tree_impl/points_op.hpp
     ${PSI_INCLUDE_DIR}/base_tree_impl/range_query.hpp
     ${PSI_INCLUDE_DIR}/base_tree_impl/tree_op/build_inner_tree.hpp
-    ${PSI_INCLUDE_DIR}/base_tree_impl/tree_op/compress_expand_tree.hpp
     ${PSI_INCLUDE_DIR}/base_tree_impl/tree_op/flatten.hpp
     ${PSI_INCLUDE_DIR}/base_tree_impl/tree_op/leaf_op.hpp
     ${PSI_INCLUDE_DIR}/base_tree_impl/tree_op/node_op.hpp

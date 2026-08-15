@@ -53,11 +53,6 @@ struct LeafNode : Node {
 	{
 	}
 
-	LeafNode(AT const &_aug)
-	    : Node{true, static_cast<size_t>(0)}, is_dummy(false), aug(_aug)
-	{
-	}
-
 	// NOTE: alloc a leaf with default size
 	LeafNode(Range In, AllocNormalLeafTag)
 	    : Node{true, static_cast<size_t>(In.size())}, is_dummy(false),
@@ -88,24 +83,9 @@ struct LeafNode : Node {
 		parlay::assign_dispatch(pts[0], In[0], PointAssignTag());
 	}
 
-	bool CapacityFull() const
-	{
-		return this->size == kDefaultWrap;
-	}
-
 	Points const GetPoints() const
 	{
 		return pts.substr(0, this->size);
-	}
-
-	AugType &GetAug() const
-	{
-		return aug;
-	}
-
-	AugType const &GetSplit() const
-	{
-		return aug;
 	}
 
 	auto GetBox()
@@ -137,26 +117,6 @@ struct LeafNode : Node {
 	AugType aug;
 };
 
-template <typename NodeType, typename Range>
-static auto GetAugByType(Range In)
-{
-	if constexpr (NodeHasNonTrivialAug<typename NodeType::AT>) {
-		return typename NodeType::AT(In);
-	} else {
-		return typename NodeType::AT();
-	}
-}
-
-template <typename NodeType>
-static auto GetAugByType(Node *l, Node *r)
-{
-	if constexpr (NodeHasNonTrivialAug<typename NodeType::AT>) {
-		return typename NodeType::AT(l, r);
-	} else {
-		return typename NodeType::AT();
-	}
-}
-
 // NOTE:: Alloc a leaf with input IN and given size
 // TODO: the input aug is no longer valid
 template <typename Range, typename Leaf>
@@ -184,15 +144,6 @@ static Leaf *AllocEmptyLeafNode()
 {
 	Leaf *o = parlay::type_allocator<Leaf>::alloc();
 	new (o) Leaf();
-	return o;
-}
-
-// NOTE: Alloc a empty Leaf, but set the aug by hand
-template <typename Range, typename Leaf>
-static Leaf *AllocEmptyLeafNode(typename Leaf::AT const &aug)
-{
-	Leaf *o = parlay::type_allocator<Leaf>::alloc();
-	new (o) Leaf(aug);
 	return o;
 }
 
