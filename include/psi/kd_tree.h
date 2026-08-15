@@ -76,44 +76,25 @@ public:
 	friend Node *BT::RebuildWithInsert(Node *T, PrepareFunc prepare_func,
 					   Slice In, Args &&...args);
 
-	void KdTreeTag();
+	/* The split rule calls BuildRecursive back; see DivideSpace. */
+	friend SplitRule;
 
-	// NOTE: functions
+	void KdTreeTag();
 
 	template <typename Range>
 	void Build(Range &&In);
 
-	constexpr void DeleteTree() override;
-
 	template <typename Range>
 	void BatchInsert(Range &&In);
 
-	void BatchInsert_(Slice In);
-
-	Node *BatchInsertRecursive(Node *T, Slice In, Slice Out, DimsType d);
-
-	// NOTE: batch delete
-	// NOTE: in default, all Points to be deleted are assumed in the tree,
-	// if that is not the case, using BatchDiff
+	// NOTE: every point is assumed to be in the tree; if that may not
+	// hold, use BatchDiff
 	template <typename Range>
 	void BatchDelete(Range &&In);
 
-	void BatchDelete_(Slice In);
-
-	NodeBox BatchDeleteRecursive(Node *T, Box const &bx, Slice In,
-				     Slice Out, DimsType d, bool has_tomb);
-
-	// NOTE: batch diff
-	// NOTE: for the case that some Points to be deleted are not in the tree
+	// NOTE: tolerates points that are not in the tree
 	template <typename Range>
 	void BatchDiff(Range &&In);
-
-	void BatchDiff_(Slice In);
-
-	// TODO: add bounding Box for batch delete recursive as well
-	// WARN: fix the possible in partial deletion as well
-	NodeBox BatchDiffRecursive(Node *T, Box const &bx, Slice In, Slice Out,
-				   DimsType d);
 
 	template <typename Range>
 	void Flatten(Range &&Out);
@@ -126,18 +107,7 @@ public:
 	template <typename Range>
 	auto RangeQuery(Box const &query_box, Range &&Out);
 
-	void DivideRotate(Slice In, SplitterSeq &pivots, DimsType dim,
-			  BucketType idx, BoxSeq &box_seq, Box const &bx);
-
-	void PickPivots(Slice In, size_t const &n, SplitterSeq &pivots,
-			DimsType const dim, BoxSeq &box_seq, Box const &bx);
-
-	Node *BuildRecursive(Slice In, Slice Out, DimsType dim, Box const &bx);
-
-	Node *SerialBuildRecursive(Slice In, Slice Out, DimsType dim,
-				   Box const &bx);
-
-	void Build_(Slice In);
+	constexpr void DeleteTree() override;
 
 	constexpr static char const *GetTreeName()
 	{
@@ -151,6 +121,27 @@ public:
 		else
 			return "NoBox";
 	}
+
+private:
+	void Build_(Slice In);
+	Node *BuildRecursive(Slice In, Slice Out, DimsType dim, Box const &bx);
+	Node *SerialBuildRecursive(Slice In, Slice Out, DimsType dim,
+				   Box const &bx);
+	void DivideRotate(Slice In, SplitterSeq &pivots, DimsType dim,
+			  BucketType idx, BoxSeq &box_seq, Box const &bx);
+	void PickPivots(Slice In, size_t const &n, SplitterSeq &pivots,
+			DimsType const dim, BoxSeq &box_seq, Box const &bx);
+
+	void BatchInsert_(Slice In);
+	Node *BatchInsertRecursive(Node *T, Slice In, Slice Out, DimsType d);
+
+	void BatchDelete_(Slice In);
+	NodeBox BatchDeleteRecursive(Node *T, Box const &bx, Slice In,
+				     Slice Out, DimsType d, bool has_tomb);
+
+	void BatchDiff_(Slice In);
+	NodeBox BatchDiffRecursive(Node *T, Box const &bx, Slice In, Slice Out,
+				   DimsType d);
 
 	SplitRule split_rule_;
 };

@@ -236,6 +236,31 @@ public:
 	static inline CircleType
 	GetCircle(parlay::sequence<CircleType> const &circle_seq);
 
+	/*
+	 * Copy a caller range into tree owned storage and hand the slice to op.
+	 * Every public Build, BatchInsert, BatchDelete and BatchDiff funnels
+	 * through here. The copy is unconditional: the trees consume the buffer
+	 * in place, and a move-when-rvalue path would change how much memory
+	 * traffic every measured operation does.
+	 *
+	 * Preconditions that read the caller's own range must be checked by the
+	 * caller, before this runs.
+	 */
+	template <typename Range, typename Fn>
+	static void IngestRange(Range &&In, Fn &&op)
+	{
+		static_assert(parlay::is_random_access_range_v<Range>);
+		static_assert(parlay::is_less_than_comparable_v<
+			      parlay::range_reference_type_t<Range>>);
+		static_assert(std::is_constructible_v<
+			      parlay::range_value_type_t<Range>,
+			      parlay::range_reference_type_t<Range>>);
+
+		auto aux = Points::uninitialized(parlay::size(In));
+		parlay::copy(In, parlay::make_slice(aux));
+		op(parlay::make_slice(aux));
+	}
+
 	// NOTE: build tree
 	static inline void SamplePoints(Slice In, Points &arr);
 

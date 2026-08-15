@@ -146,29 +146,17 @@ public:
 	template <typename Range>
 	void Build(Range &&In);
 
-	void Build_(Slice In);
-
-	constexpr void DeleteTree() override;
-
 	template <typename Range>
 	void BatchInsert(Range &&In);
 
-	void BatchInsert_(Slice In);
-
-	// NOTE: batch delete
-	// NOTE: in default, all Points to be deleted are assumed in the tree,
-	// if that is not the case, using BatchDiff
+	// NOTE: every point is assumed to be in the tree; if that may not
+	// hold, use BatchDiff
 	template <typename Range>
 	void BatchDelete(Range &&In);
 
-	void BatchDelete_(Slice In);
-
-	// NOTE: batch diff
-	// NOTE: for the case that some Points to be deleted are not in the tree
+	// NOTE: tolerates points that are not in the tree
 	template <typename Range>
 	void BatchDiff(Range &&In);
-
-	void BatchDiff_(Slice In);
 
 	template <typename Range>
 	void Flatten(Range &&Out);
@@ -181,6 +169,8 @@ public:
 	template <typename Range>
 	auto RangeQuery(Box const &query_box, Range &&Out);
 
+	constexpr void DeleteTree() override;
+
 	size_t GetSize() const
 	{
 		return cpam_aug_map_.size();
@@ -190,15 +180,19 @@ public:
 	{
 		return "PTree";
 	}
+
 	constexpr static char const *CheckHasBox()
 	{
 		return "HasBox";
 	}
 
-	// TODO: need to hide the basetree assests, e.g., root_
+private:
+	void Build_(Slice In);
+	void BatchInsert_(Slice In);
+	void BatchDelete_(Slice In);
+	void BatchDiff_(Slice In);
 
 	SplitRule space_filling_curve_;
-
 	CpamAugMap cpam_aug_map_;
 };
 

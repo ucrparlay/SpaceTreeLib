@@ -88,29 +88,23 @@ public:
 	friend Node *BT::RebuildWithInsert(Node *T, PrepareFunc prepare_func,
 					   Slice In, Args &&...args);
 
+	/* The split rule calls BuildRecursive back; see DivideSpace. */
+	friend SplitRule;
+
 	void OrthTreeTag();
 
-	// NOTE: functions
 	template <typename Range, typename... Args>
 	void Build(Range &&In, Args &&...args);
 
 	template <typename Range>
 	void BatchInsert(Range &&In);
 
-	constexpr void DeleteTree() override;
-
-	// NOTE: batch delete
-	// NOTE: in default, all Points to be deleted are assumed in the tree
+	// NOTE: every point is assumed to be in the tree; if that may not
+	// hold, use BatchDiff
 	template <typename Range>
 	void BatchDelete(Range &&In);
 
-	void BatchDelete_(Slice In);
-
-	Node *BatchDeleteRecursive(Node *T, Slice In, Slice Out, Box const &box,
-				   bool has_tomb);
-
-	// NOTE: batch diff
-	// NOTE: for the case that some Points to be deleted are not in the tree
+	// NOTE: tolerates points that are not in the tree
 	template <typename Range>
 	void BatchDiff(Range &&In);
 
@@ -122,37 +116,10 @@ public:
 
 	auto RangeCount(Box const &query_box);
 
-	// auto RangeCount(Circle const& cl);
-
 	template <typename Range>
 	auto RangeQuery(Box const &query_box, Range &&Out);
 
-	void Build_(Slice In);
-
-	void Build_(Slice In, Box const &box);
-
-	void SerialSplit(Slice In, DimsType dim, DimsType idx, Box const &box,
-			 parlay::sequence<BallsType> &sums);
-
-	void SerialSplitSkeleton(Node *T, Slice In, DimsType dim, DimsType idx,
-				 parlay::sequence<BallsType> &sums);
-
-	void DivideRotate(HyperPlaneSeq &pivots, DimsType dim, BucketType idx,
-			  BoxSeq &box_seq, Box const &box);
-
-	void PickPivots(Slice In, size_t const &n, HyperPlaneSeq &pivots,
-			DimsType const dim, BoxSeq &box_seq, Box const &bx);
-
-	Node *BuildRecursive(Slice In, Slice Out, Box const &bx);
-
-	Node *SerialBuildRecursive(Slice In, Slice Out, Box const &bx,
-				   bool checked_duplicate);
-
-	void BatchInsert_(Slice In);
-
-	Node *BatchInsertRecursive(Node *T, Slice In, Slice Out, Box const &bx);
-
-	void BatchDiff_(Slice In);
+	constexpr void DeleteTree() override;
 
 	void SetBoundingBox(Box const &box)
 	{
@@ -160,12 +127,11 @@ public:
 		fixed_box = true;
 	}
 
-	Node *BatchDiffRecursive(Node *T, Slice In, Slice Out);
-
 	constexpr static char const *GetTreeName()
 	{
 		return "OrthTree";
 	}
+
 	constexpr static char const *CheckHasBox()
 	{
 		if constexpr (HasBox<InteriorAugType>)
@@ -174,12 +140,33 @@ public:
 			return "NoBox";
 	}
 
+private:
+	void Build_(Slice In);
+	void Build_(Slice In, Box const &box);
+	Node *BuildRecursive(Slice In, Slice Out, Box const &bx);
+	Node *SerialBuildRecursive(Slice In, Slice Out, Box const &bx,
+				   bool checked_duplicate);
+	void SerialSplit(Slice In, DimsType dim, DimsType idx, Box const &box,
+			 parlay::sequence<BallsType> &sums);
+	void SerialSplitSkeleton(Node *T, Slice In, DimsType dim, DimsType idx,
+				 parlay::sequence<BallsType> &sums);
+	void DivideRotate(HyperPlaneSeq &pivots, DimsType dim, BucketType idx,
+			  BoxSeq &box_seq, Box const &box);
+	void PickPivots(Slice In, size_t const &n, HyperPlaneSeq &pivots,
+			DimsType const dim, BoxSeq &box_seq, Box const &bx);
+
+	void BatchInsert_(Slice In);
+	Node *BatchInsertRecursive(Node *T, Slice In, Slice Out, Box const &bx);
+
+	void BatchDelete_(Slice In);
+	Node *BatchDeleteRecursive(Node *T, Slice In, Slice Out, Box const &box,
+				   bool has_tomb);
+
+	void BatchDiff_(Slice In);
+	Node *BatchDiffRecursive(Node *T, Slice In, Slice Out);
+
 	SplitRule split_rule_;
 	bool fixed_box = false;
-	size_t alloc_dummy_num_ = 0;
-	size_t alloc_empty_num_ = 0;
-	size_t alloc_normal_num_ = 0;
-	size_t alloc_interior_num_ = 0;
 };
 
 } // namespace psi

@@ -15,21 +15,11 @@ template <typename Range>
 void OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight,
 	      kImbaRatio>::BatchInsert(Range &&In)
 {
-	static_assert(parlay::is_random_access_range_v<Range>);
-	static_assert(parlay::is_less_than_comparable_v<
-		      parlay::range_reference_type_t<Range>>);
-	static_assert(
-		std::is_constructible_v<parlay::range_value_type_t<Range>,
-					parlay::range_reference_type_t<Range>>);
 	static_assert(BT::kBuildDepthOnce % kMD == 0);
 	assert(kMD == BT::kDim);
 	// TODO: handling the case that insert box is no in the tree box
 	assert(BT::WithinBox(BT::GetBox(In), this->tree_box_));
-
-	auto aux = Points::uninitialized(parlay::size(In));
-	parlay::copy(In, parlay::make_slice(aux));
-	Slice A = parlay::make_slice(aux);
-	BatchInsert_(A);
+	BT::IngestRange(In, [&](Slice A) { BatchInsert_(A); });
 }
 
 template <typename Point, typename SplitRule, typename LeafAugType,

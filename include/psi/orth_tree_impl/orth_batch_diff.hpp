@@ -16,17 +16,7 @@ template <typename Range>
 void OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight,
 	      kImbaRatio>::BatchDiff(Range &&In)
 {
-	static_assert(parlay::is_random_access_range_v<Range>);
-	static_assert(parlay::is_less_than_comparable_v<
-		      parlay::range_reference_type_t<Range>>);
-	static_assert(
-		std::is_constructible_v<parlay::range_value_type_t<Range>,
-					parlay::range_reference_type_t<Range>>);
-
-	auto aux = Points::uninitialized(parlay::size(In));
-	parlay::copy(In, parlay::make_slice(aux));
-	Slice A = parlay::make_slice(aux);
-	BatchDiff_(A);
+	BT::IngestRange(In, [&](Slice A) { BatchDiff_(A); });
 	return;
 }
 
