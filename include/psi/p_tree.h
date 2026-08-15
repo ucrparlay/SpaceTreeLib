@@ -7,7 +7,16 @@
 #include <utility>
 
 #include "base_tree.h"
+
+/*
+ * cpam is third party. Silence its noise, but not -Wreturn-local-addr or
+ * -Wuninitialized: both currently fire in augmented_node.h and both are real.
+ */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+#pragma GCC diagnostic ignored "-Wunused-local-typedefs"
 #include "dependence/cpam/cpam.h"
+#pragma GCC diagnostic pop
 
 namespace psi
 {

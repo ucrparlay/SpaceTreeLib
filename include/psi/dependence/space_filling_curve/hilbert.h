@@ -28,8 +28,8 @@ typedef unsigned long halfmask_t;
  * (bits_per_byte)
  */
 
-void hilbert_i2c(unsigned nDims, unsigned nBits, bitmask_t index,
-		 bitmask_t coord[]);
+inline void hilbert_i2c(unsigned nDims, unsigned nBits, bitmask_t index,
+			bitmask_t coord[]);
 
 /*****************************************************************
  * hilbert_c2i
@@ -45,7 +45,8 @@ void hilbert_i2c(unsigned nDims, unsigned nBits, bitmask_t index,
  *      nDims*nBits <= (sizeof bitmask_t) * (bits_per_byte)
  */
 
-bitmask_t hilbert_c2i(unsigned nDims, unsigned nBits, bitmask_t const coord[]);
+inline bitmask_t hilbert_c2i(unsigned nDims, unsigned nBits,
+			     bitmask_t const coord[]);
 
 /*****************************************************************
  * hilbert_cmp, hilbert_ieee_cmp
@@ -66,10 +67,10 @@ bitmask_t hilbert_c2i(unsigned nDims, unsigned nBits, bitmask_t const coord[]);
  *      nBits <= (sizeof bitmask_t) * (bits_per_byte)
  */
 
-int hilbert_cmp(unsigned nDims, unsigned nBytes, unsigned nBits,
-		void const *coord1, void const *coord2);
-int hilbert_ieee_cmp(unsigned nDims, double const *coord1,
-		     double const *coord2);
+inline int hilbert_cmp(unsigned nDims, unsigned nBytes, unsigned nBits,
+		       void const *coord1, void const *coord2);
+inline int hilbert_ieee_cmp(unsigned nDims, double const *coord1,
+			    double const *coord2);
 
 /*****************************************************************
  * hilbert_box_vtx
@@ -89,10 +90,10 @@ int hilbert_ieee_cmp(unsigned nDims, double const *coord1,
  * Assumptions:
  *      nBits <= (sizeof bitmask_t) * (bits_per_byte)
  */
-unsigned hilbert_box_vtx(unsigned nDims, unsigned nBytes, unsigned nBits,
-			 int findMin, void *c1, void *c2);
-unsigned hilbert_ieee_box_vtx(unsigned nDims, int findMin, double *c1,
-			      double *c2);
+inline unsigned hilbert_box_vtx(unsigned nDims, unsigned nBytes, unsigned nBits,
+				int findMin, void *c1, void *c2);
+inline unsigned hilbert_ieee_box_vtx(unsigned nDims, int findMin, double *c1,
+				     double *c2);
 
 /*****************************************************************
  * hilbert_box_pt
@@ -110,10 +111,10 @@ unsigned hilbert_ieee_box_vtx(unsigned nDims, int findMin, double *c1,
  * Assumptions:
  *      nBits <= (sizeof bitmask_t) * (bits_per_byte)
  */
-unsigned hilbert_box_pt(unsigned nDims, unsigned nBytes, unsigned nBits,
-			int findMin, void *coord1, void *coord2);
-unsigned hilbert_ieee_box_pt(unsigned nDims, int findMin, double *c1,
-			     double *c2);
+inline unsigned hilbert_box_pt(unsigned nDims, unsigned nBytes, unsigned nBits,
+			       int findMin, void *coord1, void *coord2);
+inline unsigned hilbert_ieee_box_pt(unsigned nDims, int findMin, double *c1,
+				    double *c2);
 
 /*****************************************************************
  * hilbert_nextinbox
@@ -138,9 +139,9 @@ unsigned hilbert_ieee_box_pt(unsigned nDims, int findMin, double *c1,
  * Assumptions:
  *      nBits <= (sizeof bitmask_t) * (bits_per_byte)
  */
-int hilbert_nextinbox(unsigned nDims, unsigned nBytes, unsigned nBits,
-		      int findPrev, void *coord1, void *coord2,
-		      void const *point);
+inline int hilbert_nextinbox(unsigned nDims, unsigned nBytes, unsigned nBits,
+			     int findPrev, void *coord1, void *coord2,
+			     void const *point);
 
 /*****************************************************************
  * hilbert_incr
@@ -156,7 +157,7 @@ int hilbert_nextinbox(unsigned nDims, unsigned nBytes, unsigned nBits,
  *      nBits <= (sizeof bitmask_t) * (bits_per_byte)
  */
 
-void hilbert_incr(unsigned nDims, unsigned nBits, bitmask_t coord[]);
+inline void hilbert_incr(unsigned nDims, unsigned nBits, bitmask_t coord[]);
 
 } // namespace hilbert
 } // namespace psi

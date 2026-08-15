@@ -140,8 +140,8 @@ namespace psi
 		 * bits. Assumptions: nDims*nBits <= (sizeof index) *
 		 * (bits_per_byte)
 		 */
-		void hilbert_i2c(unsigned nDims, unsigned nBits,
-				 bitmask_t index, bitmask_t coord[])
+		inline void hilbert_i2c(unsigned nDims, unsigned nBits,
+					bitmask_t index, bitmask_t coord[])
 		{
 			if (nDims > 1) {
 				bitmask_t coords;
@@ -205,8 +205,8 @@ namespace psi
 		 * nDims*nBits bits. Assumptions: nDims*nBits <= (sizeof
 		 * bitmask_t) * (bits_per_byte)
 		 */
-		bitmask_t hilbert_c2i(unsigned nDims, unsigned nBits,
-				      bitmask_t const coord[])
+		inline bitmask_t hilbert_c2i(unsigned nDims, unsigned nBits,
+					     bitmask_t const coord[])
 		{
 			if (nDims > 1) {
 				unsigned const nDimsBits = nDims * nBits;
@@ -576,8 +576,9 @@ namespace psi
 			return 0;
 		}
 
-		int hilbert_cmp(unsigned nDims, unsigned nBytes, unsigned nBits,
-				void const *c1, void const *c2)
+		inline int hilbert_cmp(unsigned nDims, unsigned nBytes,
+				       unsigned nBits, void const *c1,
+				       void const *c2)
 		{
 			bitmask_t const one = 1;
 			bitmask_t bits = one << (nDims - 1);
@@ -587,8 +588,8 @@ namespace psi
 						getIntBits);
 		}
 
-		int hilbert_ieee_cmp(unsigned nDims, double const *c1,
-				     double const *c2)
+		inline int hilbert_ieee_cmp(unsigned nDims, double const *c1,
+					    double const *c2)
 		{
 			unsigned rotation, max;
 			bitmask_t bits, index;
@@ -694,9 +695,9 @@ namespace psi
 			return y;
 		}
 
-		unsigned hilbert_box_vtx(unsigned nDims, unsigned nBytes,
-					 unsigned nBits, int findMin, void *c1,
-					 void *c2)
+		inline unsigned hilbert_box_vtx(unsigned nDims, unsigned nBytes,
+						unsigned nBits, int findMin,
+						void *c1, void *c2)
 		{
 			bitmask_t const one = 1;
 			bitmask_t bits = one << (nDims - 1);
@@ -706,8 +707,8 @@ namespace psi
 						    bits, bits, getIntBits);
 		}
 
-		unsigned hilbert_ieee_box_vtx(unsigned nDims, int findMin,
-					      double *c1, double *c2)
+		inline unsigned hilbert_ieee_box_vtx(
+			unsigned nDims, int findMin, double *c1, double *c2)
 		{
 			unsigned rotation, max;
 			bitmask_t bits, index;
@@ -743,7 +744,7 @@ namespace psi
 		 * refer to least point Assumptions: nBits <= (sizeof bitmask_t)
 		 * * (bits_per_byte)
 		 */
-		unsigned hilbert_box_pt_work(
+		inline unsigned hilbert_box_pt_work(
 			unsigned nDims, unsigned nBytes, unsigned nBits,
 			int findMin, unsigned max, unsigned y, char *c1,
 			char *c2, unsigned rotation, bitmask_t bits,
@@ -810,9 +811,9 @@ namespace psi
 			return smearSum;
 		}
 
-		unsigned hilbert_box_pt(unsigned nDims, unsigned nBytes,
-					unsigned nBits, int findMin, void *c1,
-					void *c2)
+		inline unsigned hilbert_box_pt(unsigned nDims, unsigned nBytes,
+					       unsigned nBits, int findMin,
+					       void *c1, void *c2)
 		{
 			bitmask_t const one = 1;
 			bitmask_t bits = one << (nDims - 1);
@@ -822,8 +823,8 @@ namespace psi
 				getIntBits, propogateIntBits);
 		}
 
-		unsigned hilbert_ieee_box_pt(unsigned nDims, int findMin,
-					     double *c1, double *c2)
+		inline unsigned hilbert_ieee_box_pt(unsigned nDims, int findMin,
+						    double *c1, double *c2)
 		{
 			unsigned rotation, max;
 			bitmask_t bits, index;
@@ -882,9 +883,9 @@ namespace psi
 		 * Assumptions:
 		 *      nBits <= (sizeof bitmask_t) * (bits_per_byte)
 		 */
-		int hilbert_nextinbox(unsigned nDims, unsigned nBytes,
-				      unsigned nBits, int findPrev, void *c1V,
-				      void *c2V, void const *ptV)
+		inline int hilbert_nextinbox(
+			unsigned nDims, unsigned nBytes, unsigned nBits,
+			int findPrev, void *c1V, void *c2V, void const *ptV)
 		{
 			bitmask_t const one = 1;
 			unsigned y = nBits;
@@ -1144,8 +1145,8 @@ namespace psi
 		 *      nBits <= (sizeof bitmask_t) * (bits_per_byte)
 		 */
 
-		void hilbert_incr(unsigned nDims, unsigned nBits,
-				  bitmask_t coord[])
+		inline void hilbert_incr(unsigned nDims, unsigned nBits,
+					 bitmask_t coord[])
 		{
 			bitmask_t const one = 1;
 			bitmask_t const ndOnes = ones(bitmask_t, nDims);

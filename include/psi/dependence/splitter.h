@@ -8,12 +8,20 @@
 #include "dependence/concepts.h"
 #include "dependence/tree_node.h"
 
-// NOTE: for spacial filling curve
 #include "libmorton/morton.h"
 #include "libmorton/morton3D.h"
-#include "space_filling_curve/hilbert.c"
 #include "space_filling_curve/hilbert.h"
 #include "space_filling_curve/hilbert_high_dim.h"
+
+/*
+ * hilbert.c holds the definitions, not just declarations, and is third party.
+ * Its functions are inline so two translation units can both include this
+ * header; its warnings are not ours to fix.
+ */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+#include "space_filling_curve/hilbert.c"
+#pragma GCC diagnostic pop
 
 namespace psi
 {

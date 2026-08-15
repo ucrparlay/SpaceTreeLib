@@ -9,7 +9,7 @@ namespace PSI
 {
 namespace LUT
 {
-uint32_t deinterleave(uint32_t x)
+inline uint32_t deinterleave(uint32_t x)
 {
 	x = x & 0x55555555;
 	x = (x | (x >> 1)) & 0x33333333;
@@ -19,7 +19,7 @@ uint32_t deinterleave(uint32_t x)
 	return x;
 }
 
-uint32_t interleave(uint32_t x)
+inline uint32_t interleave(uint32_t x)
 {
 	x = (x | (x << 8)) & 0x00FF00FF;
 	x = (x | (x << 4)) & 0x0F0F0F0F;
@@ -28,7 +28,7 @@ uint32_t interleave(uint32_t x)
 	return x;
 }
 
-uint32_t prefixScan(uint32_t x)
+inline uint32_t prefixScan(uint32_t x)
 {
 	x = (x >> 8) ^ x;
 	x = (x >> 4) ^ x;
@@ -37,12 +37,12 @@ uint32_t prefixScan(uint32_t x)
 	return x;
 }
 
-uint32_t descan(uint32_t x)
+inline uint32_t descan(uint32_t x)
 {
 	return x ^ (x >> 1);
 }
 
-void hilbertIndexToXY(uint32_t n, uint32_t i, uint32_t &x, uint32_t &y)
+inline void hilbertIndexToXY(uint32_t n, uint32_t i, uint32_t &x, uint32_t &y)
 {
 	i = i << (32 - 2 * n);
 
@@ -61,7 +61,7 @@ void hilbertIndexToXY(uint32_t n, uint32_t i, uint32_t &x, uint32_t &y)
 	y = (a ^ i0 ^ i1) >> (16 - n);
 }
 
-uint32_t hilbertXYToIndex(uint32_t n, uint32_t x, uint32_t y)
+inline uint32_t hilbertXYToIndex(uint32_t n, uint32_t x, uint32_t y)
 {
 	x = x << (16 - n);
 	y = y << (16 - n);
@@ -150,7 +150,8 @@ static uint8_t const hilbertToMortonTable[] = {
 	19, 25, 29, 47, 46, 68, 64, 34, 45, 60, 62, 71, 67, 18, 16, 49,
 };
 
-uint32_t transformCurve(uint32_t in, uint32_t bits, uint8_t const *lookupTable)
+inline uint32_t transformCurve(uint32_t in, uint32_t bits,
+			       uint8_t const *lookupTable)
 {
 	uint32_t transform = 0;
 	uint32_t out = 0;
@@ -164,12 +165,12 @@ uint32_t transformCurve(uint32_t in, uint32_t bits, uint8_t const *lookupTable)
 	return out;
 }
 
-uint32_t mortonToHilbert3D(uint32_t mortonIndex, uint32_t bits)
+inline uint32_t mortonToHilbert3D(uint32_t mortonIndex, uint32_t bits)
 {
 	return transformCurve(mortonIndex, bits, mortonToHilbertTable);
 }
 
-uint32_t hilbertToMorton3D(uint32_t hilbertIndex, uint32_t bits)
+inline uint32_t hilbertToMorton3D(uint32_t hilbertIndex, uint32_t bits)
 {
 	return transformCurve(hilbertIndex, bits, hilbertToMortonTable);
 }
@@ -230,7 +231,8 @@ inline uint64_t rotl64(uint64_t x, unsigned int n)
 }
 #endif
 
-uint32_t transformCurve(uint32_t in, uint32_t bits, uint32_t const *lookupTable)
+inline uint32_t transformCurve(uint32_t in, uint32_t bits,
+			       uint32_t const *lookupTable)
 {
 	uint64_t x = rotr64(in, 3 * bits);
 
@@ -242,12 +244,12 @@ uint32_t transformCurve(uint32_t in, uint32_t bits, uint32_t const *lookupTable)
 	return x >> 29;
 }
 
-uint32_t mortonToHilbert3D(uint32_t mortonIndex, uint32_t bits)
+inline uint32_t mortonToHilbert3D(uint32_t mortonIndex, uint32_t bits)
 {
 	return transformCurve(mortonIndex, bits, mortonToHilbertTable);
 }
 
-uint32_t hilbertToMorton3D(uint32_t hilbertIndex, uint32_t bits)
+inline uint32_t hilbertToMorton3D(uint32_t hilbertIndex, uint32_t bits)
 {
 	return transformCurve(hilbertIndex, bits, hilbertToMortonTable);
 }
