@@ -20,7 +20,8 @@ auto orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
 			       bounded_queue<Point, Range> &bq) const
 {
 	knn_logger logger;
-	if (this->root_ == nullptr)
+	/* An empty queue has no slot to write a neighbour into. */
+	if (this->root_ == nullptr || bq.max_size() == 0)
 		return logger;
 	// base_type::template knn_multi<leaf_type, interior_type>(this->root_,
 	// q, DIM, bq, this->tree_box_,
@@ -45,15 +46,16 @@ template <typename Point, typename SplitRule, typename LeafAugType,
 	  typename InteriorAugType, uint_fast8_t md, uint_fast8_t SkHeight,
 	  uint_fast8_t ImbaRatio>
 template <typename Range>
-void orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
-	       ImbaRatio>::flatten(Range &&out) const
+size_t orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
+		 ImbaRatio>::flatten(Range &&out) const
 {
-	if (this->root_ == nullptr) {
-		assert(out.size() == 0);
-		return;
+	size_t const n = this->get_size();
+	if (this->root_ == nullptr || out.size() != n) {
+		return 0;
 	}
 	base_type::template flatten_rec<leaf_type, interior_type>(
 		this->root_, parlay::make_slice(out));
+	return n;
 }
 
 template <typename Point, typename SplitRule, typename LeafAugType,

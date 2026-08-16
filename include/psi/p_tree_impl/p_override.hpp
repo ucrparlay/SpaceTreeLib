@@ -10,27 +10,6 @@
 
 namespace psi
 {
-#define FT long
-
-// return the sqr distance between a point and a mbr
-template <class Point, class MBR>
-auto point_mbr_sqrdis(Point p, MBR &mbr)
-{
-	FT dx = max(max(mbr.first[0] - p[0], (FT)0.0),
-		    max(p[0] - mbr.second[0], (FT)0.0));
-	FT dy = max(max(mbr.first[1] - p[1], (FT)0.0),
-		    max(p[1] - mbr.second[1], (FT)0.0));
-	return dx * dx + dy * dy;
-}
-
-// return the sqr distance between two points
-template <class Point>
-auto point_point_sqrdis(Point const &lhs, Point const &rhs)
-{
-	return (lhs.pnt[0] - rhs.pnt[0]) * (lhs.pnt[0] - rhs.pnt[0]) +
-	       (lhs.pnt[1] - rhs.pnt[1]) * (lhs.pnt[1] - rhs.pnt[1]);
-}
-
 template <typename Point, typename SplitRule, uint_fast8_t SkHeight,
 	  uint_fast8_t ImbaRatio>
 template <typename Range>
@@ -38,6 +17,9 @@ auto p_tree<Point, SplitRule, SkHeight, ImbaRatio>::knn(
 	Point const &q, bounded_queue<Point, Range> &bq)
 {
 	knn_logger logger;
+	/* An empty queue has no slot to write a neighbour into. */
+	if (bq.max_size() == 0)
+		return logger;
 	cpam_aug_map_type::template knn<base_type>(this->cpam_aug_map_, q, bq,
 						   logger);
 	return logger;
@@ -46,11 +28,15 @@ auto p_tree<Point, SplitRule, SkHeight, ImbaRatio>::knn(
 template <typename Point, typename SplitRule, uint_fast8_t SkHeight,
 	  uint_fast8_t ImbaRatio>
 template <typename Range>
-void p_tree<Point, SplitRule, SkHeight, ImbaRatio>::flatten(Range &&out) const
+size_t p_tree<Point, SplitRule, SkHeight, ImbaRatio>::flatten(Range &&out) const
 {
-	assert(this->cpam_aug_map_.size() == out.size());
+	size_t const n = this->cpam_aug_map_.size();
+	if (out.size() != n) {
+		return 0;
+	}
 	cpam_aug_map_type::entries(this->cpam_aug_map_,
 				   parlay::make_slice(out).begin());
+	return n;
 }
 
 template <typename Point, typename SplitRule, uint_fast8_t SkHeight,

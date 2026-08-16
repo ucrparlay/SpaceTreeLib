@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <type_traits>
+#include <utility>
 
 #include "dependence/comparator.h"
 #include "dependence/loggers.h"
@@ -366,10 +367,43 @@ public:
 	 */
 	virtual ~base_tree() = default;
 
+	base_tree() = default;
+
+	/*
+	 * root_ is an owning raw pointer, so a copy would be freed twice.
+	 * A tree moves instead; the source is left empty and safe to destroy.
+	 */
+	base_tree(base_tree const &) = delete;
+	base_tree &operator=(base_tree const &) = delete;
+
+	base_tree(base_tree &&other) noexcept
+	    : root_(std::exchange(other.root_, nullptr)),
+	      tree_box_(std::exchange(other.tree_box_, get_empty_box()))
+	{
+	}
+
+	base_tree &operator=(base_tree &&other) noexcept
+	{
+		if (this != &other) {
+			delete_tree();
+			root_ = std::exchange(other.root_, nullptr);
+			tree_box_ =
+				std::exchange(other.tree_box_, get_empty_box());
+		}
+		return *this;
+	}
+
 	constexpr virtual void delete_tree() = 0;
 
 	template <typename leaf_type, typename interior_type>
 	void delete_tree_wrapper();
+
+	/*
+	 * Frees the nodes and leaves the box alone, which is what build_ needs:
+	 * delete_tree() would also drop a box the caller pinned.
+	 */
+	template <typename leaf_type, typename interior_type>
+	void delete_tree_nodes();
 
 	template <typename leaf_type, is_binary_node interior_type,
 		  bool granularity = true>
@@ -549,8 +583,8 @@ public:
 	size_t count_tree_nodes_num(node *T);
 
 	template <typename leaf_type, typename interior_type>
-	void count_tree_heights(node *T, size_t deep, size_t &idx,
-				parlay::sequence<size_t> &heights);
+	void count_tree_heights(node *T, size_t deep, size_t &leaf_num,
+				size_t &depth_sum);
 
 	// NOTE: param interfaces
 	void set_root(node *root)

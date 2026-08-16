@@ -15,10 +15,20 @@ void base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::delete_tree_wrapper()
 	if (this->root_ == nullptr) {
 		return;
 	}
-	delete_tree_recursive<leaf_type, interior_type>(this->root_);
+	delete_tree_nodes<leaf_type, interior_type>();
 	this->tree_box_ = get_empty_box();
+}
+
+template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
+	  uint_fast8_t ImbaRatio>
+template <typename leaf_type, typename interior_type>
+void base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::delete_tree_nodes()
+{
+	if (this->root_ == nullptr) {
+		return;
+	}
+	delete_tree_recursive<leaf_type, interior_type>(this->root_);
 	this->root_ = nullptr;
-	return;
 }
 
 template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,

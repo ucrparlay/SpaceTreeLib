@@ -10,10 +10,30 @@
 namespace psi
 {
 
+/*
+ * Skeleton height for a given dimension. A skeleton level splits every
+ * dimension once, so the height has to be a multiple of the dimension.
+ * Throwing is how a consteval function reports an unsupported dimension.
+ */
+consteval uint_fast8_t orth_build_depth_once(uint_fast8_t const dim)
+{
+	if (dim == 2 || dim == 3) {
+		return 6;
+	}
+	if (dim == 4) {
+		return 8;
+	}
+	if (dim >= 5 && dim <= 8) {
+		return dim;
+	}
+	throw "orth_tree has no skeleton height for this dimension";
+}
+
 template <typename Point, typename SplitRule,
 	  typename LeafAugType = box_leaf_aug<base_tree<Point>>,
 	  typename InteriorAugType = box_interior_aug<base_tree<Point>>,
-	  uint_fast8_t md = 2, uint_fast8_t SkHeight = 6,
+	  uint_fast8_t md = Point::get_dim(),
+	  uint_fast8_t SkHeight = orth_build_depth_once(Point::get_dim()),
 	  uint_fast8_t ImbaRatio = 30>
 class orth_tree
     : public base_tree<Point,
@@ -47,6 +67,12 @@ public:
 	static_assert(is_spatial_median_split<
 			      typename SplitRule::partition_rule_type>,
 		      "orth_tree needs a spatial_median partition rule");
+	/*
+	 * A mismatch used to build an empty tree that answered 0 to every
+	 * query, since the only check was an assert compiled out in release.
+	 */
+	static_assert(md == base_type::num_dims,
+		      "orth_tree's md must equal the point's dimension");
 
 	using bucket_type = base_type::bucket_type;
 	using balls_type = base_type::balls_type;
@@ -103,6 +129,15 @@ public:
 		delete_tree();
 	}
 
+	orth_tree() = default;
+	/*
+	 * Move-only: root_ is an owning raw pointer. Assignment ends up
+	 * deleted because SplitRule holds const members; construction is
+	 * what containers and factory returns need.
+	 */
+	orth_tree(orth_tree &&) = default;
+	orth_tree &operator=(orth_tree &&) = default;
+
 	void orth_tree_tag();
 
 	template <typename Range, typename... Args>
@@ -120,8 +155,14 @@ public:
 	template <typename Range>
 	void batch_diff(Range &&in);
 
+	/*
+	 * Copies every point into out, which must be exactly get_size()
+	 * long: the recursion splits out by subtree size, so any other
+	 * length would write outside it. Returns the number written, or 0
+	 * if out was the wrong size and nothing was written.
+	 */
 	template <typename Range>
-	void flatten(Range &&out) const;
+	size_t flatten(Range &&out) const;
 
 	template <typename Range>
 	auto knn(Point const &q, bounded_queue<Point, Range> &bq) const;

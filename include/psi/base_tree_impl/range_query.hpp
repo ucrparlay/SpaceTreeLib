@@ -197,21 +197,38 @@ void base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::range_query_leaf(
 {
 	assert(T->is_leaf);
 
+	if (s >= out.size()) {
+		return;
+	}
+
 	leaf_type *tl = static_cast<leaf_type *>(T);
+	/*
+	 * out is the caller's buffer and the answer size is not known until
+	 * the query runs, so every write is bounded by it. When the buffer has
+	 * room for the whole leaf -- the ordinary case -- the bulk paths below
+	 * run untouched; otherwise the answer is truncated and the caller sees
+	 * it in the returned count.
+	 */
 	if (tl->is_dummy) {
 		if (within_box(tl->pts[0], query_box)) {
-			assert(s + tl->size <= out.size());
-			std::fill_n(out.begin() + s, tl->size, tl->pts[0]);
-			s += tl->size;
+			size_t const n =
+				std::min<size_t>(tl->size, out.size() - s);
+			std::fill_n(out.begin() + s, n, tl->pts[0]);
+			s += n;
 		}
-	} else {
-		assert(s + tl->size <= out.size());
+	} else if (s + tl->size <= out.size()) {
 		auto result = std::ranges::copy_if(
 			tl->pts.begin(), tl->pts.begin() + tl->size,
 			out.begin() + s, [&](auto const &p) {
 				return within_box(p, query_box);
 			});
 		s += std::ranges::distance(out.begin() + s, result.out);
+	} else {
+		for (size_t i = 0; i < tl->size && s < out.size(); i++) {
+			if (within_box(tl->pts[i], query_box)) {
+				out[s++] = tl->pts[i];
+			}
+		}
 	}
 	return;
 }
@@ -239,9 +256,9 @@ void base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::
 		if (!box_intersect_box(box, query_box)) {
 			logger.skip_box_num++;
 			return;
-		} else if (within_box(box, query_box)) {
+		} else if (within_box(box, query_box) &&
+			   s + t->size <= out.size()) {
 			logger.full_box_num++;
-			assert(s + t->size <= out.size());
 			flatten_rec<leaf_type, interior_type>(
 				t, out.cut(s, s + t->size));
 			s += t->size;
@@ -299,11 +316,19 @@ void base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::
 			logger.skip_box_num++;
 			return;
 		} else if (within_box(box, query_box)) {
-			logger.full_box_num++;
-			size_t candidate_size =
+			size_t const candidate_size =
 				static_cast<interior_type *>(t)->merge_size(
 					next_idx);
-			assert(s + candidate_size <= out.size());
+			if (s + candidate_size > out.size()) {
+				/* No room for the O(1) copy; the walk below
+				 * clamps leaf by leaf instead. */
+				range_query_serial_recursive<leaf_type,
+							     interior_type>(
+					t, out, s, query_box, box, next_dim,
+					next_idx, logger);
+				return;
+			}
+			logger.full_box_num++;
 			partial_flatten<leaf_type, interior_type>(
 				t, out.cut(s, s + candidate_size), next_idx);
 			s += candidate_size;

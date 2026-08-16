@@ -347,6 +347,9 @@ template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
 template <typename leaf_type, typename interior_type>
 size_t base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::get_tree_height()
 {
+	if (this->root_ == nullptr) {
+		return 0;
+	}
 	size_t deep = 0;
 	return get_max_tree_depth<leaf_type, interior_type>(this->root_, deep);
 }
@@ -357,6 +360,9 @@ template <typename leaf_type, typename interior_type>
 size_t base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::get_max_tree_depth(
 	node *T, size_t deep)
 {
+	if (T == nullptr) {
+		return deep;
+	}
 	if (T->is_leaf) {
 		return deep;
 	}
@@ -387,17 +393,13 @@ template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
 template <typename leaf_type, typename interior_type>
 double base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::get_ave_tree_height()
 {
-	// std::cout << is_binary_node<interior_type> << std::endl;
-	parlay::sequence<size_t> heights(this->root_->size);
-	size_t idx = 0;
-	count_tree_heights<leaf_type, interior_type>(this->root_, 0, idx,
-						     heights);
-	// auto kv = parlay::histogram_by_key( heights.cut( 0, idx ) );
-	// std::sort( kv.begin(), kv.end(),
-	//            [&]( auto a, auto b ) { return a.first < b.first; } );
-	// for ( auto i : kv )
-	//     std::cout << i.first << " " << i.second << std::endl;
-	return double(1.0 * parlay::reduce(heights.cut(0, idx)) / idx);
+	if (this->root_ == nullptr) {
+		return 0.0;
+	}
+	size_t leaf_num = 0, depth_sum = 0;
+	count_tree_heights<leaf_type, interior_type>(this->root_, 0, leaf_num,
+						     depth_sum);
+	return leaf_num == 0 ? 0.0 : double(depth_sum) / double(leaf_num);
 }
 
 template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
@@ -406,6 +408,9 @@ template <typename leaf_type, typename interior_type>
 size_t base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::count_tree_nodes_num(
 	node *T)
 {
+	if (T == nullptr) {
+		return 0;
+	}
 	if (T->is_leaf) {
 		return 1;
 	}
@@ -439,28 +444,27 @@ template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
 	  uint_fast8_t ImbaRatio>
 template <typename leaf_type, typename interior_type>
 void base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::count_tree_heights(
-	node *T, size_t deep, size_t &idx, parlay::sequence<size_t> &heights)
+	node *T, size_t deep, size_t &leaf_num, size_t &depth_sum)
 {
 	if (T->is_leaf) {
-		heights[idx++] = deep;
+		leaf_num++;
+		depth_sum += deep;
 		return;
 	}
 
 	interior_type *ti = static_cast<interior_type *>(T);
 	if constexpr (is_binary_node<interior_type>) {
-		count_tree_heights<leaf_type, interior_type>(ti->left, deep + 1,
-							     idx, heights);
 		count_tree_heights<leaf_type, interior_type>(
-			ti->right, deep + 1, idx, heights);
+			ti->left, deep + 1, leaf_num, depth_sum);
+		count_tree_heights<leaf_type, interior_type>(
+			ti->right, deep + 1, leaf_num, depth_sum);
 	} else if constexpr (is_multi_node<interior_type>) {
 		for (size_t i = 0; i < ti->tree_nodes.size(); i++) {
 			count_tree_heights<leaf_type, interior_type>(
-				ti->tree_nodes[i], deep + 1, idx, heights);
+				ti->tree_nodes[i], deep + 1, leaf_num,
+				depth_sum);
 		}
-	} else {
-		return;
 	}
-	return;
 }
 
 } // namespace psi

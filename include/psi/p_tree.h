@@ -149,6 +149,15 @@ public:
 		delete_tree();
 	}
 
+	p_tree() = default;
+	/*
+	 * Move-only: root_ is an owning raw pointer. Assignment ends up
+	 * deleted because SplitRule holds const members; construction is
+	 * what containers and factory returns need.
+	 */
+	p_tree(p_tree &&) = default;
+	p_tree &operator=(p_tree &&) = default;
+
 	void p_tree_tag();
 
 	template <typename Range>
@@ -166,8 +175,14 @@ public:
 	template <typename Range>
 	void batch_diff(Range &&in);
 
+	/*
+	 * Copies every point into out, which must be exactly get_size()
+	 * long: the recursion splits out by subtree size, so any other
+	 * length would write outside it. Returns the number written, or 0
+	 * if out was the wrong size and nothing was written.
+	 */
 	template <typename Range>
-	void flatten(Range &&out) const;
+	size_t flatten(Range &&out) const;
 
 	template <typename Range>
 	/* Not const: cpam takes the map by non-const reference. */

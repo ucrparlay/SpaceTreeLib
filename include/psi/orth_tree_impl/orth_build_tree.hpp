@@ -20,7 +20,6 @@ void orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
 	       ImbaRatio>::build(Range &&in, Args &&...args)
 {
 	static_assert(base_type::build_depth_once % md == 0);
-	assert(md == base_type::num_dims);
 	base_type::ingest_range(in, [&](slice_type A) {
 		build_(A, std::forward<Args>(args)...);
 	});
@@ -230,10 +229,10 @@ template <typename Point, typename SplitRule, typename LeafAugType,
 void orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
 	       ImbaRatio>::build_(slice_type A)
 {
+	base_type::template delete_tree_nodes<leaf_type, interior_type>();
 	points_type B = points_type::uninitialized(A.size());
 	if (!fixed_box) {
 		this->tree_box_ = base_type::get_box(A);
-		fixed_box = true;
 	}
 	this->root_ = build_recursive(A, B.cut(0, A.size()), this->tree_box_);
 	assert(this->root_ != nullptr);
@@ -248,10 +247,10 @@ void orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
 {
 	assert(base_type::within_box(base_type::get_box(A), box));
 
+	base_type::template delete_tree_nodes<leaf_type, interior_type>();
 	points_type B = points_type::uninitialized(A.size());
 	if (!fixed_box) {
 		this->tree_box_ = box;
-		fixed_box = true;
 	}
 	this->root_ = build_recursive(A, B.cut(0, A.size()), this->tree_box_);
 	assert(this->root_ != nullptr);

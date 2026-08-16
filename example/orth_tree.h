@@ -52,28 +52,13 @@ using base_type = psi::base_tree<Point>;
 
 // Helper function to determine skeleton height for orth_tree
 // Same as in test_framework.h
-static consteval uint8_t orth_get_build_depth_once(uint8_t const dim)
-{
-	if (dim == 2 || dim == 3) {
-		return 6;
-	} else if (dim == 4) {
-		return 8;
-	} else if (dim >= 5 && dim <= 8) {
-		return dim;
-	} else {
-		// static_assert will trigger for unsupported dimensions
-		return 0;
-	}
-}
-
 // Define split rule: stadard rotate dimension + spatial median
 using SplitRule = psi::orthogonal_split_rule<psi::rotate_dim<Point>,
 					     psi::spatial_median<Point>>;
 
 // Define orth_tree type with augmentations
 using Tree = psi::orth_tree<Point, SplitRule, psi::box_leaf_aug<base_type>,
-			    psi::box_interior_aug<base_type>, Point::get_dim(),
-			    orth_get_build_depth_once(Point::get_dim())>;
+			    psi::box_interior_aug<base_type>>;
 
 void run_example()
 {

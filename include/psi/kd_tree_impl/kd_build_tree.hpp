@@ -223,6 +223,7 @@ template <typename Point, typename SplitRule, typename LeafAugType,
 void kd_tree<Point, SplitRule, LeafAugType, InteriorAugType, SkHeight,
 	     ImbaRatio>::build_(slice_type A)
 {
+	base_type::template delete_tree_nodes<leaf_type, interior_type>();
 	points_type B = points_type::uninitialized(A.size());
 	this->tree_box_ = base_type::get_box(A);
 	this->root_ =

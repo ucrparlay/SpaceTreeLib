@@ -13,16 +13,19 @@ inline typename base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::coord_type
 base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::get_box_mid(
 	dims_type const d, box_type const &box)
 {
-	// TODO: change to num_type::divide2ceil
 	if constexpr (std::is_integral_v<coord_type>) {
-		// NOTE: since the points on the box line will be put in right,
-		// therefore the box should always be rounded up as well.
-		// Consideing the example (1, 1) and (1, 2), in order to split
-		// the points, the new box should have split at y=2
-		return static_cast<coord_type>(
-			std::ceil(static_cast<double>(box.first.pnt[d] +
-						      box.second.pnt[d]) /
-				  static_cast<double>(2)));
+		/*
+		 * Points on the split plane go right, so the midpoint rounds
+		 * up: (1, 1) and (1, 2) only separate if the split is at 2.
+		 *
+		 * first + ceil((second - first) / 2), not ceil((first +
+		 * second) / 2): the sum overflows once the two bounds reach
+		 * 2^63, which put the plane outside the box and made
+		 * spatial_median recurse forever.
+		 */
+		return box.first.pnt[d] +
+		       num_type::divide_two_ceil(static_cast<coord_type>(
+			       box.second.pnt[d] - box.first.pnt[d]));
 	} else {
 		return (box.first.pnt[d] + box.second.pnt[d]) / 2;
 	}
