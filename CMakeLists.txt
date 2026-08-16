@@ -37,11 +37,18 @@ else()
 	set(psi_is_top_level OFF)
 endif()
 option(PSI_BUILD_BENCHMARKS "Build the test and baseline drivers" ${psi_is_top_level})
+option(PSI_BUILD_TESTS "Build the unit tests" ${psi_is_top_level})
 option(PSI_BUILD_EXAMPLES "Build the three example programs" ${psi_is_top_level})
 
 # ON reproduces the flags every measurement was taken with. OFF gives a build
 # that runs on a machine other than the one that compiled it.
 option(PSI_NATIVE_ARCH "Tune for the building machine's CPU" ON)
+
+# The library's only error mechanism is assert(), and the only configuration
+# that kept them was -DDEBUG=ON, which is unoptimised. That made a checked run
+# 10-50x slower than a normal one, which is why the correctness script was
+# impractical to run. This keeps the optimised flags and the checks.
+option(PSI_ASSERTS "Keep assert() in an optimised build" OFF)
 
 
 if(CILKPLUS)
@@ -89,6 +96,15 @@ elseif(NOT CMAKE_BUILD_TYPE STREQUAL psi_build_type)
 	  "CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} is being kept; -DDEBUG=${DEBUG} "
 	  "would have selected ${psi_build_type}. Use -DDEBUG=ON for the "
 	  "assert-enabled configuration.")
+endif()
+
+if(PSI_ASSERTS)
+	string(REPLACE "-DNDEBUG" "" CMAKE_CXX_FLAGS_RELEASE
+	       "${CMAKE_CXX_FLAGS_RELEASE}")
+	string(REPLACE "-DNDEBUG" "" CMAKE_CXX_FLAGS_RELWITHDEBINFO
+	       "${CMAKE_CXX_FLAGS_RELWITHDEBINFO}")
+	add_compile_options(-UNDEBUG)
+	message(STATUS "PSI: assertions kept in an optimised build")
 endif()
 
 if(PSI_NATIVE_ARCH)
@@ -212,6 +228,11 @@ if(PSI_BUILD_BENCHMARKS)
 	target_link_libraries(boost_rtree PUBLIC PSI ${Boost_LIBRARIES})
 	target_include_directories(boost_rtree PUBLIC ${Boost_INCLUDE_DIRS})
 	target_compile_options(boost_rtree PRIVATE -DBOOST_MATH_DISABLE_FLOAT128 -DBOOST_CSTDFLOAT_NO_LIBQUADMATH_SUPPORT)
+endif()
+
+if(PSI_BUILD_TESTS)
+	enable_testing()
+	add_subdirectory(tests/unit)
 endif()
 
 if(PSI_BUILD_EXAMPLES)

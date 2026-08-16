@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iostream>
+#include <vector>
 
 #include "parlay/primitives.h"
 #include "parlay/sequence.h"
@@ -72,7 +73,21 @@ using another_split_rule_type =
 // maintain the bounding box as an augmented value.
 using Tree = psi::p_tree<Point, another_split_rule_type>;
 
-void run_example()
+/*
+ * The example doubles as a smoke test: without these it prints success even
+ * when every answer is wrong.
+ */
+static int example_failures = 0;
+
+static void expect(bool ok, char const *what)
+{
+	if (!ok) {
+		std::cerr << "  CHECK FAILED: " << what << std::endl;
+		example_failures++;
+	}
+}
+
+int run_example()
 {
 	// 1. create sample 2D points
 	size_t n = 1000;
@@ -95,6 +110,8 @@ void run_example()
 		  << std::endl;
 
 	// 3. K-Nearest neighbors query
+	expect(tree.get_size() == n, "size after build");
+
 	int K = 10;
 	Point query_point;
 	query_point[0] = 500;
@@ -134,6 +151,15 @@ void run_example()
 	std::cout << "Range query [400,600]x[400,600] found " << count
 		  << " points" << std::endl;
 
+	size_t brute = 0;
+	for (auto const &p : points) {
+		if (p[0] >= 400 && p[0] <= 600 && p[1] >= 400 && p[1] <= 600)
+			brute++;
+	}
+	expect(count == brute, "range_query count matches brute force");
+	expect(tree.range_count(query_box).first == brute,
+	       "range_count matches brute force");
+
 	// 5. Batch insert new points
 	size_t insert_count = 100;
 	points_type new_points(insert_count);
@@ -145,6 +171,7 @@ void run_example()
 
 	tree.batch_insert(parlay::make_slice(new_points));
 	std::cout << "Inserted " << insert_count << " new points" << std::endl;
+	expect(tree.get_size() == n + insert_count, "size after insert");
 
 	// 6. Batch delete some points
 	size_t delete_count = 50;
@@ -152,10 +179,18 @@ void run_example()
 
 	tree.batch_delete(parlay::make_slice(points_to_delete));
 	std::cout << "Deleted " << delete_count << " points" << std::endl;
+	expect(tree.get_size() == n + insert_count - delete_count,
+	       "size after delete");
 
 	// 7. Clean up
 	tree.delete_tree();
+	if (example_failures != 0) {
+		std::cerr << "Example FAILED: " << example_failures
+			  << " check(s)" << std::endl;
+		return 1;
+	}
 	std::cout << "Example completed successfully!" << std::endl;
+	return 0;
 }
 
 } // namespace p_tree_example

@@ -335,7 +335,16 @@ void base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::validate()
 			abort();
 		}
 	} else {
-		assert(false);
+		/*
+		 * p_tree lands here: its node type is CPAM's, which none of
+		 * the branches above understand, and CPAM is not ours to walk.
+		 * Say so rather than aborting on what reads like an
+		 * unreachable case -- p_tree is covered by the black-box
+		 * property tests under tests/unit instead.
+		 */
+		std::cout << "no structural validation for this node type; "
+			     "see tests/unit\n"
+			  << std::flush;
 	}
 
 	std::cout << "<<< end validate tree\n" << std::flush;

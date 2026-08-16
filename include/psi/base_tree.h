@@ -95,6 +95,13 @@ public:
 	static inline coord_type get_box_mid(dims_type const d,
 					     box_type const &bx);
 	static inline bool legal_box(box_type const &bx);
+	/*
+	 * True when the box covers nothing, i.e. some dimension has first >
+	 * second. Intersecting two boxes produces one, so it is a legal query
+	 * whose answer is zero -- the public queries return early rather than
+	 * asserting their way down the traversal.
+	 */
+	static inline bool box_is_empty(box_type const &bx);
 	static inline bool within_box(box_type const &a, box_type const &b);
 	static inline bool same_box(box_type const &a, box_type const &b);
 	static inline bool within_box(Point const &p, box_type const &bx);

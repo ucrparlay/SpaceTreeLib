@@ -2,6 +2,5 @@
 
 int main()
 {
-	orth_tree_example::run_example();
-	return 0;
+	return orth_tree_example::run_example();
 }

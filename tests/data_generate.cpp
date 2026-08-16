@@ -1,3 +1,5 @@
+#include <string>
+
 #include "data_op.h"
 
 int main(int argc, char *argv[])
@@ -16,6 +18,11 @@ int main(int argc, char *argv[])
 	file_num = P.getOptionIntValue("-file_num", 2);
 	varden = P.getOptionIntValue("-varden", 0);
 	kValueUB = P.getOptionIntValue("-axis_max", 1'000'000'000);
+	/* generated data has to be reproducible; see generator_seed() */
+	int seed = P.getOptionIntValue("-seed", -1);
+	if (seed >= 0) {
+		setenv("PSI_SEED", std::to_string(seed).c_str(), 1);
+	}
 
 	std::cout << "pts_num: " << pts_num << " pts_dim: " << pts_dim
 		  << " file_num: " << file_num << " varden: " << varden

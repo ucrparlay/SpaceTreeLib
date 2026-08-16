@@ -38,7 +38,15 @@ typedef CGAL::Fuzzy_sphere<tree_traits_type> fuzzy_circle_type;
 
 size_t maxReduceSize = 0;
 int const kCCPQueryNum = 10000;
+/*
+ * Upper bound only: the driver used it unconditionally, so any input smaller
+ * than a million points ran subseq() past the end and crashed.
+ */
 size_t const kCCPBatchQuerySize = 1000000;
+static size_t ccp_query_size(size_t n)
+{
+	return std::min(kCCPBatchQuerySize, n);
+}
 // size_t const kCCPBatchQuerySize = 110;
 double const batchInsertCheckRatio = 0.1;
 double const kCCPBatchDiffTotalRatio = 1.0;
@@ -148,9 +156,17 @@ void runKDParallel(auto const &wp, auto const &wi, scalar_type *kdknn,
 			  << std::flush;
 	}
 
-	if (tag &
-	    (1
-	     << 1)) { // NOTE: without tag & (1<<0), this will remove no points
+	/*
+	 * The points deleted here are the ones the insert branch added, so
+	 * without bit 0 this asks batch_delete to remove points that were
+	 * never in the tree -- which its contract forbids, and which trips an
+	 * assert rather than removing nothing.
+	 */
+	if ((tag & (1 << 1)) && !(tag & (1 << 0))) {
+		std::cout << "skip delete: -t bit 1 needs bit 0, otherwise "
+			     "there is nothing inserted to delete\n"
+			  << std::flush;
+	} else if (tag & (1 << 1)) {
 		batch_delete<Point, Tree, test_time>(tree, wp, wi, 2,
 						     batchInsertCheckRatio);
 		tree.template validate<typename Tree::leaf_type,
@@ -216,10 +232,10 @@ void runKDParallel(auto const &wp, auto const &wi, scalar_type *kdknn,
 			     "build------------------\n"
 			  << std::flush;
 		knn_checker(wp.subseq(0, wp.size() / 2), wi,
-			    wp.subseq(0, kCCPBatchQuerySize));
-		knn_checker(
-			wp.subseq(0, wp.size() / 2), wi,
-			wp.subseq(wp.size() - kCCPBatchQuerySize, wp.size()));
+			    wp.subseq(0, ccp_query_size(wp.size())));
+		knn_checker(wp.subseq(0, wp.size() / 2), wi,
+			    wp.subseq(wp.size() - ccp_query_size(wp.size()),
+				      wp.size()));
 	}
 
 	if (tag & (1 << 4)) { // incre delete
@@ -234,16 +250,16 @@ void runKDParallel(auto const &wp, auto const &wi, scalar_type *kdknn,
 		std::cout << "---------------finish incre "
 			     "delete------------------\n"
 			  << std::flush;
-		knn_checker(
-			wp.subseq(0, wp.size() / 2), wi,
-			wp.subseq(wp.size() - kCCPBatchQuerySize, wp.size()));
 		knn_checker(wp.subseq(0, wp.size() / 2), wi,
-			    wp.subseq(0, kCCPBatchQuerySize));
+			    wp.subseq(wp.size() - ccp_query_size(wp.size()),
+				      wp.size()));
+		knn_checker(wp.subseq(0, wp.size() / 2), wi,
+			    wp.subseq(0, ccp_query_size(wp.size())));
 	}
 
 	// NOTE: query phase
 	if (query_type & (1 << 0)) { // NOTE: NN query
-		knn_checker(wp, wi, wp.subseq(0, kCCPBatchQuerySize));
+		knn_checker(wp, wi, wp.subseq(0, ccp_query_size(wp.size())));
 	}
 
 	points_type new_wp;
@@ -327,8 +343,8 @@ int main(int argc, char *argv[])
 		// NOTE: alloc the memory
 		coord_type *cgknn;
 		coord_type *kdknn;
-		cgknn = new coord_type[kCCPBatchQuerySize];
-		kdknn = new coord_type[kCCPBatchQuerySize];
+		cgknn = new coord_type[ccp_query_size(wp.size())];
+		kdknn = new coord_type[ccp_query_size(wp.size())];
 
 		// NOTE: run the test
 		runKDParallel<Point, TreeWrapper>(wp, wi, kdknn, cgknn,

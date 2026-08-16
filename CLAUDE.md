@@ -106,20 +106,36 @@ Warnings are on for the three examples only; they cover the whole library.
 `include/psi` must stay warning-clean apart from the vendored
 `space_filling_curve/hilbert.c`.
 
-There is no automated correctness gate. To check a change:
+There is a correctness gate now: `ctest` in the build directory runs the unit
+suite under `tests/unit`, which compares all three trees against brute force
+(queries, batch updates, flatten round-trip, degenerate inputs, double
+coordinates). It takes well under a second and needs no data files. Unit tests
+include only `psi/…` headers -- never `tests/test_framework.h`, which costs
+~70 s and 1.7 GB per translation unit and pulls in the baselines.
 
+`-DPSI_ASSERTS=ON` keeps `assert()` in an optimised build, which is the
+configuration to check a change under; `-DDEBUG=ON` also works but is `-O0`.
+
+To check a change:
+
+- `ctest` passes
 - all nine targets build (eleven with `-DCGAL=ON`, which adds the
   `kd_ccp` / `p_ccp` oracles that `script/checkCorrect.sh` drives)
-- the three `*_tree_example` binaries run and agree
+- the three `*_tree_example` binaries run and agree -- they check their own
+  answers against brute force now, so a non-zero exit means a wrong answer
 - build with `-DDEBUG=ON` so the asserts and `validate()` run, then compare
   against a worktree at the previous commit on the same input
 
 `orth_tree` requires a `spatial_median` partition rule. Pairing it with
 `object_median` is now a `static_assert`, not a segfault.
 
-`script/checkCorrect.sh` sets `tester` twice, so the second assignment wins
-and `p_ccp` never runs: `p_tree` is not covered by it. Its `tag=0` also means
-no batch update is exercised.
+`script/checkCorrect.sh` compares against CGAL and exits non-zero on the first
+mismatch: `./checkCorrect.sh [fast|full] [data-root] [build-dir]`. It sweeps
+all three trees, the update bits and the query bits. Generate your own data
+with `data_generator` and point it at the root, or set `PSI_DATA`; `PSI_NODES`
+overrides the sizes. Note `-t` bit 1 (delete) needs bit 0 (insert): alone it
+would ask `batch_delete` to remove points that were never inserted, which its
+contract forbids.
 
 While iterating, check one size (`n=1000000`) — the larger sizes take over an
 hour each in a `-DDEBUG=ON` build. Run the whole matrix once the work is

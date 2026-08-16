@@ -38,7 +38,15 @@ typedef CGAL::Fuzzy_sphere<tree_traits_type> fuzzy_circle_type;
 
 size_t maxReduceSize = 0;
 int const kCCPQueryNum = 10000;
+/*
+ * Upper bound only: the driver used it unconditionally, so any input smaller
+ * than a million points ran subseq() past the end and crashed.
+ */
 size_t const kCCPBatchQuerySize = 1000000;
+static size_t ccp_query_size(size_t n)
+{
+	return std::min(kCCPBatchQuerySize, n);
+}
 // size_t const kCCPBatchQuerySize = 110;
 double const batchInsertCheckRatio = 0.1;
 double const kCCPBatchDiffTotalRatio = 1.0;
@@ -211,10 +219,10 @@ void runPTreeParallel(auto const &wp, auto const &wi, scalar_type *kdknn,
 								rounds, rat);
 		}
 		knn_checker(wp.subseq(0, wp.size() / 2), wi,
-			    wp.subseq(0, kCCPBatchQuerySize));
-		knn_checker(
-			wp.subseq(0, wp.size() / 2), wi,
-			wp.subseq(wp.size() - kCCPBatchQuerySize, wp.size()));
+			    wp.subseq(0, ccp_query_size(wp.size())));
+		knn_checker(wp.subseq(0, wp.size() / 2), wi,
+			    wp.subseq(wp.size() - ccp_query_size(wp.size()),
+				      wp.size()));
 	}
 
 	if (tag & (1 << 4)) {
@@ -224,14 +232,14 @@ void runPTreeParallel(auto const &wp, auto const &wi, scalar_type *kdknn,
 								rounds, rat);
 		}
 		knn_checker(wp.subseq(0, wp.size() / 2), wi,
-			    wp.subseq(0, kCCPBatchQuerySize));
+			    wp.subseq(0, ccp_query_size(wp.size())));
 		knn_checker(wp.subseq(0, wp.size() / 2), wi,
-			    wp.subseq(0, kCCPBatchQuerySize));
+			    wp.subseq(0, ccp_query_size(wp.size())));
 	}
 
 	// NOTE: query phase
 	if (query_type & (1 << 0)) { // NOTE: NN query
-		knn_checker(wp, wi, wp.subseq(0, kCCPBatchQuerySize));
+		knn_checker(wp, wi, wp.subseq(0, ccp_query_size(wp.size())));
 	}
 
 	points_type new_wp;
@@ -310,8 +318,8 @@ int main(int argc, char *argv[])
 		coord_type *cgknn;
 		coord_type *kdknn;
 
-		cgknn = new coord_type[kCCPBatchQuerySize];
-		kdknn = new coord_type[kCCPBatchQuerySize];
+		cgknn = new coord_type[ccp_query_size(wp.size())];
+		kdknn = new coord_type[ccp_query_size(wp.size())];
 
 		// NOTE: run the test
 		runPTreeParallel<Point, TreeWrapper>(wp, wi, kdknn, cgknn,

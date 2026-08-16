@@ -1,12 +1,14 @@
 #pragma once
 
 #include <algorithm>
+#include <filesystem>
 #include <cstddef>
 #include <cstdint>
 #include <iomanip>
 #include <ios>
 #include <iostream>
 
+#include "seed.h"
 #include "baselines/cpam_raw/cpamtree.hpp"
 #include "baselines/zdtree/zdtree.hpp"
 #include "baselines/zdtree_3d/zdtree_3d.hpp"
@@ -190,6 +192,15 @@ auto gen_rectangles(int rec_num, int const type,
 			}
 		}
 	}
+	/*
+	 * Clamp to the input: the large bracket asks for 10,000-point
+	 * rectangles, so below that recurse_box records nothing and the loop
+	 * below never terminates. For the benchmark sizes the clamp never
+	 * fires.
+	 */
+	range.first = std::min(range.first, n);
+	range.second = std::max(range.first, std::min(range.second, n));
+
 	box_seq_type box_seq(rec_num);
 	int cnt = 0;
 	points_type wp(n);
@@ -199,13 +210,24 @@ auto gen_rectangles(int rec_num, int const type,
 	// std::cout << " " << range.first << " " << range.second << std::endl;
 
 	size_t max_size = 0;
+	int barren_passes = 0;
 	while (cnt < rec_num) {
+		int const cnt_before = cnt;
 		parlay::copy(WP, wp);
 		auto r = recurse_box<Point, Tree, SavePoint>(
 			parlay::make_slice(wp), box_seq, DIM, range, cnt,
 			rec_num, type);
 		max_size = std::max(max_size, r);
-		// std::cout << cnt << " " << max_size << std::endl;
+		/* Bail out rather than spin forever if the input cannot
+		 * produce the requested rectangles. */
+		barren_passes = (cnt == cnt_before) ? barren_passes + 1 : 0;
+		if (barren_passes >= 100) {
+			std::cout << "gen_rectangles: only " << cnt << " of "
+				  << rec_num << " rectangles fit in " << n
+				  << " points; continuing with those\n";
+			box_seq.resize(cnt > 0 ? cnt : 0);
+			break;
+		}
 	}
 	// std::cout << "finish generate " << std::endl;
 	return std::make_pair(box_seq, max_size);
@@ -1208,8 +1230,7 @@ void generate_random_points(parlay::sequence<Point> &wp, coord_type _box_size,
 {
 	coord_type box_size = _box_size;
 
-	std::random_device rd;	   // a seed source for the random number engine
-	std::mt19937 gen_mt(rd()); // mersenne_twister_engine seeded with rd()
+	std::mt19937 gen_mt(generator_seed());
 	std::uniform_int_distribution<int> distrib(1, box_size);
 
 	parlay::random_generator gen(distrib(gen_mt));
@@ -1840,8 +1861,28 @@ public:
 					std::string(insert_file_path_cml);
 				// std::cout << insert_file_path << std::endl;
 			} else { // determine the name otherwise
-				int id = std::stoi(name.substr(
-					0, name.find_first_of('.')));
+				/*
+				 * The sibling is derived from the stem, so a
+				 * file not named <number>.in used to throw out
+				 * of stoi, and a missing sibling used to crash
+				 * after an unrelated "unable to open" message.
+				 */
+				std::string const stem =
+					name.substr(0, name.find_first_of('.'));
+				if (stem.empty() ||
+				    stem.find_first_not_of("0123456789") !=
+					    std::string::npos) {
+					std::cerr
+						<< "\n-i 1 derives the insert "
+						   "file from the input's "
+						   "name, "
+						   "which must be <number>.in. "
+						   "Pass -I <file> to name it, "
+						   "or -i 0 for no insert "
+						   "file.\n";
+					return;
+				}
+				int id = std::stoi(stem);
 #ifdef CCP
 				id = (id + 1) %
 				     10; // WARN: MOD graph number used to test
@@ -1856,6 +1897,13 @@ public:
 				insert_file_path = std::string(input_file_path)
 							   .substr(0, pos) +
 						   std::to_string(id) + ".in";
+			}
+			if (!std::filesystem::exists(insert_file_path)) {
+				std::cerr << "\ninsert file "
+					  << insert_file_path
+					  << " does not exist. Pass -I <file> "
+					     "or -i 0.\n";
+				return;
 			}
 			auto [n, d] = read_points<Point>(
 				insert_file_path.c_str(), wi, N);

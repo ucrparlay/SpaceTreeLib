@@ -65,7 +65,7 @@ auto orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
 	       ImbaRatio>::range_count(box_type const &bx) const
 {
 	range_query_logger logger;
-	if (this->root_ == nullptr)
+	if (this->root_ == nullptr || base_type::box_is_empty(bx))
 		return std::make_pair(size_t{0}, logger);
 	size_t s = base_type::template range_count_rectangle<leaf_type,
 							     interior_type>(
@@ -93,7 +93,7 @@ auto orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
 {
 	range_query_logger logger;
 	size_t s = 0;
-	if (this->root_ == nullptr)
+	if (this->root_ == nullptr || base_type::box_is_empty(query_box))
 		return std::make_pair(s, logger);
 	base_type::template range_query_serial_recursive<leaf_type,
 							 interior_type>(

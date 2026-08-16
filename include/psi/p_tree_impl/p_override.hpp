@@ -45,6 +45,9 @@ auto p_tree<Point, SplitRule, SkHeight, ImbaRatio>::range_count(
 	box_type const &query_box)
 {
 	range_query_logger logger;
+	if (base_type::box_is_empty(query_box)) {
+		return std::make_pair(size_t{0}, logger);
+	}
 
 	auto size = cpam_aug_map_type::template range_count_filter2<base_type>(
 		this->cpam_aug_map_, query_box, logger);
@@ -60,6 +63,9 @@ auto p_tree<Point, SplitRule, SkHeight, ImbaRatio>::range_query(
 {
 	range_query_logger logger;
 	size_t cnt = 0;
+	if (base_type::box_is_empty(query_box)) {
+		return std::make_pair(cnt, logger);
+	}
 	cpam_aug_map_type::template range_report_filter2<base_type>(
 		this->cpam_aug_map_, query_box, cnt, parlay::make_slice(out),
 		logger);

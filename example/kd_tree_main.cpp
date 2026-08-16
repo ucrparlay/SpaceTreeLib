@@ -2,6 +2,5 @@
 
 int main()
 {
-	kd_tree_example::run_example();
-	return 0;
+	return kd_tree_example::run_example();
 }

@@ -33,6 +33,19 @@ base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::get_box_mid(
 
 template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
 	  uint_fast8_t ImbaRatio>
+inline bool base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::box_is_empty(
+	box_type const &bx)
+{
+	for (dims_type i = 0; i < num_dims; ++i) {
+		if (num_type::gt(bx.first.pnt[i], bx.second.pnt[i])) {
+			return true;
+		}
+	}
+	return false;
+}
+
+template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
+	  uint_fast8_t ImbaRatio>
 inline bool base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::legal_box(
 	box_type const &bx)
 {

@@ -2,6 +2,5 @@
 
 int main()
 {
-	p_tree_example::run_example();
-	return 0;
+	return p_tree_example::run_example();
 }

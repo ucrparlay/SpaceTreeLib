@@ -612,12 +612,21 @@ struct augmented_ops : map_type {
 
 		if (!b)
 			return;
+		/*
+		 * out is the caller's buffer and the answer size is not known
+		 * before the walk, so every write is bounded by it and the
+		 * count reports what was actually written -- the same contract
+		 * kd_tree and orth_tree give.
+		 */
+		if (cnt >= out.size())
+			return;
 
 		auto const &node_box = map_type::aug_val_ref(b);
 		if (!base_type::box_intersect_box(node_box, query_box)) {
 			logger.skip_box_num++;
 			return;
-		} else if (base_type::within_box(node_box, query_box)) {
+		} else if (base_type::within_box(node_box, query_box) &&
+			   cnt + map_type::size(b) <= out.size()) {
 			logger.full_box_num++;
 			cnt += flatten(b,
 				       out.cut(cnt, cnt + map_type::size(b)));
@@ -627,7 +636,8 @@ struct augmented_ops : map_type {
 		if (map_type::is_compressed(b)) { // leaf node
 			logger.vis_leaf_num++;
 			auto f_filter = [&](auto const &et) {
-				if (base_type::within_box(et, query_box)) {
+				if (cnt < out.size() &&
+				    base_type::within_box(et, query_box)) {
 					out[cnt++] = et;
 				}
 			};
@@ -639,7 +649,8 @@ struct augmented_ops : map_type {
 		logger.vis_interior_num++;
 		auto rb = map_type::cast_to_regular(b);
 
-		if (base_type::within_box(rb->entry.first, query_box)) {
+		if (cnt < out.size() &&
+		    base_type::within_box(rb->entry.first, query_box)) {
 			out[cnt++] = rb->entry.first;
 		}
 

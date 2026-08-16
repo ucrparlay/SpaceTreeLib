@@ -3,6 +3,8 @@
 #include <numeric>
 #include <string>
 
+#include "seed.h"
+
 #include "common/IO.h"
 #include "common/geometryIO.h"
 #include "common/parse_command_line.h"
@@ -12,6 +14,7 @@
 #include "psi/base_tree.h"
 #include "psi/dependence/basic_point.h"
 #include "psi/dependence/comparator.h"
+
 ///**********************************START*********************************///
 
 using axis_type = int64_t;
@@ -152,10 +155,7 @@ public:
 	{
 		points_type wp(gen_num);
 
-		std::random_device
-			rd; // a seed source for the random number engine
-		std::mt19937 gen_mt(
-			rd()); // mersenne_twister_engine seeded with rd()
+		std::mt19937 gen_mt(generator_seed());
 		std::uniform_int_distribution<int> distrib(1, kValueUB);
 
 		parlay::random_generator gen(distrib(gen_mt));
@@ -179,10 +179,7 @@ public:
 	{
 		auto constexpr num_dims = Point::get_dim();
 
-		std::random_device
-			rd; // a seed source for the random number engine
-		std::mt19937 gen_mt(
-			rd()); // mersenne_twister_engine seeded with rd()
+		std::mt19937 gen_mt(generator_seed());
 		std::uniform_int_distribution<int> distrib(1, 65536);
 		parlay::random_generator gen(
 			distrib(gen_mt)); // PARA: thread safe random generator
@@ -279,10 +276,7 @@ public:
 				     size_t const cur_restart_idx)
 	{
 		using spreader_type = std::pair<Point, dims_type>;
-		std::random_device
-			rd; // a seed source for the random number engine
-		std::mt19937 gen_mt(
-			rd()); // mersenne_twister_engine seeded with rd()
+		std::mt19937 gen_mt(generator_seed());
 		std::uniform_int_distribution<int> distrib(1, kValueUB);
 
 		parlay::random_generator gen(distrib(gen_mt));
@@ -352,10 +346,7 @@ public:
 
 	points_type apply(size_t const gen_num)
 	{
-		std::random_device
-			rd; // a seed source for the random number engine
-		std::mt19937 gen_mt(
-			rd()); // mersenne_twister_engine seeded with rd()
+		std::mt19937 gen_mt(generator_seed());
 		std::uniform_int_distribution<int> distrib(1, 2024);
 
 		parlay::random_generator gen(
