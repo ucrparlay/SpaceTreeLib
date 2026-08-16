@@ -143,7 +143,7 @@ node *orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
 		}
 	}
 
-	orth_node_arr_type tree_nodes;
+	node_arr_type tree_nodes;
 	size_t start = 0;
 	for (dims_type i = 0; i < node_regions; ++i) {
 		// NOTE: iterate through non-empty partitions, put them into the

@@ -75,9 +75,10 @@ base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::check_box(
 			retrieve_box<leaf_type, interior_type>(ti->right)));
 		assert(same_box(new_box, ti->get_box()));
 		return new_box;
-	} else if (is_multi_node<interior_type> &&
-		   !has_box<typename interior_type::at_type>) { // orth without
-								// box
+	} else if constexpr (is_multi_node<interior_type> &&
+			     !has_box<typename interior_type::
+					      at_type>) { // orth without
+							  // box
 		box_seq_type new_box(
 			ti->template compute_subregions<box_seq_type>(box));
 		box_seq_type return_box_seq(new_box.size());
@@ -90,8 +91,10 @@ base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::check_box(
 		auto return_box = get_box(return_box_seq);
 		assert(within_box(return_box, box));
 		return return_box;
-	} else if (is_multi_node<interior_type> &&
-		   has_box<typename interior_type::at_type>) { // orth with box
+	} else if constexpr (is_multi_node<interior_type> &&
+			     has_box<typename interior_type::at_type>) { // orth
+									 // with
+									 // box
 		box_seq_type new_box(
 			ti->template compute_subregions<box_seq_type>(box));
 		box_seq_type return_box_seq(new_box.size());

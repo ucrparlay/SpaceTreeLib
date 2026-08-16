@@ -51,8 +51,8 @@ inline void psi_test_fail(char const *file, int line, char const *expr,
 #define CHECK_EQ(a, b)                                                  \
 	do {                                                            \
 		psi_test_checks++;                                      \
-		auto const &psi_a = (a);                                \
-		auto const &psi_b = (b);                                \
+		auto const psi_a = (a);                                 \
+		auto const psi_b = (b);                                 \
 		if (!(psi_a == psi_b))                                  \
 			psi_test_fail(__FILE__, __LINE__, #a " == " #b, \
 				      std::to_string(psi_a) + " vs " +  \

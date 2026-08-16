@@ -48,6 +48,11 @@ public:
 	using box_type = std::pair<basic_point, basic_point>;
 	using box_seq_type = parlay::sequence<box_type>;
 
+	/* What the convenience knn hands back: points by value, so the result
+	 * outlives any update to the tree. */
+	using knn_result_type = std::pair<Point, dis_type>;
+	using knn_result_seq_type = parlay::sequence<knn_result_type>;
+
 	using node_box_type = std::pair<node *, box_type>;
 	using node_box_seq_type = parlay::sequence<node_box_type>;
 	using node_tag_type = std::pair<node *, uint_fast8_t>;
@@ -398,6 +403,22 @@ public:
 				std::exchange(other.tree_box_, get_empty_box());
 		}
 		return *this;
+	}
+
+	/*
+	 * Convenience forms. The primary entry points write into a buffer the
+	 * caller has to size, which means knowing the answer first; these
+	 * allocate and return. They are ordinary wrappers -- nothing here is
+	 * on a measured path unless a caller chooses it.
+	 */
+	points_type range_query(box_type const &query_box) const;
+	knn_result_seq_type knn(Point const &q, size_t k) const;
+
+	/* Through the derived tree: p_tree keeps its points in a cpam map and
+	 * has no root_ at all. */
+	bool empty() const
+	{
+		return static_cast<DerivedTree const *>(this)->get_size() == 0;
 	}
 
 	constexpr virtual void delete_tree() = 0;

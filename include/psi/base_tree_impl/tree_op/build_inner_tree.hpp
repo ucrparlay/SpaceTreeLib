@@ -47,7 +47,7 @@ node *base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::build_inner_tree(
 		return tree_nodes[idx - pivot_num - 1];
 	}
 
-	typename DerivedTree::orth_node_arr_type multi_nodes;
+	typename DerivedTree::node_arr_type multi_nodes;
 	typename DerivedTree::splitter_type split;
 	for (dims_type i = 0; i < DerivedTree::node_regions; ++i) {
 		multi_nodes[i] = build_inner_tree<interior_type>(

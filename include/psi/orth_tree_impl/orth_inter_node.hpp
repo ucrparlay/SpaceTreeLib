@@ -13,12 +13,12 @@ struct orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
 		 ImbaRatio>::orth_interior_node
     : multi_node<Point, md, splitter_type, InteriorAugType> {
 	using base_node = multi_node<Point, md, splitter_type, InteriorAugType>;
-	using orth_node_arr_type = typename base_node::node_arr_type;
+	using node_arr_type = typename base_node::node_arr_type;
 	using pt_type = Point;
 	using st_type = splitter_type;
 	using at_type = InteriorAugType;
 
-	orth_interior_node(orth_node_arr_type const &_tree_nodes,
+	orth_interior_node(node_arr_type const &_tree_nodes,
 			   st_type const &_split)
 	    : base_node(_tree_nodes, _split,
 			at_type(at_type::template create<
@@ -26,7 +26,7 @@ struct orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
 	{
 	}
 
-	orth_interior_node(orth_node_arr_type const &_tree_nodes,
+	orth_interior_node(node_arr_type const &_tree_nodes,
 			   st_type const &_split, at_type const &_aug)
 	    : base_node(_tree_nodes, _split, _aug)
 	{
@@ -57,7 +57,7 @@ struct orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
 		return this->aug.force_parallel(this->size);
 	}
 
-	auto update_aug(orth_node_arr_type const &tree_nodes)
+	auto update_aug(node_arr_type const &tree_nodes)
 	{
 		return this->aug.template update<leaf_type, interior_type>(
 			tree_nodes);

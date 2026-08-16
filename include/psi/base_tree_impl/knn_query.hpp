@@ -581,6 +581,43 @@ void base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::knn_cover(
 	return;
 }
 
+/*
+ * Convenience knn: sizes and fills the queue itself, then hands back copies
+ * sorted by distance. The buffer-taking form is still there for callers that
+ * want to own the storage.
+ */
+template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
+	  uint_fast8_t ImbaRatio>
+typename base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::knn_result_seq_type
+base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::knn(Point const &q,
+							size_t k) const
+{
+	size_t const n =
+		std::min(k, static_cast<DerivedTree const *>(this)->get_size());
+	if (n == 0) {
+		return knn_result_seq_type();
+	}
+
+	/* bounded_queue holds references, which have no default state, so the
+	 * buffer needs a filler; it is overwritten before anything reads it. */
+	using nn_pair = std::pair<std::reference_wrapper<Point>, dis_type>;
+	Point filler = q;
+	parlay::sequence<nn_pair> buf(n, nn_pair(std::ref(filler), dis_type()));
+	bounded_queue<Point, nn_pair> bq(parlay::make_slice(buf));
+
+	static_cast<DerivedTree const *>(this)->knn(q, bq);
+
+	knn_result_seq_type out(bq.size());
+	for (size_t i = 0; i < bq.size(); i++) {
+		out[i] = knn_result_type(buf[i].first.get(), buf[i].second);
+	}
+	std::sort(out.begin(), out.end(),
+		  [](knn_result_type const &a, knn_result_type const &b) {
+			  return a.second < b.second;
+		  });
+	return out;
+}
+
 } // namespace psi
 
 #endif // PSI_BASE_TREE_IMPL_KNN_QUERY_HPP

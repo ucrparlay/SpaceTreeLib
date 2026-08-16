@@ -129,6 +129,12 @@ public:
 	template <typename Range>
 	auto knn(Point const &q, bounded_queue<Point, Range> &bq) const;
 
+	/* The buffer-taking forms below would otherwise hide the
+	 * allocating ones the base provides. */
+	using base_type::empty;
+	using base_type::knn;
+	using base_type::range_query;
+
 	auto range_count(box_type const &query_box) const;
 
 	template <typename Range>

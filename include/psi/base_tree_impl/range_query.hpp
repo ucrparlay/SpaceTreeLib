@@ -360,6 +360,25 @@ void base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::
 
 	return;
 }
+/*
+ * Convenience range_query: the answer size is not known in advance, so this
+ * counts first and then reports into a buffer it owns.
+ */
+template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
+	  uint_fast8_t ImbaRatio>
+typename base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::points_type
+base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::range_query(
+	box_type const &query_box) const
+{
+	auto const *tree = static_cast<DerivedTree const *>(this);
+	size_t const n = tree->range_count(query_box).first;
+	points_type out(n);
+	if (n != 0) {
+		tree->range_query(query_box, parlay::make_slice(out));
+	}
+	return out;
+}
+
 } // namespace psi
 
 #endif // PSI_BASE_TREE_IMPL_RANGE_QUERY_HPP_

@@ -560,7 +560,7 @@ struct base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::inner_tree {
 			}
 		}
 
-		typename interior_type::orth_node_arr_type new_nodes;
+		typename interior_type::node_arr_type new_nodes;
 		for (bucket_type i = 0; i < interior_type::get_regions(); ++i) {
 			new_nodes[i] =
 				update_inner_tree_recursive<ut, UpdateParFlag>(

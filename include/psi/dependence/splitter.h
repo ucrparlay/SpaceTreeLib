@@ -288,6 +288,14 @@ struct base_split_partition_rule {
 	constexpr virtual hyper_plane_type const
 	split_sample(slice_type in, dims_type const dim,
 		     box_type const &box) const = 0;
+
+	/*
+	 * Batch update asks this before rebuilding a subtree. It was defined
+	 * ad hoc on each concrete rule and absent here, so a new rule that
+	 * omitted it built cleanly and failed on the first batch update
+	 * instead of at the declaration.
+	 */
+	constexpr virtual bool allow_rebuild() const = 0;
 };
 
 template <typename Point>
@@ -312,7 +320,7 @@ struct object_median : base_split_partition_rule<Point> {
 		return "ObjectMedian";
 	}
 
-	constexpr bool allow_rebuild() const
+	constexpr bool allow_rebuild() const override
 	{
 		return true;
 	};
@@ -409,7 +417,7 @@ struct spatial_median : base_split_partition_rule<Point> {
 		return "SpatialMedian";
 	}
 
-	constexpr bool allow_rebuild() const
+	constexpr bool allow_rebuild() const override
 	{
 		return false;
 	};
@@ -678,11 +686,23 @@ struct orthogonal_split_rule {
 				return divide_space(
 					tree, in, out, box, Tree::get_box(in),
 					std::forward<Args>(args)...);
-			} else { // define the behavior of other dim rule
-				 // static_assert(false);
+			} else {
+				/*
+				 * A rule with no branch here falls out of a
+				 * function that has to return a node, and the
+				 * contributor sees "void value not ignored"
+				 * in a file they never opened. Say it where
+				 * the edit belongs. Dependent, so it only
+				 * fires on instantiation.
+				 */
+				static_assert(sizeof(DimRule) == 0,
+					      "handle_undivided has no branch "
+					      "for this dimension rule");
 			}
-		} else { // define the behavior of other partition rule
-			 // static_assert(false);
+		} else {
+			static_assert(sizeof(PartitionRule) == 0,
+				      "handle_undivided has no branch for "
+				      "this partition rule");
 		}
 	}
 

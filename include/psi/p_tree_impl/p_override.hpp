@@ -14,7 +14,7 @@ template <typename Point, typename SplitRule, uint_fast8_t SkHeight,
 	  uint_fast8_t ImbaRatio>
 template <typename Range>
 auto p_tree<Point, SplitRule, SkHeight, ImbaRatio>::knn(
-	Point const &q, bounded_queue<Point, Range> &bq)
+	Point const &q, bounded_queue<Point, Range> &bq) const
 {
 	knn_logger logger;
 	/* An empty queue has no slot to write a neighbour into. */
@@ -42,7 +42,7 @@ size_t p_tree<Point, SplitRule, SkHeight, ImbaRatio>::flatten(Range &&out) const
 template <typename Point, typename SplitRule, uint_fast8_t SkHeight,
 	  uint_fast8_t ImbaRatio>
 auto p_tree<Point, SplitRule, SkHeight, ImbaRatio>::range_count(
-	box_type const &query_box)
+	box_type const &query_box) const
 {
 	range_query_logger logger;
 	if (base_type::box_is_empty(query_box)) {
@@ -59,7 +59,7 @@ template <typename Point, typename SplitRule, uint_fast8_t SkHeight,
 	  uint_fast8_t ImbaRatio>
 template <typename Range>
 auto p_tree<Point, SplitRule, SkHeight, ImbaRatio>::range_query(
-	box_type const &query_box, Range &&out)
+	box_type const &query_box, Range &&out) const
 {
 	range_query_logger logger;
 	size_t cnt = 0;

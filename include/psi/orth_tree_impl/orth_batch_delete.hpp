@@ -89,7 +89,7 @@ node *orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
 		assert(putTomb ? (!has_tomb) : true);
 
 		auto ti = static_cast<interior_type *>(T);
-		orth_node_arr_type new_nodes;
+		node_arr_type new_nodes;
 
 		size_t start = 0;
 		for (dims_type i = 0; i < node_regions; ++i) {

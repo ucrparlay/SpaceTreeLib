@@ -81,7 +81,7 @@ node *orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
 			std::accumulate(sums.begin(), sums.end(), 0), n));
 
 		auto ti = static_cast<interior_type *>(T);
-		orth_node_arr_type new_nodes;
+		node_arr_type new_nodes;
 
 		size_t start = 0;
 		for (dims_type i = 0; i < node_regions; ++i) {

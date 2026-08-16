@@ -186,12 +186,18 @@ public:
 
 	template <typename Range>
 	/* Not const: cpam takes the map by non-const reference. */
-	auto knn(Point const &q, bounded_queue<Point, Range> &bq);
+	auto knn(Point const &q, bounded_queue<Point, Range> &bq) const;
 
-	auto range_count(box_type const &query_box);
+	/* The buffer-taking forms below would otherwise hide the
+	 * allocating ones the base provides. */
+	using base_type::empty;
+	using base_type::knn;
+	using base_type::range_query;
+
+	auto range_count(box_type const &query_box) const;
 
 	template <typename Range>
-	auto range_query(box_type const &query_box, Range &&out);
+	auto range_query(box_type const &query_box, Range &&out) const;
 
 	constexpr void delete_tree() override;
 
@@ -216,8 +222,17 @@ private:
 	void batch_delete_(slice_type in);
 	void batch_diff_(slice_type in);
 
-	SplitRule space_filling_curve_;
-	cpam_aug_map_type cpam_aug_map_;
+	/*
+	 * No split-rule member: unlike kd_tree and orth_tree, p_tree never
+	 * calls its rule. SplitRule reaches the tree as cpam_entry's
+	 * filling_curve_t, and the code is applied by cpam_sample_sort during
+	 * the build. Adding a curve means writing one with encode(), not
+	 * touching anything here.
+	 *
+	 * The queries do not change the tree, but cpam takes its map by
+	 * non-const reference.
+	 */
+	mutable cpam_aug_map_type cpam_aug_map_;
 };
 
 } // namespace psi

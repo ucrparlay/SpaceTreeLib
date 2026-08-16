@@ -103,7 +103,7 @@ public:
 	using leaf_type = leaf_node<Point, slice_type, base_type::leaf_capacity,
 				    LeafAugType, parlay::move_assign_tag>;
 	using interior_type = orth_interior_node;
-	using orth_node_arr_type = interior_type::orth_node_arr_type;
+	using node_arr_type = interior_type::node_arr_type;
 	using inner_tree =
 		typename base_type::template inner_tree<leaf_type,
 							interior_type>;
@@ -166,6 +166,12 @@ public:
 
 	template <typename Range>
 	auto knn(Point const &q, bounded_queue<Point, Range> &bq) const;
+
+	/* The buffer-taking forms below would otherwise hide the
+	 * allocating ones the base provides. */
+	using base_type::empty;
+	using base_type::knn;
+	using base_type::range_query;
 
 	auto range_count(box_type const &query_box) const;
 

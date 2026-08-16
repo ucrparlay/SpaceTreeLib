@@ -110,13 +110,25 @@ Calling `build` again on a live tree replaces its contents.
 
 ### 4. Query
 
-Counting and reporting the points inside a box:
+Every point inside a box, and the `k` nearest neighbours of a point:
 
 ```cpp
 typename decltype(tree)::box_type box;
 box.first[0] = 400;  box.first[1] = 400;    /* lower corner */
 box.second[0] = 600; box.second[1] = 600;   /* upper corner */
 
+parlay::sequence<point> inside = tree.range_query(box);
+auto nearest = tree.knn(query_point, 10);   /* sorted, nearest first */
+```
+
+`knn` gives back `(point, squared distance)` pairs by value, so they stay
+valid after the tree changes. Both return fewer results than asked for when
+the tree holds fewer points, and both return nothing on an empty tree.
+
+That is all most callers need. The forms below let you own the storage
+instead, which is what the benchmarks use:
+
+```cpp
 auto [count, count_log] = tree.range_count(box);
 
 parlay::sequence<point> found(tree.get_size());
@@ -126,10 +138,8 @@ auto [written, query_log] = tree.range_query(box, parlay::make_slice(found));
 
 `range_query` writes into the buffer you supply and returns how many points it
 wrote. A buffer smaller than the answer is not an error: the result is
-truncated and `written` tells you so. The extra value in each pair is a
+truncated and `written` tells you so. The second value in each pair is a
 counter block for profiling; ignore it unless you are measuring.
-
-The `k` nearest neighbours of a point:
 
 ```cpp
 using dis_type = typename point::dis_type;
@@ -145,8 +155,9 @@ tree.knn(query_point, queue);
 ```
 
 The queue must be pre-filled, because `std::reference_wrapper` has no default
-constructor; any point will do as the filler. The results reference storage
-owned by the tree, so do not use them after modifying it.
+constructor; any point will do as the filler. Unlike `knn(q, k)`, these
+results *reference* storage owned by the tree, so do not use them after
+modifying it.
 
 ### 5. Update
 
@@ -279,10 +290,13 @@ Common to all three trees. `Range` is any random-access range of points.
 | `batch_delete(Range&&)` | — | every point must be present |
 | `batch_diff(Range&&)` | — | tolerates points that are absent |
 | `flatten(Range&& out)` | `size_t` | needs `out.size() == get_size()`, else writes nothing and returns 0 |
+| `knn(Point const&, size_t k)` | `sequence<pair<Point, dis_type>>` | allocates; sorted, nearest first; points by value |
+| `range_query(box_type const&)` | `points_type` | allocates and returns what it found |
 | `knn(Point const&, bounded_queue&)` | profiling counters | results land in the queue; `queue.size()` is how many |
 | `range_count(box_type const&)` | `pair<size_t, counters>` | |
 | `range_query(box_type const&, Range&& out)` | `pair<size_t, counters>` | truncates to `out.size()` |
 | `get_size()` | `size_t` | number of points |
+| `empty()` | `bool` | |
 | `delete_tree()` | — | idempotent |
 | `get_tree_name()` | `char const*` | parsed by the plotting scripts; do not change |
 
@@ -293,6 +307,50 @@ error.
 
 Member types you will use: `point_type` via your own alias, `box_type`,
 `points_type`, `slice_type`, `coord_type`, `dis_type`.
+
+## Extending PSI
+
+Three extension points, in increasing order of effort.
+
+### A new curve (p_tree)
+
+The cheapest. Write a type with `encode()` in the shape of
+`psi::morton_curve` / `psi::hilbert_curve` (`psi/dependence/splitter.h`) and
+pass `psi::spatial_filling_curve<your_curve>` as `p_tree`'s split rule. The
+code is applied during the build by `cpam_sample_sort`; `p_tree` itself never
+calls the rule.
+
+### A new split rule (kd_tree, orth_tree)
+
+Derive from `psi::base_split_dim_rule` or `psi::base_split_partition_rule` and
+implement every pure virtual — including `allow_rebuild()`, which batch update
+asks before rebuilding a subtree.
+
+Then add a branch for it in `orthogonal_split_rule::handle_undivided`, which
+decides what happens when the chosen dimension cannot be split. Without one
+you get a `static_assert` naming the rule; that assert is the whole reason it
+is worth mentioning here.
+
+### A new tree type
+
+Not "derive and override". A derived tree has to supply, by name:
+
+| What | Why |
+|---|---|
+| `leaf_type`, `interior_type` | every algorithm in `base_tree_impl/` takes them as template arguments |
+| `split_rule_type`, `splitter_type` | `validate()` and the build |
+| `node_arr_type`, `node_regions`, `splitter_num` | multi-way trees only; the skeleton builder reads them off the derived class |
+| a tag method plus a matching `is_*` concept | how the shared code tells the families apart |
+| `build_recursive` / `serial_build_recursive` | the split rule calls back into these, so the signature is fixed by the family |
+| `friend SplitRule` and the two `rebuild_*` friends | the callbacks reach private members |
+| `delete_tree()` | pure virtual on the base |
+
+`kd_tree` is the smaller model to copy; `orth_tree` shows the multi-way side.
+Start by copying one wholesale and deleting, rather than deriving from scratch.
+
+Two things the base cannot check for you: `validate()` has no branch for a node
+type that is neither binary nor multi-way (it says so and continues), and the
+augmentation concepts cannot state the `create`/`update` requirement.
 
 ## Checking a change
 

@@ -72,8 +72,30 @@ int main()
 	tree.build(parlay::make_slice(points));
 	CHECK_EQ(tree.get_size(), points.size());
 
+	CASE("manual/query-simple");
+	/* --- "Query": the allocating forms --- */
+	{
+		typename decltype(tree)::box_type box;
+		box.first[0] = 400;
+		box.first[1] = 400;
+		box.second[0] = 600;
+		box.second[1] = 600;
+
+		point query_point;
+		query_point[0] = 500;
+		query_point[1] = 500;
+
+		parlay::sequence<point> inside = tree.range_query(box);
+		auto nearest = tree.knn(query_point, 10);
+
+		CHECK_EQ(nearest.size(), size_t(10));
+		CHECK(nearest.front().second <= nearest.back().second);
+		CHECK_EQ(inside.size(), tree.range_count(box).first);
+		CHECK(!tree.empty());
+	}
+
 	CASE("manual/range");
-	/* --- "Query" --- */
+	/* --- "Query": the buffer-taking forms --- */
 	typename decltype(tree)::box_type box;
 	box.first[0] = 400;
 	box.first[1] = 400;
