@@ -22,29 +22,29 @@
 #define TBB_PREVIEW_GLOBAL_CONTROL 1
 #include <tbb/global_control.h>
 
-using Typename = coord;
+using scalar_type = coord;
 
-typedef CGAL::Cartesian_d<Typename> Kernel;
-typedef Kernel::Point_d Point_d;
-typedef CGAL::Search_traits_d<Kernel> TreeTraits;
-typedef CGAL::Euclidean_distance<TreeTraits> Distance;
-typedef CGAL::Fuzzy_sphere<TreeTraits> Fuzzy_circle;
+typedef CGAL::Cartesian_d<scalar_type> kernel_type;
+typedef kernel_type::Point_d Point_d;
+typedef CGAL::Search_traits_d<kernel_type> tree_traits_type;
+typedef CGAL::Euclidean_distance<tree_traits_type> distance_type;
+typedef CGAL::Fuzzy_sphere<tree_traits_type> fuzzy_circle_type;
 //@ median tree
-typedef CGAL::Median_of_rectangle<TreeTraits> Median_of_rectangle;
-typedef CGAL::Orthogonal_k_neighbor_search<TreeTraits, Distance,
+typedef CGAL::Median_of_rectangle<tree_traits_type> Median_of_rectangle;
+typedef CGAL::Orthogonal_k_neighbor_search<tree_traits_type, distance_type,
 					   Median_of_rectangle>
-	Neighbor_search_Median;
-typedef Neighbor_search_Median::Tree Tree_Median;
+	neighbor_search_median_type;
+typedef neighbor_search_median_type::Tree tree_median_type;
 
 //@ midpoint tree
-typedef CGAL::Midpoint_of_rectangle<TreeTraits> Midpoint_of_rectangle;
-typedef CGAL::Orthogonal_k_neighbor_search<TreeTraits, Distance,
+typedef CGAL::Midpoint_of_rectangle<tree_traits_type> Midpoint_of_rectangle;
+typedef CGAL::Orthogonal_k_neighbor_search<tree_traits_type, distance_type,
 					   Midpoint_of_rectangle>
-	Neighbor_search_Midpoint;
-typedef Neighbor_search_Midpoint::Tree Tree_Midpoint;
-typedef CGAL::Fuzzy_iso_box<TreeTraits> Fuzzy_iso_box;
+	neighbor_search_midpoint_type;
+typedef neighbor_search_midpoint_type::Tree tree_midpoint_type;
+typedef CGAL::Fuzzy_iso_box<tree_traits_type> Fuzzy_iso_box;
 
-template <typename Splitter, typename Tree, typename Neighbor_search,
+template <typename splitter_type, typename Tree, typename neighbor_search_type,
 	  typename point>
 void testCGALParallel(int Dim, int LEAVE_WRAP, parlay::sequence<point> &wp,
 		      int N, int K, int const &rounds, string const &insertFile,
@@ -94,7 +94,7 @@ void testCGALParallel(int Dim, int LEAVE_WRAP, parlay::sequence<point> &wp,
 	});
 
 	timer.start();
-	Splitter split;
+	splitter_type split;
 	// Tree tree;
 	Tree tree(_points.begin(), _points.end(), split);
 	tree.template build<CGAL::Parallel_tag>();
@@ -124,7 +124,7 @@ void testCGALParallel(int Dim, int LEAVE_WRAP, parlay::sequence<point> &wp,
 				cgal_insert(ratios[i]);
 			}
 		} else {
-			cgal_insert(kBatchInsertRatio);
+			cgal_insert(batch_insert_ratio);
 		}
 
 		if (tag == 1)
@@ -175,14 +175,14 @@ void testCGALParallel(int Dim, int LEAVE_WRAP, parlay::sequence<point> &wp,
 	//* start test
 
 	// PERF: handle the size of cgknn dynamically
-	Typename *cgknn;
+	scalar_type *cgknn;
 	if (tag == 1) {
-		cgknn = new Typename[N + wi.size()];
+		cgknn = new scalar_type[N + wi.size()];
 	} else {
-		cgknn = new Typename[N];
+		cgknn = new scalar_type[N];
 	}
 
-	if (queryType & (1 << 0)) { // NOTE: KNN query
+	if (queryType & (1 << 0)) { // NOTE: knn query
 		auto run_cgal_knn = [&](int kth, size_t batchSize) {
 			timer.reset();
 			timer.start();
@@ -200,7 +200,7 @@ void testCGALParallel(int Dim, int LEAVE_WRAP, parlay::sequence<point> &wp,
 							std::begin(wp[s].pnt),
 							std::begin(wp[s].pnt) +
 								Dim);
-						Neighbor_search search(
+						neighbor_search_type search(
 							tree, query, kth);
 						auto it = search.end();
 						it--;
@@ -247,7 +247,7 @@ void testCGALParallel(int Dim, int LEAVE_WRAP, parlay::sequence<point> &wp,
 							std::begin(pts[s].pnt),
 							std::begin(pts[s].pnt) +
 								Dim);
-						Neighbor_search search(
+						neighbor_search_type search(
 							tree, query, K);
 						auto it = search.end();
 						it--;
@@ -514,8 +514,8 @@ void testCGALParallel(int Dim, int LEAVE_WRAP, parlay::sequence<point> &wp,
 					// Neighbor search can be instantiated
 					// from several threads at the same time
 					Point_d query = all_pts[s];
-					Neighbor_search search(tree, query,
-							       kth);
+					neighbor_search_type search(tree, query,
+								    kth);
 					auto it = search.end();
 					it--;
 					cgknn[s] = it->second;
@@ -603,24 +603,25 @@ void testCGALParallel(int Dim, int LEAVE_WRAP, parlay::sequence<point> &wp,
 		});
 		size_t batchSize =
 			static_cast<size_t>(np.size() * insertBatchInbaRatio);
-		size_t KnnSize =
+		size_t knn_size =
 			static_cast<size_t>(np.size() * knnBatchInbaRatio);
-		Splitter split;
+		splitter_type split;
 		Tree tree(_points.begin(), _points.begin() + batchSize, split);
 		tree.template build<CGAL::Parallel_tag>();
 		timer.reset();
 		timer.start();
 		std::cout << "finish build the tree" << std::endl;
-		parlay::sequence<size_t> visNodeNum(KnnSize, 0);
+		parlay::sequence<size_t> visNodeNum(knn_size, 0);
 		tbb::parallel_for(
-			tbb::blocked_range<std::size_t>(0, KnnSize),
+			tbb::blocked_range<std::size_t>(0, knn_size),
 			[&](tbb::blocked_range<std::size_t> const &r) {
 				for (std::size_t s = r.begin(); s != r.end();
 				     ++s) {
 					// Neighbor search can be instantiated
 					// from several threads at the same time
 					Point_d query = _points[s];
-					Neighbor_search search(tree, query, 1);
+					neighbor_search_type search(tree, query,
+								    1);
 					auto it = search.end();
 					it--;
 					// cgknn[s] = it->second;
@@ -631,7 +632,7 @@ void testCGALParallel(int Dim, int LEAVE_WRAP, parlay::sequence<point> &wp,
 			});
 		timer.stop();
 		std::cout << timer.total_time() << " " << tree.root()->depth()
-			  << " " << parlay::reduce(visNodeNum) / KnnSize << " "
+			  << " " << parlay::reduce(visNodeNum) / knn_size << " "
 			  << std::flush;
 	}
 
@@ -668,7 +669,7 @@ void testCGALParallel(int Dim, int LEAVE_WRAP, parlay::sequence<point> &wp,
 
 		// std::cout << " after generate points " << std::endl;
 		delete[] cgknn;
-		cgknn = new Typename[batchQueryOsmSize];
+		cgknn = new scalar_type[batchQueryOsmSize];
 		insertOsmByTimaCgal(pts);
 
 		// auto all_points = parlay::flatten(node_by_year);
@@ -720,12 +721,12 @@ void testCGALParallel(int Dim, int LEAVE_WRAP, parlay::sequence<point> &wp,
 					});
 			}
 		}
-		cgknn = new Typename[batchQueryOsmSize];
+		cgknn = new scalar_type[batchQueryOsmSize];
 		insertOsmByTimaCgal(pts);
 
 		// auto all_points = parlay::flatten(node);
 		// std::vector<Point_d> all_pts(all_points.size());
-		// cgknn = new Typename[all_points.size()];
+		// cgknn = new scalar_type[all_points.size()];
 		// parlay::parallel_for(0, all_points.size(), [&](size_t j) {
 		//     all_pts[j] = Point_d(Dim, std::begin(all_points[j].pnt),
 		//     std::end(all_points[j].pnt));
@@ -802,65 +803,71 @@ int main(int argc, char *argv[])
 				return PointType<coord, 2>(wp[i].pnt.begin());
 			});
 		decltype(wp)().swap(wp);
-		testCGALParallel<Median_of_rectangle, Tree_Median,
-				 Neighbor_search_Median, PointType<coord, 2>>(
-			Dim, LEAVE_WRAP, pts, N, K, rounds, insertFile, tag,
-			queryType, summary);
+		testCGALParallel<Median_of_rectangle, tree_median_type,
+				 neighbor_search_median_type,
+				 PointType<coord, 2>>(Dim, LEAVE_WRAP, pts, N,
+						      K, rounds, insertFile,
+						      tag, queryType, summary);
 	} else if (Dim == 3) {
 		auto pts = parlay::tabulate(
 			N, [&](size_t i) -> PointType<coord, 3> {
 				return PointType<coord, 3>(wp[i].pnt.begin());
 			});
 		decltype(wp)().swap(wp);
-		testCGALParallel<Median_of_rectangle, Tree_Median,
-				 Neighbor_search_Median, PointType<coord, 3>>(
-			Dim, LEAVE_WRAP, pts, N, K, rounds, insertFile, tag,
-			queryType, summary);
+		testCGALParallel<Median_of_rectangle, tree_median_type,
+				 neighbor_search_median_type,
+				 PointType<coord, 3>>(Dim, LEAVE_WRAP, pts, N,
+						      K, rounds, insertFile,
+						      tag, queryType, summary);
 	} else if (Dim == 5) {
 		auto pts = parlay::tabulate(
 			N, [&](size_t i) -> PointType<coord, 5> {
 				return PointType<coord, 5>(wp[i].pnt.begin());
 			});
 		decltype(wp)().swap(wp);
-		testCGALParallel<Median_of_rectangle, Tree_Median,
-				 Neighbor_search_Median, PointType<coord, 5>>(
-			Dim, LEAVE_WRAP, pts, N, K, rounds, insertFile, tag,
-			queryType, summary);
+		testCGALParallel<Median_of_rectangle, tree_median_type,
+				 neighbor_search_median_type,
+				 PointType<coord, 5>>(Dim, LEAVE_WRAP, pts, N,
+						      K, rounds, insertFile,
+						      tag, queryType, summary);
 	} else if (Dim == 7) {
 		auto pts = parlay::tabulate(
 			N, [&](size_t i) -> PointType<coord, 7> {
 				return PointType<coord, 7>(wp[i].pnt.begin());
 			});
 		decltype(wp)().swap(wp);
-		testCGALParallel<Median_of_rectangle, Tree_Median,
-				 Neighbor_search_Median, PointType<coord, 7>>(
-			Dim, LEAVE_WRAP, pts, N, K, rounds, insertFile, tag,
-			queryType, summary);
+		testCGALParallel<Median_of_rectangle, tree_median_type,
+				 neighbor_search_median_type,
+				 PointType<coord, 7>>(Dim, LEAVE_WRAP, pts, N,
+						      K, rounds, insertFile,
+						      tag, queryType, summary);
 	} else if (Dim == 9) {
 		auto pts = parlay::tabulate(
 			N, [&](size_t i) -> PointType<coord, 9> {
 				return PointType<coord, 9>(wp[i].pnt.begin());
 			});
 		decltype(wp)().swap(wp);
-		testCGALParallel<Median_of_rectangle, Tree_Median,
-				 Neighbor_search_Median, PointType<coord, 9>>(
-			Dim, LEAVE_WRAP, pts, N, K, rounds, insertFile, tag,
-			queryType, summary);
+		testCGALParallel<Median_of_rectangle, tree_median_type,
+				 neighbor_search_median_type,
+				 PointType<coord, 9>>(Dim, LEAVE_WRAP, pts, N,
+						      K, rounds, insertFile,
+						      tag, queryType, summary);
 	} else if (Dim == 10) {
 		auto pts = parlay::tabulate(
 			N, [&](size_t i) -> PointType<coord, 10> {
 				return PointType<coord, 10>(wp[i].pnt.begin());
 			});
 		decltype(wp)().swap(wp);
-		testCGALParallel<Median_of_rectangle, Tree_Median,
-				 Neighbor_search_Median, PointType<coord, 10>>(
-			Dim, LEAVE_WRAP, pts, N, K, rounds, insertFile, tag,
-			queryType, summary);
+		testCGALParallel<Median_of_rectangle, tree_median_type,
+				 neighbor_search_median_type,
+				 PointType<coord, 10>>(Dim, LEAVE_WRAP, pts, N,
+						       K, rounds, insertFile,
+						       tag, queryType, summary);
 	}
 
 	// else if ( tag == -1 )
-	//   testCGALSerial<Median_of_rectangle, Tree_Median,
-	//   Neighbor_search_Median>(
+	//   testCGALSerial<Median_of_rectangle, tree_median_type,
+	//   neighbor_search_median_type>(
 	//       Dim, LEAVE_WRAP, wp, N, K );
 
 	return 0;

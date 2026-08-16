@@ -11,52 +11,53 @@
 namespace psi
 {
 
-// NOTE: In memory of SFINE
+// NOTE: in memory of SFINE
 // template<typename>
 // struct is_pair : std::false_type {};
 // template<typename T, typename U>
 // struct is_pair<std::pair<T, U>> : std::true_type {};
 // template<typename T>
-// concept IsPair = is_pair<T>::value;
+// concept is_pair = is_pair<T>::value;
 
-template <typename T, typename Node>
-concept CheckPointerToNode = std::is_pointer_v<T> &&
-			     std::is_base_of_v<Node, std::remove_pointer_t<T>>;
+template <typename T, typename node>
+concept check_pointer_to_node =
+	std::is_pointer_v<T> &&
+	std::is_base_of_v<node, std::remove_pointer_t<T>>;
 
 template <typename T>
-concept IsPair = requires {
+concept is_pair = requires {
 	requires std::same_as<
 		T, std::pair<typename T::first_type, typename T::second_type>>;
 };
 
 template <typename T, typename Point>
-concept IsBox = requires {
-	requires IsPair<T> &&
+concept is_box = requires {
+	requires is_pair<T> &&
 			 std::same_as<typename T::first_type,
-				      typename Point::BP> &&
+				      typename Point::bp_type> &&
 			 std::same_as<typename T::second_type,
-				      typename Point::BP>;
+				      typename Point::bp_type>;
 };
 
 // NOTE: tag whether a node has non-trivial augmentation
 template <typename T>
-concept NodeHasNonTrivialAug =
+concept node_has_non_trivial_aug =
 	(!std::is_empty_v<T>) && (!std::same_as<T, std::monostate>);
 
 // NOTE:: Helper function to find and return the variable of the specified type
 template <typename T, typename First, typename... Rest>
-constexpr T &FindVar(First &first, Rest &...rest)
+constexpr T &find_var(First &first, Rest &...rest)
 {
 	if constexpr (std::same_as<T, First>) {
 		return first;
 	} else {
-		return FindVar<T>(rest...);
+		return find_var<T>(rest...);
 	}
 }
 
 // NOTE: Overload for the case when the type is not found
 template <typename T>
-constexpr T &FindVar()
+constexpr T &find_var()
 {
 	static_assert(!std::same_as<T, T>, "Type not found in parameter pack");
 	return *reinterpret_cast<T *>(nullptr);
@@ -71,7 +72,7 @@ constexpr T &FindVar()
 
 // NOTE: Concept to check if a function can be called with a parameter
 template <typename ReturnType, typename Func, typename Arg>
-concept CallableWithArg = requires(Func func, Arg arg) {
+concept callable_with_arg = requires(Func func, Arg arg) {
 	{ func(arg) } -> std::convertible_to<ReturnType>;
 };
 
@@ -79,9 +80,9 @@ concept CallableWithArg = requires(Func func, Arg arg) {
 // if func accepts a parameter arg, then call it; otherwise return func()
 // directly
 template <typename ReturnType, typename Func, typename Arg>
-ReturnType InvokeWithOptionalArg(Func &&func, Arg &&arg)
+ReturnType invoke_with_optional_arg(Func &&func, Arg &&arg)
 {
-	if constexpr (CallableWithArg<ReturnType, Func, Arg>) {
+	if constexpr (callable_with_arg<ReturnType, Func, Arg>) {
 		return func(std::forward<Arg>(arg));
 	} else {
 		return func();
@@ -91,109 +92,113 @@ ReturnType InvokeWithOptionalArg(Func &&func, Arg &&arg)
 // NOTE: define the what is a binary node
 template <typename T,
 	  template <typename, typename, typename> typename BinaryNodeT>
-concept CheckBinaryNode = std::is_base_of_v<
-	BinaryNodeT<typename T::PT, typename T::ST, typename T::AT>, T>;
+concept check_binary_node =
+	std::is_base_of_v<BinaryNodeT<typename T::pt_type, typename T::st_type,
+				      typename T::at_type>,
+			  T>;
 
 // NOTE: helper for decide a multi-way node
 template <typename T,
 	  template <typename, uint_fast8_t, typename,
 		    typename> typename MultiNodeT,
 	  uint_fast8_t... Ns>
-concept IsMultiNodeHelper =
-	(std::is_base_of_v<
-		 MultiNodeT<typename T::PT, Ns, typename T::ST, typename T::AT>,
-		 T> ||
+concept is_multi_node_helper =
+	(std::is_base_of_v<MultiNodeT<typename T::pt_type, Ns,
+				      typename T::st_type, typename T::at_type>,
+			   T> ||
 	 ...);
 
 // NOTE: define the what is a multi-way node
 template <typename T, template <typename, uint_fast8_t, typename,
 				typename> typename MultiNodeT>
-concept CheckMultiNode =
-	IsMultiNodeHelper<T, MultiNodeT, 2, 3, 4, 5, 6, 7, 8, 9, 10>;
+concept check_multi_node =
+	is_multi_node_helper<T, MultiNodeT, 2, 3, 4, 5, 6, 7, 8, 9, 10>;
 
 // NOTE: define the what is a dynamic node
 template <typename T,
 	  template <typename, typename, typename> typename DynamicNodeT>
-concept CheckDynamicNode = std::is_base_of_v<
-	DynamicNodeT<typename T::PT, typename T::ST, typename T::AT>, T>;
+concept check_dynamic_node =
+	std::is_base_of_v<DynamicNodeT<typename T::pt_type, typename T::st_type,
+				       typename T::at_type>,
+			  T>;
 
 // NOTE: tag aug point
 template <typename T>
-concept IsAugPoint = requires(T t) {
-	{ t.AugPointTag() } -> std::same_as<void>;
+concept is_aug_point = requires(T t) {
+	{ t.aug_point_tag() } -> std::same_as<void>;
 };
 
 /*
- * Carries a bounding box. Tests GetBox(), which is what the library calls; a
+ * Carries a bounding box. Tests get_box(), which is what the library calls; a
  * member named box is not enough, and used to be the whole test, so an
  * augmentation that renamed it silently fell back to the hyperplane paths.
  */
 template <typename T>
-concept HasBox = requires(T const &t) {
-	{ t.GetBox() };
+concept has_box = requires(T const &t) {
+	{ t.get_box() };
 };
 
 // NOTE: tag a orth tree
 template <typename T>
-concept IsOrthTree = requires(T t) {
-	{ t.OrthTreeTag() } -> std::same_as<void>;
+concept is_orth_tree = requires(T t) {
+	{ t.orth_tree_tag() } -> std::same_as<void>;
 };
 
 // NOTE: tag a kd tree
 template <typename T>
-concept IsKdTree = requires(T t) {
-	{ t.KdTreeTag() } -> std::same_as<void>;
+concept is_kd_tree = requires(T t) {
+	{ t.kd_tree_tag() } -> std::same_as<void>;
 };
 
 template <typename T>
-concept IsPTree = requires(T t) {
-	{ t.PTreeTag() } -> std::same_as<void>;
+concept is_p_tree = requires(T t) {
+	{ t.p_tree_tag() } -> std::same_as<void>;
 };
 
 template <typename T>
-concept IsObjectMedianSplit = requires(T t) {
-	{ t.ObjectMedianTag() } -> std::same_as<void>;
+concept is_object_median_split = requires(T t) {
+	{ t.object_median_tag() } -> std::same_as<void>;
 };
 
 template <typename T>
-concept IsSpatialMedianSplit = requires(T t) {
-	{ t.SpatialMedianTag() } -> std::same_as<void>;
+concept is_spatial_median_split = requires(T t) {
+	{ t.spatial_median_tag() } -> std::same_as<void>;
 };
 
 /*
- * What KdTree and OrthTree require of a user supplied augmentation. Create and
- * Update are not here: they take the very Interior type that holds the
+ * What kd_tree and orth_tree require of a user supplied augmentation. create
+ * and update are not here: they take the very interior_type that holds the
  * augmentation, which is not nameable at the point these are checked.
  */
-template <typename A, typename Slice>
-concept LeafAugmentation = requires(A a, Slice In) {
+template <typename A, typename slice_type>
+concept leaf_augmentation = requires(A a, slice_type in) {
 	A();
-	A(In);
-	a.UpdateAug(In);
-	a.Reset();
+	A(in);
+	a.update_aug(in);
+	a.reset();
 };
 
 template <typename A>
-concept InteriorAugmentation = requires(A a, bool flag, size_t n) {
-	a.SetParallelFlag(flag);
-	a.ResetParallelFlag();
-	{ a.GetParallelFlagIniStatus() } -> std::convertible_to<bool>;
-	{ a.ForceParallel(n) } -> std::convertible_to<bool>;
+concept interior_augmentation = requires(A a, bool flag, size_t n) {
+	a.set_parallel_flag(flag);
+	a.reset_parallel_flag();
+	{ a.get_parallel_flag_ini_status() } -> std::convertible_to<bool>;
+	{ a.force_parallel(n) } -> std::convertible_to<bool>;
 };
 
 template <typename T>
-concept SupportsForceParallel = requires(T t) {
-	{ t.ForceParallel() } -> std::same_as<bool>;
+concept supports_force_parallel = requires(T t) {
+	{ t.force_parallel() } -> std::same_as<bool>;
 };
 
 template <typename T>
-concept IsMaxStretchDim = requires(T t) {
-	{ t.MaxStretchTag() } -> std::same_as<void>;
+concept is_max_stretch_dim = requires(T t) {
+	{ t.max_stretch_tag() } -> std::same_as<void>;
 };
 
 template <typename T>
-concept IsRotateDimSplit = requires(T t) {
-	{ t.RotateDimTag() } -> std::same_as<void>;
+concept is_rotate_dim_split = requires(T t) {
+	{ t.rotate_dim_tag() } -> std::same_as<void>;
 };
 
 } // namespace psi

@@ -87,7 +87,7 @@ struct edge_map {
 		auto nested_edges = parlay::map(vtx_subset, [&](vertexId v) {
 			return parlay::delayed_tabulate(
 				G[v].degree, [&, v](size_t i) {
-					return std::pair(v, G[v].Neighbors[i]);
+					return std::pair(v, G[v].neighbors[i]);
 				});
 		});
 		auto edges = delayed::flatten(nested_edges);
@@ -120,7 +120,7 @@ struct edge_map {
 				size_t block_size = 5000;
 				auto vtx = G[v];
 				auto d = vtx.degree;
-				auto ngh = vtx.Neighbors;
+				auto ngh = vtx.neighbors;
 				auto do_block = [&, vsub = vtx_subset.begin()](
 							size_t i) {
 					size_t begin = block_size * i;

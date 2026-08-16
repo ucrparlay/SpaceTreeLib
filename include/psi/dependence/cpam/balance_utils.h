@@ -15,7 +15,7 @@ template <class Node>
 struct balance_utils {
 	using node = typename Node::node;
 	using regular_node = typename Node::regular_node;
-	using GC = gc<Node>;
+	using gc_type = gc<Node>;
 
 	static constexpr size_t B = Node::B;
 
@@ -52,7 +52,7 @@ struct balance_utils {
 	{
 		regular_node *l = Node::cast_to_regular(t->lc);
 		regular_node *root =
-			Node::cast_to_regular(GC::copy_if_needed(l->rc));
+			Node::cast_to_regular(gc_type::copy_if_needed(l->rc));
 		l->rc = root->lc;
 		Node::update(l);
 		root->lc = l;
@@ -65,7 +65,7 @@ struct balance_utils {
 	{
 		regular_node *r = Node::cast_to_regular(t->rc);
 		regular_node *root =
-			Node::cast_to_regular(GC::copy_if_needed(r->lc));
+			Node::cast_to_regular(gc_type::copy_if_needed(r->lc));
 		r->lc = root->rc;
 		Node::update(r);
 		root->rc = r;
@@ -78,7 +78,8 @@ struct balance_utils {
 	{
 		if (!Node::is_left_heavy(t1, t2))
 			return validate(regular_balanced_join(t1, t2, k));
-		regular_node *t = Node::cast_to_regular(GC::copy_if_needed(t1));
+		regular_node *t =
+			Node::cast_to_regular(gc_type::copy_if_needed(t1));
 		t->rc = regular_right_join(Node::cast_to_regular(t->rc), t2, k);
 
 		// rebalance if needed
@@ -98,7 +99,8 @@ struct balance_utils {
 	{
 		if (!Node::is_left_heavy(t2, t1))
 			return validate(regular_balanced_join(t1, t2, k));
-		regular_node *t = Node::cast_to_regular(GC::copy_if_needed(t2));
+		regular_node *t =
+			Node::cast_to_regular(gc_type::copy_if_needed(t2));
 		t->lc = regular_left_join(t1, Node::cast_to_regular(t->lc), k);
 
 		// rebalance if needed
@@ -162,7 +164,8 @@ struct balance_utils {
 
 		// Otherwise even if t1 is imbalanced after the join, we know
 		// that this call can successfully perform a single rotation.
-		regular_node *t = Node::cast_to_regular(GC::copy_if_needed(t1));
+		regular_node *t =
+			Node::cast_to_regular(gc_type::copy_if_needed(t1));
 		t->rc = right_join(t->rc, t2, k);
 
 		// rebalance if needed
@@ -216,7 +219,8 @@ struct balance_utils {
 			return validate(Node::make_compressed(t1, t2, k));
 		}
 
-		regular_node *t = Node::cast_to_regular(GC::copy_if_needed(t2));
+		regular_node *t =
+			Node::cast_to_regular(gc_type::copy_if_needed(t2));
 		t->lc = left_join(t1, t->lc, k);
 
 		// rebalance if needed
@@ -315,7 +319,7 @@ struct balance_utils {
 	// note that if k is not used (e.g., it gets put into a compressed node,
 	// we need to free it)
 	//
-	// Similarly, calls pass ownership of t1 and t2 to node_join here. In
+	// Similarly, calls pass ownership of t1 and t2 to node_join here. in
 	// particular, if node_join does not use t1 or t2 (e.g., if it decides
 	// to return a compressed node), it will call decrement(t1) and
 	// decrement(t2).

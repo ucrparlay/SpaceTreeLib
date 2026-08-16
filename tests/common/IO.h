@@ -55,26 +55,26 @@ auto is_space = [](char c) {
 // parallel code for converting a string to word pointers
 // side effects string by setting to null after each word
 template <class Seq>
-parlay::sequence<char *> stringToWords(Seq &Str)
+parlay::sequence<char *> stringToWords(Seq &str)
 {
-	size_t n = Str.size();
+	size_t n = str.size();
 
 	parlay::parallel_for(0, n, [&](long i) {
-		if (is_space(Str[i]))
-			Str[i] = 0;
+		if (is_space(str[i]))
+			str[i] = 0;
 	});
 
 	// mark start of words
 	auto FL = parlay::tabulate(n, [&](long i) -> bool {
-		return (i == 0) ? Str[0] : Str[i] && !Str[i - 1];
+		return (i == 0) ? str[0] : str[i] && !str[i - 1];
 	});
 
 	// offset for each start of word
-	auto Offsets = parlay::pack_index<long>(FL);
+	auto offsets = parlay::pack_index<long>(FL);
 
 	// pointer to each start of word
-	auto SA = parlay::tabulate(Offsets.size(), [&](long j) -> char * {
-		return Str.begin() + Offsets[j];
+	auto SA = parlay::tabulate(offsets.size(), [&](long j) -> char * {
+		return str.begin() + offsets[j];
 	});
 
 	return SA;
@@ -175,14 +175,14 @@ charstring seqToString(Seq const &A)
 	std::tie(L, m) = parlay::scan(std::move(L));
 
 	charstring B(m + 1, (char)0);
-	char *Bs = B.begin();
+	char *bs = B.begin();
 
 	parlay::parallel_for(0, n - 1, [&](long i) {
-		xToString(Bs + L[i], A[i]);
-		Bs[L[i + 1] - 1] = '\n';
+		xToString(bs + L[i], A[i]);
+		bs[L[i + 1] - 1] = '\n';
 	});
-	xToString(Bs + L[n - 1], A[n - 1]);
-	Bs[m] = Bs[m - 1] = '\n';
+	xToString(bs + L[n - 1], A[n - 1]);
+	bs[m] = bs[m - 1] = '\n';
 
 	charstring C = parlay::filter(B, [&](char c) { return c != 0; });
 	C[C.size() - 1] = 0;
@@ -222,9 +222,9 @@ int writeSeqToFile(string header, parlay::sequence<T> const &A,
 	return 0;
 }
 
-template <class T1, class T2>
-int write2SeqToFile(string header, parlay::sequence<T1> const &A,
-		    parlay::sequence<T2> const &B, char const *fileName)
+template <class t1_type, class t2_type>
+int write2SeqToFile(string header, parlay::sequence<t1_type> const &A,
+		    parlay::sequence<t2_type> const &B, char const *fileName)
 {
 	ofstream file(fileName, ios::out | ios::binary);
 	if (!file.is_open()) {

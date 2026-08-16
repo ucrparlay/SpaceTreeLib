@@ -21,36 +21,36 @@ class map_
 {
 public:
 	using Entry = _Entry;
-	using Seq_Tree = sequence_ops<Join_Tree>;
-	using Tree = map_ops<Seq_Tree, Entry>;
+	using seq_tree_type = sequence_ops<Join_Tree>;
+	using Tree = map_ops<seq_tree_type, Entry>;
 	using node = typename Tree::node;
 	using E = typename Entry::entry_t;
 	// using E_Ref_V = typename Entry::entry_t_ref_v;
-	using E_Ref_Wrap_V = typename Entry::entry_t_ref_wrapper_v;
+	using e_ref_wrap_v_type = typename Entry::entry_t_ref_wrapper_v;
 	using K = typename Entry::key_t;
 	using V = typename Entry::val_t;
 	using M = map_;
-	using GC = typename Tree::GC;
-	using Build = build<Entry>;
+	using gc_type = typename Tree::gc_type;
+	using build_type = build<Entry>;
 	using maybe_V = std::optional<V>;
 	using maybe_E = std::optional<E>;
-	using ptr = typename GC::ptr;
+	using ptr = typename gc_type::ptr;
 
 	static constexpr size_t B = Join_Tree::B;
-	static constexpr size_t kNodeLimit = Join_Tree::kNodeLimit;
+	static constexpr size_t node_limit = Join_Tree::node_limit;
 
 	// initializing, reserving and finishing
 	static void init()
 	{
-		GC::init();
+		gc_type::init();
 	}
 	static void reserve(size_t n, bool randomize = false)
 	{
-		GC::reserve(n, randomize);
+		gc_type::reserve(n, randomize);
 	};
 	static void finish()
 	{
-		GC::finish();
+		gc_type::finish();
 	}
 
 	void swap(map_ &b)
@@ -61,7 +61,7 @@ public:
 	// empty constructor
 	map_() : root(NULL)
 	{
-		GC::init();
+		gc_type::init();
 	}
 
 	// copy constructor, increment reference count
@@ -71,7 +71,7 @@ public:
 		//   assert(false);
 		// }
 		root = m.root;
-		GC::increment(root);
+		gc_type::increment(root);
 	}
 
 	// move constructor, clear the source, leave reference count as is
@@ -87,7 +87,7 @@ public:
 		if (this != &m) {
 			clear();
 			root = m.root;
-			GC::increment(root);
+			gc_type::increment(root);
 		}
 		return *this;
 	}
@@ -112,7 +112,7 @@ public:
 	// singleton (TODO: finalize?)
 	map_(E const &e)
 	{
-		GC::init();
+		gc_type::init();
 		root = Tree::single(e);
 	}
 
@@ -158,7 +158,7 @@ public:
 	//       parlay::make_slice(S)).get_root());
 	// }
 
-	map_(parlay::sequence<E_Ref_Wrap_V> const &S)
+	map_(parlay::sequence<e_ref_wrap_v_type> const &S)
 	{
 		M empty = M();
 		// std::cout << "entry to the build : " << std::endl;
@@ -198,8 +198,8 @@ public:
 	{
 		node *t = root;
 		if (__sync_bool_compare_and_swap(&(this->root), t, NULL)) {
-			if (GC::initialized()) {
-				GC::decrement_recursive(t);
+			if (gc_type::initialized()) {
+				gc_type::decrement_recursive(t);
 			}
 		}
 	}
@@ -238,7 +238,7 @@ public:
 	// apply function f on all entries
 	template <class F>
 	static void foreach_index(M const &m, F const &f, size_t start = 0,
-				  size_t granularity = kNodeLimit)
+				  size_t granularity = node_limit)
 	{
 		Tree::foreach_index(ptr(m.root, true), start, f, granularity);
 	}
@@ -274,14 +274,14 @@ public:
 
 	static M from_sequence(parlay::sequence<E> &seq)
 	{
-		return M(Seq_Tree::from_array(seq.begin(), seq.size()));
+		return M(seq_tree_type::from_array(seq.begin(), seq.size()));
 	}
 
 	// apply function f to all entries in the tree and flatten them to a
 	// sequence
 	template <class OT, class F>
 	static parlay::sequence<OT> to_seq(M m, F const &f,
-					   size_t granularity = kNodeLimit)
+					   size_t granularity = node_limit)
 	{
 		parlay::sequence<OT> out =
 			parlay::sequence<OT>::uninitialized(m.size());
@@ -300,7 +300,7 @@ public:
 	}
 
 	// flatten all entries to a sequence
-	static parlay::sequence<E> entries(M m, size_t granularity = kNodeLimit)
+	static parlay::sequence<E> entries(M m, size_t granularity = node_limit)
 	{
 		auto f = [](E e) -> E { return e; };
 		return to_seq<E>(std::move(m), f, granularity);
@@ -324,7 +324,7 @@ public:
 		Tree::foreach_index(m.get_root(), 0, f);
 	}
 
-	static parlay::sequence<K> keys(M m, size_t granularity = kNodeLimit)
+	static parlay::sequence<K> keys(M m, size_t granularity = node_limit)
 	{
 		auto f = [](E e) -> K { return Entry::get_key(e); };
 		return to_seq<K>(std::move(m), f, granularity);
@@ -393,7 +393,7 @@ public:
 	// filters elements that satisfy the predicate when applied to the
 	// elements.
 	template <class F>
-	static M filter(M m, F const &f, size_t granularity = kNodeLimit)
+	static M filter(M m, F const &f, size_t granularity = node_limit)
 	{
 		return M(Tree::finalize(
 			Tree::filter(m.get_root(), f, granularity)));
@@ -445,11 +445,11 @@ public:
 	static M multi_insert(M m, Seq const &SS)
 	{
 		auto replace = [](V const &a, V const &b) { return b; };
-		// parlay::sequence<E> A = Build::sort_remove_duplicates(SS);
-		// timer t("");
-		auto A = Build::sort_remove_duplicates(SS);
+		// parlay::sequence<E> A =
+		// build_type::sort_remove_duplicates(SS); timer t("");
+		auto A = build_type::sort_remove_duplicates(SS);
 		// t.next("(total) sort");
-		//    M A_m = Seq_Tree::from_array(A.begin(), A.size());
+		//    M A_m = seq_tree_type::from_array(A.begin(), A.size());
 		//    //M A_m = Tree::multi_insert_sorted(nullptr, A.data(),
 		//    A.size(), replace); t.next("multi-insert time"); auto x =
 		//    M(Tree::uniont(m.get_root(), A_m.get_root(), replace));
@@ -469,13 +469,14 @@ public:
 	static M multi_delete(M m, Seq const &SS)
 	{
 		// timer t("");
-		auto A = Build::template sort_remove_duplicates<Seq, K>(SS);
+		auto A =
+			build_type::template sort_remove_duplicates<Seq, K>(SS);
 
 		// auto keys =
 		//     parlay::tabulate(A.size(), [&](size_t i) { return
 		//     A[i].first; });
 		// t.next("(total) sort");
-		//    M A_m = Seq_Tree::from_array(A.begin(), A.size());
+		//    M A_m = seq_tree_type::from_array(A.begin(), A.size());
 		//    //M A_m = Tree::multi_insert_sorted(nullptr, A.data(),
 		//    A.size(), replace); t.next("multi-insert time"); auto x =
 		//    M(Tree::uniont(m.get_root(), A_m.get_root(), replace));
@@ -495,13 +496,14 @@ public:
 	static M multi_diff(M m, Seq const &SS)
 	{
 		// timer t("");
-		auto A = Build::template sort_remove_duplicates<Seq, K>(SS);
+		auto A =
+			build_type::template sort_remove_duplicates<Seq, K>(SS);
 
 		// auto keys =
 		//     parlay::tabulate(A.size(), [&](size_t i) { return
 		//     A[i].first; });
 		// t.next("(total) sort");
-		//    M A_m = Seq_Tree::from_array(A.begin(), A.size());
+		//    M A_m = seq_tree_type::from_array(A.begin(), A.size());
 		//    //M A_m = Tree::multi_insert_sorted(nullptr, A.data(),
 		//    A.size(), replace); t.next("multi-insert time"); auto x =
 		//    M(Tree::uniont(m.get_root(), A_m.get_root(), replace));
@@ -522,8 +524,8 @@ public:
 	// static M multi_insert_xx(M m, Seq &SS, bool sequential = false) {
 	//   auto replace = [] (const V& a, const V& b) {return b;};
 	//   parlay::sequence<E> A =
-	//   Build::sort_remove_duplicates(std::move(SS), sequential); auto x =
-	//   M(Tree::multi_insert_sorted(m.get_root(), A.data(), A.size(),
+	//   build_type::sort_remove_duplicates(std::move(SS), sequential); auto
+	//   x = M(Tree::multi_insert_sorted(m.get_root(), A.data(), A.size(),
 	//   replace)); return x;
 	// }
 
@@ -622,7 +624,7 @@ public:
 	template <class Seq, class Bin_Op>
 	static M multi_insert_combine(M m, Seq const &S, Bin_Op f)
 	{
-		auto A = Build::sort_combine_duplicates(S, f);
+		auto A = build_type::sort_combine_duplicates(S, f);
 		return M(Tree::multi_insert_sorted(m.get_root(), A.data(),
 						   A.size(), f));
 	}
@@ -631,7 +633,7 @@ public:
 	template <class Seq, class Bin_Op>
 	static M multi_insert_combine_xx(M m, Seq &S, Bin_Op f)
 	{
-		auto A = Build::sort_combine_duplicates_inplace(S, f);
+		auto A = build_type::sort_combine_duplicates_inplace(S, f);
 		return M(Tree::multi_insert_sorted(m.get_root(), A.begin(),
 						   A.size(), f));
 	}
@@ -655,7 +657,8 @@ public:
 	static M multi_insert_reduce(M m, Seq const &S, Reduce g)
 	{
 		auto replace = [](V const &a, V const &b) { return b; };
-		parlay::sequence<E> A = Build::sort_reduce_duplicates(S, g);
+		parlay::sequence<E> A =
+			build_type::sort_reduce_duplicates(S, g);
 		auto x = M(Tree::multi_insert_sorted(m.get_root(), A.data(),
 						     A.size(), replace));
 		// auto print_fn = [&] (const E& e) {
@@ -670,7 +673,7 @@ public:
 	static M multi_insert_reduce(M m, pair<K, Val> *A, size_t n, Reduce g)
 	{
 		auto replace = [](V const &a, V const &b) { return b; };
-		auto B = Build::sort_reduce_duplicates(A, n, g);
+		auto B = build_type::sort_reduce_duplicates(A, n, g);
 		auto x = M(Tree::multi_insert_sorted(m.get_root(), B.first,
 						     B.second, replace));
 		return x;
@@ -681,7 +684,7 @@ public:
 		M m, pair<K, Val> *A, size_t n, Reduce g,
 		Bin_Op &f = [](V const &a, V const &b) { return b; })
 	{
-		auto B = Build::sort_reduce_duplicates(A, n, g);
+		auto B = build_type::sort_reduce_duplicates(A, n, g);
 		auto x = M(Tree::multi_insert_sorted(m.get_root(), B.first,
 						     B.second, f));
 		return x;
@@ -745,18 +748,18 @@ public:
 	// Sequence Op: returns index of first element equal to e
 	std::optional<size_t> find_unsorted(E const &e)
 	{
-		return Seq_Tree::find_unsorted(root, e);
+		return seq_tree_type::find_unsorted(root, e);
 	}
 
 	template <class Less>
 	bool is_sorted(Less less)
 	{
-		return Seq_Tree::is_sorted(root, less);
+		return seq_tree_type::is_sorted(root, less);
 	}
 
 	static M reverse(M &a)
 	{
-		return M(Seq_Tree::reverse(a.root));
+		return M(seq_tree_type::reverse(a.root));
 	}
 
 	//  maybe_E search(const size_t rank) const {
@@ -789,10 +792,10 @@ public:
 	template <class M1, class M2, class F>
 	static M map_intersect(M1 a, M2 b, F const &op)
 	{
-		using T1 = typename M1::Tree;
-		using T2 = typename M2::Tree;
-		return M(Tree::template intersect<T1, T2>(a.get_root(),
-							  b.get_root(), op));
+		using t1_type = typename M1::Tree;
+		using t2_type = typename M2::Tree;
+		return M(Tree::template intersect<t1_type, t2_type>(
+			a.get_root(), b.get_root(), op));
 	}
 
 	static M map_intersect(M a, M b)
@@ -817,9 +820,9 @@ public:
 	//    return M(Tree::range_num(a.root, kl, r));
 	//  }
 	//
-	//  template<class Map, class Reduce>
+	//  template<class map_type, class Reduce>
 	//  static typename Reduce::T range_number_mr(M& a, K kl, size_t r,
-	//  const Map& mp, const Reduce& rdc) {
+	//  const map_type& mp, const Reduce& rdc) {
 	//    auto x = Tree::range_num_mr(a.root, kl, r, mp, rdc);
 	//    return x.first;
 	//  }
@@ -835,7 +838,7 @@ public:
 	template <class Ma, class F>
 	static M map(Ma &a, F const &f)
 	{
-		GC::init();
+		gc_type::init();
 		// Should wrap with ptr(a.root, true)?
 		// No: default conversion to ptr doesn't set the extra flag.
 		// Unnecessary ref-cnt hits: return M(Tree::template
@@ -846,12 +849,12 @@ public:
 	template <class Ma, class F>
 	static M map_set(Ma a, F const &f)
 	{
-		GC::init();
+		gc_type::init();
 		return M(Tree::template map_set<typename Ma::Tree>(a.root, f));
 	}
 
 	template <class F>
-	static void map_index(M &m, F const &f, size_t granularity = kNodeLimit,
+	static void map_index(M &m, F const &f, size_t granularity = node_limit,
 			      size_t start = 0)
 	{
 		Tree::foreach_index(ptr(m.root, true), start, f, granularity);
@@ -860,19 +863,19 @@ public:
 	//  template<class R, class F>
 	//  static typename R::T semi_map_reduce(const M& m, const F& f, const
 	//  R& r,
-	//				       size_t grain=kNodeLimit) {
+	//				       size_t grain=node_limit) {
 	//    return Tree::template semi_map_reduce<R>(m.root, f, r, grain);}
 
 	template <class R, class F>
 	static typename R::T map_reduce(M const &m, F const &f, R const &r,
-					size_t grain = kNodeLimit)
+					size_t grain = node_limit)
 	{
-		GC::init();
+		gc_type::init();
 		return Tree::template map_reduce<R>(m.root, f, r, grain);
 	}
 
 	template <class F>
-	static void map_void(M &m, F const &f, size_t granularity = kNodeLimit)
+	static void map_void(M &m, F const &f, size_t granularity = node_limit)
 	{
 		struct do_nothing {
 			using T = bool;
@@ -894,7 +897,7 @@ public:
 
 	//  template<class Ma, class F>
 	//  static  M map_filter(const Ma& a, const F& f, size_t
-	//  granularity=kNodeLimit) {
+	//  granularity=node_limit) {
 	//    return M(Tree::template map_filter<typename Ma::Tree>(a.root, f,
 	//    granularity));
 	//  }
@@ -912,7 +915,7 @@ public:
 	// construct from a node (perhaps should be private)
 	map_(node *n) : root(n)
 	{
-		GC::init();
+		gc_type::init();
 	}
 
 	// TODO: remove?
@@ -939,7 +942,7 @@ public:
 	// Some useful debugging utilities
 	bool check_balance() const
 	{
-		return Seq_Tree::check_balance(root);
+		return seq_tree_type::check_balance(root);
 	}
 
 	template <class F>
@@ -978,7 +981,7 @@ public:
 	}
 	void print_stats()
 	{
-		GC::print_stats();
+		gc_type::print_stats();
 	}
 };
 

@@ -26,7 +26,7 @@ struct weight_balanced_tree {
 		using node = typename Node::node;
 		using regular_node = typename Node::regular_node;
 		using t_utils = balance_utils<balance>;
-		using ET = typename Node::ET;
+		using et_type = typename Node::et_type;
 		using Node::B;
 		friend t_utils;
 

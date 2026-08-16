@@ -22,9 +22,9 @@ using namespace std;
 using namespace psi::hilbert;
 using FT = double;
 // using FT = float;
-constexpr FT FT_INF_MIN = numeric_limits<FT>::min();
-constexpr FT FT_INF_MAX = numeric_limits<FT>::max();
-constexpr FT FT_EPS = numeric_limits<FT>::epsilon();
+constexpr FT ft_inf_min = numeric_limits<FT>::min();
+constexpr FT ft_inf_max = numeric_limits<FT>::max();
+constexpr FT ft_eps = numeric_limits<FT>::epsilon();
 
 struct break_down {
 	FT sort_time = 0;
@@ -44,7 +44,7 @@ struct break_down {
 
 inline int dcmp(const FT &x)
 {
-	if (fabs(x) < FT_EPS)
+	if (fabs(x) < ft_eps)
 		return 0;
 	return x < 0 ? -1 : 1;
 }
@@ -71,51 +71,51 @@ struct Point {
 	}
 
 	// new things
-	using Coord = FT;
-	using Coords = std::array<Coord, 2>;
-	using Num = psi::Num_Comparator<Coord>;
-	using DisType = std::conditional_t<std::is_integral_v<Coord>,
-					   int_fast64_t, double>;
-	using DimsType = uint_fast8_t;
-	using BP = Point;
-	Point(Coords const &_pnt) : x(_pnt[0]), y(_pnt[1])
+	using coord_type = FT;
+	using coords_type = std::array<coord_type, 2>;
+	using num_type = psi::num_comparator<coord_type>;
+	using dis_type = std::conditional_t<std::is_integral_v<coord_type>,
+					    int_fast64_t, double>;
+	using dims_type = uint_fast8_t;
+	using bp_type = Point;
+	Point(coords_type const &_pnt) : x(_pnt[0]), y(_pnt[1])
 	{
 	}
 	Point(FT x) : x(x), y(x)
 	{
 	}
-	Coord &operator[](DimsType i)
+	coord_type &operator[](dims_type i)
 	{
 		return i == 0 ? x : y;
 	}
-	Coord const &operator[](DimsType i) const
+	coord_type const &operator[](dims_type i) const
 	{
 		return i == 0 ? x : y;
 	}
-	Point const MinCoords(Point const &b) const
+	Point const min_coords(Point const &b) const
 	{
 		Point p;
-		p[0] = Num::Min(x, b[0]);
-		p[1] = Num::Min(y, b[1]);
+		p[0] = num_type::min(x, b[0]);
+		p[1] = num_type::min(y, b[1]);
 		return p;
 	}
 
-	Point const MaxCoords(Point const &b) const
+	Point const max_coords(Point const &b) const
 	{
 		Point p;
-		p[0] = Num::Max(x, b[0]);
-		p[1] = Num::Max(y, b[1]);
+		p[0] = num_type::max(x, b[0]);
+		p[1] = num_type::max(y, b[1]);
 		return p;
 	}
-	static consteval auto GetDim()
+	static consteval auto get_dim()
 	{
 		return 2;
 	}
-	bool SameDimension(Point const &b) const
+	bool same_dimension(Point const &b) const
 	{
 		return x == b.x && y == b.y;
 	}
-	Coords GetCoords() const
+	coords_type get_coords() const
 	{
 		return {x, y};
 	}
@@ -224,7 +224,7 @@ struct Point {
 	}
 };
 
-typedef pair<Point, Point> Bounding_Box;
+typedef pair<Point, Point> bounding_box_type;
 
 struct diff_type {
 	size_t add_cnt, remove_cnt;
@@ -284,8 +284,8 @@ struct diff_type {
 //     P.resize(n);
 //     size_t id;
 //     FT x, y;
-//     FT x_min(FT_INF_MAX), x_max(FT_INF_MIN), y_min(FT_INF_MAX),
-//         y_max(FT_INF_MIN);
+//     FT x_min(ft_inf_max), x_max(ft_inf_min), y_min(ft_inf_max),
+//         y_max(ft_inf_min);
 //     for (size_t i = 0; i < n; i++) {
 //       // fin >> id >> x >> y;
 //       fin >> x >> y;
@@ -297,12 +297,12 @@ struct diff_type {
 //       auto cur_p = Point(id, x, y);
 //       P[i] = cur_p;
 //     }
-//     return Bounding_Box({Point(x_min, y_min), Point(x_max, y_max)});
+//     return bounding_box_type({Point(x_min, y_min), Point(x_max, y_max)});
 //   } else {
 //     size_t id;
 //     FT x, y;
-//     FT x_min(FT_INF_MAX), x_max(FT_INF_MIN), y_min(FT_INF_MAX),
-//         y_max(FT_INF_MIN);
+//     FT x_min(ft_inf_max), x_max(ft_inf_min), y_min(ft_inf_max),
+//         y_max(ft_inf_min);
 //     P.clear();
 //     while (fin >> id >> x >> y) {
 //       x *= 1000000;
@@ -317,18 +317,18 @@ struct diff_type {
 //       auto cur_p = Point(id, x, y);
 //       P.emplace_back(cur_p);
 //     }
-//     return Bounding_Box({Point(x_min, y_min), Point(x_max, y_max)});
+//     return bounding_box_type({Point(x_min, y_min), Point(x_max, y_max)});
 //   }
 // }
 
-template <typename PT>
-auto filter_diff_results(PT &add, PT &remove)
+template <typename pt_type>
+auto filter_diff_results(pt_type &add, pt_type &remove)
 {
 	auto id_cmp = [&](auto lhs, auto rhs) { return lhs.id < rhs.id; };
 	auto sorted_add = parlay::sort(add, id_cmp);
 	auto sorted_remove = parlay::sort(remove, id_cmp);
 
-	PT insert_points = {}, delete_points = {}, update_points = {};
+	pt_type insert_points = {}, delete_points = {}, update_points = {};
 	size_t i = 0, j = 0;
 	while (i < sorted_add.size() && j < sorted_remove.size()) {
 		if (sorted_add[i].id <
@@ -461,18 +461,19 @@ int mbr_mbr_relation(MBR &small_mbr, MBR &large_mbr)
 template <class Records>
 auto get_mbr(Records &P)
 {
-	FT x_min = FT_INF_MAX, x_max = FT_INF_MIN, y_min = FT_INF_MAX,
-	   y_max = FT_INF_MIN;
+	FT x_min = ft_inf_max, x_max = ft_inf_min, y_min = ft_inf_max,
+	   y_max = ft_inf_min;
 	for (auto &p : P) {
 		x_min = min(x_min, p.x);
 		x_max = max(x_max, p.x);
 		y_min = min(y_min, p.y);
 		y_max = max(y_max, p.y);
 	}
-	return Bounding_Box({Point(x_min, y_min), Point(x_max, y_max)});
+	return bounding_box_type({Point(x_min, y_min), Point(x_max, y_max)});
 }
 
-auto mbr_mbr_within_dis(Bounding_Box &mbr1, Bounding_Box &mbr2, FT &point_dis)
+auto mbr_mbr_within_dis(bounding_box_type &mbr1, bounding_box_type &mbr2,
+			FT &point_dis)
 {
 	return !(dcmp(mbr1.second.x + point_dis - mbr2.first.x) < 0 ||
 		 dcmp(mbr1.second.y + point_dis - mbr2.first.y) < 0 ||
@@ -519,12 +520,12 @@ auto generate_range_query(T &P, size_t n)
 	return make_pair(Point(xmin, ymin), Point(xmax, ymax));
 }
 
-// template <class In>
-// auto read_range_query(In qry_in) {
+// template <class in>
+// auto read_range_query(in qry_in) {
 //   ifstream fin(qry_in);
 //   size_t n, d;
 //   fin >> n >> d;
-//   parlay::sequence<Bounding_Box> ret(n);
+//   parlay::sequence<bounding_box_type> ret(n);
 //   for (size_t i = 0; i < n; i++) {
 //     fin >> ret[i].first.x >> ret[i].first.y >> ret[i].second.x >>
 //         ret[i].second.y;
@@ -532,8 +533,8 @@ auto generate_range_query(T &P, size_t n)
 //   return ret;
 // }
 
-// template <class In>
-// auto read_range_query(In qry_in, size_t q_type, size_t& maxSize,
+// template <class in>
+// auto read_range_query(in qry_in, size_t q_type, size_t& maxSize,
 //                       bool is_real = false) {
 //   ifstream fin(qry_in);
 //   if (q_type == 8) {  // range report, need maxSize
@@ -541,7 +542,7 @@ auto generate_range_query(T &P, size_t n)
 //   }
 //   size_t n, d;
 //   fin >> n >> d;
-//   parlay::sequence<Bounding_Box> ret(n);
+//   parlay::sequence<bounding_box_type> ret(n);
 //   parlay::sequence<size_t> cnt(n);
 //   for (size_t i = 0; i < n; i++) {
 //     fin >> cnt[i] >> ret[i].first.x >> ret[i].first.y >> ret[i].second.x >>
@@ -642,11 +643,11 @@ auto split_insert_delete(Pset &P, size_t &insert_ratio, size_t id_bias)
 {
 	size_t insert_num = P.size() / 10 * insert_ratio;
 	size_t delete_num = P.size() - insert_num;
-	auto P_insert = P.substr(0, insert_num);
+	auto p_insert = P.substr(0, insert_num);
 	parlay::parallel_for(0, insert_num,
-			     [&](size_t i) { P_insert[i].id += id_bias; });
-	auto P_delete = P.substr(P.size() - delete_num, delete_num);
-	return make_tuple(P_insert, P_delete);
+			     [&](size_t i) { p_insert[i].id += id_bias; });
+	auto p_delete = P.substr(P.size() - delete_num, delete_num);
+	return make_tuple(p_insert, p_delete);
 }
 
 template <typename Pset>
@@ -661,20 +662,20 @@ auto print_Pset_info(Pset &P, string name = "debug", size_t end_idx = 0)
 }
 
 template <typename Pset>
-auto collect_newver_point(Pset &P, Pset &P_insert, Pset &P_delete)
+auto collect_newver_point(Pset &P, Pset &p_insert, Pset &p_delete)
 {
 	unordered_map<size_t, bool> removed = {};
-	for (auto &pt : P_delete) {
+	for (auto &pt : p_delete) {
 		removed[pt.id] = true;
 	}
 	auto ret = parlay::sequence<Point>::uninitialized(P.size() +
-							  P_insert.size());
+							  p_insert.size());
 	auto cnt = 0;
 	for (auto &pt : P) {
 		if (!removed[pt.id])
 			parlay::assign_uninitialized(ret[cnt++], pt);
 	}
-	for (auto &pt : P_insert) {
+	for (auto &pt : p_insert) {
 		// if (!removed[pt.id])
 		parlay::assign_uninitialized(ret[cnt++], pt);
 	}
@@ -682,28 +683,28 @@ auto collect_newver_point(Pset &P, Pset &P_insert, Pset &P_delete)
 	return ret;
 }
 
-auto compute_cur_box(Bounding_Box &cur_mbr, FT &x_prefix, FT &y_prefix,
+auto compute_cur_box(bounding_box_type &cur_mbr, FT &x_prefix, FT &y_prefix,
 		     size_t b, bool x_splitter)
 {
 	size_t shift_b = (b + 1) / 2;
 	FT split_value = 1.0 * (1u << (shift_b - 1));
 
-	auto L_box = cur_mbr;
-	auto R_box = cur_mbr;
+	auto l_box = cur_mbr;
+	auto r_box = cur_mbr;
 	auto rx_prefix = x_prefix;
 	auto ry_prefix = y_prefix;
 	if (x_splitter) {
-		L_box.second.x =
-			min(x_prefix + split_value - FT_EPS, L_box.second.x);
-		R_box.first.x = max(x_prefix + split_value, R_box.first.x);
+		l_box.second.x =
+			min(x_prefix + split_value - ft_eps, l_box.second.x);
+		r_box.first.x = max(x_prefix + split_value, r_box.first.x);
 		rx_prefix += split_value;
 	} else {
-		L_box.second.y =
-			min(y_prefix + split_value - FT_EPS, L_box.second.y);
-		R_box.first.y = max(y_prefix + split_value, R_box.first.y);
+		l_box.second.y =
+			min(y_prefix + split_value - ft_eps, l_box.second.y);
+		r_box.first.y = max(y_prefix + split_value, r_box.first.y);
 		ry_prefix += split_value;
 	}
-	return make_tuple(L_box, R_box, rx_prefix, ry_prefix);
+	return make_tuple(l_box, r_box, rx_prefix, ry_prefix);
 }
 
 auto get_delete_p(parlay::sequence<Point> &lhs, parlay::sequence<Point> &P,
@@ -965,8 +966,8 @@ auto random_sample(size_t n, Pset P)
 }
 
 //  return a set of sorted points
-template <typename PT>
-auto get_sorted_points(PT &P, bool use_hilbert = false)
+template <typename pt_type>
+auto get_sorted_points(pt_type &P, bool use_hilbert = false)
 {
 	auto n = P.size();
 	parlay::parallel_for(0, n, [&](int i) {
@@ -994,8 +995,8 @@ auto get_sorted_points(PT &P, bool use_hilbert = false)
 	// }
 }
 
-template <typename PT>
-auto get_sorted_points_hilbert(PT &P, bool use_hilbert = true)
+template <typename pt_type>
+auto get_sorted_points_hilbert(pt_type &P, bool use_hilbert = true)
 {
 	auto n = P.size();
 	parlay::parallel_for(0, n, [&](int i) {
@@ -1006,7 +1007,7 @@ auto get_sorted_points_hilbert(PT &P, bool use_hilbert = true)
 	return parlay::sort(P, [&](auto lhs, auto rhs) {
 		return lhs.morton_id < rhs.morton_id;
 	});
-	// auto P_set = parlay::sort(P, [&](auto lhs, auto rhs){
+	// auto p_set = parlay::sort(P, [&](auto lhs, auto rhs){
 	// 	unsigned long long p_lhs[] = {static_cast<unsigned long
 	// long>(lhs.x), static_cast<unsigned long long>(lhs.y)}; 	unsigned
 	// long long p_rhs[] = {static_cast<unsigned long long>(rhs.x),
@@ -1014,16 +1015,16 @@ auto get_sorted_points_hilbert(PT &P, bool use_hilbert = true)
 	// sizeof(unsigned long long), 8 * sizeof(unsigned long long), p_lhs,
 	// p_rhs) == -1;
 	// });
-	// return P_set;
+	// return p_set;
 }
 
 //	return a set of sorted address, do not modify the input;
-template <typename PT>
-auto get_sorted_address(PT &P)
+template <typename pt_type>
+auto get_sorted_address(pt_type &P)
 {
-	parlay::sequence<geobase::Point *> P_set(P.size());
-	parlay::parallel_for(0, P.size(), [&](int i) { P_set[i] = &P[i]; });
-	P_set = parlay::sort(P_set, [&](auto lhs, auto rhs) {
+	parlay::sequence<geobase::Point *> p_set(P.size());
+	parlay::parallel_for(0, P.size(), [&](int i) { p_set[i] = &P[i]; });
+	p_set = parlay::sort(p_set, [&](auto lhs, auto rhs) {
 		auto msd = 0;
 		if (geobase::less_msb(
 			    static_cast<unsigned int>(lhs->x) ^
@@ -1033,19 +1034,19 @@ auto get_sorted_address(PT &P)
 			msd = 1;
 		return !msd ? lhs->x < rhs->x : lhs->y < rhs->y;
 	});
-	return P_set;
+	return p_set;
 }
 
-template <typename PT>
-auto get_unsorted_address(PT &P)
+template <typename pt_type>
+auto get_unsorted_address(pt_type &P)
 {
-	parlay::sequence<Point *> P_set(P.size());
-	parlay::parallel_for(0, P.size(), [&](int i) { P_set[i] = &P[i]; });
-	return P_set;
+	parlay::sequence<Point *> p_set(P.size());
+	parlay::parallel_for(0, P.size(), [&](int i) { p_set[i] = &P[i]; });
+	return p_set;
 }
 
-template <typename PT>
-auto record_check(PT &P)
+template <typename pt_type>
+auto record_check(pt_type &P)
 {
 	map<int, int> mmp = {};
 	auto cnt = 0;
@@ -1065,8 +1066,8 @@ auto record_check(PT &P)
 }
 
 // return a set contains all ids in a sequence of point pointer
-template <typename PT>
-auto get_point_id(PT &P)
+template <typename pt_type>
+auto get_point_id(pt_type &P)
 {
 	set<int> ret = {};
 	for (auto pt : P) {
@@ -1075,8 +1076,8 @@ auto get_point_id(PT &P)
 	return ret;
 }
 
-template <typename PT>
-auto count_duplicate_zvalues(PT &P)
+template <typename pt_type>
+auto count_duplicate_zvalues(pt_type &P)
 {
 	unordered_map<unsigned long long, int> zvalue_map = {};
 	for (auto &pt : P) {
@@ -1147,14 +1148,14 @@ auto diff_by_id(T &a, T &b)
 
 //  merge to sequence by id, return two sequences. The first one has no
 //  conflict, the second one has conflict
-template <typename PT>
-auto merge_by_id_with_conflict(PT &a, PT &b)
+template <typename pt_type>
+auto merge_by_id_with_conflict(pt_type &a, pt_type &b)
 {
 	size_t i = 0, j = 0;
 	auto id_cmp = [&](auto lhs, auto rhs) { return lhs.id < rhs.id; };
 	auto sorted_a = parlay::sort(a, id_cmp);
 	auto sorted_b = parlay::sort(b, id_cmp);
-	PT ret_noconflict = {}, ret_conflict = {};
+	pt_type ret_noconflict = {}, ret_conflict = {};
 	while (i < sorted_a.size() && j < sorted_b.size()) {
 		if (sorted_a[i].id ==
 		    sorted_b[j].id) { //  two points have the same id

@@ -10,105 +10,110 @@ namespace psi
 {
 
 template <typename Point, typename SplitRule, typename LeafAugType,
-	  typename InteriorAugType, uint_fast8_t kSkHeight,
-	  uint_fast8_t kImbaRatio>
-struct KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight,
-	      kImbaRatio>::KdInteriorNode
-    : BinaryNode<Point, Splitter, InteriorAugType> {
-	using PT = Point;
-	using ST = Splitter;
-	using AT = InteriorAugType;
+	  typename InteriorAugType, uint_fast8_t SkHeight,
+	  uint_fast8_t ImbaRatio>
+struct kd_tree<Point, SplitRule, LeafAugType, InteriorAugType, SkHeight,
+	       ImbaRatio>::kd_interior_node
+    : binary_node<Point, splitter_type, InteriorAugType> {
+	using pt_type = Point;
+	using st_type = splitter_type;
+	using at_type = InteriorAugType;
 
-	KdInteriorNode(Node *_left, Node *_right, const ST &_split)
-	    : BinaryNode<Point, Splitter, AT>(
+	kd_interior_node(node *_left, node *_right, st_type const &_split)
+	    : binary_node<Point, splitter_type, at_type>(
 		      _left, _right, _split,
-		      AT(AT::template Create<Leaf, Interior>(_left, _right)))
+		      at_type(at_type::template create<leaf_type,
+						       interior_type>(_left,
+								      _right)))
 	{
 	}
 
-	KdInteriorNode(Node *_left, Node *_right, const ST &_split,
-		       const AT &_aug)
-	    : BinaryNode<Point, Splitter, AT>(_left, _right, _split, _aug)
+	kd_interior_node(node *_left, node *_right, st_type const &_split,
+			 at_type const &_aug)
+	    : binary_node<Point, splitter_type, at_type>(_left, _right, _split,
+							 _aug)
 	{
 	}
 
-	// Adding a virtual destructor makes Node polymorphic
-	virtual ~KdInteriorNode() = default;
+	// Adding a virtual destructor makes node polymorphic
+	virtual ~kd_interior_node() = default;
 
-	inline void SetParallelFlag(bool const flag)
+	inline void set_parallel_flag(bool const flag)
 	{
-		this->aug.SetParallelFlag(flag);
+		this->aug.set_parallel_flag(flag);
 	}
 
-	inline void ResetParallelFlag()
+	inline void reset_parallel_flag()
 	{
-		this->aug.ResetParallelFlag();
+		this->aug.reset_parallel_flag();
 	}
 
-	inline bool GetParallelFlagIniStatus()
+	inline bool get_parallel_flag_ini_status()
 	{
-		return this->aug.GetParallelFlagIniStatus();
+		return this->aug.get_parallel_flag_ini_status();
 	}
 
-	inline bool ForceParallel() const
+	inline bool force_parallel() const
 	{
-		return this->aug.ForceParallel(this->size);
+		return this->aug.force_parallel(this->size);
 	}
 
-	auto UpdateAug(Node *l, Node *r)
+	auto update_aug(node *l, node *r)
 	{
-		return this->aug.template Update<Leaf, Interior>(l, r);
+		return this->aug.template update<leaf_type, interior_type>(l,
+									   r);
 	}
 
-	decltype(auto) GetBox()
-		requires HasBox<AT>
+	decltype(auto) get_box()
+		requires has_box<at_type>
 	{
-		return this->aug.GetBox();
+		return this->aug.get_box();
 	}
 
-	decltype(auto) GetBox() const
-		requires HasBox<AT>
+	decltype(auto) get_box() const
+		requires has_box<at_type>
 	{
-		return this->aug.GetBox();
+		return this->aug.get_box();
 	}
 
-	auto ResetAug()
+	auto reset_aug()
 	{
-		return this->aug.Reset();
+		return this->aug.reset();
 	}
 };
 
-// template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
-//           uint_fast8_t kImbaRatio>
-// template <uint_fast8_t kMD>
-// struct KdTree<Point, SplitRule, kSkHeight, kImbaRatio>::KdCompressionNode
-//     : MultiNode<Point, kMD, CompressNodeSplitter, AugType> {
-//   using BaseNode = MultiNode<Point, kMD, CompressNodeSplitter, AugType>;
-//   using KdNodeArr = typename BaseNode::NodeArr;
-//   using PT = Point;
-//   using ST = CompressNodeSplitter;
-//   using AT = AugType;
+// template <typename Point, typename SplitRule, uint_fast8_t SkHeight,
+//           uint_fast8_t ImbaRatio>
+// template <uint_fast8_t md>
+// struct kd_tree<Point, SplitRule, SkHeight, ImbaRatio>::KdCompressionNode
+//     : multi_node<Point, md, CompressNodeSplitter, AugType> {
+//   using base_node = multi_node<Point, md, CompressNodeSplitter,
+//   AugType>; using KdNodeArr = typename base_node::node_arr_type; using
+//   pt_type = Point; using st_type = CompressNodeSplitter; using at_type =
+//   AugType;
 
-//   KdCompressionNode(KdNodeArr const& _tree_nodes, const ST& _split,
-//                     const AT& _aug)
-//       : BaseNode(_tree_nodes, _split, _aug) {}
+//   KdCompressionNode(KdNodeArr const& _tree_nodes, const st_type& _split,
+//                     const at_type& _aug)
+//       : base_node(_tree_nodes, _split, _aug) {}
 
-//   // Adding a virtual destructor makes Node polymorphic
+//   // Adding a virtual destructor makes node polymorphic
 //   virtual ~KdCompressionNode() = default;
 
-//   inline void SetParallelFlag(bool const flag) { this->aug.emplace(flag); }
+//   inline void set_parallel_flag(bool const flag) { this->aug.emplace(flag); }
 
-//   inline void ResetParallelFlag() { this->aug.reset(); }
+//   inline void reset_parallel_flag() { this->aug.reset(); }
 
-//   inline bool GetParallelFlagIniStatus() { return this->aug.has_value(); }
+//   inline bool get_parallel_flag_ini_status() { return this->aug.has_value();
+//   }
 
 //   // NOTE: use a tri-state bool to indicate whether a subtree needs to be
 //   // rebuilt. If aug is not INITIALIZED, then it means there is no need to
 //   // rebuild; otherwise, the value depends on the initial tree size before
 //   // rebuilding.
-//   inline bool ForceParallel() const {
+//   inline bool force_parallel() const {
 //     return this->aug.has_value() ? this->aug.value()
-//                                  : this->size > BT::kSerialBuildCutoff;
+//                                  : this->size >
+//                                  base_type::serial_build_cutoff;
 //   }
 // };
 

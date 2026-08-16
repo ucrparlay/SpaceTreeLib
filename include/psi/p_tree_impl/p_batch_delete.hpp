@@ -7,26 +7,26 @@ namespace psi
 {
 
 // NOTE: default batch delete
-template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
-	  uint_fast8_t kImbaRatio>
+template <typename Point, typename SplitRule, uint_fast8_t SkHeight,
+	  uint_fast8_t ImbaRatio>
 template <typename Range>
-void PTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDelete(Range &&In)
+void p_tree<Point, SplitRule, SkHeight, ImbaRatio>::batch_delete(Range &&in)
 {
-	BT::IngestRange(In, [&](Slice A) { BatchDelete_(A); });
+	base_type::ingest_range(in, [&](slice_type A) { batch_delete_(A); });
 	return;
 }
 
-// NOTE: assume all Points are fully covered in the tree
-template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
-	  uint_fast8_t kImbaRatio>
-void PTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDelete_(Slice A)
+// NOTE: assume all points_type are fully covered in the tree
+template <typename Point, typename SplitRule, uint_fast8_t SkHeight,
+	  uint_fast8_t ImbaRatio>
+void p_tree<Point, SplitRule, SkHeight, ImbaRatio>::batch_delete_(slice_type A)
 {
 	if (!this->cpam_aug_map_.root ||
-	    !CpamAugMap::size(this->cpam_aug_map_.root)) {
+	    !cpam_aug_map_type::size(this->cpam_aug_map_.root)) {
 		return;
 	}
-	this->cpam_aug_map_ =
-		CpamAugMap::multi_delete(std::move(this->cpam_aug_map_), A);
+	this->cpam_aug_map_ = cpam_aug_map_type::multi_delete(
+		std::move(this->cpam_aug_map_), A);
 	return;
 }
 

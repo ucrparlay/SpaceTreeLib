@@ -59,7 +59,7 @@ struct commandLine {
 	}
 
 	// looks for two filenames
-	pair<char *, char *> IOFileNames()
+	pair<char *, char *> io_file_names()
 	{
 		if (argc < 3)
 			badArgument();

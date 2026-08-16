@@ -16,105 +16,107 @@
 namespace psi
 {
 
-template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
-	  uint_fast8_t kImbaRatio>
-template <typename Leaf, typename Range>
-void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::ExtractPointsInLeaf(
-	Node *T, Range Out)
+template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
+	  uint_fast8_t ImbaRatio>
+template <typename leaf_type, typename Range>
+void base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::extract_points_in_leaf(
+	node *T, Range out)
 {
-	Leaf *TL = static_cast<Leaf *>(T);
-	if (TL->is_dummy) {
-		std::ranges::fill_n(Out.begin(), TL->size, TL->pts[0]);
+	leaf_type *tl = static_cast<leaf_type *>(T);
+	if (tl->is_dummy) {
+		std::ranges::fill_n(out.begin(), tl->size, tl->pts[0]);
 	} else {
-		std::ranges::copy(TL->pts.begin(), TL->pts.begin() + TL->size,
-				  Out.begin());
+		std::ranges::copy(tl->pts.begin(), tl->pts.begin() + tl->size,
+				  out.begin());
 	}
 	return;
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
-	  uint_fast8_t kImbaRatio>
-template <typename Leaf>
-Node *
-BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::InsertPoints2Leaf(Node *T,
-								       Slice In)
+template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
+	  uint_fast8_t ImbaRatio>
+template <typename leaf_type>
+node *base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::insert_points2_leaf(
+	node *T, slice_type in)
 {
-	Leaf *TL = static_cast<Leaf *>(T);
-	if (TL->is_dummy) {
-		T->size += In.size();
+	leaf_type *tl = static_cast<leaf_type *>(T);
+	if (tl->is_dummy) {
+		T->size += in.size();
 		return T;
 	}
 
-	assert(T->size + In.size() <= kLeafCapacity);
-	if (TL->pts.size() == 0) {
-		assert(TL->size == 0);
-		TL->pts = Points::uninitialized(kLeafCapacity);
+	assert(T->size + in.size() <= leaf_capacity);
+	if (tl->pts.size() == 0) {
+		assert(tl->size == 0);
+		tl->pts = points_type::uninitialized(leaf_capacity);
 	}
-	for (size_t i = 0; i < In.size(); i++) {
-		TL->pts[TL->size + i] = In[i];
+	for (size_t i = 0; i < in.size(); i++) {
+		tl->pts[tl->size + i] = in[i];
 	}
-	TL->size += In.size();
+	tl->size += in.size();
 
-	TL->UpdateAug(TL->pts.cut(0, TL->size));
+	tl->update_aug(tl->pts.cut(0, tl->size));
 	return T;
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
-	  uint_fast8_t kImbaRatio>
-template <typename Leaf, typename ReturnType>
+template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
+	  uint_fast8_t ImbaRatio>
+template <typename leaf_type, typename ReturnType>
 ReturnType
-BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::DeletePoints4Leaf(Node *T,
-								       Slice In)
+base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::delete_points4_leaf(
+	node *T, slice_type in)
 {
-	assert(T->size >= In.size());
-	Leaf *TL = static_cast<Leaf *>(T);
+	assert(T->size >= in.size());
+	leaf_type *tl = static_cast<leaf_type *>(T);
 
-	if (TL->is_dummy) {
-		assert(In.size() <= T->size);
-		TL->size -= In.size(); // WARN: this assumes that In\in T
-		if (TL->size == 0) {
-			TL->is_dummy = false;
-			TL->pts = Points::uninitialized(kLeafCapacity);
-			TL->ResetAug();
+	if (tl->is_dummy) {
+		assert(in.size() <= T->size);
+		tl->size -= in.size(); // WARN: this assumes that in\in T
+		if (tl->size == 0) {
+			tl->is_dummy = false;
+			tl->pts = points_type::uninitialized(leaf_capacity);
+			tl->reset_aug();
 		}
 
-		if constexpr (std::same_as<ReturnType, Node *>) {
+		if constexpr (std::same_as<ReturnType, node *>) {
 			return T;
-		} else if constexpr (std::same_as<ReturnType, NodeBox>) {
-			if constexpr (HasBox<typename Leaf::AT>) {
-				return NodeBox(T, TL->GetBox());
+		} else if constexpr (std::same_as<ReturnType, node_box_type>) {
+			if constexpr (has_box<typename leaf_type::at_type>) {
+				return node_box_type(T, tl->get_box());
 			} else {
-				return NodeBox(
-					T, T->size ? Box(TL->pts[0], TL->pts[0])
-						   : GetEmptyBox());
+				return node_box_type(
+					T, T->size ? box_type(tl->pts[0],
+							      tl->pts[0])
+						   : get_empty_box());
 			}
 		} else {
 			;
 		}
 	}
 
-	auto it = TL->pts.begin(), end = TL->pts.begin() + TL->size;
-	for (size_t i = 0; i < In.size(); i++) {
-		it = std::ranges::find(TL->pts.begin(), end, In[i]);
+	auto it = tl->pts.begin(), end = tl->pts.begin() + tl->size;
+	for (size_t i = 0; i < in.size(); i++) {
+		it = std::ranges::find(tl->pts.begin(), end, in[i]);
 		assert(it != end);
 		std::ranges::iter_swap(it, --end);
 	}
 
-	assert(std::cmp_equal(std::distance(TL->pts.begin(), end),
-			      TL->size - In.size()));
-	TL->size -= In.size();
-	assert(TL->size >= 0);
-	TL->UpdateAug(TL->pts.cut(0, TL->size));
-	// assert(TL->GetBox() == GetBox(TL->pts.cut(0, TL->size)));
+	assert(std::cmp_equal(std::distance(tl->pts.begin(), end),
+			      tl->size - in.size()));
+	tl->size -= in.size();
+	assert(tl->size >= 0);
+	tl->update_aug(tl->pts.cut(0, tl->size));
+	// assert(tl->get_box() == get_box(tl->pts.cut(0, tl->size)));
 
-	if constexpr (std::same_as<ReturnType, Node *>) {
+	if constexpr (std::same_as<ReturnType, node *>) {
 		return T;
-	} else if constexpr (std::same_as<ReturnType, NodeBox>) {
-		if constexpr (HasBox<typename Leaf::AT>) {
-			return NodeBox(T, TL->GetBox());
-			// return NodeBox(T, GetBox(TL->pts.cut(0, TL->size)));
+	} else if constexpr (std::same_as<ReturnType, node_box_type>) {
+		if constexpr (has_box<typename leaf_type::at_type>) {
+			return node_box_type(T, tl->get_box());
+			// return node_box_type(T, get_box(tl->pts.cut(0,
+			// tl->size)));
 		} else {
-			return NodeBox(T, GetBox(TL->pts.cut(0, TL->size)));
+			return node_box_type(T,
+					     get_box(tl->pts.cut(0, tl->size)));
 		}
 	} else {
 	}
@@ -122,57 +124,59 @@ BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::DeletePoints4Leaf(Node *T,
 
 // NOTE: diff points from the leaf using std::set_difference
 // {1, 2, 5, 5, 5, 9} ∖ {2, 5, 7} == {1, 5, 5, 9}
-template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
-	  uint_fast8_t kImbaRatio>
-template <typename Leaf, typename ReturnType>
+template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
+	  uint_fast8_t ImbaRatio>
+template <typename leaf_type, typename ReturnType>
 ReturnType
-BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::DiffPoints4Leaf(Node *T,
-								     Slice In)
+base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::diff_points4_leaf(
+	node *T, slice_type in)
 {
-	Leaf *TL = static_cast<Leaf *>(T);
+	leaf_type *tl = static_cast<leaf_type *>(T);
 
-	if (TL->is_dummy) {
-		size_t cnt = parlay::count(In, TL->pts[0]);
-		TL->size = TL->size >= cnt ? TL->size - cnt : 0;
-		assert(TL->size >= 0);
-		if (TL->size == 0) { // set points to normal leaf when all
+	if (tl->is_dummy) {
+		size_t cnt = parlay::count(in, tl->pts[0]);
+		tl->size = tl->size >= cnt ? tl->size - cnt : 0;
+		assert(tl->size >= 0);
+		if (tl->size == 0) { // set points to normal leaf when all
 				     // points in dummy node has been deleted
-			TL->is_dummy = false;
-			TL->pts = Points::uninitialized(kLeafCapacity);
-			TL->ResetAug();
+			tl->is_dummy = false;
+			tl->pts = points_type::uninitialized(leaf_capacity);
+			tl->reset_aug();
 		}
 
-		if constexpr (std::same_as<ReturnType, Node *>) {
+		if constexpr (std::same_as<ReturnType, node *>) {
 			return T;
-		} else if constexpr (std::same_as<ReturnType, NodeBox>) {
-			if constexpr (HasBox<typename Leaf::AT>) {
-				return NodeBox(T, TL->GetBox());
+		} else if constexpr (std::same_as<ReturnType, node_box_type>) {
+			if constexpr (has_box<typename leaf_type::at_type>) {
+				return node_box_type(T, tl->get_box());
 			} else {
-				return NodeBox(
-					T, T->size ? Box(TL->pts[0], TL->pts[0])
-						   : GetEmptyBox());
+				return node_box_type(
+					T, T->size ? box_type(tl->pts[0],
+							      tl->pts[0])
+						   : get_empty_box());
 			}
 		} else {
 			;
 		}
 	}
 
-	// NOTE: for normal leaf, need to check whether all Points are in the
-	// leaf
+	// NOTE: for normal leaf, need to check whether all points_type are in
+	// the leaf
 	auto diff_res = std::ranges::set_difference(
-		parlay::sort(TL->pts.cut(0, TL->size)), parlay::sort(In),
-		TL->pts.begin(),
+		parlay::sort(tl->pts.cut(0, tl->size)), parlay::sort(in),
+		tl->pts.begin(),
 		[](Point const &p1, Point const &p2) { return p1 < p2; });
-	TL->size = std::ranges::distance(TL->pts.begin(), diff_res.out);
-	TL->UpdateAug(TL->pts.cut(0, TL->size));
+	tl->size = std::ranges::distance(tl->pts.begin(), diff_res.out);
+	tl->update_aug(tl->pts.cut(0, tl->size));
 
-	if constexpr (std::same_as<ReturnType, Node *>) {
+	if constexpr (std::same_as<ReturnType, node *>) {
 		return T;
-	} else if constexpr (std::same_as<ReturnType, NodeBox>) {
-		if constexpr (HasBox<typename Leaf::AT>) {
-			return NodeBox(T, TL->GetBox());
+	} else if constexpr (std::same_as<ReturnType, node_box_type>) {
+		if constexpr (has_box<typename leaf_type::at_type>) {
+			return node_box_type(T, tl->get_box());
 		} else {
-			return NodeBox(T, GetBox(TL->pts.cut(0, TL->size)));
+			return node_box_type(T,
+					     get_box(tl->pts.cut(0, tl->size)));
 		}
 	} else {
 		;

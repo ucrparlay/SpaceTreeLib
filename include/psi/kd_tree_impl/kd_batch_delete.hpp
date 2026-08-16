@@ -8,66 +8,71 @@ namespace psi
 
 // NOTE: default batch delete
 template <typename Point, typename SplitRule, typename LeafAugType,
-	  typename InteriorAugType, uint_fast8_t kSkHeight,
-	  uint_fast8_t kImbaRatio>
+	  typename InteriorAugType, uint_fast8_t SkHeight,
+	  uint_fast8_t ImbaRatio>
 template <typename Range>
-void KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight,
-	    kImbaRatio>::BatchDelete(Range &&In)
+void kd_tree<Point, SplitRule, LeafAugType, InteriorAugType, SkHeight,
+	     ImbaRatio>::batch_delete(Range &&in)
 {
-	BT::IngestRange(In, [&](Slice A) { BatchDelete_(A); });
+	base_type::ingest_range(in, [&](slice_type A) { batch_delete_(A); });
 	return;
 }
 
-// NOTE: assume all Points are fully covered in the tree
+// NOTE: assume all points_type are fully covered in the tree
 template <typename Point, typename SplitRule, typename LeafAugType,
-	  typename InteriorAugType, uint_fast8_t kSkHeight,
-	  uint_fast8_t kImbaRatio>
-void KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight,
-	    kImbaRatio>::BatchDelete_(Slice A)
+	  typename InteriorAugType, uint_fast8_t SkHeight,
+	  uint_fast8_t ImbaRatio>
+void kd_tree<Point, SplitRule, LeafAugType, InteriorAugType, SkHeight,
+	     ImbaRatio>::batch_delete_(slice_type A)
 {
 	if (this->root_ == nullptr) {
 		assert(A.size() == 0);
 		return;
 	}
 
-	Points B = Points::uninitialized(A.size());
-	Node *T = this->root_;
-	Box box = this->tree_box_;
-	DimsType d = T->is_leaf ? 0 : static_cast<Interior *>(T)->split.second;
+	points_type B = points_type::uninitialized(A.size());
+	node *T = this->root_;
+	box_type box = this->tree_box_;
+	dims_type d =
+		T->is_leaf ? 0 : static_cast<interior_type *>(T)->split.second;
 	std::tie(this->root_, this->tree_box_) =
-		BatchDeleteRecursive(T, box, A, parlay::make_slice(B), d, 1);
+		batch_delete_recursive(T, box, A, parlay::make_slice(B), d, 1);
 	return;
 }
 
-// NOTE: delete with rebuild, with the assumption that all Points are in the
-// tree
-// WARN: the param d can be only used when rotate cutting is applied
+// NOTE: delete with rebuild, with the assumption that all points_type are in
+// the tree WARN: the param d can be only used when rotate cutting is applied
 template <typename Point, typename SplitRule, typename LeafAugType,
-	  typename InteriorAugType, uint_fast8_t kSkHeight,
-	  uint_fast8_t kImbaRatio>
-typename KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight,
-		kImbaRatio>::NodeBox
-KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight, kImbaRatio>::
-	BatchDeleteRecursive(
-		Node *T,
-		typename KdTree<Point, SplitRule, LeafAugType, InteriorAugType,
-				kSkHeight, kImbaRatio>::Box const &box,
-		Slice In, Slice Out, DimsType d, bool has_tomb)
+	  typename InteriorAugType, uint_fast8_t SkHeight,
+	  uint_fast8_t ImbaRatio>
+typename kd_tree<Point, SplitRule, LeafAugType, InteriorAugType, SkHeight,
+		 ImbaRatio>::node_box_type
+kd_tree<Point, SplitRule, LeafAugType, InteriorAugType, SkHeight, ImbaRatio>::
+	batch_delete_recursive(
+		node *T,
+		typename kd_tree<Point, SplitRule, LeafAugType, InteriorAugType,
+				 SkHeight, ImbaRatio>::box_type const &box,
+		slice_type in, slice_type out, dims_type d, bool has_tomb)
 {
-	size_t n = In.size();
+	size_t n = in.size();
 
 	if (n == 0) {
-		if constexpr (HasBox<typename Interior::AT> &&
-			      HasBox<typename Leaf::AT>) {
-			assert(BT::SameBox(
-				BT::template GetBox<Leaf, Interior>(T),
-				BT::template RetrieveBox<Leaf, Interior>(T)));
-			return NodeBox(
-				T, BT::template RetrieveBox<Leaf, Interior>(T));
+		if constexpr (has_box<typename interior_type::at_type> &&
+			      has_box<typename leaf_type::at_type>) {
+			assert(base_type::same_box(
+				base_type::template get_box<leaf_type,
+							    interior_type>(T),
+				base_type::template retrieve_box<
+					leaf_type, interior_type>(T)));
+			return node_box_type(
+				T, base_type::template retrieve_box<
+					   leaf_type, interior_type>(T));
 		} else {
-			assert(BT::WithinBox(
-				BT::template GetBox<Leaf, Interior>(T), box));
-			return NodeBox(T, box);
+			assert(base_type::within_box(
+				base_type::template get_box<leaf_type,
+							    interior_type>(T),
+				box));
+			return node_box_type(T, box);
 		}
 	}
 
@@ -75,133 +80,146 @@ KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight, kImbaRatio>::
 	// INFO: it can be used to accelerate the whole deletion process
 	if (n == T->size) {
 		if (has_tomb) { // rebuild this subtree
-			BT::template DeleteTreeRecursive<Leaf, Interior>(T);
-			return NodeBox(AllocEmptyLeafNode<Slice, Leaf>(),
-				       BT::GetEmptyBox());
+			base_type::template delete_tree_recursive<
+				leaf_type, interior_type>(T);
+			return node_box_type(
+				alloc_empty_leaf_node<slice_type, leaf_type>(),
+				base_type::get_empty_box());
 		}
 		// within a rebuild tree
 		if (!T->is_leaf) { // interior
-			auto TI = static_cast<Interior *>(T);
-			TI->ResetAug(); // needs to put before set parallel flag
+			auto ti = static_cast<interior_type *>(T);
+			ti->reset_aug(); // needs to put before set parallel
+					 // flag
 			// WARN: only set the flag for root, the remaining tree
 			// is still unset
-			TI->SetParallelFlag(T->size > BT::kSerialBuildCutoff);
+			ti->set_parallel_flag(T->size >
+					      base_type::serial_build_cutoff);
 		} else { // leaf
-			auto TL = static_cast<Leaf *>(T);
-			TL->ResetAug();
+			auto tl = static_cast<leaf_type *>(T);
+			tl->reset_aug();
 		}
 		T->size = 0;
-		return NodeBox(T, BT::GetEmptyBox());
+		return node_box_type(T, base_type::get_empty_box());
 	}
 #endif
 
 	if (T->is_leaf) {
-		return BT::template DeletePoints4Leaf<Leaf, NodeBox>(T, In);
-		// auto o = BT::template DeletePoints4Leaf<Leaf, NodeBox>(T,
-		// In); assert(BT::SameBox(BT::template GetBox<Leaf,
-		// Interior>(o.first),
-		//                    BT::template RetrieveBox<Leaf,
-		//                    Interior>(o.first)));
+		return base_type::template delete_points4_leaf<leaf_type,
+							       node_box_type>(
+			T, in);
+		// auto o = base_type::template delete_points4_leaf<leaf_type,
+		// node_box_type>(T, in);
+		// assert(base_type::same_box(base_type::template
+		// get_box<leaf_type, interior_type>(o.first),
+		//                    base_type::template
+		//                    retrieve_box<leaf_type,
+		//                    interior_type>(o.first)));
 		// return o;
 	}
 
 	// if (1) {
-	if (In.size() <= BT::kSerialBuildCutoff) {
-		Interior *TI = static_cast<Interior *>(T);
-		PointsIter split_iter =
-			std::ranges::partition(In, [&](Point const &p) {
-				return Num::Lt(p.pnt[TI->split.second],
-					       TI->split.first);
+	if (in.size() <= base_type::serial_build_cutoff) {
+		interior_type *ti = static_cast<interior_type *>(T);
+		points_iter_type split_iter =
+			std::ranges::partition(in, [&](Point const &p) {
+				return num_type::lt(p.pnt[ti->split.second],
+						    ti->split.first);
 			}).begin();
 
 		// NOTE: put the tomb if the remaining points number are below
-		// kSparseLeafThreshold (to avoid next insertion exceeds the
+		// sparse_leaf_threshold (to avoid next insertion exceeds the
 		// limit) or imbalance
 		bool putTomb =
 			has_tomb &&
-			(BT::SparseNode(In.size(), TI->size) ||
-			 (split_rule_.AllowRebuild() &&
-			  BT::ImbalanceNode(TI->left->size -
-						    (split_iter - In.begin()),
-					    TI->size - In.size())));
+			(base_type::sparse_node(in.size(), ti->size) ||
+			 (split_rule_.allow_rebuild() &&
+			  base_type::imbalance_node(
+				  ti->left->size - (split_iter - in.begin()),
+				  ti->size - in.size())));
 		has_tomb = putTomb ? false : has_tomb;
 		assert(putTomb ? (!has_tomb) : true);
 
-		// DimsType next_dim = (d + 1) % BT::kDim;
-		DimsType next_dim = split_rule_.NextDimension(d);
-		BoxCut box_cut(box, TI->split, true);
+		// dims_type next_dim = (d + 1) % base_type::num_dims;
+		dims_type next_dim = split_rule_.next_dimension(d);
+		box_cut_type box_cut(box, ti->split, true);
 
-		auto [L, Lbox] = BatchDeleteRecursive(
-			TI->left, box_cut.GetFirstBoxCut(),
-			In.cut(0, split_iter - In.begin()),
-			Out.cut(0, split_iter - In.begin()), next_dim,
+		auto [L, lbox] = batch_delete_recursive(
+			ti->left, box_cut.get_first_box_cut(),
+			in.cut(0, split_iter - in.begin()),
+			out.cut(0, split_iter - in.begin()), next_dim,
 			has_tomb);
-		auto [R, Rbox] = BatchDeleteRecursive(
-			TI->right, box_cut.GetSecondBoxCut(),
-			In.cut(split_iter - In.begin(), n),
-			Out.cut(split_iter - In.begin(), n), next_dim,
+		auto [R, rbox] = batch_delete_recursive(
+			ti->right, box_cut.get_second_box_cut(),
+			in.cut(split_iter - in.begin(), n),
+			out.cut(split_iter - in.begin(), n), next_dim,
 			has_tomb);
 
 		bool const force_parallel_flag =
-			TI->size > BT::kSerialBuildCutoff;
+			ti->size > base_type::serial_build_cutoff;
 
-		BT::template UpdateInterior<Interior>(T, L, R);
-		TI = static_cast<Interior *>(T);
-		assert(T->size == L->size + R->size && TI->split.second >= 0 &&
-		       TI->is_leaf == false);
+		base_type::template update_interior<interior_type>(T, L, R);
+		ti = static_cast<interior_type *>(T);
+		assert(T->size == L->size + R->size && ti->split.second >= 0 &&
+		       ti->is_leaf == false);
 
 		if (!has_tomb) {
-			TI->SetParallelFlag(force_parallel_flag);
+			ti->set_parallel_flag(force_parallel_flag);
 		}
 
 		// NOTE: rebuild
 		if (putTomb) {
-			assert(BT::SparseNode(0, TI->size) ||
-			       (split_rule_.AllowRebuild() &&
-				BT::ImbalanceNode(TI->left->size, TI->size)));
-			auto const new_box = BT::GetBox(Lbox, Rbox);
-			// auto const tree_box = BT::template GetBox<Leaf,
-			// Interior>(T); auto const left_box = BT::template
-			// RetrieveBox<Leaf, Interior>(TI->left); auto const
-			// right_box = BT::template RetrieveBox<Leaf,
-			// Interior>(TI->right); auto const tree_in_box =
-			// BT::template RetrieveBox<Leaf, Interior>(T);
-			assert(BT::WithinBox(
-				BT::template GetBox<Leaf, Interior>(T),
+			assert(base_type::sparse_node(0, ti->size) ||
+			       (split_rule_.allow_rebuild() &&
+				base_type::imbalance_node(ti->left->size,
+							  ti->size)));
+			auto const new_box = base_type::get_box(lbox, rbox);
+			// auto const tree_box = base_type::template
+			// get_box<leaf_type, interior_type>(T); auto const
+			// left_box = base_type::template
+			// retrieve_box<leaf_type, interior_type>(ti->left);
+			// auto const right_box = base_type::template
+			// retrieve_box<leaf_type, interior_type>(ti->right);
+			// auto const tree_in_box = base_type::template
+			// retrieve_box<leaf_type, interior_type>(T);
+			assert(base_type::within_box(
+				base_type::template get_box<leaf_type,
+							    interior_type>(T),
 				new_box));
-			return NodeBox(
-				BT::template RebuildSingleTree<Leaf, Interior,
-							       false>(T, d,
-								      new_box),
+			return node_box_type(
+				base_type::template rebuild_single_tree<
+					leaf_type, interior_type, false>(
+					T, d, new_box),
 				new_box);
 		}
 
-		return NodeBox(T, BT::GetBox(Lbox, Rbox));
+		return node_box_type(T, base_type::get_box(lbox, rbox));
 	}
 
-	InnerTree IT;
-	IT.AssignNodeTag(T, 1);
-	assert(IT.tags_num > 0 && IT.tags_num <= BT::kBucketNum);
-	BT::template SievePoints<Interior>(In, Out, n, IT.tags, IT.sums,
-					   IT.tags_num);
+	inner_tree IT;
+	IT.assign_node_tag(T, 1);
+	assert(IT.tags_num > 0 && IT.tags_num <= base_type::bucket_num);
+	base_type::template sieve_points<interior_type>(in, out, n, IT.tags,
+							IT.sums, IT.tags_num);
 
-	auto tree_nodes = NodeBoxSeq::uninitialized(IT.tags_num);
-	auto box_seq = parlay::sequence<Box>::uninitialized(IT.tags_num);
+	auto tree_nodes = node_box_seq_type::uninitialized(IT.tags_num);
+	auto box_seq = parlay::sequence<box_type>::uninitialized(IT.tags_num);
 
 	// enable the force parallel flag in batch deletion
 	/* Results are used by asserts only, but the call tags the skeleton. */
 	[[maybe_unused]] auto [re_num, tot_re_size] =
-		IT.template TagImbalanceNodeDeletion<true>(
-			box_seq, box, has_tomb, [&](BucketType idx) -> bool {
-				Interior *TI = static_cast<Interior *>(
-					IT.tags[idx].first);
-				return BT::SparseNode(IT.sums_tree[idx],
-						      TI->size) ||
-				       (split_rule_.AllowRebuild() &&
-					BT::ImbalanceNode(
-						TI->left->size -
+		IT.template tag_imbalance_node_deletion<true>(
+			box_seq, box, has_tomb, [&](bucket_type idx) -> bool {
+				interior_type *ti =
+					static_cast<interior_type *>(
+						IT.tags[idx].first);
+				return base_type::sparse_node(IT.sums_tree[idx],
+							      ti->size) ||
+				       (split_rule_.allow_rebuild() &&
+					base_type::imbalance_node(
+						ti->left->size -
 							IT.sums_tree[idx << 1],
-						TI->size - IT.sums_tree[idx]));
+						ti->size - IT.sums_tree[idx]));
 			});
 
 	assert(re_num <= IT.tags_num);
@@ -218,70 +236,75 @@ KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight, kImbaRatio>::
 			assert(IT.sums_tree[IT.rev_tag[i]] == IT.sums[i]);
 			assert(IT.tags[IT.rev_tag[i]].first->size >=
 			       IT.sums[i]);
-			assert(BT::WithinBox(
-				BT::GetBox(Out.cut(start, start + IT.sums[i])),
-				BT::template GetBox<Leaf, Interior>(
+			assert(base_type::within_box(
+				base_type::get_box(
+					out.cut(start, start + IT.sums[i])),
+				base_type::template get_box<leaf_type,
+							    interior_type>(
 					IT.tags[IT.rev_tag[i]].first)));
 
-			DimsType next_dim = d,
-				 depth = IT.GetDepthByIndex(IT.rev_tag[i]);
-			for (BucketType i = 0; i < depth; i++) {
-				next_dim = split_rule_.NextDimension(next_dim);
+			dims_type next_dim = d,
+				  depth = IT.get_depth_by_index(IT.rev_tag[i]);
+			for (bucket_type i = 0; i < depth; i++) {
+				next_dim = split_rule_.next_dimension(next_dim);
 			}
 
-			tree_nodes[i] = BatchDeleteRecursive(
+			tree_nodes[i] = batch_delete_recursive(
 				IT.tags[IT.rev_tag[i]].first, box_seq[i],
-				Out.cut(start, start + IT.sums[i]),
-				In.cut(start, start + IT.sums[i]), next_dim,
+				out.cut(start, start + IT.sums[i]),
+				in.cut(start, start + IT.sums[i]), next_dim,
 				IT.tags[IT.rev_tag[i]].second ==
-					BT::kBucketNum + 1);
+					base_type::bucket_num + 1);
 		},
 		1);
 
 	// NOTE: handling of rebuild (in parallel)
 	// NOTE: get new box for skeleton root and rebuild nodes
-	Box const new_box = std::get<1>(
-		IT.template UpdateInnerTree<InnerTree::kTagRebuildNode>(
+	box_type const new_box = std::get<1>(
+		IT.template update_inner_tree<inner_tree::kTagRebuildNode>(
 			tree_nodes, box_seq));
 	assert(IT.tags_num == re_num);
 
 	// NOTE: launch the rebuild in parallel
 	parlay::parallel_for(0, IT.tags_num, [&](size_t i) {
-		assert(IT.tags[IT.rev_tag[i]].second == BT::kBucketNum + 3);
+		assert(IT.tags[IT.rev_tag[i]].second ==
+		       base_type::bucket_num + 3);
 
 		if (IT.tags[IT.rev_tag[i]].first->size == 0) { // NOTE: empty
 #ifndef DISABLE_BATCH_DELETE_SIZE_OPT
-			BT::template DeleteTreeRecursive<Leaf, Interior, false>(
+			base_type::template delete_tree_recursive<
+				leaf_type, interior_type, false>(
 				IT.tags[IT.rev_tag[i]].first);
 #else
-      BT::template DeleteTreeRecursive<Leaf, Interior, true>(
+      base_type::template delete_tree_recursive<leaf_type, interior_type, true>(
           IT.tags[IT.rev_tag[i]].first);
 #endif
 			IT.tags[IT.rev_tag[i]].first =
-				AllocEmptyLeafNode<Slice, Leaf>();
+				alloc_empty_leaf_node<slice_type, leaf_type>();
 		} else { // NOTE: rebuild
-			assert(BT::WithinBox(
-				BT::template GetBox<Leaf, Interior>(
+			assert(base_type::within_box(
+				base_type::template get_box<leaf_type,
+							    interior_type>(
 					IT.tags[IT.rev_tag[i]].first),
 				box_seq[i]));
 
-			DimsType next_dim = d,
-				 depth = IT.GetDepthByIndex(IT.rev_tag[i]);
-			for (BucketType i = 0; i < depth; i++) {
-				next_dim = split_rule_.NextDimension(next_dim);
+			dims_type next_dim = d,
+				  depth = IT.get_depth_by_index(IT.rev_tag[i]);
+			for (bucket_type i = 0; i < depth; i++) {
+				next_dim = split_rule_.next_dimension(next_dim);
 			}
 			IT.tags[IT.rev_tag[i]].first =
-				BT::template RebuildSingleTree<Leaf, Interior,
-							       false>(
+				base_type::template rebuild_single_tree<
+					leaf_type, interior_type, false>(
 					IT.tags[IT.rev_tag[i]].first, next_dim,
 					box_seq[i]);
 		}
 	}); // PERF: let the parlay decide granularity
 
 	auto const new_root = std::get<0>(
-		IT.template UpdateInnerTree<InnerTree::kPostDelUpdate>(
+		IT.template update_inner_tree<inner_tree::kPostDelUpdate>(
 			tree_nodes));
-	return NodeBox(new_root, new_box);
+	return node_box_type(new_root, new_box);
 }
 
 } // namespace psi

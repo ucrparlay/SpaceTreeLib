@@ -14,16 +14,16 @@
 #include "psi/dependence/comparator.h"
 ///**********************************START*********************************///
 
-using Axis = int64_t;
-Axis kValueUB = 1'000'000'000;
-// Axis const kValueUB = 1'000'000;
+using axis_type = int64_t;
+axis_type kValueUB = 1'000'000'000;
+// axis_type const kValueUB = 1'000'000;
 
 inline std::string toString(auto const &a)
 {
 	return std::to_string(a);
 }
 
-void PrintPoints(auto const &wp)
+void print_points(auto const &wp)
 {
 	for (auto const &p : wp) {
 		std::cout << p << std::endl;
@@ -32,11 +32,11 @@ void PrintPoints(auto const &wp)
 	return;
 }
 
-void PrintToFile(std::string const &path, auto const &wp)
+void print_to_file(std::string const &path, auto const &wp)
 {
 	size_t const gen_num = wp.size();
 	auto constexpr gen_dim =
-		std::remove_reference_t<decltype(wp)>::value_type::GetDim();
+		std::remove_reference_t<decltype(wp)>::value_type::get_dim();
 
 	auto header = toString(gen_num) + " " + toString(gen_dim);
 	// NOTE: create a parlay::sequence<char> in order to call the
@@ -71,22 +71,24 @@ void PrintToFile(std::string const &path, auto const &wp)
 	return;
 }
 
-template <typename InputPoint, typename OutputPoint>
-class DataLaundry
+template <typename InputPoint, typename output_point_type>
+class data_laundry
 {
 public:
-	using InputPoints = parlay::sequence<InputPoint>;
-	using OutputPoints = parlay::sequence<OutputPoint>;
+	using input_points_type = parlay::sequence<InputPoint>;
+	using output_points_type = parlay::sequence<output_point_type>;
 
-	static OutputPoints RoundDown(auto const &wp, int const multiply_offset)
+	static output_points_type round_down(auto const &wp,
+					     int const multiply_offset)
 	{
 		return parlay::tabulate(
-			wp.size(), [&](size_t i) -> OutputPoint {
-				OutputPoint p;
-				for (int j = 0; j < OutputPoint::GetDim();
-				     j++) {
+			wp.size(), [&](size_t i) -> output_point_type {
+				output_point_type p;
+				for (int j = 0;
+				     j < output_point_type::get_dim(); j++) {
 					p.pnt[j] = static_cast<
-						typename OutputPoint::Coord>(
+						typename output_point_type::
+							coord_type>(
 						std::floor(wp[i].pnt[j] *
 							   multiply_offset));
 				}
@@ -95,18 +97,19 @@ public:
 			});
 	}
 
-	static OutputPoints RemoveDuplicates(auto const &wp)
+	static output_points_type remove_duplicates(auto const &wp)
 	{
-		using BP = typename OutputPoint::BP;
+		using bp_type = typename output_point_type::bp_type;
 		auto new_pts = parlay::unique(
-			parlay::sort(wp,
-				     [&](auto const &a, auto const &b) {
-					     return static_cast<BP const &>(a) <
-						    static_cast<BP const &>(b);
-				     }),
+			parlay::sort(
+				wp,
+				[&](auto const &a, auto const &b) {
+					return static_cast<bp_type const &>(a) <
+					       static_cast<bp_type const &>(b);
+				}),
 			[&](auto const &a, auto const &b) {
-				return static_cast<BP const &>(a) ==
-				       static_cast<BP const &>(b);
+				return static_cast<bp_type const &>(a) ==
+				       static_cast<bp_type const &>(b);
 			});
 		// return new_pts;
 		return parlay::sort(new_pts, [&](auto const &a, auto const &b) {
@@ -114,21 +117,22 @@ public:
 		});
 	}
 
-	static OutputPoints ShiftToFirstRegion(auto &wp)
+	static output_points_type shift_to_first_region(auto &wp)
 	{
-		auto bb = psi::BaseTree<OutputPoint>::GetBox(
+		auto bb = psi::base_tree<output_point_type>::get_box(
 			parlay::make_slice(wp));
 		return parlay::tabulate(wp.size(), [&](size_t i) {
-			OutputPoint p;
-			for (int j = 0; j < OutputPoint::GetDim(); j++) {
-				p[j] = static_cast<typename OutputPoint::Coord>(
+			output_point_type p;
+			for (int j = 0; j < output_point_type::get_dim(); j++) {
+				p[j] = static_cast<
+					typename output_point_type::coord_type>(
 					wp[i][j] - bb.first[j]);
 			}
 			return p;
 		});
 	}
 
-	static bool CheckCoordWithinRange(auto &wp)
+	static bool check_coord_within_range(auto &wp)
 	{
 		return parlay::all_of(wp, [&](auto const &p) {
 			return std::ranges::all_of(p.pnt, [](auto const &c) {
@@ -139,14 +143,14 @@ public:
 };
 
 template <typename Point>
-class UniformGenerator
+class uniform_generator
 {
 public:
-	using Points = parlay::sequence<Point>;
+	using points_type = parlay::sequence<Point>;
 
-	static Points WithinBox(size_t const gen_num)
+	static points_type within_box(size_t const gen_num)
 	{
-		Points wp(gen_num);
+		points_type wp(gen_num);
 
 		std::random_device
 			rd; // a seed source for the random number engine
@@ -161,18 +165,19 @@ public:
 		// generate n random points in a cube
 		parlay::parallel_for(0, gen_num, [&](size_t i) {
 			auto r = gen[i];
-			for (typename Point::DimsType j = 0;
-			     j < Point::GetDim(); j++) {
+			for (typename Point::dims_type j = 0;
+			     j < Point::get_dim(); j++) {
 				wp[i].pnt[j] = dis(r);
 			}
 		});
 		return wp;
 	}
 
-	static Points WithinSphere(size_t const gen_num, Point const &center,
-				   typename Point::Coord const radius)
+	static points_type
+	within_sphere(size_t const gen_num, Point const &center,
+		      typename Point::coord_type const radius)
 	{
-		auto constexpr kDim = Point::GetDim();
+		auto constexpr num_dims = Point::get_dim();
 
 		std::random_device
 			rd; // a seed source for the random number engine
@@ -184,21 +189,23 @@ public:
 		std::uniform_real_distribution<double> dis(0.0, 1.0);
 
 		return parlay::tabulate(gen_num, [&](size_t) -> Point {
-			std::array<double, Point::GetDim()> coords;
+			std::array<double, Point::get_dim()> coords;
 			Point p;
 			double r = static_cast<double>(radius) *
-				   std::pow(dis(gen), 1.0 / kDim);
+				   std::pow(dis(gen), 1.0 / num_dims);
 
 			double sum_squares = 0.0;
-			for (typename Point::DimsType j = 0; j < kDim; ++j) {
+			for (typename Point::dims_type j = 0; j < num_dims;
+			     ++j) {
 				coords[j] = dis(gen) * 2.0 - 1.0;
 				sum_squares += coords[j] * coords[j];
 			}
 
 			double scale = r / std::sqrt(sum_squares);
-			for (typename Point::DimsType j = 0; j < kDim; ++j) {
+			for (typename Point::dims_type j = 0; j < num_dims;
+			     ++j) {
 				coords[j] *= scale;
-				p[j] = static_cast<typename Point::Coord>(
+				p[j] = static_cast<typename Point::coord_type>(
 					       coords[j]) +
 				       center[j];
 			}
@@ -212,45 +219,45 @@ public:
 	}
 };
 
-template <typename Point, bool kSameDensity>
-class VardenGenerator
+template <typename Point, bool SameDensity>
+class varden_generator
 {
 public:
-	using Points = parlay::sequence<Point>;
-	using DimsType = Point::DimsType;
-	using Num = psi::Num_Comparator<Axis>;
+	using points_type = parlay::sequence<Point>;
+	using dims_type = Point::dims_type;
+	using num_type = psi::num_comparator<axis_type>;
 
-	constexpr static double GetRhoNoice()
+	constexpr static double get_rho_noice()
 	{
 		return 1.0 / 10000;
 	}
 
 	// PARA: initial spreader avaliable counter
-	constexpr static size_t SpreaderSize()
+	constexpr static size_t spreader_size()
 	{
 		return 100;
 	}
 
-	static double RestartProbability(size_t n)
+	static double restart_probability(size_t n)
 	{
-		return 10.0 / (n * (1 - GetRhoNoice()));
+		return 10.0 / (n * (1 - get_rho_noice()));
 	}
 
-	static size_t GetNoicePtsNum(size_t gen_num)
+	static size_t get_noice_pts_num(size_t gen_num)
 	{
 		return static_cast<size_t>(static_cast<double>(gen_num) *
-					   GetRhoNoice());
+					   get_rho_noice());
 	}
 
-	static size_t GetClusterPtsNum(size_t gen_num)
+	static size_t get_cluster_pts_num(size_t gen_num)
 	{
-		return gen_num - GetNoicePtsNum(gen_num);
+		return gen_num - get_noice_pts_num(gen_num);
 	}
 
 	size_t
-	RadiusByVicinity([[maybe_unused]] size_t const prev_restart) noexcept
+	radius_by_vicinity([[maybe_unused]] size_t const prev_restart) noexcept
 	{
-		if constexpr (kSameDensity) {
+		if constexpr (SameDensity) {
 			return 100;
 		} else {
 			return 100 * ((prev_restart % 10) + 1);
@@ -258,20 +265,20 @@ public:
 	}
 
 	size_t
-	ShiftDistance([[maybe_unused]] size_t const prev_restart) noexcept
+	shift_distance([[maybe_unused]] size_t const prev_restart) noexcept
 	{
-		if constexpr (kSameDensity) {
-			return 50 * Point::GetDim();
+		if constexpr (SameDensity) {
+			return 50 * Point::get_dim();
 		} else {
-			return RadiusByVicinity(prev_restart) *
-			       Point::GetDim() / 2;
+			return radius_by_vicinity(prev_restart) *
+			       Point::get_dim() / 2;
 		}
 	}
 
-	Points GenerateCluster(size_t const gen_num,
-			       size_t const cur_restart_idx)
+	points_type generate_cluster(size_t const gen_num,
+				     size_t const cur_restart_idx)
 	{
-		using Spreader = std::pair<Point, DimsType>;
+		using spreader_type = std::pair<Point, dims_type>;
 		std::random_device
 			rd; // a seed source for the random number engine
 		std::mt19937 gen_mt(
@@ -292,36 +299,38 @@ public:
 
 		// ((a % b) + b) % b; negative modular
 		auto shift_pts = parlay::tabulate(
-			gen_num / SpreaderSize() + 1, [&](size_t i) {
+			gen_num / spreader_size() + 1, [&](size_t i) {
 				if (i) {
 					int const dir =
 						dis(gen) %
-						Point::GetDim(); // pick a dir
-					Point p(static_cast<Point::Coord>(0));
+						Point::get_dim(); // pick a dir
+					Point p(static_cast<Point::coord_type>(
+						0));
 					int sign = bernoulli(gen) ? 1 : -1;
 					p[dir] =
 						sign *
-						ShiftDistance(
+						shift_distance(
 							cur_restart_idx); // move
 									  // dis
 									  // in
 									  // this
 									  // dir
-					return Spreader(p, dir);
+					return spreader_type(p, dir);
 				} else {
-					return Spreader(generate_random_point(),
-							0);
+					return spreader_type(
+						generate_random_point(), 0);
 				}
 			});
 
 		parlay::scan_inclusive_inplace(
 			shift_pts.cut(1, shift_pts.size()),
 			parlay::binary_op(
-				[](Spreader const &a, Spreader const &b) {
+				[](spreader_type const &a,
+				   spreader_type const &b) {
 					Point c(a.first); // WARN: order here
 							  // matters
 					c[b.second] += b.first[b.second];
-					return Spreader(c, b.second);
+					return spreader_type(c, b.second);
 				},
 				shift_pts[0]));
 
@@ -330,18 +339,18 @@ public:
 			parlay::tabulate(shift_pts.size(), [&](size_t i) {
 				size_t sz =
 					i != shift_pts.size() - 1
-						? SpreaderSize()
-						: gen_num - i * SpreaderSize();
-				return UniformGenerator<Point>::WithinSphere(
+						? spreader_size()
+						: gen_num - i * spreader_size();
+				return uniform_generator<Point>::within_sphere(
 					sz, shift_pts[i].first,
-					RadiusByVicinity(cur_restart_idx));
+					radius_by_vicinity(cur_restart_idx));
 			}));
 
 		assert(pts.size() == gen_num);
 		return pts;
 	}
 
-	Points Apply(size_t const gen_num)
+	points_type apply(size_t const gen_num)
 	{
 		std::random_device
 			rd; // a seed source for the random number engine
@@ -356,33 +365,33 @@ public:
 		// NOTE: begin generate
 		// pick the restart points
 		auto r_start_pts = parlay::tabulate(
-			GetClusterPtsNum(gen_num), [&](size_t i) -> bool {
+			get_cluster_pts_num(gen_num), [&](size_t i) -> bool {
 				auto r = gen[i];
 				return i == 0 ||
-				       dis(r) < RestartProbability(gen_num);
+				       dis(r) < restart_probability(gen_num);
 			});
 
 		// pack the index of the restart points
 		auto restart_idx = parlay::pack_index(r_start_pts);
-		restart_idx.push_back(GetClusterPtsNum(gen_num));
+		restart_idx.push_back(get_cluster_pts_num(gen_num));
 
 		// generate the points for each cluster and pack them
 		auto cluster_seq = parlay::flatten(
 			parlay::tabulate(restart_idx.size() - 1, [&](size_t i) {
-				return GenerateCluster(
+				return generate_cluster(
 					restart_idx[i + 1] - restart_idx[i], i);
 			}));
 
 		// move the points to the first region of the space
-		auto bb = psi::BaseTree<Point>::GetBox(
+		auto bb = psi::base_tree<Point>::get_box(
 			parlay::make_slice(cluster_seq));
-		for (DimsType j = 0; j < Point::GetDim(); j++) {
-			bb.first[j] =
-				Num::Min(bb.first[j], static_cast<Axis>(0));
-			bb.first[j] = Num::Abs(bb.first[j]);
+		for (dims_type j = 0; j < Point::get_dim(); j++) {
+			bb.first[j] = num_type::min(bb.first[j],
+						    static_cast<axis_type>(0));
+			bb.first[j] = num_type::abs(bb.first[j]);
 		}
 		parlay::parallel_for(0, cluster_seq.size(), [&](size_t i) {
-			for (DimsType j = 0; j < Point::GetDim(); j++) {
+			for (dims_type j = 0; j < Point::get_dim(); j++) {
 				cluster_seq[i][j] += bb.first[j];
 				if (cluster_seq[i][j] < 0) {
 					std::cout << "cluster_seq[i][j]: "
@@ -394,14 +403,14 @@ public:
 
 		// append the noice points
 		return parlay::append(cluster_seq,
-				      UniformGenerator<Point>::WithinBox(
-					      GetNoicePtsNum(gen_num)));
+				      uniform_generator<Point>::within_box(
+					      get_noice_pts_num(gen_num)));
 	}
 };
 
 template <typename Point>
 auto generate_varden_points(size_t pts_num)
 {
-	VardenGenerator<Point, false> varden;
-	return varden.Apply(pts_num);
+	varden_generator<Point, false> varden;
+	return varden.apply(pts_num);
 }

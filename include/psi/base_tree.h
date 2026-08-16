@@ -15,230 +15,240 @@ namespace psi
 
 // NOTE: Basetree
 template <typename Point, typename DerivedTree = void,
-	  uint_fast8_t kSkHeight = 6, uint_fast8_t kImbaRatio = 30>
-class BaseTree
+	  uint_fast8_t SkHeight = 6, uint_fast8_t ImbaRatio = 30>
+class base_tree
 {
 public:
-	// NOTE: when kSkHeight >= 8, the # bucket is 255, total skeleton nodes
+	// NOTE: when SkHeight >= 8, the # bucket is 255, total skeleton nodes
 	// >= 255*2
 
-	using BasicPoint = Point::BP;
-	using TemplatePoint = Point;
+	using basic_point = Point::bp_type;
+	using template_point_type = Point;
 
-	using BucketType = std::conditional_t<(kSkHeight > 7), uint_fast16_t,
-					      uint_fast8_t>;
-	using BallsType = uint_fast32_t;
-	using DimsType = uint_fast8_t;
-	// using DepthType = uint_fast8_t;
-	// using DepthType = int_fast8_t;
-	using DepthType = int;
-	using BucketSeq = parlay::sequence<BucketType>;
-	using BallSeq = parlay::sequence<BallsType>;
+	using bucket_type =
+		std::conditional_t<(SkHeight > 7), uint_fast16_t, uint_fast8_t>;
+	using balls_type = uint_fast32_t;
+	using dims_type = uint_fast8_t;
+	// using depth_type = uint_fast8_t;
+	// using depth_type = int_fast8_t;
+	using depth_type = int;
+	using bucket_seq_type = parlay::sequence<bucket_type>;
+	using ball_seq_type = parlay::sequence<balls_type>;
 
-	using Coord = typename Point::Coord;
-	using Coords = typename Point::Coords;
-	using DisType = typename Point::DisType;
-	using Num = Num_Comparator<Coord>;
-	using Slice = parlay::slice<Point *, Point *>;
-	using Points = parlay::sequence<Point>;
-	using PointsIter = typename parlay::sequence<Point>::iterator;
-	using HyperPlane = std::pair<Coord, DimsType>;
-	using HyperPlaneSeq = parlay::sequence<HyperPlane>;
-	using Box = std::pair<BasicPoint, BasicPoint>;
-	using BoxSeq = parlay::sequence<Box>;
+	using coord_type = typename Point::coord_type;
+	using coords_type = typename Point::coords_type;
+	using dis_type = typename Point::dis_type;
+	using num_type = num_comparator<coord_type>;
+	using slice_type = parlay::slice<Point *, Point *>;
+	using points_type = parlay::sequence<Point>;
+	using points_iter_type = typename parlay::sequence<Point>::iterator;
+	using hyper_plane_type = std::pair<coord_type, dims_type>;
+	using hyper_plane_seq_type = parlay::sequence<hyper_plane_type>;
+	using box_type = std::pair<basic_point, basic_point>;
+	using box_seq_type = parlay::sequence<box_type>;
 
-	using NodeBox = std::pair<Node *, Box>;
-	using NodeBoxSeq = parlay::sequence<NodeBox>;
-	using NodeTag = std::pair<Node *, uint_fast8_t>;
-	using NodeTagSeq = parlay::sequence<NodeTag>;
+	using node_box_type = std::pair<node *, box_type>;
+	using node_box_seq_type = parlay::sequence<node_box_type>;
+	using node_tag_type = std::pair<node *, uint_fast8_t>;
+	using node_tag_seq_type = parlay::sequence<node_tag_type>;
 
 	// TODO: use the one provided in aug
 
 	// NOTE: Const variables
 	// NOTE: uint32t handle up to 4e9 at least
 	// WARN: bucket num should smaller than 1<<8 to handle type overflow
-	static constexpr DimsType const kDim = std::tuple_size_v<Coords>;
-	static constexpr BucketType const kBuildDepthOnce = kSkHeight;
-	static constexpr BucketType const kPivotNum =
-		(1 << kBuildDepthOnce) - 1;
-	static constexpr BucketType const kBucketNum = 1 << kBuildDepthOnce;
+	static constexpr dims_type const num_dims =
+		std::tuple_size_v<coords_type>;
+	static constexpr bucket_type const build_depth_once = SkHeight;
+	static constexpr bucket_type const pivot_num =
+		(1 << build_depth_once) - 1;
+	static constexpr bucket_type const bucket_num = 1 << build_depth_once;
 
 	// NOTE: tree structure
-	static constexpr uint_fast8_t const kLeafCapacity = 32;
-	static constexpr uint_fast8_t const kSparseLeafThreshold = 24;
-	// static constexpr uint_fast8_t const kLeafCapacity = 8;
-	// static constexpr uint_fast8_t const kSparseLeafThreshold = 4;
-	static constexpr uint_fast16_t const kSerialBuildCutoff = 1 << 10;
+	static constexpr uint_fast8_t const leaf_capacity = 32;
+	static constexpr uint_fast8_t const sparse_leaf_threshold = 24;
+	// static constexpr uint_fast8_t const leaf_capacity = 8;
+	// static constexpr uint_fast8_t const sparse_leaf_threshold = 4;
+	static constexpr uint_fast16_t const serial_build_cutoff = 1 << 10;
 
-	// NOTE: block param in Partition
-	static constexpr uint_fast8_t const kLog2Base = 10;
-	static constexpr uint_fast16_t const kBlockSize = 1 << kLog2Base;
+	// NOTE: block param in partition
+	static constexpr uint_fast8_t const log2_base = 10;
+	static constexpr uint_fast16_t const block_size = 1 << log2_base;
 
 	// NOTE: reconstruct weight threshold
-	static constexpr uint_fast8_t const kImbalanceRatio = kImbaRatio;
+	static constexpr uint_fast8_t const imbalance_ratio = ImbaRatio;
 
 	// NOTE: array based inner tree for batch insertion and deletion
-	template <typename Leaf, typename Interior>
-	struct InnerTree;
+	template <typename leaf_type, typename interior_type>
+	struct inner_tree;
 
 	// NOTE: compute the bounding box on the fly
-	struct BoxCut;
+	struct box_cut_type;
 
 	// NOTE: get the imbalance ratio
-	static inline size_t GetImbalanceRatio();
-	static inline bool ImbalanceNode(size_t const l, size_t const n);
-	static inline bool SparseNode(size_t const l, size_t const n);
+	static inline size_t get_imbalance_ratio();
+	static inline bool imbalance_node(size_t const l, size_t const n);
+	static inline bool sparse_node(size_t const l, size_t const n);
 
-	// NOTE: Box operations
-	static inline Coord GetBoxMid(DimsType const d, Box const &bx);
-	static inline bool LegalBox(Box const &bx);
-	static inline bool WithinBox(Box const &a, Box const &b);
-	static inline bool SameBox(Box const &a, Box const &b);
-	static inline bool WithinBox(Point const &p, Box const &bx);
-	static inline bool BoxIntersectBox(Box const &a, Box const &b);
-	static inline bool IsBoxLineInDimension(Box const &box, DimsType d);
-	static inline bool VerticalLineSplitBox(Coord const &l, Box const &box,
-						DimsType d);
+	// NOTE: box_type operations
+	static inline coord_type get_box_mid(dims_type const d,
+					     box_type const &bx);
+	static inline bool legal_box(box_type const &bx);
+	static inline bool within_box(box_type const &a, box_type const &b);
+	static inline bool same_box(box_type const &a, box_type const &b);
+	static inline bool within_box(Point const &p, box_type const &bx);
+	static inline bool box_intersect_box(box_type const &a,
+					     box_type const &b);
+	static inline bool is_box_line_in_dimension(box_type const &box,
+						    dims_type d);
+	static inline bool vertical_line_split_box(coord_type const &l,
+						   box_type const &box,
+						   dims_type d);
+	static inline bool vertical_line_on_box_left_edge(coord_type const &l,
+							  box_type const &box,
+							  dims_type d);
+	static inline bool vertical_line_on_box_right_edge(coord_type const &l,
+							   box_type const &box,
+							   dims_type d);
+	static inline bool vertical_line_on_box_edge(coord_type const &l,
+						     box_type const &box,
+						     dims_type d);
+	static inline bool vertical_line_intersect_box(coord_type const &l,
+						       box_type const &box,
+						       dims_type d);
 	static inline bool
-	VerticalLineOnBoxLeftEdge(Coord const &l, Box const &box, DimsType d);
-	static inline bool
-	VerticalLineOnBoxRightEdge(Coord const &l, Box const &box, DimsType d);
-	static inline bool VerticalLineOnBoxEdge(Coord const &l, Box const &box,
-						 DimsType d);
-	static inline bool VerticalLineIntersectBox(Coord const &l,
-						    Box const &box, DimsType d);
-	static inline bool VerticalLineIntersectBoxExclude(Coord const &l,
-							   Box const &box,
-							   DimsType d);
-	template <typename Leaf, typename Interior>
-	static inline decltype(auto) RetrieveBox(Node const *T)
-		requires(HasBox<typename Leaf::AT> &&
-			 HasBox<typename Interior::AT>);
+	vertical_line_intersect_box_exclude(coord_type const &l,
+					    box_type const &box, dims_type d);
+	template <typename leaf_type, typename interior_type>
+	static inline decltype(auto) retrieve_box(node const *T)
+		requires(has_box<typename leaf_type::at_type> &&
+			 has_box<typename interior_type::at_type>);
 
-	static inline Box GetEmptyBox();
-	static inline Point GetBoxCenter(Box const &box);
-	static Box GetBox(Box const &x, Box const &y);
-	static Box GetBox(Slice V);
-	static Box GetBox(BoxSeq const &box_seq);
-	template <typename Leaf, typename Interior>
-	static Box GetBox(Node *T);
+	static inline box_type get_empty_box();
+	static inline Point get_box_center(box_type const &box);
+	static box_type get_box(box_type const &x, box_type const &y);
+	static box_type get_box(slice_type V);
+	static box_type get_box(box_seq_type const &box_seq);
+	template <typename leaf_type, typename interior_type>
+	static box_type get_box(node *T);
 
-	// NOTE: Circle operations
-	struct NormalCircle {
-		Point const &GetCenter() const
+	// NOTE: circle_type operations
+	struct normal_circle {
+		Point const &get_center() const
 		{
 			return center;
 		}
 
-		Coord GetRadius() const
+		coord_type get_radius() const
 		{
 			return radius;
 		}
 
-		Coord GetRadiusSquare() const
+		coord_type get_radius_square() const
 		{
 			return radius * radius;
 		}
 
-		static Coord ComputeRadius(double const &r)
+		static coord_type compute_radius(double const &r)
 		{
-			return static_cast<Coord>(r);
+			return static_cast<coord_type>(r);
 		}
 
 		friend std::ostream &operator<<(std::ostream &o,
-						NormalCircle const &cl)
+						normal_circle const &cl)
 		{
 			o << "{ " << cl.center << ", " << cl.radius << "}";
 			return o;
 		}
 
 		Point center;
-		Coord radius;
+		coord_type radius;
 	};
 
-	struct CoverCircle {
-		Point const &GetCenter() const
+	struct cover_circle {
+		Point const &get_center() const
 		{
 			return center;
 		}
 
-		Coord GetRadius() const
+		coord_type get_radius() const
 		{
-			return static_cast<Coord>(1 << level);
+			return static_cast<coord_type>(1 << level);
 		}
 
-		Coord GetRadiusSquare() const
+		coord_type get_radius_square() const
 		{
-			return GetRadius() * GetRadius();
+			return get_radius() * get_radius();
 		}
 
-		static DepthType ComputeRadius(auto const &r)
+		static depth_type compute_radius(auto const &r)
 		{
 			// TODO: hard to represent the radius with length 0
-			return Num_Comparator<decltype(r)>::IsZero(r)
+			return num_comparator<decltype(r)>::is_zero(r)
 				       ? -1
-				       : static_cast<DepthType>(
+				       : static_cast<depth_type>(
 						 std::ceil(std::log2(r)));
 		}
 
-		bool operator==(CoverCircle const &cl) const
+		bool operator==(cover_circle const &cl) const
 		{
 			return center == cl.center && level == cl.level;
 		}
 
 		friend std::ostream &operator<<(std::ostream &o,
-						CoverCircle const &cl)
+						cover_circle const &cl)
 		{
 			o << "{ " << cl.center << ", " << cl.level << "}";
 			return o;
 		}
 
 		Point center;
-		DepthType level;
+		depth_type level;
 	};
 
 	template <typename CircleType>
-	static bool LegalCircle(CircleType const &cl);
+	static bool legal_circle(CircleType const &cl);
 
 	template <typename CircleType>
-	static inline bool WithinCircle(Point const &p, CircleType const &cl);
+	static inline bool within_circle(Point const &p, CircleType const &cl);
 
 	template <typename CircleType>
-	static inline bool WithinCircle(Box const &box, CircleType const &cl);
+	static inline bool within_circle(box_type const &box,
+					 CircleType const &cl);
 
 	template <typename CircleType1, typename CircleType2>
-	static inline bool CircleWithinCircle(CircleType1 const &a,
-					      CircleType2 const &b);
+	static inline bool circle_within_circle(CircleType1 const &a,
+						CircleType2 const &b);
 
 	template <typename CircleType>
-	static inline bool CircleIntersectBox(CircleType const &cl,
-					      Box const &box);
+	static inline bool circle_intersect_box(CircleType const &cl,
+						box_type const &box);
 
 	template <typename CircleType>
-	static inline bool CircleIntersectCircle(CircleType const &a,
-						 CircleType const &b);
+	static inline bool circle_intersect_circle(CircleType const &a,
+						   CircleType const &b);
 
 	template <typename CircleType>
-	static inline CircleType GetCircle(Box const &box);
+	static inline CircleType get_circle(box_type const &box);
 
 	template <typename CircleType>
-	static inline CircleType GetCircle(Slice V);
+	static inline CircleType get_circle(slice_type V);
 
 	template <typename CircleType>
-	static inline CircleType GetCircle(CircleType const &a,
-					   CircleType const &b);
+	static inline CircleType get_circle(CircleType const &a,
+					    CircleType const &b);
 
 	template <typename CircleType>
-	static inline CircleType GetCircle(Point const &p,
-					   CircleType const &cl);
+	static inline CircleType get_circle(Point const &p,
+					    CircleType const &cl);
 
 	template <typename CircleType>
 	static inline CircleType
-	GetCircle(parlay::sequence<CircleType> const &circle_seq);
+	get_circle(parlay::sequence<CircleType> const &circle_seq);
 
 	/*
 	 * Copy a caller range into tree owned storage and hand the slice to op.
-	 * Every public Build, BatchInsert, BatchDelete and BatchDiff funnels
+	 * Every public build, batch_insert, batch_delete and batch_diff funnels
 	 * through here. The copy is unconditional: the trees consume the buffer
 	 * in place, and a move-when-rvalue path would change how much memory
 	 * traffic every measured operation does.
@@ -247,7 +257,7 @@ public:
 	 * caller, before this runs.
 	 */
 	template <typename Range, typename Fn>
-	static void IngestRange(Range &&In, Fn &&op)
+	static void ingest_range(Range &&in, Fn &&op)
 	{
 		static_assert(parlay::is_random_access_range_v<Range>);
 		static_assert(parlay::is_less_than_comparable_v<
@@ -256,301 +266,324 @@ public:
 			      parlay::range_value_type_t<Range>,
 			      parlay::range_reference_type_t<Range>>);
 
-		auto aux = Points::uninitialized(parlay::size(In));
-		parlay::copy(In, parlay::make_slice(aux));
+		auto aux = points_type::uninitialized(parlay::size(in));
+		parlay::copy(in, parlay::make_slice(aux));
 		op(parlay::make_slice(aux));
 	}
 
 	// NOTE: build tree
-	static inline void SamplePoints(Slice In, Points &arr);
+	static inline void sample_points(slice_type in, points_type &arr);
 
-	static inline BucketType FindBucket(Point const &p,
-					    HyperPlaneSeq const &pivots);
+	static inline bucket_type
+	find_bucket(Point const &p, hyper_plane_seq_type const &pivots);
 
-	template <IsBinaryNode Interior, bool UpdateParFlag = true>
-	static inline void UpdateInterior(Node *T, Node *L, Node *R);
+	template <is_binary_node interior_type, bool UpdateParFlag = true>
+	static inline void update_interior(node *T, node *L, node *R);
 
-	template <IsBinaryNode Interior, bool UpdateParFlag = true>
-	static inline void UpdateInterior(Node *T, NodeBox const &L,
-					  NodeBox const &R);
+	template <is_binary_node interior_type, bool UpdateParFlag = true>
+	static inline void update_interior(node *T, node_box_type const &L,
+					   node_box_type const &R);
 
-	template <IsMultiNode Interior, bool UpdateParFlag = true>
+	template <is_multi_node interior_type, bool UpdateParFlag = true>
 	static inline void
-	UpdateInterior(Node *T, typename Interior::NodeArr const &new_nodes);
+	update_interior(node *T,
+			typename interior_type::node_arr_type const &new_nodes);
 
-	template <typename Leaf, typename Interior, bool granularity = true>
-	static void PrepareRebuild(Node *T, Slice In, Points &wx, Points &wo);
+	template <typename leaf_type, typename interior_type,
+		  bool granularity = true>
+	static void prepare_rebuild(node *T, slice_type in, points_type &wx,
+				    points_type &wo);
 
-	template <typename Leaf, typename Interior, bool granularity = true>
-	static void PrepareRebuild(Node *T, Points &wx, Points &wo);
+	template <typename leaf_type, typename interior_type,
+		  bool granularity = true>
+	static void prepare_rebuild(node *T, points_type &wx, points_type &wo);
 
-	static void Partition(Slice A, Slice B, size_t const n,
-			      HyperPlaneSeq const &pivots,
-			      parlay::sequence<BallsType> &sums);
+	static void partition(slice_type A, slice_type B, size_t const n,
+			      hyper_plane_seq_type const &pivots,
+			      parlay::sequence<balls_type> &sums);
 
 	// NOTE: batch insert
-	template <typename Leaf>
-	static Node *InsertPoints2Leaf(Node *T, Slice In);
+	template <typename leaf_type>
+	static node *insert_points2_leaf(node *T, slice_type in);
 
-	template <typename Leaf, typename RT>
-	static RT DeletePoints4Leaf(Node *T, Slice In);
+	template <typename leaf_type, typename RT>
+	static RT delete_points4_leaf(node *T, slice_type in);
 
-	template <typename Leaf, typename RT>
-	static RT DiffPoints4Leaf(Node *T, Slice In);
+	template <typename leaf_type, typename RT>
+	static RT diff_points4_leaf(node *T, slice_type in);
 
-	template <IsBinaryNode Interior>
-	static inline BucketType RetrieveTag(Point const &p,
-					     NodeTagSeq const &tags);
+	template <is_binary_node interior_type>
+	static inline bucket_type retrieve_tag(Point const &p,
+					       node_tag_seq_type const &tags);
 
-	template <IsMultiNode Interior>
-	static inline BucketType RetrieveTag(Point const &p,
-					     NodeTagSeq const &tags);
+	template <is_multi_node interior_type>
+	static inline bucket_type retrieve_tag(Point const &p,
+					       node_tag_seq_type const &tags);
 
-	template <typename Interior>
-	static void SievePoints(Slice A, Slice B, size_t const n,
-				NodeTagSeq const &tags,
-				parlay::sequence<BallsType> &sums,
-				BucketType const tags_num);
+	template <typename interior_type>
+	static void sieve_points(slice_type A, slice_type B, size_t const n,
+				 node_tag_seq_type const &tags,
+				 parlay::sequence<balls_type> &sums,
+				 bucket_type const tags_num);
 
-	template <typename Leaf, typename Interior, typename PrepareFunc,
-		  typename... Args>
-	Node *RebuildWithInsert(Node *T, PrepareFunc prepare_func, Slice In,
-				Args &&...args);
-
-	template <typename Leaf, typename Interior, bool granularity,
-		  typename... Args>
-	Node *RebuildSingleTree(Node *T, Args &&...args);
-
-	template <typename Leaf, IsBinaryNode Interior, bool granularity,
+	template <typename leaf_type, typename interior_type,
 		  typename PrepareFunc, typename... Args>
-	Node *RebuildTreeRecursive(Node *T, PrepareFunc &&prepare_func,
-				   bool const allow_rebuild, Args &&...args);
+	node *rebuild_with_insert(node *T, PrepareFunc prepare_func,
+				  slice_type in, Args &&...args);
 
-	template <typename Leaf, IsMultiNode Interior, bool granularity,
-		  typename PrepareFunc, typename... Args>
-	Node *RebuildTreeRecursive(Node *T, PrepareFunc &&prepare_func,
-				   bool const allow_rebuild, Args &&...args);
+	template <typename leaf_type, typename interior_type, bool granularity,
+		  typename... Args>
+	node *rebuild_single_tree(node *T, Args &&...args);
 
-	template <typename Leaf, IsBinaryNode Interior, typename Base>
-	static Base BuildInnerTree(BucketType idx, HyperPlaneSeq const &pivots,
-				   parlay::sequence<Base> const &tree_nodes);
+	template <typename leaf_type, is_binary_node interior_type,
+		  bool granularity, typename PrepareFunc, typename... Args>
+	node *rebuild_tree_recursive(node *T, PrepareFunc &&prepare_func,
+				     bool const allow_rebuild, Args &&...args);
 
-	template <IsMultiNode Interior>
-	static Node *BuildInnerTree(BucketType idx, HyperPlaneSeq const &pivots,
-				    parlay::sequence<Node *> const &tree_nodes);
+	template <typename leaf_type, is_multi_node interior_type,
+		  bool granularity, typename PrepareFunc, typename... Args>
+	node *rebuild_tree_recursive(node *T, PrepareFunc &&prepare_func,
+				     bool const allow_rebuild, Args &&...args);
+
+	template <typename leaf_type, is_binary_node interior_type,
+		  typename Base>
+	static Base build_inner_tree(bucket_type idx,
+				     hyper_plane_seq_type const &pivots,
+				     parlay::sequence<Base> const &tree_nodes);
+
+	template <is_multi_node interior_type>
+	static node *
+	build_inner_tree(bucket_type idx, hyper_plane_seq_type const &pivots,
+			 parlay::sequence<node *> const &tree_nodes);
 
 	// NOTE: delete tree
-	template <SupportsForceParallel Interior, bool granularity>
-	inline static bool ForceParallelRecursion(Interior const *T);
+	template <supports_force_parallel interior_type, bool granularity>
+	inline static bool force_parallel_recursion(interior_type const *T);
 
 	/*
-	 * Needed because DeleteTree is virtual. The derived destructor does the
-	 * freeing; calling a pure virtual from here would be too late.
+	 * Needed because delete_tree is virtual. The derived destructor does
+	 * the freeing; calling a pure virtual from here would be too late.
 	 */
-	virtual ~BaseTree() = default;
+	virtual ~base_tree() = default;
 
-	constexpr virtual void DeleteTree() = 0;
+	constexpr virtual void delete_tree() = 0;
 
-	template <typename Leaf, typename Interior>
-	void DeleteTreeWrapper();
+	template <typename leaf_type, typename interior_type>
+	void delete_tree_wrapper();
 
-	template <typename Leaf, IsBinaryNode Interior, bool granularity = true>
-	static void DeleteTreeRecursive(Node *T);
-
-	template <typename Leaf, IsMultiNode Interior, bool granularity = true>
-	static void DeleteTreeRecursive(Node *T);
-
-	template <typename Leaf, IsDynamicNode Interior,
+	template <typename leaf_type, is_binary_node interior_type,
 		  bool granularity = true>
-	static void DeleteTreeRecursive(Node *T);
+	static void delete_tree_recursive(node *T);
 
-	// NOTE: KNN query stuffs
-	static inline DisType P2PDistanceSquare(Point const &p, Point const &q);
+	template <typename leaf_type, is_multi_node interior_type,
+		  bool granularity = true>
+	static void delete_tree_recursive(node *T);
 
-	static inline DisType P2BMinDistanceSquare(Point const &p,
-						   Box const &a);
+	template <typename leaf_type, is_dynamic_node interior_type,
+		  bool granularity = true>
+	static void delete_tree_recursive(node *T);
 
-	static inline DisType P2BMaxDistanceSquare(Point const &p,
-						   Box const &a);
+	// NOTE: knn query stuffs
+	static inline dis_type p2p_distance_square(Point const &p,
+						   Point const &q);
 
-	static inline double P2CMinDistance(Point const &p, Point const &center,
-					    DisType const r);
+	static inline dis_type p2b_min_distance_square(Point const &p,
+						       box_type const &a);
+
+	static inline dis_type p2b_max_distance_square(Point const &p,
+						       box_type const &a);
+
+	static inline double
+	p2c_min_distance(Point const &p, Point const &center, dis_type const r);
 
 	template <typename CircleType>
-	static inline double P2CMinDistance(Point const &p,
-					    CircleType const &cl);
+	static inline double p2c_min_distance(Point const &p,
+					      CircleType const &cl);
 
-	static inline DisType InterruptibleDistance(Point const &p,
-						    Point const &q, DisType up);
+	static inline dis_type
+	interruptible_distance(Point const &p, Point const &q, dis_type up);
 
 	// NOTE: searech knn in the leaf
-	template <typename Leaf, typename Range>
-	static void KNNLeaf(Node *T, Point const &q,
-			    kBoundedQueue<Point, Range> &bq);
+	template <typename leaf_type, typename Range>
+	static void knn_leaf(node *T, Point const &q,
+			     bounded_queue<Point, Range> &bq);
 
 	// NOTE: search knn in the binary node
-	template <typename Leaf, IsBinaryNode Interior, typename Range>
-	static void KNNBinary(Node *T, Point const &q,
-			      kBoundedQueue<Point, Range> &bq,
-			      Box const &node_box, KNNLogger &logger)
-		requires std::same_as<typename Interior::ST, HyperPlane>;
+	template <typename leaf_type, is_binary_node interior_type,
+		  typename Range>
+	static void knn_binary(node *T, Point const &q,
+			       bounded_queue<Point, Range> &bq,
+			       box_type const &node_box, knn_logger &logger)
+		requires std::same_as<typename interior_type::st_type,
+				      hyper_plane_type>;
 
-	template <typename Leaf, IsBinaryNode Interior, typename Range>
-	static void KNNBinaryBox(Node *T, Point const &q,
-				 kBoundedQueue<Point, Range> &bq,
-				 KNNLogger &logger);
-
-	// NOTE: search knn in the expanded multi node
-	template <typename Leaf, IsMultiNode Interior, typename Range>
-	static void KNNMultiExpand(Node *T, Point const &q, DimsType dim,
-				   BucketType idx,
-				   kBoundedQueue<Point, Range> &bq,
-				   Box const &node_box, KNNLogger &logger);
+	template <typename leaf_type, is_binary_node interior_type,
+		  typename Range>
+	static void knn_binary_box(node *T, Point const &q,
+				   bounded_queue<Point, Range> &bq,
+				   knn_logger &logger);
 
 	// NOTE: search knn in the expanded multi node
-	template <typename Leaf, IsMultiNode Interior, typename Range>
+	template <typename leaf_type, is_multi_node interior_type,
+		  typename Range>
 	static void
-	KNNMultiExpandBox(Node *T, Point const &q, DimsType dim, BucketType idx,
-			  kBoundedQueue<Point, Range> &bq, KNNLogger &logger);
+	knn_multi_expand(node *T, Point const &q, dims_type dim,
+			 bucket_type idx, bounded_queue<Point, Range> &bq,
+			 box_type const &node_box, knn_logger &logger);
+
+	// NOTE: search knn in the expanded multi node
+	template <typename leaf_type, is_multi_node interior_type,
+		  typename Range>
+	static void knn_multi_expand_box(node *T, Point const &q, dims_type dim,
+					 bucket_type idx,
+					 bounded_queue<Point, Range> &bq,
+					 knn_logger &logger);
 
 	// NOTE: search knn in the multi node
-	template <typename Leaf, IsMultiNode Interior, typename Range>
-	static void KNNMulti(Node *T, Point const &q,
-			     kBoundedQueue<Point, Range> &bq,
-			     KNNLogger &logger);
+	template <typename leaf_type, is_multi_node interior_type,
+		  typename Range>
+	static void knn_multi(node *T, Point const &q,
+			      bounded_queue<Point, Range> &bq,
+			      knn_logger &logger);
 
 	// NOTE: search knn in the cover node
 	// TODO: change type of interior
-	template <typename Leaf, IsDynamicNode Interior, typename Range>
-	static void KNNCover(Node *T, Point const &q,
-			     kBoundedQueue<Point, Range> &bq,
-			     KNNLogger &logger);
+	template <typename leaf_type, is_dynamic_node interior_type,
+		  typename Range>
+	static void knn_cover(node *T, Point const &q,
+			      bounded_queue<Point, Range> &bq,
+			      knn_logger &logger);
 
 	// NOTE: range count stuffs
-	template <typename Leaf>
-	static size_t RangeCountRectangleLeaf(Node *T, Box const &query_box);
+	template <typename leaf_type>
+	static size_t range_count_rectangle_leaf(node *T,
+						 box_type const &query_box);
 
-	template <typename Leaf, IsBinaryNode Interior>
-	static size_t RangeCountRectangle(Node *T, Box const &query_box,
-					  Box const &node_box,
-					  RangeQueryLogger &logger);
+	template <typename leaf_type, is_binary_node interior_type>
+	static size_t range_count_rectangle(node *T, box_type const &query_box,
+					    box_type const &node_box,
+					    range_query_logger &logger);
 
-	template <typename Leaf, IsMultiNode Interior>
-	static size_t RangeCountRectangle(Node *T, Box const &query_box,
-					  Box const &node_box, DimsType dim,
-					  BucketType idx,
-					  RangeQueryLogger &logger);
+	template <typename leaf_type, is_multi_node interior_type>
+	static size_t range_count_rectangle(node *T, box_type const &query_box,
+					    box_type const &node_box,
+					    dims_type dim, bucket_type idx,
+					    range_query_logger &logger);
 
-	// template <typename Leaf, IsBinaryNode Interior>
-	// static size_t RangeCountRadius(Node* T, NormalCircle const& cl,
-	//                                Box const& node_box);
-
-	// NOTE: range query stuffs
-	template <typename Leaf, typename Range>
-	static void RangeQueryLeaf(Node *T, Range Out, size_t &s,
-				   Box const &query_box);
-
-	template <typename Leaf, IsBinaryNode Interior, typename Range>
-	static void RangeQuerySerialRecursive(Node *T, Range Out, size_t &s,
-					      Box const &query_box,
-					      Box const &node_box,
-					      RangeQueryLogger &logger);
-
-	// template <typename Leaf, IsMultiNode Interior>
-	// static size_t RangeCountRadius(Node* T, NormalCircle const& cl,
-	//                                Box const& node_box);
+	// template <typename leaf_type, is_binary_node interior_type>
+	// static size_t RangeCountRadius(node* T, normal_circle const& cl,
+	//                                box_type const& node_box);
 
 	// NOTE: range query stuffs
-	template <typename Leaf, IsMultiNode Interior, typename Range>
-	static void RangeQuerySerialRecursive(Node *T, Range Out, size_t &s,
-					      Box const &query_box,
-					      Box const &node_box, DimsType dim,
-					      BucketType idx,
-					      RangeQueryLogger &logger);
+	template <typename leaf_type, typename Range>
+	static void range_query_leaf(node *T, Range out, size_t &s,
+				     box_type const &query_box);
+
+	template <typename leaf_type, is_binary_node interior_type,
+		  typename Range>
+	static void range_query_serial_recursive(node *T, Range out, size_t &s,
+						 box_type const &query_box,
+						 box_type const &node_box,
+						 range_query_logger &logger);
+
+	// template <typename leaf_type, is_multi_node interior_type>
+	// static size_t RangeCountRadius(node* T, normal_circle const& cl,
+	//                                box_type const& node_box);
+
+	// NOTE: range query stuffs
+	template <typename leaf_type, is_multi_node interior_type,
+		  typename Range>
+	static void range_query_serial_recursive(node *T, Range out, size_t &s,
+						 box_type const &query_box,
+						 box_type const &node_box,
+						 dims_type dim, bucket_type idx,
+						 range_query_logger &logger);
 
 	// NOTE: utility
 	// TODO: better evaluate the parallel recursion function
-	template <typename Leaf, IsBinaryNode Interior, typename Range,
-		  bool granularity = true>
-	static void FlattenRec(Node *T, Range Out);
+	template <typename leaf_type, is_binary_node interior_type,
+		  typename Range, bool granularity = true>
+	static void flatten_rec(node *T, Range out);
 
-	template <typename Leaf, typename Interior, typename Range,
+	template <typename leaf_type, typename interior_type, typename Range,
 		  bool granularity = true>
-	static void FlattenRec(Node *T, Range Out)
-		requires(!IsBinaryNode<Interior>);
+	static void flatten_rec(node *T, Range out)
+		requires(!is_binary_node<interior_type>);
 
-	template <typename Leaf, typename Range>
-	static void ExtractPointsInLeaf(Node *T, Range Out);
+	template <typename leaf_type, typename Range>
+	static void extract_points_in_leaf(node *T, Range out);
 
-	template <typename Leaf, IsMultiNode Interior, typename Range,
-		  bool granularity = true>
-	static void PartialFlatten(Node *T, Range Out, BucketType idx);
+	template <typename leaf_type, is_multi_node interior_type,
+		  typename Range, bool granularity = true>
+	static void partial_flatten(node *T, Range out, bucket_type idx);
 
 	// NOTE: validations
-	template <typename Leaf, typename Interior>
-	Box CheckBox(Node *T, Box const &box);
+	template <typename leaf_type, typename interior_type>
+	box_type check_box(node *T, box_type const &box);
 
-	template <typename Leaf, typename Interior>
-	Points
-	CheckCover(Node *T,
-		   typename Interior::CircleType const &level_cover_circle);
+	template <typename leaf_type, typename interior_type>
+	points_type check_cover(
+		node *T,
+		typename interior_type::CircleType const &level_cover_circle);
 
-	template <typename Leaf, typename Interior>
-	static size_t CheckSize(Node *T);
+	template <typename leaf_type, typename interior_type>
+	static size_t check_size(node *T);
 
-	template <typename Leaf, typename Interior>
-	void CheckTreeSameSequential(Node *T, int dim);
+	template <typename leaf_type, typename interior_type>
+	void check_tree_same_sequential(node *T, int dim);
 
-	template <typename Leaf, typename Interior, typename SplitRule>
-	void Validate();
+	template <typename leaf_type, typename interior_type,
+		  typename SplitRule>
+	void validate();
 
-	template <typename Leaf, typename Interior>
-	size_t GetTreeHeight();
+	template <typename leaf_type, typename interior_type>
+	size_t get_tree_height();
 
-	template <typename Leaf, typename Interior>
-	size_t GetMaxTreeDepth(Node *T, size_t deep);
+	template <typename leaf_type, typename interior_type>
+	size_t get_max_tree_depth(node *T, size_t deep);
 
-	template <typename Leaf, typename Interior>
-	double GetAveTreeHeight();
+	template <typename leaf_type, typename interior_type>
+	double get_ave_tree_height();
 
-	template <typename Leaf, typename Interior>
-	size_t CountTreeNodesNum(Node *T);
+	template <typename leaf_type, typename interior_type>
+	size_t count_tree_nodes_num(node *T);
 
-	template <typename Leaf, typename Interior>
-	void CountTreeHeights(Node *T, size_t deep, size_t &idx,
-			      parlay::sequence<size_t> &heights);
+	template <typename leaf_type, typename interior_type>
+	void count_tree_heights(node *T, size_t deep, size_t &idx,
+				parlay::sequence<size_t> &heights);
 
 	// NOTE: param interfaces
-	void SetRoot(Node *root)
+	void set_root(node *root)
 	{
 		this->root_ = root;
 	}
 
-	Node *GetRoot() const
+	node *get_root() const
 	{
 		return this->root_;
 	}
 
-	size_t GetSize() const
+	size_t get_size() const
 	{
 		return this->root_ ? this->root_->size : 0;
 	}
 
-	Box GetRootBox() const
+	box_type get_root_box() const
 	{
 		return this->tree_box_;
 	}
 
-	consteval static auto GetBuildDepthOnce()
+	consteval static auto get_build_depth_once()
 	{
-		return static_cast<int>(kBuildDepthOnce);
+		return static_cast<int>(build_depth_once);
 	}
 
 protected:
-	Node *root_ = nullptr;
+	node *root_ = nullptr;
 	parlay::internal::timer timer;
-	/* Empty box is the identity for GetBox(); BasicPoint() leaves junk. */
-	Box tree_box_ = GetEmptyBox();
+	/* Empty box is the identity for get_box(); basic_point() leaves
+	 * junk. */
+	box_type tree_box_ = get_empty_box();
 };
 
 } // namespace psi

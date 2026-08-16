@@ -2,7 +2,7 @@
 #include "test_framework.h"
 
 template <typename InputPoint>
-void RoundDataAndShift(commandLine &P)
+void round_data_and_shift(commandLine &P)
 {
 	std::string input_path, output_suffix, output_path;
 	int pts_dim, multiply_offset;
@@ -14,9 +14,9 @@ void RoundDataAndShift(commandLine &P)
 
 	std::cout << input_path << std::endl;
 	std::cout << output_suffix << std::endl;
-	using OutputPoint =
-		AugPoint<int64_t, InputPoint::GetDim(), Wrapper::AugId>;
-	using Laundy = DataLaundry<InputPoint, OutputPoint>;
+	using output_point_type =
+		aug_point<int64_t, InputPoint::get_dim(), wrapper::aug_id>;
+	using laundy_type = data_laundry<InputPoint, output_point_type>;
 
 	std::cout << "Input: " << input_path << std::endl;
 	output_path =
@@ -25,31 +25,31 @@ void RoundDataAndShift(commandLine &P)
 
 	parlay::sequence<InputPoint> wp;
 	read_points<InputPoint>(input_path.c_str(), wp, 0);
-	auto bb = psi::BaseTree<InputPoint>::GetBox(parlay::make_slice(wp));
+	auto bb = psi::base_tree<InputPoint>::get_box(parlay::make_slice(wp));
 	std::cout << bb.first << " " << bb.second << std::endl;
 
-	// PrintPoints(wp);
-	auto new_wp = Laundy::RoundDown(wp, multiply_offset);
-	// PrintPoints(new_wp);
-	new_wp = Laundy::RemoveDuplicates(new_wp);
-	// PrintPoints(new_wp);
-	new_wp = Laundy::ShiftToFirstRegion(new_wp);
-	// PrintPoints(new_wp);
-	if (!Laundy::CheckCoordWithinRange(new_wp)) {
-		throw std::runtime_error("ShiftToFirstRegion failed");
+	// print_points(wp);
+	auto new_wp = laundy_type::round_down(wp, multiply_offset);
+	// print_points(new_wp);
+	new_wp = laundy_type::remove_duplicates(new_wp);
+	// print_points(new_wp);
+	new_wp = laundy_type::shift_to_first_region(new_wp);
+	// print_points(new_wp);
+	if (!laundy_type::check_coord_within_range(new_wp)) {
+		throw std::runtime_error("shift_to_first_region failed");
 		exit(1);
 	}
 
-	auto new_bb =
-		psi::BaseTree<OutputPoint>::GetBox(parlay::make_slice(new_wp));
+	auto new_bb = psi::base_tree<output_point_type>::get_box(
+		parlay::make_slice(new_wp));
 	std::cout << new_bb.first << " " << new_bb.second << std::endl;
 
 	std::cout << "Writing... " << std::endl;
-	PrintToFile(output_path, new_wp);
+	print_to_file(output_path, new_wp);
 }
 
 template <typename InputPoint>
-void SortByCoord(commandLine &P)
+void sort_by_coord(commandLine &P)
 {
 	std::string input_path, output_suffix, output_path;
 	int pts_dim, sort_dim;
@@ -59,9 +59,9 @@ void SortByCoord(commandLine &P)
 	pts_dim = P.getOptionIntValue("-d", 2);
 	sort_dim = P.getOptionIntValue("-sort_dim", 0);
 
-	using OutputPoint =
-		AugPoint<int64_t, InputPoint::GetDim(), Wrapper::AugId>;
-	using Laundy = DataLaundry<InputPoint, OutputPoint>;
+	using output_point_type =
+		aug_point<int64_t, InputPoint::get_dim(), wrapper::aug_id>;
+	using laundy_type = data_laundry<InputPoint, output_point_type>;
 
 	std::cout << "Input: " << input_path << std::endl;
 	output_path =
@@ -76,7 +76,7 @@ void SortByCoord(commandLine &P)
 	});
 
 	std::cout << "Writing... " << std::endl;
-	PrintToFile(output_path, new_wp);
+	print_to_file(output_path, new_wp);
 }
 
 int main(int argc, char *argv[])
@@ -92,34 +92,34 @@ int main(int argc, char *argv[])
 
 	auto apply = [&]<typename InputPoint>() {
 		if (usage & (1 << 0)) {
-			RoundDataAndShift<InputPoint>(P);
+			round_data_and_shift<InputPoint>(P);
 		} else if (usage & (1 << 1)) {
-			SortByCoord<InputPoint>(P);
+			sort_by_coord<InputPoint>(P);
 		}
 	};
 
 	auto generate_with_coord_type = [&]<typename CoordType>() {
 		if (pts_dim == 2) {
-			apply.template operator()<
-				psi::AugPoint<CoordType, 2, Wrapper::AugId>>();
+			apply.template operator()<psi::aug_point<
+				CoordType, 2, wrapper::aug_id>>();
 		} else if (pts_dim == 3) {
-			apply.template operator()<
-				psi::AugPoint<CoordType, 3, Wrapper::AugId>>();
+			apply.template operator()<psi::aug_point<
+				CoordType, 3, wrapper::aug_id>>();
 		} else if (pts_dim == 5) {
-			apply.template operator()<
-				psi::AugPoint<CoordType, 5, Wrapper::AugId>>();
+			apply.template operator()<psi::aug_point<
+				CoordType, 5, wrapper::aug_id>>();
 		} else if (pts_dim == 7) {
-			apply.template operator()<
-				psi::AugPoint<CoordType, 7, Wrapper::AugId>>();
+			apply.template operator()<psi::aug_point<
+				CoordType, 7, wrapper::aug_id>>();
 		} else if (pts_dim == 9) {
-			apply.template operator()<
-				psi::AugPoint<CoordType, 9, Wrapper::AugId>>();
+			apply.template operator()<psi::aug_point<
+				CoordType, 9, wrapper::aug_id>>();
 		} else if (pts_dim == 12) {
-			apply.template operator()<
-				psi::AugPoint<CoordType, 12, Wrapper::AugId>>();
+			apply.template operator()<psi::aug_point<
+				CoordType, 12, wrapper::aug_id>>();
 		} else if (pts_dim == 16) {
-			apply.template operator()<
-				psi::AugPoint<CoordType, 16, Wrapper::AugId>>();
+			apply.template operator()<psi::aug_point<
+				CoordType, 16, wrapper::aug_id>>();
 		} else {
 			throw std::runtime_error("Invalid dimension");
 		}

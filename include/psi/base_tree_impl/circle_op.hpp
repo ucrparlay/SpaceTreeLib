@@ -8,208 +8,216 @@
 
 namespace psi
 {
-template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
-	  uint_fast8_t kImbaRatio>
+template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
+	  uint_fast8_t ImbaRatio>
 template <typename CircleType>
-inline bool BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::LegalCircle(
+inline bool base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::legal_circle(
 	CircleType const &cl)
 {
-	return Num::Geq(cl.GetRadius(), 0);
+	return num_type::geq(cl.get_radius(), 0);
 }
 
 // NOTE: point within the circle
-template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
-	  uint_fast8_t kImbaRatio>
+template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
+	  uint_fast8_t ImbaRatio>
 template <typename CircleType>
-inline bool BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::WithinCircle(
+inline bool base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::within_circle(
 	Point const &p, CircleType const &cl)
 {
-	Coord r = 0;
-	for (DimsType i = 0; i < kDim; ++i) {
-		r += (p.pnt[i] - cl.GetCenter().pnt[i]) *
-		     (p.pnt[i] - cl.GetCenter().pnt[i]);
-		if (Num::Gt(r, cl.GetRadius() * cl.GetRadius()))
+	coord_type r = 0;
+	for (dims_type i = 0; i < num_dims; ++i) {
+		r += (p.pnt[i] - cl.get_center().pnt[i]) *
+		     (p.pnt[i] - cl.get_center().pnt[i]);
+		if (num_type::gt(r, cl.get_radius() * cl.get_radius()))
 			return false;
 	}
-	assert(Num::Leq(r, cl.GetRadius() * cl.GetRadius()));
+	assert(num_type::leq(r, cl.get_radius() * cl.get_radius()));
 	return true;
 }
 
 // NOTE: box within the circle
-template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
-	  uint_fast8_t kImbaRatio>
+template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
+	  uint_fast8_t ImbaRatio>
 template <typename CircleType>
-inline bool BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::WithinCircle(
-	Box const &box, CircleType const &cl)
+inline bool base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::within_circle(
+	box_type const &box, CircleType const &cl)
 {
-	assert(LegalBox(box));
-	assert(LegalCircle(cl));
+	assert(legal_box(box));
+	assert(legal_circle(cl));
 
 	// NOTE: the logical is same as p2b_max_distance <= radius
-	Coord r = 0;
-	for (DimsType i = 0; i < kDim; ++i) {
-		if (Num::Lt(cl.GetCenter().pnt[i],
-			    (box.first.pnt[i] + box.second.pnt[i]) / 2)) {
-			r += (box.second.pnt[i] - cl.GetCenter().pnt[i]) *
-			     (box.second.pnt[i] - cl.GetCenter().pnt[i]);
+	coord_type r = 0;
+	for (dims_type i = 0; i < num_dims; ++i) {
+		if (num_type::lt(cl.get_center().pnt[i],
+				 (box.first.pnt[i] + box.second.pnt[i]) / 2)) {
+			r += (box.second.pnt[i] - cl.get_center().pnt[i]) *
+			     (box.second.pnt[i] - cl.get_center().pnt[i]);
 		} else {
-			r += (cl.GetCenter().pnt[i] - box.first.pnt[i]) *
-			     (cl.GetCenter().pnt[i] - box.first.pnt[i]);
+			r += (cl.get_center().pnt[i] - box.first.pnt[i]) *
+			     (cl.get_center().pnt[i] - box.first.pnt[i]);
 		}
-		if (Num::Gt(r, cl.GetRadiusSquare()))
+		if (num_type::gt(r, cl.get_radius_square()))
 			return false;
 	}
-	assert(Num::Leq(r, cl.GetRadiusSquare()));
+	assert(num_type::leq(r, cl.get_radius_square()));
 	return true;
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
-	  uint_fast8_t kImbaRatio>
+template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
+	  uint_fast8_t ImbaRatio>
 template <typename CircleType>
 inline bool
-BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::CircleIntersectBox(
-	CircleType const &cl, Box const &box)
+base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::circle_intersect_box(
+	CircleType const &cl, box_type const &box)
 {
-	assert(LegalBox(box));
-	assert(LegalCircle(cl));
+	assert(legal_box(box));
+	assert(legal_circle(cl));
 	// NOTE: the logical is same as p2b_min_distance > radius
-	Coord r = 0;
-	for (DimsType i = 0; i < kDim; ++i) {
-		if (Num::Lt(cl.GetCenter().pnt[i], box.first.pnt[i])) {
-			r += (box.first.pnt[i] - cl.GetCenter().pnt[i]) *
-			     (box.first.pnt[i] - cl.GetCenter().pnt[i]);
-		} else if (Num::Gt(cl.GetCenter().pnt[i], box.second.pnt[i])) {
-			r += (cl.GetCenter().pnt[i] - box.second.pnt[i]) *
-			     (cl.GetCenter().pnt[i] - box.second.pnt[i]);
+	coord_type r = 0;
+	for (dims_type i = 0; i < num_dims; ++i) {
+		if (num_type::lt(cl.get_center().pnt[i], box.first.pnt[i])) {
+			r += (box.first.pnt[i] - cl.get_center().pnt[i]) *
+			     (box.first.pnt[i] - cl.get_center().pnt[i]);
+		} else if (num_type::gt(cl.get_center().pnt[i],
+					box.second.pnt[i])) {
+			r += (cl.get_center().pnt[i] - box.second.pnt[i]) *
+			     (cl.get_center().pnt[i] - box.second.pnt[i]);
 		}
-		if (Num::Gt(r, cl.GetRadius() * cl.GetRadius()))
+		if (num_type::gt(r, cl.get_radius() * cl.get_radius()))
 			return false; //* not intersect
 	}
-	assert(Num::Leq(r, cl.GetRadius() * cl.GetRadius()));
+	assert(num_type::leq(r, cl.get_radius() * cl.get_radius()));
 	return true;
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
-	  uint_fast8_t kImbaRatio>
+template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
+	  uint_fast8_t ImbaRatio>
 template <typename CircleType>
 inline CircleType
-BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::GetCircle(Box const &box)
+base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::get_circle(
+	box_type const &box)
 {
-	assert(LegalBox(box) && box != GetEmptyBox());
+	assert(legal_box(box) && box != get_empty_box());
 
-	Coord r = 0;
-	if constexpr (kDim == 2) {
-		r = Num::DivideTwoCeil(box.second.pnt[0] - box.first.pnt[0]) *
-			    Num::DivideTwoCeil(box.second.pnt[0] -
-					       box.first.pnt[0]) +
-		    Num::DivideTwoCeil(box.second.pnt[1] - box.first.pnt[1]) *
-			    Num::DivideTwoCeil(box.second.pnt[1] -
-					       box.first.pnt[1]);
-	} else if constexpr (kDim == 3) {
-		r = Num::DivideTwoCeil(box.second.pnt[0] - box.first.pnt[0]) *
-			    Num::DivideTwoCeil(box.second.pnt[0] -
-					       box.first.pnt[0]) +
-		    Num::DivideTwoCeil(box.second.pnt[1] - box.first.pnt[1]) *
-			    Num::DivideTwoCeil(box.second.pnt[1] -
-					       box.first.pnt[1]) +
-		    Num::DivideTwoCeil(box.second.pnt[2] - box.first.pnt[2]) *
-			    Num::DivideTwoCeil(box.second.pnt[2] -
-					       box.first.pnt[2]);
+	coord_type r = 0;
+	if constexpr (num_dims == 2) {
+		r = num_type::divide_two_ceil(box.second.pnt[0] -
+					      box.first.pnt[0]) *
+			    num_type::divide_two_ceil(box.second.pnt[0] -
+						      box.first.pnt[0]) +
+		    num_type::divide_two_ceil(box.second.pnt[1] -
+					      box.first.pnt[1]) *
+			    num_type::divide_two_ceil(box.second.pnt[1] -
+						      box.first.pnt[1]);
+	} else if constexpr (num_dims == 3) {
+		r = num_type::divide_two_ceil(box.second.pnt[0] -
+					      box.first.pnt[0]) *
+			    num_type::divide_two_ceil(box.second.pnt[0] -
+						      box.first.pnt[0]) +
+		    num_type::divide_two_ceil(box.second.pnt[1] -
+					      box.first.pnt[1]) *
+			    num_type::divide_two_ceil(box.second.pnt[1] -
+						      box.first.pnt[1]) +
+		    num_type::divide_two_ceil(box.second.pnt[2] -
+					      box.first.pnt[2]) *
+			    num_type::divide_two_ceil(box.second.pnt[2] -
+						      box.first.pnt[2]);
 	} else {
-		for (DimsType i = 0; i < kDim; ++i) {
-			r += Num::DivideTwoCeil(box.second.pnt[i] -
-						box.first.pnt[i]) *
-			     Num::DivideTwoCeil(box.second.pnt[i] -
-						box.first.pnt[i]);
+		for (dims_type i = 0; i < num_dims; ++i) {
+			r += num_type::divide_two_ceil(box.second.pnt[i] -
+						       box.first.pnt[i]) *
+			     num_type::divide_two_ceil(box.second.pnt[i] -
+						       box.first.pnt[i]);
 		}
 	}
 
 	// std::cout << "r: " << std::sqrt(r) << '\n';
-	// assert(WithinCircle(
+	// assert(within_circle(
 	//     box,
-	//     CircleType{GetBoxCenter(box),
-	//     CircleType::ComputeRadius(std::sqrt(r))}));
+	//     CircleType{get_box_center(box),
+	//     CircleType::compute_radius(std::sqrt(r))}));
 
-	return CircleType{GetBoxCenter(box),
-			  CircleType::ComputeRadius(std::sqrt(r))};
+	return CircleType{get_box_center(box),
+			  CircleType::compute_radius(std::sqrt(r))};
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
-	  uint_fast8_t kImbaRatio>
+template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
+	  uint_fast8_t ImbaRatio>
 template <typename CircleType>
 inline CircleType
-BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::GetCircle(Slice V)
+base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::get_circle(slice_type V)
 {
-	return GetCircle<CircleType>(GetBox(V));
+	return get_circle<CircleType>(get_box(V));
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
-	  uint_fast8_t kImbaRatio>
+template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
+	  uint_fast8_t ImbaRatio>
 template <typename CircleType>
 inline CircleType
-BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::GetCircle(
+base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::get_circle(
 	parlay::sequence<CircleType> const &circle_seq)
 {
 	CircleType circle = circle_seq[0];
 	for (size_t i = 1; i < circle_seq.size(); i++) {
-		circle = GetCircle(circle, circle_seq[i]);
+		circle = get_circle(circle, circle_seq[i]);
 	}
 	return circle;
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
-	  uint_fast8_t kImbaRatio>
+template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
+	  uint_fast8_t ImbaRatio>
 template <typename CircleType1, typename CircleType2>
 inline bool
-BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::CircleWithinCircle(
+base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::circle_within_circle(
 	CircleType1 const &a, CircleType2 const &b)
 {
-	assert(LegalCircle(a) && LegalCircle(b));
-	return Num::Leq(a.GetRadius(), b.GetRadius()) &&
-	       Num::Leq(P2PDistanceSquare(a.GetCenter(), b.GetCenter()),
-			(b.GetRadius() - a.GetRadius()) *
-				(b.GetRadius() - a.GetRadius()));
+	assert(legal_circle(a) && legal_circle(b));
+	return num_type::leq(a.get_radius(), b.get_radius()) &&
+	       num_type::leq(
+		       p2p_distance_square(a.get_center(), b.get_center()),
+		       (b.get_radius() - a.get_radius()) *
+			       (b.get_radius() - a.get_radius()));
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
-	  uint_fast8_t kImbaRatio>
+template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
+	  uint_fast8_t ImbaRatio>
 template <typename CircleType>
 inline CircleType
-BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::GetCircle(
+base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::get_circle(
 	CircleType const &a, CircleType const &b)
 {
-	if (CircleWithinCircle(a, b)) {
+	if (circle_within_circle(a, b)) {
 		return b;
-	} else if (CircleWithinCircle(b, a)) {
+	} else if (circle_within_circle(b, a)) {
 		return a;
 	}
 
 	Point center;
-	for (DimsType i = 0; i < kDim; ++i) {
+	for (dims_type i = 0; i < num_dims; ++i) {
 		center.pnt[i] =
-			(a.GetCenter().pnt[i] + b.GetCenter().pnt[i]) / 2;
+			(a.get_center().pnt[i] + b.get_center().pnt[i]) / 2;
 	}
 	double radius =
-		std::sqrt(P2PDistanceSquare(a.GetCenter(), b.GetCenter())) /
+		std::sqrt(p2p_distance_square(a.get_center(), b.get_center())) /
 			2.0 +
-		std::max(a.GetRadius(), b.GetRadius());
+		std::max(a.get_radius(), b.get_radius());
 
-	return CircleType{center, CircleType::ComputeRadius(radius)};
+	return CircleType{center, CircleType::compute_radius(radius)};
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
-	  uint_fast8_t kImbaRatio>
+template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
+	  uint_fast8_t ImbaRatio>
 template <typename CircleType>
 inline CircleType
-BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::GetCircle(
+base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::get_circle(
 	Point const &p, CircleType const &cl)
 {
-	if (PointWithinCircle(p, cl)) {
+	if (point_within_circle(p, cl)) {
 		return cl;
 	}
-	Coord radius = P2PDistanceSquare(p, cl.GetCenter());
-	return CircleType{cl.GetCenter(),
-			  CircleType::ComputeRadius(std::sqrt(radius))};
+	coord_type radius = p2p_distance_square(p, cl.get_center());
+	return CircleType{cl.get_center(),
+			  CircleType::compute_radius(std::sqrt(radius))};
 }
 
 } // namespace psi

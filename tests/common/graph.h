@@ -32,14 +32,14 @@
 //  intV should have enough range to represent |V|
 //  intE should have enough range to represent |E|
 //  intE defaults to intV if not specified
-using DefaultIntV = int;
-using DefaultWeight = float;
+using default_int_v_type = int;
+using default_weight_type = float;
 
 // **************************************************************
 //    EDGE ARRAY REPRESENTATION
 // **************************************************************
 
-template <class intV = DefaultIntV>
+template <class intV = default_int_v_type>
 struct edge {
 	intV u;
 	intV v;
@@ -51,7 +51,7 @@ struct edge {
 	}
 };
 
-template <class intV = DefaultIntV>
+template <class intV = default_int_v_type>
 struct edgeArray {
 	parlay::sequence<edge<intV>> E;
 	size_t numRows;
@@ -74,7 +74,7 @@ struct edgeArray {
 //    WEIGHED EDGE ARRAY
 // **************************************************************
 
-template <class intV = DefaultIntV, class Weight = DefaultWeight>
+template <class intV = default_int_v_type, class Weight = default_weight_type>
 struct wghEdge {
 	intV u, v;
 	Weight weight;
@@ -86,7 +86,7 @@ struct wghEdge {
 	}
 };
 
-template <class intV = DefaultIntV, class Weight = DefaultWeight>
+template <class intV = default_int_v_type, class Weight = default_weight_type>
 struct wghEdgeArray {
 	using W = Weight;
 	parlay::sequence<wghEdge<intV, W>> E;
@@ -109,36 +109,36 @@ struct wghEdgeArray {
 //    ADJACENCY ARRAY REPRESENTATION
 // **************************************************************
 
-template <class intV = DefaultIntV>
+template <class intV = default_int_v_type>
 struct vertex {
-	intV const *Neighbors;
+	intV const *neighbors;
 	intV degree;
-	vertex(intV const *N, intV const d) : Neighbors(N), degree(d)
+	vertex(intV const *N, intV const d) : neighbors(N), degree(d)
 	{
 	}
-	vertex() : Neighbors(NULL), degree(0)
+	vertex() : neighbors(NULL), degree(0)
 	{
 	}
 };
 
-template <class intV = DefaultIntV>
+template <class intV = default_int_v_type>
 struct mod_vertex {
-	intV *Neighbors;
+	intV *neighbors;
 	intV degree;
-	mod_vertex(intV *N, intV d) : Neighbors(N), degree(d)
+	mod_vertex(intV *N, intV d) : neighbors(N), degree(d)
 	{
 	}
-	mod_vertex() : Neighbors(NULL), degree(0)
+	mod_vertex() : neighbors(NULL), degree(0)
 	{
 	}
 };
 
-template <class intV = DefaultIntV, class intE = intV>
+template <class intV = default_int_v_type, class intE = intV>
 struct graph {
 	using vertexId = intV;
 	using edgeId = intE;
-	using MVT = mod_vertex<intV>;
-	using VT = vertex<intV>;
+	using mvt_type = mod_vertex<intV>;
+	using vt_type = vertex<intV>;
 	parlay::sequence<intE> offsets;
 	parlay::sequence<intV> edges;
 	parlay::sequence<intV> degrees; // not always used
@@ -172,18 +172,20 @@ struct graph {
 		});
 	}
 
-	MVT operator[](size_t const i)
+	mvt_type operator[](size_t const i)
 	{
-		return MVT(edges.data() + offsets[i],
-			   (degrees.size() == 0) ? offsets[i + 1] - offsets[i]
-						 : degrees[i]);
+		return mvt_type(edges.data() + offsets[i],
+				(degrees.size() == 0)
+					? offsets[i + 1] - offsets[i]
+					: degrees[i]);
 	}
 
-	const VT operator[](size_t const i) const
+	vt_type const operator[](size_t const i) const
 	{
-		return VT(edges.data() + offsets[i],
-			  (degrees.size() == 0) ? offsets[i + 1] - offsets[i]
-						: degrees[i]);
+		return vt_type(edges.data() + offsets[i],
+			       (degrees.size() == 0)
+				       ? offsets[i + 1] - offsets[i]
+				       : degrees[i]);
 	}
 
 	graph(parlay::sequence<intE> offsets_, parlay::sequence<intV> edges_,
@@ -201,21 +203,21 @@ struct graph {
 //    WEIGHTED ADJACENCY ARRAY REPRESENTATION
 // **************************************************************
 
-template <class intV = DefaultIntV, class Weight = DefaultWeight>
+template <class intV = default_int_v_type, class Weight = default_weight_type>
 struct wghVertex {
-	intV *Neighbors;
+	intV *neighbors;
 	intV degree;
 	Weight *nghWeights;
 	wghVertex(intV *N, Weight *W, intV d)
-	    : Neighbors(N), nghWeights(W), degree(d)
+	    : neighbors(N), nghWeights(W), degree(d)
 	{
 	}
 };
 
-template <class intV = DefaultIntV, class Weight = DefaultWeight,
+template <class intV = default_int_v_type, class Weight = default_weight_type,
 	  class intE = intV>
 struct wghGraph {
-	using VT = wghVertex<intV, Weight>;
+	using vt_type = wghVertex<intV, Weight>;
 	using W = Weight;
 	parlay::sequence<intE> offsets;
 	parlay::sequence<intV> edges;
@@ -237,11 +239,11 @@ struct wghGraph {
 	{
 		return offsets;
 	}
-	VT operator[](size_t const i)
+	vt_type operator[](size_t const i)
 	{
-		return VT(edges.begin() + offsets[i],
-			  weights.begin() + offsets[i],
-			  offsets[i + 1] - offsets[i]);
+		return vt_type(edges.begin() + offsets[i],
+			       weights.begin() + offsets[i],
+			       offsets[i + 1] - offsets[i]);
 	}
 
 	wghGraph(parlay::sequence<intE> offsets_, parlay::sequence<intV> edges_,
@@ -257,16 +259,16 @@ struct wghGraph {
 };
 
 template <typename intV>
-struct FlowGraph {
+struct flow_graph {
 	wghGraph<intV> g;
 	intV source, sink;
-	FlowGraph(wghGraph<intV> g, intV source, intV sink)
+	flow_graph(wghGraph<intV> g, intV source, intV sink)
 	    : g(g), source(source), sink(sink)
 	{
 	}
-	FlowGraph copy()
+	flow_graph copy()
 	{
-		return FlowGraph(g.copy(), source, sink);
+		return flow_graph(g.copy(), source, sink);
 	}
 	void del()
 	{

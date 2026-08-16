@@ -3,7 +3,7 @@
 #include "utils.h"
 
 // *******************************************
-//   GC
+//   gc_type
 // *******************************************
 
 namespace psi
@@ -19,7 +19,7 @@ struct gc {
 	using compressed_node = typename Node::compressed_node;
 	using alloc = typename Node::allocator;
 	using complex_alloc = typename Node::complex_allocator;
-	using ET = typename Node::ET;
+	using et_type = typename Node::et_type;
 	static constexpr size_t B = Node::B;
 
 	static void init()
@@ -214,7 +214,7 @@ struct gc {
 			return (strip_flag(p) == nullptr);
 		}
 
-		// Equivalent to GC::inc_if(r, extra_ptr);
+		// Equivalent to gc_type::inc_if(r, extra_ptr);
 		// This destructs the underlying pointer.
 		node *node_ptr()
 		{
@@ -240,7 +240,7 @@ struct gc {
 			return Node::size(strip_flag(p));
 		}
 
-		ET entry()
+		et_type entry()
 		{
 			assert(is_regular());
 			return Node::get_entry(strip_flag(p));

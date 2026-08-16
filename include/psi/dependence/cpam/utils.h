@@ -30,7 +30,7 @@ namespace utils
 //  constexpr const size_t compression_block_size = 32;
 //  //constexpr const size_t compression_block_size = 35;
 //
-//  static constexpr size_t kBaseCaseSize = 7*compression_block_size;
+//  static constexpr size_t base_case_size = 7*compression_block_size;
 //
 //  // for granularity control
 //  // if the size of a node is smaller than this number then it
@@ -105,26 +105,26 @@ struct get_right {
 };
 
 // should update the following to use more portable implementation
-template <typename ET>
-inline bool atomic_compare_and_swap(ET *a, ET oldval, ET newval)
+template <typename et_type>
+inline bool atomic_compare_and_swap(et_type *a, et_type oldval, et_type newval)
 {
-	static_assert(sizeof(ET) <= 8, "Bad CAS length");
-	if (sizeof(ET) == 1) {
+	static_assert(sizeof(et_type) <= 8, "Bad CAS length");
+	if (sizeof(et_type) == 1) {
 		uint8_t r_oval, r_nval;
-		memcpy(&r_oval, &oldval, sizeof(ET));
-		memcpy(&r_nval, &newval, sizeof(ET));
+		memcpy(&r_oval, &oldval, sizeof(et_type));
+		memcpy(&r_nval, &newval, sizeof(et_type));
 		return __sync_bool_compare_and_swap(
 			reinterpret_cast<uint8_t *>(a), r_oval, r_nval);
-	} else if (sizeof(ET) == 4) {
+	} else if (sizeof(et_type) == 4) {
 		uint32_t r_oval, r_nval;
-		memcpy(&r_oval, &oldval, sizeof(ET));
-		memcpy(&r_nval, &newval, sizeof(ET));
+		memcpy(&r_oval, &oldval, sizeof(et_type));
+		memcpy(&r_nval, &newval, sizeof(et_type));
 		return __sync_bool_compare_and_swap(
 			reinterpret_cast<uint32_t *>(a), r_oval, r_nval);
-	} else { // if (sizeof(ET) == 8) {
+	} else { // if (sizeof(et_type) == 8) {
 		uint64_t r_oval, r_nval;
-		memcpy(&r_oval, &oldval, sizeof(ET));
-		memcpy(&r_nval, &newval, sizeof(ET));
+		memcpy(&r_oval, &oldval, sizeof(et_type));
+		memcpy(&r_nval, &newval, sizeof(et_type));
 		return __sync_bool_compare_and_swap(
 			reinterpret_cast<uint64_t *>(a), r_oval, r_nval);
 	}
@@ -156,8 +156,8 @@ inline void write_add(E *a, EV b)
 	} while (!atomic_compare_and_swap(a, oldV, newV));
 }
 
-template <typename F, typename AT>
-static size_t PAM_linear_search(AT *A, size_t size, F const &less)
+template <typename F, typename at_type>
+static size_t pam_linear_search(at_type *A, size_t size, F const &less)
 {
 	for (size_t i = 0; i < size; i++)
 		if (!less(A[i]))
@@ -166,8 +166,8 @@ static size_t PAM_linear_search(AT *A, size_t size, F const &less)
 }
 
 // ?? why does PAM have its own binary search?
-template <typename F, typename AT>
-static size_t PAM_binary_search(AT *A, size_t n, F const &less)
+template <typename F, typename at_type>
+static size_t pam_binary_search(at_type *A, size_t n, F const &less)
 {
 	size_t start = 0;
 	size_t end = n;
@@ -178,7 +178,7 @@ static size_t PAM_binary_search(AT *A, size_t n, F const &less)
 		else
 			start = mid + 1;
 	}
-	size_t x = start + PAM_linear_search(A + start, end - start, less);
+	size_t x = start + pam_linear_search(A + start, end - start, less);
 	return x;
 }
 

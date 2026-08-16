@@ -14,71 +14,73 @@
 
 namespace psi
 {
-template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
-	  uint_fast8_t kImbaRatio>
-template <typename Leaf, typename Interior>
-decltype(auto) BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::RetrieveBox(
-	Node const *node)
-	requires(HasBox<typename Leaf::AT> && HasBox<typename Interior::AT>)
+template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
+	  uint_fast8_t ImbaRatio>
+template <typename leaf_type, typename interior_type>
+decltype(auto) base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::retrieve_box(
+	node const *node)
+	requires(has_box<typename leaf_type::at_type> &&
+		 has_box<typename interior_type::at_type>)
 {
-	return node->is_leaf ? static_cast<Leaf const *>(node)->GetBox()
-			     : static_cast<Interior const *>(node)->GetBox();
+	return node->is_leaf
+		       ? static_cast<leaf_type const *>(node)->get_box()
+		       : static_cast<interior_type const *>(node)->get_box();
 }
 
 // NOTE: update the info of T by new children L and R
-template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
-	  uint_fast8_t kImbaRatio>
-template <IsBinaryNode Interior, bool UpdateParFlag>
-inline void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::UpdateInterior(
-	Node *T, Node *L, Node *R)
+template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
+	  uint_fast8_t ImbaRatio>
+template <is_binary_node interior_type, bool UpdateParFlag>
+inline void base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::update_interior(
+	node *T, node *L, node *R)
 {
 	assert(!T->is_leaf);
-	Interior *TI = static_cast<Interior *>(T);
+	interior_type *ti = static_cast<interior_type *>(T);
 	if constexpr (UpdateParFlag) {
-		TI->ResetParallelFlag();
+		ti->reset_parallel_flag();
 	}
-	TI->size = L->size + R->size;
-	TI->left = L;
-	TI->right = R;
-	TI->UpdateAug(L, R);
+	ti->size = L->size + R->size;
+	ti->left = L;
+	ti->right = R;
+	ti->update_aug(L, R);
 	return;
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
-	  uint_fast8_t kImbaRatio>
-template <IsBinaryNode Interior, bool UpdateParFlag>
-inline void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::UpdateInterior(
-	Node *T, NodeBox const &L, NodeBox const &R)
+template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
+	  uint_fast8_t ImbaRatio>
+template <is_binary_node interior_type, bool UpdateParFlag>
+inline void base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::update_interior(
+	node *T, node_box_type const &L, node_box_type const &R)
 {
 	assert(!T->is_leaf);
-	Interior *TI = static_cast<Interior *>(T);
+	interior_type *ti = static_cast<interior_type *>(T);
 	if constexpr (UpdateParFlag) {
-		TI->ResetParallelFlag();
+		ti->reset_parallel_flag();
 	}
-	TI->size = L.first->size + R.first->size;
-	TI->left = L.first;
-	TI->right = R.first;
-	TI->UpdateAug(L.first, R.first);
+	ti->size = L.first->size + R.first->size;
+	ti->left = L.first;
+	ti->right = R.first;
+	ti->update_aug(L.first, R.first);
 	return;
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
-	  uint_fast8_t kImbaRatio>
-template <IsMultiNode Interior, bool UpdateParFlag>
-inline void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::UpdateInterior(
-	Node *T, typename Interior::NodeArr const &new_nodes)
+template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
+	  uint_fast8_t ImbaRatio>
+template <is_multi_node interior_type, bool UpdateParFlag>
+inline void base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::update_interior(
+	node *T, typename interior_type::node_arr_type const &new_nodes)
 {
 	assert(!T->is_leaf);
-	Interior *TI = static_cast<Interior *>(T);
+	interior_type *ti = static_cast<interior_type *>(T);
 	if constexpr (UpdateParFlag) {
-		TI->ResetParallelFlag();
+		ti->reset_parallel_flag();
 	}
 	/* size_t init: a plain 0 makes the accumulator int and truncates. */
-	TI->size = std::accumulate(
+	ti->size = std::accumulate(
 		new_nodes.begin(), new_nodes.end(), size_t{0},
-		[](size_t acc, Node *n) -> size_t { return acc + n->size; });
-	TI->tree_nodes = new_nodes;
-	TI->UpdateAug(new_nodes);
+		[](size_t acc, node *n) -> size_t { return acc + n->size; });
+	ti->tree_nodes = new_nodes;
+	ti->update_aug(new_nodes);
 	return;
 }
 } // namespace psi

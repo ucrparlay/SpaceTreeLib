@@ -3,26 +3,26 @@
 namespace pbbs
 {
 
-template <typename ET>
-inline bool atomic_compare_and_swap(ET *a, ET oldval, ET newval)
+template <typename et_type>
+inline bool atomic_compare_and_swap(et_type *a, et_type oldval, et_type newval)
 {
-	static_assert(sizeof(ET) <= 8, "Bad CAS length");
-	if (sizeof(ET) == 1) {
+	static_assert(sizeof(et_type) <= 8, "Bad CAS length");
+	if (sizeof(et_type) == 1) {
 		uint8_t r_oval, r_nval;
-		std::memcpy(&r_oval, &oldval, sizeof(ET));
-		std::memcpy(&r_nval, &newval, sizeof(ET));
+		std::memcpy(&r_oval, &oldval, sizeof(et_type));
+		std::memcpy(&r_nval, &newval, sizeof(et_type));
 		return __sync_bool_compare_and_swap(
 			reinterpret_cast<uint8_t *>(a), r_oval, r_nval);
-	} else if (sizeof(ET) == 4) {
+	} else if (sizeof(et_type) == 4) {
 		uint32_t r_oval, r_nval;
-		std::memcpy(&r_oval, &oldval, sizeof(ET));
-		std::memcpy(&r_nval, &newval, sizeof(ET));
+		std::memcpy(&r_oval, &oldval, sizeof(et_type));
+		std::memcpy(&r_nval, &newval, sizeof(et_type));
 		return __sync_bool_compare_and_swap(
 			reinterpret_cast<uint32_t *>(a), r_oval, r_nval);
-	} else { // if (sizeof(ET) == 8) {
+	} else { // if (sizeof(et_type) == 8) {
 		uint64_t r_oval, r_nval;
-		std::memcpy(&r_oval, &oldval, sizeof(ET));
-		std::memcpy(&r_nval, &newval, sizeof(ET));
+		std::memcpy(&r_oval, &oldval, sizeof(et_type));
+		std::memcpy(&r_nval, &newval, sizeof(et_type));
 		return __sync_bool_compare_and_swap(
 			reinterpret_cast<uint64_t *>(a), r_oval, r_nval);
 	}
@@ -61,10 +61,10 @@ inline void write_add(std::atomic<E> *a, EV b)
 	} while (!std::atomic_compare_exchange_strong(a, &oldV, newV));
 }
 
-template <typename ET, typename F>
-inline bool write_min(ET *a, ET b, F less)
+template <typename et_type, typename F>
+inline bool write_min(et_type *a, et_type b, F less)
 {
-	ET c;
+	et_type c;
 	bool r = 0;
 	do
 		c = *a;
@@ -72,10 +72,10 @@ inline bool write_min(ET *a, ET b, F less)
 	return r;
 }
 
-template <typename ET, typename F>
-inline bool write_min(std::atomic<ET> *a, ET b, F less)
+template <typename et_type, typename F>
+inline bool write_min(std::atomic<et_type> *a, et_type b, F less)
 {
-	ET c;
+	et_type c;
 	bool r = 0;
 	do
 		c = a->load();
@@ -84,10 +84,10 @@ inline bool write_min(std::atomic<ET> *a, ET b, F less)
 	return r;
 }
 
-template <typename ET, typename F>
-inline bool write_max(ET *a, ET b, F less)
+template <typename et_type, typename F>
+inline bool write_max(et_type *a, et_type b, F less)
 {
-	ET c;
+	et_type c;
 	bool r = 0;
 	do
 		c = *a;
@@ -95,10 +95,10 @@ inline bool write_max(ET *a, ET b, F less)
 	return r;
 }
 
-template <typename ET, typename F>
-inline bool write_max(std::atomic<ET> *a, ET b, F less)
+template <typename et_type, typename F>
+inline bool write_max(std::atomic<et_type> *a, et_type b, F less)
 {
-	ET c;
+	et_type c;
 	bool r = 0;
 	do
 		c = a->load();

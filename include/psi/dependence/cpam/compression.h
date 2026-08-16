@@ -19,18 +19,18 @@ struct diffencoded_entry_encoder {
 
 	template <class Entry, bool is_aug = false>
 	struct encoder {
-		using ET = typename Entry::entry_t;
+		using et_type = typename Entry::entry_t;
 		using K = typename Entry::key_t;
 		using V = typename Entry::val_t; // possibly empty (should
 						 // ensure that default_val in
 						 // set is empty)
 		static constexpr bool is_trivial = false; // to test
 
-		static inline void print_info(const ET &et)
+		static inline void print_info(et_type const &et)
 		{
 		}
 
-		static inline size_t encoded_size(ET *data, size_t size)
+		static inline size_t encoded_size(et_type *data, size_t size)
 		{
 			uint8_t stk[2 * sizeof(K)];
 			assert(size > 0);
@@ -50,14 +50,15 @@ struct diffencoded_entry_encoder {
 			return key_bytes + val_bytes;
 		}
 
-		static inline auto encode(ET *data, size_t size, uint8_t *bytes)
+		static inline auto encode(et_type *data, size_t size,
+					  uint8_t *bytes)
 		{
 			V *vals = (V *)bytes;
 			uint8_t *key_bytes = (bytes + size * sizeof(V));
 
 			if constexpr (is_aug) {
-				using AT = typename Entry::aug_t;
-				AT av = Entry::from_entry(data[0]);
+				using at_type = typename Entry::aug_t;
+				at_type av = Entry::from_entry(data[0]);
 				K prev_key = Entry::get_key(data[0]);
 				*((K *)key_bytes) = prev_key; // store first key
 				vals[0] = Entry::get_val(data[0]);
@@ -153,14 +154,14 @@ struct diffencoded_entry_encoder {
 			return true;
 		}
 
-		// F: ET -> K
+		// F: et_type -> K
 		template <class F, class Comp, class K>
-		static inline std::optional<ET>
+		static inline std::optional<et_type>
 		find(uint8_t *bytes, size_t size, F const &f, Comp const &comp,
 		     K const &k)
 		{
-			std::optional<ET> ret;
-			auto test = [&](const ET &et) -> bool {
+			std::optional<et_type> ret;
+			auto test = [&](et_type const &et) -> bool {
 				if (!(comp(k, f(et)) || comp(f(et), k))) {
 					ret = et;
 					return false;
@@ -182,21 +183,21 @@ struct diffencoded_entry_encoder {
 };
 
 struct null_encoder {
-	template <class ET>
-	static inline void print_info(const ET &et)
+	template <class et_type>
+	static inline void print_info(et_type const &et)
 	{
 		assert(false);
 		exit(-1);
 	}
-	template <class ET>
-	static inline size_t encoded_size(ET *data, size_t size)
+	template <class et_type>
+	static inline size_t encoded_size(et_type *data, size_t size)
 	{
 		assert(false);
 		exit(-1);
-		return sizeof(ET) * size;
+		return sizeof(et_type) * size;
 	}
-	template <class ET>
-	static inline void encode(ET *data, size_t size, uint8_t *bytes)
+	template <class et_type>
+	static inline void encode(et_type *data, size_t size, uint8_t *bytes)
 	{
 		assert(false);
 		exit(-1);
@@ -225,10 +226,10 @@ struct null_encoder {
 		assert(false);
 		exit(-1);
 	}
-	template <class ET, class F, class Comp, class K>
-	static inline std::optional<ET> find(uint8_t *bytes, size_t size,
-					     F const &f, Comp const &comp,
-					     K const &k)
+	template <class et_type, class F, class Comp, class K>
+	static inline std::optional<et_type> find(uint8_t *bytes, size_t size,
+						  F const &f, Comp const &comp,
+						  K const &k)
 	{
 		assert(false);
 		exit(-1);
@@ -246,34 +247,34 @@ struct default_entry_encoder {
 
 	template <class Entry, bool is_aug = false>
 	struct encoder {
-		using ET = typename Entry::entry_t;
+		using et_type = typename Entry::entry_t;
 		static constexpr bool is_trivial = false; // to test
 
-		static inline void print_info(const ET &et)
+		static inline void print_info(et_type const &et)
 		{
 		}
 
-		// TODO remove ET* data
-		static inline size_t encoded_size(ET *data, size_t size)
+		// TODO remove et_type* data
+		static inline size_t encoded_size(et_type *data, size_t size)
 		{
-			return sizeof(ET) * size;
+			return sizeof(et_type) * size;
 		}
 
 		template <typename T>
-		// static inline auto encode(ET* data, size_t size, uint8_t*
-		// bytes) {
+		// static inline auto encode(et_type* data, size_t size,
+		// uint8_t* bytes) {
 		static inline auto encode(T *data, size_t size, uint8_t *bytes)
 		{
 			if constexpr (is_aug) {
-				using AT = typename Entry::aug_t;
-				ET *ets = (ET *)bytes;
+				using at_type = typename Entry::aug_t;
+				et_type *ets = (et_type *)bytes;
 				// parlay::move_uninitialized(ets[0], data[0]);
 				parlay::assign_uninitialized(
 					ets[0],
 					basic_node_helpers::get_entry_indentity<
-						ET>(data[0]));
+						et_type>(data[0]));
 
-				AT av = Entry::from_entry(ets[0]);
+				at_type av = Entry::from_entry(ets[0]);
 				// assert(av.ref_cnt() == 1);
 				// size_t total_size = 0;
 				// total_size += std::get<1>(ets[0]).size();
@@ -285,7 +286,8 @@ struct default_entry_encoder {
 					parlay::assign_uninitialized(
 						ets[i],
 						basic_node_helpers::
-							get_entry_indentity<ET>(
+							get_entry_indentity<
+								et_type>(
 								data[i]));
 					auto next_av =
 						Entry::from_entry(ets[i]);
@@ -303,7 +305,7 @@ struct default_entry_encoder {
 				//  assert(av.ref_cnt() == 1);
 				return av;
 			} else {
-				ET *ets = (ET *)bytes;
+				et_type *ets = (et_type *)bytes;
 				for (size_t i = 0; i < size; i++) {
 					// parlay::move_uninitialized(ets[i],
 					// data[i]);
@@ -312,7 +314,8 @@ struct default_entry_encoder {
 					parlay::assign_uninitialized(
 						ets[i],
 						basic_node_helpers::
-							get_entry_indentity<ET>(
+							get_entry_indentity<
+								et_type>(
 								data[i]));
 				}
 			}
@@ -322,7 +325,7 @@ struct default_entry_encoder {
 		static inline void decode(uint8_t *bytes, size_t size,
 					  F const &f)
 		{
-			ET *ets = (ET *)bytes;
+			et_type *ets = (et_type *)bytes;
 			for (size_t i = 0; i < size; i++) {
 				f(ets[i]);
 			}
@@ -330,9 +333,9 @@ struct default_entry_encoder {
 
 		static inline void reorder(uint8_t *bytes, size_t size)
 		{
-			ET *ets = (ET *)bytes;
+			et_type *ets = (et_type *)bytes;
 			std::sort(ets, ets + size,
-				  [](const ET &a, const ET &b) {
+				  [](et_type const &a, et_type const &b) {
 					  return Entry::get_key(a) <
 						 Entry::get_key(b);
 				  });
@@ -351,8 +354,8 @@ struct default_entry_encoder {
 					  uint8_t *cur_bytes,
 					  size_t append_size, size_t cur_size)
 		{
-			ET *append_ets = (ET *)append_bytes;
-			ET *cur_ets = (ET *)cur_bytes;
+			et_type *append_ets = (et_type *)append_bytes;
+			et_type *cur_ets = (et_type *)cur_bytes;
 			for (size_t i = 0; i < append_size; i++) {
 				cur_ets[cur_size + i] = append_ets[i];
 			}
@@ -363,7 +366,7 @@ struct default_entry_encoder {
 		static inline bool decode_cond(uint8_t *bytes, size_t size,
 					       F const &f)
 		{
-			ET *ets = (ET *)bytes;
+			et_type *ets = (et_type *)bytes;
 			for (size_t i = 0; i < size; i++) {
 				if (!f(ets[i]))
 					return false;
@@ -372,29 +375,29 @@ struct default_entry_encoder {
 		}
 
 		// TODO: this find code should not be located here, but in
-		// map_ops? F: ET -> K
+		// map_ops? F: et_type -> K
 		template <class F, class Comp, class K>
-		static inline std::optional<ET>
+		static inline std::optional<et_type>
 		find(uint8_t *bytes, size_t size, F const &f, Comp const &comp,
 		     K const &k)
 		{
-			ET *ets = (ET *)bytes;
+			et_type *ets = (et_type *)bytes;
 			auto seq = parlay::delayed_seq<K>(
 				size, [&](size_t i) { return f(ets[i]); });
 			size_t ind =
 				parlay::internal::binary_search(seq, k, comp);
 			if ((ind < size) &&
 			    !(comp(seq[ind], k) || comp(k, seq[ind]))) {
-				return std::optional<ET>(ets[ind]);
+				return std::optional<et_type>(ets[ind]);
 			}
 			return std::nullopt;
 		}
 
 		static inline void destroy(uint8_t *bytes, size_t size)
 		{
-			ET *ets = (ET *)bytes;
+			et_type *ets = (et_type *)bytes;
 			for (size_t i = 0; i < size; i++) {
-				ets[i].~ET();
+				ets[i].~et_type();
 			}
 		}
 	};

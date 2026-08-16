@@ -10,97 +10,103 @@ namespace psi
 {
 
 /*
- * Default augmentations. KdTree and OrthTree use these unless told otherwise,
+ * Default augmentations. kd_tree and orth_tree use these unless told otherwise,
  * so the common case needs no user code.
  *
- * BT is a BaseTree used only for its box vocabulary, so BaseTree<Point> works
- * even though the tree instantiates BaseTree<Point, TheTree, ...>. Do not
- * reach for anything here that varies with the other parameters: BucketType
- * changes at kSkHeight > 7.
+ * base_type is a base_tree used only for its box vocabulary, so
+ * base_tree<Point> works even though the tree instantiates base_tree<Point,
+ * TheTree, ...>. Do not reach for anything here that varies with the other
+ * parameters: bucket_type changes at SkHeight > 7.
  */
 
 /* Bounding box of the points in a leaf. */
-template <typename BT>
-struct BoxLeafAug {
-	using Box = typename BT::Box;
-	using Slice = typename BT::Slice;
+template <typename base_type>
+struct box_leaf_aug {
+	using box_type = typename base_type::box_type;
+	using slice_type = typename base_type::slice_type;
 
-	BoxLeafAug() : box(BT::GetEmptyBox())
+	box_leaf_aug() : box(base_type::get_empty_box())
 	{
 	}
-	BoxLeafAug(Slice In) : box(BT::GetBox(In))
+	box_leaf_aug(slice_type in) : box(base_type::get_box(in))
 	{
 	}
 
-	Box const &GetBox() const
+	box_type const &get_box() const
 	{
 		return box;
 	}
 
-	void UpdateAug(Slice In)
+	void update_aug(slice_type in)
 	{
-		box = BT::GetBox(In);
+		box = base_type::get_box(in);
 	}
 
-	void Reset()
+	void reset()
 	{
-		box = BT::GetEmptyBox();
+		box = base_type::get_empty_box();
 	}
 
-	Box box;
+	box_type box;
 };
 
 /*
  * Bounding box of a subtree, plus the flag that picks parallel granularity.
  *
- * Create and Update are member templates because they are handed the very
- * Interior type that holds this augmentation. Both a binary and a multi-way
- * form are present; the node calls Create<Leaf, Interior>(...) and the last
- * parameter is deduced from the argument.
+ * create and update are member templates because they are handed the very
+ * interior_type that holds this augmentation. Both a binary and a
+ * multi-way form are present; the node calls create<leaf_type,
+ * interior_type>(...) and the last parameter is deduced from the argument.
  */
-template <typename BT>
-struct BoxInteriorAug {
-	using Box = typename BT::Box;
+template <typename base_type>
+struct box_interior_aug {
+	using box_type = typename base_type::box_type;
 
-	BoxInteriorAug() : box(BT::GetEmptyBox())
+	box_interior_aug() : box(base_type::get_empty_box())
 	{
 	}
-	BoxInteriorAug(Box const &b) : box(b)
+	box_interior_aug(box_type const &b) : box(b)
 	{
 	}
 
-	Box const &GetBox() const
+	box_type const &get_box() const
 	{
 		return box;
 	}
 
-	template <typename Leaf, typename Interior>
-	static Box Create(Node *l, Node *r)
+	template <typename leaf_type, typename interior_type>
+	static box_type create(node *l, node *r)
 	{
-		return BT::GetBox(BT::template RetrieveBox<Leaf, Interior>(l),
-				  BT::template RetrieveBox<Leaf, Interior>(r));
+		return base_type::get_box(
+			base_type::template retrieve_box<leaf_type,
+							 interior_type>(l),
+			base_type::template retrieve_box<leaf_type,
+							 interior_type>(r));
 	}
 
-	template <typename Leaf, typename Interior>
-	void Update(Node *l, Node *r)
+	template <typename leaf_type, typename interior_type>
+	void update(node *l, node *r)
 	{
-		box = Create<Leaf, Interior>(l, r);
+		box = create<leaf_type, interior_type>(l, r);
 	}
 
-	template <typename Leaf, typename Interior, typename TreeNodes>
-	static Box Create(TreeNodes const &nodes)
+	template <typename leaf_type, typename interior_type,
+		  typename TreeNodes>
+	static box_type create(TreeNodes const &nodes)
 	{
-		Box b = BT::GetEmptyBox();
+		box_type b = base_type::get_empty_box();
 		for (auto *t : nodes)
-			b = BT::GetBox(
-				b, BT::template RetrieveBox<Leaf, Interior>(t));
+			b = base_type::get_box(
+				b, base_type::template retrieve_box<
+					   leaf_type, interior_type>(t));
 		return b;
 	}
 
-	template <typename Leaf, typename Interior, typename TreeNodes>
-	void Update(TreeNodes const &nodes)
+	template <typename leaf_type, typename interior_type,
+		  typename TreeNodes>
+	void update(TreeNodes const &nodes)
 	{
-		box = Create<Leaf, Interior, TreeNodes>(nodes);
+		box = create<leaf_type, interior_type, TreeNodes>(nodes);
 	}
 
 	/*
@@ -108,34 +114,35 @@ struct BoxInteriorAug {
 	 * what batch delete needs: it shrinks sizes before the rebuild pass, so
 	 * a size test at that point would under-parallelise.
 	 */
-	void SetParallelFlag(bool const flag)
+	void set_parallel_flag(bool const flag)
 	{
 		force_par.emplace(flag);
 	}
 
-	void ResetParallelFlag()
+	void reset_parallel_flag()
 	{
 		force_par.reset();
 	}
 
-	bool GetParallelFlagIniStatus() const
+	bool get_parallel_flag_ini_status() const
 	{
 		return force_par.has_value();
 	}
 
-	bool ForceParallel(size_t sz) const
+	bool force_parallel(size_t sz) const
 	{
-		return force_par.has_value() ? force_par.value()
-					     : sz > BT::kSerialBuildCutoff;
+		return force_par.has_value()
+			       ? force_par.value()
+			       : sz > base_type::serial_build_cutoff;
 	}
 
-	void Reset()
+	void reset()
 	{
 		force_par.reset();
-		box = BT::GetEmptyBox();
+		box = base_type::get_empty_box();
 	}
 
-	Box box;
+	box_type box;
 	std::optional<bool> force_par;
 };
 

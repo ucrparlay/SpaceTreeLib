@@ -50,21 +50,21 @@ using edge = pair<index_pair, triang_t *>;
 
 // Hash table to store skinny triangles
 struct hashEdges {
-	using kType = index_pair;
+	using k_type = index_pair;
 	using eType = edge *;
 	eType empty()
 	{
 		return NULL;
 	}
-	kType getKey(eType v)
+	k_type getKey(eType v)
 	{
 		return v->first;
 	}
-	size_t hash(kType s)
+	size_t hash(k_type s)
 	{
 		return hash64(s.first) + 3 * (hash64(s.second));
 	}
-	int cmp(kType s1, kType s2)
+	int cmp(k_type s1, k_type s2)
 	{
 		return ((s1.first > s2.first)	  ? 1
 			: (s1.first < s2.first)	  ? -1
@@ -82,67 +82,67 @@ struct hashEdges {
 	}
 };
 
-using EdgeTable = hashtable<hashEdges>;
+using edge_table_type = hashtable<hashEdges>;
 
-EdgeTable makeEdgeTable(size_t m)
+edge_table_type makeEdgeTable(size_t m)
 {
-	return EdgeTable(m, hashEdges());
+	return edge_table_type(m, hashEdges());
 }
 
 std::pair<sequence<triang_t>, sequence<vertex_t>>
-topology_from_triangles(triangles<point> &Tri, size_t extra_points = 0)
+topology_from_triangles(triangles<point> &tris, size_t extra_points = 0)
 {
-	size_t n = Tri.numPoints();
-	size_t m = Tri.numTriangles();
+	size_t n = tris.numPoints();
+	size_t m = tris.numTriangles();
 
 	auto V = tabulate(n + extra_points, [&](size_t i) {
-		return (i < n) ? vertex_t(Tri.P[i], i) : vertex_t();
+		return (i < n) ? vertex_t(tris.P[i], i) : vertex_t();
 	});
 
-	sequence<triang_t> Triangs(m + 2 * extra_points);
+	sequence<triang_t> triangs(m + 2 * extra_points);
 	sequence<edge> E(m * 3);
-	EdgeTable ET = makeEdgeTable(m * 6);
+	edge_table_type et_type = makeEdgeTable(m * 6);
 	parallel_for(0, m, [&](size_t i) {
 		for (int j = 0; j < 3; j++) {
-			E[i * 3 + j] = edge(
-				index_pair(Tri.T[i][j], Tri.T[i][(j + 1) % 3]),
-				&Triangs[i]);
-			ET.insert(&E[i * 3 + j]);
-			Triangs[i].vtx[(j + 2) % 3] = &V[Tri.T[i][j]];
+			E[i * 3 + j] = edge(index_pair(tris.T[i][j],
+						       tris.T[i][(j + 1) % 3]),
+					    &triangs[i]);
+			et_type.insert(&E[i * 3 + j]);
+			triangs[i].vtx[(j + 2) % 3] = &V[tris.T[i][j]];
 		}
 	});
 
 	parallel_for(0, m, [&](size_t i) {
-		Triangs[i].id = i;
-		Triangs[i].initialized = 1;
-		Triangs[i].bad = 0;
+		triangs[i].id = i;
+		triangs[i].initialized = 1;
+		triangs[i].bad = 0;
 		for (int j = 0; j < 3; j++) {
-			index_pair key = {Tri.T[i][(j + 1) % 3], Tri.T[i][j]};
-			edge *Ed = ET.find(key);
-			if (Ed != NULL)
-				Triangs[i].ngh[j] = Ed->second;
+			index_pair key = {tris.T[i][(j + 1) % 3], tris.T[i][j]};
+			edge *ed = et_type.find(key);
+			if (ed != NULL)
+				triangs[i].ngh[j] = ed->second;
 			else {
-				Triangs[i].ngh[j] = NULL;
-				// Triangs[i].vtx[j]->boundary = 1;
-				// Triangs[i].vtx[(j+2)%3]->boundary = 1;
+				triangs[i].ngh[j] = NULL;
+				// triangs[i].vtx[j]->boundary = 1;
+				// triangs[i].vtx[(j+2)%3]->boundary = 1;
 			}
 		}
 	});
-	return std::pair(std::move(Triangs), std::move(V));
+	return std::pair(std::move(triangs), std::move(V));
 }
 
 // Note that this is not currently a complete test of correctness
 // For example it would allow a set of disconnected triangles, or even no
 // triangles
-bool check_delaunay(sequence<triang_t> &Triangles, size_t boundary_size)
+bool check_delaunay(sequence<triang_t> &tri_seq, size_t boundary_size)
 {
-	size_t n = Triangles.size();
+	size_t n = tri_seq.size();
 	sequence<size_t> boundary_count(n, 0);
 	size_t insideOutError = n;
 	size_t inCircleError = n;
 	parallel_for(0, n, [&](size_t i) {
-		if (Triangles[i].initialized) {
-			simplex_t t = simplex(&Triangles[i], 0);
+		if (tri_seq[i].initialized) {
+			simplex_t t = simplex(&tri_seq[i], 0);
 			for (int j = 0; j < 3; j++) {
 				simplex_t a = t.across();
 				if (a.valid()) {

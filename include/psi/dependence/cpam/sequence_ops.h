@@ -16,18 +16,19 @@ struct sequence_ops : Tree {
 	using node = typename Tree::node;
 	using regular_node = typename Tree::regular_node;
 	using compressed_node = typename Tree::compressed_node;
-	using ET = typename Tree::ET;
-	using GC = gc<Tree>;
-	using ptr = typename GC::ptr;
+	using et_type = typename Tree::et_type;
+	using gc_type = gc<Tree>;
+	using ptr = typename gc_type::ptr;
 	using Tree::B;
-	using Tree::kBaseCaseSize;
-	using Tree::kNodeLimit;
+	using Tree::base_case_size;
+	using Tree::node_limit;
 
-	using expose_tuple = std::tuple<ptr, ET &, ptr, regular_node *>;
-	using expose_simple_tuple = std::tuple<node *, ET &, node *>;
+	using expose_tuple = std::tuple<ptr, et_type &, ptr, regular_node *>;
+	using expose_simple_tuple = std::tuple<node *, et_type &, node *>;
 
 	// Takes a compressed node and returns the node's elements as a tree
-	static regular_node *to_tree_impl(ET *A, uint32_t n, uint32_t depth = 0)
+	static regular_node *to_tree_impl(et_type *A, uint32_t n,
+					  uint32_t depth = 0)
 	{
 		if (n <= 0)
 			return (regular_node *)Tree::empty();
@@ -44,7 +45,7 @@ struct sequence_ops : Tree {
 
 		size_t l_size = mid, r_size = n - mid - 1;
 		auto P = utils::fork<regular_node *>(
-			n >= kNodeLimit,
+			n >= node_limit,
 			[&]() { return to_tree_impl(A, l_size, depth + 1); },
 			[&]() {
 				return to_tree_impl(A + mid + 1, r_size,
@@ -55,8 +56,8 @@ struct sequence_ops : Tree {
 
 	static regular_node *to_tree(compressed_node *c)
 	{
-		ET tmp_arr[2 * B];
-		ET *arr = Tree::compressed_node_elms(c, tmp_arr);
+		et_type tmp_arr[2 * B];
+		et_type *arr = Tree::compressed_node_elms(c, tmp_arr);
 		size_t arr_size = c->s;
 		assert(arr_size > 0);
 		return to_tree_impl(arr, arr_size);
@@ -125,7 +126,7 @@ struct sequence_ops : Tree {
 		Tree::reorder(c);
 	}
 
-	static node *join(node *l, ET e, node *r, regular_node *root)
+	static node *join(node *l, et_type e, node *r, regular_node *root)
 	{
 		if (root == nullptr) {
 			root = Tree::make_regular_node(e);
@@ -133,7 +134,8 @@ struct sequence_ops : Tree {
 		return Tree::node_join(l, r, root);
 	}
 
-	static node *regular_join(node *l, ET e, node *r, regular_node *root)
+	static node *regular_join(node *l, et_type e, node *r,
+				  regular_node *root)
 	{
 		if (root == nullptr) {
 			root = Tree::make_regular_node(e);
@@ -147,7 +149,7 @@ struct sequence_ops : Tree {
 		if (a == NULL)
 			return 0;
 		auto P = utils::fork<node_size_t>(
-			Tree::size(a) >= kNodeLimit,
+			Tree::size(a) >= node_limit,
 			[&]() { return depth(a->lc); },
 			[&]() { return depth(a->rc); });
 		return std::max(P.first, P.second) + 1;
@@ -158,18 +160,18 @@ struct sequence_ops : Tree {
 		if (a == NULL)
 			return true;
 		auto P = utils::fork<bool>(
-			Tree::size(a) >= kNodeLimit,
+			Tree::size(a) >= node_limit,
 			[&]() { return check_balance(a->lc); },
 			[&]() { return check_balance(a->rc); });
 		return Tree::is_balanced(a) && P.first && P.second;
 	}
 
 	// TODO: add base case.
-	static std::optional<ET> select_compressed(node *a, size_t rank)
+	static std::optional<et_type> select_compressed(node *a, size_t rank)
 	{
 		size_t i = 0;
-		std::optional<ET> ret;
-		auto fn = [&](const ET &a) -> bool {
+		std::optional<et_type> ret;
+		auto fn = [&](et_type const &a) -> bool {
 			if (i == rank) {
 				ret = a;
 				return false;
@@ -182,7 +184,7 @@ struct sequence_ops : Tree {
 	}
 
 	// TODO: add base case.
-	static std::optional<ET> select(node *a, size_t rank)
+	static std::optional<et_type> select(node *a, size_t rank)
 	{
 		if (a == nullptr)
 			return {};
@@ -193,7 +195,7 @@ struct sequence_ops : Tree {
 		// std::cout << "Size = " << size << " e = " << e << std::endl;
 		size_t left_size = Tree::size(an->lc);
 		;
-		std::optional<ET> ret;
+		std::optional<et_type> ret;
 		if (rank > left_size) {
 			ret = select(an->rc, rank - left_size - 1);
 		} else if (rank < left_size) {
@@ -206,9 +208,9 @@ struct sequence_ops : Tree {
 
 	static node *take_compressed(node *a, size_t rank)
 	{
-		ET arr[2 * B];
+		et_type arr[2 * B];
 		size_t offset = 0;
-		auto copy_f = [&](ET e) {
+		auto copy_f = [&](et_type e) {
 			if (offset < rank) {
 				parlay::move_uninitialized(arr[offset++], e);
 			}
@@ -236,15 +238,15 @@ struct sequence_ops : Tree {
 		regular_node *join =
 			Tree::make_regular_node(Tree::get_entry(ar));
 		node *r = take(ar->rc, rank - left_size - 1);
-		GC::increment(ar->lc);
+		gc_type::increment(ar->lc);
 		return Tree::node_join(ar->lc, r, join);
 	}
 
 	//  static node* suffix_compressed(node* a, size_t rank) {
-	//    ET arr[2*B];
+	//    et_type arr[2*B];
 	//    size_t offset = 0;
 	//    size_t idx = 0;
-	//    auto copy_f = [&] (ET e) {
+	//    auto copy_f = [&] (et_type e) {
 	//      if (idx >= rank) {
 	//        parlay::move_uninitialized(arr[offset++], e);
 	//      }
@@ -268,15 +270,15 @@ struct sequence_ops : Tree {
 	//    if (rank > left_size) return suffix(ar->rc, rank - left_size - 1);
 	//    regular_node* join = Tree::make_regular_node(Tree::get_entry(ar));
 	//    node* l = suffix(ar->lc, rank);
-	//    GC::increment(ar->rc);
+	//    gc_type::increment(ar->rc);
 	//    return Tree::node_join(l, ar->rc, join);
 	//  }
 	//
 	//  static node* subseq_compressed(node* a, size_t left, size_t right) {
-	//    ET arr[2*B];
+	//    et_type arr[2*B];
 	//    size_t offset = 0;
 	//    size_t idx = 0;
-	//    auto copy_f = [&] (ET e) {
+	//    auto copy_f = [&] (et_type e) {
 	//      if ((left <= idx) && (idx < right)) {
 	//        parlay::move_uninitialized(arr[offset++], e);
 	//      }
@@ -324,9 +326,9 @@ struct sequence_ops : Tree {
 	template <class F>
 	static node *entry_bc(node *r, F &f)
 	{
-		ET stack[2 * B];
+		et_type stack[2 * B];
 		size_t offset = 0;
-		auto copy_f = [&](ET a) {
+		auto copy_f = [&](et_type a) {
 			if (f(a)) {
 				parlay::move_uninitialized(stack[offset++], a);
 			}
@@ -335,7 +337,7 @@ struct sequence_ops : Tree {
 		assert(offset <= 2 * B);
 
 		if (offset < B) {
-			return to_tree_impl((ET *)stack, offset);
+			return to_tree_impl((et_type *)stack, offset);
 		} else {
 			return Tree::make_compressed(stack, offset);
 		}
@@ -348,7 +350,7 @@ struct sequence_ops : Tree {
 			return NULL;
 		if (Tree::is_compressed(a)) {
 			size_t i = 0;
-			auto comp = [&](const ET &e) {
+			auto comp = [&](et_type const &e) {
 				bool ret = i >= rank;
 				i++;
 				return ret;
@@ -363,7 +365,7 @@ struct sequence_ops : Tree {
 		regular_node *join =
 			Tree::make_regular_node(Tree::get_entry(ar));
 		node *l = suffix(ar->lc, rank);
-		GC::increment(ar->rc);
+		gc_type::increment(ar->rc);
 		return Tree::node_join(l, ar->rc, join);
 	}
 
@@ -374,9 +376,10 @@ struct sequence_ops : Tree {
 		if (!r)
 			return NULL;
 		if (Tree::is_compressed(r)) {
-			// Build tree only on elements in the range in the leaf.
+			// build_type tree only on elements in the range in the
+			// leaf.
 			size_t i = 0;
-			auto comp = [&](const ET &k) {
+			auto comp = [&](et_type const &k) {
 				bool ret = (low <= i) && (i <= high);
 				i++;
 				return ret;
@@ -437,9 +440,9 @@ struct sequence_ops : Tree {
 	{
 		assert(b.is_compressed());
 		assert(b.size() <= 2 * B);
-		ET arr[2 * B];
+		et_type arr[2 * B];
 		size_t offset = 0;
-		auto copy_f = [&](typename InTree::ET e) {
+		auto copy_f = [&](typename InTree::et_type e) {
 			auto y = f(e);
 			parlay::move_uninitialized(arr[offset++], y);
 		};
@@ -482,7 +485,7 @@ struct sequence_ops : Tree {
 			size_t n = Tree::size(a);
 			auto r = Tree::cast_to_regular(a);
 			auto P = utils::fork<size_t>(
-				n >= kNodeLimit,
+				n >= node_limit,
 				[&]() { return size_in_bytes(r->lc, f); },
 				[&]() { return size_in_bytes(r->rc, f); });
 
@@ -509,7 +512,7 @@ struct sequence_ops : Tree {
 		size_t n = Tree::size(a);
 		auto r = Tree::cast_to_regular(a);
 		auto P = utils::fork<std::tuple<size_t, size_t, size_t>>(
-			n >= kNodeLimit, [&]() { return node_stats(r->lc); },
+			n >= node_limit, [&]() { return node_stats(r->lc); },
 			[&]() { return node_stats(r->rc); });
 
 		internal += std::get<0>(P.first) + std::get<0>(P.second) + 1;
@@ -520,15 +523,16 @@ struct sequence_ops : Tree {
 	}
 
 	template <class F>
-	static std::tuple<bool, ET, ET> is_sorted_impl(node *a, F const &less)
+	static std::tuple<bool, et_type, et_type> is_sorted_impl(node *a,
+								 F const &less)
 	{
 		if (a == nullptr)
-			return {true, ET(), ET()};
+			return {true, et_type(), et_type()};
 		if (Tree::is_compressed(a)) {
-			ET left, right;
+			et_type left, right;
 			size_t i = 0;
 			bool sorted = true;
-			auto fn = [&](const ET &a) {
+			auto fn = [&](et_type const &a) {
 				if (i == 0) {
 					left = a;
 				}
@@ -543,13 +547,13 @@ struct sequence_ops : Tree {
 		}
 
 		auto an = (regular_node *)a;
-		auto P = utils::fork<std::tuple<bool, ET, ET>>(
+		auto P = utils::fork<std::tuple<bool, et_type, et_type>>(
 			true, [&]() { return is_sorted_impl(an->lc, less); },
 			[&]() { return is_sorted_impl(an->rc, less); });
 		auto [l_sorted, l_left, l_right] = P.first;
 		auto [r_sorted, r_left, r_right] = P.second;
 
-		const ET &mid = Tree::get_entry(an);
+		et_type const &mid = Tree::get_entry(an);
 		bool mid_sorted = less(l_right, mid) && less(mid, r_left);
 
 		return {l_sorted && r_sorted && mid_sorted, l_left, r_right};
@@ -562,11 +566,11 @@ struct sequence_ops : Tree {
 	}
 
 	static std::optional<size_t> find_unsorted_compressed(node *a,
-							      const ET &e)
+							      et_type const &e)
 	{
 		size_t i = 0;
 		std::optional<size_t> ret;
-		auto fn = [&](const ET &a) -> bool {
+		auto fn = [&](et_type const &a) -> bool {
 			if (e == a) {
 				ret = i;
 				return false;
@@ -578,7 +582,7 @@ struct sequence_ops : Tree {
 		return ret;
 	}
 
-	static std::optional<size_t> find_unsorted(node *a, const ET &e,
+	static std::optional<size_t> find_unsorted(node *a, et_type const &e,
 						   bool par = false)
 	{
 		if (a == nullptr)
@@ -600,16 +604,16 @@ struct sequence_ops : Tree {
 		if (a == nullptr)
 			return nullptr;
 		if (Tree::is_compressed(a)) {
-			ET arr[2 * B];
+			et_type arr[2 * B];
 			size_t k = Tree::size(a) - 1;
-			auto fn = [&](const ET &e) {
+			auto fn = [&](et_type const &e) {
 				arr[k] = e;
 				k--;
 			};
 			Tree::iterate_seq(a, fn);
 			return Tree::make_single_compressed_node(arr,
 								 Tree::size(a));
-			//      ET* arr = Tree::compressed_node_elms(a,
+			//      et_type* arr = Tree::compressed_node_elms(a,
 			//      tmp_arr); size_t arr_size = Tree::size(a);
 			//      std::reverse(arr, arr + arr_size);
 			//      return to_tree_impl(arr, arr_size);
@@ -618,17 +622,17 @@ struct sequence_ops : Tree {
 		auto an = (regular_node *)a;
 		size_t n = Tree::size(an);
 		auto P = utils::fork<node *>(
-			n >= kNodeLimit, [&]() { return reverse(an->lc); },
+			n >= node_limit, [&]() { return reverse(an->lc); },
 			[&]() { return reverse(an->rc); });
 
-		const ET &mid = Tree::get_entry(an);
+		et_type const &mid = Tree::get_entry(an);
 		regular_node *m = Tree::make_regular_node(mid);
 		return Tree::node_join(P.second, P.first, m);
 	}
 
 	template <typename F>
 	static void foreach_index(ptr a, size_t start, F const &f,
-				  size_t granularity = kNodeLimit)
+				  size_t granularity = node_limit)
 	{
 		if (a.empty())
 			return;
@@ -637,7 +641,7 @@ struct sequence_ops : Tree {
 						 // node_ptr() causes ref_cnt
 						 // bumps.
 			size_t i = 0;
-			auto fn = [&](ET a) {
+			auto fn = [&](et_type a) {
 				f(a, start + i);
 				i++;
 			};
@@ -657,18 +661,18 @@ struct sequence_ops : Tree {
 				foreach_index(std::move(rc), start + lsize + 1,
 					      f, granularity);
 			});
-		GC::decrement(root);
+		gc_type::decrement(root);
 	}
 
 	// Experimental version: remove later if unused
 	template <typename F>
 	static void foreach_index_2(node *a, F const &f,
-				    size_t granularity = kNodeLimit)
+				    size_t granularity = node_limit)
 	{
 		if (!a)
 			return;
 		if (Tree::is_compressed(a)) {
-			auto fn = [&](ET a) { f(a, 0); };
+			auto fn = [&](et_type a) { f(a, 0); };
 			Tree::iterate_seq(a, fn);
 			return;
 		}
@@ -704,7 +708,7 @@ struct sequence_ops : Tree {
 		if (a == nullptr)
 			return true;
 		if (Tree::is_compressed(a)) {
-			auto fn = [&](const ET &a) -> bool {
+			auto fn = [&](et_type const &a) -> bool {
 				bool ret = f(a);
 				return ret;
 			};
@@ -742,28 +746,30 @@ struct sequence_ops : Tree {
 		foreach_seq(std::move(lc), f);
 		f(e);
 		foreach_seq(std::move(rc), f);
-		GC::decrement(root);
+		gc_type::decrement(root);
 	}
 
 	template <class Func>
 	static node *filter_bc(ptr b1, Func const &f)
 	{
 		assert(b1.size() > 0);
-		ET stack[kBaseCaseSize + 1];
+		et_type stack[base_case_size + 1];
 
 		auto b1_node = b1.node_ptr();
 		size_t offset = 0;
-		auto copy_f = [&](ET a) { // needs to be a copy since we move
-			if (f(a))
-				parlay::move_uninitialized(stack[offset++], a);
-		};
+		auto copy_f =
+			[&](et_type a) { // needs to be a copy since we move
+				if (f(a))
+					parlay::move_uninitialized(
+						stack[offset++], a);
+			};
 		Tree::iterate_seq(b1_node, copy_f);
-		assert(offset <= kBaseCaseSize);
+		assert(offset <= base_case_size);
 
 		Tree::decrement_recursive(b1_node);
 
 		if (offset < B) {
-			return to_tree_impl((ET *)stack, offset);
+			return to_tree_impl((et_type *)stack, offset);
 		} else {
 			// need to refactor
 			return Tree::make_compressed(stack, offset);
@@ -772,13 +778,13 @@ struct sequence_ops : Tree {
 
 	template <class Func>
 	static node *filter(ptr b, Func const &f,
-			    size_t granularity = kNodeLimit)
+			    size_t granularity = node_limit)
 	{
 		if (b.empty())
 			return NULL;
 		size_t n = b.size();
 
-		//    if (n <= kBaseCaseSize) {
+		//    if (n <= base_case_size) {
 		//      return filter_bc(std::move(b), f);
 		//    }
 
@@ -800,7 +806,7 @@ struct sequence_ops : Tree {
 				root = Tree::single(e);
 			return join(l, e, r, root);
 		} else {
-			GC::decrement(root);
+			gc_type::decrement(root);
 			return join2(l, r);
 		}
 	}
@@ -816,7 +822,7 @@ struct sequence_ops : Tree {
 	//		return true;
 	//	}
 	//
-	//    auto P = utils::fork<bool>(Tree::size(b) >= kNodeLimit,
+	//    auto P = utils::fork<bool>(Tree::size(b) >= node_limit,
 	//      [&]() {return if_exist(b->lc, f, indicator);},
 	//      [&]() {return if_exist(b->rc, f, indicator);});
 	//	return P.first || P.second;
@@ -824,15 +830,16 @@ struct sequence_ops : Tree {
 
 	// Assumes the input is sorted and there are no duplicate keys
 	template <typename T>
-	// static node* from_array(ET* A, size_t n) {
+	// static node* from_array(et_type* A, size_t n) {
 	static node *from_array(T *A, size_t n)
 	{
 		if (n <= 0)
 			return Tree::empty();
 		if (n == 1) {
 			if constexpr (!std::same_as<T,
-						    ET>) { // WARN: this may
-							   // incur wrong copy
+						    et_type>) { // WARN: this
+								// may
+				// incur wrong copy
 				return Tree::single(*A[0].second);
 			} else {
 				return Tree::single(A[0]);
@@ -846,7 +853,7 @@ struct sequence_ops : Tree {
 		regular_node *m = Tree::make_regular_node(A[mid]);
 
 		auto P = utils::fork<node *>(
-			n >= kNodeLimit, [&]() { return from_array(A, mid); },
+			n >= node_limit, [&]() { return from_array(A, mid); },
 			[&]() { return from_array(A + mid + 1, n - mid - 1); });
 
 		return Tree::node_join(P.first, P.second, m);
@@ -855,14 +862,14 @@ struct sequence_ops : Tree {
 	// TODO
 	//  template<class Seq1, class Func>
 	//  static node* map_filter(typename Seq1::node* b, const Func& f,
-	//			  size_t granularity=kNodeLimit) {
+	//			  size_t granularity=node_limit) {
 	//    if (!b) return NULL;
 	//
 	//    auto P = utils::fork<node*>(Seq1::size(b) >= granularity,
 	//      [&]() {return map_filter<Seq1>(b->lc, f, granularity);},
 	//      [&]() {return map_filter<Seq1>(b->rc, f, granularity);});
 	//
-	//    std::optional<ET> me = f(Seq1::get_entry(b));
+	//    std::optional<et_type> me = f(Seq1::get_entry(b));
 	//    if (me.has_value()) {
 	//      node* r = Tree::make_node(*me);
 	//      return Tree::node_join(P.first, P.second, r);
@@ -871,14 +878,14 @@ struct sequence_ops : Tree {
 
 	template <class R, class F>
 	static typename R::T map_reduce(node *a, F f, R r,
-					size_t grain = kNodeLimit)
+					size_t grain = node_limit)
 	{
 		using T = typename R::T;
 		if (a == nullptr)
 			return r.identity();
 		if (Tree::is_compressed(a)) {
 			T v = r.identity();
-			auto fn = [&](ET a) { v = R::add(v, f(a)); };
+			auto fn = [&](et_type a) { v = R::add(v, f(a)); };
 			Tree::iterate_seq(a, fn);
 			return v;
 		}

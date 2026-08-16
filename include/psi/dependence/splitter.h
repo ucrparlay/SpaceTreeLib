@@ -27,55 +27,58 @@ namespace psi
 {
 // NOTE: ---------------- Spatial filling curve ---------------
 template <typename Point>
-struct MortonCurve {
-	using BT = BaseTree<Point, MortonCurve<Point>>;
-	using Slice = BT::Slice;
-	using DimsType = BT::DimsType;
-	using Box = BT::Box;
-	using Num = BT::Num;
-	using Coord = BT::Coord;
-	using HyperPlane = BT::HyperPlane;
+struct morton_curve {
+	using base_type = base_tree<Point, morton_curve<Point>>;
+	using slice_type = base_type::slice_type;
+	using dims_type = base_type::dims_type;
+	using box_type = base_type::box_type;
+	using num_type = base_type::num_type;
+	using coord_type = base_type::coord_type;
+	using hyper_plane_type = base_type::hyper_plane_type;
 
-	using CurveCode = typename Point::AT::CurveCode;
+	using curve_code_type = typename Point::at_type::curve_code_type;
 
-	void MortonTag()
+	void morton_tag()
 	{
 	}
-	static std::string GetName()
+	static std::string get_name()
 	{
 		return "MortonCurve";
 	}
 
-	static auto Encode(Point const &p)
+	static auto encode(Point const &p)
 	{
-		assert(std::is_integral_v<Coord>);
-		if constexpr (Point::GetDim() == 2) {
-			return libmorton::m2D_e_for<CurveCode, uint32_t>(
+		assert(std::is_integral_v<coord_type>);
+		if constexpr (Point::get_dim() == 2) {
+			return libmorton::m2D_e_for<curve_code_type, uint32_t>(
 				p.pnt[0], p.pnt[1]);
-		} else if constexpr (Point::GetDim() == 3) {
-			return libmorton::m3D_e_for_ET<CurveCode, uint32_t>(
+		} else if constexpr (Point::get_dim() == 3) {
+			return libmorton::m3D_e_for_ET<curve_code_type,
+						       uint32_t>(
 				p.pnt[0], p.pnt[1], p.pnt[2]);
 		} else {
 			static_assert(
 				"MortonCurve only supports 2D and 3D points");
 		}
 		// uint_fast8_t loc = 0;
-		// CurveCode id = 0;
-		// for (DimsType i = 0; i < 64 / Point::GetDim(); i++) {
-		//   if constexpr (Point::GetDim() == 2) {
-		//     id = id | (((p.pnt[0] >> i) & static_cast<CurveCode>(1))
+		// curve_code_type id = 0;
+		// for (dims_type i = 0; i < 64 / Point::get_dim(); i++) {
+		//   if constexpr (Point::get_dim() == 2) {
+		//     id = id | (((p.pnt[0] >> i) &
+		//     static_cast<curve_code_type>(1))
 		//     << (loc++)); id = id | (((p.pnt[1] >> i) &
-		//     static_cast<CurveCode>(1)) << (loc++));
-		//   } else if constexpr (Point::GetDim() == 3) {
-		//     id = id | (((p.pnt[0] >> i) & static_cast<CurveCode>(1))
+		//     static_cast<curve_code_type>(1)) << (loc++));
+		//   } else if constexpr (Point::get_dim() == 3) {
+		//     id = id | (((p.pnt[0] >> i) &
+		//     static_cast<curve_code_type>(1))
 		//     << (loc++)); id = id | (((p.pnt[1] >> i) &
-		//     static_cast<CurveCode>(1)) << (loc++)); id = id |
-		//     (((p.pnt[2] >> i) & static_cast<CurveCode>(1)) <<
+		//     static_cast<curve_code_type>(1)) << (loc++)); id = id |
+		//     (((p.pnt[2] >> i) & static_cast<curve_code_type>(1)) <<
 		//     (loc++));
 		//   } else {
-		//     for (DimsType d = 0; d < Point::GetDim(); d++) {
+		//     for (dims_type d = 0; d < Point::get_dim(); d++) {
 		//       id = id | (((p.pnt[d] >> i) &
-		//       static_cast<CurveCode>(1)) << (loc++));
+		//       static_cast<curve_code_type>(1)) << (loc++));
 		//     }
 		//   }
 		// }
@@ -84,48 +87,48 @@ struct MortonCurve {
 };
 
 template <typename Point>
-struct HilbertCurve {
-	using BT = BaseTree<Point, HilbertCurve<Point>>;
-	using Slice = BT::Slice;
-	using DimsType = BT::DimsType;
-	using Box = BT::Box;
-	using Num = BT::Num;
-	using Coord = BT::Coord;
-	using HyperPlane = BT::HyperPlane;
+struct hilbert_curve {
+	using base_type = base_tree<Point, hilbert_curve<Point>>;
+	using slice_type = base_type::slice_type;
+	using dims_type = base_type::dims_type;
+	using box_type = base_type::box_type;
+	using num_type = base_type::num_type;
+	using coord_type = base_type::coord_type;
+	using hyper_plane_type = base_type::hyper_plane_type;
 
-	using CurveCode = typename Point::AT::CurveCode;
+	using curve_code_type = typename Point::at_type::curve_code_type;
 
-	void HilbertTag()
+	void hilbert_tag()
 	{
 	}
-	static std::string GetName()
+	static std::string get_name()
 	{
 		return "HilbertCurve";
 	}
 
 	// TODO: optimize the encode
-	static auto Encode(Point const &p)
+	static auto encode(Point const &p)
 	{
-		assert(std::is_integral_v<Coord>);
-		// auto ix = static_cast<CurveCode>(p.pnt[0]);
-		// auto iy = static_cast<CurveCode>(p.pnt[1]);
-		// CurveCode arr[] = {ix, iy};
+		assert(std::is_integral_v<coord_type>);
+		// auto ix = static_cast<curve_code_type>(p.pnt[0]);
+		// auto iy = static_cast<curve_code_type>(p.pnt[1]);
+		// curve_code_type arr[] = {ix, iy};
 		// return hilbert::hilbert_c2i(2, 32, arr);
 		// return hilbert::hilbert_c2i(
-		//     2, 32, reinterpret_cast<CurveCode
-		//     const*>(p.GetCoords().data()));
+		//     2, 32, reinterpret_cast<curve_code_type
+		//     const*>(p.get_coords().data()));
 
-		if constexpr (Point::GetDim() == 2) {
+		if constexpr (Point::get_dim() == 2) {
 			return hilbert::hilbert_c2i(
 				2, 32,
 				reinterpret_cast<hilbert::bitmask_t const *>(
-					p.GetCoords().data()));
-		} else if constexpr (Point::GetDim() == 3) {
+					p.get_coords().data()));
+		} else if constexpr (Point::get_dim() == 3) {
 			// maximum 20 bits for each dimension (2^20 = 1048576))
 			return hilbert::hilbert_c2i(
 				3, 21,
 				reinterpret_cast<hilbert::bitmask_t const *>(
-					p.GetCoords().data()));
+					p.get_coords().data()));
 		} else {
 			static_assert(
 				"HilbertCurve only supports 2D and 3D points");
@@ -134,76 +137,78 @@ struct HilbertCurve {
 };
 
 template <typename Curve>
-struct SpatialFillingCurve {
-	using CurveCode = typename Curve::CurveCode;
+struct spatial_filling_curve {
+	using curve_code_type = typename Curve::curve_code_type;
 
-	static std::string GetSplitName()
+	static std::string get_split_name()
 	{
-		return Curve::GetName();
+		return Curve::get_name();
 	}
 
 	template <typename... Args>
-	static auto Encode(Args &&...args)
+	static auto encode(Args &&...args)
 	{
-		return Curve::Encode(std::forward<Args>(args)...);
+		return Curve::encode(std::forward<Args>(args)...);
 	}
 
 	template <typename... Args>
-	auto Decode(Args &&...args)
+	auto decode(Args &&...args)
 	{
-		return Curve::Decode(std::forward<Args>(args)...);
+		return Curve::decode(std::forward<Args>(args)...);
 	}
 };
 
 // NOTE: ---------------- Orthogonal Split Rule ----------------
 template <typename Point>
-struct BaseSplitDimRule {
-	using BT = BaseTree<Point, BaseSplitDimRule<Point>>;
-	using Slice = BT::Slice;
-	using DimsType = BT::DimsType;
-	using Box = BT::Box;
-	using Num = BT::Num;
-	using Coord = BT::Coord;
-	using HyperPlane = BT::HyperPlane;
+struct base_split_dim_rule {
+	using base_type = base_tree<Point, base_split_dim_rule<Point>>;
+	using slice_type = base_type::slice_type;
+	using dims_type = base_type::dims_type;
+	using box_type = base_type::box_type;
+	using num_type = base_type::num_type;
+	using coord_type = base_type::coord_type;
+	using hyper_plane_type = base_type::hyper_plane_type;
 
-	constexpr virtual DimsType const
-	FindCuttingDimension(Box const &bx, DimsType const dim) const = 0;
+	constexpr virtual dims_type const
+	find_cutting_dimension(box_type const &bx,
+			       dims_type const dim) const = 0;
 
-	constexpr virtual DimsType const
-	FindRebuildDimension(DimsType const dim) const = 0;
+	constexpr virtual dims_type const
+	find_rebuild_dimension(dims_type const dim) const = 0;
 
-	constexpr virtual DimsType const
-	NextDimension(DimsType const dim) const = 0;
+	constexpr virtual dims_type const
+	next_dimension(dims_type const dim) const = 0;
 	// TODO: the spliiter should deterine how to split as well
 };
 
 template <typename Point>
-struct MaxStretchDim : BaseSplitDimRule<Point> {
-	using BSR = BaseSplitDimRule<Point>;
-	using BT = BSR::BT;
-	using Slice = BSR::Slice;
-	using DimsType = BSR::DimsType;
-	using Box = BSR::Box;
-	using Coord = BSR::Coord;
-	using Num = BSR::Num;
-	using HyperPlane = BT::HyperPlane;
+struct max_stretch_dim : base_split_dim_rule<Point> {
+	using bsr_type = base_split_dim_rule<Point>;
+	using base_type = bsr_type::base_type;
+	using slice_type = bsr_type::slice_type;
+	using dims_type = bsr_type::dims_type;
+	using box_type = bsr_type::box_type;
+	using coord_type = bsr_type::coord_type;
+	using num_type = bsr_type::num_type;
+	using hyper_plane_type = base_type::hyper_plane_type;
 
-	void MaxStretchTag()
+	void max_stretch_tag()
 	{
 	}
-	static std::string GetName()
+	static std::string get_name()
 	{
 		return "MaxStretchDim";
 	}
 
-	constexpr DimsType const FindCuttingDimension(Box const &bx,
-						      DimsType) const override
+	constexpr dims_type const
+	find_cutting_dimension(box_type const &bx, dims_type) const override
 	{
-		DimsType d(0);
-		Coord diff(bx.second.pnt[0] - bx.first.pnt[0]);
-		assert(Num::Geq(diff, 0));
-		for (DimsType i = 1; i < BT::kDim; ++i) {
-			if (Num::Gt(bx.second.pnt[i] - bx.first.pnt[i], diff)) {
+		dims_type d(0);
+		coord_type diff(bx.second.pnt[0] - bx.first.pnt[0]);
+		assert(num_type::geq(diff, 0));
+		for (dims_type i = 1; i < base_type::num_dims; ++i) {
+			if (num_type::gt(bx.second.pnt[i] - bx.first.pnt[i],
+					 diff)) {
 				diff = bx.second.pnt[i] - bx.first.pnt[i];
 				d = i;
 			}
@@ -211,296 +216,305 @@ struct MaxStretchDim : BaseSplitDimRule<Point> {
 		return d;
 	};
 
-	constexpr DimsType const FindRebuildDimension(DimsType) const override
+	constexpr dims_type const
+	find_rebuild_dimension(dims_type) const override
 	{
 		return 0;
 	};
 
 	// TODO: this is wired as the next dimension should return the dimension
 	// with second largest
-	constexpr DimsType const NextDimension(DimsType) const override
+	constexpr dims_type const next_dimension(dims_type) const override
 	{
 		return 0;
 	};
 };
 
 template <typename Point>
-struct RotateDim : BaseSplitDimRule<Point> {
-	using BSR = BaseSplitDimRule<Point>;
-	using BT = BSR::BT;
-	using Slice = BSR::Slice;
-	using DimsType = BSR::DimsType;
-	using Box = BSR::Box;
-	using Coord = BSR::Coord;
-	using Num = BSR::Num;
-	using PointsIter = BT::PointsIter;
-	using HyperPlane = BT::HyperPlane;
+struct rotate_dim : base_split_dim_rule<Point> {
+	using bsr_type = base_split_dim_rule<Point>;
+	using base_type = bsr_type::base_type;
+	using slice_type = bsr_type::slice_type;
+	using dims_type = bsr_type::dims_type;
+	using box_type = bsr_type::box_type;
+	using coord_type = bsr_type::coord_type;
+	using num_type = bsr_type::num_type;
+	using points_iter_type = base_type::points_iter_type;
+	using hyper_plane_type = base_type::hyper_plane_type;
 
-	void RotateDimTag()
+	void rotate_dim_tag()
 	{
 	}
-	static std::string GetName()
+	static std::string get_name()
 	{
 		return "RotateDim";
 	}
 
-	constexpr DimsType const
-	FindCuttingDimension([[maybe_unused]] Box const &bx,
-			     DimsType const dim) const override
+	constexpr dims_type const
+	find_cutting_dimension([[maybe_unused]] box_type const &bx,
+			       dims_type const dim) const override
 	{
 		return dim;
 	};
 
-	constexpr DimsType const
-	FindRebuildDimension([[maybe_unused]] DimsType const dim) const override
+	constexpr dims_type const find_rebuild_dimension(
+		[[maybe_unused]] dims_type const dim) const override
 	{
 		return dim;
 	};
 
-	constexpr DimsType const NextDimension(DimsType dim) const override
+	constexpr dims_type const next_dimension(dims_type dim) const override
 	{
-		return (dim + 1) % BT::kDim;
+		return (dim + 1) % base_type::num_dims;
 	};
 };
 
 template <typename Point>
-struct BaseSplitPartitionRule {
-	using BT = BaseTree<Point, BaseSplitPartitionRule<Point>>;
-	using Slice = BT::Slice;
-	using DimsType = BT::DimsType;
-	using Box = BT::Box;
-	using Num = BT::Num;
-	using Coord = BT::Coord;
-	using HyperPlane = BT::HyperPlane;
-	using PointsIter = BT::PointsIter;
-	using IterHyperPair = std::pair<PointsIter, std::optional<HyperPlane>>;
+struct base_split_partition_rule {
+	using base_type = base_tree<Point, base_split_partition_rule<Point>>;
+	using slice_type = base_type::slice_type;
+	using dims_type = base_type::dims_type;
+	using box_type = base_type::box_type;
+	using num_type = base_type::num_type;
+	using coord_type = base_type::coord_type;
+	using hyper_plane_type = base_type::hyper_plane_type;
+	using points_iter_type = base_type::points_iter_type;
+	using iter_hyper_pair_type =
+		std::pair<points_iter_type, std::optional<hyper_plane_type>>;
 
-	constexpr virtual IterHyperPair const
-	SplitInput(Slice In, DimsType const dim, Box const &box) const = 0;
-	constexpr virtual HyperPlane const
-	SplitSample(Slice In, DimsType const dim, Box const &box) const = 0;
+	constexpr virtual iter_hyper_pair_type const
+	split_input(slice_type in, dims_type const dim,
+		    box_type const &box) const = 0;
+	constexpr virtual hyper_plane_type const
+	split_sample(slice_type in, dims_type const dim,
+		     box_type const &box) const = 0;
 };
 
 template <typename Point>
-struct ObjectMedian : BaseSplitPartitionRule<Point> {
-	using BSR = BaseSplitPartitionRule<Point>;
-	using BT = BSR::BT;
-	using Slice = BSR::Slice;
-	using DimsType = BSR::DimsType;
-	using Box = BSR::Box;
-	using Coord = BSR::Coord;
-	using Num = BSR::Num;
-	using PointsIter = BSR::PointsIter;
-	using HyperPlane = BSR::HyperPlane;
-	using IterHyperPair = BSR::IterHyperPair;
+struct object_median : base_split_partition_rule<Point> {
+	using bsr_type = base_split_partition_rule<Point>;
+	using base_type = bsr_type::base_type;
+	using slice_type = bsr_type::slice_type;
+	using dims_type = bsr_type::dims_type;
+	using box_type = bsr_type::box_type;
+	using coord_type = bsr_type::coord_type;
+	using num_type = bsr_type::num_type;
+	using points_iter_type = bsr_type::points_iter_type;
+	using hyper_plane_type = bsr_type::hyper_plane_type;
+	using iter_hyper_pair_type = bsr_type::iter_hyper_pair_type;
 
-	void ObjectMedianTag()
+	void object_median_tag()
 	{
 	}
 
-	static std::string GetName()
+	static std::string get_name()
 	{
 		return "ObjectMedian";
 	}
 
-	constexpr bool AllowRebuild() const
+	constexpr bool allow_rebuild() const
 	{
 		return true;
 	};
 
-	constexpr IterHyperPair const
-	SplitInput(Slice In, DimsType const dim,
-		   [[maybe_unused]] Box const &box) const override
+	constexpr iter_hyper_pair_type const
+	split_input(slice_type in, dims_type const dim,
+		    [[maybe_unused]] box_type const &box) const override
 	{
-		size_t n = In.size();
+		size_t n = in.size();
 		std::ranges::nth_element(
-			In.begin(), In.begin() + n / 2, In.end(),
+			in.begin(), in.begin() + n / 2, in.end(),
 			[&](Point const &p1, Point const &p2) {
-				return Num::Lt(p1.pnt[dim], p2.pnt[dim]);
+				return num_type::lt(p1.pnt[dim], p2.pnt[dim]);
 			});
 
 		auto split_iter =
 			std::ranges::partition(
-				In.begin(), In.begin() + n / 2,
+				in.begin(), in.begin() + n / 2,
 				[&](Point const &p) {
-					return Num::Lt(p.pnt[dim],
-						       In[n / 2].pnt[dim]);
+					return num_type::lt(p.pnt[dim],
+							    in[n / 2].pnt[dim]);
 				})
 				.begin();
 
 		if (split_iter ==
-		    In.begin()) { // NOTE: handle duplicated medians
+		    in.begin()) { // NOTE: handle duplicated medians
 			split_iter =
 				std::ranges::partition(
-					In.begin() + n / 2, In.end(),
+					in.begin() + n / 2, in.end(),
 					[&](Point const &p) {
-						return Num::Eq(
+						return num_type::eq(
 							p.pnt[dim],
-							In[n / 2].pnt[dim]);
+							in[n / 2].pnt[dim]);
 					})
 					.begin(); // NOTE: now all duplicated
 						  // median is on the left
 		}
 		// return split_iter;
 		if (split_iter <=
-		    In.begin() + n / 2) { // NOTE: split is on left half
-			return IterHyperPair(
+		    in.begin() + n / 2) { // NOTE: split is on left half
+			return iter_hyper_pair_type(
 				split_iter,
-				HyperPlane(In[n / 2].pnt[dim], dim));
+				hyper_plane_type(in[n / 2].pnt[dim], dim));
 		} else if (split_iter !=
-			   In.end()) { // NOTE: split is on right half
+			   in.end()) { // NOTE: split is on right half
 			auto min_elem_iter = std::ranges::min_element(
-				split_iter, In.end(),
+				split_iter, in.end(),
 				[&](Point const &p1, Point const &p2) {
-					return Num::Lt(p1.pnt[dim],
-						       p2.pnt[dim]);
+					return num_type::lt(p1.pnt[dim],
+							    p2.pnt[dim]);
 				});
-			return IterHyperPair(
+			return iter_hyper_pair_type(
 				split_iter,
-				HyperPlane(min_elem_iter->pnt[dim], dim));
+				hyper_plane_type(min_elem_iter->pnt[dim], dim));
 		} else { // NOTE: all the same
-			return IterHyperPair(split_iter, std::nullopt);
+			return iter_hyper_pair_type(split_iter, std::nullopt);
 		}
 	}
 
 	// TODO: the sample may handle the duplicates as well
-	constexpr HyperPlane const
-	SplitSample(Slice In, DimsType const dim,
-		    [[maybe_unused]] Box const &box) const override
+	constexpr hyper_plane_type const
+	split_sample(slice_type in, dims_type const dim,
+		     [[maybe_unused]] box_type const &box) const override
 	{
-		size_t n = In.size();
-		std::ranges::nth_element(In, In.begin() + n / 2,
-					 [&](Point const &p1, Point const &p2) {
-						 return Num::Lt(p1.pnt[dim],
-								p2.pnt[dim]);
-					 });
-		return HyperPlane(In[n / 2][dim], dim);
+		size_t n = in.size();
+		std::ranges::nth_element(
+			in, in.begin() + n / 2,
+			[&](Point const &p1, Point const &p2) {
+				return num_type::lt(p1.pnt[dim], p2.pnt[dim]);
+			});
+		return hyper_plane_type(in[n / 2][dim], dim);
 	}
 };
 
 template <typename Point>
-struct SpatialMedian : BaseSplitPartitionRule<Point> {
-	using BSR = BaseSplitPartitionRule<Point>;
-	using BT = BSR::BT;
-	using Slice = BSR::Slice;
-	using DimsType = BSR::DimsType;
-	using Box = BSR::Box;
-	using Coord = BSR::Coord;
-	using Num = BSR::Num;
-	using PointsIter = BSR::PointsIter;
-	using HyperPlane = BSR::HyperPlane;
-	using IterHyperPair = BSR::IterHyperPair;
+struct spatial_median : base_split_partition_rule<Point> {
+	using bsr_type = base_split_partition_rule<Point>;
+	using base_type = bsr_type::base_type;
+	using slice_type = bsr_type::slice_type;
+	using dims_type = bsr_type::dims_type;
+	using box_type = bsr_type::box_type;
+	using coord_type = bsr_type::coord_type;
+	using num_type = bsr_type::num_type;
+	using points_iter_type = bsr_type::points_iter_type;
+	using hyper_plane_type = bsr_type::hyper_plane_type;
+	using iter_hyper_pair_type = bsr_type::iter_hyper_pair_type;
 
-	void SpatialMedianTag()
+	void spatial_median_tag()
 	{
 	}
 
-	static std::string GetName()
+	static std::string get_name()
 	{
 		return "SpatialMedian";
 	}
 
-	constexpr bool AllowRebuild() const
+	constexpr bool allow_rebuild() const
 	{
 		return false;
 	};
 
-	constexpr IterHyperPair const SplitInput(Slice In, DimsType const dim,
-						 Box const &box) const override
+	constexpr iter_hyper_pair_type const
+	split_input(slice_type in, dims_type const dim,
+		    box_type const &box) const override
 	{
 		auto split_iter =
-			std::ranges::partition(In, [&](Point const &p) {
-				return Num::Lt(p.pnt[dim],
-					       BT::GetBoxMid(dim, box));
+			std::ranges::partition(in, [&](Point const &p) {
+				return num_type::lt(
+					p.pnt[dim],
+					base_type::get_box_mid(dim, box));
 			}).begin();
-		if (split_iter == In.begin() || split_iter == In.end()) {
-			return IterHyperPair(split_iter, std::nullopt);
+		if (split_iter == in.begin() || split_iter == in.end()) {
+			return iter_hyper_pair_type(split_iter, std::nullopt);
 		} else {
-			return IterHyperPair(
+			return iter_hyper_pair_type(
 				split_iter,
-				HyperPlane(BT::GetBoxMid(dim, box), dim));
+				hyper_plane_type(
+					base_type::get_box_mid(dim, box), dim));
 		}
 	}
 
-	constexpr HyperPlane const SplitSample([[maybe_unused]] Slice In,
-					       DimsType const dim,
-					       Box const &box) const override
+	constexpr hyper_plane_type const
+	split_sample([[maybe_unused]] slice_type in, dims_type const dim,
+		     box_type const &box) const override
 	{
-		return HyperPlane(BT::GetBoxMid(dim, box), dim);
+		return hyper_plane_type(base_type::get_box_mid(dim, box), dim);
 	}
 };
 
 template <class DimRule, class PartitionRule>
-struct OrthogonalSplitRule {
-	using DimRuleType = DimRule;
-	using PartitionRuleType = PartitionRule;
+struct orthogonal_split_rule {
+	using dim_rule_type = DimRule;
+	using partition_rule_type = PartitionRule;
 
-	static std::string GetSplitName()
+	static std::string get_split_name()
 	{
-		return DimRule::GetName() + "-" + PartitionRule::GetName();
+		return DimRule::get_name() + "-" + PartitionRule::get_name();
 	}
 
 	// NOTE: dimension
 	template <typename... Args>
-	auto FindCuttingDimension(Args &&...args)
+	auto find_cutting_dimension(Args &&...args)
 	{
-		return dim_rule.FindCuttingDimension(
+		return dim_rule.find_cutting_dimension(
 			std::forward<Args>(args)...);
 	}
 
 	template <typename... Args>
-	auto FindRebuildDimension(Args &&...args)
+	auto find_rebuild_dimension(Args &&...args)
 	{
-		return dim_rule.FindRebuildDimension(
+		return dim_rule.find_rebuild_dimension(
 			std::forward<Args>(args)...);
 	}
 
 	template <typename... Args>
-	auto NextDimension(Args &&...args)
+	auto next_dimension(Args &&...args)
 	{
-		return dim_rule.NextDimension(std::forward<Args>(args)...);
+		return dim_rule.next_dimension(std::forward<Args>(args)...);
 	}
 
 	// NOTE: serial parititon used in algorithm
 	template <typename... Args>
-	auto SplitInput(Args &&...args)
+	auto split_input(Args &&...args)
 	{
-		return partition_rule.SplitInput(std::forward<Args>(args)...);
+		return partition_rule.split_input(std::forward<Args>(args)...);
 	}
 
 	// NOTE: split the sample in order to get the hyperplane
 	template <typename... Args>
-	auto SplitSample(Args &&...args)
+	auto split_sample(Args &&...args)
 	{
-		return partition_rule.SplitSample(std::forward<Args>(args)...);
+		return partition_rule.split_sample(std::forward<Args>(args)...);
 	}
 
 	// NOTE: query whether to launch the rebuild
 	template <typename... Args>
-	auto AllowRebuild(Args &&...args)
+	auto allow_rebuild(Args &&...args)
 	{
-		return partition_rule.AllowRebuild(std::forward<Args>(args)...);
+		return partition_rule.allow_rebuild(
+			std::forward<Args>(args)...);
 	}
 
 	// NOTE: helper for handling the duplicate
 	// NOTE: divide the space until the split cut the input box
 	// INFO: divide the space for binary node
-	template <typename Tree, typename Slice, typename DimsType,
-		  typename Box>
-	Node *DivideSpace(Tree &tree, Slice In, Slice Out, Box const &node_box,
-			  Box const &input_box, DimsType dim)
-		requires(IsBinaryNode<typename Tree::Interior>)
+	template <typename Tree, typename slice_type, typename dims_type,
+		  typename box_type>
+	node *divide_space(Tree &tree, slice_type in, slice_type out,
+			   box_type const &node_box, box_type const &input_box,
+			   dims_type dim)
+		requires(is_binary_node<typename Tree::interior_type>)
 	{
-		assert(Tree::WithinBox(input_box, node_box));
+		assert(Tree::within_box(input_box, node_box));
 
 		// Main logic
-		if (Tree::VerticalLineSplitBox(Tree::GetBoxMid(dim, node_box),
-					       input_box, dim)) {
-			return tree.BuildRecursive(In, Out, dim, node_box);
+		if (Tree::vertical_line_split_box(
+			    Tree::get_box_mid(dim, node_box), input_box, dim)) {
+			return tree.build_recursive(in, out, dim, node_box);
 		}
 
-		auto cut_dim = dim_rule.FindCuttingDimension(node_box, dim);
-		auto cut_val = Tree::GetBoxMid(cut_dim, node_box);
+		auto cut_dim = dim_rule.find_cutting_dimension(node_box, dim);
+		auto cut_val = Tree::get_box_mid(cut_dim, node_box);
 
 		// INFO: Test whether the node_box will remain unchanged after
 		// the split. If the mid of box is the same as the box edge,
@@ -508,154 +522,162 @@ struct OrthogonalSplitRule {
 		// that all the mid on all dimension is on the box edge, i.e.,
 		// (0,1), (0,1), then a correct split algorithm will handle this
 		// case
-		DimsType dim_cnt = 0;
-		while (dim_cnt != Tree::kDim) {
-			if (!Tree::VerticalLineOnBoxEdge(cut_val, node_box,
-							 cut_dim)) {
+		dims_type dim_cnt = 0;
+		while (dim_cnt != Tree::num_dims) {
+			if (!Tree::vertical_line_on_box_edge(cut_val, node_box,
+							     cut_dim)) {
 				break;
 			}
-			cut_dim = dim_rule.NextDimension(cut_dim);
-			cut_val = Tree::GetBoxMid(cut_dim, node_box);
+			cut_dim = dim_rule.next_dimension(cut_dim);
+			cut_val = Tree::get_box_mid(cut_dim, node_box);
 			dim_cnt++;
 		}
 
-		if (dim_cnt == Tree::kDim) { // WARN:this breaks rotation manner
+		if (dim_cnt ==
+		    Tree::num_dims) { // WARN:this breaks rotation manner
 			// NOTE: checks whether the node box is separatable
-			return tree.BuildRecursive(
-				In, Out, dim_rule.NextDimension(dim), node_box);
-		} else if (Tree::VerticalLineSplitBox(cut_val, input_box,
-						      cut_dim)) {
+			return tree.build_recursive(
+				in, out, dim_rule.next_dimension(dim),
+				node_box);
+		} else if (Tree::vertical_line_split_box(cut_val, input_box,
+							 cut_dim)) {
 			// NOTE: above while loop may changed to new dim and
 			// need to re-check whether it can split the input. This
 			// is necessary as the following left/right test assumes
 			// the @cut_val does not split box
-			return tree.BuildRecursive(In, Out, cut_dim, node_box);
+			return tree.build_recursive(in, out, cut_dim, node_box);
 		}
 
 		bool split_is_right =
-			Tree::Num::Gt(cut_val, input_box.second[cut_dim]);
+			Tree::num_type::gt(cut_val, input_box.second[cut_dim]);
 		assert(split_is_right ||
-		       Tree::Num::Leq(cut_val, input_box.first[cut_dim]));
+		       Tree::num_type::leq(cut_val, input_box.first[cut_dim]));
 
-		typename Tree::BoxCut box_cut(
-			node_box, typename Tree::Splitter(cut_val, cut_dim),
+		typename Tree::box_cut_type box_cut(
+			node_box,
+			typename Tree::splitter_type(cut_val, cut_dim),
 			split_is_right);
 
-		Node *L =
-			DivideSpace(tree, In, Out, box_cut.GetFirstBoxCut(),
-				    input_box, dim_rule.NextDimension(cut_dim));
-		Node *R = AllocEmptyLeafNode<Slice, typename Tree::Leaf>();
-		assert(Tree::WithinBox(input_box, box_cut.GetBox()));
+		node *L = divide_space(tree, in, out,
+				       box_cut.get_first_box_cut(), input_box,
+				       dim_rule.next_dimension(cut_dim));
+		node *R = alloc_empty_leaf_node<slice_type,
+						typename Tree::leaf_type>();
+		assert(Tree::within_box(input_box, box_cut.get_box()));
 
 		if (!split_is_right) {
-			assert(Tree::Num::Leq(
-				Tree::GetBoxMid(cut_dim, node_box),
+			assert(Tree::num_type::leq(
+				Tree::get_box_mid(cut_dim, node_box),
 				input_box.first[cut_dim]));
 			std::ranges::swap(L, R);
 		}
 
-		return AllocInteriorNode<typename Tree::Interior>(
-			L, R, box_cut.GetHyperPlane());
+		return alloc_interior_node<typename Tree::interior_type>(
+			L, R, box_cut.get_hyper_plane());
 	}
 
 	// INFO: divide the space for multi node
-	template <typename Tree, typename Slice, typename Box>
-	Node *DivideSpace(Tree &tree, Slice In, Slice Out, Box const &node_box,
-			  Box const &input_box)
-		requires(IsMultiNode<typename Tree::Interior>)
+	template <typename Tree, typename slice_type, typename box_type>
+	node *divide_space(Tree &tree, slice_type in, slice_type out,
+			   box_type const &node_box, box_type const &input_box)
+		requires(is_multi_node<typename Tree::interior_type>)
 	{
-		assert(Tree::WithinBox(input_box, node_box));
+		assert(Tree::within_box(input_box, node_box));
 
-		auto nodebox_split = Tree::Interior::ComputeSplitter(node_box);
+		auto nodebox_split =
+			Tree::interior_type::compute_splitter(node_box);
 		for (auto const &split : nodebox_split) {
-			if (Tree::VerticalLineSplitBox(split.first, input_box,
-						       split.second)) {
+			if (Tree::vertical_line_split_box(
+				    split.first, input_box, split.second)) {
 				// any point on the split should be put on the
 				// right
-				return tree.BuildRecursive(In, Out, node_box);
+				return tree.build_recursive(in, out, node_box);
 			}
 		}
 
 		if (std::ranges::all_of(nodebox_split, [&](auto const &split) {
-			    return Tree::VerticalLineOnBoxEdge(
+			    return Tree::vertical_line_on_box_edge(
 				    split.first, node_box, split.second);
 		    })) { // NOTE: new box will be same as the old ones
-			return tree.BuildRecursive(In, Out, node_box);
+			return tree.build_recursive(in, out, node_box);
 		}
 
 		// PARA: node id contains the input box
-		typename Tree::Interior::BucketType pivot_region_id = 1;
+		typename Tree::interior_type::bucket_type pivot_region_id = 1;
 		// NOTE: considering three cases:
 		// 1: the split is LESS than the left input box edge
 		// 2: the split is EQ the left box edge
 		// 3: same as 2 but left and right edge is same, aka. a line
 		// The special judge above has prune out the case that split
-		// intersect the box, therefore split Lt or Eq the RIGHT edge
+		// intersect the box, therefore split lt or eq the RIGHT edge
 		// will cover all the cases
 		for (auto const &split : nodebox_split) {
 			pivot_region_id =
 				pivot_region_id * 2 +
-				static_cast<
-					typename Tree::Interior::BucketType>(
-					Tree::Num::Leq(
+				static_cast<typename Tree::interior_type::
+						    bucket_type>(
+					Tree::num_type::leq(
 						split.first,
 						input_box
 							.second[split.second]));
 		}
-		pivot_region_id -= Tree::Interior::GetRegions();
+		pivot_region_id -= Tree::interior_type::get_regions();
 
-		typename Tree::Interior::NodeArr tree_nodes;
-		for (typename Tree::Interior::BucketType i = 0;
-		     i < Tree::Interior::GetRegions(); i++) {
+		typename Tree::interior_type::node_arr_type tree_nodes;
+		for (typename Tree::interior_type::bucket_type i = 0;
+		     i < Tree::interior_type::get_regions(); i++) {
 			tree_nodes[i] =
 				pivot_region_id == i
-					? DivideSpace(
-						  tree, In, Out,
-						  Tree::Interior::
-							  GetBoxByRegionId(
+					? divide_space(
+						  tree, in, out,
+						  Tree::interior_type::
+							  get_box_by_region_id(
 								  i,
 								  nodebox_split,
 								  node_box),
 						  input_box)
-					: AllocEmptyLeafNode<
-						  Slice, typename Tree::Leaf>();
+					: alloc_empty_leaf_node<
+						  slice_type,
+						  typename Tree::leaf_type>();
 		}
 
-		return AllocInteriorNode<typename Tree::Interior>(
+		return alloc_interior_node<typename Tree::interior_type>(
 			tree_nodes, nodebox_split);
 	}
 
 	// NOTE: cannot divide the points on @dim, while the points are not the
 	// same
-	template <typename Tree, typename Slice, typename Box, typename... Args>
-	auto HandleUndivided(Tree &tree, Slice In, Slice Out, Box const &box,
-			     Args &&...args)
+	template <typename Tree, typename slice_type, typename box_type,
+		  typename... Args>
+	auto handle_undivided(Tree &tree, slice_type in, slice_type out,
+			      box_type const &box, Args &&...args)
 	{
-		if constexpr (IsObjectMedianSplit<PartitionRule>) {
+		if constexpr (is_object_median_split<PartitionRule>) {
 			// NOTE: in object median, if current dimension is not
 			// divideable, then switch to another dimension then
 			// continue. This works since unless all points are
 			// same, otherwise we can always slice some points out.
-			if constexpr (IsBinaryNode<typename Tree::Interior>) {
+			if constexpr (is_binary_node<
+					      typename Tree::interior_type>) {
 				// TODO: tooo brute force
-				return tree.SerialBuildRecursive(
-					In, Out,
-					dim_rule.NextDimension(
+				return tree.serial_build_recursive(
+					in, out,
+					dim_rule.next_dimension(
 						std::forward<Args>(args)...),
-					Tree::GetBox(In));
+					Tree::get_box(in));
 			} else {
-				return tree.BuildRecursive(In, Out,
-							   Tree::GetBox(In));
+				return tree.build_recursive(in, out,
+							    Tree::get_box(in));
 			}
 
-		} else if constexpr (IsSpatialMedianSplit<PartitionRule>) {
+		} else if constexpr (is_spatial_median_split<PartitionRule>) {
 			// NOTE: in spatial median, we simply reduce the box by
 			// half on current dim, then switch to next dim.
-			if constexpr (IsRotateDimSplit<DimRule> ||
-				      IsMaxStretchDim<DimRule>) {
-				return DivideSpace(tree, In, Out, box,
-						   Tree::GetBox(In),
-						   std::forward<Args>(args)...);
+			if constexpr (is_rotate_dim_split<DimRule> ||
+				      is_max_stretch_dim<DimRule>) {
+				return divide_space(
+					tree, in, out, box, Tree::get_box(in),
+					std::forward<Args>(args)...);
 			} else { // define the behavior of other dim rule
 				 // static_assert(false);
 			}

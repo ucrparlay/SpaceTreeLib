@@ -318,6 +318,6 @@ struct simplex {
 };
 
 // this might or might not be needed
-// void topologyFromTriangles(triangles<point2d> Tri, vtx** vr, tri** tr);
+// void topologyFromTriangles(triangles<point2d> tris, vtx** vr, tri** tr);
 
 #endif // _TOPOLOGY_INCLUDED

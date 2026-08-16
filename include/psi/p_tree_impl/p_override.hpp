@@ -31,57 +31,58 @@ auto point_point_sqrdis(Point const &lhs, Point const &rhs)
 	       (lhs.pnt[1] - rhs.pnt[1]) * (lhs.pnt[1] - rhs.pnt[1]);
 }
 
-template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
-	  uint_fast8_t kImbaRatio>
+template <typename Point, typename SplitRule, uint_fast8_t SkHeight,
+	  uint_fast8_t ImbaRatio>
 template <typename Range>
-auto PTree<Point, SplitRule, kSkHeight, kImbaRatio>::KNN(
-	Point const &q, kBoundedQueue<Point, Range> &bq)
+auto p_tree<Point, SplitRule, SkHeight, ImbaRatio>::knn(
+	Point const &q, bounded_queue<Point, Range> &bq)
 {
-	KNNLogger logger;
-	CpamAugMap::template knn<BT>(this->cpam_aug_map_, q, bq, logger);
+	knn_logger logger;
+	cpam_aug_map_type::template knn<base_type>(this->cpam_aug_map_, q, bq,
+						   logger);
 	return logger;
 }
 
-template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
-	  uint_fast8_t kImbaRatio>
+template <typename Point, typename SplitRule, uint_fast8_t SkHeight,
+	  uint_fast8_t ImbaRatio>
 template <typename Range>
-void PTree<Point, SplitRule, kSkHeight, kImbaRatio>::Flatten(Range &&Out) const
+void p_tree<Point, SplitRule, SkHeight, ImbaRatio>::flatten(Range &&out) const
 {
-	assert(this->cpam_aug_map_.size() == Out.size());
-	CpamAugMap::entries(this->cpam_aug_map_,
-			    parlay::make_slice(Out).begin());
+	assert(this->cpam_aug_map_.size() == out.size());
+	cpam_aug_map_type::entries(this->cpam_aug_map_,
+				   parlay::make_slice(out).begin());
 }
 
-template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
-	  uint_fast8_t kImbaRatio>
-auto PTree<Point, SplitRule, kSkHeight, kImbaRatio>::RangeCount(
-	Box const &query_box)
+template <typename Point, typename SplitRule, uint_fast8_t SkHeight,
+	  uint_fast8_t ImbaRatio>
+auto p_tree<Point, SplitRule, SkHeight, ImbaRatio>::range_count(
+	box_type const &query_box)
 {
-	RangeQueryLogger logger;
+	range_query_logger logger;
 
-	auto size = CpamAugMap::template range_count_filter2<BT>(
+	auto size = cpam_aug_map_type::template range_count_filter2<base_type>(
 		this->cpam_aug_map_, query_box, logger);
 
 	return std::make_pair(size, logger);
 }
 
-template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
-	  uint_fast8_t kImbaRatio>
+template <typename Point, typename SplitRule, uint_fast8_t SkHeight,
+	  uint_fast8_t ImbaRatio>
 template <typename Range>
-auto PTree<Point, SplitRule, kSkHeight, kImbaRatio>::RangeQuery(
-	Box const &query_box, Range &&Out)
+auto p_tree<Point, SplitRule, SkHeight, ImbaRatio>::range_query(
+	box_type const &query_box, Range &&out)
 {
-	RangeQueryLogger logger;
+	range_query_logger logger;
 	size_t cnt = 0;
-	CpamAugMap::template range_report_filter2<BT>(
-		this->cpam_aug_map_, query_box, cnt, parlay::make_slice(Out),
+	cpam_aug_map_type::template range_report_filter2<base_type>(
+		this->cpam_aug_map_, query_box, cnt, parlay::make_slice(out),
 		logger);
 	return std::make_pair(cnt, logger);
 }
 
-template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
-	  uint_fast8_t kImbaRatio>
-constexpr void PTree<Point, SplitRule, kSkHeight, kImbaRatio>::DeleteTree()
+template <typename Point, typename SplitRule, uint_fast8_t SkHeight,
+	  uint_fast8_t ImbaRatio>
+constexpr void p_tree<Point, SplitRule, SkHeight, ImbaRatio>::delete_tree()
 {
 	cpam_aug_map_.clear();
 	cpam_aug_map_.root = nullptr;

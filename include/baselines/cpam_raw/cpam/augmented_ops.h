@@ -297,20 +297,20 @@ struct augmented_ops : Map {
 		return l + r + cur_pt_inside;
 	}
 
-	template <class BaseTree, typename Logger, typename kBoundedQueue>
-	static void knn(node *b, auto const &q, kBoundedQueue &bq,
+	template <class base_tree, typename Logger, typename bounded_queue>
+	static void knn(node *b, auto const &q, bounded_queue &bq,
 			Logger &logger)
 	{
-		using BT = BaseTree;
+		using BT = base_tree;
 		using Point = decltype(q);
-		using Coord = typename BT::TemplatePoint::Coord;
-		using DisType = typename BT::TemplatePoint::DisType;
+		using coord_type = typename BT::template_point_type::coord_type;
+		using dis_type = typename BT::template_point_type::dis_type;
 
 		if (!b)
 			return;
 
 		if (bq.size() &&
-		    BT::P2BMinDistanceSquare(q, Map::aug_val(b).first) >
+		    BT::p2b_min_distance_square(q, Map::aug_val(b).first) >
 			    bq.top_value() &&
 		    bq.full()) {
 			logger.skip_box_num++;
@@ -324,10 +324,11 @@ struct augmented_ops : Map {
 				if (!bq.full()) {
 					bq.insert(std::make_pair(
 						std::ref(et),
-						BT::P2PDistanceSquare(q, et)));
+						BT::p2p_distance_square(q,
+									et)));
 					return;
 				}
-				auto r = BT::InterruptibleDistance(
+				auto r = BT::interruptible_distance(
 					q, et, bq.top_value());
 				if (r <
 				    bq.top_value()) { // PERF: remember
@@ -349,17 +350,17 @@ struct augmented_ops : Map {
 
 		logger.vis_interior_num++;
 		auto rb = Map::cast_to_regular(b);
-		DisType d_lc = rb->lc ? BT::P2BMinDistanceSquare(
-						q, Map::aug_val(rb->lc).first)
-				      : std::numeric_limits<DisType>::max();
-		DisType d_rc = rb->rc ? BT::P2BMinDistanceSquare(
-						q, Map::aug_val(rb->rc).first)
-				      : std::numeric_limits<DisType>::max();
+		dis_type d_lc = rb->lc ? BT::p2b_min_distance_square(
+						 q, Map::aug_val(rb->lc).first)
+				       : std::numeric_limits<dis_type>::max();
+		dis_type d_rc = rb->rc ? BT::p2b_min_distance_square(
+						 q, Map::aug_val(rb->rc).first)
+				       : std::numeric_limits<dis_type>::max();
 		bool go_left = d_lc <= d_rc;
 
 		// check current entry
 		// the rb->entry is a <point, aug> pair
-		auto r = BT::InterruptibleDistance(
+		auto r = BT::interruptible_distance(
 			q, std::get<1>(rb->entry.first), bq.top_value());
 		if (!bq.full() || r < bq.top_value()) {
 			bq.insert(std::make_pair(

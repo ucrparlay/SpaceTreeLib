@@ -15,133 +15,136 @@
 namespace psi
 {
 
-template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
-	  uint_fast8_t kImbaRatio>
-template <SupportsForceParallel Interior, bool granularity>
+template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
+	  uint_fast8_t ImbaRatio>
+template <supports_force_parallel interior_type, bool granularity>
 inline bool
-BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::ForceParallelRecursion(
-	Interior const *TI)
+base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::force_parallel_recursion(
+	interior_type const *ti)
 {
 #ifndef DISABLE_BATCH_DELETE_SIZE_OPT
-	return (granularity && TI->size > kSerialBuildCutoff) ||
-	       (!granularity && TI->ForceParallel());
+	return (granularity && ti->size > serial_build_cutoff) ||
+	       (!granularity && ti->force_parallel());
 #else
-	return (granularity) || (!granularity && TI->ForceParallel());
+	return (granularity) || (!granularity && ti->force_parallel());
 #endif // !DISABLE_BATCH_DELETE_SIZE_OPT
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
-	  uint_fast8_t kImbaRatio>
-template <typename Leaf, IsBinaryNode Interior, typename Range,
+template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
+	  uint_fast8_t ImbaRatio>
+template <typename leaf_type, is_binary_node interior_type, typename Range,
 	  bool granularity>
-void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::FlattenRec(Node *T,
-								     Range Out)
+void base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::flatten_rec(node *T,
+								     Range out)
 {
-	assert(T->size == Out.size());
+	assert(T->size == out.size());
 
 	if (T->size == 0)
 		return;
 
 	if (T->is_leaf) {
-		ExtractPointsInLeaf<Leaf>(T, Out);
+		extract_points_in_leaf<leaf_type>(T, out);
 		return;
 	}
 
-	Interior *TI = static_cast<Interior *>(T);
-	assert(TI->size == TI->left->size + TI->right->size);
+	interior_type *ti = static_cast<interior_type *>(T);
+	assert(ti->size == ti->left->size + ti->right->size);
 	parlay::par_do_if(
 		// WARN: check parallelisim using node size can be biased
-		ForceParallelRecursion<Interior, granularity>(TI),
+		force_parallel_recursion<interior_type, granularity>(ti),
 		[&]() {
-			FlattenRec<Leaf, Interior>(TI->left,
-						   Out.cut(0, TI->left->size));
+			flatten_rec<leaf_type, interior_type>(
+				ti->left, out.cut(0, ti->left->size));
 		},
 		[&]() {
-			FlattenRec<Leaf, Interior>(
-				TI->right, Out.cut(TI->left->size, TI->size));
+			flatten_rec<leaf_type, interior_type>(
+				ti->right, out.cut(ti->left->size, ti->size));
 		});
 
 	return;
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
-	  uint_fast8_t kImbaRatio>
-template <typename Leaf, typename Interior, typename Range, bool granularity>
-void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::FlattenRec(Node *T,
-								     Range Out)
-	requires(!IsBinaryNode<Interior>)
+template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
+	  uint_fast8_t ImbaRatio>
+template <typename leaf_type, typename interior_type, typename Range,
+	  bool granularity>
+void base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::flatten_rec(node *T,
+								     Range out)
+	requires(!is_binary_node<interior_type>)
 {
-	assert(T->size == Out.size());
+	assert(T->size == out.size());
 
 	if (T->size == 0)
 		return;
 
 	if (T->is_leaf) {
-		ExtractPointsInLeaf<Leaf>(T, Out);
+		extract_points_in_leaf<leaf_type>(T, out);
 		return;
 	}
 
-	Interior *TI = static_cast<Interior *>(T);
+	interior_type *ti = static_cast<interior_type *>(T);
 
-	assert(TI->size == std::accumulate(TI->tree_nodes.begin(),
-					   TI->tree_nodes.end(),
+	assert(ti->size == std::accumulate(ti->tree_nodes.begin(),
+					   ti->tree_nodes.end(),
 					   static_cast<size_t>(0),
-					   [](size_t acc, Node *n) -> size_t {
+					   [](size_t acc, node *n) -> size_t {
 						   return acc + n->size;
 					   }));
 
 	parlay::parallel_for(
-		0, TI->tree_nodes.size(),
-		[&](BucketType i) {
+		0, ti->tree_nodes.size(),
+		[&](bucket_type i) {
 			size_t start = 0;
-			for (BucketType j = 0; j < i; ++j) {
-				start += TI->tree_nodes[j]->size;
+			for (bucket_type j = 0; j < i; ++j) {
+				start += ti->tree_nodes[j]->size;
 			}
-			FlattenRec<Leaf, Interior, Range>(
-				TI->tree_nodes[i],
-				Out.cut(start,
-					start + TI->tree_nodes[i]->size));
+			flatten_rec<leaf_type, interior_type, Range>(
+				ti->tree_nodes[i],
+				out.cut(start,
+					start + ti->tree_nodes[i]->size));
 		},
-		ForceParallelRecursion<Interior, granularity>(TI)
+		force_parallel_recursion<interior_type, granularity>(ti)
 			? 1
-			: TI->GetSubTreeNum());
+			: ti->get_sub_tree_num());
 
 	return;
 }
 
-// NOTE: for multi node @T, it only flatten the subtree with id @idx to @Out
-template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
-	  uint_fast8_t kImbaRatio>
-template <typename Leaf, IsMultiNode Interior, typename Range, bool granularity>
-void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::PartialFlatten(
-	Node *T, Range Out, BucketType idx)
+// NOTE: for multi node @T, it only flatten the subtree with id @idx to @out
+template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
+	  uint_fast8_t ImbaRatio>
+template <typename leaf_type, is_multi_node interior_type, typename Range,
+	  bool granularity>
+void base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::partial_flatten(
+	node *T, Range out, bucket_type idx)
 {
 	if (idx == 1) {
-		assert(T->size == Out.size());
-		FlattenRec<Leaf, Interior>(T, Out.cut(0, T->size));
+		assert(T->size == out.size());
+		flatten_rec<leaf_type, interior_type>(T, out.cut(0, T->size));
 		return;
-	} else if (idx >= Interior::GetRegions()) {
-		Node *ns = static_cast<Interior *>(T)
-				   ->tree_nodes[idx - Interior::GetRegions()];
-		assert(ns->size == Out.size());
-		FlattenRec<Leaf, Interior>(ns, Out.cut(0, ns->size));
+	} else if (idx >= interior_type::get_regions()) {
+		node *ns = static_cast<interior_type *>(T)
+				   ->tree_nodes[idx -
+						interior_type::get_regions()];
+		assert(ns->size == out.size());
+		flatten_rec<leaf_type, interior_type>(ns, out.cut(0, ns->size));
 		return;
 	}
 
-	Interior *TI = static_cast<Interior *>(T);
-	size_t l_size = TI->MergeSize(idx << 1),
-	       r_size = TI->MergeSize(idx << 1 | 1);
-	assert(l_size + r_size == Out.size());
+	interior_type *ti = static_cast<interior_type *>(T);
+	size_t l_size = ti->merge_size(idx << 1),
+	       r_size = ti->merge_size(idx << 1 | 1);
+	assert(l_size + r_size == out.size());
 	parlay::par_do_if(
-		ForceParallelRecursion<Interior, granularity>(
-			static_cast<Interior *>(T)),
+		force_parallel_recursion<interior_type, granularity>(
+			static_cast<interior_type *>(T)),
 		[&]() {
-			PartialFlatten<Leaf, Interior>(T, Out.cut(0, l_size),
-						       idx << 1);
+			partial_flatten<leaf_type, interior_type>(
+				T, out.cut(0, l_size), idx << 1);
 		},
 		[&]() {
-			PartialFlatten<Leaf, Interior>(
-				T, Out.cut(l_size, l_size + r_size),
+			partial_flatten<leaf_type, interior_type>(
+				T, out.cut(l_size, l_size + r_size),
 				idx << 1 | 1);
 		});
 	return;

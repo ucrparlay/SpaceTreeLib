@@ -11,17 +11,17 @@
 
 namespace psi
 {
-template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
-	  uint_fast8_t kImbaRatio>
+template <typename Point, typename SplitRule, uint_fast8_t SkHeight,
+	  uint_fast8_t ImbaRatio>
 template <typename Range>
-void PTree<Point, SplitRule, kSkHeight, kImbaRatio>::Build(Range &&In)
+void p_tree<Point, SplitRule, SkHeight, ImbaRatio>::build(Range &&in)
 {
-	BT::IngestRange(In, [&](Slice A) { Build_(A); });
+	base_type::ingest_range(in, [&](slice_type A) { build_(A); });
 }
 
-template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
-	  uint_fast8_t kImbaRatio>
-void PTree<Point, SplitRule, kSkHeight, kImbaRatio>::Build_(Slice A)
+template <typename Point, typename SplitRule, uint_fast8_t SkHeight,
+	  uint_fast8_t ImbaRatio>
+void p_tree<Point, SplitRule, SkHeight, ImbaRatio>::build_(slice_type A)
 {
 	// parlay::parallel_for(0, n, [&](size_t i) {
 	//   P[i].morton_id = uRse_hilbert ? P[i].overlap_bits() :
@@ -36,27 +36,27 @@ void PTree<Point, SplitRule, kSkHeight, kImbaRatio>::Build_(Slice A)
 	// parlay::sequence<CpamPair> entries(n);
 	// parlay::parallel_for(0, n, [&](int i) {
 	//   // entries[i] = {{P[i].morton_id, P[i].id}, P[i]};
-	//   entries[i] = {{space_filling_curve_.Encode(A[i]), i},
+	//   entries[i] = {{space_filling_curve_.encode(A[i]), i},
 	//   std::ref(A[i])};
-	//   // entries[i] = {{space_filling_curve_.Encode(A[i]), i}, A[i]};
+	//   // entries[i] = {{space_filling_curve_.encode(A[i]), i}, A[i]};
 	//   // entries[i] = {P[i]->id, P[i]};
 	// });
-	// CpamPair a = {{space_filling_curve_.Encode(A[0]), 0}, A[0]};
-	// std::tuple<typename CpamEntry::key_t,
-	//            std::reference_wrapper<typename CpamEntry::val_t>>
-	//     b = {{space_filling_curve_.Encode(A[0]), 0}, std::ref(A[0])};
+	// CpamPair a = {{space_filling_curve_.encode(A[0]), 0}, A[0]};
+	// std::tuple<typename cpam_entry::key_t,
+	//            std::reference_wrapper<typename cpam_entry::val_t>>
+	//     b = {{space_filling_curve_.encode(A[0]), 0}, std::ref(A[0])};
 	// std::cout << sizeof(a) << " " << sizeof(b) << std::endl;
 	// auto a = std::ref(A[0]);
 
 	// parlay::internal::timer t("");
 	// auto entries = parlay::tabulate(n, [&](size_t i) {
-	//   // return {{space_filling_curve_.Encode(A[i]), i}, std::ref(A[i])};
+	//   // return {{space_filling_curve_.encode(A[i]), i}, std::ref(A[i])};
 	//   // return {{0, i}, std::ref(A[i])};
 	//   // return std::make_tuple(std::make_pair(0, i), A[i]);
-	//   // return std::make_tuple(std::make_pair(SplitRule::Encode(A[i]),
+	//   // return std::make_tuple(std::make_pair(SplitRule::encode(A[i]),
 	//   i), A[i]); return std::make_tuple(
-	//       std::make_pair(SplitRule::Encode(A[i]),
-	//       static_cast<IdType>(i)), std::ref(A[i]));
+	//       std::make_pair(SplitRule::encode(A[i]),
+	//       static_cast<id_type>(i)), std::ref(A[i]));
 	// });
 	// t.next("make_entries");
 
@@ -68,10 +68,10 @@ void PTree<Point, SplitRule, kSkHeight, kImbaRatio>::Build_(Slice A)
 	// zmap m1(entries);
 	// auto vals = zmap::values(m1);
 	// parlay::parallel_for(
-	//     0, n, [&](size_t i) { A[i].GetAug().code =
-	//     SplitRule::Encode(A[i]); });
-	// this->cpam_aug_map_ = CpamAugMap(A);
-	this->cpam_aug_map_ = std::move(CpamAugMap(A));
+	//     0, n, [&](size_t i) { A[i].get_aug().code =
+	//     SplitRule::encode(A[i]); });
+	// this->cpam_aug_map_ = cpam_aug_map_type(A);
+	this->cpam_aug_map_ = std::move(cpam_aug_map_type(A));
 	// return m1;
 
 	return;

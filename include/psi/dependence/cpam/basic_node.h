@@ -18,28 +18,28 @@ using node_size_t = unsigned int;
 // *******************************************
 
 template <class balance_data, class _Entry, class EntryEncoder,
-	  size_t kBlockSize>
+	  size_t block_size>
 struct basic_node {
 public:
-	using ET = _Entry;
+	using et_type = _Entry;
 	using node = void;
 	using basic =
-		basic_node<balance_data, _Entry, EntryEncoder, kBlockSize>;
+		basic_node<balance_data, _Entry, EntryEncoder, block_size>;
 
-	static constexpr size_t kCompressionBlockSize = kBlockSize;
-	static constexpr size_t B = kCompressionBlockSize;
+	static constexpr size_t compression_block_size = block_size;
+	static constexpr size_t B = compression_block_size;
 
-	static constexpr size_t kBaseCaseSize = 8 * B + 2;
-	static constexpr size_t kNodeLimit = 4 * B;
-	static constexpr size_t kBlockSizeUpperBound =
-		2 * B * sizeof(ET) + 3 * sizeof(node_size_t);
+	static constexpr size_t base_case_size = 8 * B + 2;
+	static constexpr size_t node_limit = 4 * B;
+	static constexpr size_t block_size_upper_bound =
+		2 * B * sizeof(et_type) + 3 * sizeof(node_size_t);
 
 	struct regular_node : balance_data {
 		node_size_t r; // reference count, top-bit is always "1"
 		node_size_t s;
 		node *lc;
 		node *rc;
-		ET entry;
+		et_type entry;
 	};
 	using allocator = parlay::type_allocator<regular_node>;
 
@@ -52,15 +52,16 @@ public:
 
 	// Complex nodes have between B and 2B elements.
 	struct complex_bytes {
-		uint8_t arr[kBlockSizeUpperBound];
+		uint8_t arr[block_size_upper_bound];
 	};
 	using complex_allocator = parlay::type_allocator<complex_bytes>;
 
-	static void reorder(ET *stack, size_t s)
+	static void reorder(et_type *stack, size_t s)
 	{
 		return std::sort(stack, stack + s,
-				 [](const ET &a, const ET &b) {
-					 return ET::get_key(a) < ET::get_key(b);
+				 [](et_type const &a, et_type const &b) {
+					 return et_type::get_key(a) <
+						et_type::get_key(b);
 				 });
 	}
 
@@ -87,7 +88,7 @@ public:
 
 	static inline bool is_regular(node *a)
 	{
-		return !a || ((regular_node *)a)->r & kTopBit;
+		return !a || ((regular_node *)a)->r & top_bit;
 	}
 	static inline bool is_compressed(node *a)
 	{
@@ -115,7 +116,7 @@ public:
 	}
 	static node_size_t ref_cnt(node *a)
 	{
-		return (a) ? generic_node(a)->r & kLowBitMask : 0;
+		return (a) ? generic_node(a)->r & low_bit_mask : 0;
 	}
 
 	// Used by balance_utils
@@ -126,17 +127,17 @@ public:
 	}
 
 	template <typename T>
-	// static regular_node* make_regular_node(const ET& e) {
+	// static regular_node* make_regular_node(const et_type& e) {
 	static regular_node *make_regular_node(T const &e)
 	{
 		regular_node *o = allocator::alloc();
 		o->r = 1;
-		o->r |= kTopBit;
+		o->r |= top_bit;
 		parlay::assign_uninitialized(o->entry, e);
 		return o;
 	}
 
-	static regular_node *single(const ET &e)
+	static regular_node *single(et_type const &e)
 	{
 		regular_node *r = make_regular_node(e);
 		r->lc = r->rc = NULL;
@@ -149,22 +150,22 @@ public:
 		return NULL;
 	}
 
-	inline static ET &get_entry(node *a)
+	inline static et_type &get_entry(node *a)
 	{
 		return cast_to_regular(a)->entry;
 	}
-	inline static ET *get_entry_p(node *a)
+	inline static et_type *get_entry_p(node *a)
 	{
 		return &(cast_to_regular(a)->entry);
 	}
-	static void set_entry(node *a, ET const &e)
+	static void set_entry(node *a, et_type const &e)
 	{
 		cast_to_regular(a)->entry = e;
 	}
 
-	static constexpr node_size_t kTopBit = ((node_size_t)1)
+	static constexpr node_size_t top_bit = ((node_size_t)1)
 					       << (sizeof(node_size_t) * 8 - 1);
-	static constexpr node_size_t kLowBitMask = kTopBit - ((node_size_t)1);
+	static constexpr node_size_t low_bit_mask = top_bit - ((node_size_t)1);
 
 	/* ========================== Compression =============================
 	 */
@@ -178,7 +179,7 @@ public:
 		EntryEncoder::inplace_update(data_start, c->s, f);
 	}
 
-	template <typename F, bool kReorderCompress = true>
+	template <typename F, bool ReorderCompress = true>
 	static void iterate_seq(node *a, F const &f)
 	{
 		if (!a)
@@ -192,14 +193,14 @@ public:
 			auto c = cast_to_compressed(a);
 			uint8_t *data_start =
 				(((uint8_t *)c) + sizeof(compressed_node));
-			if constexpr (kReorderCompress) {
+			if constexpr (ReorderCompress) {
 				reorder(c);
 			}
 			EntryEncoder::decode(data_start, c->s, f);
 		}
 	}
 
-	template <typename F, bool kReorderCompress = true>
+	template <typename F, bool ReorderCompress = true>
 	static bool iterate_cond(node *a, F const &f)
 	{
 		if (!a)
@@ -218,7 +219,7 @@ public:
 			auto c = cast_to_compressed(a);
 			uint8_t *data_start =
 				(((uint8_t *)c) + sizeof(compressed_node));
-			if constexpr (kReorderCompress) {
+			if constexpr (ReorderCompress) {
 				reorder(c);
 			}
 			return EntryEncoder::decode_cond(data_start, c->s, f);
@@ -226,8 +227,8 @@ public:
 	}
 
 	template <class F, class Comp, class K>
-	static std::optional<ET> find_compressed(node *b, F const &f,
-						 Comp const &comp, K const &k)
+	static std::optional<et_type>
+	find_compressed(node *b, F const &f, Comp const &comp, K const &k)
 	{
 		auto c = cast_to_compressed(b);
 		uint8_t *data_start =
@@ -235,8 +236,8 @@ public:
 		return EntryEncoder::find(data_start, c->s, f, comp, k);
 	}
 
-	// Used by GC to copy a compressed node. TODO: update to work correctly
-	// with diff-encoding.
+	// Used by gc_type to copy a compressed node. TODO: update to work
+	// correctly with diff-encoding.
 	static node *make_compressed_node(node *b)
 	{
 		return basic_node_helpers::make_compressed_node<basic>(b, B);
@@ -278,7 +279,8 @@ public:
 
 	// takes a pointer to an array of ETs, and a length of the number of ETs
 	// to construct, and returns a compressed node.
-	static compressed_node *make_single_compressed_node(ET *e, size_t s)
+	static compressed_node *make_single_compressed_node(et_type *e,
+							    size_t s)
 	{
 		assert(s <= 2 * B);
 
@@ -308,7 +310,7 @@ public:
 		return basic_node_helpers::make_compressed<basic>(l, r, e, B);
 	}
 
-	static node *make_compressed(ET *stack, size_t tot)
+	static node *make_compressed(et_type *stack, size_t tot)
 	{
 		return basic_node_helpers::make_compressed<basic>(stack, tot,
 								  B);
@@ -320,14 +322,14 @@ public:
 	}
 
 	// TODO: change return type to void.
-	static ET *compressed_node_elms(node *_c, ET *tmp_arr)
+	static et_type *compressed_node_elms(node *_c, et_type *tmp_arr)
 	{
 		assert(is_compressed(_c));
 		auto c = cast_to_compressed(_c);
 		uint8_t *data_start =
 			(((uint8_t *)c) + 3 * sizeof(node_size_t));
 		size_t i = 0;
-		auto f = [&](const ET &et) {
+		auto f = [&](et_type const &et) {
 			parlay::assign_uninitialized(tmp_arr[i++], et);
 		};
 		reorder(c);
@@ -335,7 +337,7 @@ public:
 		return tmp_arr;
 	}
 
-	/* ================================ GC
+	/* ================================ gc_type
 	 * ================================== */
 
 	// Handles both regular and compressed nodes.
@@ -343,7 +345,7 @@ public:
 	{
 		if (is_regular(va)) {
 			auto a = cast_to_regular(va);
-			(a->entry).~ET();
+			(a->entry).~et_type();
 			allocator::free(a);
 		} else {
 			auto c = cast_to_compressed(va);
@@ -359,7 +361,7 @@ public:
 	static bool decrement_count(node *a)
 	{
 		if ((utils::fetch_and_add(&generic_node(a)->r, -1) &
-		     kLowBitMask) == 1) {
+		     low_bit_mask) == 1) {
 			free_node(a);
 			return true;
 		}
@@ -392,7 +394,7 @@ public:
 			node *rsub = cast_to_regular(t)->rc;
 			if (decrement(t)) {
 				utils::fork_no_result(
-					size(lsub) >= kNodeLimit,
+					size(lsub) >= node_limit,
 					[&]() { decrement_recursive(lsub); },
 					[&]() { decrement_recursive(rsub); });
 			}
@@ -464,7 +466,7 @@ public:
 	{
 		if (m > n)
 			std::swap(n, m);
-		return (m > 8 && (m * parlay::log2_up(n / m + 1)) > kNodeLimit);
+		return (m > 8 && (m * parlay::log2_up(n / m + 1)) > node_limit);
 	}
 };
 

@@ -10,105 +10,112 @@ namespace psi
 
 // NOTE: default batch delete
 template <typename Point, typename SplitRule, typename LeafAugType,
-	  typename InteriorAugType, uint_fast8_t kMD, uint_fast8_t kSkHeight,
-	  uint_fast8_t kImbaRatio>
+	  typename InteriorAugType, uint_fast8_t md, uint_fast8_t SkHeight,
+	  uint_fast8_t ImbaRatio>
 template <typename Range>
-void OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight,
-	      kImbaRatio>::BatchDiff(Range &&In)
+void orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
+	       ImbaRatio>::batch_diff(Range &&in)
 {
-	BT::IngestRange(In, [&](Slice A) { BatchDiff_(A); });
+	base_type::ingest_range(in, [&](slice_type A) { batch_diff_(A); });
 	return;
 }
 
 // NOTE: assume points are partially covered in the tree
 template <typename Point, typename SplitRule, typename LeafAugType,
-	  typename InteriorAugType, uint_fast8_t kMD, uint_fast8_t kSkHeight,
-	  uint_fast8_t kImbaRatio>
-void OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight,
-	      kImbaRatio>::BatchDiff_(Slice A)
+	  typename InteriorAugType, uint_fast8_t md, uint_fast8_t SkHeight,
+	  uint_fast8_t ImbaRatio>
+void orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
+	       ImbaRatio>::batch_diff_(slice_type A)
 {
 	if (this->root_ == nullptr)
 		return;
 
 	// NOTE: diff points from the tree
-	Points B = Points::uninitialized(A.size());
-	this->root_ = BatchDiffRecursive(this->root_, A, parlay::make_slice(B));
+	points_type B = points_type::uninitialized(A.size());
+	this->root_ =
+		batch_diff_recursive(this->root_, A, parlay::make_slice(B));
 
 	// NOTE: launch the rebuild
 	// PARA: @prepare_func: function that computes the new parameters before
 	// the rebuildtree recursive
-	auto prepare_func = [&]([[maybe_unused]] Node *T,
-				[[maybe_unused]] size_t i, Box const &box) {
+	auto prepare_func = [&]([[maybe_unused]] node *T,
+				[[maybe_unused]] size_t i,
+				box_type const &box) {
 		auto new_box =
-			static_cast<Interior *>(T)->GetBoxByRegionId(i, box);
-		assert(BT::WithinBox(new_box, box));
+			static_cast<interior_type *>(T)->get_box_by_region_id(
+				i, box);
+		assert(base_type::within_box(new_box, box));
 		return std::make_tuple(std::move(new_box));
 	};
-	this->root_ = BT::template RebuildTreeRecursive<Leaf, Interior, false>(
-		this->root_, prepare_func, split_rule_.AllowRebuild(),
-		this->tree_box_);
+	this->root_ = base_type::template rebuild_tree_recursive<
+		leaf_type, interior_type, false>(this->root_, prepare_func,
+						 split_rule_.allow_rebuild(),
+						 this->tree_box_);
 	return;
 }
 
 // NOTE: the orth does not need box since the box will never change
 template <typename Point, typename SplitRule, typename LeafAugType,
-	  typename InteriorAugType, uint_fast8_t kMD, uint_fast8_t kSkHeight,
-	  uint_fast8_t kImbaRatio>
-Node *OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight,
-	       kImbaRatio>::BatchDiffRecursive(Node *T, Slice In, Slice Out)
+	  typename InteriorAugType, uint_fast8_t md, uint_fast8_t SkHeight,
+	  uint_fast8_t ImbaRatio>
+node *orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
+		ImbaRatio>::batch_diff_recursive(node *T, slice_type in,
+						 slice_type out)
 {
-	size_t n = In.size();
+	size_t n = in.size();
 
 	if (n == 0) {
 		return T;
 	}
 
 	if (T->is_leaf) {
-		return BT::template DiffPoints4Leaf<Leaf, Node *>(T, In);
+		return base_type::template diff_points4_leaf<leaf_type, node *>(
+			T, in);
 	}
 
-	// if (In.size()) {
-	if (In.size() <= BT::kSerialBuildCutoff) {
-		parlay::sequence<BallsType> sums(kNodeRegions, 0);
-		SerialSplitSkeleton(T, In, 0, 1, sums);
+	// if (in.size()) {
+	if (in.size() <= base_type::serial_build_cutoff) {
+		parlay::sequence<balls_type> sums(node_regions, 0);
+		serial_split_skeleton(T, in, 0, 1, sums);
 		assert(std::cmp_equal(
 			std::accumulate(sums.begin(), sums.end(), 0), n));
 
-		auto TI = static_cast<Interior *>(T);
-		OrthNodeArr new_nodes;
+		auto ti = static_cast<interior_type *>(T);
+		orth_node_arr_type new_nodes;
 
 		size_t start = 0;
-		for (DimsType i = 0; i < kNodeRegions; ++i) {
-			new_nodes[i] = BatchDiffRecursive(
-				TI->tree_nodes[i],
-				In.cut(start, start + sums[i]),
-				Out.cut(start, start + sums[i]));
+		for (dims_type i = 0; i < node_regions; ++i) {
+			new_nodes[i] = batch_diff_recursive(
+				ti->tree_nodes[i],
+				in.cut(start, start + sums[i]),
+				out.cut(start, start + sums[i]));
 			start += sums[i];
 		}
 
 		bool const force_parallel_flag =
-			TI->size > BT::kSerialBuildCutoff;
-		BT::template UpdateInterior<Interior>(T, new_nodes);
+			ti->size > base_type::serial_build_cutoff;
+		base_type::template update_interior<interior_type>(T,
+								   new_nodes);
 		assert(T->is_leaf == false);
 
-		if (BT::SparseNode(0, TI->size)) {
-			TI->SetParallelFlag(force_parallel_flag);
+		if (base_type::sparse_node(0, ti->size)) {
+			ti->set_parallel_flag(force_parallel_flag);
 		}
 
 		return T;
 	}
 
-	InnerTree IT;
-	IT.AssignNodeTag(T, 1);
-	assert(IT.tags_num > 0 && IT.tags_num <= BT::kBucketNum);
-	BT::template SievePoints<Interior>(In, Out, n, IT.tags, IT.sums,
-					   IT.tags_num);
-	IT.TagPuffyNodes();
+	inner_tree IT;
+	IT.assign_node_tag(T, 1);
+	assert(IT.tags_num > 0 && IT.tags_num <= base_type::bucket_num);
+	base_type::template sieve_points<interior_type>(in, out, n, IT.tags,
+							IT.sums, IT.tags_num);
+	IT.tag_puffy_nodes();
 
 	// PERF: no need to call tag imbalance node here, as the bounding box
 	// for orth-tree is fixed
 
-	auto tree_nodes = parlay::sequence<Node *>::uninitialized(IT.tags_num);
+	auto tree_nodes = parlay::sequence<node *>::uninitialized(IT.tags_num);
 	parlay::parallel_for(
 		0, IT.tags_num,
 		[&](decltype(IT.tags_num) i) {
@@ -117,21 +124,22 @@ Node *OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight,
 				start += IT.sums[j];
 			}
 
-			tree_nodes[i] = BatchDiffRecursive(
+			tree_nodes[i] = batch_diff_recursive(
 				IT.tags[IT.rev_tag[i]].first,
-				Out.cut(start, start + IT.sums[i]),
-				In.cut(start, start + IT.sums[i]));
+				out.cut(start, start + IT.sums[i]),
+				in.cut(start, start + IT.sums[i]));
 
 			// NOTE: after pick the tag, the tag id is same as the
-			// bucket id. In order to match the base case in
-			// UpdateInnerTree, we need to manually change it to
-			// kBucketNum+2, i.e., none-of its ancestor has been
+			// bucket id. in order to match the base case in
+			// update_inner_tree, we need to manually change it to
+			// bucket_num+2, i.e., none-of its ancestor has been
 			// rebuilt
-			IT.tags[IT.rev_tag[i]].second = BT::kBucketNum + 2;
+			IT.tags[IT.rev_tag[i]].second =
+				base_type::bucket_num + 2;
 		},
 		1);
 
-	return IT.template UpdateInnerTree<InnerTree::kUpdatePointer, false>(
+	return IT.template update_inner_tree<inner_tree::kUpdatePointer, false>(
 		tree_nodes);
 }
 

@@ -13,14 +13,14 @@ using namespace std;
 //    POINTS AND VECTORS (3d),  2d is below
 // *************************************************************
 
-template <class Coord>
+template <class coord_type>
 class point3d;
 
-template <class Coord>
+template <class coord_type>
 class vector3d
 {
 public:
-	using coord = Coord;
+	using coord = coord_type;
 	using vector = vector3d;
 	using point = point3d<coord>;
 	coord x;
@@ -74,7 +74,7 @@ public:
 		cout << std::setprecision(10) << ":(" << x << "," << y << ","
 		     << z << "):";
 	}
-	coord Length(void)
+	coord length(void)
 	{
 		return sqrt(x * x + y * y + z * z);
 	}
@@ -85,11 +85,11 @@ public:
 	static int const dim = 3;
 };
 
-template <class Coord>
+template <class coord_type>
 class point3d
 {
 public:
-	using coord = Coord;
+	using coord = coord_type;
 	using vector = vector3d<coord>;
 	using point = point3d;
 	coord x;
@@ -120,11 +120,11 @@ public:
 	{
 		return point(x + op2.x, y + op2.y, z + op2.z);
 	}
-	point MinCoords(point b)
+	point min_coords(point b)
 	{
 		return point(min(x, b.x), min(y, b.y), min(z, b.z));
 	}
-	point MaxCoords(point b)
+	point max_coords(point b)
 	{
 		return point(max(x, b.x), max(y, b.y), max(z, b.z));
 	}
@@ -185,14 +185,14 @@ inline vector3d<coord>::vector3d(point3d<coord> p)
 //    POINTS AND VECTORS (2d)
 // *************************************************************
 
-template <class Coord>
+template <class coord_type>
 class point2d;
 
-template <class Coord>
+template <class coord_type>
 class vector2d
 {
 public:
-	using coord = Coord;
+	using coord = coord_type;
 	using point = point2d<coord>;
 	using vector = vector2d;
 	coord x;
@@ -242,7 +242,7 @@ public:
 	{
 		cout << ":(" << x << "," << y << "):";
 	}
-	coord Length(void)
+	coord length(void)
 	{
 		return sqrt(x * x + y * y);
 	}
@@ -265,11 +265,11 @@ static std::ostream &operator<<(std::ostream &os, point3d<coord> const v)
 	return os << v.x << " " << v.y << " " << v.z;
 }
 
-template <class Coord>
+template <class coord_type>
 class point2d
 {
 public:
-	using coord = Coord;
+	using coord = coord_type;
 	using vector = vector2d<coord>;
 	using point = point2d;
 	coord x;
@@ -302,11 +302,11 @@ public:
 	{
 		return (i == 0) ? x : y;
 	};
-	point MinCoords(point b)
+	point min_coords(point b)
 	{
 		return point(min(x, b.x), min(y, b.y));
 	}
-	point MaxCoords(point b)
+	point max_coords(point b)
 	{
 		return point(max(x, b.x), max(y, b.y));
 	}
@@ -375,7 +375,7 @@ template <class coord>
 inline coord triAreaNormalized(point2d<coord> a, point2d<coord> b,
 			       point2d<coord> c)
 {
-	return triArea(a, b, c) / ((b - a).Length() * (c - a).Length());
+	return triArea(a, b, c) / ((b - a).length() * (c - a).length());
 }
 
 // Returns TRUE if the points a, b, c are in a counterclockise order
@@ -416,7 +416,7 @@ inline double inCircleNormalized(point2d<coord> a, point2d<coord> b,
 	vector3d<coord> bd = onParabola(b - d);
 	vector3d<coord> cd = onParabola(c - d);
 	return (ad.cross(bd)).dot(cd) /
-	       (ad.Length() * bd.Length() * cd.Length());
+	       (ad.length() * bd.length() * cd.length());
 }
 
 // *************************************************************
@@ -464,8 +464,8 @@ inline coord angle(point2d<coord> a, point2d<coord> b, point2d<coord> c)
 {
 	vector2d<coord> ba = (b - a);
 	vector2d<coord> ca = (c - a);
-	coord lba = ba.Length();
-	coord lca = ca.Length();
+	coord lba = ba.length();
+	coord lca = ca.length();
 	coord pi = 3.14159;
 	return 180 / pi * acos(ba.dot(ca) / (lba * lca));
 }
@@ -477,9 +477,9 @@ inline coord minAngleCheck(point2d<coord> a, point2d<coord> b, point2d<coord> c,
 	vector2d<coord> ba = (b - a);
 	vector2d<coord> ca = (c - a);
 	vector2d<coord> cb = (c - b);
-	coord lba = ba.Length();
-	coord lca = ca.Length();
-	coord lcb = cb.Length();
+	coord lba = ba.length();
+	coord lca = ca.length();
+	coord lcb = cb.length();
 	coord pi = 3.14159;
 	coord co = cos(angle * pi / 180.);
 	return (ba.dot(ca) / (lba * lca) > co ||

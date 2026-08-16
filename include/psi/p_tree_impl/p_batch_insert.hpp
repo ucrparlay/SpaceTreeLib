@@ -6,25 +6,25 @@
 
 namespace psi
 {
-template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
-	  uint_fast8_t kImbaRatio>
+template <typename Point, typename SplitRule, uint_fast8_t SkHeight,
+	  uint_fast8_t ImbaRatio>
 template <typename Range>
-void PTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchInsert(Range &&In)
+void p_tree<Point, SplitRule, SkHeight, ImbaRatio>::batch_insert(Range &&in)
 {
-	BT::IngestRange(In, [&](Slice A) { BatchInsert_(A); });
+	base_type::ingest_range(in, [&](slice_type A) { batch_insert_(A); });
 }
 
-template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
-	  uint_fast8_t kImbaRatio>
-void PTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchInsert_(Slice A)
+template <typename Point, typename SplitRule, uint_fast8_t SkHeight,
+	  uint_fast8_t ImbaRatio>
+void p_tree<Point, SplitRule, SkHeight, ImbaRatio>::batch_insert_(slice_type A)
 {
 	if (!this->cpam_aug_map_.root ||
-	    !CpamAugMap::size(this->cpam_aug_map_.root)) {
-		/* Build_ , not Build: A is already tree owned storage. */
-		return Build_(A);
+	    !cpam_aug_map_type::size(this->cpam_aug_map_.root)) {
+		/* build_ , not build: A is already tree owned storage. */
+		return build_(A);
 	}
-	this->cpam_aug_map_ =
-		CpamAugMap::multi_insert(std::move(this->cpam_aug_map_), A);
+	this->cpam_aug_map_ = cpam_aug_map_type::multi_insert(
+		std::move(this->cpam_aug_map_), A);
 	return;
 }
 

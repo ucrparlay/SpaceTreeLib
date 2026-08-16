@@ -13,234 +13,247 @@
 namespace psi
 {
 template <typename Point, typename SplitRule, typename LeafAugType,
-	  typename InteriorAugType, uint_fast8_t kMD, uint_fast8_t kSkHeight,
-	  uint_fast8_t kImbaRatio>
+	  typename InteriorAugType, uint_fast8_t md, uint_fast8_t SkHeight,
+	  uint_fast8_t ImbaRatio>
 template <typename Range, typename... Args>
-void OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight,
-	      kImbaRatio>::Build(Range &&In, Args &&...args)
+void orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
+	       ImbaRatio>::build(Range &&in, Args &&...args)
 {
-	static_assert(BT::kBuildDepthOnce % kMD == 0);
-	assert(kMD == BT::kDim);
-	BT::IngestRange(
-		In, [&](Slice A) { Build_(A, std::forward<Args>(args)...); });
+	static_assert(base_type::build_depth_once % md == 0);
+	assert(md == base_type::num_dims);
+	base_type::ingest_range(in, [&](slice_type A) {
+		build_(A, std::forward<Args>(args)...);
+	});
 }
 
 // TODO: maybe we don't need this function, it can be directly computed by value
 template <typename Point, typename SplitRule, typename LeafAugType,
-	  typename InteriorAugType, uint_fast8_t kMD, uint_fast8_t kSkHeight,
-	  uint_fast8_t kImbaRatio>
-void OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight,
-	      kImbaRatio>::DivideRotate(HyperPlaneSeq &pivots, DimsType dim,
-					BucketType idx, BoxSeq &box_seq,
-					Box const &box)
+	  typename InteriorAugType, uint_fast8_t md, uint_fast8_t SkHeight,
+	  uint_fast8_t ImbaRatio>
+void orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
+	       ImbaRatio>::divide_rotate(hyper_plane_seq_type &pivots,
+					 dims_type dim, bucket_type idx,
+					 box_seq_type &box_seq,
+					 box_type const &box)
 {
-	if (idx > BT::kPivotNum) {
+	if (idx > base_type::pivot_num) {
 		// WARN: sometimes cut dimension can be -1, never use
 		// pivots[idx].first == -1 to check whether it is in bucket;
 		// instead, use idx > PIVOT_NUM
-		box_seq[idx - BT::kBucketNum] = box;
-		pivots[idx] = HyperPlane(0, idx - BT::kBucketNum);
+		box_seq[idx - base_type::bucket_num] = box;
+		pivots[idx] = hyper_plane_type(0, idx - base_type::bucket_num);
 		return;
 	}
 
-	pivots[idx] =
-		split_rule_.SplitSample(Slice(nullptr, nullptr), dim, box);
+	pivots[idx] = split_rule_.split_sample(slice_type(nullptr, nullptr),
+					       dim, box);
 
-	BoxCut box_cut(box, pivots[idx], true);
-	// dim = (dim + 1) % BT::kDim;
-	dim = split_rule_.NextDimension(dim);
-	DivideRotate(pivots, dim, 2 * idx, box_seq, box_cut.GetFirstBoxCut());
-	DivideRotate(pivots, dim, 2 * idx + 1, box_seq,
-		     box_cut.GetSecondBoxCut());
+	box_cut_type box_cut(box, pivots[idx], true);
+	// dim = (dim + 1) % base_type::num_dims;
+	dim = split_rule_.next_dimension(dim);
+	divide_rotate(pivots, dim, 2 * idx, box_seq,
+		      box_cut.get_first_box_cut());
+	divide_rotate(pivots, dim, 2 * idx + 1, box_seq,
+		      box_cut.get_second_box_cut());
 
 	return;
 }
 
 template <typename Point, typename SplitRule, typename LeafAugType,
-	  typename InteriorAugType, uint_fast8_t kMD, uint_fast8_t kSkHeight,
-	  uint_fast8_t kImbaRatio>
-void OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight,
-	      kImbaRatio>::SerialSplit(Slice In, DimsType dim, DimsType idx,
-				       Box const &box,
-				       parlay::sequence<BallsType> &sums)
+	  typename InteriorAugType, uint_fast8_t md, uint_fast8_t SkHeight,
+	  uint_fast8_t ImbaRatio>
+void orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
+	       ImbaRatio>::serial_split(slice_type in, dims_type dim,
+					dims_type idx, box_type const &box,
+					parlay::sequence<balls_type> &sums)
 {
-	assert(dim <= BT::kDim);
+	assert(dim <= base_type::num_dims);
 
-	if (dim == BT::kDim) {
-		sums[idx - kNodeRegions] = In.size();
+	if (dim == base_type::num_dims) {
+		sums[idx - node_regions] = in.size();
 		return;
 	}
 
-	auto [split_iter, split] = split_rule_.SplitInput(In, dim, box);
+	auto [split_iter, split] = split_rule_.split_input(in, dim, box);
 
-	SerialSplit(In.cut(0, split_iter - In.begin()), dim + 1, idx << 1, box,
-		    sums);
-	SerialSplit(In.cut(split_iter - In.begin(), In.size()), dim + 1,
-		    idx << 1 | 1, box, sums);
+	serial_split(in.cut(0, split_iter - in.begin()), dim + 1, idx << 1, box,
+		     sums);
+	serial_split(in.cut(split_iter - in.begin(), in.size()), dim + 1,
+		     idx << 1 | 1, box, sums);
 }
 
 template <typename Point, typename SplitRule, typename LeafAugType,
-	  typename InteriorAugType, uint_fast8_t kMD, uint_fast8_t kSkHeight,
-	  uint_fast8_t kImbaRatio>
-Node *OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight,
-	       kImbaRatio>::SerialBuildRecursive(Slice In, Slice Out,
-						 Box const &box,
-						 bool checked_duplicate)
+	  typename InteriorAugType, uint_fast8_t md, uint_fast8_t SkHeight,
+	  uint_fast8_t ImbaRatio>
+node *orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
+		ImbaRatio>::serial_build_recursive(slice_type in,
+						   slice_type out,
+						   box_type const &box,
+						   bool checked_duplicate)
 {
-	assert(In.size() == 0 || BT::WithinBox(BT::GetBox(In), box));
-	size_t n = In.size();
+	assert(in.size() == 0 ||
+	       base_type::within_box(base_type::get_box(in), box));
+	size_t n = in.size();
 
 	if (n == 0) {
-		return AllocEmptyLeafNode<Slice, Leaf>();
+		return alloc_empty_leaf_node<slice_type, leaf_type>();
 	}
 
-	if (n <= BT::kLeafCapacity) {
-		return AllocNormalLeafNode<Slice, Leaf>(In);
+	if (n <= base_type::leaf_capacity) {
+		return alloc_normal_leaf_node<slice_type, leaf_type>(in);
 	}
 
-	assert(kSplitterNum == BT::kDim);
+	assert(splitter_num == base_type::num_dims);
 
-	DimsType dim = 0;
-	parlay::sequence<BallsType> sums(kNodeRegions, 0);
-	auto splitter = Interior::ComputeSplitter(box);
-	SerialSplit(In, dim, 1, box, sums);
+	dims_type dim = 0;
+	parlay::sequence<balls_type> sums(node_regions, 0);
+	auto splitter = interior_type::compute_splitter(box);
+	serial_split(in, dim, 1, box, sums);
 	assert(std::cmp_equal(std::accumulate(sums.begin(), sums.end(), 0), n));
 
-	if (std::ranges::count(sums, 0) == kNodeRegions - 1) { // split fails
+	if (std::ranges::count(sums, 0) == node_regions - 1) { // split fails
 		if (std::ranges::find_if_not(
-			    In, [&](Point const &p) { // early return
-				    return p.SameDimension(In[0]);
-			    }) == In.end()) {
-			if constexpr (IsAugPoint<Point>) {
+			    in, [&](Point const &p) { // early return
+				    return p.same_dimension(in[0]);
+			    }) == in.end()) {
+			if constexpr (is_aug_point<Point>) {
 				if constexpr (
-					Point::IsNonTrivialAugmentation()) {
-					return AllocFixSizeLeafNode<Slice,
-								    Leaf>(
-						In,
+					Point::is_non_trivial_augmentation()) {
+					return alloc_fix_size_leaf_node<
+						slice_type, leaf_type>(
+						in,
 						std::max(
-							In.size(),
+							in.size(),
 							static_cast<size_t>(
-								BT::kLeafCapacity)));
+								base_type::
+									leaf_capacity)));
 				} else {
-					return AllocDummyLeafNode<Slice, Leaf>(
-						In);
+					return alloc_dummy_leaf_node<slice_type,
+								     leaf_type>(
+						in);
 				}
 			} else {
 				// WARN: Need to pass full range, since it needs
 				// to compute the size
-				return AllocDummyLeafNode<Slice, Leaf>(In);
+				return alloc_dummy_leaf_node<slice_type,
+							     leaf_type>(in);
 			}
 		} else {
-			return split_rule_.HandleUndivided(*this, In, Out, box);
+			return split_rule_.handle_undivided(*this, in, out,
+							    box);
 		}
 	}
 
-	OrthNodeArr tree_nodes;
+	orth_node_arr_type tree_nodes;
 	size_t start = 0;
-	for (DimsType i = 0; i < kNodeRegions; ++i) {
+	for (dims_type i = 0; i < node_regions; ++i) {
 		// NOTE: iterate through non-empty partitions, put them into the
 		// position identified by non_empty_node
-		tree_nodes[i] = SerialBuildRecursive(
-			In.cut(start, start + sums[i]),
-			Out.cut(start, start + sums[i]),
-			Interior::GetBoxByRegionId(i, splitter, box),
+		tree_nodes[i] = serial_build_recursive(
+			in.cut(start, start + sums[i]),
+			out.cut(start, start + sums[i]),
+			interior_type::get_box_by_region_id(i, splitter, box),
 			checked_duplicate);
 		start += sums[i];
 	}
 
-	return AllocInteriorNode<Interior>(tree_nodes, splitter);
+	return alloc_interior_node<interior_type>(tree_nodes, splitter);
 }
 
 template <typename Point, typename SplitRule, typename LeafAugType,
-	  typename InteriorAugType, uint_fast8_t kMD, uint_fast8_t kSkHeight,
-	  uint_fast8_t kImbaRatio>
-Node *OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight,
-	       kImbaRatio>::BuildRecursive(Slice In, Slice Out, Box const &box)
+	  typename InteriorAugType, uint_fast8_t md, uint_fast8_t SkHeight,
+	  uint_fast8_t ImbaRatio>
+node *orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
+		ImbaRatio>::build_recursive(slice_type in, slice_type out,
+					    box_type const &box)
 {
 	// TODO: may ensure the bucket is corresponding the the splitter
-	assert(In.size() == 0 || BT::WithinBox(BT::GetBox(In), box));
-	size_t n = In.size();
+	assert(in.size() == 0 ||
+	       base_type::within_box(base_type::get_box(in), box));
+	size_t n = in.size();
 
-	// if (In.size()) {
-	if (n <= BT::kSerialBuildCutoff) {
-		return SerialBuildRecursive(In, Out, box, false);
+	// if (in.size()) {
+	if (n <= base_type::serial_build_cutoff) {
+		return serial_build_recursive(in, out, box, false);
 	}
 
-	auto pivots = HyperPlaneSeq::uninitialized(BT::kPivotNum +
-						   BT::kBucketNum + 1);
-	auto box_seq = BoxSeq::uninitialized(BT::kBucketNum);
-	parlay::sequence<BallsType> sums;
+	auto pivots = hyper_plane_seq_type::uninitialized(
+		base_type::pivot_num + base_type::bucket_num + 1);
+	auto box_seq = box_seq_type::uninitialized(base_type::bucket_num);
+	parlay::sequence<balls_type> sums;
 
-	DivideRotate(pivots, 0, 1, box_seq, box);
-	BT::Partition(In, Out, In.size(), pivots, sums);
+	divide_rotate(pivots, 0, 1, box_seq, box);
+	base_type::partition(in, out, in.size(), pivots, sums);
 
 	auto tree_nodes =
-		parlay::sequence<Node *>::uninitialized(BT::kBucketNum);
-	auto nodes_map = BucketSeq::uninitialized(BT::kBucketNum);
-	BucketType zeros = std::ranges::count(sums, 0), cnt = 0;
+		parlay::sequence<node *>::uninitialized(base_type::bucket_num);
+	auto nodes_map = bucket_seq_type::uninitialized(base_type::bucket_num);
+	bucket_type zeros = std::ranges::count(sums, 0), cnt = 0;
 
-	if (zeros == BT::kBucketNum - 1) { // NOTE: switch to seral
+	if (zeros == base_type::bucket_num - 1) { // NOTE: switch to seral
 		// TODO: add parallelsim within this call
 		// see parallel kth element
-		return SerialBuildRecursive(In, Out, box, false);
+		return serial_build_recursive(in, out, box, false);
 	}
 
-	for (BucketType i = 0; i < BT::kBucketNum; ++i) {
+	for (bucket_type i = 0; i < base_type::bucket_num; ++i) {
 		if (sums[i] == 0) {
-			tree_nodes[i] = AllocEmptyLeafNode<Slice, Leaf>();
+			tree_nodes[i] =
+				alloc_empty_leaf_node<slice_type, leaf_type>();
 		} else {
 			nodes_map[cnt++] = i;
 		}
 	}
 
 	parlay::parallel_for(
-		0, BT::kBucketNum - zeros,
-		[&](BucketType i) {
+		0, base_type::bucket_num - zeros,
+		[&](bucket_type i) {
 			size_t start = 0;
-			for (BucketType j = 0; j < nodes_map[i]; ++j) {
+			for (bucket_type j = 0; j < nodes_map[i]; ++j) {
 				start += sums[j];
 			}
 
-			tree_nodes[nodes_map[i]] = BuildRecursive(
-				Out.cut(start, start + sums[nodes_map[i]]),
-				In.cut(start, start + sums[nodes_map[i]]),
+			tree_nodes[nodes_map[i]] = build_recursive(
+				out.cut(start, start + sums[nodes_map[i]]),
+				in.cut(start, start + sums[nodes_map[i]]),
 				box_seq[nodes_map[i]]);
 		},
 		1);
 
-	return BT::template BuildInnerTree<Interior>(1, pivots, tree_nodes);
+	return base_type::template build_inner_tree<interior_type>(1, pivots,
+								   tree_nodes);
 }
 
 template <typename Point, typename SplitRule, typename LeafAugType,
-	  typename InteriorAugType, uint_fast8_t kMD, uint_fast8_t kSkHeight,
-	  uint_fast8_t kImbaRatio>
-void OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight,
-	      kImbaRatio>::Build_(Slice A)
+	  typename InteriorAugType, uint_fast8_t md, uint_fast8_t SkHeight,
+	  uint_fast8_t ImbaRatio>
+void orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
+	       ImbaRatio>::build_(slice_type A)
 {
-	Points B = Points::uninitialized(A.size());
+	points_type B = points_type::uninitialized(A.size());
 	if (!fixed_box) {
-		this->tree_box_ = BT::GetBox(A);
+		this->tree_box_ = base_type::get_box(A);
 		fixed_box = true;
 	}
-	this->root_ = BuildRecursive(A, B.cut(0, A.size()), this->tree_box_);
+	this->root_ = build_recursive(A, B.cut(0, A.size()), this->tree_box_);
 	assert(this->root_ != nullptr);
 	return;
 }
 
 template <typename Point, typename SplitRule, typename LeafAugType,
-	  typename InteriorAugType, uint_fast8_t kMD, uint_fast8_t kSkHeight,
-	  uint_fast8_t kImbaRatio>
-void OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight,
-	      kImbaRatio>::Build_(Slice A, Box const &box)
+	  typename InteriorAugType, uint_fast8_t md, uint_fast8_t SkHeight,
+	  uint_fast8_t ImbaRatio>
+void orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
+	       ImbaRatio>::build_(slice_type A, box_type const &box)
 {
-	assert(BT::WithinBox(BT::GetBox(A), box));
+	assert(base_type::within_box(base_type::get_box(A), box));
 
-	Points B = Points::uninitialized(A.size());
+	points_type B = points_type::uninitialized(A.size());
 	if (!fixed_box) {
 		this->tree_box_ = box;
 		fixed_box = true;
 	}
-	this->root_ = BuildRecursive(A, B.cut(0, A.size()), this->tree_box_);
+	this->root_ = build_recursive(A, B.cut(0, A.size()), this->tree_box_);
 	assert(this->root_ != nullptr);
 	return;
 }

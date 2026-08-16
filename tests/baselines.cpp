@@ -22,7 +22,7 @@ int main(int argc, char *argv[])
 
 	auto test_func =
 		[]<class TreeDesc, typename Point>(
-			int const &kDim, parlay::sequence<Point> const &wp,
+			int const &num_dims, parlay::sequence<Point> const &wp,
 			parlay::sequence<Point> const &wi, size_t const &N,
 			int const &K, int const &kRounds,
 			string const &kInsertFile, int const &kTag,
@@ -30,8 +30,8 @@ int main(int argc, char *argv[])
 
 		};
 
-	Wrapper::ApplyBaselines(tree_type, dims, split_type, params,
-				DefaultTestFunc);
+	wrapper::apply_baselines(tree_type, dims, split_type, params,
+				 default_test_func);
 
 	return 0;
 }

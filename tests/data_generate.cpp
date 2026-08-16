@@ -35,29 +35,36 @@ int main(int argc, char *argv[])
 	auto generate = [&]<typename Point>(std::string const &new_path) {
 		std::cout << "Generating... " << std::endl;
 		auto wp =
-			varden ? VardenGenerator<Point, false>().Apply(pts_num)
-			       : UniformGenerator<Point>::WithinBox(pts_num);
+			varden ? varden_generator<Point, false>().apply(pts_num)
+			       : uniform_generator<Point>::within_box(pts_num);
 		std::cout << "Writing... " << std::endl;
-		PrintToFile(new_path, wp);
+		print_to_file(new_path, wp);
 	};
 
 	for (int i = 0; i < file_num; i++) {
 		std::string newpath = path + toString(i + 1) + ".in";
 		std::cout << newpath << std::endl;
 		if (pts_dim == 2) {
-			generate.operator()<psi::BasicPoint<Axis, 2>>(newpath);
+			generate.operator()<psi::basic_point<axis_type, 2>>(
+				newpath);
 		} else if (pts_dim == 3) {
-			generate.operator()<psi::BasicPoint<Axis, 3>>(newpath);
+			generate.operator()<psi::basic_point<axis_type, 3>>(
+				newpath);
 		} else if (pts_dim == 5) {
-			generate.operator()<psi::BasicPoint<Axis, 5>>(newpath);
+			generate.operator()<psi::basic_point<axis_type, 5>>(
+				newpath);
 		} else if (pts_dim == 7) {
-			generate.operator()<psi::BasicPoint<Axis, 7>>(newpath);
+			generate.operator()<psi::basic_point<axis_type, 7>>(
+				newpath);
 		} else if (pts_dim == 9) {
-			generate.operator()<psi::BasicPoint<Axis, 9>>(newpath);
+			generate.operator()<psi::basic_point<axis_type, 9>>(
+				newpath);
 		} else if (pts_dim == 12) {
-			generate.operator()<psi::BasicPoint<Axis, 12>>(newpath);
+			generate.operator()<psi::basic_point<axis_type, 12>>(
+				newpath);
 		} else if (pts_dim == 16) {
-			generate.operator()<psi::BasicPoint<Axis, 16>>(newpath);
+			generate.operator()<psi::basic_point<axis_type, 16>>(
+				newpath);
 		} else {
 			throw std::runtime_error("Invalid dimension");
 		}

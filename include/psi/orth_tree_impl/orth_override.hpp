@@ -12,97 +12,101 @@
 namespace psi
 {
 template <typename Point, typename SplitRule, typename LeafAugType,
-	  typename InteriorAugType, uint_fast8_t kMD, uint_fast8_t kSkHeight,
-	  uint_fast8_t kImbaRatio>
+	  typename InteriorAugType, uint_fast8_t md, uint_fast8_t SkHeight,
+	  uint_fast8_t ImbaRatio>
 template <typename Range>
-auto OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight,
-	      kImbaRatio>::KNN(Point const &q,
-			       kBoundedQueue<Point, Range> &bq) const
+auto orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
+	       ImbaRatio>::knn(Point const &q,
+			       bounded_queue<Point, Range> &bq) const
 {
-	KNNLogger logger;
+	knn_logger logger;
 	if (this->root_ == nullptr)
 		return logger;
-	// BT::template KNNMulti<Leaf, Interior>(this->root_, q, DIM, bq,
-	// this->tree_box_,
+	// base_type::template knn_multi<leaf_type, interior_type>(this->root_,
+	// q, DIM, bq, this->tree_box_,
 	//                                       vis_node_num, generate_box_num,
 	//                                       check_box_num);
-	// BT::template KNNBinary<Leaf, KdInteriorNode>(T, q, DIM, bq,
-	// this->tree_box_,
+	// base_type::template knn_binary<leaf_type, kd_interior_node>(T, q,
+	// DIM, bq, this->tree_box_,
 	//                                              logger);
-	if constexpr (HasBox<typename Interior::AT>) {
-		BT::template KNNMulti<Leaf, Interior>(this->root_, q, bq,
-						      logger);
-		// BT::template KNNMultiExpandBox<Leaf, Interior>(T, q, 0, 1,
-		// bq, logger);
+	if constexpr (has_box<typename interior_type::at_type>) {
+		base_type::template knn_multi<leaf_type, interior_type>(
+			this->root_, q, bq, logger);
+		// base_type::template knn_multi_expand_box<leaf_type,
+		// interior_type>(T, q, 0, 1, bq, logger);
 	} else {
-		BT::template KNNMultiExpand<Leaf, Interior>(
+		base_type::template knn_multi_expand<leaf_type, interior_type>(
 			this->root_, q, 0, 1, bq, this->tree_box_, logger);
 	}
 	return logger;
 }
 
 template <typename Point, typename SplitRule, typename LeafAugType,
-	  typename InteriorAugType, uint_fast8_t kMD, uint_fast8_t kSkHeight,
-	  uint_fast8_t kImbaRatio>
+	  typename InteriorAugType, uint_fast8_t md, uint_fast8_t SkHeight,
+	  uint_fast8_t ImbaRatio>
 template <typename Range>
-void OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight,
-	      kImbaRatio>::Flatten(Range &&Out) const
+void orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
+	       ImbaRatio>::flatten(Range &&out) const
 {
 	if (this->root_ == nullptr) {
-		assert(Out.size() == 0);
+		assert(out.size() == 0);
 		return;
 	}
-	BT::template FlattenRec<Leaf, Interior>(this->root_,
-						parlay::make_slice(Out));
+	base_type::template flatten_rec<leaf_type, interior_type>(
+		this->root_, parlay::make_slice(out));
 }
 
 template <typename Point, typename SplitRule, typename LeafAugType,
-	  typename InteriorAugType, uint_fast8_t kMD, uint_fast8_t kSkHeight,
-	  uint_fast8_t kImbaRatio>
-auto OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight,
-	      kImbaRatio>::RangeCount(Box const &bx) const
+	  typename InteriorAugType, uint_fast8_t md, uint_fast8_t SkHeight,
+	  uint_fast8_t ImbaRatio>
+auto orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
+	       ImbaRatio>::range_count(box_type const &bx) const
 {
-	RangeQueryLogger logger;
+	range_query_logger logger;
 	if (this->root_ == nullptr)
 		return std::make_pair(size_t{0}, logger);
-	size_t s = BT::template RangeCountRectangle<Leaf, Interior>(
+	size_t s = base_type::template range_count_rectangle<leaf_type,
+							     interior_type>(
 		this->root_, bx, this->tree_box_, 0, 1, logger);
 	return std::make_pair(s, logger);
 }
 
 // template <typename Point, typename SplitRule, typename LeafAugType, typename
-// InteriorAugType, uint_fast8_t kMD,
-//           uint_fast8_t kSkHeight, uint_fast8_t kImbaRatio>
-// auto OrthTree<Point, SplitRule, kMD, kSkHeight, kImbaRatio>::RangeCount(
-//     Circle const& cl) {
-//   return BT::template RangeCountRadius<Leaf, Interior>(this->root_, cl,
+// InteriorAugType, uint_fast8_t md,
+//           uint_fast8_t SkHeight, uint_fast8_t ImbaRatio>
+// auto orth_tree<Point, SplitRule, md, SkHeight, ImbaRatio>::range_count(
+//     circle_type const& cl) {
+//   return base_type::template RangeCountRadius<leaf_type,
+//   interior_type>(this->root_, cl,
 //                                                        this->tree_box_);
 // }
 
 template <typename Point, typename SplitRule, typename LeafAugType,
-	  typename InteriorAugType, uint_fast8_t kMD, uint_fast8_t kSkHeight,
-	  uint_fast8_t kImbaRatio>
+	  typename InteriorAugType, uint_fast8_t md, uint_fast8_t SkHeight,
+	  uint_fast8_t ImbaRatio>
 template <typename Range>
-auto OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD, kSkHeight,
-	      kImbaRatio>::RangeQuery(Box const &query_box, Range &&Out) const
+auto orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
+	       ImbaRatio>::range_query(box_type const &query_box,
+				       Range &&out) const
 {
-	RangeQueryLogger logger;
+	range_query_logger logger;
 	size_t s = 0;
 	if (this->root_ == nullptr)
 		return std::make_pair(s, logger);
-	BT::template RangeQuerySerialRecursive<Leaf, Interior>(
-		this->root_, parlay::make_slice(Out), s, query_box,
+	base_type::template range_query_serial_recursive<leaf_type,
+							 interior_type>(
+		this->root_, parlay::make_slice(out), s, query_box,
 		this->tree_box_, 0, 1, logger);
 	return std::make_pair(s, logger);
 }
 
 template <typename Point, typename SplitRule, typename LeafAugType,
-	  typename InteriorAugType, uint_fast8_t kMD, uint_fast8_t kSkHeight,
-	  uint_fast8_t kImbaRatio>
-constexpr void OrthTree<Point, SplitRule, LeafAugType, InteriorAugType, kMD,
-			kSkHeight, kImbaRatio>::DeleteTree()
+	  typename InteriorAugType, uint_fast8_t md, uint_fast8_t SkHeight,
+	  uint_fast8_t ImbaRatio>
+constexpr void orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md,
+			 SkHeight, ImbaRatio>::delete_tree()
 {
-	BT::template DeleteTreeWrapper<Leaf, Interior>();
+	base_type::template delete_tree_wrapper<leaf_type, interior_type>();
 	this->fixed_box = false;
 }
 

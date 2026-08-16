@@ -28,21 +28,21 @@ namespace cpam
 {
 
 // the following parameters can be tuned
-constexpr size_t const SEQ_THRESHOLD = 8192;
-constexpr size_t const BUCKET_FACTOR = 32;
-constexpr size_t const LOW_BUCKET_FACTOR = 16;
+constexpr size_t const seq_threshold = 8192;
+constexpr size_t const bucket_factor = 32;
+constexpr size_t const low_bucket_factor = 16;
 
 // count number in each bucket
 template <typename InSeq, typename CountIterator, typename KeySeq>
-void seq_count_(InSeq In, KeySeq Keys, CountIterator counts, size_t num_buckets)
+void seq_count_(InSeq in, KeySeq keys, CountIterator counts, size_t num_buckets)
 {
 	using s_size_t =
 		typename std::iterator_traits<CountIterator>::value_type;
-	size_t n = In.size();
+	size_t n = in.size();
 	// use local counts to avoid false sharing
 	auto local_counts = sequence<s_size_t>(num_buckets);
 	for (size_t j = 0; j < n; j++) {
-		size_t k = Keys[j];
+		size_t k = keys[j];
 		assert(k < num_buckets);
 		local_counts[k]++;
 	}
@@ -53,7 +53,7 @@ void seq_count_(InSeq In, KeySeq Keys, CountIterator counts, size_t num_buckets)
 // write to destination, where offsets give start of each bucket
 template <typename assignment_tag, typename InSeq, typename OffsetIterator,
 	  typename KeySeq>
-void seq_write_(InSeq In, KeySeq Keys, OffsetIterator offsets,
+void seq_write_(InSeq in, KeySeq keys, OffsetIterator offsets,
 		size_t num_buckets)
 {
 	// copy to local offsets to avoid false sharing
@@ -61,37 +61,37 @@ void seq_write_(InSeq In, KeySeq Keys, OffsetIterator offsets,
 	auto local_offsets = sequence<oi>::uninitialized(num_buckets);
 	for (size_t i = 0; i < num_buckets; i++)
 		local_offsets[i] = offsets[i];
-	for (size_t j = 0; j < In.size(); j++) {
-		oi k = local_offsets[Keys[j]]++;
+	for (size_t j = 0; j < in.size(); j++) {
+		oi k = local_offsets[keys[j]]++;
 // needs to be made portable
 #if defined(__GNUC__) || defined(__clang__)
 		if constexpr (is_contiguous_iterator_v<oi>)
 			__builtin_prefetch(((char *)k) + 64);
 #endif
-		assign_dispatch(*k, In[j], assignment_tag());
+		assign_dispatch(*k, in[j], assignment_tag());
 	}
 }
 
 // write to destination, where offsets give end of each bucket
 template <typename assignment_tag, typename InSeq, typename OutIterator,
 	  typename OffsetIterator, typename KeySeq>
-void seq_write_down_(InSeq In, OutIterator Out, KeySeq Keys,
+void seq_write_down_(InSeq in, OutIterator out, KeySeq keys,
 		     OffsetIterator offsets, size_t)
 { // num_buckets) {
-	for (std::ptrdiff_t j = In.size() - 1; j >= 0; j--) {
-		auto k = --offsets[Keys[j]];
-		assign_dispatch(Out[k], In[j], assignment_tag());
+	for (std::ptrdiff_t j = in.size() - 1; j >= 0; j--) {
+		auto k = --offsets[keys[j]];
+		assign_dispatch(out[k], in[j], assignment_tag());
 	}
 }
 
 // Sequential counting sort internal
 template <typename assignment_tag, typename InS, typename OutS,
 	  typename CountIterator, typename KeyS>
-void seq_count_sort_(InS In, OutS Out, KeyS Keys, CountIterator counts,
+void seq_count_sort_(InS in, OutS out, KeyS keys, CountIterator counts,
 		     size_t num_buckets)
 {
 	// count size of each bucket
-	seq_count_(In, Keys, counts, num_buckets);
+	seq_count_(in, keys, counts, num_buckets);
 
 	// generate offsets for buckets
 	size_t s = 0;
@@ -101,22 +101,22 @@ void seq_count_sort_(InS In, OutS Out, KeyS Keys, CountIterator counts,
 	}
 
 	// send to destination
-	seq_write_down_<assignment_tag>(In, Out.begin(), Keys, counts,
+	seq_write_down_<assignment_tag>(in, out.begin(), keys, counts,
 					num_buckets);
 }
 
 // Sequential counting sort
 template <typename assignment_tag, typename InIterator, typename OutIterator,
 	  typename KeyIterator>
-sequence<size_t> seq_count_sort(slice<InIterator, InIterator> In,
-				slice<OutIterator, OutIterator> Out,
-				slice<KeyIterator, KeyIterator> Keys,
+sequence<size_t> seq_count_sort(slice<InIterator, InIterator> in,
+				slice<OutIterator, OutIterator> out,
+				slice<KeyIterator, KeyIterator> keys,
 				size_t num_buckets)
 {
 	auto counts = sequence<size_t>::uninitialized(num_buckets + 1);
-	seq_count_sort_<assignment_tag>(In, Out, Keys, counts.begin(),
+	seq_count_sort_<assignment_tag>(in, out, keys, counts.begin(),
 					num_buckets);
-	counts[num_buckets] = In.size();
+	counts[num_buckets] = in.size();
 	return counts;
 }
 
@@ -125,21 +125,21 @@ sequence<size_t> seq_count_sort(slice<InIterator, InIterator> In,
 // If skip_if_in_one and returned flag is true, then the Input was alread
 // sorted, and it has not been moved to the output.
 //
-// Values are transferred from In to Out as per the type of assignment_tag.
+// Values are transferred from in to out as per the type of assignment_tag.
 // E.g. If assignment_tag is parlay::copy_assign_tag, values are copied,
 // if it is parlay::uninitialized_move_tag, they are moved assuming that
-// Out is uninitialized, etc.
+// out is uninitialized, etc.
 template <typename assignment_tag, typename s_size_t, typename InIterator,
 	  typename OutIterator, typename KeyIterator>
 std::pair<sequence<size_t>, bool>
-count_sort_(slice<InIterator, InIterator> In,
-	    slice<OutIterator, OutIterator> Out,
-	    slice<KeyIterator, KeyIterator> Keys, size_t num_buckets,
+count_sort_(slice<InIterator, InIterator> in,
+	    slice<OutIterator, OutIterator> out,
+	    slice<KeyIterator, KeyIterator> keys, size_t num_buckets,
 	    float parallelism = 1.0, bool skip_if_in_one = false,
 	    sequence<uint32_t> light_id = {})
 {
 	using T = typename slice<InIterator, InIterator>::value_type;
-	size_t n = In.size();
+	size_t n = in.size();
 	size_t num_threads = num_workers();
 	bool is_nested = parallelism < .5;
 
@@ -155,9 +155,9 @@ count_sort_(slice<InIterator, InIterator> In,
 	size_t num_blocks = 1 + n * sizeof(T) / (num_buckets * 5000);
 
 	// if insufficient parallelism, sort sequentially
-	if (n < SEQ_THRESHOLD || num_blocks == 1 || num_threads == 1) {
+	if (n < seq_threshold || num_blocks == 1 || num_threads == 1) {
 		return std::make_pair(seq_count_sort<assignment_tag>(
-					      In, Out, Keys, num_buckets),
+					      in, out, keys, num_buckets),
 				      false);
 	}
 
@@ -172,8 +172,8 @@ count_sort_(slice<InIterator, InIterator> In,
 		[&](size_t i) {
 			size_t start = (std::min)(i * block_size, n);
 			size_t end = (std::min)(start + block_size, n);
-			seq_count_(In.cut(start, end),
-				   make_slice(Keys).cut(start, end),
+			seq_count_(in.cut(start, end),
+				   make_slice(keys).cut(start, end),
 				   counts.begin() + i * num_buckets,
 				   num_buckets);
 		},
@@ -230,7 +230,7 @@ count_sort_(slice<InIterator, InIterator> In,
 	parallel_for(
 		0, num_buckets,
 		[&](size_t i) {
-			auto v = bucket_offsets[i] + Out.begin();
+			auto v = bucket_offsets[i] + out.begin();
 			for (size_t j = 0; j < num_blocks; j++) {
 				dest_offsets[j * num_buckets + i] = v;
 				v += counts[j * num_buckets + i];
@@ -244,7 +244,7 @@ count_sort_(slice<InIterator, InIterator> In,
 			size_t start = (std::min)(i * block_size, n);
 			size_t end = (std::min)(start + block_size, n);
 			seq_write_<assignment_tag>(
-				In.cut(start, end), Keys.cut(start, end),
+				in.cut(start, end), keys.cut(start, end),
 				dest_offsets.begin() + i * num_buckets,
 				num_buckets);
 		},
@@ -254,12 +254,12 @@ count_sort_(slice<InIterator, InIterator> In,
 }
 
 template <typename InIterator, typename KeyIterator>
-auto group_by_small_int(slice<InIterator, InIterator> In,
-			slice<KeyIterator, KeyIterator> Keys,
+auto group_by_small_int(slice<InIterator, InIterator> in,
+			slice<KeyIterator, KeyIterator> keys,
 			size_t num_buckets)
 {
 	using T = typename slice<InIterator, InIterator>::value_type;
-	size_t n = In.size();
+	size_t n = in.size();
 	using s_size_t = size_t;
 
 	size_t num_blocks =
@@ -268,24 +268,24 @@ auto group_by_small_int(slice<InIterator, InIterator> In,
 	size_t m = num_blocks * num_buckets;
 
 	if (num_buckets == 2) {
-		sequence<size_t> Sums(num_blocks);
+		sequence<size_t> sums(num_blocks);
 		sliced_for(n, block_size, [&](size_t i, size_t s, size_t e) {
 			size_t c = 0;
 			for (size_t j = s; j < e; j++)
-				c += (Keys[j] == 0);
-			Sums[i] = c;
+				c += (keys[j] == 0);
+			sums[i] = c;
 		});
-		size_t m = scan_inplace(make_slice(Sums), plus<size_t>());
+		size_t m = scan_inplace(make_slice(sums), plus<size_t>());
 		auto r0 = sequence<T>::uninitialized(m);
 		auto r1 = sequence<T>::uninitialized(n - m);
 		sliced_for(n, block_size, [&](size_t i, size_t s, size_t e) {
-			size_t c0 = Sums[i];
+			size_t c0 = sums[i];
 			size_t c1 = s - c0;
 			for (size_t j = s; j < e; j++) {
-				if (Keys[j] == 0)
-					assign_uninitialized(r0[c0++], In[j]);
+				if (keys[j] == 0)
+					assign_uninitialized(r0[c0++], in[j]);
 				else
-					assign_uninitialized(r1[c1++], In[j]);
+					assign_uninitialized(r1[c1++], in[j]);
 			}
 		});
 		return parlay::sequence<sequence<T>>{std::move(r0),
@@ -300,8 +300,8 @@ auto group_by_small_int(slice<InIterator, InIterator> In,
 		[&](size_t i) {
 			size_t start = (std::min)(i * block_size, n);
 			size_t end = (std::min)(start + block_size, n);
-			seq_count_(In.cut(start, end),
-				   make_slice(Keys).cut(start, end),
+			seq_count_(in.cut(start, end),
+				   make_slice(keys).cut(start, end),
 				   counts.begin() + i * num_buckets,
 				   num_buckets);
 		},
@@ -342,7 +342,7 @@ auto group_by_small_int(slice<InIterator, InIterator> In,
 			size_t start = (std::min)(i * block_size, n);
 			size_t end = (std::min)(start + block_size, n);
 			seq_write_<uninitialized_copy_tag>(
-				In.cut(start, end), Keys.cut(start, end),
+				in.cut(start, end), keys.cut(start, end),
 				dest_offsets.begin() + i * num_buckets,
 				num_buckets);
 		},
@@ -354,54 +354,54 @@ auto group_by_small_int(slice<InIterator, InIterator> In,
 // If skip_if_in_one and returned flag is true, then the Input was alread
 // sorted, and it has not been moved to the output.
 //
-// Values are transferred from In to Out as per the type of assignment_tag.
+// Values are transferred from in to out as per the type of assignment_tag.
 // E.g. If assignment_tag is parlay::copy_assign_tag, values are copied,
 // if it is parlay::uninitialized_move_tag, they are moved assuming that
-// Out is uninitialized, etc. assignment_tag can be uninitialized_relocate_tag,
+// out is uninitialized, etc. assignment_tag can be uninitialized_relocate_tag,
 // in which case the inputs are destructively moved, leaving the input
 // as uninitialized memory that must not be destroyed.
 template <typename assignment_tag, typename InIterator, typename OutIterator,
 	  typename KeyIterator>
-auto count_sort(slice<InIterator, InIterator> In,
-		slice<OutIterator, OutIterator> Out,
-		slice<KeyIterator, KeyIterator> Keys, size_t num_buckets,
+auto count_sort(slice<InIterator, InIterator> in,
+		slice<OutIterator, OutIterator> out,
+		slice<KeyIterator, KeyIterator> keys, size_t num_buckets,
 		float parallelism = 1.0, bool skip_if_in_one = false)
 {
-	size_t n = In.size();
-	assert(n == Out.size());
-	assert(n == Keys.size());
+	size_t n = in.size();
+	assert(n == out.size());
+	assert(n == keys.size());
 
 	size_t max32 =
 		static_cast<size_t>((std::numeric_limits<uint32_t>::max)());
 	if (n < max32 && num_buckets < max32)
 		// use 4-byte counters when larger ones not needed
 		return count_sort_<assignment_tag, uint32_t>(
-			In, Out, Keys, num_buckets, parallelism,
+			in, out, keys, num_buckets, parallelism,
 			skip_if_in_one);
-	return count_sort_<assignment_tag, size_t>(In, Out, Keys, num_buckets,
+	return count_sort_<assignment_tag, size_t>(in, out, keys, num_buckets,
 						   parallelism, skip_if_in_one);
 }
 
 template <typename InIterator, typename KeyS>
-auto count_sort(slice<InIterator, InIterator> In, KeyS const &Keys,
+auto count_sort(slice<InIterator, InIterator> in, KeyS const &keys,
 		size_t num_buckets)
 {
 	using value_type = typename slice<InIterator, InIterator>::value_type;
-	auto Out = sequence<value_type>::uninitialized(In.size());
+	auto out = sequence<value_type>::uninitialized(in.size());
 	auto a = count_sort<uninitialized_copy_tag>(
-		In, make_slice(Out), make_slice(Keys), num_buckets);
-	return std::make_pair(std::move(Out), std::move(a.first));
+		in, make_slice(out), make_slice(keys), num_buckets);
+	return std::make_pair(std::move(out), std::move(a.first));
 }
 
 template <typename InIterator, typename KeyS>
-auto count_sort_inplace(slice<InIterator, InIterator> In, KeyS const &Keys,
+auto count_sort_inplace(slice<InIterator, InIterator> in, KeyS const &keys,
 			size_t num_buckets)
 {
 	using value_type = typename slice<InIterator, InIterator>::value_type;
-	auto Tmp = uninitialized_sequence<value_type>(In.size());
+	auto tmp = uninitialized_sequence<value_type>(in.size());
 	auto a = count_sort<uninitialized_relocate_tag>(
-		In, make_slice(Tmp), make_slice(Keys), num_buckets);
-	parlay::uninitialized_relocate(Tmp.begin(), Tmp.end(), In.begin());
+		in, make_slice(tmp), make_slice(keys), num_buckets);
+	parlay::uninitialized_relocate(tmp.begin(), tmp.end(), in.begin());
 	return a.first;
 }
 

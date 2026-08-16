@@ -16,70 +16,72 @@ namespace psi
 {
 
 // NOTE: rebuild the tree
-template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
-	  uint_fast8_t kImbaRatio>
-template <typename Leaf, typename Interior, bool granularity>
-void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::PrepareRebuild(
-	Node *T, Points &wx, Points &wo)
+template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
+	  uint_fast8_t ImbaRatio>
+template <typename leaf_type, typename interior_type, bool granularity>
+void base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::prepare_rebuild(
+	node *T, points_type &wx, points_type &wo)
 {
-	wo = Points::uninitialized(T->size);
-	wx = Points::uninitialized(T->size);
-	FlattenRec<Leaf, Interior, Slice, granularity>(T,
-						       parlay::make_slice(wx));
-	DeleteTreeRecursive<Leaf, Interior, granularity>(T);
+	wo = points_type::uninitialized(T->size);
+	wx = points_type::uninitialized(T->size);
+	flatten_rec<leaf_type, interior_type, slice_type, granularity>(
+		T, parlay::make_slice(wx));
+	delete_tree_recursive<leaf_type, interior_type, granularity>(T);
 	return;
 }
 
-// NOTE: rebuild with new input In
-template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
-	  uint_fast8_t kImbaRatio>
-template <typename Leaf, typename Interior, bool granularity>
-void BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::PrepareRebuild(
-	Node *T, Slice In, Points &wx, Points &wo)
+// NOTE: rebuild with new input in
+template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
+	  uint_fast8_t ImbaRatio>
+template <typename leaf_type, typename interior_type, bool granularity>
+void base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::prepare_rebuild(
+	node *T, slice_type in, points_type &wx, points_type &wo)
 {
-	wo = Points::uninitialized(T->size + In.size());
-	wx = Points::uninitialized(T->size + In.size());
-	parlay::parallel_for(0, In.size(), [&](size_t j) { wx[j] = In[j]; });
-	FlattenRec<Leaf, Interior, Slice, granularity>(
-		T, wx.cut(In.size(), wx.size()));
-	DeleteTreeRecursive<Leaf, Interior, granularity>(T);
+	wo = points_type::uninitialized(T->size + in.size());
+	wx = points_type::uninitialized(T->size + in.size());
+	parlay::parallel_for(0, in.size(), [&](size_t j) { wx[j] = in[j]; });
+	flatten_rec<leaf_type, interior_type, slice_type, granularity>(
+		T, wx.cut(in.size(), wx.size()));
+	delete_tree_recursive<leaf_type, interior_type, granularity>(T);
 	return;
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
-	  uint_fast8_t kImbaRatio>
-template <typename Leaf, typename Interior, typename PrepareFunc,
+template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
+	  uint_fast8_t ImbaRatio>
+template <typename leaf_type, typename interior_type, typename PrepareFunc,
 	  typename... Args>
-Node *BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::RebuildWithInsert(
-	Node *T, PrepareFunc prepare_func, Slice In, Args &&...args)
+node *base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::rebuild_with_insert(
+	node *T, PrepareFunc prepare_func, slice_type in, Args &&...args)
 {
-	Points w_in, w_out;
-	PrepareRebuild<Leaf, Interior>(T, In, w_in, w_out);
+	points_type w_in, w_out;
+	prepare_rebuild<leaf_type, interior_type>(T, in, w_in, w_out);
 	auto additional_arg = prepare_func(T, w_in, w_out);
 	static_assert(
-		std::is_invocable_v<decltype(&DerivedTree::BuildRecursive),
-				    DerivedTree *, Slice, Slice, Args &&...,
-				    Box>);
-	return static_cast<DerivedTree *>(this)->BuildRecursive(
+		std::is_invocable_v<decltype(&DerivedTree::build_recursive),
+				    DerivedTree *, slice_type, slice_type,
+				    Args &&..., box_type>);
+	return static_cast<DerivedTree *>(this)->build_recursive(
 		parlay::make_slice(w_in), parlay::make_slice(w_out),
 		std::forward<Args>(args)..., additional_arg);
 }
 
 // PARA: when granularity set to false, it will disable the default value for
-// granularity size, which is BT::kSerialBuildCutoff; instead, it will check
-// whether the force parallel flag has been enabled
-template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
-	  uint_fast8_t kImbaRatio>
-template <typename Leaf, typename Interior, bool granularity, typename... Args>
-Node *BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::RebuildSingleTree(
-	Node *T, Args &&...args)
+// granularity size, which is base_type::serial_build_cutoff; instead, it will
+// check whether the force parallel flag has been enabled
+template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
+	  uint_fast8_t ImbaRatio>
+template <typename leaf_type, typename interior_type, bool granularity,
+	  typename... Args>
+node *base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::rebuild_single_tree(
+	node *T, Args &&...args)
 {
-	Points wx, wo;
-	PrepareRebuild<Leaf, Interior, granularity>(T, wx, wo);
+	points_type wx, wo;
+	prepare_rebuild<leaf_type, interior_type, granularity>(T, wx, wo);
 	static_assert(
-		std::is_invocable_v<decltype(&DerivedTree::BuildRecursive),
-				    DerivedTree *, Slice, Slice, Args &&...>);
-	return static_cast<DerivedTree *>(this)->BuildRecursive(
+		std::is_invocable_v<decltype(&DerivedTree::build_recursive),
+				    DerivedTree *, slice_type, slice_type,
+				    Args &&...>);
+	return static_cast<DerivedTree *>(this)->build_recursive(
 		parlay::make_slice(wx), parlay::make_slice(wo),
 		std::forward<Args>(args)...);
 }
@@ -88,38 +90,41 @@ Node *BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::RebuildSingleTree(
 // tree
 // PARA: if allow_enable_rebuild enabled, this method will re-balance the
 // tree; otherwise, it flattens all sparse node into leaf nodes
-template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
-	  uint_fast8_t kImbaRatio>
-template <typename Leaf, IsBinaryNode Interior, bool granularity,
+template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
+	  uint_fast8_t ImbaRatio>
+template <typename leaf_type, is_binary_node interior_type, bool granularity,
 	  typename PrepareFunc, typename... Args>
-Node *BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::RebuildTreeRecursive(
-	Node *T, PrepareFunc &&prepare_func, bool const allow_inba_rebuild,
+node *
+base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::rebuild_tree_recursive(
+	node *T, PrepareFunc &&prepare_func, bool const allow_inba_rebuild,
 	Args &&...args)
 {
 	if (T->is_leaf) {
 		return T;
 	}
 
-	Interior *TI = static_cast<Interior *>(T);
+	interior_type *ti = static_cast<interior_type *>(T);
 	// NOTE: rebuild the tree if it is sparse or imbalance
-	if (SparseNode(0, TI->size) ||
-	    (allow_inba_rebuild && ImbalanceNode(TI->left->size, TI->size))) {
-		return RebuildSingleTree<Leaf, Interior, granularity>(
+	if (sparse_node(0, ti->size) ||
+	    (allow_inba_rebuild && imbalance_node(ti->left->size, ti->size))) {
+		return rebuild_single_tree<leaf_type, interior_type,
+					   granularity>(
 			T, std::forward<Args>(args)...);
 	}
 
 	auto const [left_args, right_args] =
 		prepare_func(T, std::forward<Args>(args)...);
 
-	Node *L, *R;
+	node *L, *R;
 	parlay::par_do_if(
-		ForceParallelRecursion<Interior, granularity>(TI),
+		force_parallel_recursion<interior_type, granularity>(ti),
 		[&] {
 			L = std::apply(
 				[&](auto &&...left_args) {
-					return RebuildTreeRecursive<
-						Leaf, Interior, granularity>(
-						TI->left, prepare_func,
+					return rebuild_tree_recursive<
+						leaf_type, interior_type,
+						granularity>(
+						ti->left, prepare_func,
 						allow_inba_rebuild,
 						std::forward<
 							decltype(left_args)>(
@@ -130,9 +135,10 @@ Node *BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::RebuildTreeRecursive(
 		[&] {
 			R = std::apply(
 				[&](auto &&...right_args) {
-					return RebuildTreeRecursive<
-						Leaf, Interior, granularity>(
-						TI->right, prepare_func,
+					return rebuild_tree_recursive<
+						leaf_type, interior_type,
+						granularity>(
+						ti->right, prepare_func,
 						allow_inba_rebuild,
 						std::forward<
 							decltype(right_args)>(
@@ -141,40 +147,43 @@ Node *BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::RebuildTreeRecursive(
 				right_args);
 		});
 
-	UpdateInterior<Interior>(T, L, R);
+	update_interior<interior_type>(T, L, R);
 	return T;
 }
 
 // NOTE: rebuild a multi-node tree
-template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
-	  uint_fast8_t kImbaRatio>
-template <typename Leaf, IsMultiNode Interior, bool granularity,
+template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
+	  uint_fast8_t ImbaRatio>
+template <typename leaf_type, is_multi_node interior_type, bool granularity,
 	  typename PrepareFunc, typename... Args>
-Node *BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::RebuildTreeRecursive(
-	Node *T, PrepareFunc &&prepare_func,
+node *
+base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::rebuild_tree_recursive(
+	node *T, PrepareFunc &&prepare_func,
 	[[maybe_unused]] bool const allow_inba_rebuild, Args &&...args)
 {
 	if (T->is_leaf) {
 		return T;
 	}
 
-	Interior *TI = static_cast<Interior *>(T);
-	if (SparseNode(0, TI->size)) {
-		return RebuildSingleTree<Leaf, Interior, granularity>(
+	interior_type *ti = static_cast<interior_type *>(T);
+	if (sparse_node(0, ti->size)) {
+		return rebuild_single_tree<leaf_type, interior_type,
+					   granularity>(
 			T, std::forward<Args>(args)...);
 	}
 
-	typename Interior::NodeArr new_nodes;
+	typename interior_type::node_arr_type new_nodes;
 	parlay::parallel_for(
-		0, Interior::GetRegions(),
-		[&](BucketType i) {
+		0, interior_type::get_regions(),
+		[&](bucket_type i) {
 			auto const new_args =
 				prepare_func(T, i, std::forward<Args>(args)...);
 			std::apply(
 				[&](auto &&...new_args) {
-					new_nodes[i] = RebuildTreeRecursive<
-						Leaf, Interior, granularity>(
-						TI->tree_nodes[i], prepare_func,
+					new_nodes[i] = rebuild_tree_recursive<
+						leaf_type, interior_type,
+						granularity>(
+						ti->tree_nodes[i], prepare_func,
 						allow_inba_rebuild,
 						std::forward<
 							decltype(new_args)>(
@@ -182,11 +191,11 @@ Node *BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::RebuildTreeRecursive(
 				},
 				new_args);
 		},
-		ForceParallelRecursion<Interior, granularity>(TI)
+		force_parallel_recursion<interior_type, granularity>(ti)
 			? 1
-			: Interior::GetRegions());
+			: interior_type::get_regions());
 
-	UpdateInterior<Interior>(T, new_nodes);
+	update_interior<interior_type>(T, new_nodes);
 	return T;
 }
 

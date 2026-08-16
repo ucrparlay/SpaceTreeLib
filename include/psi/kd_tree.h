@@ -14,141 +14,152 @@ namespace psi
 {
 
 template <typename Point, typename SplitRule,
-	  typename LeafAugType = BoxLeafAug<BaseTree<Point>>,
-	  typename InteriorAugType = BoxInteriorAug<BaseTree<Point>>,
-	  uint_fast8_t kSkHeight = 6, uint_fast8_t kImbaRatio = 30>
-class KdTree : public BaseTree<Point,
-			       KdTree<Point, SplitRule, LeafAugType,
-				      InteriorAugType, kSkHeight, kImbaRatio>,
-			       kSkHeight, kImbaRatio>
+	  typename LeafAugType = box_leaf_aug<base_tree<Point>>,
+	  typename InteriorAugType = box_interior_aug<base_tree<Point>>,
+	  uint_fast8_t SkHeight = 6, uint_fast8_t ImbaRatio = 30>
+class kd_tree : public base_tree<Point,
+				 kd_tree<Point, SplitRule, LeafAugType,
+					 InteriorAugType, SkHeight, ImbaRatio>,
+				 SkHeight, ImbaRatio>
 {
 public:
-	using BT = BaseTree<Point,
-			    KdTree<Point, SplitRule, LeafAugType,
-				   InteriorAugType, kSkHeight, kImbaRatio>,
-			    kSkHeight, kImbaRatio>;
+	using base_type =
+		base_tree<Point,
+			  kd_tree<Point, SplitRule, LeafAugType,
+				  InteriorAugType, SkHeight, ImbaRatio>,
+			  SkHeight, ImbaRatio>;
 
 	static_assert(
-		LeafAugmentation<LeafAugType, typename BT::Slice>,
-		"LeafAugType needs A(), A(Slice), UpdateAug(Slice), Reset()");
-	static_assert(InteriorAugmentation<InteriorAugType>,
-		      "InteriorAugType needs SetParallelFlag(bool), "
-		      "ResetParallelFlag(), GetParallelFlagIniStatus(), "
-		      "ForceParallel(size_t)");
+		leaf_augmentation<LeafAugType, typename base_type::slice_type>,
+		"LeafAugType needs A(), A(slice_type), update_aug(slice_type), "
+		"reset()");
+	static_assert(interior_augmentation<InteriorAugType>,
+		      "InteriorAugType needs set_parallel_flag(bool), "
+		      "reset_parallel_flag(), get_parallel_flag_ini_status(), "
+		      "force_parallel(size_t)");
 
-	using BucketType = typename BT::BucketType;
-	using BallsType = typename BT::BallsType;
-	using DimsType = typename BT::DimsType;
-	using BucketSeq = typename BT::BucketSeq;
-	using Coord = typename Point::Coord;
-	using Coords = typename Point::Coords;
-	using Num = Num_Comparator<Coord>;
-	using Slice = typename BT::Slice;
-	using Points = typename BT::Points;
-	using PointsIter = typename BT::PointsIter;
-	using Box = typename BT::Box;
-	using BoxSeq = typename BT::BoxSeq;
+	using bucket_type = typename base_type::bucket_type;
+	using balls_type = typename base_type::balls_type;
+	using dims_type = typename base_type::dims_type;
+	using bucket_seq_type = typename base_type::bucket_seq_type;
+	using coord_type = typename Point::coord_type;
+	using coords_type = typename Point::coords_type;
+	using num_type = num_comparator<coord_type>;
+	using slice_type = typename base_type::slice_type;
+	using points_type = typename base_type::points_type;
+	using points_iter_type = typename base_type::points_iter_type;
+	using box_type = typename base_type::box_type;
+	using box_seq_type = typename base_type::box_seq_type;
 
-	using HyperPlane = typename BT::HyperPlane;
-	using HyperPlaneSeq = typename BT::HyperPlaneSeq;
-	using NodeBox = typename BT::NodeBox;
-	using NodeBoxSeq = typename BT::NodeBoxSeq;
-	using Splitter = HyperPlane;
-	using SplitterSeq = HyperPlaneSeq;
-	using SplitRuleType = SplitRule;
+	using hyper_plane_type = typename base_type::hyper_plane_type;
+	using hyper_plane_seq_type = typename base_type::hyper_plane_seq_type;
+	using node_box_type = typename base_type::node_box_type;
+	using node_box_seq_type = typename base_type::node_box_seq_type;
+	using splitter_type = hyper_plane_type;
+	using splitter_seq_type = hyper_plane_seq_type;
+	using split_rule_type = SplitRule;
 
-	static constexpr DimsType const kMD = 2;
+	static constexpr dims_type const md = 2;
 
-	using Leaf = LeafNode<Point, Slice, BT::kLeafCapacity, LeafAugType,
-			      parlay::move_assign_tag>;
-	struct KdInteriorNode;
-	using Interior = KdInteriorNode;
+	using leaf_type = leaf_node<Point, slice_type, base_type::leaf_capacity,
+				    LeafAugType, parlay::move_assign_tag>;
+	struct kd_interior_node;
+	using interior_type = kd_interior_node;
 
-	using InnerTree = typename BT::template InnerTree<Leaf, Interior>;
-	using BoxCut = typename BT::BoxCut;
+	using inner_tree =
+		typename base_type::template inner_tree<leaf_type,
+							interior_type>;
+	using box_cut_type = typename base_type::box_cut_type;
 
-	template <typename Leaf, typename Interior, bool granularity,
+	template <typename leaf_type, typename interior_type, bool granularity,
 		  typename... Args>
-	friend Node *BT::RebuildSingleTree(Node *T, Args &&...args);
+	friend node *base_type::rebuild_single_tree(node *T, Args &&...args);
 
-	template <typename Leaf, typename Interior, typename PrepareFunc,
-		  typename... Args>
-	friend Node *BT::RebuildWithInsert(Node *T, PrepareFunc prepare_func,
-					   Slice In, Args &&...args);
+	template <typename leaf_type, typename interior_type,
+		  typename PrepareFunc, typename... Args>
+	friend node *
+	base_type::rebuild_with_insert(node *T, PrepareFunc prepare_func,
+				       slice_type in, Args &&...args);
 
-	/* The split rule calls BuildRecursive back; see DivideSpace. */
+	/* The split rule calls build_recursive back; see divide_space. */
 	friend SplitRule;
 
-	/* DeleteTreeWrapper is idempotent, so an explicit DeleteTree()
+	/* delete_tree_wrapper is idempotent, so an explicit delete_tree()
 	 * before this stays correct. */
-	~KdTree() override
+	~kd_tree() override
 	{
-		DeleteTree();
+		delete_tree();
 	}
 
-	void KdTreeTag();
+	void kd_tree_tag();
 
 	template <typename Range>
-	void Build(Range &&In);
+	void build(Range &&in);
 
 	template <typename Range>
-	void BatchInsert(Range &&In);
+	void batch_insert(Range &&in);
 
 	// NOTE: every point is assumed to be in the tree; if that may not
-	// hold, use BatchDiff
+	// hold, use batch_diff
 	template <typename Range>
-	void BatchDelete(Range &&In);
+	void batch_delete(Range &&in);
 
 	// NOTE: tolerates points that are not in the tree
 	template <typename Range>
-	void BatchDiff(Range &&In);
+	void batch_diff(Range &&in);
 
 	template <typename Range>
-	void Flatten(Range &&Out) const;
+	void flatten(Range &&out) const;
 
 	template <typename Range>
-	auto KNN(Point const &q, kBoundedQueue<Point, Range> &bq) const;
+	auto knn(Point const &q, bounded_queue<Point, Range> &bq) const;
 
-	auto RangeCount(Box const &query_box) const;
+	auto range_count(box_type const &query_box) const;
 
 	template <typename Range>
-	auto RangeQuery(Box const &query_box, Range &&Out) const;
+	auto range_query(box_type const &query_box, Range &&out) const;
 
-	constexpr void DeleteTree() override;
+	constexpr void delete_tree() override;
 
-	constexpr static char const *GetTreeName()
+	constexpr static char const *get_tree_name()
 	{
 		return "KdTree";
 	}
 
-	constexpr static char const *CheckHasBox()
+	constexpr static char const *check_has_box()
 	{
-		if constexpr (HasBox<InteriorAugType>)
+		if constexpr (has_box<InteriorAugType>)
 			return "HasBox";
 		else
 			return "NoBox";
 	}
 
 private:
-	void Build_(Slice In);
-	Node *BuildRecursive(Slice In, Slice Out, DimsType dim, Box const &bx);
-	Node *SerialBuildRecursive(Slice In, Slice Out, DimsType dim,
-				   Box const &bx);
-	void DivideRotate(Slice In, SplitterSeq &pivots, DimsType dim,
-			  BucketType idx, BoxSeq &box_seq, Box const &bx);
-	void PickPivots(Slice In, size_t const &n, SplitterSeq &pivots,
-			DimsType const dim, BoxSeq &box_seq, Box const &bx);
+	void build_(slice_type in);
+	node *build_recursive(slice_type in, slice_type out, dims_type dim,
+			      box_type const &bx);
+	node *serial_build_recursive(slice_type in, slice_type out,
+				     dims_type dim, box_type const &bx);
+	void divide_rotate(slice_type in, splitter_seq_type &pivots,
+			   dims_type dim, bucket_type idx,
+			   box_seq_type &box_seq, box_type const &bx);
+	void pick_pivots(slice_type in, size_t const &n,
+			 splitter_seq_type &pivots, dims_type const dim,
+			 box_seq_type &box_seq, box_type const &bx);
 
-	void BatchInsert_(Slice In);
-	Node *BatchInsertRecursive(Node *T, Slice In, Slice Out, DimsType d);
+	void batch_insert_(slice_type in);
+	node *batch_insert_recursive(node *T, slice_type in, slice_type out,
+				     dims_type d);
 
-	void BatchDelete_(Slice In);
-	NodeBox BatchDeleteRecursive(Node *T, Box const &bx, Slice In,
-				     Slice Out, DimsType d, bool has_tomb);
+	void batch_delete_(slice_type in);
+	node_box_type batch_delete_recursive(node *T, box_type const &bx,
+					     slice_type in, slice_type out,
+					     dims_type d, bool has_tomb);
 
-	void BatchDiff_(Slice In);
-	NodeBox BatchDiffRecursive(Node *T, Box const &bx, Slice In, Slice Out,
-				   DimsType d);
+	void batch_diff_(slice_type in);
+	node_box_type batch_diff_recursive(node *T, box_type const &bx,
+					   slice_type in, slice_type out,
+					   dims_type d);
 
 	SplitRule split_rule_;
 };

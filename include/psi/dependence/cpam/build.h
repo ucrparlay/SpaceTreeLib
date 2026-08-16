@@ -17,18 +17,18 @@ template <class Entry>
 struct build {
 	using K = typename Entry::key_t;
 	using V = typename Entry::val_t;
-	using ET = typename Entry::entry_t;
+	using et_type = typename Entry::entry_t;
 	using filling_curve_t = typename Entry::filling_curve_t;
 	using key_entry_pointer = typename Entry::key_entry_pointer;
 
-	constexpr static auto less = [](const ET &a, const ET &b) {
+	constexpr static auto less = [](et_type const &a, et_type const &b) {
 		return Entry::comp(Entry::get_key(a), Entry::get_key(b));
 	};
 
 	// sorts a sequence, then removes all but first element with equal keys
 	// the sort is not necessarily stable, so any element could be kept
 	template <class Seq, typename output_type = key_entry_pointer>
-	// static parlay::sequence<ET> sort_remove_duplicates(
+	// static parlay::sequence<et_type> sort_remove_duplicates(
 	static auto sort_remove_duplicates(Seq const &A)
 	{ // ?? const
 		// if (A.size() == 0) return
@@ -39,7 +39,7 @@ struct build {
 		//     A, [&](auto const& p) { return std::get<0>(p).first == 0;
 		//     }));
 		// parlay::parallel_for(0, A.size(), [&](size_t i) {
-		//   A[i].aug.code = filling_curve_t::Encode(A[i]);
+		//   A[i].aug.code = filling_curve_t::encode(A[i]);
 		// });
 		// auto B = parlay::internal::sample_sort(
 		//     parlay::make_slice(A.begin(), A.end()), less);
@@ -49,14 +49,15 @@ struct build {
 			[&](auto const &a, auto const &b) {
 				if constexpr (std::same_as<
 						      output_type,
-						      std::pair<K, ET *>>) {
+						      std::pair<K,
+								et_type *>>) {
 					// NOTE: using pair when build or insert
 					return a.first < b.first;
 				} else if constexpr (std::same_as<output_type,
 								  K>) {
 					return a < b;
 				} else if constexpr (std::same_as<output_type,
-								  ET>) {
+								  et_type>) {
 					return less(a, b);
 				} else {
 					static_assert(false,
@@ -74,28 +75,28 @@ struct build {
 		//     [](auto const& k) { return Entry::get_key(k).code; });
 		// t.next("sort");
 
-		// auto Fl = parlay::delayed_seq<bool>(
+		// auto fl = parlay::delayed_seq<bool>(
 		//     B.size(), [&](size_t i) { return (i == 0) || less(B[i -
 		//     1], B[i]);
 		//     });
 		//
-		// auto o = parlay::pack(B, Fl);
+		// auto o = parlay::pack(B, fl);
 		// t.next("pack");
 		// return o;
 		return B;
 	}
 
 	template <class Seq, class Reduce>
-	static parlay::sequence<ET> sort_reduce_duplicates(Seq const &A,
-							   Reduce const &reduce)
+	static parlay::sequence<et_type>
+	sort_reduce_duplicates(Seq const &A, Reduce const &reduce)
 	{
 		using E = typename Seq::value_type;
-		using Vi = typename E::second_type;
+		using vi_type = typename E::second_type;
 
 		timer t("sort_reduce_duplicates", false);
 		size_t n = A.size();
 		if (n == 0)
-			return parlay::sequence<ET>(0);
+			return parlay::sequence<et_type>(0);
 		auto lessE = [](E const &a, E const &b) {
 			return Entry::comp(a.first, b.first);
 		};
@@ -106,21 +107,22 @@ struct build {
 
 		// determines the index of start of each block of equal keys
 		// and copies values into vals
-		parlay::sequence<bool> Fl(n);
-		auto Vals = parlay::tabulate(n, [&](size_t i) -> Vi {
-			Fl[i] = (i == 0) || lessE(B[i - 1], B[i]);
+		parlay::sequence<bool> fl(n);
+		auto vals = parlay::tabulate(n, [&](size_t i) -> vi_type {
+			fl[i] = (i == 0) || lessE(B[i - 1], B[i]);
 			return B[i].second;
 		});
 		t.next("copy, set flags");
 
-		auto I = parlay::pack_index<node_size_t>(Fl);
+		auto I = parlay::pack_index<node_size_t>(fl);
 		t.next("pack index");
 
 		// combines over each block of equal keys using function reduce
-		auto a = parlay::tabulate(I.size(), [&](size_t i) -> ET {
+		auto a = parlay::tabulate(I.size(), [&](size_t i) -> et_type {
 			size_t start = I[i];
 			size_t end = (i == I.size() - 1) ? n : I[i + 1];
-			return ET(B[start].first, reduce(Vals.cut(start, end)));
+			return et_type(B[start].first,
+				       reduce(vals.cut(start, end)));
 		});
 		t.next("reductions");
 		// tabulate set over all entries of i
@@ -128,16 +130,16 @@ struct build {
 	}
 
 	template <class Seq, class Reduce>
-	static parlay::sequence<ET>
+	static parlay::sequence<et_type>
 	sort_reduce_duplicates_a(Seq const &A, Reduce const &reduce)
 	{
 		using E = typename Seq::value_type;
-		using Vi = typename E::second_type;
+		using vi_type = typename E::second_type;
 
 		timer t("sort_reduce_duplicates", false);
 		size_t n = A.size();
 		if (n == 0)
-			return parlay::sequence<ET>(0);
+			return parlay::sequence<et_type>(0);
 		auto lessE = [](E const &a, E const &b) {
 			return Entry::comp(a.first, b.first);
 		};
@@ -148,21 +150,22 @@ struct build {
 
 		// determines the index of start of each block of equal keys
 		// and copies values into vals
-		parlay::sequence<bool> Fl(n); // ?? should it be unitialized
-		auto Vals = parlay::tabulate(n, [&](size_t i) -> Vi {
-			Fl[i] = (i == 0) || lessE(B[i - 1], B[i]);
+		parlay::sequence<bool> fl(n); // ?? should it be unitialized
+		auto vals = parlay::tabulate(n, [&](size_t i) -> vi_type {
+			fl[i] = (i == 0) || lessE(B[i - 1], B[i]);
 			return B[i].second;
 		});
 		t.next("copy, set flags");
 
-		auto I = parlay::pack_index<node_size_t>(Fl);
+		auto I = parlay::pack_index<node_size_t>(fl);
 		t.next("pack index");
 
 		// combines over each block of equal keys using function reduce
-		auto a = parlay::tabulate(I.size(), [&](size_t i) -> ET {
+		auto a = parlay::tabulate(I.size(), [&](size_t i) -> et_type {
 			size_t start = I[i];
 			size_t end = (i == I.size() - 1) ? n : I[i + 1];
-			return ET(B[start].first, reduce(Vals.cut(start, end)));
+			return et_type(B[start].first,
+				       reduce(vals.cut(start, end)));
 		});
 		t.next("reductions");
 		// tabulate set over all entries of i
@@ -170,8 +173,8 @@ struct build {
 	}
 
 	template <class Seq, class Bin_Op>
-	static parlay::sequence<ET> sort_combine_duplicates(Seq const &A,
-							    Bin_Op &f)
+	static parlay::sequence<et_type> sort_combine_duplicates(Seq const &A,
+								 Bin_Op &f)
 	{
 		auto mon = parlay::make_monoid(f, V());
 		auto reduce_op =
@@ -182,10 +185,10 @@ struct build {
 	}
 
 	template <class Seq, class Bin_Op>
-	static parlay::slice<ET *, ET *>
+	static parlay::slice<et_type *, et_type *>
 	sort_combine_duplicates_inplace(Seq const &A, Bin_Op &f)
 	{
-		auto less = [&](ET a, ET b) {
+		auto less = [&](et_type a, et_type b) {
 			return Entry::comp(a.first, b.first);
 		};
 		parlay::internal::quicksort(A.begin(), A.size(), less);

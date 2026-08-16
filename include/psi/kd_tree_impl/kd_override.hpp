@@ -11,89 +11,93 @@
 namespace psi
 {
 template <typename Point, typename SplitRule, typename LeafAugType,
-	  typename InteriorAugType, uint_fast8_t kSkHeight,
-	  uint_fast8_t kImbaRatio>
+	  typename InteriorAugType, uint_fast8_t SkHeight,
+	  uint_fast8_t ImbaRatio>
 template <typename Range>
-auto KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight,
-	    kImbaRatio>::KNN(Point const &q,
-			     kBoundedQueue<Point, Range> &bq) const
+auto kd_tree<Point, SplitRule, LeafAugType, InteriorAugType, SkHeight,
+	     ImbaRatio>::knn(Point const &q,
+			     bounded_queue<Point, Range> &bq) const
 {
-	KNNLogger logger;
+	knn_logger logger;
 	if (this->root_ == nullptr)
 		return logger;
-	if constexpr (HasBox<typename Interior::AT>) {
-		BT::template KNNBinaryBox<Leaf, Interior>(this->root_, q, bq,
-							  logger);
+	if constexpr (has_box<typename interior_type::at_type>) {
+		base_type::template knn_binary_box<leaf_type, interior_type>(
+			this->root_, q, bq, logger);
 	} else {
-		BT::template KNNBinary<Leaf, Interior>(this->root_, q, bq,
-						       this->tree_box_, logger);
+		base_type::template knn_binary<leaf_type, interior_type>(
+			this->root_, q, bq, this->tree_box_, logger);
 	}
 	return logger;
 }
 
 template <typename Point, typename SplitRule, typename LeafAugType,
-	  typename InteriorAugType, uint_fast8_t kSkHeight,
-	  uint_fast8_t kImbaRatio>
+	  typename InteriorAugType, uint_fast8_t SkHeight,
+	  uint_fast8_t ImbaRatio>
 template <typename Range>
-void KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight,
-	    kImbaRatio>::Flatten(Range &&Out) const
+void kd_tree<Point, SplitRule, LeafAugType, InteriorAugType, SkHeight,
+	     ImbaRatio>::flatten(Range &&out) const
 {
 	if (this->root_ == nullptr) {
-		assert(Out.size() == 0);
+		assert(out.size() == 0);
 		return;
 	}
-	BT::template FlattenRec<Leaf, Interior>(this->root_,
-						parlay::make_slice(Out));
+	base_type::template flatten_rec<leaf_type, interior_type>(
+		this->root_, parlay::make_slice(out));
 }
 
 template <typename Point, typename SplitRule, typename LeafAugType,
-	  typename InteriorAugType, uint_fast8_t kSkHeight,
-	  uint_fast8_t kImbaRatio>
-auto KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight,
-	    kImbaRatio>::RangeCount(Box const &bx) const
+	  typename InteriorAugType, uint_fast8_t SkHeight,
+	  uint_fast8_t ImbaRatio>
+auto kd_tree<Point, SplitRule, LeafAugType, InteriorAugType, SkHeight,
+	     ImbaRatio>::range_count(box_type const &bx) const
 {
-	RangeQueryLogger logger;
+	range_query_logger logger;
 	if (this->root_ == nullptr)
 		return std::make_pair(size_t{0}, logger);
-	size_t size = BT::template RangeCountRectangle<Leaf, Interior>(
+	size_t size = base_type::template range_count_rectangle<leaf_type,
+								interior_type>(
 		this->root_, bx, this->tree_box_, logger);
 	return std::make_pair(size, logger);
 }
 
 // template <typename Point, typename SplitRule, typename LeafAugType, typename
-// InteriorAugType,  uint_fast8_t kSkHeight,
-//           uint_fast8_t kImbaRatio>
-// auto KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight ,
-// kImbaRatio>::RangeCount(
-//     Circle const& cl) {
-//   return BT::template RangeCountRadius<Leaf, Interior>(this->root_, cl,
+// InteriorAugType,  uint_fast8_t SkHeight,
+//           uint_fast8_t ImbaRatio>
+// auto kd_tree<Point, SplitRule, LeafAugType, InteriorAugType, SkHeight ,
+// ImbaRatio>::range_count(
+//     circle_type const& cl) {
+//   return base_type::template RangeCountRadius<leaf_type,
+//   interior_type>(this->root_, cl,
 //                                                        this->tree_box_);
 // }
 
 template <typename Point, typename SplitRule, typename LeafAugType,
-	  typename InteriorAugType, uint_fast8_t kSkHeight,
-	  uint_fast8_t kImbaRatio>
+	  typename InteriorAugType, uint_fast8_t SkHeight,
+	  uint_fast8_t ImbaRatio>
 template <typename Range>
-auto KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight,
-	    kImbaRatio>::RangeQuery(Box const &query_box, Range &&Out) const
+auto kd_tree<Point, SplitRule, LeafAugType, InteriorAugType, SkHeight,
+	     ImbaRatio>::range_query(box_type const &query_box,
+				     Range &&out) const
 {
-	RangeQueryLogger logger;
+	range_query_logger logger;
 	size_t s = 0;
 	if (this->root_ == nullptr)
 		return std::make_pair(s, logger);
-	BT::template RangeQuerySerialRecursive<Leaf, Interior>(
-		this->root_, parlay::make_slice(Out), s, query_box,
+	base_type::template range_query_serial_recursive<leaf_type,
+							 interior_type>(
+		this->root_, parlay::make_slice(out), s, query_box,
 		this->tree_box_, logger);
 	return std::make_pair(s, logger);
 }
 
 template <typename Point, typename SplitRule, typename LeafAugType,
-	  typename InteriorAugType, uint_fast8_t kSkHeight,
-	  uint_fast8_t kImbaRatio>
-constexpr void KdTree<Point, SplitRule, LeafAugType, InteriorAugType, kSkHeight,
-		      kImbaRatio>::DeleteTree()
+	  typename InteriorAugType, uint_fast8_t SkHeight,
+	  uint_fast8_t ImbaRatio>
+constexpr void kd_tree<Point, SplitRule, LeafAugType, InteriorAugType, SkHeight,
+		       ImbaRatio>::delete_tree()
 {
-	BT::template DeleteTreeWrapper<Leaf, Interior>();
+	base_type::template delete_tree_wrapper<leaf_type, interior_type>();
 }
 
 } // namespace psi

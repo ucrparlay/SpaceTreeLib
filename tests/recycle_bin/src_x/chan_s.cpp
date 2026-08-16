@@ -32,7 +32,7 @@ int cmp_shuffle(Point *p, Point *q)
 	return (*p)[j] - (*q)[j];
 }
 
-void SSS_preprocess(Point P[], int n)
+void sss_preprocess(Point P[], int n)
 {
 	shift = (int)(drand48() * MAX);
 	q1 = new int[d];
@@ -77,7 +77,7 @@ float dist_sq_to_box(Point q, Point p1, Point p2)
 	return z;
 }
 
-void SSS_query0(Point P[], int n, Point q)
+void sss_query0(Point P[], int n, Point q)
 {
 	if (n == 0)
 		return;
@@ -85,20 +85,20 @@ void SSS_query0(Point P[], int n, Point q)
 	if (n == 1 || dist_sq_to_box(q, P[0], P[n - 1]) * sq(1 + eps) > r_sq)
 		return;
 	if (cmp_shuffle(&q, &P[n / 2]) < 0) {
-		SSS_query0(P, n / 2, q);
+		sss_query0(P, n / 2, q);
 		if (cmp_shuffle(&q2, &P[n / 2]) > 0)
-			SSS_query0(P + n / 2 + 1, n - n / 2 - 1, q);
+			sss_query0(P + n / 2 + 1, n - n / 2 - 1, q);
 	} else {
-		SSS_query0(P + n / 2 + 1, n - n / 2 - 1, q);
+		sss_query0(P + n / 2 + 1, n - n / 2 - 1, q);
 		if (cmp_shuffle(&q1, &P[n / 2]) < 0)
-			SSS_query0(P, n / 2, q);
+			sss_query0(P, n / 2, q);
 	}
 }
 
-Point SSS_query(Point P[], int n, Point q)
+Point sss_query(Point P[], int n, Point q)
 {
 	r_sq = FLT_MAX;
-	SSS_query0(P, n, q);
+	sss_query0(P, n, q);
 	return ans;
 }
 
@@ -118,11 +118,11 @@ int main(int argc, char *argv[])
 		for (j = 0; j < d; j++)
 			cin >> P[i][j];
 	}
-	SSS_preprocess(P, n);
+	sss_preprocess(P, n);
 	for (i = 0; i < m; i++) {
 		for (j = 0; j < d; j++)
 			cin >> q[j];
-		SSS_query(P, n, q);
+		sss_query(P, n, q);
 		cout << r << "\n";
 	}
 	for (i = 0; i < n; i++)

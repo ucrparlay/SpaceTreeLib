@@ -12,19 +12,19 @@ namespace psi
 namespace cpam
 {
 
-template <class Map>
-struct augmented_ops : Map {
-	using Entry = typename Map::Entry;
-	using node = typename Map::node;
-	using Seq = typename Map::_Seq;
-	using ET = typename Map::ET;
-	using GC = typename Map::GC;
-	using K = typename Map::K;
+template <class map_type>
+struct augmented_ops : map_type {
+	using Entry = typename map_type::Entry;
+	using node = typename map_type::node;
+	using Seq = typename map_type::_Seq;
+	using et_type = typename map_type::et_type;
+	using gc_type = typename map_type::gc_type;
+	using K = typename map_type::K;
 	using aug_t = typename Entry::aug_t;
-	using ptr = typename GC::ptr;
-	using Map::B;
-	using Map::kBaseCaseSize;
-	using Map::kNodeLimit;
+	using ptr = typename gc_type::ptr;
+	using map_type::B;
+	using map_type::base_case_size;
+	using map_type::node_limit;
 
 	static inline aug_t aug_val(node *b)
 	{
@@ -41,7 +41,7 @@ struct augmented_ops : Map {
 		aug_sum_t() : result(Entry::get_empty())
 		{
 		}
-		void add_entry(ET e)
+		void add_entry(et_type e)
 		{
 			result = Entry::combine(result, Entry::from_entry(e));
 		}
@@ -56,23 +56,24 @@ struct augmented_ops : Map {
 	static void aug_sum_left(node *b, K const &key, aug &a)
 	{
 		while (b) {
-			if (Map::is_compressed(b)) {
+			if (map_type::is_compressed(b)) {
 				auto fn = [&](auto const &et) {
-					if (Map::comp(Entry::get_key(et),
-						      key)) {
+					if (map_type::comp(Entry::get_key(et),
+							   key)) {
 						a.add_entry(et);
 						return true;
 					}
 					return false;
 				};
-				Map::iterate_cond(b, fn);
+				map_type::iterate_cond(b, fn);
 				return;
 			}
-			auto rb = Map::cast_to_regular(b);
-			if (!Map::comp(key, Map::get_key(rb))) {
-				a.add_entry(Map::get_entry(rb));
+			auto rb = map_type::cast_to_regular(b);
+			if (!map_type::comp(key, map_type::get_key(rb))) {
+				a.add_entry(map_type::get_entry(rb));
 				if (rb->lc)
-					a.add_aug_val(Map::aug_val(rb->lc));
+					a.add_aug_val(
+						map_type::aug_val(rb->lc));
 				b = rb->rc;
 			} else {
 				b = rb->lc;
@@ -85,21 +86,22 @@ struct augmented_ops : Map {
 	static void aug_sum_right(node *b, K const &key, aug &a)
 	{
 		while (b) {
-			if (Map::is_compressed(b)) {
+			if (map_type::is_compressed(b)) {
 				auto fn = [&](auto const &et) {
-					if (!Map::comp(Entry::get_key(et),
-						       key)) {
+					if (!map_type::comp(Entry::get_key(et),
+							    key)) {
 						a.add_entry(et);
 					}
 				};
-				Map::iterate_seq(b, fn);
+				map_type::iterate_seq(b, fn);
 				return;
 			}
-			auto rb = Map::cast_to_regular(b);
-			if (!Map::comp(Map::get_key(rb), key)) {
-				a.add_entry(Map::get_entry(rb));
+			auto rb = map_type::cast_to_regular(b);
+			if (!map_type::comp(map_type::get_key(rb), key)) {
+				a.add_entry(map_type::get_entry(rb));
 				if (rb->rc)
-					a.add_aug_val(Map::aug_val(rb->rc));
+					a.add_aug_val(
+						map_type::aug_val(rb->rc));
 				b = rb->lc;
 			} else
 				b = rb->rc;
@@ -110,24 +112,25 @@ struct augmented_ops : Map {
 	static void aug_sum_range(node *b, K const &key_left,
 				  K const &key_right, aug &a)
 	{
-		node *r = Map::range_root_2(b, key_left, key_right);
+		node *r = map_type::range_root_2(b, key_left, key_right);
 		if (r) {
-			if (Map::is_compressed(r)) {
+			if (map_type::is_compressed(r)) {
 				auto fn = [&](auto const &et) {
-					if (Map::comp(key_left,
-						      Entry::get_key(et)) &&
-					    Map::comp(Entry::get_key(et),
-						      key_right)) {
+					if (map_type::comp(
+						    key_left,
+						    Entry::get_key(et)) &&
+					    map_type::comp(Entry::get_key(et),
+							   key_right)) {
 						a.add_entry(et);
 					}
 				};
-				Map::iterate_seq(r, fn);
+				map_type::iterate_seq(r, fn);
 			} else {
-				auto rr = Map::cast_to_regular(r);
+				auto rr = map_type::cast_to_regular(r);
 				// add in left side (right of or at key_left)
 				aug_sum_right(rr->lc, key_left, a);
 				// add in middle
-				a.add_entry(Map::get_entry(rr));
+				a.add_entry(map_type::get_entry(rr));
 				// add in right side (left of or at key_right)
 				aug_sum_left(rr->rc, key_right, a);
 			}
@@ -135,12 +138,12 @@ struct augmented_ops : Map {
 	}
 
 	template <typename Func>
-	static std::optional<ET> aug_select(node *b, Func const &f)
+	static std::optional<et_type> aug_select(node *b, Func const &f)
 	{
 		if (!b)
 			return {};
-		if (Map::is_compressed(b)) {
-			std::optional<ET> ret;
+		if (map_type::is_compressed(b)) {
+			std::optional<et_type> ret;
 			auto fn = [&](auto const &et) {
 				if (!f(Entry::from_entry(et))) {
 					ret = et;
@@ -148,15 +151,15 @@ struct augmented_ops : Map {
 				}
 				return true; // keep iterating
 			};
-			Map::iterate_cond(b, fn);
+			map_type::iterate_cond(b, fn);
 			return ret;
 		}
-		auto rb = Map::cast_to_regular(b);
-		if (f(Map::aug_val(rb->lc))) {
-			if (f(Entry::from_entry(Map::get_entry(rb)))) {
+		auto rb = map_type::cast_to_regular(b);
+		if (f(map_type::aug_val(rb->lc))) {
+			if (f(Entry::from_entry(map_type::get_entry(rb)))) {
 				return aug_select(rb->rc, f);
 			}
-			return Map::get_entry(rb);
+			return map_type::get_entry(rb);
 		}
 		return aug_select(rb->lc, f);
 	}
@@ -165,36 +168,36 @@ struct augmented_ops : Map {
 	static node *aug_filter_bc(ptr b1, Func const &f)
 	{
 		assert(b1.size() > 0);
-		ET stack[kBaseCaseSize + 1];
+		et_type stack[base_case_size + 1];
 
 		auto b1_node = b1.node_ptr();
 		size_t offset = 0;
 		aug_t cur = Entry::get_empty();
-		auto copy_f = [&](ET a) { // has to be a copy since we move
+		auto copy_f = [&](et_type a) { // has to be a copy since we move
 			cur = Entry::combine(cur, Entry::from_entry(a));
 			if (f(cur)) {
 				parlay::move_uninitialized(stack[offset++], a);
 			}
 		};
-		Map::iterate_seq(b1_node, copy_f);
-		assert(offset <= kBaseCaseSize);
+		map_type::iterate_seq(b1_node, copy_f);
+		assert(offset <= base_case_size);
 
-		Map::decrement_recursive(b1_node);
+		map_type::decrement_recursive(b1_node);
 
 		if (offset < B) {
-			return Map::to_tree_impl((ET *)stack, offset);
+			return map_type::to_tree_impl((et_type *)stack, offset);
 		} else {
-			return Map::make_compressed(stack, offset);
+			return map_type::make_compressed(stack, offset);
 		}
 	}
 
 	template <class Func>
 	static node *aug_filter(ptr b, Func const &f,
-				size_t granularity = kNodeLimit)
+				size_t granularity = node_limit)
 	{
 		if (b.empty())
 			return NULL;
-		if (b.size() <= kBaseCaseSize) {
+		if (b.size() <= base_case_size) {
 			return aug_filter_bc(std::move(b), f);
 		}
 		// TODO: better functionality for getting aug_val from b
@@ -204,7 +207,7 @@ struct augmented_ops : Map {
 			return NULL;
 
 		size_t n = b.size();
-		auto [lc, e, rc, root] = Map::expose(std::move(b));
+		auto [lc, e, rc, root] = map_type::expose(std::move(b));
 
 		auto [l, r] = utils::fork<node *>(
 			n >= granularity,
@@ -218,38 +221,39 @@ struct augmented_ops : Map {
 			});
 
 		if (f(Entry::from_entry(e))) {
-			return Map::join(l, e, r, root);
+			return map_type::join(l, e, r, root);
 		} else {
-			GC::decrement(root);
-			return Map::join2(l, r);
+			gc_type::decrement(root);
+			return map_type::join2(l, r);
 		}
 	}
 
 	template <class Func>
-	static node *insert_lazy(node *b, const ET &e, Func const &f)
+	static node *insert_lazy(node *b, et_type const &e, Func const &f)
 	{
 		aug_t av = Entry::from_entry(e);
 		auto g = [&](aug_t const &a) { return Entry::combine(av, a); };
 
 		auto lazy_join = [&](node *l, node *r, node *_m) -> node * {
-			auto m = Map::cast_to_regular(_m);
+			auto m = map_type::cast_to_regular(_m);
 			m->rc = r;
 			m->lc = l;
-			if (Map::is_balanced(m)) {
-				Map::lazy_update(m, g);
+			if (map_type::is_balanced(m)) {
+				map_type::lazy_update(m, g);
 				return m;
 			} else
-				return Map::node_join(l, r, m);
+				return map_type::node_join(l, r, m);
 		};
 
-		return Map::template insert_tmpl<Func, decltype(lazy_join),
-						 false>(b, e, f, lazy_join);
+		return map_type::template insert_tmpl<Func, decltype(lazy_join),
+						      false>(b, e, f,
+							     lazy_join);
 	}
 
 	// F for box check, F2 for point check
 	// template <typename F, typename F2>
 	// static size_t range_count_filter2(node* b, F const& f, const F2& f2,
-	//                                   size_t granularity = kNodeLimit) {
+	//                                   size_t granularity = node_limit) {
 	//   if (!b) return 0;
 	//   auto cur_aug = aug_val(b);
 	//   auto flag = f(cur_aug.first);
@@ -258,7 +262,7 @@ struct augmented_ops : Map {
 	//     return cur_aug.second;  // fully contained
 	//   }
 	//
-	//   if (Map::is_compressed(b)) {  // leaf node
+	//   if (map_type::is_compressed(b)) {  // leaf node
 	//     auto ret = 0;
 	//     auto f_filter = [&](auto const& et) {
 	//       auto cur_pt = std::get<1>(et);
@@ -266,12 +270,12 @@ struct augmented_ops : Map {
 	//         ret++;
 	//       }
 	//     };
-	//     Map::iterate_seq(b, f_filter);
+	//     map_type::iterate_seq(b, f_filter);
 	//     return ret;
 	//   }
 	//
-	//   auto rb = Map::cast_to_regular(b);
-	//   auto cur_pt = Map::get_val(rb);
+	//   auto rb = map_type::cast_to_regular(b);
+	//   auto cur_pt = map_type::get_val(rb);
 	//   auto flag2 = f2(cur_pt) == 1 ? 1 : 0;
 	//
 	//   auto l = range_count_filter2(rb->lc, f, f2, granularity);
@@ -280,58 +284,60 @@ struct augmented_ops : Map {
 	//   return l + r + flag2;
 	// }
 
-	template <class BaseTree, typename Box, typename Logger>
-	static size_t range_count_filter2(node *b, Box const &query_box,
+	template <class base_tree, typename box_type, typename Logger>
+	static size_t range_count_filter2(node *b, box_type const &query_box,
 					  Logger &logger)
 	{
-		using BT = BaseTree;
+		using base_type = base_tree;
 
 		if (!b)
 			return 0;
 
-		auto const &node_box = Map::aug_val_ref(b);
-		if (!BT::BoxIntersectBox(node_box, query_box)) {
+		auto const &node_box = map_type::aug_val_ref(b);
+		if (!base_type::box_intersect_box(node_box, query_box)) {
 			logger.skip_box_num++;
 			return 0;
-		} else if (BT::WithinBox(node_box, query_box)) {
+		} else if (base_type::within_box(node_box, query_box)) {
 			logger.full_box_num++;
-			return Map::size(b); // fully contained
+			return map_type::size(b); // fully contained
 		}
 
-		if (Map::is_compressed(b)) { // leaf node
+		if (map_type::is_compressed(b)) { // leaf node
 			logger.vis_leaf_num++;
 			size_t ret = 0;
 			auto f_filter = [&](auto const &et) {
-				if (BT::WithinBox(et, query_box)) {
+				if (base_type::within_box(et, query_box)) {
 					ret++;
 				}
 			};
-			Map::template iterate_seq<decltype(f_filter), false>(
-				b, f_filter);
+			map_type::template iterate_seq<decltype(f_filter),
+						       false>(b, f_filter);
 			return ret;
 		}
 
 		logger.vis_interior_num++;
-		auto rb = Map::cast_to_regular(b);
+		auto rb = map_type::cast_to_regular(b);
 
-		auto l = range_count_filter2<BaseTree>(rb->lc, query_box,
-						       logger);
-		auto r = range_count_filter2<BaseTree>(rb->rc, query_box,
-						       logger);
+		auto l = range_count_filter2<base_tree>(rb->lc, query_box,
+							logger);
+		auto r = range_count_filter2<base_tree>(rb->rc, query_box,
+							logger);
 
 		return l + r +
 		       static_cast<size_t>(
-			       BT::WithinBox(rb->entry.first, query_box) ? 1
-									 : 0);
+			       base_type::within_box(rb->entry.first, query_box)
+				       ? 1
+				       : 0);
 	}
 
 	//  F is point-point dis, F2 is point-mbr dis
-	template <class BaseTree, typename F, typename F2, typename Out,
+	template <class base_tree, typename F, typename F2, typename Out,
 		  typename Logger>
-	static void knn_filter(node *b, ET const q, F const &f, const F2 &f2,
-			       size_t &k, Out &out, Logger &logger)
+	static void knn_filter(node *b, et_type const q, F const &f,
+			       const F2 &f2, size_t &k, Out &out,
+			       Logger &logger)
 	{
-		using BT = BaseTree;
+		using base_type = base_tree;
 		if (!b)
 			return;
 
@@ -348,16 +354,16 @@ struct augmented_ops : Map {
 			}
 		};
 
-		if (Map::is_compressed(b)) { // leaf node·
+		if (map_type::is_compressed(b)) { // leaf node·
 			logger.vis_leaf_num++;
-			auto f_filter = [&](ET &et) { pt_check(et); };
-			Map::iterate_seq(b, f_filter);
+			auto f_filter = [&](et_type &et) { pt_check(et); };
+			map_type::iterate_seq(b, f_filter);
 			return;
 		}
 
 		logger.vis_interior_num++;
-		auto rb = Map::cast_to_regular(b);
-		// auto cur_pt = Map::get_val(rb);
+		auto rb = map_type::cast_to_regular(b);
+		// auto cur_pt = map_type::get_val(rb);
 		auto cur_pt = rb->entry.first;
 		pt_check(cur_pt);
 
@@ -373,14 +379,14 @@ struct augmented_ops : Map {
 		}
 		auto go_left = [&]() {
 			if (!out.full() || l_dis < out.top().second) {
-				knn_filter<BT>(rb->lc, q, f, f2, k, out,
-					       logger);
+				knn_filter<base_type>(rb->lc, q, f, f2, k, out,
+						      logger);
 			}
 		};
 		auto go_right = [&]() {
 			if (!out.full() || r_dis < out.top().second) {
-				knn_filter<BT>(rb->rc, q, f, f2, k, out,
-					       logger);
+				knn_filter<base_type>(rb->rc, q, f, f2, k, out,
+						      logger);
 			}
 		};
 
@@ -393,34 +399,36 @@ struct augmented_ops : Map {
 		}
 	}
 
-	template <class BaseTree, typename Logger, typename kBoundedQueue>
-	static void knn(node *b, ET const &q, kBoundedQueue &bq, Logger &logger)
+	template <class base_tree, typename Logger, typename bounded_queue>
+	static void knn(node *b, et_type const &q, bounded_queue &bq,
+			Logger &logger)
 	{
-		using BT = BaseTree;
-		using Coord = typename ET::Coord;
-		using DisType = typename ET::DisType;
+		using base_type = base_tree;
+		using coord_type = typename et_type::coord_type;
+		using dis_type = typename et_type::dis_type;
 
 		if (!b)
 			return;
 
 		if (bq.size() &&
-		    BT::P2BMinDistanceSquare(q, Map::aug_val_ref(b)) >
-			    bq.top_value() &&
+		    base_type::p2b_min_distance_square(
+			    q, map_type::aug_val_ref(b)) > bq.top_value() &&
 		    bq.full()) {
 			logger.skip_box_num++;
 			return;
 		}
 
-		if (Map::is_compressed(b)) { // leaf node
+		if (map_type::is_compressed(b)) { // leaf node
 			logger.vis_leaf_num++;
-			auto f_filter = [&](ET &et) {
+			auto f_filter = [&](et_type &et) {
 				if (!bq.full()) {
 					bq.insert(std::make_pair(
 						std::ref(et),
-						BT::P2PDistanceSquare(q, et)));
+						base_type::p2p_distance_square(
+							q, et)));
 					return;
 				}
-				auto r = BT::InterruptibleDistance(
+				auto r = base_type::interruptible_distance(
 					q, et, bq.top_value());
 				if (r <
 				    bq.top_value()) { // PERF: remember
@@ -435,30 +443,32 @@ struct augmented_ops : Map {
 				}
 				return;
 			};
-			Map::template iterate_seq<decltype(f_filter), false>(
-				b, f_filter);
+			map_type::template iterate_seq<decltype(f_filter),
+						       false>(b, f_filter);
 			return;
 		}
 
 		logger.vis_interior_num++;
-		auto rb = Map::cast_to_regular(b);
-		DisType d_lc = rb->lc ? BT::P2BMinDistanceSquare(
-						q, Map::aug_val_ref(rb->lc))
-				      : std::numeric_limits<DisType>::max();
-		DisType d_rc = rb->rc ? BT::P2BMinDistanceSquare(
-						q, Map::aug_val_ref(rb->rc))
-				      : std::numeric_limits<DisType>::max();
+		auto rb = map_type::cast_to_regular(b);
+		dis_type d_lc =
+			rb->lc ? base_type::p2b_min_distance_square(
+					 q, map_type::aug_val_ref(rb->lc))
+			       : std::numeric_limits<dis_type>::max();
+		dis_type d_rc =
+			rb->rc ? base_type::p2b_min_distance_square(
+					 q, map_type::aug_val_ref(rb->rc))
+			       : std::numeric_limits<dis_type>::max();
 		bool go_left = d_lc <= d_rc;
 
 		// check current entry
 		// the rb->entry is a <point, aug> pair
-		auto r = BT::InterruptibleDistance(q, rb->entry.first,
-						   bq.top_value());
+		auto r = base_type::interruptible_distance(q, rb->entry.first,
+							   bq.top_value());
 		if (!bq.full() || r < bq.top_value()) {
 			bq.insert(std::make_pair(std::ref(rb->entry.first), r));
 		}
 
-		knn<BT>(go_left ? rb->lc : rb->rc, q, bq, logger);
+		knn<base_type>(go_left ? rb->lc : rb->rc, q, bq, logger);
 
 		logger.check_box_num++;
 		if (((go_left ? d_rc : d_lc) > bq.top_value()) && bq.full()) {
@@ -466,25 +476,25 @@ struct augmented_ops : Map {
 			return;
 		}
 
-		knn<BT>(go_left ? rb->rc : rb->lc, q, bq, logger);
+		knn<base_type>(go_left ? rb->rc : rb->lc, q, bq, logger);
 
 		return;
 	}
 
 	template <class F, typename F2>
 	static size_t range_count_filter(ptr b, F const &f, const F2 &f2,
-					 size_t granularity = kNodeLimit)
+					 size_t granularity = node_limit)
 	{
 		if (b.empty())
 			return 0;
-		// auto cur_par = Map::get_entry(b.unsafe_ptr());
-		// Map::print_node_info(b.unsafe_ptr(), "cur");
+		// auto cur_par = map_type::get_entry(b.unsafe_ptr());
+		// map_type::print_node_info(b.unsafe_ptr(), "cur");
 		// std::cout << cur_val.first << "-" << cur_val.second <<
 		// std::endl; auto cur_pt =
-		// std::get<1>(Map::get_entry(b.unsafe_ptr()));
+		// std::get<1>(map_type::get_entry(b.unsafe_ptr()));
 		auto cur_aug = aug_val(b.unsafe_ptr());
-		auto [lc, e, rc, root] = Map::expose(std::move(b));
-		// auto [lc2, e, rc, root] = Map::expose(std::move(b));
+		auto [lc, e, rc, root] = map_type::expose(std::move(b));
+		// auto [lc2, e, rc, root] = map_type::expose(std::move(b));
 
 		auto cur_pt = std::get<1>(e);
 		// std::cout << std::fixed << std::setprecision(6) << cur_pt.x
@@ -493,11 +503,11 @@ struct augmented_ops : Map {
 		auto flag = f(cur_aug.first);
 
 		if (flag < 0) {
-			GC::decrement(root);
+			gc_type::decrement(root);
 			return 0;
 		}
 		if (flag == 1) {
-			GC::decrement(root);
+			gc_type::decrement(root);
 			// std::cout << "found " << cur_aug.second << " points"
 			// << std::endl;
 			return cur_aug.second;
@@ -508,7 +518,7 @@ struct augmented_ops : Map {
 		auto cur_pt_inside = f2(cur_pt) > 0 ? 1 : 0;
 
 		// size_t n = b.size();
-		// auto [lc, e, rc, root] = Map::expose(std::move(b));
+		// auto [lc, e, rc, root] = map_type::expose(std::move(b));
 
 		// auto [l, r] = utils::fork<size_t>(n >= granularity,
 		//   [&]() {return range_count_filter(std::move(lc), f,
@@ -519,7 +529,7 @@ struct augmented_ops : Map {
 		auto l = range_count_filter(std::move(lc), f, f2, granularity);
 		auto r = range_count_filter(std::move(rc), f, f2, granularity);
 
-		GC::decrement(root);
+		gc_type::decrement(root);
 
 		return l + r + cur_pt_inside;
 	}
@@ -527,18 +537,19 @@ struct augmented_ops : Map {
 	// template <class F, typename Out>
 	// static void range_report_filter2(node* b, F const& f, int64_t& cnt,
 	// Out& out,
-	//                                  size_t granularity = kNodeLimit) {
+	//                                  size_t granularity = node_limit) {
 	//   if (!b) return;
 	//
 	//   auto cur_aug = aug_val(b);
 	//   auto flag = f(cur_aug.first);
 	//   if (flag < 0) return;  // exclude
 	//
-	//   if (Map::is_compressed(b)) {  // leaf node
+	//   if (map_type::is_compressed(b)) {  // leaf node
 	//     if (flag == 1) {
 	//       auto f_filter = [&](auto const& et) { out[cnt++] =
 	//       std::get<1>(et);
-	//       }; Map::iterate_seq(b, f_filter); return;  // fully contained
+	//       }; map_type::iterate_seq(b, f_filter); return;  // fully
+	//       contained
 	//     }
 	//
 	//     auto f_filter = [&](auto const& et) {
@@ -548,12 +559,12 @@ struct augmented_ops : Map {
 	//         out[cnt++] = cur_pt;
 	//       }
 	//     };
-	//     Map::iterate_seq(b, f_filter);
+	//     map_type::iterate_seq(b, f_filter);
 	//     return;
 	//   }
 	//
-	//   auto rb = Map::cast_to_regular(b);
-	//   auto cur_pt = Map::get_val(rb);
+	//   auto rb = map_type::cast_to_regular(b);
+	//   auto cur_pt = map_type::get_val(rb);
 	//   auto pt_box = std::make_pair(cur_pt, cur_pt);
 	//   auto flag2 = f(pt_box) == 1 ? 1 : 0;
 	//   if (flag2) out[cnt++] = cur_pt;
@@ -568,17 +579,18 @@ struct augmented_ops : Map {
 	{
 		if (!b)
 			return 0;
-		if (Map::is_compressed(b)) {
+		if (map_type::is_compressed(b)) {
 			size_t sz = 0;
 			auto copy_f = [&](auto const &et) { out[sz++] = et; };
-			Map::template iterate_seq<decltype(copy_f), false>(
+			map_type::template iterate_seq<decltype(copy_f), false>(
 				b, copy_f);
 			return sz;
 		}
-		auto rb = Map::cast_to_regular(b);
-		auto ls = Map::size(rb->lc);
+		auto rb = map_type::cast_to_regular(b);
+		auto ls = map_type::size(rb->lc);
 		assert(out.size() == rb->s);
-		assert(rb->s == Map::size(rb->lc) + Map::size(rb->rc) + 1);
+		assert(rb->s ==
+		       map_type::size(rb->lc) + map_type::size(rb->rc) + 1);
 
 		utils::fork_no_result(
 			rb->s >= 1024,
@@ -591,65 +603,67 @@ struct augmented_ops : Map {
 		return rb->s;
 	}
 
-	template <class BaseTree, typename Box, typename Logger, typename Out>
-	static void range_report_filter2(node *b, Box const &query_box,
+	template <class base_tree, typename box_type, typename Logger,
+		  typename Out>
+	static void range_report_filter2(node *b, box_type const &query_box,
 					 size_t &cnt, Out out, Logger &logger)
 	{
-		using BT = BaseTree;
+		using base_type = base_tree;
 
 		if (!b)
 			return;
 
-		auto const &node_box = Map::aug_val_ref(b);
-		if (!BT::BoxIntersectBox(node_box, query_box)) {
+		auto const &node_box = map_type::aug_val_ref(b);
+		if (!base_type::box_intersect_box(node_box, query_box)) {
 			logger.skip_box_num++;
 			return;
-		} else if (BT::WithinBox(node_box, query_box)) {
+		} else if (base_type::within_box(node_box, query_box)) {
 			logger.full_box_num++;
-			cnt += flatten(b, out.cut(cnt, cnt + Map::size(b)));
+			cnt += flatten(b,
+				       out.cut(cnt, cnt + map_type::size(b)));
 			return;
 		}
 
-		if (Map::is_compressed(b)) { // leaf node
+		if (map_type::is_compressed(b)) { // leaf node
 			logger.vis_leaf_num++;
 			auto f_filter = [&](auto const &et) {
-				if (BT::WithinBox(et, query_box)) {
+				if (base_type::within_box(et, query_box)) {
 					out[cnt++] = et;
 				}
 			};
-			Map::template iterate_seq<decltype(f_filter), false>(
-				b, f_filter);
+			map_type::template iterate_seq<decltype(f_filter),
+						       false>(b, f_filter);
 			return;
 		}
 
 		logger.vis_interior_num++;
-		auto rb = Map::cast_to_regular(b);
+		auto rb = map_type::cast_to_regular(b);
 
-		if (BT::WithinBox(rb->entry.first, query_box)) {
+		if (base_type::within_box(rb->entry.first, query_box)) {
 			out[cnt++] = rb->entry.first;
 		}
 
-		range_report_filter2<BaseTree>(rb->lc, query_box, cnt, out,
-					       logger);
-		range_report_filter2<BaseTree>(rb->rc, query_box, cnt, out,
-					       logger);
+		range_report_filter2<base_tree>(rb->lc, query_box, cnt, out,
+						logger);
+		range_report_filter2<base_tree>(rb->rc, query_box, cnt, out,
+						logger);
 	}
 
 	template <class F, typename Out>
 	static void range_report_filter(ptr b, F const &f, int64_t &cnt,
 					Out &out,
-					size_t granularity = kNodeLimit)
+					size_t granularity = node_limit)
 	{
 		if (b.empty())
 			return;
 		auto cur_aug = aug_val(b.unsafe_ptr());
 
-		auto [lc, e, rc, root] = Map::expose(std::move(b));
+		auto [lc, e, rc, root] = map_type::expose(std::move(b));
 
 		auto flag = f(cur_aug.first);
 
 		if (flag < 0) {
-			GC::decrement(root);
+			gc_type::decrement(root);
 			return; //  exclude
 		}
 
@@ -663,7 +677,7 @@ struct augmented_ops : Map {
 		}
 		range_report_filter(std::move(rc), f, cnt, out);
 
-		GC::decrement(root);
+		gc_type::decrement(root);
 		return;
 	}
 };

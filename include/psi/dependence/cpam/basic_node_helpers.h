@@ -11,10 +11,10 @@ namespace cpam
 namespace basic_node_helpers
 {
 
-template <typename ET, typename T>
-static inline const ET &get_entry_indentity(T *arr, size_t pos)
+template <typename et_type, typename T>
+static inline et_type const &get_entry_indentity(T *arr, size_t pos)
 {
-	if constexpr (std::same_as<T, ET>) {
+	if constexpr (std::same_as<T, et_type>) {
 		return arr[pos];
 	} else {
 		// assert((*arr[pos].second).aug.code != 0);
@@ -22,10 +22,10 @@ static inline const ET &get_entry_indentity(T *arr, size_t pos)
 	}
 }
 
-template <typename ET, typename T>
-static inline const ET &get_entry_indentity(T const &val)
+template <typename et_type, typename T>
+static inline et_type const &get_entry_indentity(T const &val)
 {
-	if constexpr (std::same_as<T, ET>) {
+	if constexpr (std::same_as<T, et_type>) {
 		return val;
 	} else {
 		// assert((*val.second).aug.code != 0);
@@ -34,7 +34,8 @@ static inline const ET &get_entry_indentity(T const &val)
 }
 
 // template <class Node>
-// static typename Node::node* single_compressed_node(typename Node::ET* stack,
+// static typename Node::node* single_compressed_node(typename Node::et_type*
+// stack,
 //                                                    size_t tot) {
 template <class Node, typename T>
 static typename Node::node *single_compressed_node(T *stack, size_t tot)
@@ -46,23 +47,24 @@ static typename Node::node *single_compressed_node(T *stack, size_t tot)
 
 // template <class Node>
 // static typename Node::node* two_compressed_nodes(
-//     typename Node::ET* stack, size_t tot, size_t B,
+//     typename Node::et_type* stack, size_t tot, size_t B,
 //     typename Node::regular_node* e = nullptr) {
 template <class Node, typename T>
 static typename Node::node *
 two_compressed_nodes(T *stack, size_t tot, size_t B,
 		     typename Node::regular_node *e = nullptr)
 {
-	using ET = typename Node::ET;
+	using et_type = typename Node::et_type;
 	assert(tot >= (2 * B + 1));
 	size_t left_size = tot / 2, right_size = tot / 2 - (!(tot & 1));
 	// if (e == nullptr) e = Node::single(stack[left_size]);
 	if (e == nullptr)
-		e = Node::single(get_entry_indentity<ET>(stack, left_size));
+		e = Node::single(
+			get_entry_indentity<et_type>(stack, left_size));
 
 	auto c_l = Node::make_single_compressed_node(stack, left_size);
 	// Node::set_entry(e, stack[left_size]);
-	Node::set_entry(e, get_entry_indentity<ET>(stack, left_size));
+	Node::set_entry(e, get_entry_indentity<et_type>(stack, left_size));
 	auto c_r = Node::make_single_compressed_node(stack + left_size + 1,
 						     right_size);
 
@@ -74,16 +76,16 @@ two_compressed_nodes(T *stack, size_t tot, size_t B,
 
 // template <class Node>
 // static typename Node::node* four_compressed_nodes(
-//     typename Node::ET* stack, size_t tot, size_t B,
+//     typename Node::et_type* stack, size_t tot, size_t B,
 //     typename Node::regular_node* e = nullptr) {
 template <class Node, typename T>
 static typename Node::node *
 four_compressed_nodes(T *stack, size_t tot, size_t B,
 		      typename Node::regular_node *e = nullptr)
 {
-	using ET = typename Node::ET;
+	using et_type = typename Node::et_type;
 	using node = typename Node::node;
-	// auto make_two_nodes = [&](ET* start, size_t tot) -> node* {
+	// auto make_two_nodes = [&](et_type* start, size_t tot) -> node* {
 	auto make_two_nodes = [&](auto *start, size_t tot) -> node * {
 		assert(tot >= 2 * B);
 		if (tot == 2 * B) {
@@ -116,8 +118,9 @@ four_compressed_nodes(T *stack, size_t tot, size_t B,
 		e = Node::make_regular_node(stack[lc_size]);
 
 	// Node::set_entry(e, stack[lc_size]);  // double set?
-	Node::set_entry(e,
-			get_entry_indentity<ET>(stack[lc_size])); // double set?
+	Node::set_entry(
+		e,
+		get_entry_indentity<et_type>(stack[lc_size])); // double set?
 
 	e->lc = lc;
 	e->rc = rc;
@@ -133,18 +136,18 @@ four_compressed_nodes(T *stack, size_t tot, size_t B,
     2B   2B
 */
 // template <class Node>
-// static typename Node::node* make_compressed(typename Node::ET* stack,
+// static typename Node::node* make_compressed(typename Node::et_type* stack,
 //                                             size_t tot, size_t B) {
 template <class Node, typename T>
 static typename Node::node *make_compressed(T *stack, size_t tot, size_t B)
 {
 	assert(tot >= B);
 	assert(tot <= 8 * B + 2);
-	using ET = typename Node::ET;
+	using et_type = typename Node::et_type;
 
 	typename Node::node *ret = nullptr;
 	if (tot <= 2 * B) {
-		// ret = single_compressed_node<Node>((ET*)stack, tot);
+		// ret = single_compressed_node<Node>((et_type*)stack, tot);
 		ret = single_compressed_node<Node>(stack, tot);
 	} else if (tot <= 4 * B + 1) {
 		ret = two_compressed_nodes<Node>(stack, tot, B);
@@ -168,10 +171,10 @@ make_compressed(typename Node::node *l, typename Node::node *r,
 	size_t tot = l_s + r_s + (e != nullptr);
 	assert(tot >= B);
 
-	using ET = typename Node::ET;
-	ET stack[7 * B];
+	using et_type = typename Node::et_type;
+	et_type stack[7 * B];
 	size_t offset = 0;
-	auto copy_f = [&](const ET &a) {
+	auto copy_f = [&](et_type const &a) {
 		parlay::assign_uninitialized(stack[offset++], a);
 	};
 	Node::iterate_seq(l, copy_f);
@@ -183,7 +186,7 @@ make_compressed(typename Node::node *l, typename Node::node *r,
 
 	void *ret;
 	if (tot <= 2 * B) {
-		ret = single_compressed_node<Node>((ET *)stack, offset);
+		ret = single_compressed_node<Node>((et_type *)stack, offset);
 		if (e)
 			Node::decrement(e);
 	} else if (tot <= 4 * B + 1) {
@@ -199,16 +202,16 @@ make_compressed(typename Node::node *l, typename Node::node *r,
 	return ret;
 }
 
-// Used by GC to copy a compressed node. TODO: update to work correctly with
-// diff-encoding.
+// Used by gc_type to copy a compressed node. TODO: update to work correctly
+// with diff-encoding.
 template <class Node>
 static typename Node::node *make_compressed_node(typename Node::node *b,
 						 size_t B)
 {
-	using ET = typename Node::ET;
-	ET stack[2 * B];
+	using et_type = typename Node::et_type;
+	et_type stack[2 * B];
 	size_t offset = 0;
-	auto copy_f = [&](const ET &e) {
+	auto copy_f = [&](et_type const &e) {
 		parlay::assign_uninitialized(stack[offset++], e);
 	};
 	Node::iterate_seq(b, copy_f);

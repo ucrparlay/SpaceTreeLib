@@ -6,7 +6,7 @@
 namespace psi
 {
 
-struct KNNLogger {
+struct knn_logger {
 	size_t vis_leaf_num = 0;
 	size_t vis_interior_num = 0;
 	size_t generate_box_num = 0;
@@ -14,7 +14,7 @@ struct KNNLogger {
 	size_t skip_box_num = 0;
 };
 
-struct RangeQueryLogger {
+struct range_query_logger {
 	size_t vis_leaf_num = 0;
 	size_t vis_interior_num = 0;
 	size_t generate_box_num = 0;

@@ -8,73 +8,75 @@
 #include "psi/dependence/splitter.h"
 #include "psi/p_tree.h"
 
-// Example usage of PTree from SpaceTreeLib
-// PTree uses space-filling curves (Morton/Hilbert) to order points
+// Example usage of p_tree from SpaceTreeLib
+// p_tree uses space-filling curves (Morton/Hilbert) to order points
 
 namespace p_tree_example
 {
 
-using Coord = long;
+using coord_type = long;
 
 // Define augmentation structure for points with space-filling curve code
 // WARN: All functions must be defined
-// PTree requires AugIdCode which includes both an id and a curve code
-struct AugIdCode {
-	using IdType = int_fast32_t;
-	using CurveCode = uint64_t;
+// p_tree requires aug_id_code which includes both an id and a curve code
+struct aug_id_code {
+	using id_type = int_fast32_t;
+	using curve_code_type = uint64_t;
 
-	AugIdCode() : code(0), id(0)
+	aug_id_code() : code(0), id(0)
 	{
 	}
 
-	void SetMember(CurveCode const &val)
+	void set_member(curve_code_type const &val)
 	{
 		code = val;
 	}
 
-	bool operator<(AugIdCode const &rhs) const
+	bool operator<(aug_id_code const &rhs) const
 	{
 		return code == rhs.code ? id < rhs.id : code < rhs.code;
 	}
 
-	bool operator==(AugIdCode const &rhs) const
+	bool operator==(aug_id_code const &rhs) const
 	{
 		// WARN: code is not important, we only need to ensure the id
 		return id == rhs.id;
 	}
 
-	friend std::ostream &operator<<(std::ostream &os, AugIdCode const &rhs)
+	friend std::ostream &operator<<(std::ostream &os,
+					aug_id_code const &rhs)
 	{
 		os << rhs.code << " " << rhs.id;
 		return os;
 	}
 
-	CurveCode code;
-	IdType id;
+	curve_code_type code;
+	id_type id;
 };
 
 // Define point type: 2D points with augmented ID and curve code
-using Point = psi::AugPoint<Coord, 2, AugIdCode>;
-using Points = parlay::sequence<Point>;
-using BT = psi::BaseTree<Point>;
+using Point = psi::aug_point<coord_type, 2, aug_id_code>;
+using points_type = parlay::sequence<Point>;
+using base_type = psi::base_tree<Point>;
 
 // Define split rule using space-filling curve (Morton curve in this example)
-using SplitRule = psi::SpatialFillingCurve<psi::MortonCurve<Point>>;
+using SplitRule = psi::spatial_filling_curve<psi::morton_curve<Point>>;
 
-// Alternative: HilbertCurve<Point>
-using AnotherSplitRule = psi::SpatialFillingCurve<psi::HilbertCurve<Point>>;
+// Alternative: hilbert_curve<Point>
+using another_split_rule_type =
+	psi::spatial_filling_curve<psi::hilbert_curve<Point>>;
 
-// Define PTree type
-// PTree doesn't use LeafAug/InteriorAug like KdTree/OrthTree
+// Define p_tree type
+// p_tree doesn't use LeafAug/InteriorAug like kd_tree/orth_tree
 // It uses CPAM (Compressed Purely Functional Augmented Maps) internally to
 // maintain the bounding box as an augmented value.
-using Tree = psi::PTree<Point, AnotherSplitRule>;
+using Tree = psi::p_tree<Point, another_split_rule_type>;
 
 void run_example()
 {
-	// 1. Create sample 2D points
+	// 1. create sample 2D points
 	size_t n = 1000;
-	Points points(n);
+	points_type points(n);
 
 	// Generate random points in a 1000x1000 grid
 	parlay::parallel_for(0, n, [&](size_t i) {
@@ -86,27 +88,27 @@ void run_example()
 
 	std::cout << "Created " << n << " random 2D points" << std::endl;
 
-	// 2. Build the PTree
+	// 2. build the p_tree
 	Tree tree;
-	tree.Build(parlay::make_slice(points));
+	tree.build(parlay::make_slice(points));
 	std::cout << "Built PTree with " << n << " points using Morton curve"
 		  << std::endl;
 
-	// 3. K-Nearest Neighbors query
+	// 3. K-Nearest neighbors query
 	int K = 10;
 	Point query_point;
 	query_point[0] = 500;
 	query_point[1] = 500;
 	query_point.aug.id = -1;
 
-	using DisType = typename Point::DisType;
-	using nn_pair = std::pair<std::reference_wrapper<Point>, DisType>;
+	using dis_type = typename Point::dis_type;
+	using nn_pair = std::pair<std::reference_wrapper<Point>, dis_type>;
 
 	parlay::sequence<nn_pair> knn_result(K,
 					     nn_pair(std::ref(points[0]), 0));
-	psi::kBoundedQueue<Point, nn_pair> bq(parlay::make_slice(knn_result));
+	psi::bounded_queue<Point, nn_pair> bq(parlay::make_slice(knn_result));
 
-	tree.KNN(query_point, bq);
+	tree.knn(query_point, bq);
 
 	std::cout << "Found " << K
 		  << " nearest neighbors to point (500, 500) (unsorted):"
@@ -119,40 +121,40 @@ void run_example()
 	}
 
 	// 4. Range query (Range count is available as well)
-	typename Tree::Box query_box;
+	typename Tree::box_type query_box;
 	query_box.first[0] = 400;
 	query_box.first[1] = 400;
 	query_box.second[0] = 600;
 	query_box.second[1] = 600;
 
-	Points range_result(n); // Allocate max possible size
+	points_type range_result(n); // Allocate max possible size
 	auto [count, logger] =
-		tree.RangeQuery(query_box, parlay::make_slice(range_result));
+		tree.range_query(query_box, parlay::make_slice(range_result));
 
 	std::cout << "Range query [400,600]x[400,600] found " << count
 		  << " points" << std::endl;
 
 	// 5. Batch insert new points
 	size_t insert_count = 100;
-	Points new_points(insert_count);
+	points_type new_points(insert_count);
 	parlay::parallel_for(0, insert_count, [&](size_t i) {
 		new_points[i][0] = (n + i) * 11 % 1000;
 		new_points[i][1] = (n + i) * 17 % 1000;
 		new_points[i].aug.id = n + i;
 	});
 
-	tree.BatchInsert(parlay::make_slice(new_points));
+	tree.batch_insert(parlay::make_slice(new_points));
 	std::cout << "Inserted " << insert_count << " new points" << std::endl;
 
 	// 6. Batch delete some points
 	size_t delete_count = 50;
-	Points points_to_delete = points.subseq(0, delete_count);
+	points_type points_to_delete = points.subseq(0, delete_count);
 
-	tree.BatchDelete(parlay::make_slice(points_to_delete));
+	tree.batch_delete(parlay::make_slice(points_to_delete));
 	std::cout << "Deleted " << delete_count << " points" << std::endl;
 
 	// 7. Clean up
-	tree.DeleteTree();
+	tree.delete_tree();
 	std::cout << "Example completed successfully!" << std::endl;
 }
 

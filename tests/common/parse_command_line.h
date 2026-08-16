@@ -60,7 +60,7 @@ struct commandLine {
 	}
 
 	// looks for two filenames
-	std::pair<char *, char *> IOFileNames()
+	std::pair<char *, char *> io_file_names()
 	{
 		if (argc < 3)
 			badArgument();

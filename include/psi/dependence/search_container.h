@@ -8,21 +8,21 @@ namespace psi
 {
 
 template <typename Point, typename T>
-class NN_Comparator
+class nn_comparator
 {
-	using DisType = typename Point::DisType;
-	using Num = Num_Comparator<DisType>;
+	using dis_type = typename Point::dis_type;
+	using num_type = num_comparator<dis_type>;
 
 public:
 	bool operator()(T const &a, T const &b)
 	{
-		return Num::Lt(a.second, b.second);
+		return num_type::lt(a.second, b.second);
 	}
 };
 
 template <typename Point, typename T,
-	  typename Compare = NN_Comparator<Point, T>>
-class kBoundedQueue
+	  typename Compare = nn_comparator<Point, T>>
+class bounded_queue
 {
 	// NOTE: A priority queue with fixed maximum capacity. While the queue
 	// has not reached its maximum capacity, elements are inserted as they
@@ -36,15 +36,15 @@ class kBoundedQueue
 	// A simplified version of CGAL bounded_priority_queue
 	// https://github.com/CGAL/cgal/blob/v5.4/Spatial_searching/include/CGAL/Spatial_searching/internal/bounded_priority_queue.h
 
-	using DisType = typename Point::DisType;
-	// using T = std::pair<Point*, DisType>;
+	using dis_type = typename Point::dis_type;
+	// using T = std::pair<Point*, dis_type>;
 
 public:
-	kBoundedQueue(Compare const &comp = Compare()) : m_comp(comp)
+	bounded_queue(Compare const &comp = Compare()) : m_comp(comp)
 	{
 	}
 
-	kBoundedQueue(parlay::slice<T *, T *> data_slice,
+	bounded_queue(parlay::slice<T *, T *> data_slice,
 		      Compare const &comp = Compare())
 	    : m_count(0), m_data(data_slice), m_comp(comp)
 	{
@@ -82,7 +82,7 @@ public:
 		return m_data[0];
 	}
 
-	DisType const top_value() const
+	dis_type const top_value() const
 	{
 		return m_data[0].second;
 	}
@@ -92,7 +92,7 @@ public:
 		return m_data;
 	}
 
-	void insert(std::pair<std::reference_wrapper<Point>, DisType> const x)
+	void insert(std::pair<std::reference_wrapper<Point>, dis_type> const x)
 	{
 		// T x( _x.first, _x.second );
 		T *data1 = (&m_data[0] - 1);

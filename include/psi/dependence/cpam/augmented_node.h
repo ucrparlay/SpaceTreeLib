@@ -17,17 +17,17 @@ namespace cpam
 //   get_empty() -> aug_t;
 //   from_entry(entry_t) -> aug_t;
 //   combine(aut_t, aug_t) -> aug_t;
-template <class balance, class Entry, class AugEntryEncoder, size_t kBlockSize>
+template <class balance, class Entry, class AugEntryEncoder, size_t block_size>
 struct aug_node
     : public basic_node<
 	      balance,
 	      std::pair<typename Entry::entry_t, typename Entry::aug_t>,
-	      null_encoder, kBlockSize> {
-	using AT = typename Entry::aug_t;
-	using ET = typename Entry::entry_t;
-	using aug = aug_node<balance, Entry, AugEntryEncoder, kBlockSize>;
-	using basic = basic_node<balance, std::pair<ET, AT>, null_encoder,
-				 kBlockSize>;
+	      null_encoder, block_size> {
+	using at_type = typename Entry::aug_t;
+	using et_type = typename Entry::entry_t;
+	using aug = aug_node<balance, Entry, AugEntryEncoder, block_size>;
+	using basic = basic_node<balance, std::pair<et_type, at_type>,
+				 null_encoder, block_size>;
 	using node = typename basic::node;
 	using regular_node = typename basic::regular_node;
 	using compressed_node = typename basic::compressed_node;
@@ -38,20 +38,20 @@ struct aug_node
 	using basic::check_compressed_node;
 	using basic::empty;
 	using basic::increment_count;
-	using basic::kNodeLimit;
+	using basic::node_limit;
 	using basic::ref_cnt;
 	using basic::size;
 	using basic::will_be_compressed;
 
-	static ET &get_entry(node *a)
+	static et_type &get_entry(node *a)
 	{
 		return basic::cast_to_regular(a)->entry.first;
 	}
-	static ET *get_entry_p(node *a)
+	static et_type *get_entry_p(node *a)
 	{
 		return &basic::cast_to_regular(a)->entry.first;
 	}
-	static void set_entry(node *a, const ET &e)
+	static void set_entry(node *a, et_type const &e)
 	{
 		basic::cast_to_regular(a)->entry.first = e;
 	}
@@ -60,13 +60,13 @@ struct aug_node
 		node_size_t r; // reference count, top-bit is always "0"
 		node_size_t s; // number of entries used (size)
 		node_size_t size_in_bytes;
-		AT aug_val;
+		at_type aug_val;
 		bool is_sorted = true;
 	};
 
 	static bool is_regular(node *a)
 	{
-		return !a || ((regular_node *)a)->r & basic::kTopBit;
+		return !a || ((regular_node *)a)->r & basic::top_bit;
 	}
 	static bool is_compressed(node *a)
 	{
@@ -84,7 +84,7 @@ struct aug_node
 	}
 
 	// TODO: include case for compressed
-	static AT aug_val(node *a)
+	static at_type aug_val(node *a)
 	{
 		if (a == NULL)
 			return Entry::get_empty();
@@ -94,12 +94,12 @@ struct aug_node
 		return c->aug_val;
 	}
 
-	static AT const &aug_val_ref(node *a)
+	static at_type const &aug_val_ref(node *a)
 	{
 		if (a == NULL) {
 			/* get_empty() returns by value; a reference bound to
 			 * it dies with the return statement. */
-			static AT const empty = Entry::get_empty();
+			static at_type const empty = Entry::get_empty();
 			return empty;
 		}
 		if (basic::is_regular(a))
@@ -121,7 +121,7 @@ struct aug_node
 	{
 		regular_node *a = basic::cast_to_regular(ov);
 		basic::update(a);
-		AT av = Entry::from_entry(get_entry(a));
+		at_type av = Entry::from_entry(get_entry(a));
 		if (a->lc)
 			av = Entry::combine(aug_val(a->lc), std::move(av));
 		if (a->rc)
@@ -134,14 +134,14 @@ struct aug_node
 	{
 		if (basic::is_regular(va)) {
 			auto a = basic::cast_to_regular(va);
-			std::get<0>((a->entry)).~ET();
-			std::get<1>((a->entry)).~AT();
+			std::get<0>((a->entry)).~et_type();
+			std::get<1>((a->entry)).~at_type();
 			allocator::free(a);
 		} else {
 			auto c = cast_to_compressed(va);
 			uint8_t *data_start =
 				(((uint8_t *)c) + sizeof(aug_compressed_node));
-			c->aug_val.~AT();
+			c->aug_val.~at_type();
 			AugEntryEncoder::destroy(data_start, c->s);
 			auto array_size = c->size_in_bytes;
 			utils::free_array<uint8_t>((uint8_t *)va, array_size);
@@ -152,7 +152,7 @@ struct aug_node
 	static bool decrement_count(node *a)
 	{
 		if ((utils::fetch_and_add(&basic::generic_node(a)->r, -1) &
-		     basic::kLowBitMask) == 1) {
+		     basic::low_bit_mask) == 1) {
 			free_node(a);
 			return true;
 		}
@@ -179,7 +179,7 @@ struct aug_node
 			node *rsub = basic::cast_to_regular(t)->rc;
 			if (decrement(t)) {
 				utils::fork_no_result(
-					basic::size(lsub) >= kNodeLimit,
+					basic::size(lsub) >= node_limit,
 					[&]() { decrement_recursive(lsub); },
 					[&]() { decrement_recursive(rsub); });
 			}
@@ -189,23 +189,23 @@ struct aug_node
 	}
 
 	template <typename T>
-	// static regular_node* make_regular_node(ET e) {
+	// static regular_node* make_regular_node(et_type e) {
 	static regular_node *make_regular_node(T const &e)
 	{
-		std::pair<ET, AT> ea;
+		std::pair<et_type, at_type> ea;
 		// ea.first = e;
-		ea.first = basic_node_helpers::get_entry_indentity<ET>(e);
+		ea.first = basic_node_helpers::get_entry_indentity<et_type>(e);
 		return basic::make_regular_node(ea);
 	}
 
-	static regular_node *single(ET const &e)
+	static regular_node *single(et_type const &e)
 	{
-		AT av = Entry::from_entry(e);
+		at_type av = Entry::from_entry(e);
 		return basic::single(std::make_pair(e, av));
 	}
 
-	// static regular_node* single(const ET& e) {
-	//   AT av = Entry::from_entry(e);
+	// static regular_node* single(const et_type& e) {
+	//   at_type av = Entry::from_entry(e);
 	//   return basic::single(std::make_pair(e, av));
 	// }
 
@@ -230,7 +230,7 @@ struct aug_node
 		}
 	}
 
-	template <typename F, bool kReorderCompress = true>
+	template <typename F, bool ReorderCompress = true>
 	static void iterate_seq(node *a, F const &f)
 	{
 		if (!a)
@@ -244,14 +244,14 @@ struct aug_node
 			auto c = cast_to_compressed(a);
 			uint8_t *data_start =
 				(((uint8_t *)c) + sizeof(aug_compressed_node));
-			if constexpr (kReorderCompress) {
+			if constexpr (ReorderCompress) {
 				reorder(c);
 			}
 			AugEntryEncoder::decode(data_start, c->s, f);
 		}
 	}
 
-	template <typename F, bool kReorderCompress = true>
+	template <typename F, bool ReorderCompress = true>
 	static bool iterate_cond(node *a, F const &f)
 	{
 		if (!a)
@@ -270,7 +270,7 @@ struct aug_node
 			auto c = cast_to_compressed(a);
 			uint8_t *data_start =
 				((uint8_t *)c) + sizeof(aug_compressed_node);
-			if constexpr (kReorderCompress) {
+			if constexpr (ReorderCompress) {
 				reorder(c);
 			}
 			return AugEntryEncoder::decode_cond(data_start, c->s,
@@ -279,8 +279,8 @@ struct aug_node
 	}
 
 	template <class F, class Comp, class K>
-	static std::optional<ET> find_compressed(node *b, F const &f,
-						 Comp const &comp, K const &k)
+	static std::optional<et_type>
+	find_compressed(node *b, F const &f, Comp const &comp, K const &k)
 	{
 		auto c = cast_to_compressed(b);
 		uint8_t *data_start =
@@ -304,8 +304,8 @@ struct aug_node
 		return root;
 	}
 
-	// Used by GC to copy a compressed node. TODO: update to work correctly
-	// with diff-encoding.
+	// Used by gc_type to copy a compressed node. TODO: update to work
+	// correctly with diff-encoding.
 	static node *make_compressed_node(node *b)
 	{
 		return basic_node_helpers::make_compressed_node<aug>(b, B);
@@ -314,7 +314,8 @@ struct aug_node
 	// takes a pointer to an array of ETs, and a length of the number of ETs
 	// to construct, and returns a compressed node.
 	template <typename T>
-	// static compressed_node* make_single_compressed_node(ET* e, size_t s)
+	// static compressed_node* make_single_compressed_node(et_type* e,
+	// size_t s)
 	// {
 	static compressed_node *make_single_compressed_node(T *e, size_t s)
 	{
@@ -324,7 +325,7 @@ struct aug_node
 		 * though only s are written below. default_entry_encoder
 		 * ignores the pointer; a compressing one would need e. */
 		size_t encoded_size = AugEntryEncoder::encoded_size(
-			static_cast<ET *>(nullptr), 2 * B);
+			static_cast<et_type *>(nullptr), 2 * B);
 		size_t node_size = sizeof(aug_compressed_node) + encoded_size;
 		aug_compressed_node *c_node = (aug_compressed_node *)
 			utils::new_array_no_init<uint8_t>(node_size);
@@ -349,7 +350,7 @@ struct aug_node
 	}
 
 	template <typename T>
-	// static node* make_compressed(ET* stack, size_t tot) {
+	// static node* make_compressed(et_type* stack, size_t tot) {
 	static node *make_compressed(T *stack, size_t tot)
 	{
 		return basic_node_helpers::make_compressed<aug>(stack, tot, B);
@@ -360,13 +361,13 @@ struct aug_node
 		return make_compressed(l, r, nullptr);
 	}
 
-	static ET *compressed_node_elms(void *ac, ET *tmp_arr)
+	static et_type *compressed_node_elms(void *ac, et_type *tmp_arr)
 	{
 		auto c = (aug_compressed_node *)ac;
 		uint8_t *data_start =
 			(((uint8_t *)c) + sizeof(aug_compressed_node));
 		size_t i = 0;
-		auto f = [&](const ET &et) {
+		auto f = [&](et_type const &et) {
 			parlay::assign_uninitialized(tmp_arr[i++], et);
 		};
 		AugEntryEncoder::decode(data_start, c->s, f);

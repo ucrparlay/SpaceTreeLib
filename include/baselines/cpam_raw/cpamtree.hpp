@@ -9,7 +9,7 @@
 // #include "hilbert.h"
 #include "psi/base_tree.h"
 
-namespace CPAMTree
+namespace cpam_tree
 {
 using namespace std;
 // using namespace geobase;
@@ -17,45 +17,45 @@ using parlay::par_do;
 using parlay::par_do_if;
 using parlay::sequence;
 
-template <typename Point, typename SplitRule, uint_fast8_t kSkHeight = 6,
-	  uint_fast8_t kImbaRatio = 30>
-class CpamRaw
-    : public psi::BaseTree<Point,
-			   CpamRaw<Point, SplitRule, kSkHeight, kImbaRatio>,
-			   kSkHeight, kImbaRatio>
+template <typename Point, typename SplitRule, uint_fast8_t SkHeight = 6,
+	  uint_fast8_t ImbaRatio = 30>
+class cpam_raw
+    : public psi::base_tree<Point,
+			    cpam_raw<Point, SplitRule, SkHeight, ImbaRatio>,
+			    SkHeight, ImbaRatio>
 {
 public:
-	using BT =
-		psi::BaseTree<Point,
-			      CpamRaw<Point, SplitRule, kSkHeight, kImbaRatio>,
-			      kSkHeight, kImbaRatio>;
+	using base_type =
+		psi::base_tree<Point,
+			       cpam_raw<Point, SplitRule, SkHeight, ImbaRatio>,
+			       SkHeight, ImbaRatio>;
 
-	using BucketType = typename BT::BucketType;
-	using BallsType = typename BT::BallsType;
-	using DimsType = typename BT::DimsType;
-	using BucketSeq = typename BT::BucketSeq;
-	using BallSeq = typename BT::BallSeq;
-	using Coord = typename Point::Coord;
-	using Coords = typename Point::Coords;
-	using Slice = typename BT::Slice;
-	using Points = typename BT::Points;
-	using PointsIter = typename BT::PointsIter;
-	using Box = typename BT::Box;
-	using BoxSeq = typename BT::BoxSeq;
-	using Circle = typename BT::NormalCircle;
+	using bucket_type = typename base_type::bucket_type;
+	using balls_type = typename base_type::balls_type;
+	using dims_type = typename base_type::dims_type;
+	using bucket_seq_type = typename base_type::bucket_seq_type;
+	using ball_seq_type = typename base_type::ball_seq_type;
+	using coord_type = typename Point::coord_type;
+	using coords_type = typename Point::coords_type;
+	using slice_type = typename base_type::slice_type;
+	using points_type = typename base_type::points_type;
+	using points_iter_type = typename base_type::points_iter_type;
+	using box_type = typename base_type::box_type;
+	using box_seq_type = typename base_type::box_seq_type;
+	using circle_type = typename base_type::normal_circle;
 
-	using HyperPlane = typename BT::HyperPlane;
-	using HyperPlaneSeq = typename BT::HyperPlaneSeq;
-	using NodeTag = typename BT::NodeTag;
-	using NodeTagSeq = typename BT::NodeTagSeq;
-	using NodeBox = typename BT::NodeBox;
-	using NodeBoxSeq = typename BT::NodeBoxSeq;
+	using hyper_plane_type = typename base_type::hyper_plane_type;
+	using hyper_plane_seq_type = typename base_type::hyper_plane_seq_type;
+	using node_tag_type = typename base_type::node_tag_type;
+	using node_tag_seq_type = typename base_type::node_tag_seq_type;
+	using node_box_type = typename base_type::node_box_type;
+	using node_box_seq_type = typename base_type::node_box_seq_type;
 
 	// begin of CPAM_RAW definition
 	using key_type =
 		pair<unsigned long long, unsigned long long>; // morton_id, id
 	using val_type = Point;
-	using aug_type = pair<Box, size_t>;
+	using aug_type = pair<box_type, size_t>;
 
 	typedef pair<Point, int64_t> nn_pair;
 
@@ -80,15 +80,15 @@ public:
 		}
 		static aug_t get_empty()
 		{
-			return make_pair(BT::GetEmptyBox(), 0);
+			return make_pair(base_type::get_empty_box(), 0);
 		}
 		static aug_t from_entry(key_t k, val_t v)
 		{
-			return make_pair(Box(v, v), 1);
+			return make_pair(box_type(v, v), 1);
 		}
 		static aug_t combine(aug_t a, aug_t b)
 		{
-			return make_pair(BT::GetBox(a.first, b.first),
+			return make_pair(base_type::get_box(a.first, b.first),
 					 a.second + b.second);
 		}
 	};
@@ -96,18 +96,18 @@ public:
 	using zmap = cpam::aug_map<entry, 40>;
 	using par = std::tuple<typename entry::key_t, typename entry::val_t>;
 
-	using Leaf = zmap::Tree::node;
-	using Interior = zmap::Tree::node;
+	using leaf_type = zmap::Tree::node;
+	using interior_type = zmap::Tree::node;
 
 	// template <typename T>
 	// auto knn(T& tree, Point const& query_point, auto k, auto& vis_leaf) {
 	//   auto f = [&](auto cur_pt) {
-	//     return BT::P2PDistanceSquare(cur_pt, query_point);
+	//     return base_type::p2p_distance_square(cur_pt, query_point);
 	//     // return point_point_sqrdis(cur_pt, query_point);
 	//   };
 	//
 	//   auto f2 = [&](auto cur_mbr) {
-	//     return BT::P2BMinDistanceSquare(query_point, cur_mbr);
+	//     return base_type::p2b_min_distance_square(query_point, cur_mbr);
 	//     // return point_mbr_sqrdis(query_point, cur_mbr);
 	//   };
 	//
@@ -124,14 +124,14 @@ public:
 		return make_tuple(add, remove);
 	}
 
-	template <class PT>
-	auto map_init(PT &P)
+	template <class pt_type>
+	auto map_init(pt_type &P)
 	{
 		size_t n = P.size();
 
 		// parlay::internal::timer t("SFC time", true);
 		parlay::parallel_for(0, n, [&](int i) {
-			P[i].aug.code = SplitRule::Encode(P[i]);
+			P[i].aug.code = SplitRule::encode(P[i]);
 		});
 		// t.stop();
 		// t.total();
@@ -139,7 +139,7 @@ public:
 		// auto h_values = parlay::sequence<unsigned long
 		// long>::uninitialized(n); auto h_values2 =
 		// parlay::sequence<unsigned long long>::uninitialized(n);
-		// parlay::internal::timer t1("Create entry time", true);
+		// parlay::internal::timer t1("create entry time", true);
 		parlay::sequence<par> entries(n);
 		parlay::parallel_for(0, n, [&](int i) {
 			entries[i] = {{P[i].aug.code, P[i].aug.id}, P[i]};
@@ -167,13 +167,13 @@ public:
 		return std::move(m1);
 	}
 
-	template <typename PT, typename M>
-	auto map_insert(PT P, M &&mmp)
+	template <typename pt_type, typename M>
+	auto map_insert(pt_type P, M &&mmp)
 	{
 		size_t n = P.size();
 
 		parlay::parallel_for(0, n, [&](int i) {
-			P[i].aug.code = SplitRule::Encode(P[i]);
+			P[i].aug.code = SplitRule::encode(P[i]);
 		});
 
 		parlay::sequence<par> insert_pts(n);
@@ -186,13 +186,13 @@ public:
 			zmap::multi_insert(std::forward<M>(mmp), insert_pts));
 	}
 
-	template <typename PT, typename M>
-	auto map_delete(PT P, M &&mmp)
+	template <typename pt_type, typename M>
+	auto map_delete(pt_type P, M &&mmp)
 	{
 		size_t n = P.size();
 
 		parlay::parallel_for(0, n, [&](int i) {
-			P[i].aug.code = SplitRule::Encode(P[i]);
+			P[i].aug.code = SplitRule::encode(P[i]);
 		});
 		parlay::sequence<par> delete_pts(n);
 		// parlay::sequence<pair<unsigned long long, long long> >
@@ -207,11 +207,11 @@ public:
 			zmap::multi_delete(std::forward<M>(mmp), delete_pts));
 	}
 
-	int mbr_mbr_relation(Box const &a, Box const &b)
+	int mbr_mbr_relation(box_type const &a, box_type const &b)
 	{
-		if (!BT::BoxIntersectBox(a, b)) {
+		if (!base_type::box_intersect_box(a, b)) {
 			return -1; // disjoint
-		} else if (BT::WithinBox(a, b)) {
+		} else if (base_type::within_box(a, b)) {
 			return 1;
 		} else {
 			return 0; // overlap
@@ -228,7 +228,7 @@ public:
 			return mbr_mbr_relation(cur_mbr, query_mbr);
 		};
 		auto f2 = [&](auto &cur_point) {
-			return BT::WithinBox(cur_point, query_mbr);
+			return base_type::within_box(cur_point, query_mbr);
 		};
 
 		auto res = zmap::range_count_filter2(zCPAM, f, f2);
@@ -254,9 +254,10 @@ public:
 	// respectively
 	auto size_in_bytes()
 	{
-		size_t inte_used = zmap::GC::used_node();
+		size_t inte_used = zmap::gc_type::used_node();
 		size_t internal_nodes_space =
-			sizeof(typename zmap::GC::regular_node) * inte_used;
+			sizeof(typename zmap::gc_type::regular_node) *
+			inte_used;
 		auto [used, unused] =
 			parlay::internal::get_default_allocator().stats();
 		return make_tuple(internal_nodes_space, used);
@@ -264,74 +265,75 @@ public:
 
 	// APIs
 	template <typename Range>
-	void Build(Range In)
+	void build(Range in)
 	{
-		Slice A = parlay::make_slice(In);
+		slice_type A = parlay::make_slice(in);
 		cpam_aug_map_ = std::move(map_init(A));
 	}
 
-	void BatchInsert(Slice In)
+	void batch_insert(slice_type in)
 	{
 		if (!this->cpam_aug_map_.root ||
 		    !zmap::size(this->cpam_aug_map_.root)) {
-			return Build(std::forward<Slice>(In));
+			return build(std::forward<slice_type>(in));
 		}
-		cpam_aug_map_ = map_insert(In, std::move(cpam_aug_map_));
+		cpam_aug_map_ = map_insert(in, std::move(cpam_aug_map_));
 	}
 
-	void BatchDelete(Slice In)
+	void batch_delete(slice_type in)
 	{
 		if (!this->cpam_aug_map_.root ||
 		    !zmap::size(this->cpam_aug_map_.root)) {
 			return;
 		}
-		cpam_aug_map_ = map_delete(In, std::move(cpam_aug_map_));
+		cpam_aug_map_ = map_delete(in, std::move(cpam_aug_map_));
 	}
 
-	template <typename Node, typename Range>
-	auto KNN(Node *T, Point const &q, psi::kBoundedQueue<Point, Range> &bq)
+	template <typename node, typename Range>
+	auto knn(node *T, Point const &q, psi::bounded_queue<Point, Range> &bq)
 	{
-		psi::KNNLogger logger;
+		psi::knn_logger logger;
 		// this->knn(this->cpam_aug_map_, q, bq.max_size(),
 		// logger.vis_leaf_num);
-		zmap::template knn<BT>(this->cpam_aug_map_, q, bq, logger);
+		zmap::template knn<base_type>(this->cpam_aug_map_, q, bq,
+					      logger);
 		return logger;
 	}
 
-	auto RangeCount(Box const &q)
+	auto range_count(box_type const &q)
 	{
-		psi::RangeQueryLogger logger;
+		psi::range_query_logger logger;
 		auto size = this->range_count(this->cpam_aug_map_, q);
 		return std::make_pair(size, logger);
 	}
 
 	template <typename Range>
-	auto RangeQuery(Box const &q, Range &&Out)
+	auto range_query(box_type const &q, Range &&Out)
 	{
-		psi::RangeQueryLogger logger;
+		psi::range_query_logger logger;
 		auto size = this->range_report(this->cpam_aug_map_, q, Out);
 		return std::make_pair(size, logger);
 	}
 
-	void DeleteTree()
+	void delete_tree()
 	{
 		cpam_aug_map_.clear();
 		return;
 	}
 
-	size_t GetSize() const
+	size_t get_size() const
 	{
 		return cpam_aug_map_.size();
 	}
-	constexpr static char const *GetTreeName()
+	constexpr static char const *get_tree_name()
 	{
 		return "CPAM";
 	}
-	constexpr static char const *CheckHasBox()
+	constexpr static char const *check_has_box()
 	{
 		return "HasBox";
 	}
 	zmap cpam_aug_map_;
 };
 
-} // namespace CPAMTree
+} // namespace cpam_tree

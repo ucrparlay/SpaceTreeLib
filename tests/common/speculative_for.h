@@ -83,7 +83,7 @@ long speculative_for(S step, idxT s, idxT e, long granularity,
 	// integer types, do not need to be initialized
 	auto I = parlay::sequence<idxT>::uninitialized(maxRoundSize);
 	auto keep = parlay::sequence<bool>::uninitialized(maxRoundSize);
-	parlay::sequence<idxT> Ihold; // initially empty
+	parlay::sequence<idxT> ihold; // initially empty
 	parlay::sequence<S> state;
 	if (hasState)
 		state = parlay::tabulate(maxRoundSize,
@@ -109,7 +109,7 @@ long speculative_for(S step, idxT s, idxT e, long granularity,
 				0, size,
 				[&](size_t i) {
 					I[i] = (i < numberKeep)
-						       ? Ihold[i]
+						       ? ihold[i]
 						       : numberDone + i;
 					keep[i] = state[i].reserve(I[i]);
 				},
@@ -119,7 +119,7 @@ long speculative_for(S step, idxT s, idxT e, long granularity,
 				0, size,
 				[&](size_t i) {
 					I[i] = (i < numberKeep)
-						       ? Ihold[i]
+						       ? ihold[i]
 						       : numberDone + i;
 					keep[i] = step.reserve(I[i]);
 				},
@@ -146,8 +146,8 @@ long speculative_for(S step, idxT s, idxT e, long granularity,
 		}
 
 		// keep iterations that failed for next round
-		Ihold = parlay::pack(I.head(size), keep.head(size));
-		numberKeep = Ihold.size();
+		ihold = parlay::pack(I.head(size), keep.head(size));
+		numberKeep = ihold.size();
 		numberDone += size - numberKeep;
 
 		// std::cout << size << " : " << numberKeep << " : "

@@ -10,7 +10,7 @@
 namespace bg = boost::geometry;
 namespace bgi = boost::geometry::index;
 
-using Typename = Coord;
+using scalar_type = coord_type;
 // Define a 2D point
 // Define a box (for range queries)
 
@@ -80,30 +80,31 @@ counting_output_iterator<T> make_counting_output_iterator(size_t &counter)
 
 // set the points for the R-tree
 template <size_t Dim, size_t MaxDim>
-struct SetPoints {
+struct set_points {
 	static void set(auto &points, auto &points_insert, auto const &wp,
 			auto const &wi, size_t i)
 	{
 		bg::set<Dim>(points[i], wp[i].pnt[Dim]);
 		bg::set<Dim>(points_insert[i], wi[i].pnt[Dim]);
-		SetPoints<Dim + 1, MaxDim>::set(points, points_insert, wp, wi,
-						i);
+		set_points<Dim + 1, MaxDim>::set(points, points_insert, wp, wi,
+						 i);
 	}
 };
 
 template <size_t MaxDim>
-struct SetPoints<MaxDim, MaxDim> {
+struct set_points<MaxDim, MaxDim> {
 	static void set(auto &, auto &, auto const &, auto const &, size_t)
 	{
 		// End of recursion
 	}
 };
-template <class TreeDesc, typename RPoint, typename Point, size_t kRTreeMaxEle>
-void TestRtreeParallel(int Dim, parlay::sequence<Point> &wp,
-		       parlay::sequence<Point> &wi, [[maybe_unused]] int N,
-		       int K, [[maybe_unused]] int const &kRounds,
-		       int const &kTag, int const &kQueryType,
-		       int const kSummary)
+template <class TreeDesc, typename rpoint_type, typename Point,
+	  size_t rtree_max_ele>
+void test_rtree_parallel(int Dim, parlay::sequence<Point> &wp,
+			 parlay::sequence<Point> &wi, [[maybe_unused]] int N,
+			 int K, [[maybe_unused]] int const &kRounds,
+			 int const &kTag, int const &kQueryType,
+			 int const kSummary)
 {
 }
 
@@ -128,7 +129,8 @@ int main(int argc, char *argv[])
 	int split_type = params.getOptionIntValue("-l", 0);
 
 	auto run = [&]<typename TreeDesc, typename Point>(
-			   int const &kDim, parlay::sequence<Point> const &wp,
+			   int const &num_dims,
+			   parlay::sequence<Point> const &wp,
 			   parlay::sequence<Point> const &wi, size_t const &N,
 			   int const &K, int const &kRounds,
 			   string const &kInsertFile, int const &kTag,
@@ -136,32 +138,33 @@ int main(int argc, char *argv[])
 		// constexpr std::array<size_t, 5> const kMaxEleArr = {2, 4, 8,
 		// 32, 100}; auto callTestRtreeParallel = [&]<size_t...
 		// Is>(std::index_sequence<Is...>) {
-		//   (TestRtreeParallel<TreeWrapper,
-		//                      bg::model::point<Coord, kDim,
+		//   (test_rtree_parallel<TreeWrapper,
+		//                      bg::model::point<coord_type, num_dims,
 		//                      bg::cs::cartesian>, Point,
-		//                      kMaxEleArr[Is]>(kDim, wp, wi, N, K,
+		//                      kMaxEleArr[Is]>(num_dims, wp, wi, N, K,
 		//                      rounds,
 		//                                             tags, query_type,
 		//                                             summary),
 		//    ...);
 		// };
 		// callTestRtreeParallel(std::make_index_sequence<kMaxEleArr.size()>{});
-		using Tree = TreeDesc::TreeType;
-		using Points = typename Tree::Points;
-		using RPoint = bg::model::point<Coord, Point::GetDim(),
-						bg::cs::cartesian>;
-		using RBox = bg::model::box<RPoint>;
-		constexpr size_t kRTreeMaxEle =
-			32; // Max elements per node in R-tree
-		using BoostRTree =
-			bgi::rtree<RPoint, bgi::quadratic<kRTreeMaxEle>>;
-		// using Points = typename Tree::Points;
-		// using Box = typename Tree::Box;
+		using Tree = TreeDesc::tree_type;
+		using points_type = typename Tree::points_type;
+		using rpoint_type =
+			bg::model::point<coord_type, Point::get_dim(),
+					 bg::cs::cartesian>;
+		using rbox_type = bg::model::box<rpoint_type>;
+		constexpr size_t rtree_max_ele =
+			32; // max elements per node in R-tree
+		using boost_rtree_type =
+			bgi::rtree<rpoint_type, bgi::quadratic<rtree_max_ele>>;
+		// using points_type = typename Tree::points_type;
+		// using box_type = typename Tree::box_type;
 
 		// Sample points to insert into the R-tree
-		// std::cout << kRTreeMaxEle << " ";
+		// std::cout << rtree_max_ele << " ";
 
-		std::vector<RPoint> _points(wp.size());
+		std::vector<rpoint_type> _points(wp.size());
 		// assert(wp.size() == wi.size());
 
 		// NOTE: set the value of points
@@ -172,24 +175,25 @@ int main(int argc, char *argv[])
 			};
 
 		parlay::parallel_for(0, wp.size(), [&](size_t i) {
-			set_points(_points[i], wp[i],
-				   std::make_index_sequence<Point::GetDim()>{});
+			set_points(
+				_points[i], wp[i],
+				std::make_index_sequence<Point::get_dim()>{});
 		});
 
 		// To generate box
 		auto generate_query_box = [&](int rec_num, int rec_total_type,
-					      Points const &wp) {
+					      points_type const &wp) {
 			// NOTE: generate rectangles for the first half of the
 			// points
 			parlay::sequence<parlay::sequence<
-				std::pair<typename Tree::Box, size_t>>>
+				std::pair<typename Tree::box_type, size_t>>>
 				query_box_seq(rec_total_type);
 			parlay::sequence<size_t> query_max_size(rec_total_type);
 			for (int i = 0; i < rec_total_type; i++) {
 				auto [query_box, max_size] =
 					gen_rectangles<Point, Tree, false,
 						       true>(rec_num, i, wp,
-							     kDim);
+							     num_dims);
 				query_box_seq[i] = query_box;
 				query_max_size[i] = max_size;
 			}
@@ -199,22 +203,23 @@ int main(int argc, char *argv[])
 		// summary table
 		if (tag & (1 << 3) || tag & (1 << 4)) {
 			auto [query_box_seq, query_max_size] =
-				generate_query_box(kRangeQueryNum, 3,
+				generate_query_box(range_query_num, 3,
 						   wp.subseq(0, wp.size() / 2));
 
-			auto run_rtree_knn = [&](BoostRTree &tree,
-						 Points const &query_points,
+			auto run_rtree_knn = [&](boost_rtree_type &tree,
+						 points_type const
+							 &query_points,
 						 int kth) {
-				std::vector<std::vector<RPoint>> ans(
+				std::vector<std::vector<rpoint_type>> ans(
 					query_points.size(),
-					std::vector<RPoint>());
+					std::vector<rpoint_type>());
 				double ave_knn = time_loop(
 					rounds, 1.0, []() {},
 					[&]() {
 						parlay::parallel_for(
 							0, query_points.size(),
 							[&](size_t i) {
-								RPoint query_point(
+								rpoint_type query_point(
 									wp[i].pnt
 										[0],
 									wp[i].pnt
@@ -231,82 +236,99 @@ int main(int argc, char *argv[])
 				std::cout << ave_knn << " " << std::flush;
 			};
 
-			auto run_rtree_range_count = [&](BoostRTree &tree,
+			auto
+				run_rtree_range_count =
+					[&](boost_rtree_type &tree,
+					    auto const &query_box_seq,
+					    size_t const max_size, int type) {
+						size_t query_num =
+							query_box_seq.size();
+
+						double
+							ave_count =
+								time_loop(
+									kRounds,
+									-1.0,
+									[&]() {
+									},
+									[&]() {
+										parlay::
+											parallel_for(
+												0,
+												query_num, [&](size_t s) {
+													rpoint_type
+														a,
+														b;
+													set_points(
+														a,
+														query_box_seq[s]
+															.first
+															.first,
+														std::make_index_sequence<
+															Point::get_dim()>{});
+													set_points(
+														b,
+														query_box_seq[s]
+															.first
+															.second,
+														std::make_index_sequence<
+															Point::get_dim()>{});
+
+													rbox_type query_box(
+														a,
+														b);
+													size_t ans =
+														0;
+													tree.query(
+														bgi::within(
+															query_box),
+														make_counting_output_iterator<
+															size_t>(
+															ans));
+												});
+									},
+									[&]() {
+									});
+						std::cout << ave_count << " "
+							  << std::flush;
+					};
+
+			auto run_rtree_range_query = [&](boost_rtree_type &tree,
 							 auto const
 								 &query_box_seq,
 							 size_t const max_size,
 							 int type) {
 				size_t query_num = query_box_seq.size();
-
-				double ave_count = time_loop(
-					kRounds, -1.0, [&]() {},
-					[&]() {
-						parlay::parallel_for(0, query_num, [&](size_t s) {
-							RPoint a, b;
-							set_points(
-								a,
-								query_box_seq[s]
-									.first
-									.first,
-								std::make_index_sequence<
-									Point::GetDim()>{});
-							set_points(
-								b,
-								query_box_seq[s]
-									.first
-									.second,
-								std::make_index_sequence<
-									Point::GetDim()>{});
-
-							RBox query_box(a, b);
-							size_t ans = 0;
-							tree.query(
-								bgi::within(
-									query_box),
-								make_counting_output_iterator<
-									size_t>(
-									ans));
-						});
-					},
-					[&]() {});
-				std::cout << ave_count << " " << std::flush;
-			};
-
-			auto run_rtree_range_query = [&](BoostRTree &tree,
-							 auto const
-								 &query_box_seq,
-							 size_t const max_size,
-							 int type) {
-				size_t query_num = query_box_seq.size();
-				std::vector<std::vector<RPoint>> ans(
-					query_num, std::vector<RPoint>());
+				std::vector<std::vector<rpoint_type>> ans(
+					query_num, std::vector<rpoint_type>());
 
 				double aveQuery = time_loop(
 					kRounds, -1.0, [&]() {},
 					[&]() {
 						parlay::parallel_for(0, query_num, [&](size_t s) {
-							// RBox
-							// query_box(RPoint(queryBox[s].first.first.pnt[0],
+							// rbox_type
+							// query_box(rpoint_type(queryBox[s].first.first.pnt[0],
 							//                       queryBox[s].first.first.pnt[1]),
-							//                RPoint(queryBox[s].first.second.pnt[0],
+							//                rpoint_type(queryBox[s].first.second.pnt[0],
 							//                       queryBox[s].first.second.pnt[1]));
-							RPoint a, b;
+							rpoint_type a, b;
 							set_points(
 								a,
 								query_box_seq[s]
 									.first
 									.first,
 								std::make_index_sequence<
-									Point::GetDim()>{});
+									Point::get_dim()>{});
 							set_points(
 								b,
 								query_box_seq[s]
 									.first
 									.second,
 								std::make_index_sequence<
-									Point::GetDim()>{});
+									Point::get_dim()>{});
 
-							RBox query_box(a, b);
+							rbox_type query_box(a,
+									    b);
 							tree.query(
 								bgi::within(
 									query_box),
@@ -318,13 +340,13 @@ int main(int argc, char *argv[])
 				std::cout << aveQuery << " " << std::flush;
 			};
 
-			auto run_all_tests = [&](BoostRTree &tree) {
+			auto run_all_tests = [&](boost_rtree_type &tree) {
 				{
 					int k[3] = {1, 10, 100};
 
 					std::cout << "in-dis-skewed knn time: ";
 					size_t batch_size = static_cast<size_t>(
-						wp.size() * kBatchQueryRatio);
+						wp.size() * batch_query_ratio);
 					for (int i = 0; i < 3; i++) {
 						run_rtree_knn(
 							tree,
@@ -415,10 +437,10 @@ int main(int argc, char *argv[])
 			std::cout << std::fixed << std::setprecision(5);
 			puts("");
 			parlay::internal::timer timer;
-			BoostRTree tree;
+			boost_rtree_type tree;
 
 			// incre insert full
-			tree = BoostRTree(); // reset tree
+			tree = boost_rtree_type(); // reset tree
 			timer.reset(), timer.start();
 			for (int i = 0; i < _points.size(); i++) {
 				tree.insert(_points[i]);
@@ -428,7 +450,7 @@ int main(int argc, char *argv[])
 			run_all_tests(tree);
 
 			// incre insert half
-			tree = BoostRTree(); // reset tree
+			tree = boost_rtree_type(); // reset tree
 			timer.reset(), timer.start();
 			for (int i = 0; i < _points.size() / 2; i++) {
 				tree.insert(_points[i]);
@@ -439,14 +461,15 @@ int main(int argc, char *argv[])
 
 			// directly build half
 			timer.reset(), timer.start();
-			tree = BoostRTree(_points.begin(),
-					  _points.begin() + _points.size() / 2);
+			tree = boost_rtree_type(_points.begin(),
+						_points.begin() +
+							_points.size() / 2);
 			std::cout
 				<< "## build tree half: " << timer.total_time()
 				<< " " << std::endl;
 			run_all_tests(tree);
 
-			tree = BoostRTree(_points.begin(), _points.end());
+			tree = boost_rtree_type(_points.begin(), _points.end());
 			timer.reset(), timer.start();
 			for (int i = _points.size() / 2; i < _points.size();
 			     i++) {
@@ -461,7 +484,7 @@ int main(int argc, char *argv[])
 			puts("");
 			// incre insert half
 			parlay::internal::timer timer;
-			auto tree = BoostRTree(); // reset tree
+			auto tree = boost_rtree_type(); // reset tree
 			timer.reset(), timer.start();
 			for (int i = 0; i < _points.size() / 2; i++) {
 				tree.insert(_points[i]);
@@ -470,12 +493,13 @@ int main(int argc, char *argv[])
 				  << timer.total_time() << " " << std::endl;
 
 			auto [query_box_seq, query_max_size] =
-				generate_query_box(kSingleQueryLogRepeatNum, 3,
+				generate_query_box(single_query_log_repeat_num,
+						   3,
 						   wp.subseq(0, wp.size() / 2));
-			int rec_num = kSingleQueryLogRepeatNum;
+			int rec_num = single_query_log_repeat_num;
 			size_t query_num = rec_num;
-			std::vector<std::vector<RPoint>> ans(
-				query_num, std::vector<RPoint>());
+			std::vector<std::vector<rpoint_type>> ans(
+				query_num, std::vector<rpoint_type>());
 
 			auto run_range_query_log = [&](int rec_type,
 						       auto const
@@ -484,18 +508,18 @@ int main(int argc, char *argv[])
 				for (int i = 0; i < rec_num; i++) {
 					parlay::internal::timer t;
 					t.reset(), t.start();
-					RPoint a, b;
+					rpoint_type a, b;
 					set_points(a,
 						   query_box_seq[i].first.first,
 						   std::make_index_sequence<
-							   Point::GetDim()>{});
+							   Point::get_dim()>{});
 					set_points(
 						b,
 						query_box_seq[i].first.second,
 						std::make_index_sequence<
-							Point::GetDim()>{});
+							Point::get_dim()>{});
 
-					RBox query_box(a, b);
+					rbox_type query_box(a, b);
 					tree.query(bgi::within(query_box),
 						   std::back_inserter(ans[i]));
 					t.stop();
@@ -532,7 +556,7 @@ int main(int argc, char *argv[])
 		//     }
 		//   } else {
 		//     auto r_tree = tree;
-		//     rtree_insert(r_tree, kBatchInsertRatio);
+		//     rtree_insert(r_tree, batch_insert_ratio);
 		//   }
 
 		//   // if (kTag == 1) wp.append(wi);
@@ -557,7 +581,7 @@ int main(int argc, char *argv[])
 		//     }
 		//   } else {
 		//     auto r_tree = tree;
-		//     rtree_delete(r_tree, kBatchInsertRatio);
+		//     rtree_delete(r_tree, batch_insert_ratio);
 		//   }
 		// }
 
@@ -572,14 +596,14 @@ int main(int argc, char *argv[])
 		//     v.first.get<1>()
 		//     << "), ID: " << v.second << std::std::endl;
 		// }
-		// if (kQueryType & (1 << 0)) {  // NOTE: KNN query
+		// if (kQueryType & (1 << 0)) {  // NOTE: knn query
 		//   auto run_rtree_knn = [&](int kth, size_t batchSize) {
 		//     timer.reset();
 		//     timer.start();
 		//     parlay::sequence<size_t> visNodeNum(batchSize, 0);
 		//     parlay::parallel_for(0, batchSize, [&](size_t i) {
-		//       RPoint query_point(wp[i].pnt[0], wp[i].pnt[1]);
-		//       std::vector<RPoint> knn_results;
+		//       rpoint_type query_point(wp[i].pnt[0], wp[i].pnt[1]);
+		//       std::vector<rpoint_type> knn_results;
 		//       tree.query(bgi::nearest(query_point, kth),
 		//                  std::back_inserter(knn_results));
 		//     });
@@ -588,7 +612,7 @@ int main(int argc, char *argv[])
 		//   };
 		//
 		//   size_t batchSize = static_cast<size_t>(wp.size() *
-		//   kBatchQueryRatio); if (kSummary == 0) {
+		//   batch_query_ratio); if (kSummary == 0) {
 		//     int const k[3] = {1, 10, 100};
 		//     for (int i = 0; i < 3; i++) {
 		//       run_rtree_knn(k[i], batchSize);
@@ -600,40 +624,40 @@ int main(int argc, char *argv[])
 
 		//
 		// // Range query: find points within the box defined by
-		// (1.5, 1.5) and (4.5, 4.5) Box query_box(Point(1.5, 1.5),
+		// (1.5, 1.5) and (4.5, 4.5) box_type query_box(Point(1.5, 1.5),
 		// Point(4.5, 4.5)); std::vector<Point> range_results;
 		// rtree.query(bgi::intersects(query_box),
 		// std::back_inserter(range_results));
 		//
 		// if (kQueryType & (1 << 2)) {  // NOTE: range query
 		//   auto run_rtree_range_query = [&](int type) {
-		//     int queryNum = kSummary ? kSummaryRangeQueryNum :
-		//     kRangeQueryNum; auto [queryBox, maxSize] =
+		//     int queryNum = kSummary ? summary_range_query_num :
+		//     range_query_num; auto [queryBox, maxSize] =
 		//         gen_rectangles<Point, Tree, false, true>(queryNum,
-		//         type, wp, kDim);
+		//         type, wp, num_dims);
 		//     // using ref_t = std::reference_wrapper<Point_d>;
 		//     // std::vector<ref_t> out_ref( queryNum * maxSize,
 		//     std::ref( _points[0]
 		//     // )
 		//     // );
-		//     std::vector<RPoint> _ans(queryNum * maxSize);
+		//     std::vector<rpoint_type> _ans(queryNum * maxSize);
 		//
 		//     double aveQuery = time_loop(
 		//         kRounds, -1.0, [&]() {},
 		//         [&]() {
 		//           parlay::parallel_for(0, queryNum, [&](size_t s) {
-		//             // RBox
-		//             query_box(RPoint(queryBox[s].first.first.pnt[0],
+		//             // rbox_type
+		//             query_box(rpoint_type(queryBox[s].first.first.pnt[0],
 		//             // queryBox[s].first.first.pnt[1]),
-		//             // RPoint(queryBox[s].first.second.pnt[0],
-		//             // queryBox[s].first.second.pnt[1])); RPoint a,
-		//             b; set_points(a, queryBox[s].first.first,
-		//                        std::make_index_sequence<Point::GetDim()>{});
+		//             // rpoint_type(queryBox[s].first.second.pnt[0],
+		//             // queryBox[s].first.second.pnt[1])); rpoint_type
+		//             a, b; set_points(a, queryBox[s].first.first,
+		//                        std::make_index_sequence<Point::get_dim()>{});
 		//             set_points(b, queryBox[s].first.second,
-		//                        std::make_index_sequence<Point::GetDim()>{});
+		//                        std::make_index_sequence<Point::get_dim()>{});
 		//
-		//             RBox query_box(a, b);
-		//             std::vector<RPoint> range_results;
+		//             rbox_type query_box(a, b);
+		//             std::vector<rpoint_type> range_results;
 		//             tree.query(bgi::within(query_box),
 		//                        std::back_inserter(range_results));
 		//           });
@@ -653,7 +677,7 @@ int main(int argc, char *argv[])
 		// }
 		//
 		// // Range query: find points within the box defined by
-		// (1.5, 1.5) and (4.5, 4.5) Box query_box(Point(1.5, 1.5),
+		// (1.5, 1.5) and (4.5, 4.5) box_type query_box(Point(1.5, 1.5),
 		// Point(4.5, 4.5)); std::vector<Point> range_results;
 		// rtree.query(bgi::intersects(query_box),
 		// std::back_inserter(range_results));
@@ -692,6 +716,6 @@ int main(int argc, char *argv[])
 		return;
 	};
 
-	Wrapper::ApplyOrthogonal(tree_type, dims, split_type, params, run);
+	wrapper::apply_orthogonal(tree_type, dims, split_type, params, run);
 	return 0;
 }

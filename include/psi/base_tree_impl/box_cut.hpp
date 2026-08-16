@@ -5,17 +5,18 @@
 
 namespace psi
 {
-template <typename Point, typename DerivedTree, uint_fast8_t kSkHeight,
-	  uint_fast8_t kImbaRatio>
-struct BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::BoxCut {
-	using BT = BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>;
+template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
+	  uint_fast8_t ImbaRatio>
+struct base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::box_cut_type {
+	using base_type = base_tree<Point, DerivedTree, SkHeight, ImbaRatio>;
 
-	BoxCut(Box const &box, HyperPlane const &hp, bool go_left)
+	box_cut_type(box_type const &box, hyper_plane_type const &hp,
+		     bool go_left)
 	    : box(box), hp(hp), go_left(go_left)
 	{
 	}
 
-	inline Box const &GetFirstBoxCut()
+	inline box_type const &get_first_box_cut()
 	{
 		mod_dim = go_left ? &box.second.pnt[hp.second]
 				  : &box.first.pnt[hp.second];
@@ -23,7 +24,7 @@ struct BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::BoxCut {
 		return box;
 	}
 
-	inline Box const &GetSecondBoxCut()
+	inline box_type const &get_second_box_cut()
 	{
 		std::ranges::swap(hp.first, *mod_dim);
 		mod_dim = go_left ? &box.first.pnt[hp.second]
@@ -32,19 +33,19 @@ struct BaseTree<Point, DerivedTree, kSkHeight, kImbaRatio>::BoxCut {
 		return box;
 	}
 
-	inline Box const &GetBox() const
+	inline box_type const &get_box() const
 	{
 		return box;
 	}
 
-	inline HyperPlane const &GetHyperPlane() const
+	inline hyper_plane_type const &get_hyper_plane() const
 	{
 		return hp;
 	}
 
-	Box box;
-	Coord *mod_dim;
-	HyperPlane hp; // PARA: the split and the cutting dimension
+	box_type box;
+	coord_type *mod_dim;
+	hyper_plane_type hp; // PARA: the split and the cutting dimension
 	bool const go_left;
 };
 }; // namespace psi

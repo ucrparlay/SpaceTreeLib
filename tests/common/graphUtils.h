@@ -36,15 +36,16 @@
 
 using namespace std;
 
-template <class intV, class Weight = DefaultWeight>
+template <class intV, class Weight = default_weight_type>
 wghEdgeArray<intV, Weight> addRandWeights(edgeArray<intV> const &G)
 {
-	using WE = wghEdge<intV, Weight>;
+	using we_type = wghEdge<intV, Weight>;
 	parlay::random r(257621);
 	intV m = G.nonZeros;
 	intV n = G.numRows;
-	auto E = parlay::tabulate(m, [&](size_t i) -> WE {
-		return WE(G.E[i].u, G.E[i].v, (Weight)dataGen::hash<Weight>(i));
+	auto E = parlay::tabulate(m, [&](size_t i) -> we_type {
+		return we_type(G.E[i].u, G.E[i].v,
+			       (Weight)dataGen::hash<Weight>(i));
 	});
 	return wghEdgeArray<intV, Weight>(std::move(E), n);
 }
@@ -113,15 +114,15 @@ template <class intV, class Weight, class intE = intV>
 wghGraph<intV, Weight, intE>
 wghGraphFromEdges(wghEdgeArray<intV, Weight> const &A)
 {
-	using WE = wghEdge<intV, Weight>;
+	using we_type = wghEdge<intV, Weight>;
 	size_t n = A.n;
 	size_t m = A.m;
 
 	parlay::sequence<size_t> counts;
 	parlay::sequence<intE> offsets;
-	parlay::sequence<WE> E;
+	parlay::sequence<we_type> E;
 	size_t nn;
-	auto getu = [&](WE e) { return e.u; };
+	auto getu = [&](we_type e) { return e.u; };
 	std::tie(E, counts) = parlay::internal::integer_sort_with_counts(
 		parlay::make_slice(A.E), getu, n);
 	std::tie(offsets, nn) = parlay::scan(
@@ -150,7 +151,7 @@ edgeArray<intV> edgesFromGraph(graph<intV, intE> const &G)
 		size_t off = G.get_offsets()[j];
 		vertex<intV> v = G[j];
 		for (size_t i = 0; i < v.degree; i++)
-			E[off + i] = edge<intV>(j, v.Neighbors[i]);
+			E[off + i] = edge<intV>(j, v.neighbors[i]);
 	});
 	return edgeArray<intV>(std::move(E), numRows, numRows);
 }
@@ -184,7 +185,7 @@ graph<intV, intE> packGraph(graph<intV, intE> const &G)
 		vertex<intV> v = G[i];
 		size_t offset = sr.first[i];
 		for (size_t j = 0; j < v.degree; j++)
-			outEdges[offset + j] = v.Neighbors[j];
+			outEdges[offset + j] = v.neighbors[j];
 	});
 	return graph<intV, intE>(std::move(sr.first), std::move(outEdges), n);
 }
@@ -192,20 +193,20 @@ graph<intV, intE> packGraph(graph<intV, intE> const &G)
 // if I is NULL then it randomly reorders
 template <class intV, class intE>
 graph<intV, intE>
-graphReorder(graph<intV, intE> const &Gr,
+graphReorder(graph<intV, intE> const &gr,
 	     parlay::sequence<intV> const &I = parlay::sequence<intV>(0))
 {
-	intV n = Gr.numVertices();
-	intV m = Gr.numEdges();
+	intV n = gr.numVertices();
+	intV m = gr.numEdges();
 
 	bool noI = (I.size() == 0);
-	parlay::sequence<intV> const &II =
+	parlay::sequence<intV> const &ii =
 		noI ? parlay::random_permutation<intV>(n) : I;
 
 	// now write vertices to new locations
 	// inverse permutation
 	parlay::sequence<vertex<intV>> V(n);
-	parlay::parallel_for(0, n, [&](size_t i) { V[II[i]] = Gr[i]; });
+	parlay::parallel_for(0, n, [&](size_t i) { V[ii[i]] = gr[i]; });
 	parlay::sequence<intE> offsets = getOffsets<intV, intE>(V);
 	parlay::sequence<intV> E(m);
 	parlay::parallel_for(
@@ -213,7 +214,7 @@ graphReorder(graph<intV, intE> const &Gr,
 		[&](size_t i) {
 			size_t o = offsets[i];
 			for (size_t j = 0; j < V[i].degree; j++)
-				E[o + j] = II[V[i].Neighbors[j]];
+				E[o + j] = ii[V[i].neighbors[j]];
 			std::sort(E.begin() + o, E.begin() + o + V[i].degree);
 		},
 		1000);
@@ -221,13 +222,13 @@ graphReorder(graph<intV, intE> const &Gr,
 }
 
 template <class intV, class intE>
-int graphCheckConsistency(graph<intV, intE> const &Gr)
+int graphCheckConsistency(graph<intV, intE> const &gr)
 {
-	size_t n = Gr.numVertices();
-	size_t m = Gr.numEdges();
+	size_t n = gr.numVertices();
+	size_t m = gr.numEdges();
 	size_t edgecount = parlay::reduce(
 		parlay::delayed_seq<size_t>(
-			n, [&](size_t i) { return Gr[i].degree; }),
+			n, [&](size_t i) { return gr[i].degree; }),
 		parlay::addm<size_t>());
 	if (m != edgecount) {
 		cout << "bad edge count in graphCheckConsistency: m = " << m
@@ -238,8 +239,8 @@ int graphCheckConsistency(graph<intV, intE> const &Gr)
 		parlay::delayed_seq<size_t>(
 			n,
 			[&](size_t i) {
-				for (size_t j = 0; j < Gr[i].degree; j++)
-					if (Gr[i].Neighbors[j] >= n)
+				for (size_t j = 0; j < gr[i].degree; j++)
+					if (gr[i].neighbors[j] >= n)
 						return i;
 				return n;
 			}),

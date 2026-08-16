@@ -5,25 +5,26 @@
 
 namespace psi
 {
-template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
-	  uint_fast8_t kImbaRatio>
+template <typename Point, typename SplitRule, uint_fast8_t SkHeight,
+	  uint_fast8_t ImbaRatio>
 template <typename Range>
-void PTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDiff(Range &&In)
+void p_tree<Point, SplitRule, SkHeight, ImbaRatio>::batch_diff(Range &&in)
 {
-	BT::IngestRange(In, [&](Slice A) { BatchDiff_(A); });
+	base_type::ingest_range(in, [&](slice_type A) { batch_diff_(A); });
 	return;
 }
 
-// NOTE: batch delete suitable for Points that are pratially covered in the tree
-template <typename Point, typename SplitRule, uint_fast8_t kSkHeight,
-	  uint_fast8_t kImbaRatio>
-void PTree<Point, SplitRule, kSkHeight, kImbaRatio>::BatchDiff_(Slice A)
+// NOTE: batch delete suitable for points_type that are pratially covered in the
+// tree
+template <typename Point, typename SplitRule, uint_fast8_t SkHeight,
+	  uint_fast8_t ImbaRatio>
+void p_tree<Point, SplitRule, SkHeight, ImbaRatio>::batch_diff_(slice_type A)
 {
 	if (!this->cpam_aug_map_.root) {
 		return;
 	}
-	this->cpam_aug_map_ =
-		CpamAugMap::multi_diff(std::move(this->cpam_aug_map_), A);
+	this->cpam_aug_map_ = cpam_aug_map_type::multi_diff(
+		std::move(this->cpam_aug_map_), A);
 	return;
 }
 

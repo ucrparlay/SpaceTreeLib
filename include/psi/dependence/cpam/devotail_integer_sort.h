@@ -14,28 +14,28 @@ namespace parlay
 namespace cpam
 {
 
-constexpr size_t INTEGER_SORT_BASE_CASE_SIZE = 1 << 14;
-constexpr size_t SAMPLE_QUOTIENT = 500;
-constexpr size_t MERGE_BASE_CASE_SIZE = 1 << 17;
+constexpr size_t integer_sort_base_case_size = 1 << 14;
+constexpr size_t sample_quotient = 500;
+constexpr size_t merge_base_case_size = 1 << 17;
 
 template <typename InIterator, typename TmpIterator, typename GetKey>
 void parlay_merge(slice<InIterator, InIterator> A,
-		  slice<TmpIterator, TmpIterator> Tmp, GetKey const &g,
+		  slice<TmpIterator, TmpIterator> tmp, GetKey const &g,
 		  size_t n1, size_t n2)
 {
 	using in_type = typename slice<InIterator, InIterator>::value_type;
 	internal::merge_into<uninitialized_relocate_tag>(
-		A.cut(0, n1), A.cut(n1, n1 + n2), Tmp.cut(0, n1 + n2),
+		A.cut(0, n1), A.cut(n1, n1 + n2), tmp.cut(0, n1 + n2),
 		[&](in_type const &a, in_type const &b) {
 			return g(a) < g(b);
 		});
-	uninitialized_relocate(Tmp.begin(), Tmp.begin() + n1 + n2, A.begin());
+	uninitialized_relocate(tmp.begin(), tmp.begin() + n1 + n2, A.begin());
 }
 
 template <typename InIterator, typename TmpIterator, typename DistIterator,
 	  typename OffsetIterator, typename GetKey>
 void merge_out_of_place(slice<InIterator, InIterator> A,
-			slice<TmpIterator, TmpIterator> Tmp,
+			slice<TmpIterator, TmpIterator> tmp,
 			slice<DistIterator, DistIterator> dist,
 			slice<OffsetIterator, OffsetIterator> offsets,
 			GetKey const &g, size_t n1, size_t n2)
@@ -57,21 +57,21 @@ void merge_out_of_place(slice<InIterator, InIterator> A,
 		heavy_counts[i + 1] = offsets[i + 1] - offsets[0];
 	}
 	heavy_offsets[num_dist + 1] = n1;
-	if (n1 + n2 < MERGE_BASE_CASE_SIZE) {
+	if (n1 + n2 < merge_base_case_size) {
 		// move light keys
 		for (size_t i = 0; i < num_dist + 1; i++) {
 			uninitialized_relocate(A.begin() + heavy_offsets[i],
 					       A.begin() + heavy_offsets[i + 1],
-					       Tmp.begin() + heavy_counts[i]);
+					       tmp.begin() + heavy_counts[i]);
 		}
 		// move heavy keys
 		for (size_t i = 0; i < num_dist; i++) {
 			uninitialized_relocate(
 				A.begin() + n1 + heavy_counts[i],
 				A.begin() + n1 + heavy_counts[i + 1],
-				Tmp.begin() + heavy_offsets[i + 1]);
+				tmp.begin() + heavy_offsets[i + 1]);
 		}
-		uninitialized_relocate(Tmp.begin(), Tmp.begin() + n1 + n2,
+		uninitialized_relocate(tmp.begin(), tmp.begin() + n1 + n2,
 				       A.begin());
 		return;
 	}
@@ -79,16 +79,16 @@ void merge_out_of_place(slice<InIterator, InIterator> A,
 	parallel_for(0, num_dist + 1, [&](size_t i) {
 		uninitialized_relocate(A.begin() + heavy_offsets[i],
 				       A.begin() + heavy_offsets[i + 1],
-				       Tmp.begin() + heavy_counts[i]);
+				       tmp.begin() + heavy_counts[i]);
 	});
 	// move heavy keys
 	parallel_for(0, num_dist, [&](size_t i) {
 		uninitialized_relocate(A.begin() + n1 + heavy_counts[i],
 				       A.begin() + n1 + heavy_counts[i + 1],
-				       Tmp.begin() + heavy_offsets[i + 1] +
+				       tmp.begin() + heavy_offsets[i + 1] +
 					       heavy_counts[i]);
 	});
-	uninitialized_relocate(Tmp.begin(), Tmp.begin() + n1 + n2, A.begin());
+	uninitialized_relocate(tmp.begin(), tmp.begin() + n1 + n2, A.begin());
 }
 
 // A spealized version of merge for integer sort
@@ -97,7 +97,7 @@ void merge_out_of_place(slice<InIterator, InIterator> A,
 template <typename InIterator, typename TmpIterator, typename DistIterator,
 	  typename OffsetIterator, typename GetKey>
 void merge_inplace(slice<InIterator, InIterator> A,
-		   slice<TmpIterator, TmpIterator> Tmp,
+		   slice<TmpIterator, TmpIterator> tmp,
 		   slice<DistIterator, DistIterator> dist,
 		   slice<OffsetIterator, OffsetIterator> offsets,
 		   GetKey const &g, size_t n1, size_t n2)
@@ -119,11 +119,11 @@ void merge_inplace(slice<InIterator, InIterator> A,
 		heavy_counts[i + 1] = offsets[i + 1] - offsets[0];
 	}
 	heavy_offsets[num_dist + 1] = n1;
-	if (n1 + n2 < MERGE_BASE_CASE_SIZE) {
+	if (n1 + n2 < merge_base_case_size) {
 		if (n1 >= n2) {
 			uninitialized_relocate(A.begin() + n1,
 					       A.begin() + n1 + n2,
-					       Tmp.begin());
+					       tmp.begin());
 			// move light keys
 			for (size_t i = num_dist; i >= 1; i--) {
 				for (ptrdiff_t j = heavy_offsets[i + 1] - 1;
@@ -136,14 +136,14 @@ void merge_inplace(slice<InIterator, InIterator> A,
 			// move heavy keys
 			for (size_t i = 0; i < num_dist; i++) {
 				uninitialized_relocate(
-					Tmp.begin() + heavy_counts[i],
-					Tmp.begin() + heavy_counts[i + 1],
+					tmp.begin() + heavy_counts[i],
+					tmp.begin() + heavy_counts[i + 1],
 					A.begin() + heavy_offsets[i + 1] +
 						heavy_counts[i]);
 			}
 		} else {
 			uninitialized_relocate(A.begin(), A.begin() + n1,
-					       Tmp.begin());
+					       tmp.begin());
 			// move heavy keys
 			for (size_t i = 0; i < num_dist; i++) {
 				for (size_t j = heavy_counts[i];
@@ -157,8 +157,8 @@ void merge_inplace(slice<InIterator, InIterator> A,
 			// move light keys
 			for (size_t i = 0; i < num_dist + 1; i++) {
 				uninitialized_relocate(
-					Tmp.begin() + heavy_offsets[i],
-					Tmp.begin() + heavy_offsets[i + 1],
+					tmp.begin() + heavy_offsets[i],
+					tmp.begin() + heavy_offsets[i + 1],
 					A.begin() + heavy_counts[i] +
 						heavy_offsets[i]);
 			}
@@ -167,7 +167,7 @@ void merge_inplace(slice<InIterator, InIterator> A,
 	}
 	if (n1 >= n2) {
 		uninitialized_relocate(A.begin() + n1, A.begin() + n1 + n2,
-				       Tmp.begin());
+				       tmp.begin());
 		// move light keys
 		for (size_t i = num_dist; i >= 1; i--) {
 			if (heavy_offsets[i + 1] <=
@@ -197,13 +197,13 @@ void merge_inplace(slice<InIterator, InIterator> A,
 		// move heavy keys
 		parallel_for(0, num_dist, [&](size_t i) {
 			uninitialized_relocate(
-				Tmp.begin() + heavy_counts[i],
-				Tmp.begin() + heavy_counts[i + 1],
+				tmp.begin() + heavy_counts[i],
+				tmp.begin() + heavy_counts[i + 1],
 				A.begin() + heavy_offsets[i + 1] +
 					heavy_counts[i]);
 		});
 	} else {
-		uninitialized_relocate(A.begin(), A.begin() + n1, Tmp.begin());
+		uninitialized_relocate(A.begin(), A.begin() + n1, tmp.begin());
 		// move heavy keys
 		for (size_t i = 0; i < num_dist; i++) {
 			if (heavy_offsets[i + 1] + heavy_counts[i + 1] <=
@@ -234,8 +234,8 @@ void merge_inplace(slice<InIterator, InIterator> A,
 		// move light keys
 		parallel_for(0, num_dist + 1, [&](size_t i) {
 			uninitialized_relocate(
-				Tmp.begin() + heavy_offsets[i],
-				Tmp.begin() + heavy_offsets[i + 1],
+				tmp.begin() + heavy_offsets[i],
+				tmp.begin() + heavy_offsets[i + 1],
 				A.begin() + heavy_counts[i] + heavy_offsets[i]);
 		});
 	}
@@ -244,28 +244,28 @@ void merge_inplace(slice<InIterator, InIterator> A,
 template <typename s_size_t, typename inplace_tag, typename assignment_tag,
 	  typename InIterator, typename OutIterator, typename TmpIterator,
 	  typename GetKey>
-void integer_sort2_(slice<InIterator, InIterator> In,
-		    slice<OutIterator, OutIterator> Out,
-		    slice<TmpIterator, TmpIterator> Tmp, GetKey const &g,
+void integer_sort2_(slice<InIterator, InIterator> in,
+		    slice<OutIterator, OutIterator> out,
+		    slice<TmpIterator, TmpIterator> tmp, GetKey const &g,
 		    size_t key_bits, double parallelism = 1.0)
 {
-	assert(In.size() == Out.size());
+	assert(in.size() == out.size());
 
-	size_t n = In.size();
+	size_t n = in.size();
 	using in_type = typename slice<InIterator, InIterator>::value_type;
 	using key_type = typename std::invoke_result<GetKey, in_type>::type;
 
 	if (key_bits == 0) {
 		if constexpr (inplace_tag::value == false) {
-			uninitialized_relocate(In.begin(), In.end(),
-					       Out.begin());
+			uninitialized_relocate(in.begin(), in.end(),
+					       out.begin());
 		}
 		return;
 	}
 
-	if (n < INTEGER_SORT_BASE_CASE_SIZE || parallelism < .0001) {
+	if (n < integer_sort_base_case_size || parallelism < .0001) {
 		internal::cpam::seq_radix_sort<inplace_tag, assignment_tag>(
-			In, Out, Tmp, g, key_bits);
+			in, out, tmp, g, key_bits);
 		return;
 	}
 
@@ -275,7 +275,7 @@ void integer_sort2_(slice<InIterator, InIterator> In,
 
 	sequence<key_type> samples(num_samples);
 	for (size_t i = 0; i < num_samples; i++) {
-		samples[i] = g(In[hash64(i) % n]);
+		samples[i] = g(in[hash64(i) % n]);
 	}
 	internal::seq_sort_inplace(
 		make_slice(samples),
@@ -306,17 +306,17 @@ void integer_sort2_(slice<InIterator, InIterator> In,
 	// use 8 to 12 bits
 	log2_light_keys = std::min<size_t>(log2_light_keys, 12);
 	log2_light_keys = std::max<size_t>(log2_light_keys, 8);
-	using BktId = uint32_t;
+	using bkt_id_type = uint32_t;
 	// use count sort if remaining bits are few
 	if (top_bits <= log2_light_keys) {
 		size_t light_buckets = size_t{1} << top_bits;
 		size_t light_mask = light_buckets - 1;
 		auto get_bits =
 			delayed_seq<uint16_t>(n, [&](size_t k) -> uint16_t {
-				if ((g(In[k]) & bits_mask) > overflow) {
+				if ((g(in[k]) & bits_mask) > overflow) {
 					return light_buckets;
 				} else {
-					return g(In[k]) & light_mask;
+					return g(in[k]) & light_mask;
 				}
 			});
 		size_t num_buckets =
@@ -325,18 +325,18 @@ void integer_sort2_(slice<InIterator, InIterator> In,
 		bool one_bucket;
 		std::tie(bucket_offsets, one_bucket) =
 			internal::cpam::count_sort_<assignment_tag, s_size_t>(
-				In, Out, make_slice(get_bits), num_buckets,
+				in, out, make_slice(get_bits), num_buckets,
 				parallelism, inplace_tag::value);
 		if constexpr (inplace_tag::value == true) {
 			if (!one_bucket) {
-				uninitialized_relocate(Out.begin(), Out.end(),
-						       In.begin());
+				uninitialized_relocate(out.begin(), out.end(),
+						       in.begin());
 			}
 		}
 		if (bucket_offsets[light_buckets] !=
 		    bucket_offsets[light_buckets + 1]) {
-			auto &Arr = inplace_tag::value ? In : Out;
-			auto a = Arr.cut(bucket_offsets[light_buckets],
+			auto &arr = inplace_tag::value ? in : out;
+			auto a = arr.cut(bucket_offsets[light_buckets],
 					 bucket_offsets[light_buckets + 1]);
 			internal::seq_sort_inplace(
 				a,
@@ -351,8 +351,8 @@ void integer_sort2_(slice<InIterator, InIterator> In,
 	size_t shift_bits = top_bits - log2_light_keys;
 	size_t light_buckets = size_t{1} << log2_light_keys;
 	size_t light_mask = light_buckets - 1;
-	sequence<std::pair<key_type, BktId>> heavy_seq;
-	sequence<BktId> light_id(light_buckets + 1);
+	sequence<std::pair<key_type, bkt_id_type>> heavy_seq;
+	sequence<bkt_id_type> light_id(light_buckets + 1);
 	size_t bucket_id = 0, light_iter = 0;
 	for (size_t i = 0; i < num_samples;) {
 		size_t j = 0;
@@ -375,32 +375,32 @@ void integer_sort2_(slice<InIterator, InIterator> In,
 
 	size_t heavy_id_size = size_t{1} << log2_up(heavy_seq.size() * 2 + 1);
 	size_t heavy_id_mask = heavy_id_size - 1;
-	constexpr auto SMAX = std::numeric_limits<BktId>::max();
-	constexpr uint32_t BIGINT = 1e9 + 7;
-	sequence<std::pair<key_type, BktId>> heavy_id(heavy_id_size,
-						      {key_type{}, SMAX});
+	constexpr auto smax = std::numeric_limits<bkt_id_type>::max();
+	constexpr uint32_t bigint = 1e9 + 7;
+	sequence<std::pair<key_type, bkt_id_type>> heavy_id(heavy_id_size,
+							    {key_type{}, smax});
 	for (auto const &[k, v] : heavy_seq) {
-		size_t idx = (k * BIGINT) >> shift_bits & heavy_id_mask;
-		while (heavy_id[idx].second != SMAX) {
+		size_t idx = (k * bigint) >> shift_bits & heavy_id_mask;
+		while (heavy_id[idx].second != smax) {
 			idx = (idx + 1) & heavy_id_mask;
 		}
 		heavy_id[idx] = {k, v};
 	}
 	auto const lookup = [&](size_t k) {
-		if ((g(In[k]) & bits_mask) > overflow) {
-			// In[k] is overflowed
-			return static_cast<BktId>(bucket_id);
+		if ((g(in[k]) & bits_mask) > overflow) {
+			// in[k] is overflowed
+			return static_cast<bkt_id_type>(bucket_id);
 		}
-		size_t idx = (g(In[k]) * BIGINT) >> shift_bits & heavy_id_mask;
-		while (heavy_id[idx].second != SMAX &&
-		       heavy_id[idx].first != g(In[k])) {
+		size_t idx = (g(in[k]) * bigint) >> shift_bits & heavy_id_mask;
+		while (heavy_id[idx].second != smax &&
+		       heavy_id[idx].first != g(in[k])) {
 			idx = (idx + 1) & heavy_id_mask;
 		}
-		if (heavy_id[idx].second == SMAX) {
-			// In[k] is a light key
-			return light_id[g(In[k]) >> shift_bits & light_mask];
+		if (heavy_id[idx].second == smax) {
+			// in[k] is a light key
+			return light_id[g(in[k]) >> shift_bits & light_mask];
 		} else {
-			// In[k] is a heavy key
+			// in[k] is a heavy key
 			return heavy_id[idx].second;
 		}
 	};
@@ -417,11 +417,11 @@ void integer_sort2_(slice<InIterator, InIterator> In,
 	bool one_bucket;
 	std::tie(bucket_offsets, one_bucket) =
 		internal::cpam::count_sort_<assignment_tag, s_size_t>(
-			In, Out, make_slice(get_bits), num_buckets, parallelism,
+			in, out, make_slice(get_bits), num_buckets, parallelism,
 			true, light_id);
 	if (one_bucket) {
 		integer_sort2_<s_size_t, inplace_tag, assignment_tag>(
-			In, Out, Tmp, g, top_bits - log2_light_keys,
+			in, out, tmp, g, top_bits - log2_light_keys,
 			parallelism);
 		return;
 	}
@@ -430,9 +430,9 @@ void integer_sort2_(slice<InIterator, InIterator> In,
 		parallel_for(0, heavy_buckets, [&](size_t i) {
 			size_t start = bucket_offsets[heavy_seq[i].second];
 			size_t end = bucket_offsets[heavy_seq[i].second + 1];
-			uninitialized_relocate(Out.begin() + start,
-					       Out.begin() + end,
-					       In.begin() + start);
+			uninitialized_relocate(out.begin() + start,
+					       out.begin() + end,
+					       in.begin() + start);
 		});
 	}
 
@@ -456,8 +456,8 @@ void integer_sort2_(slice<InIterator, InIterator> In,
 	}
 	parallel_blocks.push_back(light_buckets + 1);
 
-	auto &Arr = inplace_tag::value == true ? In : Out;
-	auto &Tmp2 = inplace_tag::value == true ? Out : Tmp;
+	auto &arr = inplace_tag::value == true ? in : out;
+	auto &tmp2 = inplace_tag::value == true ? out : tmp;
 	parallel_for(
 		0, parallel_blocks.size() - 1,
 		[&](size_t i) {
@@ -467,8 +467,8 @@ void integer_sort2_(slice<InIterator, InIterator> In,
 				size_t start = bucket_offsets[light_id[j]];
 				size_t end = bucket_offsets[light_id[j] + 1];
 				if (start != end) {
-					auto a = Out.cut(start, end);
-					auto b = Tmp.cut(start, end);
+					auto a = out.cut(start, end);
+					auto b = tmp.cut(start, end);
 					if (j != light_buckets) {
 						integer_sort2_<
 							s_size_t,
@@ -504,10 +504,10 @@ void integer_sort2_(slice<InIterator, InIterator> In,
 									 1] -
 								(j + 1);
 							merge_inplace(
-								Arr.cut(start,
+								arr.cut(start,
 									start + n1 +
 										n2),
-								Tmp2.cut(
+								tmp2.cut(
 									start,
 									start + n1 +
 										n2),
@@ -557,45 +557,45 @@ void integer_sort2_(slice<InIterator, InIterator> In,
 }
 
 template <typename Iterator, typename GetKey>
-auto integer_sort2(slice<Iterator, Iterator> In, GetKey const &g)
+auto integer_sort2(slice<Iterator, Iterator> in, GetKey const &g)
 {
 	using in_type = typename slice<Iterator, Iterator>::value_type;
-	auto Out = sequence<in_type>::uninitialized(In.size());
-	auto Tmp = internal::uninitialized_sequence<in_type>(In.size());
+	auto out = sequence<in_type>::uninitialized(in.size());
+	auto tmp = internal::uninitialized_sequence<in_type>(in.size());
 	size_t max32 =
 		static_cast<size_t>((std::numeric_limits<uint32_t>::max)());
 	using key_type = typename std::invoke_result<
 		GetKey, typename slice<Iterator, Iterator>::value_type>::type;
-	if (In.size() < max32) {
+	if (in.size() < max32) {
 		integer_sort2_<uint32_t, std::false_type,
-			       uninitialized_copy_tag>(In, make_slice(Out),
-						       make_slice(Tmp), g,
+			       uninitialized_copy_tag>(in, make_slice(out),
+						       make_slice(tmp), g,
 						       sizeof(key_type) * 8);
 	} else {
 		integer_sort2_<size_t, std::false_type, uninitialized_copy_tag>(
-			In, make_slice(Out), make_slice(Tmp), g,
+			in, make_slice(out), make_slice(tmp), g,
 			sizeof(key_type) * 8);
 	}
-	return Out;
+	return out;
 }
 
 template <typename Iterator, typename GetKey>
-void integer_sort_inplace2(slice<Iterator, Iterator> In, GetKey const &g)
+void integer_sort_inplace2(slice<Iterator, Iterator> in, GetKey const &g)
 {
 	using in_type = typename slice<Iterator, Iterator>::value_type;
-	auto Tmp = internal::uninitialized_sequence<in_type>(In.size());
+	auto tmp = internal::uninitialized_sequence<in_type>(in.size());
 	size_t max32 =
 		static_cast<size_t>((std::numeric_limits<uint32_t>::max)());
 	using key_type = typename std::invoke_result<
 		GetKey, typename slice<Iterator, Iterator>::value_type>::type;
-	if (In.size() < max32) {
+	if (in.size() < max32) {
 		integer_sort2_<uint32_t, std::true_type,
 			       uninitialized_relocate_tag>(
-			In, make_slice(Tmp), In, g, sizeof(key_type) * 8);
+			in, make_slice(tmp), in, g, sizeof(key_type) * 8);
 	} else {
 		integer_sort2_<size_t, std::true_type,
 			       uninitialized_relocate_tag>(
-			In, make_slice(Tmp), In, g, sizeof(key_type) * 8);
+			in, make_slice(tmp), in, g, sizeof(key_type) * 8);
 	}
 }
 
