@@ -19,7 +19,11 @@ The easiest way to use PSI is to pull the pre-built Docker image from GitHub Con
 
 If you want to modify the code or can't access the pre-built image:
 
-```bash
+```
+
+The published image is compiled portably so it runs anywhere, which means it is
+*not* tuned for your CPU. Recompile inside the container with `-DPSI_NATIVE_ARCH=ON`
+before any timing run -- see [Artifact Evaluation](ARTIFACT_EVALUATION.md).bash
 # 1. Build image locally
 ./docker-run.sh build
 
@@ -78,12 +82,15 @@ docker run -it --rm \
 
 ## Results Location
 
+Relative to the repository root, which is where `docker-run.sh` must be run
+from -- these are the directories it bind-mounts.
+
 | Type | Location |
 |------|----------|
 | Generated data | Host path specified in `--data-path` |
-| Summarized results | `./data/` |
-| Logs | `./logs/` |
-| Plots | `./plots/` |
+| Summarized results | `script_ae/data/` |
+| Logs | `script_ae/logs/` |
+| Plots | `script_ae/plots/` |
 
 ## Using Docker Compose
 

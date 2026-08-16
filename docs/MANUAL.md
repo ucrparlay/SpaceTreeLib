@@ -1,244 +1,346 @@
 # PSI User Manual
-The PSI library provides three parallel spatial partition trees that are widely used, namely:
-- Parallel kd-tree (Pkd-tree);
-- Parallel quad/oct-tree (POrth-tree);
-- Parallel 1d-tree based on spatial filling curves(SPaC-tree);
 
-Thanks for AI, there is a generally good [wiki](https://deepwiki.com/ucrparlay/SpaceTreeLib) for this library, where you can find out how things are operated, and maybe get some start ideas if you want to contribute some code ☺️.
+PSI provides three parallel spatial partition trees:
 
-Any contribution is welcomed 🤗!
+| Header | Paper name | What it is |
+|---|---|---|
+| `psi/kd_tree.h` | Pkd-tree | parallel binary $k$d-tree |
+| `psi/orth_tree.h` | P-Orth tree | parallel quad/oct-tree, any dimension |
+| `psi/p_tree.h` | SPaC-tree | parallel 1-D tree over a Morton or Hilbert code |
 
-## File Organization
-```bash
-include/
-├── baselines
-│   ├── boost_rtree
-│   ├── cpam_raw
-│   ├── zdtree
-│   └── zdtree_3d
-├── libmorton
-├── parlaylib
-└── psi
-    ├── base_tree_impl
-    ├── base_tree.h
-    ├── dependence
-    ├── kd_tree_impl
-    ├── kd_tree.h
-    ├── orth_tree_impl
-    ├── orth_tree.h
-    ├── p_tree_impl
-    ├── p_tree.h
+There is also an AI-generated
+[wiki](https://deepwiki.com/ucrparlay/SpaceTreeLib) covering how things work
+internally. Contributions welcome 🤗.
+
+Every code block below is compiled by `tests/unit/test_manual.cpp`, so if the
+API moves and this file is not updated, the build breaks.
+
+## Use PSI in your project
+
+PSI is header-only. It needs C++20, parlaylib and libmorton.
+
+```cmake
+# Already have the repository, e.g. as a submodule:
+add_subdirectory(SpaceTreeLib)
+target_link_libraries(myapp PRIVATE PSI::PSI)
 ```
 
-- `baselines/`: the codes for baselines.
-- `libmorton/`: the [open-source library](https://github.com/Forceflow/libmorton) to compute the Morton/Z code quickly.
-- `parlaylib/`: a [toolkit for parallel algorithms](https://github.com/cmuparlay/parlaylib).
-- `psi/`: the main sources for the PSI library.
-- `psi/base_tree.h`: the underlying tree structure provides type definition, geometry toolkit and general APIs.
-- `psi/kd_tree.h`: known as the **Pkd-tree** the implementation for the parallel $k$d-tree.
-- `psi/orth_tree.h`: known as the **P-Orth tree**, the implementation for the parallel Quad/Orth-tree (can be extened to arbitrary higher dimensions).
-- `psi/p_tree.h`: known as the **SPaC-tree**, the implementation for the parallel 1-D spatial trees based on the Morton/Z code or Hilbert code.
+```cmake
+# Or install it once (cmake --install) and find it:
+find_package(PSI REQUIRED)
+target_link_libraries(myapp PRIVATE PSI::PSI)
+```
+
+Directly, without CMake:
+
+```bash
+g++ -std=c++20 -O3 -pthread myapp.cpp \
+    -I SpaceTreeLib/include \
+    -I SpaceTreeLib/include/parlaylib/include \
+    -I SpaceTreeLib/include/libmorton/include
+```
+
+`include/` is the only PSI include root, and every header is reached as
+`psi/…`. Build your own targets with optimisation: PSI's `-O3` applies to
+PSI's own targets, not to yours, and an unoptimised spatial index looks broken
+rather than slow. Add `-march=native` if you are measuring.
+
+Build options worth knowing:
+
+| Option | Default | Meaning |
+|---|---|---|
+| `PSI_NATIVE_ARCH` | `ON` | `-march=native -mcx16`. Turn off for a binary that runs on another machine. |
+| `PSI_ASSERTS` | `OFF` | keep `assert()` in an optimised build; the configuration to develop against |
+| `PSI_BUILD_TESTS` | on if top-level | the `ctest` suite |
+| `PSI_BUILD_BENCHMARKS` | on if top-level | the drivers and baselines; also what pulls in Boost |
+| `PSI_BUILD_EXAMPLES` | on if top-level | the three example programs |
+| `DEBUG` | `OFF` | unoptimised build with asserts and `validate()` |
+| `CGAL` | `OFF` | adds the `kd_ccp` / `p_ccp` correctness oracles |
 
 ## Step-by-step guide
-We will take the **Pkd-tree** as an example, other trees are similar.
-All source files for examples can be found in the [example/](../example/).
 
-Everything start with the definition of the `Point`:
-```c++
-// Type for each coordinate
-using Coord = long;
+Taking the Pkd-tree; the other two differ only where noted under
+[Choosing and configuring a tree](#choosing-and-configuring-a-tree). The
+complete programs are in [example/](../example/).
 
-// Define augmentation structure for points (stores an ID)
-// WARN: All functions must be defined
-struct AugId {
-  using IdType = int;
-  IdType id;
+### 1. A point type
 
-  bool operator<(AugId const& rhs) const { return id < rhs.id; }
-  bool operator==(AugId const& rhs) const { return id == rhs.id; }
-  friend std::ostream& operator<<(std::ostream& os, AugId const& rhs) {
-    os << rhs.id;
-    return os;
-  }
+```cpp
+#include "psi/kd_tree.h"
+#include "psi/dependence/splitter.h"
+
+using coord_type = long;
+using point = psi::basic_point<coord_type, 2>;
+```
+
+`coord_type` may be an integer or floating-point type. The dimension is a
+template argument, so it is fixed at compile time.
+
+### 2. A split rule
+
+A split rule is a dimension rule paired with a partition rule:
+
+```cpp
+using split_rule = psi::orthogonal_split_rule<psi::rotate_dim<point>,
+                                              psi::spatial_median<point>>;
+```
+
+| Dimension rule | Picks the split dimension by |
+|---|---|
+| `psi::rotate_dim<Point>` | cycling through the dimensions by depth |
+| `psi::max_stretch_dim<Point>` | the widest side of the bounding box |
+
+| Partition rule | Splits at |
+|---|---|
+| `psi::object_median<Point>` | the median point, so the two sides hold equal counts |
+| `psi::spatial_median<Point>` | the middle of the box, so the two sides are equal in space |
+
+### 3. Build
+
+```cpp
+psi::kd_tree<point, split_rule> tree;
+
+parlay::sequence<point> points(1000);
+/* ... fill points ... */
+tree.build(parlay::make_slice(points));
+```
+
+`build` copies what it is given, so the input may go out of scope afterwards.
+Calling `build` again on a live tree replaces its contents.
+
+### 4. Query
+
+Counting and reporting the points inside a box:
+
+```cpp
+typename decltype(tree)::box_type box;
+box.first[0] = 400;  box.first[1] = 400;    /* lower corner */
+box.second[0] = 600; box.second[1] = 600;   /* upper corner */
+
+auto [count, count_log] = tree.range_count(box);
+
+parlay::sequence<point> found(tree.get_size());
+auto [written, query_log] = tree.range_query(box, parlay::make_slice(found));
+/* found[0 .. written) are the points inside box */
+```
+
+`range_query` writes into the buffer you supply and returns how many points it
+wrote. A buffer smaller than the answer is not an error: the result is
+truncated and `written` tells you so. The extra value in each pair is a
+counter block for profiling; ignore it unless you are measuring.
+
+The `k` nearest neighbours of a point:
+
+```cpp
+using dis_type = typename point::dis_type;
+using nn_pair = std::pair<std::reference_wrapper<point>, dis_type>;
+
+size_t const k = 10;
+parlay::sequence<nn_pair> result(k, nn_pair(std::ref(points[0]), 0));
+psi::bounded_queue<point, nn_pair> queue(parlay::make_slice(result));
+
+tree.knn(query_point, queue);
+/* result[0 .. queue.size()) hold the neighbours, unsorted, with squared
+ * distances. queue.size() is less than k when the tree holds fewer points. */
+```
+
+The queue must be pre-filled, because `std::reference_wrapper` has no default
+constructor; any point will do as the filler. The results reference storage
+owned by the tree, so do not use them after modifying it.
+
+### 5. Update
+
+```cpp
+tree.batch_insert(parlay::make_slice(more_points));
+tree.batch_delete(parlay::make_slice(points_to_remove));  /* must be present */
+tree.batch_diff(parlay::make_slice(maybe_present));       /* tolerates absent */
+```
+
+`batch_delete` requires every point to be in the tree; `batch_diff` is the one
+to use when that may not hold. The tree rebuilds imbalanced subtrees on its
+own as updates accumulate.
+
+### 6. Read everything back
+
+```cpp
+parlay::sequence<point> all(tree.get_size());
+size_t n = tree.flatten(parlay::make_slice(all));
+```
+
+`flatten` needs a buffer of exactly `get_size()`; given any other size it
+writes nothing and returns 0.
+
+### 7. Clean up
+
+The destructor frees the tree. `delete_tree()` does it early and may be
+called more than once. A tree is move-only: it owns its nodes, so copying it
+would free them twice.
+
+## Choosing and configuring a tree
+
+[Which tree do I want?](TREE_ANSWER.md) compares them. Concretely:
+
+```cpp
+/* Pkd-tree: any dimension rule, any partition rule */
+psi::kd_tree<point, split_rule> kd;
+
+/* P-Orth tree: partition rule must be spatial_median (a static_assert
+ * enforces it). The arity and skeleton height default from the point type. */
+psi::orth_tree<point, split_rule> orth;
+
+/* SPaC-tree: the point must carry the curve code, so it is an aug_point */
+struct curve_code {
+        using id_type = int_fast32_t;
+        using curve_code_type = uint64_t;
+        curve_code() : code(0), id(0) {}
+        void set_member(curve_code_type const &v) { code = v; }
+        bool operator<(curve_code const &r) const
+        {
+                return code == r.code ? id < r.id : code < r.code;
+        }
+        bool operator==(curve_code const &r) const { return id == r.id; }
+        friend std::ostream &operator<<(std::ostream &o, curve_code const &r)
+        {
+                return o << r.code << " " << r.id;
+        }
+        curve_code_type code;
+        id_type id;
+};
+using aug_pt = psi::aug_point<coord_type, 2, curve_code>;
+using curve = psi::spatial_filling_curve<psi::morton_curve<aug_pt>>;
+psi::p_tree<aug_pt, curve> p;
+```
+
+`psi::hilbert_curve<Point>` is the other curve. For `p_tree`, two points are
+the same point when their `id`s match, so give every point a distinct one.
+
+## Augmentations
+
+Each node carries an augmentation. By default it is a bounding box, and you
+need to write nothing:
+
+```cpp
+psi::kd_tree<point, split_rule> tree;   /* box_leaf_aug, box_interior_aug */
+```
+
+Supply your own only if a bounding box is not what you want to store. The
+contracts are the two concepts in `psi/dependence/concepts.h`:
+
+```cpp
+template <typename A, typename Slice>
+concept leaf_augmentation = requires(A a, Slice in) {
+        A(); A(in); a.update_aug(in); a.reset();
 };
 
-// Define point type: 2D points with augmented ID
-using Point = psi::AugPoint<Coord, 2, AugId>;
-```
-
-With `Point`, we can now use all functionalities provided in `Basetree`, e.g.,
-```c++
-using BT = psi::BaseTree<Point>;
-auto box = BT::GetBox(input); // demo code, to get the bounding box for the input
-```
-
-If you want to augment some info on the tree nodes, such as the leaf nodes and the interior nodes, you can define the augmentation in this way:
-<details>
-<summary>click to expand</summary>
-
-```c++
-// Leaf augmentation: stores bounding box
-// WARN: All functions must be defined
-template <class BaseTree>
-struct LeafAugBox {
-  using Box = typename BaseTree::Box;      // The bounding box type
-  using Slice = typename BaseTree::Slice;  // parallel data container, similar
-                                           // to std::ranges
-
-  // Constructors
-  LeafAugBox() : box(BaseTree::GetEmptyBox()) {}
-  LeafAugBox(Box const& _box) : box(_box) {}
-  LeafAugBox(Slice In) : box(BaseTree::GetBox(In)) {}
-
-  // Return the bounding box
-  Box& GetBox() { return this->box; }
-  Box const& GetBox() const { return this->box; }
-
-  // Update the augmentation information
-  void UpdateAug(Slice In) { this->box = BaseTree::GetBox(In); }
-
-  // Reset the augmentation information
-  void Reset() { this->box = BaseTree::GetEmptyBox(); }
-
-  Box box;
-};
-
-// Interior node augmentation: stores bounding box and parallel build flag
-// WARN: All functions must be defined
-template <class BaseTree>
-struct InteriorAugBox {
-  using Box = typename BaseTree::Box;
-
-  // Constructors
-  InteriorAugBox() : box(BaseTree::GetEmptyBox()) {
-    force_par_indicator.reset();
-  }
-  InteriorAugBox(Box const& _box) : box(_box) { force_par_indicator.reset(); }
-
-  // Get the bounding box
-  Box& GetBox() { return this->box; }
-  Box const& GetBox() const { return this->box; }
-
-  // Given two child nodes, create the augmentation value (bounding box) for
-  // the interior node
-  template <typename Leaf, typename Interior>
-  static Box Create(psi::Node* l, psi::Node* r) {
-    return BaseTree::GetBox(BaseTree::template RetrieveBox<Leaf, Interior>(l),
-                            BaseTree::template RetrieveBox<Leaf, Interior>(r));
-  }
-
-  // Update the augmentation information for the interior node
-  template <typename Leaf, typename Interior>
-  void Update(psi::Node* l, psi::Node* r) {
-    this->box = Create<Leaf, Interior>(l, r);
-  }
-
-  // Below are required to ensure the granularity of parallelism
-  // Mark this node to be update in parallel or not in following operations
-  void SetParallelFlag(bool const flag) {
-    this->force_par_indicator.emplace(flag);
-  }
-
-  // Reset the parallel flag
-  void ResetParallelFlag() { this->force_par_indicator.reset(); }
-
-  // Get the initial status of the parallel flag
-  bool GetParallelFlagIniStatus() {
-    return this->force_par_indicator.has_value();
-  }
-
-  // Whether to force parallel update for this node
-  bool ForceParallel(size_t sz) const {
-    return this->force_par_indicator.has_value()
-               ? this->force_par_indicator.value()
-               : sz > BaseTree::kSerialBuildCutoff;
-  }
-
-  // Reset the augmentation information and parallel flag
-  void Reset() {
-    this->force_par_indicator.reset();
-    this->box = BaseTree::GetEmptyBox();
-  }
-
-  Box box;
-  std::optional<bool> force_par_indicator;
+template <typename A>
+concept interior_augmentation = requires(A a, bool flag, size_t n) {
+        a.set_parallel_flag(flag);
+        a.reset_parallel_flag();
+        { a.get_parallel_flag_ini_status() } -> std::convertible_to<bool>;
+        { a.force_parallel(n) } -> std::convertible_to<bool>;
 };
 ```
-</details>
 
-Of course, as a spatial partition tree, we can choose how to split the space:
-```c++
-// Define split rule: max stretch dimension + object median
-using SplitRule = psi::OrthogonalSplitRule<psi::MaxStretchDim<Point>,
-                                           psi::ObjectMedian<Point>>;
+Two things the concepts cannot state. First, an interior augmentation also
+needs `create` and `update` member templates, because they take the very
+`interior_type` that holds the augmentation, which is not nameable where the
+concept is checked — copy their shape from `psi/dependence/augmentation.h`.
+Second, the library looks for a **`get_box()`** member to decide whether a
+node knows its own bounds; an augmentation that stores a box under a different
+name silently falls back to the slower hyperplane paths.
 
-// Alternative split rule: rotate dimension + spatial median
-using AnotherSplitRule =
-    psi::OrthogonalSplitRule<psi::RotateDim<Point>, psi::SpatialMedian<Point>>;
+`psi::box_leaf_aug` and `psi::box_interior_aug` in
+`psi/dependence/augmentation.h` are the worked example.
+
+## Parallelism
+
+`build`, the batch updates and `flatten` are internally parallel. **A single
+query is not**: `knn`, `range_count` and `range_query` each run on one thread,
+so a loop over query points uses one core. Parallelise the batch yourself:
+
+```cpp
+parlay::parallel_for(0, queries.size(), [&](size_t i) {
+        /* each iteration does its own query */
+});
 ```
 
-Now we can define the tree type with all building blocks above:
-```c++
-// Define KdTree type
-using Tree = psi::KdTree<Point, SplitRule, LeafAugBox<BT>, InteriorAugBox<BT>>;
-Tree tree;
+The thread count comes from parlaylib: set `PARLAY_NUM_THREADS`, or build with
+`-DSERIAL=ON` for a single-threaded library. Queries do not mutate the tree, so
+running many at once is safe; updates are not concurrent with anything.
+
+## API reference
+
+Common to all three trees. `Range` is any random-access range of points.
+
+| Call | Returns | Notes |
+|---|---|---|
+| `build(Range&&)` | — | copies the input; replaces any existing contents |
+| `batch_insert(Range&&)` | — | |
+| `batch_delete(Range&&)` | — | every point must be present |
+| `batch_diff(Range&&)` | — | tolerates points that are absent |
+| `flatten(Range&& out)` | `size_t` | needs `out.size() == get_size()`, else writes nothing and returns 0 |
+| `knn(Point const&, bounded_queue&)` | profiling counters | results land in the queue; `queue.size()` is how many |
+| `range_count(box_type const&)` | `pair<size_t, counters>` | |
+| `range_query(box_type const&, Range&& out)` | `pair<size_t, counters>` | truncates to `out.size()` |
+| `get_size()` | `size_t` | number of points |
+| `delete_tree()` | — | idempotent |
+| `get_tree_name()` | `char const*` | parsed by the plotting scripts; do not change |
+
+`orth_tree::build` takes an optional bounding box, and `set_bounding_box` pins
+one before building — useful when later inserts fall outside the initial
+extent, since an orth tree does not grow its box. Inserting outside it is an
+error.
+
+Member types you will use: `point_type` via your own alias, `box_type`,
+`points_type`, `slice_type`, `coord_type`, `dis_type`.
+
+## Checking a change
+
+```bash
+cmake -S . -B build -DPSI_ASSERTS=ON && cmake --build build -j
+ctest --test-dir build              # the unit suite, well under a second
+./example/run_examples.sh           # the examples check their own answers
 ```
 
-Then we can use the tree as follows:
-- Build the tree:
-```c++
-Points points;
-tree.Build(points);
-```
-- Batch Insert:
-```c++
-Points insert_points;
-tree.BatchInsert(insert_points);
-```
-
-- Batch Delete (assumes all points to be deleted are in the tree, use `BatchDiff` if you are not sure):
-```c++
-Points delete_points;
-tree.BatchDelete(delete_points);
-// tree.BatchDiff(delete_points);
-```
-
-- KNN query
-```c++
-int K = 10; // K for KNN
-Point query_point; // Points to be queried
-
-using DisType = typename Point::DisType; // the distance type we use
-using nn_pair = std::pair<std::reference_wrapper<Point>, DisType>; // how KNN candidates are represented in the output
-
-parlay::sequence<nn_pair> knn_result(K, nn_pair(std::ref(points[0]), 0));// the output array
-psi::kBoundedQueue<Point, nn_pair> bq(parlay::make_slice(knn_result));// a fast heap for query
-
-auto* root = tree.GetRoot();
-tree.KNN(root, query_point, bq); // do the query
-```
-
-- Range count and Range query
-```c++
-typename Tree::Box query_box; // a pair of point
-Points range_result(n);  // Allocate max possible size
-auto [count, logger] =
-      tree.RangeQuery(query_box, parlay::make_slice(range_result));
-```
-
-A comprehensive example can be found [here](../example/kd_tree.h).
+For the CGAL oracle, configure with `-DCGAL=ON` and run
+`script/checkCorrect.sh fast <data-root> build`. Generate a data root with the
+tool below.
 
 ## A fast data generator
-PSI also shipped a parallel data_generator for two distribution of points, namely, the `Uniform` (uniformly spread across a cube) and `Varden` (very skewed).
 
-Usage:
 ```bash
-# In the build
-make data_generator
-./data_generator -p [output_path] -d [dimension] -n [points_num] -file_num [files_num] -varden [0:uniform, 1:varden] 
+# In the build directory
+./data_generator -p <out-dir> -n <points> -d <dim> -file_num 2 -varden 0 -seed 1
 ```
 
-It will create folders named as `uniform_bigint/` or `ss_varden_bigint/` under the directory specified by `output_path/`. The output file is numbered from `1.in` to `files_num`.
+Files land in `<out-dir>/uniform/<n>_<d>/1.in` — or `uniform_bigint` when
+`-axis_max` is above 10^6, which is the default, and `ss_varden…` with
+`-varden 1`. Only dimensions 2, 3, 5, 7, 9, 12 and 16 are supported; anything else
+throws. `-seed` makes the output reproducible; without it a fixed default
+is used and printed.
 
-The data file begins with two integer, namely `points_num` and the `dimension`, follows by `points_num` number of lines, each line contains the coordinates for each point, separated by space.
+## File organization
 
+```
+include/
+├── baselines/          competitor implementations, benchmark only
+│   ├── cpam_raw/       pristine CPAM and PAM
+│   ├── zdtree/
+│   └── zdtree_3d/
+├── libmorton/          submodule, Morton codes
+├── parlaylib/          submodule, parallel primitives
+└── psi/
+    ├── base_tree.h     shared machinery, geometry, type definitions
+    ├── base_tree_impl/
+    ├── dependence/     points, splitters, concepts, augmentations, cpam
+    ├── kd_tree.h       + kd_tree_impl/
+    ├── orth_tree.h     + orth_tree_impl/
+    └── p_tree.h        + p_tree_impl/
+example/                three worked programs, all of which check themselves
+tests/unit/             the correctness suite
+tests/                  benchmark drivers
+script/, script_ae/     experiment drivers for the two papers
+```
+
+`psi/dependence/cpam/` is a fork of CPAM that `p_tree` is built on; see
+[THIRD_PARTY.md](../THIRD_PARTY.md).

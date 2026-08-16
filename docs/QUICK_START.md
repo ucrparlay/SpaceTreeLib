@@ -14,7 +14,10 @@ See [Docker manual](DOCKER_QUICK_REFERENCE.md) for complete details.
 Necessary:
 
 - `cmake` >= 3.15
-- `g++` or `clang++` with C++20 features support (Tested with g++14 and clang-19) on Linux machines.
+- `g++` >= 14 or `clang++` >= 19, on Linux. Older versions are rejected at
+  configure time.
+- Boost headers (`libboost-dev`), for the benchmark drivers. Not needed if you
+  only want the library: configure with `-DPSI_BUILD_BENCHMARKS=OFF`.
 
 Optional:
 
@@ -31,22 +34,23 @@ git clone git@github.com:ucrparlay/SpaceTreeLib.git
 cd SpaceTreeLib
 ```
 
-2. Initialize the submodule:
+2. Initialize the submodules (the build stops with a clear message if you
+   skip this):
 
 ```bash
-git submodule update --init
+git submodule update --init --recursive
 ```
 
 3. Compilation (with `Release` and `jemalloc` disabled)
 ```bash
-mkdir build && cd build
-cmake -DDEBUG=OFF -DJEMA=OFF ..
-make -j
+cmake -S . -B build -DDEBUG=OFF -DJEMA=OFF
+cmake --build build -j
 ```
 
-4. Run some toy examples:
+4. Check it works, from the repository root:
 ```bash
-./example/run_examples.sh
+ctest --test-dir build      # the correctness suite, under a second
+./example/run_examples.sh   # three programs that verify their own answers
 ```
 
 For more detailed usage of the PSI library, please checkout the [manual](MANUAL.md).

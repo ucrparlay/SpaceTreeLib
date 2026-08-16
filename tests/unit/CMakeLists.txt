@@ -5,6 +5,7 @@ set(psi_unit_tests
 	test_queries
 	test_updates
 	test_degenerate
+	test_manual
 )
 
 foreach(psi_test ${psi_unit_tests})

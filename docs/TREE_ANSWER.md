@@ -4,12 +4,19 @@
 
 ![tree answer](what-tree-you-need.jpg)
 
+In short: `orth_tree` for update-heavy work, `p_tree` when updates dominate
+and the data is low-dimensional, `kd_tree` for query-heavy work and higher
+dimensions. See [the manual](MANUAL.md#choosing-and-configuring-a-tree) for
+the exact C++ type each one needs.
 
-Baselines:
+
+In PSI:
 - [Pkd-tree](https://dl.acm.org/doi/abs/10.1145/3709712): the SOTA parallel kd-tree;
 - [P-Orth tree](https://github.com/ucrparlay/SpaceTreeLib): parallel orth-trees (known as the quad-tree in 2d and oct-tree in 3d);
 - [SPaC-H](https://github.com/ucrparlay/SpaceTreeLib): parallel self-balanced 1d-tree using Hilbert code to order points;
 - [SPaC-Z](https://github.com/ucrparlay/SpaceTreeLib): similar with SPaC-H but use Morton code instead;
+
+Compared against, but not part of the library:
 - [CPAM-H/Z](https://dl.acm.org/doi/abs/10.1145/3519939.3523733): another 1d-tree based on the parallel augmented map; 
 - [Zd-tree](https://epubs.siam.org/doi/abs/10.1137/1.9781611977042.16): yet another 1d-tree based on the Morton code;
 - [BHL-tree](https://dl.acm.org/doi/abs/10.1145/3503221.3508429): a plain parallel kd-tree.
