@@ -1,0 +1,159 @@
+name: build and test
+
+# Development happens on dev; the only workflow before this one watched a
+# develop branch that does not exist, so nothing was ever checked.
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main, dev]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: ${{ matrix.compiler }} / ${{ matrix.config }}
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler: [g++-14, clang++-19]
+        config: [release, asserts]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libboost-dev
+          if [ "${{ matrix.compiler }}" = "g++-14" ]; then
+            sudo apt-get install -y g++-14
+          else
+            # 24.04 ships clang-18; the project needs 19, which the CMake
+            # version guard enforces.
+            wget -qO /tmp/llvm.sh https://apt.llvm.org/llvm.sh
+            chmod +x /tmp/llvm.sh
+            sudo /tmp/llvm.sh 19
+          fi
+
+      # PSI_NATIVE_ARCH=OFF because a runner's CPU is not the machine anyone
+      # measures on, and the portable path deserves to be exercised.
+      - name: Configure
+        run: |
+          extra=""
+          if [ "${{ matrix.config }}" = "asserts" ]; then
+            extra="-DPSI_ASSERTS=ON"
+          fi
+          cmake -S . -B build \
+            -DCMAKE_CXX_COMPILER=${{ matrix.compiler }} \
+            -DPSI_NATIVE_ARCH=OFF \
+            $extra
+
+      - name: Build
+        run: cmake --build build -j "$(nproc)"
+
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+
+      - name: Run the examples
+        run: ./example/run_examples.sh
+
+  consume:
+    name: consumable by another project
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install and consume via find_package
+        run: |
+          cmake -S . -B build -DPSI_NATIVE_ARCH=OFF \
+            -DPSI_BUILD_BENCHMARKS=OFF -DPSI_BUILD_EXAMPLES=OFF \
+            -DPSI_BUILD_TESTS=OFF -DCMAKE_INSTALL_PREFIX="$PWD/prefix"
+          cmake --install build
+          mkdir -p /tmp/consumer
+          cat > /tmp/consumer/CMakeLists.txt <<'EOF'
+          cmake_minimum_required(VERSION 3.15)
+          project(psi_consumer LANGUAGES CXX)
+          find_package(PSI REQUIRED)
+          add_executable(app main.cpp)
+          target_link_libraries(app PRIVATE PSI::PSI)
+          EOF
+          cat > /tmp/consumer/main.cpp <<'EOF'
+          #include "psi/kd_tree.h"
+          #include "psi/dependence/splitter.h"
+          #include <cstdio>
+          using point = psi::basic_point<long, 2>;
+          using rule = psi::orthogonal_split_rule<psi::rotate_dim<point>,
+                                                  psi::spatial_median<point>>;
+          int main() {
+                  parlay::sequence<point> pts(1000);
+                  for (size_t i = 0; i < pts.size(); i++) {
+                          long c[2] = {long(i % 31), long(i % 29)};
+                          pts[i] = point(c);
+                  }
+                  psi::kd_tree<point, rule> t;
+                  t.build(parlay::make_slice(pts));
+                  std::printf("indexed %zu points\n", t.get_size());
+                  return t.get_size() == pts.size() ? 0 : 1;
+          }
+          EOF
+          cmake -S /tmp/consumer -B /tmp/cbuild -DCMAKE_PREFIX_PATH="$PWD/prefix"
+          cmake --build /tmp/cbuild
+          /tmp/cbuild/app
+
+  oracle:
+    name: CGAL oracle
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install CGAL and Boost
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libcgal-dev libboost-dev libtbb-dev
+
+      # kd_ccp and p_ccp only exist with -DCGAL=ON, and their checks are
+      # asserts, so they mean nothing without them.
+      - name: Build the oracles
+        run: |
+          cmake -S . -B build -DCGAL=ON -DPSI_ASSERTS=ON -DPSI_NATIVE_ARCH=OFF
+          cmake --build build -j "$(nproc)" --target kd_ccp p_ccp data_generator
+
+      - name: Compare against CGAL on generated data
+        run: |
+          root=/tmp/psi-data
+          for kind in uniform ss_varden; do
+            varden=0
+            [ "$kind" = ss_varden ] && varden=1
+            for d in 2 3; do
+              ./build/data_generator -p "$root/$kind" -n 20000 -d "$d" \
+                -file_num 2 -varden "$varden" -seed "$d"
+            done
+            # the generator adds a kind level the script does not expect
+            for sub in "$root/$kind"/*/; do
+              mv "$sub"* "$root/$kind"/ && rmdir "$sub"
+            done
+          done
+          cd script
+          PSI_NODES=20000 ./checkCorrect.sh fast "$root" ../build
+
+  format:
+    name: clang-format
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check formatting
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang-format
+          files=$(git ls-files \
+            'include/psi/*.h' 'include/psi/*.hpp' 'include/psi/*.c' \
+            'include/baselines/*.h' 'include/baselines/*.hpp' \
+            'include/baselines/*.cpp' \
+            'tests/*.h' 'tests/*.cpp' 'example/*.h' 'example/*.cpp')
+          clang-format --style=file --dry-run --Werror $files

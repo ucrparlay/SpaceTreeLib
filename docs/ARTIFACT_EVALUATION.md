@@ -7,10 +7,23 @@
 
 **Warning**: The scripts for results merging and figures plotting may not execute properly if a baseline failed to generate the log and exit correctly, i.e., the resource requested exceeds the RAM. Please make sure the machine where the artifact is evaluated satisfied above requirements. Thanks. 
 
+**Before timing anything:** the published image is compiled portably, so its
+binaries run on any x86-64 machine but are *not* tuned for yours. Recompile
+inside the container before a measurement run:
+
+```bash
+cmake -S . -B build -DDEBUG=OFF -DCGAL=OFF -DPSI_NATIVE_ARCH=ON && \
+  cmake --build build -j
+```
+
+Building the image locally with `--build-arg PSI_NATIVE_ARCH=ON` does the same
+thing. This matters: the numbers in the papers were measured with
+`-march=native -mcx16`, and a portable build will be slower.
+
 **Quick Start:**
 
 ```bash
-# Build the Docker image
+# Pull the prebuilt image
 ./docker-run.sh pull
 
 # Run customized experiments (specify where to store generated data and the synthetic benchmark size)

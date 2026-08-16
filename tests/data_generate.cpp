@@ -34,10 +34,10 @@ int main(int argc, char *argv[])
 			 ? std::string(varden ? "ss_varden/" : "uniform/")
 			 : std::string(varden ? "ss_varden_bigint/"
 					      : "uniform_bigint/"));
-	std::filesystem::create_directory(path);
+	std::filesystem::create_directories(path);
 
 	path += toString(pts_num) + "_" + toString(pts_dim) + "/";
-	std::filesystem::create_directory(path);
+	std::filesystem::create_directories(path);
 
 	auto generate = [&]<typename Point>(std::string const &new_path) {
 		std::cout << "Generating... " << std::endl;

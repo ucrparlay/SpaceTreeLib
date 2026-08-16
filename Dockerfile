@@ -56,10 +56,18 @@ WORKDIR /workspace/SpaceTreeLib
 # Initialize git submodules
 RUN git submodule update --init --recursive || true
 
+# Binaries baked into a distributed image must run on machines other than the
+# one that built them, so the image is compiled portably by default. That also
+# means these binaries are NOT tuned for the host: recompile inside the
+# container with -DPSI_NATIVE_ARCH=ON before any timing run, or build the
+# image locally with --build-arg PSI_NATIVE_ARCH=ON.
+ARG PSI_NATIVE_ARCH=OFF
+
 # Create build directory and compile the project
 RUN mkdir -p build && \
     cd build && \
-    cmake -DDEBUG=OFF -DCGAL=OFF -DJEMA=OFF .. && \
+    cmake -DDEBUG=OFF -DCGAL=OFF -DJEMA=OFF \
+          -DPSI_NATIVE_ARCH=${PSI_NATIVE_ARCH} .. && \
     make -j$(nproc)
 
 # Create directories for data and results

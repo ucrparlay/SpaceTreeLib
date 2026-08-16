@@ -2,9 +2,9 @@ name: Docker Build and Push
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [main, dev]
   pull_request:
-    branches: [ main ]
+    branches: [main, dev]
   workflow_dispatch:
 
 jobs:
@@ -41,11 +41,15 @@ jobs:
           type=sha,prefix={{branch}}-
           type=raw,value=latest,enable={{is_default_branch}}
     
+    # load: true so a pull-request build produces a local image the test step
+    # below can actually run. Without it the test pulled a tag that a pull
+    # request never publishes.
     - name: Build and push Docker image
       uses: docker/build-push-action@v4
       with:
         context: .
         push: ${{ github.event_name != 'pull_request' }}
+        load: ${{ github.event_name == 'pull_request' }}
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
         cache-from: type=gha
@@ -54,4 +58,5 @@ jobs:
     - name: Run example tests
       if: github.event_name == 'pull_request'
       run: |
-        docker run --rm ghcr.io/${{ github.repository }}:pr-${{ github.event.pull_request.number }} ./example/run_examples.sh
+        tag=$(echo "${{ steps.meta.outputs.tags }}" | head -n1)
+        docker run --rm "$tag" ./example/run_examples.sh

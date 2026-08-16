@@ -101,17 +101,20 @@ function(CONFIGURE_DANALYSIS)
     else()
       message(STATUS "clang-tidy:                   Enabled (${CLANG_TIDY_EXE})")
 
-      # Args for clang-tidy.
+      # Analysis reports; it does not rewrite. The previous arguments were
+      # --fix-errors --fix-notes, so the one command a contributor would type
+      # edited the library in place -- on code whose numbers back two papers.
+      # Opt into that with the psi_clang_tidy_fix target instead.
+      #
+      # -p pointed at a "build" directory inside the source tree rather than
+      # the actual binary dir, and extra-arg was missing its leading dashes.
       set(CLANG_TIDY_ARGS
-        "-p" 
-        "${PROJECT_SOURCE_DIR}/build"
-        "--fix-notes"
-        "extra-arg=-std=c++20"
-        "--fix-errors"
-      )
-      set(CLANG_TIDY_COMPILER_ARGS
         "-p"
-        "${PROJECT_SOURCE_DIR}/build"
+        "${CMAKE_BINARY_DIR}"
+        "--extra-arg=-std=c++20"
+      )
+      set(CLANG_TIDY_FIX_ARGS ${CLANG_TIDY_ARGS} "--fix" "--fix-errors")
+      set(CLANG_TIDY_COMPILER_ARGS
         "-xc++"
         "-std=c++20"
         "${CONFIGURE_DANALYSIS_INCLUDES}"
@@ -140,6 +143,15 @@ function(CONFIGURE_DANALYSIS)
       add_custom_target(
         psi_clang_tidy_all
         COMMAND ${CLANG_TIDY_EXE} ${CLANG_TIDY_ARGS}
+        ${CONFIGURE_DANALYSIS_FILES}
+        --
+        ${CLANG_TIDY_COMPILER_ARGS}
+      )
+
+      # Same, but rewrites the sources. Never a dependency of anything.
+      add_custom_target(
+        psi_clang_tidy_fix
+        COMMAND ${CLANG_TIDY_EXE} ${CLANG_TIDY_FIX_ARGS}
         ${CONFIGURE_DANALYSIS_FILES}
         --
         ${CLANG_TIDY_COMPILER_ARGS}
