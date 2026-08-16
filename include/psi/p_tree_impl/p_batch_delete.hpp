@@ -1,7 +1,7 @@
 #ifndef PSI_P_TREE_IMPL_P_BATCH_DELETE_HPP
 #define PSI_P_TREE_IMPL_P_BATCH_DELETE_HPP
 
-#include "../p_tree.h"
+#include "psi/p_tree.h"
 
 namespace psi
 {

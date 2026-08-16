@@ -3,7 +3,7 @@
 
 #include <cmath>
 
-#include "../base_tree.h"
+#include "psi/base_tree.h"
 #include "psi/dependence/concepts.h"
 
 namespace psi

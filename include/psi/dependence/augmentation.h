@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <optional>
 
-#include "tree_node.h"
+#include "psi/dependence/tree_node.h"
 
 namespace psi
 {

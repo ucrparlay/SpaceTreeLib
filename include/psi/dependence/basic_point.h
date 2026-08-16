@@ -6,7 +6,7 @@
 #include <type_traits>
 #include <variant>
 
-#include "comparator.h"
+#include "psi/dependence/comparator.h"
 #include "parlay/alloc.h"
 #include "parlay/delayed.h"
 #include "parlay/primitives.h"

@@ -5,8 +5,8 @@
 #include <type_traits>
 #include <utility>
 
-#include "../orth_tree.h"
-#include "dependence/concepts.h"
+#include "psi/orth_tree.h"
+#include "psi/dependence/concepts.h"
 #include "psi/dependence/tree_node.h"
 
 namespace psi

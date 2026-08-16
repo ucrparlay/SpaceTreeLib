@@ -4,14 +4,14 @@
 #include <concepts>
 #include <cstdint>
 
-#include "../base_tree.h"
-#include "dependence/concepts.h"
-#include "dependence/tree_node.h"
+#include "psi/base_tree.h"
+#include "psi/dependence/concepts.h"
+#include "psi/dependence/tree_node.h"
 
 #include "libmorton/morton.h"
 #include "libmorton/morton3D.h"
-#include "space_filling_curve/hilbert.h"
-#include "space_filling_curve/hilbert_high_dim.h"
+#include "psi/dependence/space_filling_curve/hilbert.h"
+#include "psi/dependence/space_filling_curve/hilbert_high_dim.h"
 
 /*
  * hilbert.c holds the definitions, not just declarations, and is third party.
@@ -20,7 +20,7 @@
  */
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
-#include "space_filling_curve/hilbert.c"
+#include "psi/dependence/space_filling_curve/hilbert.c"
 #pragma GCC diagnostic pop
 
 namespace psi

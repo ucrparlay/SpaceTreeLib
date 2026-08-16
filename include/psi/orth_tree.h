@@ -4,8 +4,8 @@
 #include <functional>
 #include <utility>
 
-#include "base_tree.h"
-#include "dependence/augmentation.h"
+#include "psi/base_tree.h"
+#include "psi/dependence/augmentation.h"
 
 namespace psi
 {
@@ -231,11 +231,11 @@ private:
 
 } // namespace psi
 
-#include "orth_tree_impl/orth_batch_delete.hpp"
-#include "orth_tree_impl/orth_batch_diff.hpp"
-#include "orth_tree_impl/orth_batch_insert.hpp"
-#include "orth_tree_impl/orth_build_tree.hpp"
-#include "orth_tree_impl/orth_inter_node.hpp"
-#include "orth_tree_impl/orth_override.hpp"
+#include "psi/orth_tree_impl/orth_batch_delete.hpp"
+#include "psi/orth_tree_impl/orth_batch_diff.hpp"
+#include "psi/orth_tree_impl/orth_batch_insert.hpp"
+#include "psi/orth_tree_impl/orth_build_tree.hpp"
+#include "psi/orth_tree_impl/orth_inter_node.hpp"
+#include "psi/orth_tree_impl/orth_override.hpp"
 
 #endif // PSI_ORTH_TREE_H

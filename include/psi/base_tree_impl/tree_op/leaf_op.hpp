@@ -10,8 +10,8 @@
 #include <type_traits>
 #include <utility>
 
-#include "../../base_tree.h"
-#include "dependence/concepts.h"
+#include "psi/base_tree.h"
+#include "psi/dependence/concepts.h"
 
 namespace psi
 {

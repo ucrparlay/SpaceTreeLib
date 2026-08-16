@@ -2,9 +2,9 @@
 
 #include <cstdint>
 
-#include "../psi/base_tree.h"
+#include "psi/base_tree.h"
 #include "cpam/cpam.h"
-#include "dependence/loggers.h"
+#include "psi/dependence/loggers.h"
 // #include "geobase.h"
 // #include "hilbert.h"
 #include "psi/base_tree.h"

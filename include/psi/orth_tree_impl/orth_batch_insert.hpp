@@ -3,7 +3,7 @@
 
 #include <utility>
 
-#include "../orth_tree.h"
+#include "psi/orth_tree.h"
 
 namespace psi
 {

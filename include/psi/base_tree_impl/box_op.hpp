@@ -1,7 +1,7 @@
 #ifndef PSI_BASE_TREE_IMPL_BOX_OP_HPP_
 #define PSI_BASE_TREE_IMPL_BOX_OP_HPP_
 
-#include "../base_tree.h"
+#include "psi/base_tree.h"
 #include "psi/dependence/concepts.h"
 
 namespace psi

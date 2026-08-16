@@ -1,47 +1,19 @@
 include(danalysis)
 
-# List all files that should be considered for static analysis
+# Globbed rather than listed: the hand-written list had gone stale, omitting
+# every file under p_tree_impl/. dependence/cpam is a deferred fork and
+# space_filling_curve is vendored, so both stay out.
+file(GLOB_RECURSE psi_analysis_files CONFIGURE_DEPENDS
+  ${PSI_INCLUDE_DIR}/psi/*.h
+  ${PSI_INCLUDE_DIR}/psi/*.hpp
+)
+list(FILTER psi_analysis_files EXCLUDE REGEX "/dependence/(cpam|space_filling_curve)/")
+
 configure_danalysis(
   INCLUDES
     ${PSI_INCLUDE_DIR}
-    ${PSI_INCLUDE_DIR}/psi
   FILES
-    ${PSI_INCLUDE_DIR}/base_tree_impl/box_cut.hpp
-    ${PSI_INCLUDE_DIR}/base_tree_impl/delete_tree.hpp
-    ${PSI_INCLUDE_DIR}/base_tree_impl/dimensionality.hpp
-    ${PSI_INCLUDE_DIR}/base_tree_impl/box_op.hpp
-    ${PSI_INCLUDE_DIR}/base_tree_impl/inner_tree.hpp
-    ${PSI_INCLUDE_DIR}/base_tree_impl/knn_query.hpp
-    ${PSI_INCLUDE_DIR}/base_tree_impl/points_op.hpp
-    ${PSI_INCLUDE_DIR}/base_tree_impl/range_query.hpp
-    ${PSI_INCLUDE_DIR}/base_tree_impl/tree_op/build_inner_tree.hpp
-    ${PSI_INCLUDE_DIR}/base_tree_impl/tree_op/flatten.hpp
-    ${PSI_INCLUDE_DIR}/base_tree_impl/tree_op/leaf_op.hpp
-    ${PSI_INCLUDE_DIR}/base_tree_impl/tree_op/node_op.hpp
-    ${PSI_INCLUDE_DIR}/base_tree_impl/tree_op/rebuild.hpp
-    ${PSI_INCLUDE_DIR}/base_tree_impl/validation.hpp
-    ${PSI_INCLUDE_DIR}/dependence/loggers.h
-    ${PSI_INCLUDE_DIR}/dependence/search_container.h
-    ${PSI_INCLUDE_DIR}/dependence/basic_point.h
-    ${PSI_INCLUDE_DIR}/dependence/comparator.h
-    ${PSI_INCLUDE_DIR}/dependence/concepts.h
-    ${PSI_INCLUDE_DIR}/dependence/splitter.h
-    ${PSI_INCLUDE_DIR}/dependence/tree_node.h
-    ${PSI_INCLUDE_DIR}/kd_tree_impl/kd_batch_insert.hpp
-    ${PSI_INCLUDE_DIR}/kd_tree_impl/kd_batch_delete.hpp
-    ${PSI_INCLUDE_DIR}/kd_tree_impl/kd_batch_diff.hpp
-    ${PSI_INCLUDE_DIR}/kd_tree_impl/kd_build_tree.hpp
-    ${PSI_INCLUDE_DIR}/kd_tree_impl/kd_inter_node.hpp
-    ${PSI_INCLUDE_DIR}/kd_tree_impl/kd_override.hpp
-    ${PSI_INCLUDE_DIR}/orth_tree_impl/orth_batch_insert.hpp
-    ${PSI_INCLUDE_DIR}/orth_tree_impl/orth_override.hpp
-    ${PSI_INCLUDE_DIR}/orth_tree_impl/orth_batch_delete.hpp
-    ${PSI_INCLUDE_DIR}/orth_tree_impl/orth_batch_diff.hpp
-    ${PSI_INCLUDE_DIR}/orth_tree_impl/orth_build_tree.hpp
-    ${PSI_INCLUDE_DIR}/orth_tree_impl/orth_inter_node.hpp
-    ${PSI_INCLUDE_DIR}/base_tree.h
-    ${PSI_INCLUDE_DIR}/kd_tree.h
-    ${PSI_INCLUDE_DIR}/orth_tree.h
+    ${psi_analysis_files}
   IGNORE_DEFINITIONS
     PARLAY_CILK
     PARLAY_CILKPLUS

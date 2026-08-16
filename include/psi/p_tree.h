@@ -6,7 +6,7 @@
 #include <optional>
 #include <utility>
 
-#include "base_tree.h"
+#include "psi/base_tree.h"
 
 /*
  * cpam is third party. Silence its noise, but not -Wreturn-local-addr or
@@ -15,7 +15,7 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 #pragma GCC diagnostic ignored "-Wunused-local-typedefs"
-#include "dependence/cpam/cpam.h"
+#include "psi/dependence/cpam/cpam.h"
 #pragma GCC diagnostic pop
 
 namespace psi
@@ -222,11 +222,11 @@ private:
 
 } // namespace psi
 
-#include "p_tree_impl/p_batch_delete.hpp"
-#include "p_tree_impl/p_batch_diff.hpp"
-#include "p_tree_impl/p_batch_insert.hpp"
-#include "p_tree_impl/p_build_tree.hpp"
-#include "p_tree_impl/p_inter_node.hpp"
-#include "p_tree_impl/p_override.hpp"
+#include "psi/p_tree_impl/p_batch_delete.hpp"
+#include "psi/p_tree_impl/p_batch_diff.hpp"
+#include "psi/p_tree_impl/p_batch_insert.hpp"
+#include "psi/p_tree_impl/p_build_tree.hpp"
+#include "psi/p_tree_impl/p_inter_node.hpp"
+#include "psi/p_tree_impl/p_override.hpp"
 
 #endif // PSI_P_TREE_H

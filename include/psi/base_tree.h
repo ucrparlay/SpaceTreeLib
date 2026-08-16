@@ -6,10 +6,10 @@
 #include <type_traits>
 #include <utility>
 
-#include "dependence/comparator.h"
-#include "dependence/loggers.h"
-#include "dependence/search_container.h"
-#include "dependence/tree_node.h"
+#include "psi/dependence/comparator.h"
+#include "psi/dependence/loggers.h"
+#include "psi/dependence/search_container.h"
+#include "psi/dependence/tree_node.h"
 
 namespace psi
 {
@@ -622,20 +622,20 @@ protected:
 
 } // namespace psi
 
-#include "base_tree_impl/box_cut.hpp"
-#include "base_tree_impl/box_op.hpp"
-#include "base_tree_impl/circle_op.hpp"
-#include "base_tree_impl/delete_tree.hpp"
-#include "base_tree_impl/dimensionality.hpp"
-#include "base_tree_impl/inner_tree.hpp"
-#include "base_tree_impl/knn_query.hpp"
-#include "base_tree_impl/points_op.hpp"
-#include "base_tree_impl/range_query.hpp"
-#include "base_tree_impl/tree_op/build_inner_tree.hpp"
-#include "base_tree_impl/tree_op/flatten.hpp"
-#include "base_tree_impl/tree_op/leaf_op.hpp"
-#include "base_tree_impl/tree_op/node_op.hpp"
-#include "base_tree_impl/tree_op/rebuild.hpp"
-#include "base_tree_impl/validation.hpp"
+#include "psi/base_tree_impl/box_cut.hpp"
+#include "psi/base_tree_impl/box_op.hpp"
+#include "psi/base_tree_impl/circle_op.hpp"
+#include "psi/base_tree_impl/delete_tree.hpp"
+#include "psi/base_tree_impl/dimensionality.hpp"
+#include "psi/base_tree_impl/inner_tree.hpp"
+#include "psi/base_tree_impl/knn_query.hpp"
+#include "psi/base_tree_impl/points_op.hpp"
+#include "psi/base_tree_impl/range_query.hpp"
+#include "psi/base_tree_impl/tree_op/build_inner_tree.hpp"
+#include "psi/base_tree_impl/tree_op/flatten.hpp"
+#include "psi/base_tree_impl/tree_op/leaf_op.hpp"
+#include "psi/base_tree_impl/tree_op/node_op.hpp"
+#include "psi/base_tree_impl/tree_op/rebuild.hpp"
+#include "psi/base_tree_impl/validation.hpp"
 
 #endif // PSI_BASE_TREE_H_

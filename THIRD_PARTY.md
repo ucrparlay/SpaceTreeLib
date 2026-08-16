@@ -26,9 +26,6 @@ Not distributed in this repository — fetched by `git submodule update --init`.
 |---|---|---|---|
 | `include/parlaylib` | https://github.com/cmuparlay/parlaylib | `36459f4` (master) | MIT |
 | `include/libmorton` | https://github.com/Forceflow/libmorton | `7923faa` (v0.2.12) | MIT |
-| `include/highway` | https://github.com/google/highway | `2607d3b` (1.4.0) | Apache-2.0 / BSD-3 dual |
-
-`include/highway` is not referenced by any source file in this repository.
 
 ## Vendored copies
 

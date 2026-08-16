@@ -4,7 +4,7 @@
 #include <algorithm>
 #include <utility>
 
-#include "../base_tree.h"
+#include "psi/base_tree.h"
 
 namespace psi
 {

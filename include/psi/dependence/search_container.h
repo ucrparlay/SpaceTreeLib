@@ -1,7 +1,7 @@
 #ifndef PSI_DEPENDENCE_SEARCH_CONTAINER_H_
 #define PSI_DEPENDENCE_SEARCH_CONTAINER_H_
 
-#include "comparator.h"
+#include "psi/dependence/comparator.h"
 #include "parlay/slice.h"
 
 namespace psi

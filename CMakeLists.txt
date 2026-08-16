@@ -30,6 +30,19 @@ option(JEMA "" OFF)
 option(CCP "" OFF)
 option(DISABLE_BATCH_DELETE_SIZE_OPT "" OFF)
 
+# PSI is header-only; a consumer wants the library, not the benchmark suite.
+if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+	set(psi_is_top_level ON)
+else()
+	set(psi_is_top_level OFF)
+endif()
+option(PSI_BUILD_BENCHMARKS "Build the test and baseline drivers" ${psi_is_top_level})
+option(PSI_BUILD_EXAMPLES "Build the three example programs" ${psi_is_top_level})
+
+# ON reproduces the flags every measurement was taken with. OFF gives a build
+# that runs on a machine other than the one that compiled it.
+option(PSI_NATIVE_ARCH "Tune for the building machine's CPU" ON)
+
 
 if(CILKPLUS)
 	add_compile_options(-DPARLAY_CILKPLUS -DCILK -fcilkplus)
@@ -49,21 +62,47 @@ if(DISABLE_BATCH_DELETE_SIZE_OPT)
 endif()
 
 if(DEBUG)
-	set(CMAKE_BUILD_TYPE "Debug")
-	add_compile_options(-g -march=native)
-	if(NOT APPLE)
-		add_compile_options(-mcx16)
-	endif()
-	if(CCP)
-		message("CCP=ON")
-		add_compile_options(-DCCP)
-	endif()
+	set(psi_build_type "Debug")
+	add_compile_options(-g)
 else()
-	set(CMAKE_BUILD_TYPE "Release")
-	add_compile_options(-O3 -march=native)
-	if(NOT APPLE)
+	set(psi_build_type "Release")
+	add_compile_options(-O3)
+endif()
+
+# Do not silently discard the standard knob: the cache used to say Debug while
+# the compile line said -O3 -DNDEBUG.
+if(NOT CMAKE_BUILD_TYPE)
+	if(psi_is_top_level OR NOT CMAKE_CONFIGURATION_TYPES)
+		set(CMAKE_BUILD_TYPE "${psi_build_type}")
+	endif()
+	# Only PSI's own directory gets -O3 above; a consumer's targets are
+	# compiled with their own flags, and an unoptimised spatial index looks
+	# broken rather than slow.
+	if(NOT psi_is_top_level)
+		message(STATUS
+		  "PSI: consuming project set no CMAKE_BUILD_TYPE. Build your "
+		  "targets with optimisation (-O3, and -march=native if you are "
+		  "measuring) or PSI will be an order of magnitude slower.")
+	endif()
+elseif(NOT CMAKE_BUILD_TYPE STREQUAL psi_build_type)
+	message(WARNING
+	  "CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} is being kept; -DDEBUG=${DEBUG} "
+	  "would have selected ${psi_build_type}. Use -DDEBUG=ON for the "
+	  "assert-enabled configuration.")
+endif()
+
+if(PSI_NATIVE_ARCH)
+	add_compile_options(-march=native)
+	# -mcx16 is an x86 option; the old guard tested the OS, so Linux on
+	# aarch64 could not configure at all.
+	if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|AMD64|i[3-6]86)$")
 		add_compile_options(-mcx16)
 	endif()
+endif()
+
+if(CCP)
+	message(STATUS "CCP=ON")
+	add_compile_options(-DCCP)
 endif()
 
 if(STDALLOC)
@@ -71,6 +110,21 @@ if(STDALLOC)
 elseif(JEMA)
 	include_directories("/usr/local/lib")
 	set(CMAKE_BUILD_RPATH "/usr/local/lib")
+endif()
+
+foreach(psi_submodule parlaylib libmorton)
+	if(NOT EXISTS "${PSI_SOURCE_DIR}/include/${psi_submodule}/CMakeLists.txt")
+		message(FATAL_ERROR
+		  "include/${psi_submodule} is empty -- this is a git submodule.\n"
+		  "Run: git submodule update --init --recursive")
+	endif()
+endforeach()
+
+# The minimums the project is actually built and tested with.
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 14)
+	message(FATAL_ERROR "PSI needs g++ 14 or newer (found ${CMAKE_CXX_COMPILER_VERSION})")
+elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 19)
+	message(FATAL_ERROR "PSI needs clang 19 or newer (found ${CMAKE_CXX_COMPILER_VERSION})")
 endif()
 
 message(STATUS "\n\n---------------------------- PARLAY -----------------------------")
@@ -91,64 +145,94 @@ message(STATUS "\n\n---------------------------- PSI ---------------------------
 
 # NOTE: PSI
 add_library(PSI INTERFACE)
-set(PSI_INCLUDE_DIR "${PSI_SOURCE_DIR}/include/psi")
+# One include root, one spelling: every header inside include/psi includes its
+# siblings as "psi/...", so include/ is the only directory a consumer needs.
+set(PSI_INCLUDE_DIR "${PSI_SOURCE_DIR}/include")
 target_link_libraries(PSI INTERFACE parlay libmorton)
-target_include_directories(PSI INTERFACE $<BUILD_INTERFACE:${PSI_INCLUDE_DIR}>
+target_include_directories(PSI INTERFACE
+  $<BUILD_INTERFACE:${PSI_INCLUDE_DIR}>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
+target_compile_features(PSI INTERFACE cxx_std_20)
+
+add_library(PSI::PSI ALIAS PSI)
+
+# Installable so a downstream project can find_package(PSI) instead of
+# vendoring the whole repository.
+include(GNUInstallDirs)
+include(CMakePackageConfigHelpers)
+
+install(TARGETS PSI EXPORT PSITargets)
+install(DIRECTORY "${PSI_SOURCE_DIR}/include/psi"
+        DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
+        FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp" PATTERN "*.c")
+install(EXPORT PSITargets
+        FILE PSITargets.cmake
+        NAMESPACE PSI::
+        DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/PSI")
+
+configure_package_config_file(
+  "${PSI_SOURCE_DIR}/cmake/PSIConfig.cmake.in"
+  "${PROJECT_BINARY_DIR}/PSIConfig.cmake"
+  INSTALL_DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/PSI")
+write_basic_package_version_file(
+  "${PROJECT_BINARY_DIR}/PSIConfigVersion.cmake"
+  COMPATIBILITY SameMajorVersion)
+install(FILES "${PROJECT_BINARY_DIR}/PSIConfig.cmake"
+              "${PROJECT_BINARY_DIR}/PSIConfigVersion.cmake"
+        DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/PSI")
 
 add_subdirectory(static_analysis)
 message(STATUS "---------------------------- END PSI -----------------------------\n\n")
 
-add_executable(kd_test ${PROJECT_SOURCE_DIR}/tests/kd_test.cpp)
-target_link_libraries(kd_test PUBLIC PSI)
-target_include_directories(kd_test PUBLIC ${PROJECT_SOURCE_DIR}/include)
+if(PSI_BUILD_BENCHMARKS)
+	add_executable(kd_test ${PROJECT_SOURCE_DIR}/tests/kd_test.cpp)
+	target_link_libraries(kd_test PUBLIC PSI)
 
-add_executable(p_test ${PROJECT_SOURCE_DIR}/tests/p_test.cpp)
-target_link_libraries(p_test PUBLIC PSI)
-target_include_directories(p_test PUBLIC ${PROJECT_SOURCE_DIR}/include)
+	add_executable(p_test ${PROJECT_SOURCE_DIR}/tests/p_test.cpp)
+	target_link_libraries(p_test PUBLIC PSI)
 
-add_executable(baselines ${PROJECT_SOURCE_DIR}/tests/baselines.cpp)
-target_link_libraries(baselines PUBLIC PSI)
-target_include_directories(baselines PUBLIC ${PROJECT_SOURCE_DIR}/include)
+	add_executable(baselines ${PROJECT_SOURCE_DIR}/tests/baselines.cpp)
+	target_link_libraries(baselines PUBLIC PSI)
 
-if(JEMA)
-	target_link_libraries(kd_test PUBLIC libjemalloc.so)
-	target_link_libraries(p_test PUBLIC libjemalloc.so)
-	target_link_libraries(baselines PUBLIC libjemalloc.so)
+	if(JEMA)
+		target_link_libraries(kd_test PUBLIC libjemalloc.so)
+		target_link_libraries(p_test PUBLIC libjemalloc.so)
+		target_link_libraries(baselines PUBLIC libjemalloc.so)
+	endif()
+
+	add_executable(data_generator ${PROJECT_SOURCE_DIR}/tests/data_generate.cpp)
+	target_link_libraries(data_generator PUBLIC PSI)
+
+
+	add_executable(data_washer ${PROJECT_SOURCE_DIR}/tests/data_wash.cpp)
+	target_link_libraries(data_washer PUBLIC PSI)
+
+	find_package(Boost REQUIRED)
+	add_executable(boost_rtree ${PROJECT_SOURCE_DIR}/tests/boost_rtree.cpp)
+	target_link_libraries(boost_rtree PUBLIC PSI ${Boost_LIBRARIES})
+	target_include_directories(boost_rtree PUBLIC ${Boost_INCLUDE_DIRS})
+	target_compile_options(boost_rtree PRIVATE -DBOOST_MATH_DISABLE_FLOAT128 -DBOOST_CSTDFLOAT_NO_LIBQUADMATH_SUPPORT)
 endif()
 
-add_executable(data_generator ${PROJECT_SOURCE_DIR}/tests/data_generate.cpp)
-target_link_libraries(data_generator PUBLIC PSI)
-target_include_directories(data_generator PUBLIC ${PROJECT_SOURCE_DIR}/include)
+if(PSI_BUILD_EXAMPLES)
+	add_executable(kd_tree_example ${PROJECT_SOURCE_DIR}/example/kd_tree_main.cpp)
+	target_link_libraries(kd_tree_example PUBLIC PSI)
+	target_include_directories(kd_tree_example PUBLIC ${PROJECT_SOURCE_DIR}/example)
 
+	add_executable(orth_tree_example ${PROJECT_SOURCE_DIR}/example/orth_tree_main.cpp)
+	target_link_libraries(orth_tree_example PUBLIC PSI)
+	target_include_directories(orth_tree_example PUBLIC ${PROJECT_SOURCE_DIR}/example)
 
-add_executable(data_washer ${PROJECT_SOURCE_DIR}/tests/data_wash.cpp)
-target_link_libraries(data_washer PUBLIC PSI)
-target_include_directories(data_washer PUBLIC ${PROJECT_SOURCE_DIR}/include)
-
-add_executable(kd_tree_example ${PROJECT_SOURCE_DIR}/example/kd_tree_main.cpp)
-target_link_libraries(kd_tree_example PUBLIC PSI)
-target_include_directories(kd_tree_example PUBLIC ${PROJECT_SOURCE_DIR}/include ${PROJECT_SOURCE_DIR}/example)
-
-add_executable(orth_tree_example ${PROJECT_SOURCE_DIR}/example/orth_tree_main.cpp)
-target_link_libraries(orth_tree_example PUBLIC PSI)
-target_include_directories(orth_tree_example PUBLIC ${PROJECT_SOURCE_DIR}/include ${PROJECT_SOURCE_DIR}/example)
-
-add_executable(p_tree_example ${PROJECT_SOURCE_DIR}/example/p_tree_main.cpp)
-target_link_libraries(p_tree_example PUBLIC PSI)
-target_include_directories(p_tree_example PUBLIC ${PROJECT_SOURCE_DIR}/include ${PROJECT_SOURCE_DIR}/example)
-
-find_package(Boost REQUIRED)
-add_executable(boost_rtree ${PROJECT_SOURCE_DIR}/tests/boost_rtree.cpp)
-target_link_libraries(boost_rtree PUBLIC PSI ${Boost_LIBRARIES})
-target_include_directories(boost_rtree PUBLIC ${PROJECT_SOURCE_DIR}/include ${Boost_INCLUDE_DIRS})
-target_compile_options(boost_rtree PRIVATE -DBOOST_MATH_DISABLE_FLOAT128 -DBOOST_CSTDFLOAT_NO_LIBQUADMATH_SUPPORT)
+	add_executable(p_tree_example ${PROJECT_SOURCE_DIR}/example/p_tree_main.cpp)
+	target_link_libraries(p_tree_example PUBLIC PSI)
+	target_include_directories(p_tree_example PUBLIC ${PROJECT_SOURCE_DIR}/example)
+endif()
 
 # NOTE: the warning policy is applied at the very bottom of this file, after
 # every target (including the CGAL-only kd_ccp / p_ccp) has been declared.
 
 # CGAL
-if(CGAL)
+if(CGAL AND PSI_BUILD_BENCHMARKS)
 	message(STATUS "\n\n---------------------------- CGAL -----------------------------")
 	message(STATUS "To disable using -DCGAL=OFF")
 	find_package(CGAL REQUIRED)
@@ -218,8 +302,8 @@ foreach(psi_quiet_target kd_test p_test baselines boost_rtree
 	endif()
 endforeach()
 
-# Project-owned sources only. include/parlaylib, include/libmorton and
-# include/highway are submodules and must never be reformatted.
+# Project-owned sources only. include/parlaylib and include/libmorton are
+# submodules and must never be reformatted.
 file(GLOB_RECURSE all_files CONFIGURE_DEPENDS
   ${PROJECT_SOURCE_DIR}/include/psi/*.h
   ${PROJECT_SOURCE_DIR}/include/psi/*.hpp

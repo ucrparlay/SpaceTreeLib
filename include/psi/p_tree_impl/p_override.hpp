@@ -4,7 +4,7 @@
 #include <type_traits>
 #include <utility>
 
-#include "../p_tree.h"
+#include "psi/p_tree.h"
 #include "psi/dependence/loggers.h"
 #include "psi/dependence/tree_node.h"
 

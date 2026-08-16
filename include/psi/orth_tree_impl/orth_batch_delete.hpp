@@ -1,7 +1,7 @@
 #ifndef PSI_ORTH_TREE_IMPL_ORTH_BATCH_DELETE_HPP_
 #define PSI_ORTH_TREE_IMPL_ORTH_BATCH_DELETE_HPP_
 
-#include "../orth_tree.h"
+#include "psi/orth_tree.h"
 
 namespace psi
 {

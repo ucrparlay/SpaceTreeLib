@@ -1,7 +1,7 @@
 #ifndef PSI_KD_TREE_IMPL_KD_BATCH_DIFF_HPP_
 #define PSI_KD_TREE_IMPL_KD_BATCH_DIFF_HPP_
 
-#include "../kd_tree.h"
+#include "psi/kd_tree.h"
 
 namespace psi
 {

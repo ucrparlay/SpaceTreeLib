@@ -1,7 +1,7 @@
 #ifndef PSI_ORTH_TREE_IMPL_ORTH_INTER_NODE_HPP_
 #define PSI_ORTH_TREE_IMPL_ORTH_INTER_NODE_HPP_
 
-#include "../orth_tree.h"
+#include "psi/orth_tree.h"
 #include "psi/dependence/tree_node.h"
 
 namespace psi

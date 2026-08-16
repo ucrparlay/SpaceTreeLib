@@ -5,7 +5,7 @@
 
 #include <concepts>
 
-#include "../base_tree.h"
+#include "psi/base_tree.h"
 #include "parlay/primitives.h"
 
 namespace psi

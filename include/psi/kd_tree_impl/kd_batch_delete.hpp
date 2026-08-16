@@ -1,7 +1,7 @@
 #ifndef PSI_KD_TREE_IMPL_KD_BATCH_DELETE_HPP
 #define PSI_KD_TREE_IMPL_KD_BATCH_DELETE_HPP
 
-#include "../kd_tree.h"
+#include "psi/kd_tree.h"
 
 namespace psi
 {

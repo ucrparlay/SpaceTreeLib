@@ -5,7 +5,7 @@
 #include <parlay/slice.h>
 #include <parlay/type_traits.h>
 
-#include "../p_tree.h"
+#include "psi/p_tree.h"
 #include "parlay/utilities.h"
 #include "psi/dependence/tree_node.h"
 

@@ -13,8 +13,8 @@ Linux braces. Run `make format` and never argue with it. Every file must be a
 clang-format fixpoint before commit.
 
 `make format` covers `include/psi` (including `dependence/cpam`), `tests` and
-`example`. It must never reach `include/parlaylib`, `include/libmorton` or
-`include/highway` — those are submodules.
+`example`. It must never reach `include/parlaylib` or `include/libmorton` —
+those are submodules.
 
 Comments are `/* */`. The `//` still in the tree is legacy.
 

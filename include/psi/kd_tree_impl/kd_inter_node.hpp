@@ -3,7 +3,7 @@
 
 #include <cstddef>
 
-#include "../kd_tree.h"
+#include "psi/kd_tree.h"
 #include "psi/dependence/tree_node.h"
 
 namespace psi

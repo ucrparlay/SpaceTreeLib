@@ -6,9 +6,9 @@
 #include <optional>
 #include <utility>
 
-#include "base_tree.h"
-#include "dependence/augmentation.h"
-#include "dependence/concepts.h"
+#include "psi/base_tree.h"
+#include "psi/dependence/augmentation.h"
+#include "psi/dependence/concepts.h"
 
 namespace psi
 {
@@ -181,11 +181,11 @@ private:
 
 } // namespace psi
 
-#include "kd_tree_impl/kd_batch_delete.hpp"
-#include "kd_tree_impl/kd_batch_diff.hpp"
-#include "kd_tree_impl/kd_batch_insert.hpp"
-#include "kd_tree_impl/kd_build_tree.hpp"
-#include "kd_tree_impl/kd_inter_node.hpp"
-#include "kd_tree_impl/kd_override.hpp"
+#include "psi/kd_tree_impl/kd_batch_delete.hpp"
+#include "psi/kd_tree_impl/kd_batch_diff.hpp"
+#include "psi/kd_tree_impl/kd_batch_insert.hpp"
+#include "psi/kd_tree_impl/kd_build_tree.hpp"
+#include "psi/kd_tree_impl/kd_inter_node.hpp"
+#include "psi/kd_tree_impl/kd_override.hpp"
 
 #endif // PSI_KD_TREE_H

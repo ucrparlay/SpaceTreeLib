@@ -22,7 +22,7 @@
  * from his, the first two interfaces and the style of some comments are very
  * much derived from his work. */
 
-#include "hilbert.h"
+#include "psi/dependence/space_filling_curve/hilbert.h"
 
 namespace psi
 {

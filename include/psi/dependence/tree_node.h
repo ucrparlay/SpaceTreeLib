@@ -13,9 +13,9 @@
 #include <type_traits>
 #include <variant>
 
-#include "basic_point.h"
-#include "comparator.h"
-#include "dependence/concepts.h"
+#include "psi/dependence/basic_point.h"
+#include "psi/dependence/comparator.h"
+#include "psi/dependence/concepts.h"
 #include "parlay/utilities.h"
 
 namespace psi

@@ -1,8 +1,8 @@
 #ifndef PSI_BASE_TREE_IMPL_DELETE_TREE_HPP_
 #define PSI_BASE_TREE_IMPL_DELETE_TREE_HPP_
 
-#include "../base_tree.h"
-#include "dependence/concepts.h"
+#include "psi/base_tree.h"
+#include "psi/dependence/concepts.h"
 
 namespace psi
 {
