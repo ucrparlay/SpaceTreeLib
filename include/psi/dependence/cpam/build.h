@@ -2,7 +2,6 @@
 #include <parlay/internal/get_time.h>
 
 #include "cpam_sample_sort.h"
-#include "devotail_integer_sort.h"
 #include "get_time.h"
 #include "parlay/internal/integer_sort.h"
 #include "parlay/parallel.h"
@@ -68,9 +67,6 @@ struct build {
 		// parlay::internal::cpam::cpam_sample_sort<filling_curve_t>(
 		//     parlay::make_slice(A.begin(), A.end()), less);
 		// auto B = parlay::internal::integer_sort(
-		//     parlay::make_slice(A.begin(), A.end()),
-		//     [](auto const& k) { return Entry::get_key(k).code; });
-		// auto B = parlay::cpam::integer_sort2(
 		//     parlay::make_slice(A.begin(), A.end()),
 		//     [](auto const& k) { return Entry::get_key(k).code; });
 		// t.next("sort");
