@@ -40,5 +40,15 @@ If you use our code, please cite our papers:
 }
 ```
 
+## License
+
+PSI is MIT licensed — see [LICENSE](LICENSE).
+
+It also redistributes third-party code under other terms; see
+[THIRD_PARTY.md](THIRD_PARTY.md). In particular, the Hilbert curve
+implementation requires this notice:
+
+> Hilbert Curve implementation copyright 1998, Rice University
+
 Have a good day! ☀️
 

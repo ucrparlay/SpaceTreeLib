@@ -78,10 +78,23 @@ depth is out of scope unless asked:
 - the granularity argument on every `parallel_for`
 - `-march=native`, `-O3`, `-mcx16`
 
-`include/psi/dependence/cpam/` is vendored: it carries this project's naming
-and formatting, but do not change what it does. `include/baselines/cpam_raw/`
-is a second, untouched copy of the same library — only its two PSI-facing
-files (`cpamtree.hpp`, `cpam/augmented_ops.h`) follow our names.
+`include/baselines/` is out of scope. It exists to compare against; do not
+refactor it. Only its two PSI-facing files (`cpam_raw/cpamtree.hpp`,
+`cpam_raw/cpam/augmented_ops.h`) follow our names, and only so they compile.
+
+`include/psi/dependence/cpam/` is a permanent PSI fork of CPAM, not vendored
+code — it diverges from upstream by ~2,800 lines, and upstream is no longer
+maintained, so there is no re-sync to preserve changes for. It is nonetheless
+deferred: leave it alone unless asked. See `THIRD_PARTY.md`.
+
+Two consequences of that deferral, so they are not rediscovered:
+
+- The 7 `-Wmaybe-uninitialized` warnings in a release build all come from
+  `dependence/cpam/augmented_node.h` (a partly indeterminate `std::pair`).
+  They are benign, but they will show up in any sanitizer run touching
+  `p_tree`. "`include/psi` is warning-clean" means *apart from these*.
+- `p_tree` has no `validate()`; its node type is CPAM's, which the validation
+  branches do not cover. Cover `p_tree` with black-box tests instead.
 
 Flag anything that could move a measured number, even an improvement.
 
@@ -107,3 +120,7 @@ There is no automated correctness gate. To check a change:
 `script/checkCorrect.sh` sets `tester` twice, so the second assignment wins
 and `p_ccp` never runs: `p_tree` is not covered by it. Its `tag=0` also means
 no batch update is exercised.
+
+While iterating, check one size (`n=1000000`) — the larger sizes take over an
+hour each in a `-DDEBUG=ON` build. Run the whole matrix once the work is
+finished. Either way run `p_ccp` yourself, since the script will not.
