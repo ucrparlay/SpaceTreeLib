@@ -70,7 +70,7 @@ base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::delete_points4_leaf(
 
 	if (tl->is_dummy) {
 		assert(in.size() <= T->size);
-		tl->size -= in.size(); // WARN: this assumes that in\in T
+		tl->size -= in.size(); /* this assumes that in\in T */
 		if (tl->size == 0) {
 			tl->is_dummy = false;
 			tl->pts = points_type::uninitialized(leaf_capacity);
@@ -105,15 +105,12 @@ base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::delete_points4_leaf(
 	tl->size -= in.size();
 	assert(tl->size >= 0);
 	tl->update_aug(tl->pts.cut(0, tl->size));
-	// assert(tl->get_box() == get_box(tl->pts.cut(0, tl->size)));
 
 	if constexpr (std::same_as<ReturnType, node *>) {
 		return T;
 	} else if constexpr (std::same_as<ReturnType, node_box_type>) {
 		if constexpr (has_box<typename leaf_type::at_type>) {
 			return node_box_type(T, tl->get_box());
-			// return node_box_type(T, get_box(tl->pts.cut(0,
-			// tl->size)));
 		} else {
 			return node_box_type(T,
 					     get_box(tl->pts.cut(0, tl->size)));
@@ -122,8 +119,6 @@ base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::delete_points4_leaf(
 	}
 }
 
-// NOTE: diff points from the leaf using std::set_difference
-// {1, 2, 5, 5, 5, 9} ∖ {2, 5, 7} == {1, 5, 5, 9}
 template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
 	  uint_fast8_t ImbaRatio>
 template <typename leaf_type, typename ReturnType>
@@ -137,8 +132,8 @@ base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::diff_points4_leaf(
 		size_t cnt = parlay::count(in, tl->pts[0]);
 		tl->size = tl->size >= cnt ? tl->size - cnt : 0;
 		assert(tl->size >= 0);
-		if (tl->size == 0) { // set points to normal leaf when all
-				     // points in dummy node has been deleted
+		if (tl->size == 0) { /* set points to normal leaf when all */
+				     /* points in dummy node has been deleted */
 			tl->is_dummy = false;
 			tl->pts = points_type::uninitialized(leaf_capacity);
 			tl->reset_aug();
@@ -160,8 +155,10 @@ base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::diff_points4_leaf(
 		}
 	}
 
-	// NOTE: for normal leaf, need to check whether all points_type are in
-	// the leaf
+	/*
+	 * for normal leaf, need to check whether all points_type are in
+	 * the leaf
+	 */
 	auto diff_res = std::ranges::set_difference(
 		parlay::sort(tl->pts.cut(0, tl->size)), parlay::sort(in),
 		tl->pts.begin(),
@@ -182,6 +179,6 @@ base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::diff_points4_leaf(
 		;
 	}
 }
-} // namespace psi
+} /* namespace psi */
 
-#endif // PSI_BASE_TREE_IMPL_LEAF_OP_HPP_
+#endif /* PSI_BASE_TREE_IMPL_LEAF_OP_HPP_ */

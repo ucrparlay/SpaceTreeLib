@@ -23,18 +23,9 @@ auto orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
 	/* An empty queue has no slot to write a neighbour into. */
 	if (this->root_ == nullptr || bq.max_size() == 0)
 		return logger;
-	// base_type::template knn_multi<leaf_type, interior_type>(this->root_,
-	// q, DIM, bq, this->tree_box_,
-	//                                       vis_node_num, generate_box_num,
-	//                                       check_box_num);
-	// base_type::template knn_binary<leaf_type, kd_interior_node>(T, q,
-	// DIM, bq, this->tree_box_,
-	//                                              logger);
 	if constexpr (has_box<typename interior_type::at_type>) {
 		base_type::template knn_multi<leaf_type, interior_type>(
 			this->root_, q, bq, logger);
-		// base_type::template knn_multi_expand_box<leaf_type,
-		// interior_type>(T, q, 0, 1, bq, logger);
 	} else {
 		base_type::template knn_multi_expand<leaf_type, interior_type>(
 			this->root_, q, 0, 1, bq, this->tree_box_, logger);
@@ -73,16 +64,6 @@ auto orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
 	return std::make_pair(s, logger);
 }
 
-// template <typename Point, typename SplitRule, typename LeafAugType, typename
-// InteriorAugType, uint_fast8_t md,
-//           uint_fast8_t SkHeight, uint_fast8_t ImbaRatio>
-// auto orth_tree<Point, SplitRule, md, SkHeight, ImbaRatio>::range_count(
-//     circle_type const& cl) {
-//   return base_type::template RangeCountRadius<leaf_type,
-//   interior_type>(this->root_, cl,
-//                                                        this->tree_box_);
-// }
-
 template <typename Point, typename SplitRule, typename LeafAugType,
 	  typename InteriorAugType, uint_fast8_t md, uint_fast8_t SkHeight,
 	  uint_fast8_t ImbaRatio>
@@ -112,6 +93,6 @@ constexpr void orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md,
 	this->fixed_box = false;
 }
 
-} // namespace psi
+} /* namespace psi */
 
-#endif // PSI_ORTH_TREE_IMPL_ORTH_OVERRIDE_HPP_
+#endif /* PSI_ORTH_TREE_IMPL_ORTH_OVERRIDE_HPP_ */

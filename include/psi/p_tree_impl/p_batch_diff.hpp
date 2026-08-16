@@ -14,8 +14,10 @@ void p_tree<Point, SplitRule, SkHeight, ImbaRatio>::batch_diff(Range &&in)
 	return;
 }
 
-// NOTE: batch delete suitable for points_type that are pratially covered in the
-// tree
+/*
+ * batch delete suitable for points_type that are pratially covered in the
+ * tree
+ */
 template <typename Point, typename SplitRule, uint_fast8_t SkHeight,
 	  uint_fast8_t ImbaRatio>
 void p_tree<Point, SplitRule, SkHeight, ImbaRatio>::batch_diff_(slice_type A)
@@ -28,6 +30,6 @@ void p_tree<Point, SplitRule, SkHeight, ImbaRatio>::batch_diff_(slice_type A)
 	return;
 }
 
-} // namespace psi
+} /* namespace psi */
 
-#endif // PSI_P_TREE_IMPL_P_BATCH_DIFF_HPP_
+#endif /* PSI_P_TREE_IMPL_P_BATCH_DIFF_HPP_ */

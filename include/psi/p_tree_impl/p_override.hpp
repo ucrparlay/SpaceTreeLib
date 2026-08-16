@@ -81,6 +81,6 @@ constexpr void p_tree<Point, SplitRule, SkHeight, ImbaRatio>::delete_tree()
 	return;
 }
 
-} // namespace psi
+} /* namespace psi */
 
-#endif // PSI_P_TREE_IMPL_P_OVERRIDE_HPP_
+#endif /* PSI_P_TREE_IMPL_P_OVERRIDE_HPP_ */

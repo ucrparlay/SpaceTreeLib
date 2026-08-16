@@ -30,9 +30,11 @@ void kd_tree<Point, SplitRule, LeafAugType, InteriorAugType, SkHeight,
 				       box_type const &box)
 {
 	if (idx > base_type::pivot_num) {
-		// WARN: sometimes cut dimension can be -1
-		//  never use pivots[idx].first to check whether it is in
-		//  bucket; instead, use idx > PIVOT_NUM
+		/*
+		 * sometimes cut dimension can be -1
+		 * never use pivots[idx].first to check whether it is in
+		 * bucket; instead, use idx > PIVOT_NUM
+		 */
 		box_seq[idx - base_type::bucket_num] = box;
 		pivots[idx] = splitter_type(0, idx - base_type::bucket_num);
 		return;
@@ -53,7 +55,7 @@ void kd_tree<Point, SplitRule, LeafAugType, InteriorAugType, SkHeight,
 	return;
 }
 
-// NOTE: starting at dimesion dim and pick pivots in a rotation manner
+/* starting at dimesion dim and pick pivots in a rotation manner */
 template <typename Point, typename SplitRule, typename LeafAugType,
 	  typename InteriorAugType, uint_fast8_t SkHeight,
 	  uint_fast8_t ImbaRatio>
@@ -70,7 +72,7 @@ void kd_tree<Point, SplitRule, LeafAugType, InteriorAugType, SkHeight,
 	points_type arr = points_type::uninitialized(size);
 	base_type::sample_points(in, arr);
 
-	// NOTE: pick pivots
+	/* pick pivots */
 	divide_rotate(arr.cut(0, size), pivots, dim, 1, box_seq, bx);
 	return;
 }
@@ -94,11 +96,11 @@ node *kd_tree<Point, SplitRule, LeafAugType, InteriorAugType, SkHeight,
 	dims_type d = split_rule_.find_cutting_dimension(box, dim);
 	auto [split_iter, split] = split_rule_.split_input(in, d, box);
 
-	if (!split.has_value()) { // NOTE: split fails
+	if (!split.has_value()) { /* split fails */
 		if (in.end() ==
 		    std::ranges::find_if_not(in, [&](Point const &p) {
 			    return p.same_dimension(in[0]);
-		    })) { // NOTE: check whether all elements are identical
+		    })) { /* check whether all elements are identical */
 			if constexpr (is_aug_point<Point>) {
 				if constexpr (
 					Point::is_non_trivial_augmentation()) {
@@ -119,7 +121,7 @@ node *kd_tree<Point, SplitRule, LeafAugType, InteriorAugType, SkHeight,
 				return alloc_dummy_leaf_node<slice_type,
 							     leaf_type>(in);
 			}
-		} else { // NOTE: current dim d is same but other dims are not
+		} else { /* current dim d is same but other dims are not */
 			return split_rule_.handle_undivided(*this, in, out, box,
 							    dim);
 		}
@@ -158,7 +160,6 @@ node *kd_tree<Point, SplitRule, LeafAugType, InteriorAugType, SkHeight,
 	assert(in.size() == 0 ||
 	       base_type::within_box(base_type::get_box(in), bx));
 
-	// if (in.size()) {
 	if (in.size() <= base_type::serial_build_cutoff) {
 		return serial_build_recursive(in, out, dim, bx);
 	}
@@ -171,20 +172,24 @@ node *kd_tree<Point, SplitRule, LeafAugType, InteriorAugType, SkHeight,
 	pick_pivots(in, in.size(), pivots, dim, box_seq, bx);
 	base_type::partition(in, out, in.size(), pivots, sums);
 
-	// NOTE: if random sampling failed to split points, re-partitions using
-	// serail approach
+	/*
+	 * if random sampling failed to split points, re-partitions using
+	 * serail approach
+	 */
 	auto tree_nodes =
 		parlay::sequence<node *>::uninitialized(base_type::bucket_num);
 	auto nodes_map = bucket_seq_type::uninitialized(base_type::bucket_num);
 	bucket_type zeros = std::ranges::count(sums, 0), cnt = 0;
 
-	if (zeros == base_type::bucket_num - 1) { // NOTE: switch to seral
-		// TODO: add parallelsim within this call
-		// see parallel kth element
+	if (zeros == base_type::bucket_num - 1) { /* switch to seral */
+		/*
+		 * TODO: add parallelsim within this call
+		 * see parallel kth element
+		 */
 		return serial_build_recursive(in, out, dim, bx);
 	}
 
-	// NOTE: alloc empty leaf beforehand to avoid spawn threads
+	/* alloc empty leaf beforehand to avoid spawn threads */
 	for (bucket_type i = 0; i < base_type::bucket_num; ++i) {
 		if (!sums[i]) {
 			tree_nodes[i] =
@@ -232,6 +237,6 @@ void kd_tree<Point, SplitRule, LeafAugType, InteriorAugType, SkHeight,
 	return;
 }
 
-} // namespace psi
+} /* namespace psi */
 
-#endif // PSI_KD_TREE_IMPL_KD_BUILD_TREE_HPP_
+#endif /* PSI_KD_TREE_IMPL_KD_BUILD_TREE_HPP_ */

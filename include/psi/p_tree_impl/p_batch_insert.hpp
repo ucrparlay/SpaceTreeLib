@@ -28,6 +28,6 @@ void p_tree<Point, SplitRule, SkHeight, ImbaRatio>::batch_insert_(slice_type A)
 	return;
 }
 
-} // namespace psi
+} /* namespace psi */
 
-#endif // PSI_P_TREE_IMPL_P_BATCH_INSERT_HPP_
+#endif /* PSI_P_TREE_IMPL_P_BATCH_INSERT_HPP_ */

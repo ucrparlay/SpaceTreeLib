@@ -22,7 +22,7 @@ struct base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::inner_tree {
 	{
 	}
 
-	// NOTE: helpers
+	/* helpers */
 	bool assert_size(node *T) const
 	{
 		if (T->is_leaf) {
@@ -49,7 +49,7 @@ struct base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::inner_tree {
 		return true;
 	}
 
-	// NOTE: cores
+	/* cores */
 	inline void reset_tags_num()
 	{
 		tags_num = 0;
@@ -95,19 +95,21 @@ struct base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::inner_tree {
 		}
 	}
 
-	// NOTE: Each node in the skeleton receives a tag
-	// NOTE: A leaf_type node receives the tag < BUCKETNUM
-	// NOTE: All internal node has tag == BUCKETNUM
+	/*
+	 * Each node in the skeleton receives a tag
+	 * A leaf_type node receives the tag < BUCKETNUM
+	 * All internal node has tag == BUCKETNUM
+	 */
 	void assign_node_tag(node *T, bucket_type idx)
 	{
 		if (T->is_leaf || idx > pivot_num) {
 			assert(tags_num < bucket_num);
 			tags[idx] = node_tag_type(T, tags_num);
-			rev_tag[tags_num++] = idx; // WARN: cannot remove
+			rev_tag[tags_num++] = idx; /* cannot remove */
 			return;
 		}
 
-		// INFO: BUCKET ID in [0, bucket_num)
+		/* INFO: BUCKET ID in [0, bucket_num) */
 		tags[idx] = node_tag_type(T, bucket_num);
 		interior_type *ti = static_cast<interior_type *>(T);
 		if constexpr (is_binary_node<interior_type>) {
@@ -127,19 +129,23 @@ struct base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::inner_tree {
 		return;
 	}
 
-	// NOTE: reduce sums is travsersal of the skeleton with counting the
-	// points sieved onto every node, it is good to determine whether we
-	// need forcing parallel in the following operations, e.g.,
-	// flatten/rebuild the tree.
+	/*
+	 * reduce sums is travsersal of the skeleton with counting the
+	 * points sieved onto every node, it is good to determine whether we
+	 * need forcing parallel in the following operations, e.g.,
+	 * flatten/rebuild the tree.
+	 */
 	void reduce_sums(bucket_type idx)
 	{
 		if (idx > pivot_num || tags[idx].first->is_leaf) {
 			assert(tags[idx].second < bucket_num);
 			sums_tree[idx] = sums[tags[idx].second];
 
-			// PERF: no need to update the parallel flag here, as it
-			// is either a leaf node or it will be handled by
-			// recursive calls
+			/*
+			 * no need to update the parallel flag here, as it
+			 * is either a leaf node or it will be handled by
+			 * recursive calls
+			 */
 			return;
 		}
 
@@ -160,9 +166,11 @@ struct base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::inner_tree {
 			}
 		}
 
-		// PERF: Don't add force parallel here as it not precise:
-		// whether a node should be rebuilt depends on only the tomb
-		// status, rather than the points sieved to that node
+		/*
+		 * Don't add force parallel here as it not precise:
+		 * whether a node should be rebuilt depends on only the tomb
+		 * status, rather than the points sieved to that node
+		 */
 		return;
 	}
 
@@ -176,9 +184,11 @@ struct base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::inner_tree {
 		return h;
 	}
 
-	// NOTE: a bucket/leaf has id bucket_num+1
-	// a node needs to be rebuilt has id bucket_num+2
-	// otherwise, it has id bucket_num
+	/*
+	 * a bucket/leaf has id bucket_num+1
+	 * a node needs to be rebuilt has id bucket_num+2
+	 * otherwise, it has id bucket_num
+	 */
 	template <typename ViolateFunc>
 	void pick_tag(bucket_type idx, ViolateFunc &&violate_func)
 	{
@@ -190,7 +200,6 @@ struct base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::inner_tree {
 
 		assert(tags[idx].second == bucket_num &&
 		       (!tags[idx].first->is_leaf));
-		// if (violate_func(idx)) {
 		if (invoke_with_optional_arg<bool>(violate_func, idx)) {
 			tags[idx].second = bucket_num + 2;
 			rev_tag[tags_num++] = idx;
@@ -220,10 +229,12 @@ struct base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::inner_tree {
 		return;
 	}
 
-	// NOTE: the node which needs to be rebuilt has tag bucket_num+3
-	// the *bucket* node whose ancestor has been rebuilt has tag
-	// bucket_num+2 the *bucket* node whose ancestor has not been ... has
-	// bucket_num+1 otherwise, it's bucket_num
+	/*
+	 * the node which needs to be rebuilt has tag bucket_num+3
+	 * the *bucket* node whose ancestor has been rebuilt has tag
+	 * bucket_num+2 the *bucket* node whose ancestor has not been ... has
+	 * bucket_num+1 otherwise, it's bucket_num
+	 */
 	template <bool SetParallelFlag, typename ViolateFunc>
 	void mark_tomb(bucket_type idx, bucket_type &re_num,
 		       size_t &tot_re_size, box_seq_type &box_seq,
@@ -235,14 +246,16 @@ struct base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::inner_tree {
 			       tags[idx].second < bucket_num);
 			if (!has_tomb) {
 				tags[idx].second = bucket_num + 2;
-				if constexpr (SetParallelFlag) { // INFO: the
-								 // sub-tree
-								 // will be
-								 // rebuilt in
-								 // the future
-								 // and need to
-								 // force the
-								 // parallisim
+				if constexpr (SetParallelFlag) { /* INFO: the */
+								 /*
+								  * sub-tree
+								  * will be
+								  * rebuilt in
+								  * the future
+								  * and need to
+								  * force the
+								  * parallisim
+								  */
 					if (!tags[idx].first->is_leaf) {
 						auto ti = static_cast<
 							interior_type *>(
@@ -262,7 +275,7 @@ struct base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::inner_tree {
 			return;
 		}
 
-		// NOTE: no need to mark the internal nodes with tag bucket_num
+		/* no need to mark the internal nodes with tag bucket_num */
 		assert(tags[idx].second == bucket_num &&
 		       (!tags[idx].first->is_leaf));
 		interior_type *ti =
@@ -287,8 +300,7 @@ struct base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::inner_tree {
 						   box_cut.get_second_box_cut(),
 						   has_tomb, violate_func);
 		} else if constexpr (is_multi_node<interior_type>) {
-			// box_seq_type new_box(ti->template
-			// compute_subregions<box_seq_type>(box));
+
 			for (bucket_type i = 0;
 			     i < interior_type::get_regions(); ++i) {
 				mark_tomb<SetParallelFlag>(
@@ -301,12 +313,14 @@ struct base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::inner_tree {
 		return;
 	}
 
-	// NOTE: the node which needs to be rebuilt has tag bucket_num+3
-	// the *bucket* node whose ancestor has been rebuilt has tag
-	// bucket_num+2 the *bucket* node whose ancestor has not been ... has
-	// bucket_num+1 otherwise, it's bucket_num
-	// TODO: maybe we can make tagImbalance node and
-	// tagImbalancedNodeDeletion together
+	/*
+	 * the node which needs to be rebuilt has tag bucket_num+3
+	 * the *bucket* node whose ancestor has been rebuilt has tag
+	 * bucket_num+2 the *bucket* node whose ancestor has not been ... has
+	 * bucket_num+1 otherwise, it's bucket_num
+	 * TODO: maybe we can make tagImbalance node and
+	 * tagImbalancedNodeDeletion together
+	 */
 
 	template <bool SetParallelFlag, typename... Args>
 	auto tag_imbalance_node_deletion(Args &&...args)
@@ -325,8 +339,8 @@ struct base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::inner_tree {
 		if (idx > pivot_num || tags[idx].first->is_leaf) {
 			tags[idx].second =
 				bucket_num +
-				2; // PERF: ensure the following update_interior
-				   // meets the base case
+				2; /* ensure the following update_interior */
+				   /* meets the base case */
 			if (!tags[idx].first->is_leaf) {
 				interior_type *ti =
 					static_cast<interior_type *>(
@@ -363,23 +377,25 @@ struct base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::inner_tree {
 		return;
 	}
 
-	// NOTE: kUpdatePointer: update the pointer only, if it contains box,
-	// return
-	//   empty box
-	// kUpdatePointerBox: update pointer and box
-	// kTagRebuildNode: update the pointer and box, meanwhile it assign the
-	//   imbalance node with a new tag
-	// kPostDelUpdate: update the skeleton after rebuild (e.g., size,
-	// children),
-	//   which needs to avoid touch the deleted nodes
+	/*
+	 * update_pointer: update the pointer only, if it contains box,
+	 * return
+	 * empty box
+	 * update_pointer_box: update pointer and box
+	 * tag_rebuild_node: update the pointer and box, meanwhile it assign the
+	 * imbalance node with a new tag
+	 * post_del_update: update the skeleton after rebuild (e.g., size,
+	 * children),
+	 * which needs to avoid touch the deleted nodes
+	 */
 	enum update_type {
-		kUpdatePointer,
-		kUpdatePointerBox,
-		kTagRebuildNode,
-		kPostDelUpdate
+		update_pointer,
+		update_pointer_box,
+		tag_rebuild_node,
+		post_del_update
 	};
 
-	// NOTE: update the skeleton based on the @update_type
+	/* update the skeleton based on the @update_type */
 	template <update_type ut, bool UpdateParFlag = true,
 		  typename ReturnType, typename... Args>
 		requires is_pointer_to_node<ReturnType> ||
@@ -389,24 +405,29 @@ struct base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::inner_tree {
 			  Args &&...args)
 	{
 		bucket_type p = 0;
-		if constexpr (ut == kUpdatePointer ||
-			      ut == kUpdatePointerBox) { // NOTE: update the
-							 // inner tree nodes or
-							 // box
+		if constexpr (ut == update_pointer ||
+			      ut == update_pointer_box) { /* update the */
+							  /*
+							   * inner tree nodes or
+							   * box
+							   */
 			return update_inner_tree_recursive<ut, UpdateParFlag>(
 				1, tree_nodes, p, [&]() {});
-		} else if constexpr (ut == kTagRebuildNode) { // NOTE: tag the
-							      // node that needs
-							      // to be rebuild
+		} else if constexpr (ut == tag_rebuild_node) { /* tag the */
+							       /*
+								* node that needs
+								* to be rebuild
+								*/
 			this->reset_tags_num();
 
 			auto func_2_rebuild_node =
 				[&](auto const &...params) -> void {
-				if constexpr (is_binary_node<
-						      interior_type>) { // NOTE:
-					// needs to
-					// save the
-					// box
+				if constexpr (is_binary_node<interior_type>) {
+					/*
+					 * needs to
+					 * save the
+					 * box
+					 */
 					auto const &new_box = std::get<0>(
 						std::forward_as_tuple(
 							params...));
@@ -418,13 +439,15 @@ struct base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::inner_tree {
 						std::forward<Args>(
 							args)...)[tags_num++] =
 						new_box;
-				} else if constexpr (
-					is_multi_node<interior_type>) { // NOTE:
-									// the
-					// box is fixed
-					// in orth
-					// node, no
-					// need to save
+				} else if constexpr (is_multi_node<
+							     interior_type>) {
+					/* the */
+					/*
+					 * box is fixed
+					 * in orth
+					 * node, no
+					 * need to save
+					 */
 					auto const &idx = std::get<0>(
 						std::forward_as_tuple(
 							params...));
@@ -435,11 +458,15 @@ struct base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::inner_tree {
 			return update_inner_tree_recursive<ut, UpdateParFlag>(
 				1, tree_nodes, p, func_2_rebuild_node);
 		} else if constexpr (ut ==
-				     kPostDelUpdate) { // NOTE: avoid touch the
-						       // node that has been
-						       // deleted
-			// PARA: op == 0 -> toggle whether under a rebuild tree
-			// op == 1 -> query current status
+				     post_del_update) { /* avoid touch the */
+							/*
+							 * node that has been
+							 * deleted
+							 */
+			/*
+			 * PARA: op == 0 -> toggle whether under a rebuild tree
+			 * op == 1 -> query current status
+			 */
 			bool under_rebuild_tree = false;
 			return update_inner_tree_recursive<ut, UpdateParFlag>(
 				1, tree_nodes, p, [&](bool op) -> bool {
@@ -448,11 +475,10 @@ struct base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::inner_tree {
 						       : under_rebuild_tree;
 				});
 		} else {
-			// static_assert(0);
 		}
 	}
 
-	// NOTE: udpate inner tree for binary nodes
+	/* udpate inner tree for binary nodes */
 	template <update_type ut, bool UpdateParFlag, typename ReturnType,
 		  typename Func>
 		requires is_binary_node<interior_type>
@@ -460,15 +486,15 @@ struct base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::inner_tree {
 		bucket_type idx, parlay::sequence<ReturnType> const &tree_nodes,
 		bucket_type &p, Func &&func)
 	{
-		// WARN: needs to ensure this success for both insert and delete
+		/* needs to ensure this success for both insert and delete */
 		if (this->tags[idx].second == bucket_num + 1 ||
 		    this->tags[idx].second == bucket_num + 2) {
 			return tree_nodes[p++];
 		}
 
-		if constexpr (ut == kPostDelUpdate) {
+		if constexpr (ut == post_del_update) {
 			if (this->tags[idx].second == bucket_num + 3) {
-				func(0); // close the under_rebuild_tree flag
+				func(0); /* close the under_rebuild_tree flag */
 				assert(func(1) == true);
 			}
 		}
@@ -481,26 +507,28 @@ struct base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::inner_tree {
 				idx << 1 | 1, tree_nodes, p, func);
 
 		if constexpr (ut ==
-			      kUpdatePointer) { // only update the pointers
+			      update_pointer) { /* only update the pointers */
 			update_interior<interior_type, UpdateParFlag>(
 				this->tags[idx].first, left, right);
 			if constexpr (is_pointer_to_node<ReturnType>) {
 				return this->tags[idx].first;
-			} else { // WARN: if only update pointer, then avoid
-				 // update box
+			} else { /* if only update pointer, then avoid */
+				 /* update box */
 				return node_box_type(this->tags[idx].first,
 						     box_type());
 			}
 		} else if constexpr (ut ==
-				     kUpdatePointerBox) { // update pointer and
-							  // box
+				     update_pointer_box) { /* update pointer and
+							    */
+							   /* box */
 			update_interior<interior_type, UpdateParFlag>(
 				this->tags[idx].first, left, right);
 			return node_box_type(
 				this->tags[idx].first,
 				base_type::get_box(left.second, right.second));
-		} else if constexpr (ut == kTagRebuildNode) { // retag and save
-							      // box for rebuild
+		} else if constexpr (ut ==
+				     tag_rebuild_node) { /* retag and save */
+							 /* box for rebuild */
 			update_interior<interior_type, UpdateParFlag>(
 				this->tags[idx].first, left, right);
 			auto new_box =
@@ -511,19 +539,20 @@ struct base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::inner_tree {
 			}
 			return node_box_type(this->tags[idx].first,
 					     std::move(new_box));
-		} else if constexpr (ut ==
-				     kPostDelUpdate) { // avoid update pointers
-						       // for deleted trees
-			if (!func(1)) { // query whether under the rebuild_tree
+		} else if constexpr (ut == post_del_update) { /* avoid update
+								 pointers */
+			if (!func(1)) { /* query whether under the rebuild_tree
+					 */
 				update_interior<interior_type, UpdateParFlag>(
 					this->tags[idx].first, left, right);
 				return node_box_type(
 					this->tags[idx].first,
-					box_type()); // box has been computed
-						     // before
+					box_type()); /* box has been computed */
+						     /* before */
 			} else if (this->tags[idx].second ==
-				   bucket_num + 3) { // recurse back
-				func(0); // disable the under_rebuild_tree flag
+				   bucket_num + 3) { /* recurse back */
+				func(0); /* disable the under_rebuild_tree flag
+					  */
 				if (!this->tags[idx].first->is_leaf) {
 					static_cast<interior_type *>(
 						this->tags[idx].first)
@@ -532,15 +561,14 @@ struct base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::inner_tree {
 				assert(func(1) == false);
 				return node_box_type(this->tags[idx].first,
 						     box_type());
-			} else { // the tree has been deleted
+			} else { /* the tree has been deleted */
 				return node_box_type(nullptr, box_type());
 			}
 		} else {
-			// static_assert(0);
 		}
 	}
 
-	// NOTE: update inner tree for multi nodes
+	/* update inner tree for multi nodes */
 	template <update_type ut, bool UpdateParFlag, typename ReturnType,
 		  typename Func>
 		requires is_multi_node<interior_type>
@@ -553,9 +581,9 @@ struct base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::inner_tree {
 			return tree_nodes[p++];
 		}
 
-		if constexpr (ut == kPostDelUpdate) {
+		if constexpr (ut == post_del_update) {
 			if (this->tags[idx].second == bucket_num + 3) {
-				func(0); // close the under_rebuild_tree flag
+				func(0); /* close the under_rebuild_tree flag */
 				assert(func(1) == true);
 			}
 		}
@@ -568,12 +596,12 @@ struct base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::inner_tree {
 					tree_nodes, p, func);
 		}
 
-		if constexpr (ut == kUpdatePointer) {
+		if constexpr (ut == update_pointer) {
 			base_type::template update_interior<interior_type,
 							    UpdateParFlag>(
 				tags[idx].first, new_nodes);
 			return this->tags[idx].first;
-		} else if constexpr (ut == kTagRebuildNode) {
+		} else if constexpr (ut == tag_rebuild_node) {
 			update_interior<interior_type, UpdateParFlag>(
 				this->tags[idx].first, new_nodes);
 			if (this->tags[idx].second ==
@@ -581,18 +609,21 @@ struct base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::inner_tree {
 				func(idx);
 			}
 			return this->tags[idx].first;
-		} else if constexpr (ut ==
-				     kPostDelUpdate) { // NOTE: avoid update
-						       // pointers for deleted
-						       // trees
-			if (!func(1)) {		       // not under rebuild tree
+		} else if constexpr (ut == post_del_update) { /* avoid update */
+							      /*
+							       * pointers for deleted
+							       * trees
+							       */
+			if (!func(1)) { /* not under rebuild tree */
 				update_interior<interior_type, UpdateParFlag>(
 					this->tags[idx].first, new_nodes);
 				return this->tags[idx]
-					.first; // box has been computed before
+					.first; /* box has been computed before
+						 */
 			} else if (this->tags[idx].second ==
-				   bucket_num + 3) { // back
-				func(0); // disable the under_rebuild_tree flag
+				   bucket_num + 3) { /* back */
+				func(0); /* disable the under_rebuild_tree flag
+					  */
 				assert(func(1) == false);
 				if (!this->tags[idx].first->is_leaf) {
 					static_cast<interior_type *>(
@@ -600,21 +631,21 @@ struct base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::inner_tree {
 						->reset_parallel_flag();
 				}
 				return this->tags[idx].first;
-			} else { // the tree has been deleted
+			} else { /* the tree has been deleted */
 				return nullptr;
 			}
 		} else {
-			// static_assert(false);
 		}
 	}
 
-	// NOTE: variables
+	/* variables */
 	bucket_type tags_num;
-	node_tag_seq_type tags; // PARA: Assign each node a tag, aka skeleton
+	node_tag_seq_type tags; /* PARA: Assign each node a tag, aka skeleton */
 	parlay::sequence<balls_type> sums_tree;
-	bucket_seq_type rev_tag; // PARA: maps tag to the position in skeleton
+	bucket_seq_type
+		rev_tag; /* PARA: maps tag to the position in skeleton */
 	parlay::sequence<balls_type> sums;
 };
-}; // namespace psi
+}; /* namespace psi */
 
-#endif // PSI_BASE_TREE_IMPL_INNER_TREE_HPP_
+#endif /* PSI_BASE_TREE_IMPL_INNER_TREE_HPP_ */

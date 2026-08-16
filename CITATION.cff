@@ -1,0 +1,30 @@
+cff-version: 1.2.0
+title: "PSI: A library for Parallel Spatial Indexes"
+message: "If you use this software, please cite the papers below."
+type: software
+authors:
+  - family-names: Men
+    given-names: Ziyang
+  - family-names: Huang
+    given-names: Bo
+  - family-names: Gu
+    given-names: Yan
+  - family-names: Sun
+    given-names: Yihan
+repository-code: "https://github.com/ucrparlay/SpaceTreeLib"
+license: MIT
+preferred-citation:
+  type: conference-paper
+  title: "Parallel Dynamic Spatial Indexes"
+  authors:
+    - family-names: Men
+      given-names: Ziyang
+    - family-names: Huang
+      given-names: Bo
+    - family-names: Gu
+      given-names: Yan
+    - family-names: Sun
+      given-names: Yihan
+  collection-title: "Proceedings of the 31st ACM SIGPLAN Symposium on Principles and Practice of Parallel Programming (PPoPP '26)"
+  year: 2026
+  doi: "10.1145/3774934.3786412"

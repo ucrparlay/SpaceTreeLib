@@ -27,7 +27,7 @@ base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::force_parallel_recursion(
 	       (!granularity && ti->force_parallel());
 #else
 	return (granularity) || (!granularity && ti->force_parallel());
-#endif // !DISABLE_BATCH_DELETE_SIZE_OPT
+#endif /* !DISABLE_BATCH_DELETE_SIZE_OPT */
 }
 
 template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
@@ -50,7 +50,7 @@ void base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::flatten_rec(node *T,
 	interior_type *ti = static_cast<interior_type *>(T);
 	assert(ti->size == ti->left->size + ti->right->size);
 	parlay::par_do_if(
-		// WARN: check parallelisim using node size can be biased
+		/* check parallelisim using node size can be biased */
 		force_parallel_recursion<interior_type, granularity>(ti),
 		[&]() {
 			flatten_rec<leaf_type, interior_type>(
@@ -110,7 +110,7 @@ void base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::flatten_rec(node *T,
 	return;
 }
 
-// NOTE: for multi node @T, it only flatten the subtree with id @idx to @out
+/* for multi node @T, it only flatten the subtree with id @idx to @out */
 template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
 	  uint_fast8_t ImbaRatio>
 template <typename leaf_type, is_multi_node interior_type, typename Range,
@@ -149,6 +149,6 @@ void base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::partial_flatten(
 		});
 	return;
 }
-} // namespace psi
+} /* namespace psi */
 
-#endif // PSI_BASE_TREE_IMPL_TREE_OP_FLATTEN_HPP_
+#endif /* PSI_BASE_TREE_IMPL_TREE_OP_FLATTEN_HPP_ */

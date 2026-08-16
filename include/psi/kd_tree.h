@@ -108,12 +108,14 @@ public:
 	template <typename Range>
 	void batch_insert(Range &&in);
 
-	// NOTE: every point is assumed to be in the tree; if that may not
-	// hold, use batch_diff
+	/*
+	 * every point is assumed to be in the tree; if that may not
+	 * hold, use batch_diff
+	 */
 	template <typename Range>
 	void batch_delete(Range &&in);
 
-	// NOTE: tolerates points that are not in the tree
+	/* tolerates points that are not in the tree */
 	template <typename Range>
 	void batch_diff(Range &&in);
 
@@ -142,6 +144,10 @@ public:
 
 	constexpr void delete_tree() override;
 
+	/*
+	 * Parsed by script_ae/merge_*.py to label the figures; changing it
+	 * silently relabels published results.
+	 */
 	constexpr static char const *get_tree_name()
 	{
 		return "KdTree";
@@ -185,7 +191,7 @@ private:
 	SplitRule split_rule_;
 };
 
-} // namespace psi
+} /* namespace psi */
 
 #include "psi/kd_tree_impl/kd_batch_delete.hpp"
 #include "psi/kd_tree_impl/kd_batch_diff.hpp"
@@ -194,4 +200,4 @@ private:
 #include "psi/kd_tree_impl/kd_inter_node.hpp"
 #include "psi/kd_tree_impl/kd_override.hpp"
 
-#endif // PSI_KD_TREE_H
+#endif /* PSI_KD_TREE_H */

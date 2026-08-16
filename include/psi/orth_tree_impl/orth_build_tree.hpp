@@ -25,7 +25,8 @@ void orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
 	});
 }
 
-// TODO: maybe we don't need this function, it can be directly computed by value
+/* TODO: maybe we don't need this function, it can be directly computed by value
+ */
 template <typename Point, typename SplitRule, typename LeafAugType,
 	  typename InteriorAugType, uint_fast8_t md, uint_fast8_t SkHeight,
 	  uint_fast8_t ImbaRatio>
@@ -36,9 +37,7 @@ void orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
 					 box_type const &box)
 {
 	if (idx > base_type::pivot_num) {
-		// WARN: sometimes cut dimension can be -1, never use
-		// pivots[idx].first == -1 to check whether it is in bucket;
-		// instead, use idx > PIVOT_NUM
+
 		box_seq[idx - base_type::bucket_num] = box;
 		pivots[idx] = hyper_plane_type(0, idx - base_type::bucket_num);
 		return;
@@ -48,7 +47,6 @@ void orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
 					       dim, box);
 
 	box_cut_type box_cut(box, pivots[idx], true);
-	// dim = (dim + 1) % base_type::num_dims;
 	dim = split_rule_.next_dimension(dim);
 	divide_rotate(pivots, dim, 2 * idx, box_seq,
 		      box_cut.get_first_box_cut());
@@ -110,10 +108,11 @@ node *orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
 	serial_split(in, dim, 1, box, sums);
 	assert(std::cmp_equal(std::accumulate(sums.begin(), sums.end(), 0), n));
 
-	if (std::ranges::count(sums, 0) == node_regions - 1) { // split fails
+	if (std::ranges::count(sums, 0) == node_regions - 1) { /* split fails */
 		if (std::ranges::find_if_not(
-			    in, [&](Point const &p) { // early return
-				    return p.same_dimension(in[0]);
+			    in, [&](Point const &p) { /* early return */
+						      return p.same_dimension(
+							      in[0]);
 			    }) == in.end()) {
 			if constexpr (is_aug_point<Point>) {
 				if constexpr (
@@ -132,8 +131,10 @@ node *orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
 						in);
 				}
 			} else {
-				// WARN: Need to pass full range, since it needs
-				// to compute the size
+				/*
+				 * Need to pass full range, since it needs
+				 * to compute the size
+				 */
 				return alloc_dummy_leaf_node<slice_type,
 							     leaf_type>(in);
 			}
@@ -146,8 +147,10 @@ node *orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
 	node_arr_type tree_nodes;
 	size_t start = 0;
 	for (dims_type i = 0; i < node_regions; ++i) {
-		// NOTE: iterate through non-empty partitions, put them into the
-		// position identified by non_empty_node
+		/*
+		 * iterate through non-empty partitions, put them into the
+		 * position identified by non_empty_node
+		 */
 		tree_nodes[i] = serial_build_recursive(
 			in.cut(start, start + sums[i]),
 			out.cut(start, start + sums[i]),
@@ -166,12 +169,11 @@ node *orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
 		ImbaRatio>::build_recursive(slice_type in, slice_type out,
 					    box_type const &box)
 {
-	// TODO: may ensure the bucket is corresponding the the splitter
+	/* TODO: may ensure the bucket is corresponding the the splitter */
 	assert(in.size() == 0 ||
 	       base_type::within_box(base_type::get_box(in), box));
 	size_t n = in.size();
 
-	// if (in.size()) {
 	if (n <= base_type::serial_build_cutoff) {
 		return serial_build_recursive(in, out, box, false);
 	}
@@ -189,9 +191,11 @@ node *orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
 	auto nodes_map = bucket_seq_type::uninitialized(base_type::bucket_num);
 	bucket_type zeros = std::ranges::count(sums, 0), cnt = 0;
 
-	if (zeros == base_type::bucket_num - 1) { // NOTE: switch to seral
-		// TODO: add parallelsim within this call
-		// see parallel kth element
+	if (zeros == base_type::bucket_num - 1) { /* switch to seral */
+		/*
+		 * TODO: add parallelsim within this call
+		 * see parallel kth element
+		 */
 		return serial_build_recursive(in, out, box, false);
 	}
 
@@ -257,6 +261,6 @@ void orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
 	return;
 }
 
-} // namespace psi
+} /* namespace psi */
 
-#endif // PSI_ORTH_TREE_IMPL_ORTH_BUILD_TREE_HPP_
+#endif /* PSI_ORTH_TREE_IMPL_ORTH_BUILD_TREE_HPP_ */

@@ -24,20 +24,22 @@ template <typename Point, typename T,
 	  typename Compare = nn_comparator<Point, T>>
 class bounded_queue
 {
-	// NOTE: A priority queue with fixed maximum capacity. While the queue
-	// has not reached its maximum capacity, elements are inserted as they
-	// will be in a heap, the root (top()) being such that
-	// Compare(top(),x)=false for any x in the queue. Once the queue is
-	// full, trying to insert x in the queue will have no effect if
-	// Compare(x,top())=false. Otherwise, the element at the root of the
-	// heap is removed and x is inserted so as to keep the heap property.
+	/*
+	 * A priority queue with fixed maximum capacity. While the queue
+	 * has not reached its maximum capacity, elements are inserted as they
+	 * will be in a heap, the root (top()) being such that
+	 * Compare(top(),x)=false for any x in the queue. Once the queue is
+	 * full, trying to insert x in the queue will have no effect if
+	 * Compare(x,top())=false. Otherwise, the element at the root of the
+	 * heap is removed and x is inserted so as to keep the heap property.
+	 */
 
-	// NOTE:
-	// A simplified version of CGAL bounded_priority_queue
-	// https://github.com/CGAL/cgal/blob/v5.4/Spatial_searching/include/CGAL/Spatial_searching/internal/bounded_priority_queue.h
+	/*
+	 * A simplified version of CGAL bounded_priority_queue
+	 * https://github.com/CGAL/cgal/blob/v5.4/Spatial_searching/include/CGAL/Spatial_searching/internal/bounded_priority_queue.h
+	 */
 
 	using dis_type = typename Point::dis_type;
-	// using T = std::pair<Point*, dis_type>;
 
 public:
 	bounded_queue(Compare const &comp = Compare()) : m_comp(comp)
@@ -94,12 +96,10 @@ public:
 
 	void insert(std::pair<std::reference_wrapper<Point>, dis_type> const x)
 	{
-		// T x( _x.first, _x.second );
 		T *data1 = (&m_data[0] - 1);
 		if (full()) {
 			if (m_comp(x, top())) {
-				// insert x in the heap at the correct place,
-				// going down in the tree.
+
 				size_t j(1), k(2);
 				while (k <= m_count) {
 					T *z = &(data1[k]);
@@ -110,15 +110,15 @@ public:
 						break;
 					data1[j] = *z;
 					j = k;
-					k = j << 1; // a son of j in the tree
+					k = j << 1; /* a son of j in the tree */
 				}
 				data1[j] = x;
 			}
 		} else {
-			// insert element as in a heap
+			/* insert element as in a heap */
 			size_t i(++m_count), j(0);
 			while (i >= 2) {
-				j = i >> 1; // father of i in the tree
+				j = i >> 1; /* father of i in the tree */
 				T &y = data1[j];
 				if (m_comp(x, y))
 					break;
@@ -135,6 +135,6 @@ public:
 	Compare m_comp;
 };
 
-} // namespace psi
+} /* namespace psi */
 
-#endif // PSI_DEPENDENCE_SEARCH_CONTAINER_H_
+#endif /* PSI_DEPENDENCE_SEARCH_CONTAINER_H_ */

@@ -45,9 +45,9 @@ struct base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::box_cut_type {
 
 	box_type box;
 	coord_type *mod_dim;
-	hyper_plane_type hp; // PARA: the split and the cutting dimension
+	hyper_plane_type hp; /* PARA: the split and the cutting dimension */
 	bool const go_left;
 };
-}; // namespace psi
+}; /* namespace psi */
 
-#endif // PSI_BASE_TREE_IMPL_BOX_CUT_HPP_
+#endif /* PSI_BASE_TREE_IMPL_BOX_CUT_HPP_ */

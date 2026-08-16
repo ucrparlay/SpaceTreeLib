@@ -85,8 +85,7 @@ void base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::partition(
 		for (size_t j = i << log2_base;
 		     j < std::min((i + 1) << log2_base, n); j++) {
 			dims_type k = find_bucket(A[j], pivots);
-			// B[v[std::move( find_bucket( A[j], pivots ) )]++] =
-			// A[j];
+
 			B[v[k]++] = A[j];
 		}
 	});
@@ -94,7 +93,7 @@ void base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::partition(
 	return;
 }
 
-// NOTE: retrieve the bucket tag of Point p from the skeleton tags
+/* retrieve the bucket tag of Point p from the skeleton tags */
 template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
 	  uint_fast8_t ImbaRatio>
 template <is_binary_node interior_type>
@@ -131,9 +130,11 @@ base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::retrieve_tag(
 	return tags[k].second;
 }
 
-// NOTE: sieve points_type from range A to range B, using the skeleton tags. The
-// sums is the number of elemenets within each bucket, the tags_num is the total
-// number of buckets in the skeleton
+/*
+ * sieve points_type from range A to range B, using the skeleton tags. The
+ * sums is the number of elemenets within each bucket, the tags_num is the total
+ * number of buckets in the skeleton
+ */
 template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
 	  uint_fast8_t ImbaRatio>
 template <typename interior_type>
@@ -182,6 +183,6 @@ void base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::sieve_points(
 
 	return;
 }
-} // namespace psi
+} /* namespace psi */
 
-#endif // PSI_BASE_TREE_IMPL_POINTS_OP_HPP_
+#endif /* PSI_BASE_TREE_IMPL_POINTS_OP_HPP_ */

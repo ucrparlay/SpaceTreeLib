@@ -62,6 +62,6 @@ node *base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::build_inner_tree(
 
 	return alloc_interior_node<interior_type>(multi_nodes, split);
 }
-} // namespace psi
+} /* namespace psi */
 
-#endif // PSI_BASE_TREE_IMPL_TREE_OP_BUILD_INNER_TREE_HPP_
+#endif /* PSI_BASE_TREE_IMPL_TREE_OP_BUILD_INNER_TREE_HPP_ */

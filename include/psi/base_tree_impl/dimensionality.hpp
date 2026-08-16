@@ -12,11 +12,6 @@ inline size_t
 base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::get_imbalance_ratio()
 {
 	return static_cast<size_t>(imbalance_ratio);
-	// if (auto const env_p = std::getenv("imbalance_ratio")) {
-	//   return static_cast<size_t>(std::stoi(env_p));
-	// } else {
-	//   return static_cast<size_t>(imbalance_ratio);
-	// }
 }
 
 template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
@@ -43,10 +38,12 @@ inline bool
 base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::sparse_node(size_t const rm,
 								size_t const n)
 {
-	// PERF: to avoid the case that the new leaf is about 32 and then next
-	// slight larger insert will break the leaf
+	/*
+	 * to avoid the case that the new leaf is about 32 and then next
+	 * slight larger insert will break the leaf
+	 */
 	return n - rm < sparse_leaf_threshold;
 }
-} // namespace psi
+} /* namespace psi */
 
-#endif // PSI_BASE_TREE_IMPL_DIMENSIONALITY_HPP_
+#endif /* PSI_BASE_TREE_IMPL_DIMENSIONALITY_HPP_ */

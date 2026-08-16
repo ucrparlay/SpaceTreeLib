@@ -288,6 +288,6 @@ struct aug_point : basic_point<T, d> {
 	AugType aug;
 };
 
-} // namespace psi
+} /* namespace psi */
 
-#endif // PSI_DEPENDENCE_BASIC_POINT_H_
+#endif /* PSI_DEPENDENCE_BASIC_POINT_H_ */

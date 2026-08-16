@@ -11,14 +11,6 @@
 namespace psi
 {
 
-// NOTE: in memory of SFINE
-// template<typename>
-// struct is_pair : std::false_type {};
-// template<typename T, typename U>
-// struct is_pair<std::pair<T, U>> : std::true_type {};
-// template<typename T>
-// concept is_pair = is_pair<T>::value;
-
 template <typename T, typename node>
 concept check_pointer_to_node =
 	std::is_pointer_v<T> &&
@@ -39,12 +31,12 @@ concept is_box = requires {
 				      typename Point::bp_type>;
 };
 
-// NOTE: tag whether a node has non-trivial augmentation
+/* tag whether a node has non-trivial augmentation */
 template <typename T>
 concept node_has_non_trivial_aug =
 	(!std::is_empty_v<T>) && (!std::same_as<T, std::monostate>);
 
-// NOTE:: Helper function to find and return the variable of the specified type
+/* : Helper function to find and return the variable of the specified type */
 template <typename T, typename First, typename... Rest>
 constexpr T &find_var(First &first, Rest &...rest)
 {
@@ -55,7 +47,7 @@ constexpr T &find_var(First &first, Rest &...rest)
 	}
 }
 
-// NOTE: Overload for the case when the type is not found
+/* Overload for the case when the type is not found */
 template <typename T>
 constexpr T &find_var()
 {
@@ -63,22 +55,17 @@ constexpr T &find_var()
 	return *reinterpret_cast<T *>(nullptr);
 }
 
-// Example usage
-// template<typename T, typename... Args>
-//     requires ContainsType<T, Args...>
-// consteval T& getVariable(Args&... args) {
-//     return findVariable<T>(args...);
-// }
-
-// NOTE: Concept to check if a function can be called with a parameter
+/* Concept to check if a function can be called with a parameter */
 template <typename ReturnType, typename Func, typename Arg>
 concept callable_with_arg = requires(Func func, Arg arg) {
 	{ func(arg) } -> std::convertible_to<ReturnType>;
 };
 
-// NOTE: Function to handle the conditional call
-// if func accepts a parameter arg, then call it; otherwise return func()
-// directly
+/*
+ * Function to handle the conditional call
+ * if func accepts a parameter arg, then call it; otherwise return func()
+ * directly
+ */
 template <typename ReturnType, typename Func, typename Arg>
 ReturnType invoke_with_optional_arg(Func &&func, Arg &&arg)
 {
@@ -89,7 +76,7 @@ ReturnType invoke_with_optional_arg(Func &&func, Arg &&arg)
 	}
 }
 
-// NOTE: define the what is a binary node
+/* define the what is a binary node */
 template <typename T,
 	  template <typename, typename, typename> typename BinaryNodeT>
 concept check_binary_node =
@@ -97,7 +84,7 @@ concept check_binary_node =
 				      typename T::at_type>,
 			  T>;
 
-// NOTE: helper for decide a multi-way node
+/* helper for decide a multi-way node */
 template <typename T,
 	  template <typename, uint_fast8_t, typename,
 		    typename> typename MultiNodeT,
@@ -108,21 +95,13 @@ concept is_multi_node_helper =
 			   T> ||
 	 ...);
 
-// NOTE: define the what is a multi-way node
+/* define the what is a multi-way node */
 template <typename T, template <typename, uint_fast8_t, typename,
 				typename> typename MultiNodeT>
 concept check_multi_node =
 	is_multi_node_helper<T, MultiNodeT, 2, 3, 4, 5, 6, 7, 8, 9, 10>;
 
-// NOTE: define the what is a dynamic node
-template <typename T,
-	  template <typename, typename, typename> typename DynamicNodeT>
-concept check_dynamic_node =
-	std::is_base_of_v<DynamicNodeT<typename T::pt_type, typename T::st_type,
-				       typename T::at_type>,
-			  T>;
-
-// NOTE: tag aug point
+/* tag aug point */
 template <typename T>
 concept is_aug_point = requires(T t) {
 	{ t.aug_point_tag() } -> std::same_as<void>;
@@ -138,13 +117,13 @@ concept has_box = requires(T const &t) {
 	{ t.get_box() };
 };
 
-// NOTE: tag a orth tree
+/* tag a orth tree */
 template <typename T>
 concept is_orth_tree = requires(T t) {
 	{ t.orth_tree_tag() } -> std::same_as<void>;
 };
 
-// NOTE: tag a kd tree
+/* tag a kd tree */
 template <typename T>
 concept is_kd_tree = requires(T t) {
 	{ t.kd_tree_tag() } -> std::same_as<void>;
@@ -201,6 +180,6 @@ concept is_rotate_dim_split = requires(T t) {
 	{ t.rotate_dim_tag() } -> std::same_as<void>;
 };
 
-} // namespace psi
+} /* namespace psi */
 
-#endif // PSI_DEPENDENCE_CONCEPTS_H_
+#endif /* PSI_DEPENDENCE_CONCEPTS_H_ */

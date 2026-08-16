@@ -15,7 +15,7 @@
 namespace psi
 {
 
-// NOTE: rebuild the tree
+/* rebuild the tree */
 template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
 	  uint_fast8_t ImbaRatio>
 template <typename leaf_type, typename interior_type, bool granularity>
@@ -30,7 +30,7 @@ void base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::prepare_rebuild(
 	return;
 }
 
-// NOTE: rebuild with new input in
+/* rebuild with new input in */
 template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
 	  uint_fast8_t ImbaRatio>
 template <typename leaf_type, typename interior_type, bool granularity>
@@ -65,9 +65,11 @@ node *base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::rebuild_with_insert(
 		std::forward<Args>(args)..., additional_arg);
 }
 
-// PARA: when granularity set to false, it will disable the default value for
-// granularity size, which is base_type::serial_build_cutoff; instead, it will
-// check whether the force parallel flag has been enabled
+/*
+ * PARA: when granularity set to false, it will disable the default value for
+ * granularity size, which is base_type::serial_build_cutoff; instead, it will
+ * check whether the force parallel flag has been enabled
+ */
 template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
 	  uint_fast8_t ImbaRatio>
 template <typename leaf_type, typename interior_type, bool granularity,
@@ -86,10 +88,12 @@ node *base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::rebuild_single_tree(
 		std::forward<Args>(args)...);
 }
 
-// NOTE: traverse a tree, if it satisfy the condition, then rebuild a binary
-// tree
-// PARA: if allow_enable_rebuild enabled, this method will re-balance the
-// tree; otherwise, it flattens all sparse node into leaf nodes
+/*
+ * traverse a tree, if it satisfy the condition, then rebuild a binary
+ * tree
+ * PARA: if allow_enable_rebuild enabled, this method will re-balance the
+ * tree; otherwise, it flattens all sparse node into leaf nodes
+ */
 template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
 	  uint_fast8_t ImbaRatio>
 template <typename leaf_type, is_binary_node interior_type, bool granularity,
@@ -104,7 +108,7 @@ base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::rebuild_tree_recursive(
 	}
 
 	interior_type *ti = static_cast<interior_type *>(T);
-	// NOTE: rebuild the tree if it is sparse or imbalance
+	/* rebuild the tree if it is sparse or imbalance */
 	if (sparse_node(0, ti->size) ||
 	    (allow_inba_rebuild && imbalance_node(ti->left->size, ti->size))) {
 		return rebuild_single_tree<leaf_type, interior_type,
@@ -151,7 +155,7 @@ base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::rebuild_tree_recursive(
 	return T;
 }
 
-// NOTE: rebuild a multi-node tree
+/* rebuild a multi-node tree */
 template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
 	  uint_fast8_t ImbaRatio>
 template <typename leaf_type, is_multi_node interior_type, bool granularity,
@@ -199,6 +203,6 @@ base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::rebuild_tree_recursive(
 	return T;
 }
 
-} // namespace psi
+} /* namespace psi */
 
-#endif // PSI_BASE_TREE_IMPL_REBUILD_HPP_
+#endif /* PSI_BASE_TREE_IMPL_REBUILD_HPP_ */

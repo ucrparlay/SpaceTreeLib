@@ -32,7 +32,7 @@ struct node {
 	node() : is_leaf{false}, size{0} {};
 	node(bool _is_leaf, size_t _size) : is_leaf{_is_leaf}, size{_size} {};
 
-	// Adding a virtual destructor makes node polymorphic
+	/* Adding a virtual destructor makes node polymorphic */
 	virtual ~node() = default;
 
 	bool is_leaf;
@@ -46,14 +46,14 @@ struct leaf_node : node {
 	using points_type = parlay::sequence<Point>;
 	using at_type = AugType;
 
-	// NOTE: default allocator
+	/* default allocator */
 	leaf_node()
 	    : node{true, static_cast<size_t>(0)}, is_dummy(false),
 	      aug(AugType())
 	{
 	}
 
-	// NOTE: alloc a leaf with default size
+	/* alloc a leaf with default size */
 	leaf_node(Range in, alloc_normal_leaf_tag)
 	    : node{true, static_cast<size_t>(in.size())}, is_dummy(false),
 	      pts(points_type::uninitialized(DefaultWrap)), aug(at_type(in))
@@ -64,7 +64,7 @@ struct leaf_node : node {
 		});
 	}
 
-	// NOTE: alloc a leaf with specific size
+	/* alloc a leaf with specific size */
 	leaf_node(Range in, size_t const alloc_size, alloc_normal_leaf_tag)
 	    : node{true, static_cast<size_t>(in.size())}, is_dummy(false),
 	      pts(points_type::uninitialized(alloc_size)), aug(at_type(in))
@@ -75,7 +75,7 @@ struct leaf_node : node {
 		});
 	}
 
-	// NOTE: alloc a dummy leaf
+	/* alloc a dummy leaf */
 	leaf_node(Range in, alloc_dummy_leaf_tag)
 	    : node{true, static_cast<size_t>(in.size())}, is_dummy(true),
 	      pts(points_type::uninitialized(1)), aug(at_type(in.cut(0, 1)))
@@ -100,8 +100,10 @@ struct leaf_node : node {
 		return aug.get_box();
 	}
 
-	// TODO: should put this one in the aug as well and don't use the
-	// monostate
+	/*
+	 * TODO: should put this one in the aug as well and don't use the
+	 * monostate
+	 */
 	auto update_aug(Range in)
 	{
 		return aug.update_aug(in);
@@ -117,8 +119,10 @@ struct leaf_node : node {
 	AugType aug;
 };
 
-// NOTE:: Alloc a leaf with input IN and given size
-// TODO: the input aug is no longer valid
+/*
+ * : Alloc a leaf with input IN and given size
+ * TODO: the input aug is no longer valid
+ */
 template <typename Range, typename leaf_type>
 static leaf_type *alloc_fix_size_leaf_node(Range in, size_t const alloc_size)
 {
@@ -128,7 +132,7 @@ static leaf_type *alloc_fix_size_leaf_node(Range in, size_t const alloc_size)
 	return o;
 }
 
-// NOTE: Alloc a leaf
+/* Alloc a leaf */
 template <typename Range, typename leaf_type>
 static leaf_type *alloc_normal_leaf_node(Range in)
 {
@@ -138,7 +142,7 @@ static leaf_type *alloc_normal_leaf_node(Range in)
 	return o;
 }
 
-// NOTE: Alloc a empty leaf_type
+/* Alloc a empty leaf_type */
 template <typename Range, typename leaf_type>
 static leaf_type *alloc_empty_leaf_node()
 {
@@ -147,7 +151,7 @@ static leaf_type *alloc_empty_leaf_node()
 	return o;
 }
 
-// NOTE: Alloc a dummy leaf
+/* Alloc a dummy leaf */
 template <typename Range, typename leaf_type>
 static leaf_type *alloc_dummy_leaf_node(Range in)
 {
@@ -171,10 +175,10 @@ struct binary_node : node {
 	{
 	}
 
-	// Adding a virtual destructor makes node polymorphic
+	/* Adding a virtual destructor makes node polymorphic */
 	virtual ~binary_node() override = default;
 
-	// NOTE: test whether we can fetch @depth levels from @T
+	/* test whether we can fetch @depth levels from @T */
 	template <typename interior_type>
 	static inline bool test_depth(node *T, int cur_depth, int depth)
 	{
@@ -202,7 +206,7 @@ struct binary_node : node {
 	at_type aug;
 };
 
-// NOTE: multi-way node whose children # is fixed
+/* multi-way node whose children # is fixed */
 template <typename Point, uint_fast8_t md, typename SplitType, typename AugType>
 struct multi_node : node {
 	using bucket_type = uint_fast8_t;
@@ -226,13 +230,15 @@ struct multi_node : node {
 		return md;
 	}
 
-	// NOTE: whether we use same splitter for same level
-	// e.g., the horizontal in lavel is not the same
+	/*
+	 * whether we use same splitter for same level
+	 * e.g., the horizontal in lavel is not the same
+	 */
 	static consteval auto equal_split()
 		requires std::same_as<
 			st_type, std::array<typename st_type::value_type, md>>
 	{
-		return true; // every dimension one splitter
+		return true; /* every dimension one splitter */
 	}
 
 	static consteval auto equal_split()
@@ -240,7 +246,7 @@ struct multi_node : node {
 			st_type,
 			std::array<typename st_type::value_type, 1 << md>>
 	{
-		return false; // the spliiter number mathes inter nodes num
+		return false; /* the spliiter number mathes inter nodes num */
 	}
 
 	using node_arr_type = std::array<node *, get_regions()>;
@@ -257,8 +263,10 @@ struct multi_node : node {
 	{
 	}
 
-	// Adding a virtual destructor makes node polymorphic
-	// TODO: check whether it is possible to remove it then knn-mix
+	/*
+	 * Adding a virtual destructor makes node polymorphic
+	 * TODO: check whether it is possible to remove it then knn-mix
+	 */
 	virtual ~multi_node() override = default;
 
 	inline size_t merge_size(bucket_type const idx)
@@ -271,48 +279,6 @@ struct multi_node : node {
 			return merge_size(2 * idx) + merge_size(2 * idx + 1);
 		}
 	}
-
-	st_type const &get_split() const
-	{
-		return split;
-	}
-
-	node_arr_type tree_nodes;
-	st_type split;
-	at_type aug;
-};
-
-// NOTE: dynamic multi-way node whose children # is dynamic
-template <typename Point, typename SplitType, typename AugType>
-struct dynamic_node : node {
-	using bucket_type = uint_fast8_t;
-	using coord_type = typename Point::coord_type;
-	using num_type = num_comparator<coord_type>;
-	using st_type = SplitType;
-	using at_type = AugType;
-	using node_arr_type = parlay::sequence<node *>;
-
-	dynamic_node()
-	    : node{false, static_cast<size_t>(0)}, tree_nodes(node_arr_type()),
-	      split(st_type()), aug(at_type())
-	{
-	}
-
-	dynamic_node(node_arr_type const &_tree_nodes, st_type const &_split,
-		     at_type const &_aug)
-	    : node{false,
-		   std::accumulate(_tree_nodes.begin(), _tree_nodes.end(),
-				   static_cast<size_t>(0),
-				   [](size_t acc, node *n) -> size_t {
-					   return acc + n->size;
-				   })},
-	      tree_nodes(_tree_nodes), split(_split), aug(_aug)
-	{
-	}
-
-	// Adding a virtual destructor makes node polymorphic
-	// TODO: check whether it is possible to remove it then knn-mix
-	virtual ~dynamic_node() override = default;
 
 	st_type const &get_split() const
 	{
@@ -355,8 +321,10 @@ alloc_interior_node(typename interior_type::node_arr_type const &tree_nodes,
 	return o;
 }
 
-// TODO: maybe replace the node_arr_type, st_type, and at_type with template
-// parameters
+/*
+ * TODO: maybe replace the node_arr_type, st_type, and at_type with template
+ * parameters
+ */
 template <typename interior_type>
 static interior_type *
 alloc_interior_node(typename interior_type::node_arr_type const &tree_nodes,
@@ -382,17 +350,14 @@ static void free_node(node *T)
 	parlay::type_allocator<NodeType>::retire(static_cast<NodeType *>(T));
 }
 
-// Define some alias for concept check
+/* Define some alias for concept check */
 template <typename T>
 concept is_binary_node = check_binary_node<T, psi::binary_node>;
 
 template <typename T>
 concept is_multi_node = check_multi_node<T, psi::multi_node>;
 
-template <typename T>
-concept is_dynamic_node = check_dynamic_node<T, psi::dynamic_node>;
-
-// TODO: may remove below from inner tree
+/* TODO: may remove below from inner tree */
 template <typename T>
 concept is_pointer_to_node = check_pointer_to_node<T, node>;
 
@@ -402,6 +367,6 @@ concept is_node_box = requires {
 			 is_box<typename T::second_type, Point>;
 };
 
-} // namespace psi
+} /* namespace psi */
 
-#endif // PSI_DEPENDENCE_TREE_NODE_H_
+#endif /* PSI_DEPENDENCE_TREE_NODE_H_ */

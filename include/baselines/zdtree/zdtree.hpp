@@ -615,7 +615,6 @@ public:
 	using points_iter_type = typename base_type::points_iter_type;
 	using box_type = typename base_type::box_type;
 	using box_seq_type = typename base_type::box_seq_type;
-	using circle_type = typename base_type::normal_circle;
 
 	using hyper_plane_type = typename base_type::hyper_plane_type;
 	using hyper_plane_seq_type = typename base_type::hyper_plane_seq_type;

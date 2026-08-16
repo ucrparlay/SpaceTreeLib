@@ -10,9 +10,11 @@
 
 namespace psi
 {
-//*----------- double precision comparision ----------------
-//* God made the integers, all else is the work of man.
-//* -- Leopold Kronecker
+/*
+ * *----------- double precision comparision ----------------
+ * * God made the integers, all else is the work of man.
+ * * -- Leopold Kronecker
+ */
 template <typename T>
 class num_comparator
 {
@@ -83,25 +85,10 @@ public:
 		}
 	}
 
-	static inline T integer_log2_upper(T const a)
-	{
-		if constexpr (std::is_floating_point_v<T>) {
-			return static_cast<T>(std::ceil(std::log2(a)));
-		} else {
-			if (a == 0)
-				return 0; // BUG: this is a bug, should return
-					  // -1
-			T r = 0, b = a;
-			while (b >>= 1)
-				r++;
-			return r + static_cast<T>((1 << r) != a);
-		}
-	}
-
 private:
 	static constexpr T eps = std::numeric_limits<T>::epsilon();
 };
 
-} // namespace psi
+} /* namespace psi */
 
-#endif // PSI_DEPENDENCE_COMPARATOR_H_
+#endif /* PSI_DEPENDENCE_COMPARATOR_H_ */

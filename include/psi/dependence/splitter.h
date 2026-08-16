@@ -25,7 +25,7 @@
 
 namespace psi
 {
-// NOTE: ---------------- Spatial filling curve ---------------
+/* ---------------- Spatial filling curve --------------- */
 template <typename Point>
 struct morton_curve {
 	using base_type = base_tree<Point, morton_curve<Point>>;
@@ -60,29 +60,6 @@ struct morton_curve {
 			static_assert(
 				"MortonCurve only supports 2D and 3D points");
 		}
-		// uint_fast8_t loc = 0;
-		// curve_code_type id = 0;
-		// for (dims_type i = 0; i < 64 / Point::get_dim(); i++) {
-		//   if constexpr (Point::get_dim() == 2) {
-		//     id = id | (((p.pnt[0] >> i) &
-		//     static_cast<curve_code_type>(1))
-		//     << (loc++)); id = id | (((p.pnt[1] >> i) &
-		//     static_cast<curve_code_type>(1)) << (loc++));
-		//   } else if constexpr (Point::get_dim() == 3) {
-		//     id = id | (((p.pnt[0] >> i) &
-		//     static_cast<curve_code_type>(1))
-		//     << (loc++)); id = id | (((p.pnt[1] >> i) &
-		//     static_cast<curve_code_type>(1)) << (loc++)); id = id |
-		//     (((p.pnt[2] >> i) & static_cast<curve_code_type>(1)) <<
-		//     (loc++));
-		//   } else {
-		//     for (dims_type d = 0; d < Point::get_dim(); d++) {
-		//       id = id | (((p.pnt[d] >> i) &
-		//       static_cast<curve_code_type>(1)) << (loc++));
-		//     }
-		//   }
-		// }
-		// return id;
 	}
 };
 
@@ -106,17 +83,10 @@ struct hilbert_curve {
 		return "HilbertCurve";
 	}
 
-	// TODO: optimize the encode
+	/* TODO: optimize the encode */
 	static auto encode(Point const &p)
 	{
 		assert(std::is_integral_v<coord_type>);
-		// auto ix = static_cast<curve_code_type>(p.pnt[0]);
-		// auto iy = static_cast<curve_code_type>(p.pnt[1]);
-		// curve_code_type arr[] = {ix, iy};
-		// return hilbert::hilbert_c2i(2, 32, arr);
-		// return hilbert::hilbert_c2i(
-		//     2, 32, reinterpret_cast<curve_code_type
-		//     const*>(p.get_coords().data()));
 
 		if constexpr (Point::get_dim() == 2) {
 			return hilbert::hilbert_c2i(
@@ -124,7 +94,8 @@ struct hilbert_curve {
 				reinterpret_cast<hilbert::bitmask_t const *>(
 					p.get_coords().data()));
 		} else if constexpr (Point::get_dim() == 3) {
-			// maximum 20 bits for each dimension (2^20 = 1048576))
+			/* maximum 20 bits for each dimension (2^20 = 1048576))
+			 */
 			return hilbert::hilbert_c2i(
 				3, 21,
 				reinterpret_cast<hilbert::bitmask_t const *>(
@@ -158,7 +129,7 @@ struct spatial_filling_curve {
 	}
 };
 
-// NOTE: ---------------- Orthogonal Split Rule ----------------
+/* ---------------- Orthogonal Split Rule ---------------- */
 template <typename Point>
 struct base_split_dim_rule {
 	using base_type = base_tree<Point, base_split_dim_rule<Point>>;
@@ -178,7 +149,7 @@ struct base_split_dim_rule {
 
 	constexpr virtual dims_type const
 	next_dimension(dims_type const dim) const = 0;
-	// TODO: the spliiter should deterine how to split as well
+	/* TODO: the spliiter should deterine how to split as well */
 };
 
 template <typename Point>
@@ -222,8 +193,10 @@ struct max_stretch_dim : base_split_dim_rule<Point> {
 		return 0;
 	};
 
-	// TODO: this is wired as the next dimension should return the dimension
-	// with second largest
+	/*
+	 * TODO: this is wired as the next dimension should return the dimension
+	 * with second largest
+	 */
 	constexpr dims_type const next_dimension(dims_type) const override
 	{
 		return 0;
@@ -345,8 +318,7 @@ struct object_median : base_split_partition_rule<Point> {
 				})
 				.begin();
 
-		if (split_iter ==
-		    in.begin()) { // NOTE: handle duplicated medians
+		if (split_iter == in.begin()) { /* handle duplicated medians */
 			split_iter =
 				std::ranges::partition(
 					in.begin() + n / 2, in.end(),
@@ -355,17 +327,16 @@ struct object_median : base_split_partition_rule<Point> {
 							p.pnt[dim],
 							in[n / 2].pnt[dim]);
 					})
-					.begin(); // NOTE: now all duplicated
-						  // median is on the left
+					.begin(); /* now all duplicated */
+						  /* median is on the left */
 		}
-		// return split_iter;
 		if (split_iter <=
-		    in.begin() + n / 2) { // NOTE: split is on left half
+		    in.begin() + n / 2) { /* split is on left half */
 			return iter_hyper_pair_type(
 				split_iter,
 				hyper_plane_type(in[n / 2].pnt[dim], dim));
 		} else if (split_iter !=
-			   in.end()) { // NOTE: split is on right half
+			   in.end()) { /* split is on right half */
 			auto min_elem_iter = std::ranges::min_element(
 				split_iter, in.end(),
 				[&](Point const &p1, Point const &p2) {
@@ -375,12 +346,12 @@ struct object_median : base_split_partition_rule<Point> {
 			return iter_hyper_pair_type(
 				split_iter,
 				hyper_plane_type(min_elem_iter->pnt[dim], dim));
-		} else { // NOTE: all the same
+		} else { /* all the same */
 			return iter_hyper_pair_type(split_iter, std::nullopt);
 		}
 	}
 
-	// TODO: the sample may handle the duplicates as well
+	/* TODO: the sample may handle the duplicates as well */
 	constexpr hyper_plane_type const
 	split_sample(slice_type in, dims_type const dim,
 		     [[maybe_unused]] box_type const &box) const override
@@ -460,7 +431,7 @@ struct orthogonal_split_rule {
 		return DimRule::get_name() + "-" + PartitionRule::get_name();
 	}
 
-	// NOTE: dimension
+	/* dimension */
 	template <typename... Args>
 	auto find_cutting_dimension(Args &&...args)
 	{
@@ -481,21 +452,21 @@ struct orthogonal_split_rule {
 		return dim_rule.next_dimension(std::forward<Args>(args)...);
 	}
 
-	// NOTE: serial parititon used in algorithm
+	/* serial parititon used in algorithm */
 	template <typename... Args>
 	auto split_input(Args &&...args)
 	{
 		return partition_rule.split_input(std::forward<Args>(args)...);
 	}
 
-	// NOTE: split the sample in order to get the hyperplane
+	/* split the sample in order to get the hyperplane */
 	template <typename... Args>
 	auto split_sample(Args &&...args)
 	{
 		return partition_rule.split_sample(std::forward<Args>(args)...);
 	}
 
-	// NOTE: query whether to launch the rebuild
+	/* query whether to launch the rebuild */
 	template <typename... Args>
 	auto allow_rebuild(Args &&...args)
 	{
@@ -503,9 +474,11 @@ struct orthogonal_split_rule {
 			std::forward<Args>(args)...);
 	}
 
-	// NOTE: helper for handling the duplicate
-	// NOTE: divide the space until the split cut the input box
-	// INFO: divide the space for binary node
+	/*
+	 * helper for handling the duplicate
+	 * divide the space until the split cut the input box
+	 * INFO: divide the space for binary node
+	 */
 	template <typename Tree, typename slice_type, typename dims_type,
 		  typename box_type>
 	node *divide_space(Tree &tree, slice_type in, slice_type out,
@@ -515,7 +488,7 @@ struct orthogonal_split_rule {
 	{
 		assert(Tree::within_box(input_box, node_box));
 
-		// Main logic
+		/* Main logic */
 		if (Tree::vertical_line_split_box(
 			    Tree::get_box_mid(dim, node_box), input_box, dim)) {
 			return tree.build_recursive(in, out, dim, node_box);
@@ -524,12 +497,14 @@ struct orthogonal_split_rule {
 		auto cut_dim = dim_rule.find_cutting_dimension(node_box, dim);
 		auto cut_val = Tree::get_box_mid(cut_dim, node_box);
 
-		// INFO: Test whether the node_box will remain unchanged after
-		// the split. If the mid of box is the same as the box edge,
-		// then this time the recursion will usless, the worst case is
-		// that all the mid on all dimension is on the box edge, i.e.,
-		// (0,1), (0,1), then a correct split algorithm will handle this
-		// case
+		/*
+		 * INFO: Test whether the node_box will remain unchanged after
+		 * the split. If the mid of box is the same as the box edge,
+		 * then this time the recursion will usless, the worst case is
+		 * that all the mid on all dimension is on the box edge, i.e.,
+		 * (0,1), (0,1), then a correct split algorithm will handle this
+		 * case
+		 */
 		dims_type dim_cnt = 0;
 		while (dim_cnt != Tree::num_dims) {
 			if (!Tree::vertical_line_on_box_edge(cut_val, node_box,
@@ -542,17 +517,19 @@ struct orthogonal_split_rule {
 		}
 
 		if (dim_cnt ==
-		    Tree::num_dims) { // WARN:this breaks rotation manner
-			// NOTE: checks whether the node box is separatable
+		    Tree::num_dims) { /* this breaks rotation manner */
+			/* checks whether the node box is separatable */
 			return tree.build_recursive(
 				in, out, dim_rule.next_dimension(dim),
 				node_box);
 		} else if (Tree::vertical_line_split_box(cut_val, input_box,
 							 cut_dim)) {
-			// NOTE: above while loop may changed to new dim and
-			// need to re-check whether it can split the input. This
-			// is necessary as the following left/right test assumes
-			// the @cut_val does not split box
+			/*
+			 * above while loop may changed to new dim and
+			 * need to re-check whether it can split the input. This
+			 * is necessary as the following left/right test assumes
+			 * the @cut_val does not split box
+			 */
 			return tree.build_recursive(in, out, cut_dim, node_box);
 		}
 
@@ -584,7 +561,7 @@ struct orthogonal_split_rule {
 			L, R, box_cut.get_hyper_plane());
 	}
 
-	// INFO: divide the space for multi node
+	/* INFO: divide the space for multi node */
 	template <typename Tree, typename slice_type, typename box_type>
 	node *divide_space(Tree &tree, slice_type in, slice_type out,
 			   box_type const &node_box, box_type const &input_box)
@@ -597,8 +574,10 @@ struct orthogonal_split_rule {
 		for (auto const &split : nodebox_split) {
 			if (Tree::vertical_line_split_box(
 				    split.first, input_box, split.second)) {
-				// any point on the split should be put on the
-				// right
+				/*
+				 * any point on the split should be put on the
+				 * right
+				 */
 				return tree.build_recursive(in, out, node_box);
 			}
 		}
@@ -606,19 +585,21 @@ struct orthogonal_split_rule {
 		if (std::ranges::all_of(nodebox_split, [&](auto const &split) {
 			    return Tree::vertical_line_on_box_edge(
 				    split.first, node_box, split.second);
-		    })) { // NOTE: new box will be same as the old ones
+		    })) { /* new box will be same as the old ones */
 			return tree.build_recursive(in, out, node_box);
 		}
 
-		// PARA: node id contains the input box
+		/* PARA: node id contains the input box */
 		typename Tree::interior_type::bucket_type pivot_region_id = 1;
-		// NOTE: considering three cases:
-		// 1: the split is LESS than the left input box edge
-		// 2: the split is EQ the left box edge
-		// 3: same as 2 but left and right edge is same, aka. a line
-		// The special judge above has prune out the case that split
-		// intersect the box, therefore split lt or eq the RIGHT edge
-		// will cover all the cases
+		/*
+		 * considering three cases:
+		 * 1: the split is LESS than the left input box edge
+		 * 2: the split is EQ the left box edge
+		 * 3: same as 2 but left and right edge is same, aka. a line
+		 * The special judge above has prune out the case that split
+		 * intersect the box, therefore split lt or eq the RIGHT edge
+		 * will cover all the cases
+		 */
 		for (auto const &split : nodebox_split) {
 			pivot_region_id =
 				pivot_region_id * 2 +
@@ -653,21 +634,25 @@ struct orthogonal_split_rule {
 			tree_nodes, nodebox_split);
 	}
 
-	// NOTE: cannot divide the points on @dim, while the points are not the
-	// same
+	/*
+	 * cannot divide the points on @dim, while the points are not the
+	 * same
+	 */
 	template <typename Tree, typename slice_type, typename box_type,
 		  typename... Args>
 	auto handle_undivided(Tree &tree, slice_type in, slice_type out,
 			      box_type const &box, Args &&...args)
 	{
 		if constexpr (is_object_median_split<PartitionRule>) {
-			// NOTE: in object median, if current dimension is not
-			// divideable, then switch to another dimension then
-			// continue. This works since unless all points are
-			// same, otherwise we can always slice some points out.
+			/*
+			 * in object median, if current dimension is not
+			 * divideable, then switch to another dimension then
+			 * continue. This works since unless all points are
+			 * same, otherwise we can always slice some points out.
+			 */
 			if constexpr (is_binary_node<
 					      typename Tree::interior_type>) {
-				// TODO: tooo brute force
+				/* TODO: tooo brute force */
 				return tree.serial_build_recursive(
 					in, out,
 					dim_rule.next_dimension(
@@ -679,8 +664,10 @@ struct orthogonal_split_rule {
 			}
 
 		} else if constexpr (is_spatial_median_split<PartitionRule>) {
-			// NOTE: in spatial median, we simply reduce the box by
-			// half on current dim, then switch to next dim.
+			/*
+			 * in spatial median, we simply reduce the box by
+			 * half on current dim, then switch to next dim.
+			 */
 			if constexpr (is_rotate_dim_split<DimRule> ||
 				      is_max_stretch_dim<DimRule>) {
 				return divide_space(
@@ -709,6 +696,6 @@ struct orthogonal_split_rule {
 	DimRule const dim_rule;
 	PartitionRule const partition_rule;
 };
-} // namespace psi
+} /* namespace psi */
 
-#endif // PSI_DEPENDENCE_SPLITTER_H
+#endif /* PSI_DEPENDENCE_SPLITTER_H */

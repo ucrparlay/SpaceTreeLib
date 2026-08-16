@@ -6,7 +6,7 @@
 namespace psi
 {
 
-// NOTE: default batch delete
+/* default batch delete */
 template <typename Point, typename SplitRule, typename LeafAugType,
 	  typename InteriorAugType, uint_fast8_t SkHeight,
 	  uint_fast8_t ImbaRatio>
@@ -18,7 +18,7 @@ void kd_tree<Point, SplitRule, LeafAugType, InteriorAugType, SkHeight,
 	return;
 }
 
-// NOTE: assume all points_type are fully covered in the tree
+/* assume all points_type are fully covered in the tree */
 template <typename Point, typename SplitRule, typename LeafAugType,
 	  typename InteriorAugType, uint_fast8_t SkHeight,
 	  uint_fast8_t ImbaRatio>
@@ -40,8 +40,10 @@ void kd_tree<Point, SplitRule, LeafAugType, InteriorAugType, SkHeight,
 	return;
 }
 
-// NOTE: delete with rebuild, with the assumption that all points_type are in
-// the tree WARN: the param d can be only used when rotate cutting is applied
+/*
+ * delete with rebuild, with the assumption that all points_type are in
+ * the tree the param d can be only used when rotate cutting is applied
+ */
 template <typename Point, typename SplitRule, typename LeafAugType,
 	  typename InteriorAugType, uint_fast8_t SkHeight,
 	  uint_fast8_t ImbaRatio>
@@ -77,25 +79,27 @@ kd_tree<Point, SplitRule, LeafAugType, InteriorAugType, SkHeight, ImbaRatio>::
 	}
 
 #ifndef DISABLE_BATCH_DELETE_SIZE_OPT
-	// INFO: it can be used to accelerate the whole deletion process
+	/* INFO: it can be used to accelerate the whole deletion process */
 	if (n == T->size) {
-		if (has_tomb) { // rebuild this subtree
+		if (has_tomb) { /* rebuild this subtree */
 			base_type::template delete_tree_recursive<
 				leaf_type, interior_type>(T);
 			return node_box_type(
 				alloc_empty_leaf_node<slice_type, leaf_type>(),
 				base_type::get_empty_box());
 		}
-		// within a rebuild tree
-		if (!T->is_leaf) { // interior
+		/* within a rebuild tree */
+		if (!T->is_leaf) { /* interior */
 			auto ti = static_cast<interior_type *>(T);
-			ti->reset_aug(); // needs to put before set parallel
-					 // flag
-			// WARN: only set the flag for root, the remaining tree
-			// is still unset
+			ti->reset_aug(); /* needs to put before set parallel */
+					 /* flag */
+			/*
+			 * only set the flag for root, the remaining tree
+			 * is still unset
+			 */
 			ti->set_parallel_flag(T->size >
 					      base_type::serial_build_cutoff);
-		} else { // leaf
+		} else { /* leaf */
 			auto tl = static_cast<leaf_type *>(T);
 			tl->reset_aug();
 		}
@@ -108,17 +112,8 @@ kd_tree<Point, SplitRule, LeafAugType, InteriorAugType, SkHeight, ImbaRatio>::
 		return base_type::template delete_points4_leaf<leaf_type,
 							       node_box_type>(
 			T, in);
-		// auto o = base_type::template delete_points4_leaf<leaf_type,
-		// node_box_type>(T, in);
-		// assert(base_type::same_box(base_type::template
-		// get_box<leaf_type, interior_type>(o.first),
-		//                    base_type::template
-		//                    retrieve_box<leaf_type,
-		//                    interior_type>(o.first)));
-		// return o;
 	}
 
-	// if (1) {
 	if (in.size() <= base_type::serial_build_cutoff) {
 		interior_type *ti = static_cast<interior_type *>(T);
 		points_iter_type split_iter =
@@ -127,20 +122,21 @@ kd_tree<Point, SplitRule, LeafAugType, InteriorAugType, SkHeight, ImbaRatio>::
 						    ti->split.first);
 			}).begin();
 
-		// NOTE: put the tomb if the remaining points number are below
-		// sparse_leaf_threshold (to avoid next insertion exceeds the
-		// limit) or imbalance
-		bool putTomb =
+		/*
+		 * put the tomb if the remaining points number are below
+		 * sparse_leaf_threshold (to avoid next insertion exceeds the
+		 * limit) or imbalance
+		 */
+		bool put_tomb =
 			has_tomb &&
 			(base_type::sparse_node(in.size(), ti->size) ||
 			 (split_rule_.allow_rebuild() &&
 			  base_type::imbalance_node(
 				  ti->left->size - (split_iter - in.begin()),
 				  ti->size - in.size())));
-		has_tomb = putTomb ? false : has_tomb;
-		assert(putTomb ? (!has_tomb) : true);
+		has_tomb = put_tomb ? false : has_tomb;
+		assert(put_tomb ? (!has_tomb) : true);
 
-		// dims_type next_dim = (d + 1) % base_type::num_dims;
 		dims_type next_dim = split_rule_.next_dimension(d);
 		box_cut_type box_cut(box, ti->split, true);
 
@@ -167,21 +163,14 @@ kd_tree<Point, SplitRule, LeafAugType, InteriorAugType, SkHeight, ImbaRatio>::
 			ti->set_parallel_flag(force_parallel_flag);
 		}
 
-		// NOTE: rebuild
-		if (putTomb) {
+		/* rebuild */
+		if (put_tomb) {
 			assert(base_type::sparse_node(0, ti->size) ||
 			       (split_rule_.allow_rebuild() &&
 				base_type::imbalance_node(ti->left->size,
 							  ti->size)));
 			auto const new_box = base_type::get_box(lbox, rbox);
-			// auto const tree_box = base_type::template
-			// get_box<leaf_type, interior_type>(T); auto const
-			// left_box = base_type::template
-			// retrieve_box<leaf_type, interior_type>(ti->left);
-			// auto const right_box = base_type::template
-			// retrieve_box<leaf_type, interior_type>(ti->right);
-			// auto const tree_in_box = base_type::template
-			// retrieve_box<leaf_type, interior_type>(T);
+
 			assert(base_type::within_box(
 				base_type::template get_box<leaf_type,
 							    interior_type>(T),
@@ -205,7 +194,7 @@ kd_tree<Point, SplitRule, LeafAugType, InteriorAugType, SkHeight, ImbaRatio>::
 	auto tree_nodes = node_box_seq_type::uninitialized(IT.tags_num);
 	auto box_seq = parlay::sequence<box_type>::uninitialized(IT.tags_num);
 
-	// enable the force parallel flag in batch deletion
+	/* enable the force parallel flag in batch deletion */
 	/* Results are used by asserts only, but the call tags the skeleton. */
 	[[maybe_unused]] auto [re_num, tot_re_size] =
 		IT.template tag_imbalance_node_deletion<true>(
@@ -224,7 +213,7 @@ kd_tree<Point, SplitRule, LeafAugType, InteriorAugType, SkHeight, ImbaRatio>::
 
 	assert(re_num <= IT.tags_num);
 
-	// NOTE: delete the points in the tree
+	/* delete the points in the tree */
 	parlay::parallel_for(
 		0, IT.tags_num,
 		[&](decltype(IT.tags_num) i) {
@@ -258,19 +247,21 @@ kd_tree<Point, SplitRule, LeafAugType, InteriorAugType, SkHeight, ImbaRatio>::
 		},
 		1);
 
-	// NOTE: handling of rebuild (in parallel)
-	// NOTE: get new box for skeleton root and rebuild nodes
+	/*
+	 * handling of rebuild (in parallel)
+	 * get new box for skeleton root and rebuild nodes
+	 */
 	box_type const new_box = std::get<1>(
-		IT.template update_inner_tree<inner_tree::kTagRebuildNode>(
+		IT.template update_inner_tree<inner_tree::tag_rebuild_node>(
 			tree_nodes, box_seq));
 	assert(IT.tags_num == re_num);
 
-	// NOTE: launch the rebuild in parallel
+	/* launch the rebuild in parallel */
 	parlay::parallel_for(0, IT.tags_num, [&](size_t i) {
 		assert(IT.tags[IT.rev_tag[i]].second ==
 		       base_type::bucket_num + 3);
 
-		if (IT.tags[IT.rev_tag[i]].first->size == 0) { // NOTE: empty
+		if (IT.tags[IT.rev_tag[i]].first->size == 0) { /* empty */
 #ifndef DISABLE_BATCH_DELETE_SIZE_OPT
 			base_type::template delete_tree_recursive<
 				leaf_type, interior_type, false>(
@@ -281,7 +272,7 @@ kd_tree<Point, SplitRule, LeafAugType, InteriorAugType, SkHeight, ImbaRatio>::
 #endif
 			IT.tags[IT.rev_tag[i]].first =
 				alloc_empty_leaf_node<slice_type, leaf_type>();
-		} else { // NOTE: rebuild
+		} else { /* rebuild */
 			assert(base_type::within_box(
 				base_type::template get_box<leaf_type,
 							    interior_type>(
@@ -299,14 +290,14 @@ kd_tree<Point, SplitRule, LeafAugType, InteriorAugType, SkHeight, ImbaRatio>::
 					IT.tags[IT.rev_tag[i]].first, next_dim,
 					box_seq[i]);
 		}
-	}); // PERF: let the parlay decide granularity
+	}); /* let the parlay decide granularity */
 
 	auto const new_root = std::get<0>(
-		IT.template update_inner_tree<inner_tree::kPostDelUpdate>(
+		IT.template update_inner_tree<inner_tree::post_del_update>(
 			tree_nodes));
 	return node_box_type(new_root, new_box);
 }
 
-} // namespace psi
+} /* namespace psi */
 
-#endif // PSI_KD_TREE_IMPL_KD_BATCH_DELETE_HPP
+#endif /* PSI_KD_TREE_IMPL_KD_BATCH_DELETE_HPP */

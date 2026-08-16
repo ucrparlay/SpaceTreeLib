@@ -1,8 +1,14 @@
-# Executables with no extension
-!*.*
-!*/
-!Makefile
-!Dockerfile
+# These negations carved nothing out -- there was no preceding rule to
+# un-ignore from -- and !*.* actively un-ignored .env.
+core
+a.out
+compile_commands.json
+.env
+
+# Scratch produced by running the scripts
+script/logger.in
+script/log.in
+script/*.out
 /.cache
 /script/backup_data
 /script/plots

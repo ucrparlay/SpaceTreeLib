@@ -35,7 +35,7 @@ struct kd_tree<Point, SplitRule, LeafAugType, InteriorAugType, SkHeight,
 	{
 	}
 
-	// Adding a virtual destructor makes node polymorphic
+	/* Adding a virtual destructor makes node polymorphic */
 	virtual ~kd_interior_node() = default;
 
 	inline void set_parallel_flag(bool const flag)
@@ -82,41 +82,6 @@ struct kd_tree<Point, SplitRule, LeafAugType, InteriorAugType, SkHeight,
 	}
 };
 
-// template <typename Point, typename SplitRule, uint_fast8_t SkHeight,
-//           uint_fast8_t ImbaRatio>
-// template <uint_fast8_t md>
-// struct kd_tree<Point, SplitRule, SkHeight, ImbaRatio>::KdCompressionNode
-//     : multi_node<Point, md, CompressNodeSplitter, AugType> {
-//   using base_node = multi_node<Point, md, CompressNodeSplitter,
-//   AugType>; using KdNodeArr = typename base_node::node_arr_type; using
-//   pt_type = Point; using st_type = CompressNodeSplitter; using at_type =
-//   AugType;
+} /* namespace psi */
 
-//   KdCompressionNode(KdNodeArr const& _tree_nodes, const st_type& _split,
-//                     const at_type& _aug)
-//       : base_node(_tree_nodes, _split, _aug) {}
-
-//   // Adding a virtual destructor makes node polymorphic
-//   virtual ~KdCompressionNode() = default;
-
-//   inline void set_parallel_flag(bool const flag) { this->aug.emplace(flag); }
-
-//   inline void reset_parallel_flag() { this->aug.reset(); }
-
-//   inline bool get_parallel_flag_ini_status() { return this->aug.has_value();
-//   }
-
-//   // NOTE: use a tri-state bool to indicate whether a subtree needs to be
-//   // rebuilt. If aug is not INITIALIZED, then it means there is no need to
-//   // rebuild; otherwise, the value depends on the initial tree size before
-//   // rebuilding.
-//   inline bool force_parallel() const {
-//     return this->aug.has_value() ? this->aug.value()
-//                                  : this->size >
-//                                  base_type::serial_build_cutoff;
-//   }
-// };
-
-} // namespace psi
-
-#endif // PSI_KD_TREE_IMPL_KD_INTER_NODE_HPP_
+#endif /* PSI_KD_TREE_IMPL_KD_INTER_NODE_HPP_ */

@@ -22,6 +22,6 @@ struct range_query_logger {
 	size_t skip_box_num = 0;
 };
 
-} // namespace psi
+} /* namespace psi */
 
-#endif // PSI_DEPENDENCE_LOGGERS_H_
+#endif /* PSI_DEPENDENCE_LOGGERS_H_ */

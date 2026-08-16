@@ -32,7 +32,7 @@ void base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::delete_tree_nodes()
 }
 
 template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio> //* delete tree in parallel
+	  uint_fast8_t ImbaRatio> /* * delete tree in parallel */
 template <typename leaf_type, is_binary_node interior_type, bool granularity>
 void base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::delete_tree_recursive(
 	node *T)
@@ -44,8 +44,10 @@ void base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::delete_tree_recursive(
 		free_node<leaf_type>(T);
 	} else {
 		interior_type *ti = static_cast<interior_type *>(T);
-		// NOTE: enable granularity control by default, if it is
-		// disabled, always delete in parallel
+		/*
+		 * enable granularity control by default, if it is
+		 * disabled, always delete in parallel
+		 */
 		parlay::par_do_if(
 			force_parallel_recursion<interior_type, granularity>(
 				ti),
@@ -62,7 +64,7 @@ void base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::delete_tree_recursive(
 }
 
 template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio> //* delete tree in parallel
+	  uint_fast8_t ImbaRatio> /* * delete tree in parallel */
 template <typename leaf_type, is_multi_node interior_type, bool granularity>
 void base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::delete_tree_recursive(
 	node *T)
@@ -75,8 +77,10 @@ void base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::delete_tree_recursive(
 	} else {
 		interior_type *ti = static_cast<interior_type *>(T);
 
-		// NOTE: enable granularity control by default, if it is
-		// disabled, always delete in parallel
+		/*
+		 * enable granularity control by default, if it is
+		 * disabled, always delete in parallel
+		 */
 		parlay::parallel_for(
 			0, ti->tree_nodes.size(),
 			[&](size_t i) {
@@ -91,35 +95,6 @@ void base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::delete_tree_recursive(
 	}
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio> //* delete tree in parallel
-template <typename leaf_type, is_dynamic_node interior_type, bool granularity>
-void base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::delete_tree_recursive(
-	node *T)
-{
-	if (T == nullptr) {
-		return;
-	}
-	if (T->is_leaf) {
-		free_node<leaf_type>(T);
-	} else {
-		interior_type *ti = static_cast<interior_type *>(T);
+} /* namespace psi */
 
-		// NOTE: enable granularity control by default, if it is
-		// disabled, always delete in parallel
-		parlay::parallel_for(
-			0, ti->tree_nodes.size(),
-			[&](size_t i) {
-				delete_tree_recursive<leaf_type, interior_type>(
-					ti->tree_nodes[i]);
-			},
-			force_parallel_recursion<interior_type, granularity>(ti)
-				? 1
-				: ti->tree_nodes.size());
-
-		free_node<interior_type>(T);
-	}
-}
-} // namespace psi
-
-#endif // PSI_BASE_TREE_IMPL_DELETE_TREE_HPP_
+#endif /* PSI_BASE_TREE_IMPL_DELETE_TREE_HPP_ */

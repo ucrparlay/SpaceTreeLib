@@ -27,7 +27,7 @@ decltype(auto) base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::retrieve_box(
 		       : static_cast<interior_type const *>(node)->get_box();
 }
 
-// NOTE: update the info of T by new children L and R
+/* update the info of T by new children L and R */
 template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
 	  uint_fast8_t ImbaRatio>
 template <is_binary_node interior_type, bool UpdateParFlag>
@@ -83,6 +83,6 @@ inline void base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::update_interior(
 	ti->update_aug(new_nodes);
 	return;
 }
-} // namespace psi
+} /* namespace psi */
 
-#endif // PSI_BASE_TREE_IMPL_TREE_OP_NODE_OP_HPP_
+#endif /* PSI_BASE_TREE_IMPL_TREE_OP_NODE_OP_HPP_ */

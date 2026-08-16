@@ -103,19 +103,21 @@ struct orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
 		return this->aug.reset();
 	}
 
-	// NOTE: specific part
-	// NOTE: compute the spliiter
+	/*
+	 * specific part
+	 * compute the spliiter
+	 */
 	template <typename box_type>
 	static st_type compute_splitter(box_type const &box)
 	{
 		st_type split;
 
-		if constexpr (md == 2) { // for dim = 2
+		if constexpr (md == 2) { /* for dim = 2 */
 			split[0] = hyper_plane_type(
 				base_type::get_box_mid(0, box), 0);
 			split[1] = hyper_plane_type(
 				base_type::get_box_mid(1, box), 1);
-		} else if constexpr (md == 3) { // for dim = 3
+		} else if constexpr (md == 3) { /* for dim = 3 */
 			split[0] = hyper_plane_type(
 				base_type::get_box_mid(0, box), 0);
 			split[1] = hyper_plane_type(
@@ -123,7 +125,7 @@ struct orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
 			split[2] = hyper_plane_type(
 				base_type::get_box_mid(2, box), 2);
 		} else {
-			for (dims_type i = 0; i < md; ++i) { // for dim > 3
+			for (dims_type i = 0; i < md; ++i) { /* for dim > 3 */
 				split[i] = hyper_plane_type(
 					base_type::get_box_mid(i, box), i);
 			}
@@ -132,7 +134,7 @@ struct orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
 		return std::move(split);
 	}
 
-	// NOTE: Generate the hyperplane sequences for the node
+	/* Generate the hyperplane sequences for the node */
 	template <typename hyper_plane_seq_type>
 	void generate_hyper_plane_seq(hyper_plane_seq_type &hyper_seq, auto idx,
 				      auto deep)
@@ -146,19 +148,21 @@ struct orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
 		return;
 	}
 
-	// NOTE: given an idx in the tree skeleton, modify its value its
-	// position in left or right of the splitter
+	/*
+	 * given an idx in the tree skeleton, modify its value its
+	 * position in left or right of the splitter
+	 */
 	static bucket_type sieve_point(Point const &p, st_type const &split,
 				       bucket_type idx)
 	{
-		if constexpr (md == 2) { // for dim = 2
+		if constexpr (md == 2) { /* for dim = 2 */
 			idx = 2 * idx + 1 -
 			      static_cast<bucket_type>(num_type::lt(
 				      p.pnt[split[0].second], split[0].first));
 			idx = 2 * idx + 1 -
 			      static_cast<bucket_type>(num_type::lt(
 				      p.pnt[split[1].second], split[1].first));
-		} else if constexpr (md == 3) { // for dim = 3
+		} else if constexpr (md == 3) { /* for dim = 3 */
 			idx = 2 * idx + 1 -
 			      static_cast<bucket_type>(num_type::lt(
 				      p.pnt[split[0].second], split[0].first));
@@ -169,7 +173,7 @@ struct orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
 			      static_cast<bucket_type>(num_type::lt(
 				      p.pnt[split[2].second], split[2].first));
 		} else {
-			for (bucket_type i = 0; i < md; ++i) { // for dim > 3
+			for (bucket_type i = 0; i < md; ++i) { /* for dim > 3 */
 				idx = 2 * idx + 1 -
 				      static_cast<bucket_type>(num_type::lt(
 					      p.pnt[split[i].second],
@@ -184,8 +188,10 @@ struct orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
 		return sieve_point(p, this->split, idx);
 	}
 
-	// NOTE: Given a box, produce new sub-boxes equivalent to modify the
-	// existing boxes
+	/*
+	 * Given a box, produce new sub-boxes equivalent to modify the
+	 * existing boxes
+	 */
 	template <typename BoxSeqSlice>
 	static void compute_subregions_rec(BoxSeqSlice box_seq,
 					   st_type const &split,
@@ -231,14 +237,14 @@ struct orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
 		return std::move(box_seq);
 	}
 
-	// NOTE: Given a box and a bucket id, modify the box for that bucket
+	/* Given a box and a bucket id, modify the box for that bucket */
 	template <typename box_type>
 	static void modify_box_by_id(bucket_type id, st_type const &split,
 				     box_type &box)
 	{
 		assert(id >= 0 && id <= base_node::get_regions());
 
-		if constexpr (md == 2) { // dim =2
+		if constexpr (md == 2) { /* dim =2 */
 			auto &target1 =
 				(id & (1 << 1)) ? box.first : box.second;
 			target1.pnt[split[0].second] = split[0].first;
@@ -246,7 +252,7 @@ struct orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
 			auto &target2 =
 				(id & (1 << 0)) ? box.first : box.second;
 			target2.pnt[split[1].second] = split[1].first;
-		} else if constexpr (md == 3) { // dim =3
+		} else if constexpr (md == 3) { /* dim =3 */
 			auto &target1 =
 				(id & (1 << 2)) ? box.first : box.second;
 			target1.pnt[split[0].second] = split[0].first;
@@ -258,7 +264,7 @@ struct orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
 			auto &target3 =
 				(id & (1 << 0)) ? box.first : box.second;
 			target3.pnt[split[2].second] = split[2].first;
-		} else { // dim > 3
+		} else { /* dim > 3 */
 			for (bucket_type i = md; i > 0; --i) {
 				auto &target = (id & (1 << (i - 1)))
 						       ? box.first
@@ -277,7 +283,7 @@ struct orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
 		return;
 	}
 
-	// NOTE: return a new box by modifying the box for a specific region
+	/* return a new box by modifying the box for a specific region */
 	template <typename box_type>
 	static box_type get_box_by_region_id(bucket_type id,
 					     st_type const &split,
@@ -297,6 +303,6 @@ struct orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
 	}
 };
 
-} // namespace psi
+} /* namespace psi */
 
-#endif // PSI_ORTH_TREE_IMPL_ORTH_INTER_NODE_HPP_
+#endif /* PSI_ORTH_TREE_IMPL_ORTH_INTER_NODE_HPP_ */

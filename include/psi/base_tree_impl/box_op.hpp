@@ -49,7 +49,7 @@ template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
 inline bool base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::legal_box(
 	box_type const &bx)
 {
-	// TODO: remove it
+	/* TODO: remove it */
 	if (bx == get_empty_box())
 		return true;
 
@@ -249,8 +249,10 @@ base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::vertical_line_intersect_box(
 	       num_type::leq(line, box.second.pnt[d]);
 }
 
-// NOTE: if the line @line is one the boundary of the box, then it will be
-// considered as not intersect
+/*
+ * if the line @line is one the boundary of the box, then it will be
+ * considered as not intersect
+ */
 template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
 	  uint_fast8_t ImbaRatio>
 inline bool base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::
@@ -303,8 +305,10 @@ base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::get_box(slice_type V)
 	}
 }
 
-// NOTE: this function omit the possibility that T contains the bounding box --
-// it will always try to reduce a bounding box in the tree T
+/*
+ * this function omit the possibility that T contains the bounding box --
+ * it will always try to reduce a bounding box in the tree T
+ */
 template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
 	  uint_fast8_t ImbaRatio>
 template <typename leaf_type, typename interior_type>
@@ -320,9 +324,6 @@ base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::get_box(node *T)
 			return box_type(tl->pts[0], tl->pts[0]);
 		}
 		return get_box(tl->pts.cut(0, tl->size));
-		// auto nb = get_box(tl->pts.cut(0, tl->size));
-		// assert(same_box(nb, tl->get_box()));
-		// return nb;
 	}
 	interior_type *ti = static_cast<interior_type *>(T);
 	if constexpr (is_binary_node<interior_type>) {
@@ -331,9 +332,6 @@ base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::get_box(node *T)
 		box_type const &right_box =
 			get_box<leaf_type, interior_type>(ti->right);
 		return get_box(left_box, right_box);
-		// auto nb = get_box(left_box, right_box);
-		// assert(same_box(nb, ti->get_box()));
-		// return nb;
 	} else if constexpr (is_multi_node<interior_type>) {
 		box_seq_type return_box_seq(interior_type::get_regions());
 		for (size_t i = 0; i < interior_type::get_regions(); i++) {
@@ -383,6 +381,6 @@ Point base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::get_box_center(
 	}
 	return center;
 }
-} // namespace psi
+} /* namespace psi */
 
-#endif // PSI_BASE_TREE_IMPL_BOX_OP_HPP_
+#endif /* PSI_BASE_TREE_IMPL_BOX_OP_HPP_ */

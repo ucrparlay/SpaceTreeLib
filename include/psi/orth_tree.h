@@ -86,7 +86,6 @@ public:
 	using points_iter_type = base_type::points_iter_type;
 	using box_type = base_type::box_type;
 	using box_seq_type = base_type::box_seq_type;
-	// using circle_type = base_type::circle_type;
 
 	using hyper_plane_type = base_type::hyper_plane_type;
 	using hyper_plane_seq_type = base_type::hyper_plane_seq_type;
@@ -94,9 +93,7 @@ public:
 	using splitter_seq_type = parlay::sequence<splitter_type>;
 	using node_box_seq_type = base_type::node_box_seq_type;
 	using node_box_type = base_type::node_box_type;
-	// using AugType = std::optional<bool>;
 
-	// struct kd_interior_node;
 	struct orth_interior_node;
 
 	using split_rule_type = SplitRule;
@@ -146,12 +143,14 @@ public:
 	template <typename Range>
 	void batch_insert(Range &&in);
 
-	// NOTE: every point is assumed to be in the tree; if that may not
-	// hold, use batch_diff
+	/*
+	 * every point is assumed to be in the tree; if that may not
+	 * hold, use batch_diff
+	 */
 	template <typename Range>
 	void batch_delete(Range &&in);
 
-	// NOTE: tolerates points that are not in the tree
+	/* tolerates points that are not in the tree */
 	template <typename Range>
 	void batch_diff(Range &&in);
 
@@ -186,6 +185,10 @@ public:
 		fixed_box = true;
 	}
 
+	/*
+	 * Parsed by script_ae/merge_*.py to label the figures; changing it
+	 * silently relabels published results.
+	 */
 	constexpr static char const *get_tree_name()
 	{
 		return "OrthTree";
@@ -235,7 +238,7 @@ private:
 	bool fixed_box = false;
 };
 
-} // namespace psi
+} /* namespace psi */
 
 #include "psi/orth_tree_impl/orth_batch_delete.hpp"
 #include "psi/orth_tree_impl/orth_batch_diff.hpp"
@@ -244,4 +247,4 @@ private:
 #include "psi/orth_tree_impl/orth_inter_node.hpp"
 #include "psi/orth_tree_impl/orth_override.hpp"
 
-#endif // PSI_ORTH_TREE_H
+#endif /* PSI_ORTH_TREE_H */

@@ -22,7 +22,7 @@ template <typename Point, typename SplitRule, typename LeafAugType,
 void kd_tree<Point, SplitRule, LeafAugType, InteriorAugType, SkHeight,
 	     ImbaRatio>::batch_insert_(slice_type A)
 {
-	if (this->root_ == nullptr) { // TODO: may check using explicity tag
+	if (this->root_ == nullptr) { /* TODO: may check using explicity tag */
 		return build_(A);
 	}
 
@@ -42,7 +42,7 @@ void kd_tree<Point, SplitRule, LeafAugType, InteriorAugType, SkHeight,
 	return;
 }
 
-// NOTE: return the updated node
+/* return the updated node */
 template <typename Point, typename SplitRule, typename LeafAugType,
 	  typename InteriorAugType, uint_fast8_t SkHeight,
 	  uint_fast8_t ImbaRatio>
@@ -68,16 +68,9 @@ node *kd_tree<Point, SplitRule, LeafAugType, InteriorAugType, SkHeight,
 		     }))) {
 			return base_type::template insert_points2_leaf<
 				leaf_type>(T, in);
-			// auto o = base_type::template
-			// insert_points2_leaf<leaf_type>(T, in);
-			// assert(base_type::same_box(base_type::template
-			// get_box<leaf_type, interior_type>(o),
-			//                    base_type::template
-			//                    retrieve_box<leaf_type,
-			//                    interior_type>(o)));
-			// return o;
-		} else { // PERF: if a nomarl leaf tl cannot handle more
-			 // duplicates, leave them here
+
+		} else { /* if a nomarl leaf tl cannot handle more */
+			 /* duplicates, leave them here */
 			return base_type::template rebuild_with_insert<
 				leaf_type, interior_type>(T, prepare_func, in,
 							  d);
@@ -95,7 +88,7 @@ node *kd_tree<Point, SplitRule, LeafAugType, InteriorAugType, SkHeight,
 			static_cast<points_iter_type>(_2ndGroup.begin()) -
 			static_cast<points_iter_type>(in.begin());
 
-		// NOTE: rebuild
+		/* rebuild */
 		if (split_rule_.allow_rebuild() &&
 		    base_type::imbalance_node(ti->left->size + split_pos,
 					      ti->size + n)) {
@@ -104,7 +97,7 @@ node *kd_tree<Point, SplitRule, LeafAugType, InteriorAugType, SkHeight,
 							  d);
 		}
 
-		// NOTE: continue
+		/* continue */
 		node *L, *R;
 		d = split_rule_.next_dimension(d);
 		L = batch_insert_recursive(ti->left, in.cut(0, split_pos),
@@ -117,7 +110,7 @@ node *kd_tree<Point, SplitRule, LeafAugType, InteriorAugType, SkHeight,
 		return T;
 	}
 
-	// NOTE: assign each node a tag
+	/* assign each node a tag */
 	inner_tree IT;
 	assert(IT.rev_tag.size() == base_type::bucket_num);
 	IT.assign_node_tag(T, 1);
@@ -153,7 +146,7 @@ node *kd_tree<Point, SplitRule, LeafAugType, InteriorAugType, SkHeight,
 
 			if (IT.tags[IT.rev_tag[i]].second ==
 			    base_type::bucket_num + 1) {
-				// NOTE: continue sieve
+				/* continue sieve */
 				tree_nodes[i] = batch_insert_recursive(
 					IT.tags[IT.rev_tag[i]].first,
 					out.cut(s,
@@ -162,7 +155,7 @@ node *kd_tree<Point, SplitRule, LeafAugType, InteriorAugType, SkHeight,
 					in.cut(s,
 					       s + IT.sums_tree[IT.rev_tag[i]]),
 					next_dim);
-			} else { // NOTE: launch rebuild subtree
+			} else { /* launch rebuild subtree */
 				assert(IT.tags[IT.rev_tag[i]].second ==
 				       base_type::bucket_num + 2);
 				assert(IT.tags[IT.rev_tag[i]].first->size +
@@ -181,10 +174,10 @@ node *kd_tree<Point, SplitRule, LeafAugType, InteriorAugType, SkHeight,
 		},
 		1);
 
-	return IT.template update_inner_tree<inner_tree::kUpdatePointer>(
+	return IT.template update_inner_tree<inner_tree::update_pointer>(
 		tree_nodes);
 }
 
-} // namespace psi
+} /* namespace psi */
 
-#endif // PSI_KD_TREE_IMPL_KD_BATCH_INSERT_HPP_
+#endif /* PSI_KD_TREE_IMPL_KD_BATCH_INSERT_HPP_ */

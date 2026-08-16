@@ -146,6 +146,6 @@ struct box_interior_aug {
 	std::optional<bool> force_par;
 };
 
-} // namespace psi
+} /* namespace psi */
 
-#endif // PSI_DEPENDENCE_AUGMENTATION_H_
+#endif /* PSI_DEPENDENCE_AUGMENTATION_H_ */

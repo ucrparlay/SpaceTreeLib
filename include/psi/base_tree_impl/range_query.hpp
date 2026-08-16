@@ -9,7 +9,7 @@
 
 namespace psi
 {
-// NOTE: orthogonal range count in leaf
+/* orthogonal range count in leaf */
 template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
 	  uint_fast8_t ImbaRatio>
 template <typename leaf_type>
@@ -31,7 +31,7 @@ base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::range_count_rectangle_leaf(
 	}
 }
 
-// NOTE: recursive orthogonal range count for bianry node
+/* recursive orthogonal range count for bianry node */
 template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
 	  uint_fast8_t ImbaRatio>
 template <typename leaf_type, is_binary_node interior_type>
@@ -41,8 +41,10 @@ base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::range_count_rectangle(
 	range_query_logger &logger)
 {
 	if (T->is_leaf) {
-		// PERF: no need to check box because we already check it before
-		// we recursion
+		/*
+		 * no need to check box because we already check it before
+		 * we recursion
+		 */
 		logger.vis_leaf_num++;
 		return range_count_rectangle_leaf<leaf_type>(T, query_box);
 	}
@@ -66,15 +68,17 @@ base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::range_count_rectangle(
 		}
 	};
 
-	if constexpr (!has_box<typename interior_type::at_type>) { // use
-								   // hyperplane
+	if constexpr (!has_box<typename interior_type::at_type>) { /* use */
+		/* hyperplane */
 		box_cut_type box_cut(node_box, ti->split, true);
 		logger.generate_box_num++;
 		recurse(ti->left, box_cut.get_first_box_cut(), left_cnt);
 		recurse(ti->right, box_cut.get_second_box_cut(), right_cnt);
 	} else if constexpr (has_box<typename interior_type::
-					     at_type>) { // use bounding
-							 // box
+					     at_type>) { /* use
+							    bounding
+							  */
+		/* box */
 		recurse(ti->left,
 			retrieve_box<leaf_type, interior_type>(ti->left),
 			left_cnt);
@@ -88,7 +92,7 @@ base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::range_count_rectangle(
 	return left_cnt + right_cnt;
 }
 
-// NOTE: orthogonal range count for multi node
+/* orthogonal range count for multi node */
 template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
 	  uint_fast8_t ImbaRatio>
 template <typename leaf_type, is_multi_node interior_type>
@@ -113,7 +117,7 @@ base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::range_count_rectangle(
 			counter = 0;
 		} else if (within_box(box, query_box)) {
 			logger.full_box_num++;
-			// NOTE: when reach leaf, t is the children
+			/* when reach leaf, t is the children */
 			counter = static_cast<interior_type *>(t)->merge_size(
 				next_idx);
 		} else {
@@ -130,7 +134,7 @@ base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::range_count_rectangle(
 	box_cut_type box_cut(node_box, ti->split[dim], true);
 	logger.generate_box_num++;
 
-	// NOTE: visit left half
+	/* visit left half */
 	assert(ti->split[dim].second == dim);
 
 	recurse(reach_leaf ? ti->tree_nodes[idx - interior_type::get_regions()]
@@ -147,48 +151,7 @@ base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::range_count_rectangle(
 	return l + r;
 }
 
-// TODO: as range_count_rectangle
-// template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
-//           uint_fast8_t ImbaRatio>
-// template <typename leaf_type, is_binary_node interior_type>
-// size_t base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::RangeCountRadius(
-//     node* T, circle_type const& cl, box_type const& node_box) {
-//   if (!circle_intersect_box(cl, node_box)) return 0;
-//   if (within_circle(node_box, cl)) return T->size;
-//
-//   if (T->is_leaf) {
-//     size_t cnt = 0;
-//     leaf_type* tl = static_cast<leaf_type*>(T);
-//     if (tl->is_dummy) {
-//       if (within_circle(tl->pts[0], cl)) {
-//         cnt += tl->size;
-//       }
-//     } else {
-//       std::ranges::for_each(tl->pts.begin(), tl->pts.begin() + tl->size,
-//                             [&](auto const& p) {
-//                               if (within_circle(p, cl)) {
-//                                 cnt++;
-//                               }
-//                             });
-//     }
-//     return cnt;
-//   }
-//
-//   interior_type* ti = static_cast<interior_type*>(T);
-//   box_type lbox(node_box), rbox(node_box);
-//   lbox.second.pnt[ti->split.second] = ti->split.first;  //* loose
-//   rbox.first.pnt[ti->split.second] = ti->split.first;
-//
-//   size_t l, r;
-//   parlay::par_do_if(
-//       ti->size >= serial_build_cutoff,
-//       [&] { l = RangeCountRadius(ti->left, cl, lbox); },
-//       [&] { r = RangeCountRadius(ti->right, cl, rbox); });
-//
-//   return l + r;
-// };
-
-// NOTE: orthogonal range query in leaf
+/* orthogonal range query in leaf */
 template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
 	  uint_fast8_t ImbaRatio>
 template <typename leaf_type, typename Range>
@@ -233,7 +196,7 @@ void base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::range_query_leaf(
 	return;
 }
 
-// NOTE: orthogonal range query recusively
+/* orthogonal range query recusively */
 template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
 	  uint_fast8_t ImbaRatio>
 template <typename leaf_type, is_binary_node interior_type, typename Range>
@@ -270,15 +233,17 @@ void base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::
 		}
 	};
 
-	if constexpr (!has_box<typename interior_type::at_type>) { // use
-								   // hyperplane
+	if constexpr (!has_box<typename interior_type::at_type>) { /* use */
+		/* hyperplane */
 		box_cut_type box_cut(node_box, ti->split, true);
 		logger.generate_box_num++;
 		recurse(ti->left, box_cut.get_first_box_cut());
 		recurse(ti->right, box_cut.get_second_box_cut());
 	} else if constexpr (has_box<typename interior_type::
-					     at_type>) { // use bounding
-							 // box
+					     at_type>) { /* use
+							    bounding
+							  */
+		/* box */
 		recurse(ti->left,
 			retrieve_box<leaf_type, interior_type>(ti->left));
 		recurse(ti->right,
@@ -351,7 +316,7 @@ void base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::
 		box_cut.get_first_box_cut(), (dim + 1) % num_dims,
 		reach_leaf ? 1 : idx);
 
-	// NOTE: visit right
+	/* visit right */
 	idx |= 1;
 	recurse(reach_leaf ? ti->tree_nodes[idx - interior_type::get_regions()]
 			   : T,
@@ -379,6 +344,6 @@ base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::range_query(
 	return out;
 }
 
-} // namespace psi
+} /* namespace psi */
 
-#endif // PSI_BASE_TREE_IMPL_RANGE_QUERY_HPP_
+#endif /* PSI_BASE_TREE_IMPL_RANGE_QUERY_HPP_ */

@@ -63,17 +63,6 @@ auto kd_tree<Point, SplitRule, LeafAugType, InteriorAugType, SkHeight,
 	return std::make_pair(size, logger);
 }
 
-// template <typename Point, typename SplitRule, typename LeafAugType, typename
-// InteriorAugType,  uint_fast8_t SkHeight,
-//           uint_fast8_t ImbaRatio>
-// auto kd_tree<Point, SplitRule, LeafAugType, InteriorAugType, SkHeight ,
-// ImbaRatio>::range_count(
-//     circle_type const& cl) {
-//   return base_type::template RangeCountRadius<leaf_type,
-//   interior_type>(this->root_, cl,
-//                                                        this->tree_box_);
-// }
-
 template <typename Point, typename SplitRule, typename LeafAugType,
 	  typename InteriorAugType, uint_fast8_t SkHeight,
 	  uint_fast8_t ImbaRatio>
@@ -102,6 +91,6 @@ constexpr void kd_tree<Point, SplitRule, LeafAugType, InteriorAugType, SkHeight,
 	base_type::template delete_tree_wrapper<leaf_type, interior_type>();
 }
 
-} // namespace psi
+} /* namespace psi */
 
-#endif // PSI_KD_TREE_IMPL_KD_OVERRIDE_HPP_
+#endif /* PSI_KD_TREE_IMPL_KD_OVERRIDE_HPP_ */

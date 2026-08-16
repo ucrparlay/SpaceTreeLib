@@ -9,6 +9,16 @@ from typing import Dict, List, Tuple, Optional
 from dataclasses import dataclass, field
 from pathlib import Path
 
+
+def curve_suffix(token):
+    """Z or H from the curve field. A silent fallback here mislabels a whole
+    series, so an unrecognised curve is an error."""
+    if token == "HilbertCurve;":
+        return "H"
+    if token == "MortonCurve;":
+        return "Z"
+    raise ValueError(f"Unknown curve: {token}")
+
 incre_ratios = [1, 0.1, 0.01, 0.001, 0.0001]
 solver = ""
 ratio_map = {}
@@ -50,9 +60,9 @@ def combine(P) -> List:
             elif lin_sep[1] == "OrthTree;":
                 solver = "OrthTree"
             elif lin_sep[1] == "PTree;":
-                solver = "PTree-H" if lin_sep[5] == "HilbertCurve;" else "PTree-Z"
+                solver = "PTree-" + curve_suffix(lin_sep[5])
             elif lin_sep[1] == "CPAM;":
-                solver = "CPAM-H" if lin_sep[5] == "HilbertCurve;" else "CPAM-Z"
+                solver = "CPAM-" + curve_suffix(lin_sep[5])
             elif lin_sep[1] == "ZdTree;":
                 solver = "ZdTree"
             else:

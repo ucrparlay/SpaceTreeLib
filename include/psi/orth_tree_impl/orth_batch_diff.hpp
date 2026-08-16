@@ -8,7 +8,7 @@
 namespace psi
 {
 
-// NOTE: default batch delete
+/* default batch delete */
 template <typename Point, typename SplitRule, typename LeafAugType,
 	  typename InteriorAugType, uint_fast8_t md, uint_fast8_t SkHeight,
 	  uint_fast8_t ImbaRatio>
@@ -20,7 +20,7 @@ void orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
 	return;
 }
 
-// NOTE: assume points are partially covered in the tree
+/* assume points are partially covered in the tree */
 template <typename Point, typename SplitRule, typename LeafAugType,
 	  typename InteriorAugType, uint_fast8_t md, uint_fast8_t SkHeight,
 	  uint_fast8_t ImbaRatio>
@@ -30,14 +30,16 @@ void orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
 	if (this->root_ == nullptr)
 		return;
 
-	// NOTE: diff points from the tree
+	/* diff points from the tree */
 	points_type B = points_type::uninitialized(A.size());
 	this->root_ =
 		batch_diff_recursive(this->root_, A, parlay::make_slice(B));
 
-	// NOTE: launch the rebuild
-	// PARA: @prepare_func: function that computes the new parameters before
-	// the rebuildtree recursive
+	/*
+	 * launch the rebuild
+	 * PARA: @prepare_func: function that computes the new parameters before
+	 * the rebuildtree recursive
+	 */
 	auto prepare_func = [&]([[maybe_unused]] node *T,
 				[[maybe_unused]] size_t i,
 				box_type const &box) {
@@ -54,7 +56,7 @@ void orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
 	return;
 }
 
-// NOTE: the orth does not need box since the box will never change
+/* the orth does not need box since the box will never change */
 template <typename Point, typename SplitRule, typename LeafAugType,
 	  typename InteriorAugType, uint_fast8_t md, uint_fast8_t SkHeight,
 	  uint_fast8_t ImbaRatio>
@@ -73,7 +75,6 @@ node *orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
 			T, in);
 	}
 
-	// if (in.size()) {
 	if (in.size() <= base_type::serial_build_cutoff) {
 		parlay::sequence<balls_type> sums(node_regions, 0);
 		serial_split_skeleton(T, in, 0, 1, sums);
@@ -112,8 +113,10 @@ node *orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
 							IT.sums, IT.tags_num);
 	IT.tag_puffy_nodes();
 
-	// PERF: no need to call tag imbalance node here, as the bounding box
-	// for orth-tree is fixed
+	/*
+	 * no need to call tag imbalance node here, as the bounding box
+	 * for orth-tree is fixed
+	 */
 
 	auto tree_nodes = parlay::sequence<node *>::uninitialized(IT.tags_num);
 	parlay::parallel_for(
@@ -129,20 +132,22 @@ node *orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
 				out.cut(start, start + IT.sums[i]),
 				in.cut(start, start + IT.sums[i]));
 
-			// NOTE: after pick the tag, the tag id is same as the
-			// bucket id. in order to match the base case in
-			// update_inner_tree, we need to manually change it to
-			// bucket_num+2, i.e., none-of its ancestor has been
-			// rebuilt
+			/*
+			 * after pick the tag, the tag id is same as the
+			 * bucket id. in order to match the base case in
+			 * update_inner_tree, we need to manually change it to
+			 * bucket_num+2, i.e., none-of its ancestor has been
+			 * rebuilt
+			 */
 			IT.tags[IT.rev_tag[i]].second =
 				base_type::bucket_num + 2;
 		},
 		1);
 
-	return IT.template update_inner_tree<inner_tree::kUpdatePointer, false>(
+	return IT.template update_inner_tree<inner_tree::update_pointer, false>(
 		tree_nodes);
 }
 
-} // namespace psi
+} /* namespace psi */
 
-#endif // PSI_ORTH_TREE_IMPL_ORTH_BATCH_DIFF_HPP_
+#endif /* PSI_ORTH_TREE_IMPL_ORTH_BATCH_DIFF_HPP_ */

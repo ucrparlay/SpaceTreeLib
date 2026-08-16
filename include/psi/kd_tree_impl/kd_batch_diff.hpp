@@ -16,8 +16,10 @@ void kd_tree<Point, SplitRule, LeafAugType, InteriorAugType, SkHeight,
 	return;
 }
 
-// NOTE: batch delete suitable for points_type that are pratially covered in the
-// tree
+/*
+ * batch delete suitable for points_type that are pratially covered in the
+ * tree
+ */
 template <typename Point, typename SplitRule, typename LeafAugType,
 	  typename InteriorAugType, uint_fast8_t SkHeight,
 	  uint_fast8_t ImbaRatio>
@@ -31,14 +33,16 @@ void kd_tree<Point, SplitRule, LeafAugType, InteriorAugType, SkHeight,
 	node *T = this->root_;
 	box_type box = this->tree_box_;
 
-	// NOTE: diff points from the tree
+	/* diff points from the tree */
 	dims_type d =
 		T->is_leaf ? 0 : static_cast<interior_type *>(T)->split.second;
 	std::tie(T, this->tree_box_) =
 		batch_diff_recursive(T, box, A, parlay::make_slice(B), d);
 
-	// NOTE: launch rebuild to either: rebuild the imbalance tree or remove
-	// the sparse node
+	/*
+	 * launch rebuild to either: rebuild the imbalance tree or remove
+	 * the sparse node
+	 */
 	d = T->is_leaf ? 0 : static_cast<interior_type *>(T)->split.second;
 	auto prepare_rebuild_func = [&](node *T, dims_type d,
 					box_type const &box) {
@@ -53,10 +57,12 @@ void kd_tree<Point, SplitRule, LeafAugType, InteriorAugType, SkHeight,
 				      std::move(right_args));
 	};
 
-	// PERF: in the batch diff, there is no need to set the force parallel
-	// flag, as the size of the tree has been updated in the first time
-	// traversal, the second time only need to follow the size of the
-	// current tree
+	/*
+	 * in the batch diff, there is no need to set the force parallel
+	 * flag, as the size of the tree has been updated in the first time
+	 * traversal, the second time only need to follow the size of the
+	 * current tree
+	 */
 	this->root_ = base_type::template rebuild_tree_recursive<
 		leaf_type, interior_type, false>(
 		T, prepare_rebuild_func, this->split_rule_.allow_rebuild(), d,
@@ -65,8 +71,10 @@ void kd_tree<Point, SplitRule, LeafAugType, InteriorAugType, SkHeight,
 	return;
 }
 
-// NOTE: only sieve the points_type, without rebuilding the tree
-// NOTE: the kdtree needs box since the box will be changed in batch diff
+/*
+ * only sieve the points_type, without rebuilding the tree
+ * the kdtree needs box since the box will be changed in batch diff
+ */
 template <typename Point, typename SplitRule, typename LeafAugType,
 	  typename InteriorAugType, uint_fast8_t SkHeight,
 	  uint_fast8_t ImbaRatio>
@@ -91,7 +99,6 @@ kd_tree<Point, SplitRule, LeafAugType, InteriorAugType, SkHeight, ImbaRatio>::
 	}
 
 	if (in.size() <= base_type::serial_build_cutoff) {
-		// if (in.size()) {
 		interior_type *ti = static_cast<interior_type *>(T);
 		points_iter_type split_iter =
 			std::ranges::partition(in, [&](Point const &p) {
@@ -117,8 +124,10 @@ kd_tree<Point, SplitRule, LeafAugType, InteriorAugType, SkHeight, ImbaRatio>::
 		assert(T->size == L->size + R->size && ti->split.second >= 0 &&
 		       ti->is_leaf == false);
 
-		// TODO: replace this one by a lambda that can be pssed to
-		// rebuild function as well
+		/*
+		 * TODO: replace this one by a lambda that can be pssed to
+		 * rebuild function as well
+		 */
 		if (base_type::sparse_node(0, ti->size) ||
 		    (split_rule_.allow_rebuild() &&
 		     base_type::imbalance_node(ti->left->size, ti->size))) {
@@ -140,13 +149,15 @@ kd_tree<Point, SplitRule, LeafAugType, InteriorAugType, SkHeight, ImbaRatio>::
 
 	parlay::parallel_for(
 		0, IT.tags_num,
-		// NOTE: i is the index of the tags
+		/* i is the index of the tags */
 		[&](bucket_type i) {
 			size_t start = 0;
 			for (bucket_type j = 0; j < i; j++) {
-				// NOTE: should have same effect as using
-				// sums_tree if using sums_tree then it should
-				// be sums_tree[rev_tag[j]]
+				/*
+				 * should have same effect as using
+				 * sums_tree if using sums_tree then it should
+				 * be sums_tree[rev_tag[j]]
+				 */
 				start += IT.sums[j];
 			}
 
@@ -170,10 +181,10 @@ kd_tree<Point, SplitRule, LeafAugType, InteriorAugType, SkHeight, ImbaRatio>::
 		},
 		1);
 
-	return IT.template update_inner_tree<inner_tree::kUpdatePointerBox,
+	return IT.template update_inner_tree<inner_tree::update_pointer_box,
 					     false>(tree_nodes);
 }
 
-} // namespace psi
+} /* namespace psi */
 
-#endif // PSI_KD_TREE_IMPL_KD_BATCH_DIFF_HPP_
+#endif /* PSI_KD_TREE_IMPL_KD_BATCH_DIFF_HPP_ */

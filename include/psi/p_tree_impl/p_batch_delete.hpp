@@ -6,7 +6,7 @@
 namespace psi
 {
 
-// NOTE: default batch delete
+/* default batch delete */
 template <typename Point, typename SplitRule, uint_fast8_t SkHeight,
 	  uint_fast8_t ImbaRatio>
 template <typename Range>
@@ -16,7 +16,7 @@ void p_tree<Point, SplitRule, SkHeight, ImbaRatio>::batch_delete(Range &&in)
 	return;
 }
 
-// NOTE: assume all points_type are fully covered in the tree
+/* assume all points_type are fully covered in the tree */
 template <typename Point, typename SplitRule, uint_fast8_t SkHeight,
 	  uint_fast8_t ImbaRatio>
 void p_tree<Point, SplitRule, SkHeight, ImbaRatio>::batch_delete_(slice_type A)
@@ -30,6 +30,6 @@ void p_tree<Point, SplitRule, SkHeight, ImbaRatio>::batch_delete_(slice_type A)
 	return;
 }
 
-} // namespace psi
+} /* namespace psi */
 
-#endif // PSI_P_TREE_IMPL_P_BATCH_DELETE_HPP
+#endif /* PSI_P_TREE_IMPL_P_BATCH_DELETE_HPP */
