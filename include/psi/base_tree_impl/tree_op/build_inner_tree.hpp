@@ -14,10 +14,9 @@
 
 namespace psi
 {
-template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
+template <typename Traits, typename DerivedTree>
 template <typename leaf_type, is_binary_node interior_type, typename ReturnType>
-ReturnType base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::build_inner_tree(
+ReturnType base_tree<Traits, DerivedTree>::build_inner_tree(
 	bucket_type idx, hyper_plane_seq_type const &pivots,
 	parlay::sequence<ReturnType> const &tree_nodes)
 {
@@ -34,10 +33,9 @@ ReturnType base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::build_inner_tree(
 	return alloc_interior_node<interior_type>(L, R, pivots[idx]);
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
+template <typename Traits, typename DerivedTree>
 template <is_multi_node interior_type>
-node *base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::build_inner_tree(
+node *base_tree<Traits, DerivedTree>::build_inner_tree(
 	bucket_type idx, hyper_plane_seq_type const &pivots,
 	parlay::sequence<node *> const &tree_nodes)
 {

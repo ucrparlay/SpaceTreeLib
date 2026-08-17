@@ -10,79 +10,81 @@
 #include "psi/dependence/loggers.h"
 #include "psi/dependence/search_container.h"
 #include "psi/dependence/tree_node.h"
+#include "psi/tree_traits.h"
 
 namespace psi
 {
 
 /* Basetree */
-template <typename Point, typename DerivedTree = void,
-	  uint_fast8_t SkHeight = 6, uint_fast8_t ImbaRatio = 30>
-class base_tree
+template <typename Traits, typename DerivedTree>
+class base_tree : public Traits
 {
 public:
-	/*
-	 * when SkHeight >= 8, the # bucket is 255, total skeleton nodes
-	 * >= 255*2
-	 */
-
-	using basic_point = Point::bp_type;
-	using template_point_type = Point;
-
-	using bucket_type =
-		std::conditional_t<(SkHeight > 7), uint_fast16_t, uint_fast8_t>;
-	using balls_type = uint_fast32_t;
-	using dims_type = uint_fast8_t;
-	using depth_type = int;
-	using bucket_seq_type = parlay::sequence<bucket_type>;
-	using ball_seq_type = parlay::sequence<balls_type>;
-
-	using coord_type = typename Point::coord_type;
-	using coords_type = typename Point::coords_type;
-	using dis_type = typename Point::dis_type;
-	using num_type = num_comparator<coord_type>;
-	using slice_type = parlay::slice<Point *, Point *>;
-	using points_type = parlay::sequence<Point>;
-	using points_iter_type = typename parlay::sequence<Point>::iterator;
-	using hyper_plane_type = std::pair<coord_type, dims_type>;
-	using hyper_plane_seq_type = parlay::sequence<hyper_plane_type>;
-	using box_type = std::pair<basic_point, basic_point>;
-	using box_seq_type = parlay::sequence<box_type>;
-
-	/* What the convenience knn hands back: points by value, so the result
-	 * outlives any update to the tree. */
-	using knn_result_type = std::pair<Point, dis_type>;
-	using knn_result_seq_type = parlay::sequence<knn_result_type>;
-
-	using node_box_type = std::pair<node *, box_type>;
-	using node_box_seq_type = parlay::sequence<node_box_type>;
-	using node_tag_type = std::pair<node *, uint_fast8_t>;
-	using node_tag_seq_type = parlay::sequence<node_tag_type>;
-
-	/* TODO: use the one provided in aug */
+	using traits_type = Traits;
 
 	/*
-	 * Const variables
-	 * uint32t handle up to 4e9 at least
-	 * bucket num should smaller than 1<<8 to handle type overflow
+	 * Traits is a dependent base, so its names are not visible unqualified
+	 * inside the tree or in any of the impl files. Everything a tree needs
+	 * is pulled in once, here.
 	 */
-	static constexpr dims_type const num_dims =
-		std::tuple_size_v<coords_type>;
-	static constexpr bucket_type const build_depth_once = SkHeight;
-	static constexpr bucket_type const pivot_num =
-		(1 << build_depth_once) - 1;
-	static constexpr bucket_type const bucket_num = 1 << build_depth_once;
+	using point_type = typename Traits::point_type;
+	using basic_point = typename Traits::basic_point;
+	using coord_type = typename Traits::coord_type;
+	using coords_type = typename Traits::coords_type;
+	using dis_type = typename Traits::dis_type;
+	using num_type = typename Traits::num_type;
 
-	/* tree structure */
-	static constexpr uint_fast8_t const leaf_capacity = 32;
-	static constexpr uint_fast8_t const sparse_leaf_threshold = 24;
-	static constexpr uint_fast16_t const serial_build_cutoff = 1 << 10;
+	using bucket_type = typename Traits::bucket_type;
+	using balls_type = typename Traits::balls_type;
+	using dims_type = typename Traits::dims_type;
+	using depth_type = typename Traits::depth_type;
+	using bucket_seq_type = typename Traits::bucket_seq_type;
+	using ball_seq_type = typename Traits::ball_seq_type;
 
-	/* block param in partition */
-	static constexpr uint_fast8_t const log2_base = 10;
-	static constexpr uint_fast16_t const block_size = 1 << log2_base;
+	using slice_type = typename Traits::slice_type;
+	using points_type = typename Traits::points_type;
+	using points_iter_type = typename Traits::points_iter_type;
+	using hyper_plane_type = typename Traits::hyper_plane_type;
+	using hyper_plane_seq_type = typename Traits::hyper_plane_seq_type;
+	using box_type = typename Traits::box_type;
+	using box_seq_type = typename Traits::box_seq_type;
+	using knn_result_type = typename Traits::knn_result_type;
+	using knn_result_seq_type = typename Traits::knn_result_seq_type;
 
-	/* reconstruct weight threshold */
-	static constexpr uint_fast8_t const imbalance_ratio = ImbaRatio;
+	using node_box_type = typename Traits::node_box_type;
+	using node_box_seq_type = typename Traits::node_box_seq_type;
+	using node_tag_type = typename Traits::node_tag_type;
+	using node_tag_seq_type = typename Traits::node_tag_seq_type;
+
+	using split_rule_type = typename Traits::split_rule_type;
+
+	using Traits::block_size;
+	using Traits::bucket_num;
+	using Traits::build_depth_once;
+	using Traits::imbalance_ratio;
+	using Traits::leaf_capacity;
+	using Traits::log2_base;
+	using Traits::num_dims;
+	using Traits::pivot_num;
+	using Traits::serial_build_cutoff;
+	using Traits::sparse_leaf_threshold;
+
+	using Traits::box_intersect_box;
+	using Traits::box_is_empty;
+	using Traits::get_box;
+	using Traits::get_box_center;
+	using Traits::get_box_mid;
+	using Traits::get_empty_box;
+	using Traits::is_box_line_in_dimension;
+	using Traits::legal_box;
+	using Traits::same_box;
+	using Traits::vertical_line_intersect_box;
+	using Traits::vertical_line_intersect_box_exclude;
+	using Traits::vertical_line_on_box_edge;
+	using Traits::vertical_line_on_box_left_edge;
+	using Traits::vertical_line_on_box_right_edge;
+	using Traits::vertical_line_split_box;
+	using Traits::within_box;
 
 	/* array based inner tree for batch insertion and deletion */
 	template <typename leaf_type, typename interior_type>
@@ -95,55 +97,6 @@ public:
 	static inline size_t get_imbalance_ratio();
 	static inline bool imbalance_node(size_t const l, size_t const n);
 	static inline bool sparse_node(size_t const l, size_t const n);
-
-	/* box_type operations */
-	static inline coord_type get_box_mid(dims_type const d,
-					     box_type const &bx);
-	static inline bool legal_box(box_type const &bx);
-	/*
-	 * True when the box covers nothing, i.e. some dimension has first >
-	 * second. Intersecting two boxes produces one, so it is a legal query
-	 * whose answer is zero -- the public queries return early rather than
-	 * asserting their way down the traversal.
-	 */
-	static inline bool box_is_empty(box_type const &bx);
-	static inline bool within_box(box_type const &a, box_type const &b);
-	static inline bool same_box(box_type const &a, box_type const &b);
-	static inline bool within_box(Point const &p, box_type const &bx);
-	static inline bool box_intersect_box(box_type const &a,
-					     box_type const &b);
-	static inline bool is_box_line_in_dimension(box_type const &box,
-						    dims_type d);
-	static inline bool vertical_line_split_box(coord_type const &l,
-						   box_type const &box,
-						   dims_type d);
-	static inline bool vertical_line_on_box_left_edge(coord_type const &l,
-							  box_type const &box,
-							  dims_type d);
-	static inline bool vertical_line_on_box_right_edge(coord_type const &l,
-							   box_type const &box,
-							   dims_type d);
-	static inline bool vertical_line_on_box_edge(coord_type const &l,
-						     box_type const &box,
-						     dims_type d);
-	static inline bool vertical_line_intersect_box(coord_type const &l,
-						       box_type const &box,
-						       dims_type d);
-	static inline bool
-	vertical_line_intersect_box_exclude(coord_type const &l,
-					    box_type const &box, dims_type d);
-	template <typename leaf_type, typename interior_type>
-	static inline decltype(auto) retrieve_box(node const *T)
-		requires(has_box<typename leaf_type::at_type> &&
-			 has_box<typename interior_type::at_type>);
-
-	static inline box_type get_empty_box();
-	static inline Point get_box_center(box_type const &box);
-	static box_type get_box(box_type const &x, box_type const &y);
-	static box_type get_box(slice_type V);
-	static box_type get_box(box_seq_type const &box_seq);
-	template <typename leaf_type, typename interior_type>
-	static box_type get_box(node *T);
 
 	/*
 	 * Copy a caller range into tree owned storage and hand the slice to op.
@@ -174,7 +127,7 @@ public:
 	static inline void sample_points(slice_type in, points_type &arr);
 
 	static inline bucket_type
-	find_bucket(Point const &p, hyper_plane_seq_type const &pivots);
+	find_bucket(point_type const &p, hyper_plane_seq_type const &pivots);
 
 	template <is_binary_node interior_type, bool UpdateParFlag = true>
 	static inline void update_interior(node *T, node *L, node *R);
@@ -212,11 +165,11 @@ public:
 	static RT diff_points4_leaf(node *T, slice_type in);
 
 	template <is_binary_node interior_type>
-	static inline bucket_type retrieve_tag(Point const &p,
+	static inline bucket_type retrieve_tag(point_type const &p,
 					       node_tag_seq_type const &tags);
 
 	template <is_multi_node interior_type>
-	static inline bucket_type retrieve_tag(Point const &p,
+	static inline bucket_type retrieve_tag(point_type const &p,
 					       node_tag_seq_type const &tags);
 
 	template <typename interior_type>
@@ -298,7 +251,7 @@ public:
 	 * on a measured path unless a caller chooses it.
 	 */
 	points_type range_query(box_type const &query_box) const;
-	knn_result_seq_type knn(Point const &q, size_t k) const;
+	knn_result_seq_type knn(point_type const &q, size_t k) const;
 
 	/* Through the derived tree: p_tree keeps its points in a cpam map and
 	 * has no root_ at all. */
@@ -328,66 +281,68 @@ public:
 	static void delete_tree_recursive(node *T);
 
 	/* knn query stuffs */
-	static inline dis_type p2p_distance_square(Point const &p,
-						   Point const &q);
+	static inline dis_type p2p_distance_square(point_type const &p,
+						   point_type const &q);
 
-	static inline dis_type p2b_min_distance_square(Point const &p,
+	static inline dis_type p2b_min_distance_square(point_type const &p,
 						       box_type const &a);
 
-	static inline dis_type p2b_max_distance_square(Point const &p,
+	static inline dis_type p2b_max_distance_square(point_type const &p,
 						       box_type const &a);
 
-	static inline double
-	p2c_min_distance(Point const &p, Point const &center, dis_type const r);
+	static inline double p2c_min_distance(point_type const &p,
+					      point_type const &center,
+					      dis_type const r);
 
 	template <typename CircleType>
-	static inline double p2c_min_distance(Point const &p,
+	static inline double p2c_min_distance(point_type const &p,
 					      CircleType const &cl);
 
-	static inline dis_type
-	interruptible_distance(Point const &p, Point const &q, dis_type up);
+	static inline dis_type interruptible_distance(point_type const &p,
+						      point_type const &q,
+						      dis_type up);
 
 	/* searech knn in the leaf */
 	template <typename leaf_type, typename Range>
-	static void knn_leaf(node *T, Point const &q,
-			     bounded_queue<Point, Range> &bq);
+	static void knn_leaf(node *T, point_type const &q,
+			     bounded_queue<point_type, Range> &bq);
 
 	/* search knn in the binary node */
 	template <typename leaf_type, is_binary_node interior_type,
 		  typename Range>
-	static void knn_binary(node *T, Point const &q,
-			       bounded_queue<Point, Range> &bq,
+	static void knn_binary(node *T, point_type const &q,
+			       bounded_queue<point_type, Range> &bq,
 			       box_type const &node_box, knn_logger &logger)
 		requires std::same_as<typename interior_type::st_type,
 				      hyper_plane_type>;
 
 	template <typename leaf_type, is_binary_node interior_type,
 		  typename Range>
-	static void knn_binary_box(node *T, Point const &q,
-				   bounded_queue<Point, Range> &bq,
+	static void knn_binary_box(node *T, point_type const &q,
+				   bounded_queue<point_type, Range> &bq,
 				   knn_logger &logger);
 
 	/* search knn in the expanded multi node */
 	template <typename leaf_type, is_multi_node interior_type,
 		  typename Range>
 	static void
-	knn_multi_expand(node *T, Point const &q, dims_type dim,
-			 bucket_type idx, bounded_queue<Point, Range> &bq,
+	knn_multi_expand(node *T, point_type const &q, dims_type dim,
+			 bucket_type idx, bounded_queue<point_type, Range> &bq,
 			 box_type const &node_box, knn_logger &logger);
 
 	/* search knn in the expanded multi node */
 	template <typename leaf_type, is_multi_node interior_type,
 		  typename Range>
-	static void knn_multi_expand_box(node *T, Point const &q, dims_type dim,
-					 bucket_type idx,
-					 bounded_queue<Point, Range> &bq,
+	static void knn_multi_expand_box(node *T, point_type const &q,
+					 dims_type dim, bucket_type idx,
+					 bounded_queue<point_type, Range> &bq,
 					 knn_logger &logger);
 
 	/* search knn in the multi node */
 	template <typename leaf_type, is_multi_node interior_type,
 		  typename Range>
-	static void knn_multi(node *T, Point const &q,
-			      bounded_queue<Point, Range> &bq,
+	static void knn_multi(node *T, point_type const &q,
+			      bounded_queue<point_type, Range> &bq,
 			      knn_logger &logger);
 
 	/* range count stuffs */
@@ -503,7 +458,6 @@ protected:
 } /* namespace psi */
 
 #include "psi/base_tree_impl/box_cut.hpp"
-#include "psi/base_tree_impl/box_op.hpp"
 #include "psi/base_tree_impl/delete_tree.hpp"
 #include "psi/base_tree_impl/dimensionality.hpp"
 #include "psi/base_tree_impl/inner_tree.hpp"

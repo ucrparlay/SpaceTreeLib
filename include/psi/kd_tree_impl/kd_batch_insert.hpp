@@ -6,21 +6,15 @@
 
 namespace psi
 {
-template <typename Point, typename SplitRule, typename LeafAugType,
-	  typename InteriorAugType, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
+template <typename Traits>
 template <typename Range>
-void kd_tree<Point, SplitRule, LeafAugType, InteriorAugType, SkHeight,
-	     ImbaRatio>::batch_insert(Range &&in)
+void kd_tree<Traits>::batch_insert(Range &&in)
 {
 	base_type::ingest_range(in, [&](slice_type A) { batch_insert_(A); });
 }
 
-template <typename Point, typename SplitRule, typename LeafAugType,
-	  typename InteriorAugType, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
-void kd_tree<Point, SplitRule, LeafAugType, InteriorAugType, SkHeight,
-	     ImbaRatio>::batch_insert_(slice_type A)
+template <typename Traits>
+void kd_tree<Traits>::batch_insert_(slice_type A)
 {
 	if (this->root_ == nullptr) { /* TODO: may check using explicity tag */
 		return build_(A);
@@ -33,8 +27,8 @@ void kd_tree<Point, SplitRule, LeafAugType, InteriorAugType, SkHeight,
 	this->root_ = batch_insert_recursive(T, A, B.cut(0, A.size()), d);
 	assert(this->root_ != nullptr);
 	if constexpr (has_box<typename interior_type::at_type>) {
-		this->tree_box_ = base_type::template retrieve_box<
-			leaf_type, interior_type>(this->root_);
+		this->tree_box_ =
+			retrieve_box<leaf_type, interior_type>(this->root_);
 	} else {
 		this->tree_box_ = base_type::get_box(this->tree_box_,
 						     base_type::get_box(A));
@@ -43,12 +37,9 @@ void kd_tree<Point, SplitRule, LeafAugType, InteriorAugType, SkHeight,
 }
 
 /* return the updated node */
-template <typename Point, typename SplitRule, typename LeafAugType,
-	  typename InteriorAugType, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
-node *kd_tree<Point, SplitRule, LeafAugType, InteriorAugType, SkHeight,
-	      ImbaRatio>::batch_insert_recursive(node *T, slice_type in,
-						 slice_type out, dims_type d)
+template <typename Traits>
+node *kd_tree<Traits>::batch_insert_recursive(node *T, slice_type in,
+					      slice_type out, dims_type d)
 {
 	size_t n = in.size();
 
@@ -63,7 +54,8 @@ node *kd_tree<Point, SplitRule, LeafAugType, InteriorAugType, SkHeight,
 		leaf_type *tl = static_cast<leaf_type *>(T);
 		if ((!tl->is_dummy &&
 		     n + T->size <= base_type::leaf_capacity) ||
-		    (tl->is_dummy && parlay::all_of(in, [&](Point const &p) {
+		    (tl->is_dummy &&
+		     parlay::all_of(in, [&](point_type const &p) {
 			     return p == tl->pts[0];
 		     }))) {
 			return base_type::template insert_points2_leaf<
@@ -80,7 +72,7 @@ node *kd_tree<Point, SplitRule, LeafAugType, InteriorAugType, SkHeight,
 	if (n <= base_type::serial_build_cutoff) {
 		interior_type *ti = static_cast<interior_type *>(T);
 		std::ranges::subrange _2ndGroup =
-			std::ranges::partition(in, [&](Point const &p) {
+			std::ranges::partition(in, [&](point_type const &p) {
 				return num_type::lt(p.pnt[ti->split.second],
 						    ti->split.first);
 			});

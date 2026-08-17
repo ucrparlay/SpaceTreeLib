@@ -13,10 +13,9 @@ namespace psi
  * Default augmentations. kd_tree and orth_tree use these unless told otherwise,
  * so the common case needs no user code.
  *
- * base_type is a base_tree used only for its box vocabulary, so
- * base_tree<Point> works even though the tree instantiates base_tree<Point,
- * TheTree, ...>. Do not reach for anything here that varies with the other
- * parameters: bucket_type changes at SkHeight > 7.
+ * base_type is psi::point_traits<Point>, the half of the vocabulary that
+ * follows from the point type alone. It cannot be the full tree_traits: these
+ * are named in its own parameter list.
  */
 
 /* Bounding box of the points in a leaf. */
@@ -78,10 +77,8 @@ struct box_interior_aug {
 	static box_type create(node *l, node *r)
 	{
 		return base_type::get_box(
-			base_type::template retrieve_box<leaf_type,
-							 interior_type>(l),
-			base_type::template retrieve_box<leaf_type,
-							 interior_type>(r));
+			retrieve_box<leaf_type, interior_type>(l),
+			retrieve_box<leaf_type, interior_type>(r));
 	}
 
 	template <typename leaf_type, typename interior_type>
@@ -97,8 +94,7 @@ struct box_interior_aug {
 		box_type b = base_type::get_empty_box();
 		for (auto *t : nodes)
 			b = base_type::get_box(
-				b, base_type::template retrieve_box<
-					   leaf_type, interior_type>(t));
+				b, retrieve_box<leaf_type, interior_type>(t));
 		return b;
 	}
 

@@ -95,10 +95,22 @@ using split_rule = psi::orthogonal_split_rule<psi::rotate_dim<point>,
 | `psi::object_median<Point>` | the median point, so the two sides hold equal counts |
 | `psi::spatial_median<Point>` | the middle of the box, so the two sides are equal in space |
 
-### 3. Build
+### 3. A traits type
+
+A traits type carries everything a tree is configured with: the point type,
+the split rule, the augmentations, the skeleton height and the imbalance
+ratio. Name it once and hand it to any tree that suits those points.
 
 ```cpp
-psi::kd_tree<point, split_rule> tree;
+using traits = psi::tree_traits<point, split_rule>;
+```
+
+Only the first two have no default. `psi/tree_traits.h` lists the rest.
+
+### 4. Build
+
+```cpp
+psi::kd_tree<traits> tree;
 
 parlay::sequence<point> points(1000);
 /* ... fill points ... */
@@ -108,7 +120,7 @@ tree.build(parlay::make_slice(points));
 `build` copies what it is given, so the input may go out of scope afterwards.
 Calling `build` again on a live tree replaces its contents.
 
-### 4. Query
+### 5. Query
 
 Every point inside a box, and the `k` nearest neighbours of a point:
 
@@ -159,7 +171,7 @@ constructor; any point will do as the filler. Unlike `knn(q, k)`, these
 results *reference* storage owned by the tree, so do not use them after
 modifying it.
 
-### 5. Update
+### 6. Update
 
 ```cpp
 tree.batch_insert(parlay::make_slice(more_points));
@@ -171,7 +183,7 @@ tree.batch_diff(parlay::make_slice(maybe_present));       /* tolerates absent */
 to use when that may not hold. The tree rebuilds imbalanced subtrees on its
 own as updates accumulate.
 
-### 6. Read everything back
+### 7. Read everything back
 
 ```cpp
 parlay::sequence<point> all(tree.get_size());
@@ -181,7 +193,7 @@ size_t n = tree.flatten(parlay::make_slice(all));
 `flatten` needs a buffer of exactly `get_size()`; given any other size it
 writes nothing and returns 0.
 
-### 7. Clean up
+### 8. Clean up
 
 The destructor frees the tree. `delete_tree()` does it early and may be
 called more than once. A tree is move-only: it owns its nodes, so copying it
@@ -193,11 +205,12 @@ would free them twice.
 
 ```cpp
 /* Pkd-tree: any dimension rule, any partition rule */
-psi::kd_tree<point, split_rule> kd;
+psi::kd_tree<psi::tree_traits<point, split_rule>> kd;
 
-/* P-Orth tree: partition rule must be spatial_median (a static_assert
- * enforces it). The arity and skeleton height default from the point type. */
-psi::orth_tree<point, split_rule> orth;
+/* P-Orth tree: partition rule must be spatial_median, and the skeleton
+ * height must be a multiple of the dimension. Both are static_asserts;
+ * orth_tree_traits picks a height that fits. The arity follows the point. */
+psi::orth_tree<psi::orth_tree_traits<point, split_rule>> orth;
 
 /* SPaC-tree: the point must carry the curve code, so it is an aug_point */
 struct curve_code {
@@ -219,7 +232,7 @@ struct curve_code {
 };
 using aug_pt = psi::aug_point<coord_type, 2, curve_code>;
 using curve = psi::spatial_filling_curve<psi::morton_curve<aug_pt>>;
-psi::p_tree<aug_pt, curve> p;
+psi::p_tree<psi::tree_traits<aug_pt, curve>> p;
 ```
 
 `psi::hilbert_curve<Point>` is the other curve. For `p_tree`, two points are
@@ -231,7 +244,8 @@ Each node carries an augmentation. By default it is a bounding box, and you
 need to write nothing:
 
 ```cpp
-psi::kd_tree<point, split_rule> tree;   /* box_leaf_aug, box_interior_aug */
+psi::kd_tree<psi::tree_traits<point, split_rule>> tree;
+/* the traits default to box_leaf_aug and box_interior_aug */
 ```
 
 Supply your own only if a bounding box is not what you want to store. The
@@ -305,8 +319,10 @@ one before building — useful when later inserts fall outside the initial
 extent, since an orth tree does not grow its box. Inserting outside it is an
 error.
 
-Member types you will use: `point_type` via your own alias, `box_type`,
-`points_type`, `slice_type`, `coord_type`, `dis_type`.
+Member types you will use: `point_type`, `box_type`, `points_type`,
+`slice_type`, `coord_type`, `dis_type`. All of them come from the traits, so
+`traits::box_type` and `tree::box_type` are the same type -- name whichever
+reads better where you are.
 
 ## Extending PSI
 
@@ -388,8 +404,10 @@ include/
 ├── libmorton/          submodule, Morton codes
 ├── parlaylib/          submodule, parallel primitives
 └── psi/
-    ├── base_tree.h     shared machinery, geometry, type definitions
+    ├── base_tree.h     shared machinery
     ├── base_tree_impl/
+    ├── tree_traits.h   the configuration a tree takes, and the box arithmetic
+    ├── tree_traits_impl/
     ├── dependence/     points, splitters, concepts, augmentations, cpam
     ├── kd_tree.h       + kd_tree_impl/
     ├── orth_tree.h     + orth_tree_impl/

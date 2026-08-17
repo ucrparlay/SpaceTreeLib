@@ -14,25 +14,11 @@
 
 namespace psi
 {
-template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
-template <typename leaf_type, typename interior_type>
-decltype(auto) base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::retrieve_box(
-	node const *node)
-	requires(has_box<typename leaf_type::at_type> &&
-		 has_box<typename interior_type::at_type>)
-{
-	return node->is_leaf
-		       ? static_cast<leaf_type const *>(node)->get_box()
-		       : static_cast<interior_type const *>(node)->get_box();
-}
-
 /* update the info of T by new children L and R */
-template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
+template <typename Traits, typename DerivedTree>
 template <is_binary_node interior_type, bool UpdateParFlag>
-inline void base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::update_interior(
-	node *T, node *L, node *R)
+inline void base_tree<Traits, DerivedTree>::update_interior(node *T, node *L,
+							    node *R)
 {
 	assert(!T->is_leaf);
 	interior_type *ti = static_cast<interior_type *>(T);
@@ -46,11 +32,11 @@ inline void base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::update_interior(
 	return;
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
+template <typename Traits, typename DerivedTree>
 template <is_binary_node interior_type, bool UpdateParFlag>
-inline void base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::update_interior(
-	node *T, node_box_type const &L, node_box_type const &R)
+inline void
+base_tree<Traits, DerivedTree>::update_interior(node *T, node_box_type const &L,
+						node_box_type const &R)
 {
 	assert(!T->is_leaf);
 	interior_type *ti = static_cast<interior_type *>(T);
@@ -64,10 +50,9 @@ inline void base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::update_interior(
 	return;
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
+template <typename Traits, typename DerivedTree>
 template <is_multi_node interior_type, bool UpdateParFlag>
-inline void base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::update_interior(
+inline void base_tree<Traits, DerivedTree>::update_interior(
 	node *T, typename interior_type::node_arr_type const &new_nodes)
 {
 	assert(!T->is_leaf);

@@ -97,7 +97,7 @@ jobs:
                           long c[2] = {long(i % 31), long(i % 29)};
                           pts[i] = point(c);
                   }
-                  psi::kd_tree<point, rule> t;
+                  psi::kd_tree<psi::tree_traits<point, rule>> t;
                   t.build(parlay::make_slice(pts));
                   std::printf("indexed %zu points\n", t.get_size());
                   return t.get_size() == pts.size() ? 0 : 1;

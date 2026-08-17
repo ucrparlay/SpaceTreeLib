@@ -303,8 +303,8 @@ struct augmented_ops : Map {
 	{
 		using BT = base_tree;
 		using Point = decltype(q);
-		using coord_type = typename BT::template_point_type::coord_type;
-		using dis_type = typename BT::template_point_type::dis_type;
+		using coord_type = typename BT::point_type::coord_type;
+		using dis_type = typename BT::point_type::dis_type;
 
 		if (!b)
 			return;

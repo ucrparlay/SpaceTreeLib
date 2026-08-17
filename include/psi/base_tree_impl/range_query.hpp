@@ -10,11 +10,9 @@
 namespace psi
 {
 /* orthogonal range count in leaf */
-template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
+template <typename Traits, typename DerivedTree>
 template <typename leaf_type>
-size_t
-base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::range_count_rectangle_leaf(
+size_t base_tree<Traits, DerivedTree>::range_count_rectangle_leaf(
 	node *T, box_type const &query_box)
 {
 	assert(T->is_leaf);
@@ -32,11 +30,9 @@ base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::range_count_rectangle_leaf(
 }
 
 /* recursive orthogonal range count for bianry node */
-template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
+template <typename Traits, typename DerivedTree>
 template <typename leaf_type, is_binary_node interior_type>
-size_t
-base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::range_count_rectangle(
+size_t base_tree<Traits, DerivedTree>::range_count_rectangle(
 	node *T, box_type const &query_box, box_type const &node_box,
 	range_query_logger &logger)
 {
@@ -93,11 +89,9 @@ base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::range_count_rectangle(
 }
 
 /* orthogonal range count for multi node */
-template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
+template <typename Traits, typename DerivedTree>
 template <typename leaf_type, is_multi_node interior_type>
-size_t
-base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::range_count_rectangle(
+size_t base_tree<Traits, DerivedTree>::range_count_rectangle(
 	node *T, box_type const &query_box, box_type const &node_box,
 	dims_type dim, bucket_type idx, range_query_logger &logger)
 {
@@ -152,11 +146,11 @@ base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::range_count_rectangle(
 }
 
 /* orthogonal range query in leaf */
-template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
+template <typename Traits, typename DerivedTree>
 template <typename leaf_type, typename Range>
-void base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::range_query_leaf(
-	node *T, Range out, size_t &s, box_type const &query_box)
+void base_tree<Traits, DerivedTree>::range_query_leaf(node *T, Range out,
+						      size_t &s,
+						      box_type const &query_box)
 {
 	assert(T->is_leaf);
 
@@ -197,14 +191,11 @@ void base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::range_query_leaf(
 }
 
 /* orthogonal range query recusively */
-template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
+template <typename Traits, typename DerivedTree>
 template <typename leaf_type, is_binary_node interior_type, typename Range>
-void base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::
-	range_query_serial_recursive(node *T, Range out, size_t &s,
-				     box_type const &query_box,
-				     box_type const &node_box,
-				     range_query_logger &logger)
+void base_tree<Traits, DerivedTree>::range_query_serial_recursive(
+	node *T, Range out, size_t &s, box_type const &query_box,
+	box_type const &node_box, range_query_logger &logger)
 {
 	if (T->is_leaf) {
 		logger.vis_leaf_num++;
@@ -255,15 +246,12 @@ void base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::
 	return;
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
+template <typename Traits, typename DerivedTree>
 template <typename leaf_type, is_multi_node interior_type, typename Range>
-void base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::
-	range_query_serial_recursive(node *T, Range out, size_t &s,
-				     box_type const &query_box,
-				     box_type const &node_box, dims_type dim,
-				     bucket_type idx,
-				     range_query_logger &logger)
+void base_tree<Traits, DerivedTree>::range_query_serial_recursive(
+	node *T, Range out, size_t &s, box_type const &query_box,
+	box_type const &node_box, dims_type dim, bucket_type idx,
+	range_query_logger &logger)
 {
 	if (T->is_leaf) {
 		logger.vis_leaf_num++;
@@ -329,11 +317,9 @@ void base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::
  * Convenience range_query: the answer size is not known in advance, so this
  * counts first and then reports into a buffer it owns.
  */
-template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
-typename base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::points_type
-base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::range_query(
-	box_type const &query_box) const
+template <typename Traits, typename DerivedTree>
+typename base_tree<Traits, DerivedTree>::points_type
+base_tree<Traits, DerivedTree>::range_query(box_type const &query_box) const
 {
 	auto const *tree = static_cast<DerivedTree const *>(this);
 	size_t const n = tree->range_count(query_box).first;

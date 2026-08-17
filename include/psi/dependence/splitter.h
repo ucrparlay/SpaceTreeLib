@@ -4,7 +4,7 @@
 #include <concepts>
 #include <cstdint>
 
-#include "psi/base_tree.h"
+#include "psi/tree_traits.h"
 #include "psi/dependence/concepts.h"
 #include "psi/dependence/tree_node.h"
 
@@ -28,7 +28,7 @@ namespace psi
 /* ---------------- Spatial filling curve --------------- */
 template <typename Point>
 struct morton_curve {
-	using base_type = base_tree<Point, morton_curve<Point>>;
+	using base_type = point_traits<Point>;
 	using slice_type = base_type::slice_type;
 	using dims_type = base_type::dims_type;
 	using box_type = base_type::box_type;
@@ -65,7 +65,7 @@ struct morton_curve {
 
 template <typename Point>
 struct hilbert_curve {
-	using base_type = base_tree<Point, hilbert_curve<Point>>;
+	using base_type = point_traits<Point>;
 	using slice_type = base_type::slice_type;
 	using dims_type = base_type::dims_type;
 	using box_type = base_type::box_type;
@@ -132,7 +132,7 @@ struct spatial_filling_curve {
 /* ---------------- Orthogonal Split Rule ---------------- */
 template <typename Point>
 struct base_split_dim_rule {
-	using base_type = base_tree<Point, base_split_dim_rule<Point>>;
+	using base_type = point_traits<Point>;
 	using slice_type = base_type::slice_type;
 	using dims_type = base_type::dims_type;
 	using box_type = base_type::box_type;
@@ -244,7 +244,7 @@ struct rotate_dim : base_split_dim_rule<Point> {
 
 template <typename Point>
 struct base_split_partition_rule {
-	using base_type = base_tree<Point, base_split_partition_rule<Point>>;
+	using base_type = point_traits<Point>;
 	using slice_type = base_type::slice_type;
 	using dims_type = base_type::dims_type;
 	using box_type = base_type::box_type;

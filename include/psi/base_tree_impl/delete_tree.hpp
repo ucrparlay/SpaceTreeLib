@@ -7,10 +7,9 @@
 namespace psi
 {
 
-template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
+template <typename Traits, typename DerivedTree>
 template <typename leaf_type, typename interior_type>
-void base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::delete_tree_wrapper()
+void base_tree<Traits, DerivedTree>::delete_tree_wrapper()
 {
 	if (this->root_ == nullptr) {
 		return;
@@ -19,10 +18,9 @@ void base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::delete_tree_wrapper()
 	this->tree_box_ = get_empty_box();
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
+template <typename Traits, typename DerivedTree>
 template <typename leaf_type, typename interior_type>
-void base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::delete_tree_nodes()
+void base_tree<Traits, DerivedTree>::delete_tree_nodes()
 {
 	if (this->root_ == nullptr) {
 		return;
@@ -31,11 +29,9 @@ void base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::delete_tree_nodes()
 	this->root_ = nullptr;
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio> /* * delete tree in parallel */
+template <typename Traits, typename DerivedTree> /* * delete tree in parallel */
 template <typename leaf_type, is_binary_node interior_type, bool granularity>
-void base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::delete_tree_recursive(
-	node *T)
+void base_tree<Traits, DerivedTree>::delete_tree_recursive(node *T)
 {
 	if (T == nullptr) {
 		return;
@@ -63,11 +59,9 @@ void base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::delete_tree_recursive(
 	}
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio> /* * delete tree in parallel */
+template <typename Traits, typename DerivedTree> /* * delete tree in parallel */
 template <typename leaf_type, is_multi_node interior_type, bool granularity>
-void base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::delete_tree_recursive(
-	node *T)
+void base_tree<Traits, DerivedTree>::delete_tree_recursive(node *T)
 {
 	if (T == nullptr) {
 		return;

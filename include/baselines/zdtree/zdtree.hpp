@@ -591,18 +591,23 @@ auto Tree::collect_records(shared_ptr<base_node> &x)
 	return ret;
 }
 
+/* psi::base_tree takes one traits type; the defaults cannot be skipped. */
+template <typename Point, typename SplitRule, uint_fast8_t SkHeight,
+	  uint_fast8_t ImbaRatio>
+using zdtree_traits = psi::tree_traits<
+	Point, SplitRule, psi::box_leaf_aug<psi::point_traits<Point>>,
+	psi::box_interior_aug<psi::point_traits<Point>>, SkHeight, ImbaRatio>;
+
 template <typename Point, typename SplitRule, uint_fast8_t SkHeight = 6,
 	  uint_fast8_t ImbaRatio = 30>
-class zdtree
-    : public psi::base_tree<Point,
-			    zdtree<Point, SplitRule, SkHeight, ImbaRatio>,
-			    SkHeight, ImbaRatio>
+class zdtree : public psi::base_tree<
+		       zdtree_traits<Point, SplitRule, SkHeight, ImbaRatio>,
+		       zdtree<Point, SplitRule, SkHeight, ImbaRatio>>
 {
 public:
-	using base_type =
-		psi::base_tree<Point,
-			       zdtree<Point, SplitRule, SkHeight, ImbaRatio>,
-			       SkHeight, ImbaRatio>;
+	using base_type = psi::base_tree<
+		zdtree_traits<Point, SplitRule, SkHeight, ImbaRatio>,
+		zdtree<Point, SplitRule, SkHeight, ImbaRatio>>;
 	using bucket_type = typename base_type::bucket_type;
 	using balls_type = typename base_type::balls_type;
 	using dims_type = typename base_type::dims_type;

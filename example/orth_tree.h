@@ -42,7 +42,7 @@ struct aug_id {
 // Define point type: 2D points with augmented ID
 using Point = psi::aug_point<coord_type, 2, aug_id>;
 using points_type = parlay::sequence<Point>;
-using base_type = psi::base_tree<Point>;
+using base_type = psi::point_traits<Point>;
 
 // leaf_type augmentation: stores nothing
 
@@ -58,8 +58,9 @@ using SplitRule = psi::orthogonal_split_rule<psi::rotate_dim<Point>,
 					     psi::spatial_median<Point>>;
 
 // Define orth_tree type with augmentations
-using Tree = psi::orth_tree<Point, SplitRule, psi::box_leaf_aug<base_type>,
-			    psi::box_interior_aug<base_type>>;
+using Tree = psi::orth_tree<
+	psi::orth_tree_traits<Point, SplitRule, psi::box_leaf_aug<base_type>,
+			      psi::box_interior_aug<base_type>>>;
 
 /*
  * The example doubles as a smoke test: without these it prints success even

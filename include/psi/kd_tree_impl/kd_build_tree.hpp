@@ -10,24 +10,17 @@
 
 namespace psi
 {
-template <typename Point, typename SplitRule, typename LeafAugType,
-	  typename InteriorAugType, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
+template <typename Traits>
 template <typename Range>
-void kd_tree<Point, SplitRule, LeafAugType, InteriorAugType, SkHeight,
-	     ImbaRatio>::build(Range &&in)
+void kd_tree<Traits>::build(Range &&in)
 {
 	base_type::ingest_range(in, [&](slice_type A) { build_(A); });
 }
 
-template <typename Point, typename SplitRule, typename LeafAugType,
-	  typename InteriorAugType, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
-void kd_tree<Point, SplitRule, LeafAugType, InteriorAugType, SkHeight,
-	     ImbaRatio>::divide_rotate(slice_type in, splitter_seq_type &pivots,
-				       dims_type dim, bucket_type idx,
-				       box_seq_type &box_seq,
-				       box_type const &box)
+template <typename Traits>
+void kd_tree<Traits>::divide_rotate(slice_type in, splitter_seq_type &pivots,
+				    dims_type dim, bucket_type idx,
+				    box_seq_type &box_seq, box_type const &box)
 {
 	if (idx > base_type::pivot_num) {
 		/*
@@ -56,14 +49,11 @@ void kd_tree<Point, SplitRule, LeafAugType, InteriorAugType, SkHeight,
 }
 
 /* starting at dimesion dim and pick pivots in a rotation manner */
-template <typename Point, typename SplitRule, typename LeafAugType,
-	  typename InteriorAugType, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
-void kd_tree<Point, SplitRule, LeafAugType, InteriorAugType, SkHeight,
-	     ImbaRatio>::pick_pivots(slice_type in, size_t const &n,
-				     splitter_seq_type &pivots,
-				     dims_type const dim, box_seq_type &box_seq,
-				     box_type const &bx)
+template <typename Traits>
+void kd_tree<Traits>::pick_pivots(slice_type in, size_t const &n,
+				  splitter_seq_type &pivots,
+				  dims_type const dim, box_seq_type &box_seq,
+				  box_type const &bx)
 {
 	size_t size =
 		std::min(n, static_cast<size_t>(32 * base_type::bucket_num));
@@ -77,13 +67,10 @@ void kd_tree<Point, SplitRule, LeafAugType, InteriorAugType, SkHeight,
 	return;
 }
 
-template <typename Point, typename SplitRule, typename LeafAugType,
-	  typename InteriorAugType, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
-node *kd_tree<Point, SplitRule, LeafAugType, InteriorAugType, SkHeight,
-	      ImbaRatio>::serial_build_recursive(slice_type in, slice_type out,
-						 dims_type dim,
-						 box_type const &box)
+template <typename Traits>
+node *kd_tree<Traits>::serial_build_recursive(slice_type in, slice_type out,
+					      dims_type dim,
+					      box_type const &box)
 {
 	size_t n = in.size();
 
@@ -98,12 +85,13 @@ node *kd_tree<Point, SplitRule, LeafAugType, InteriorAugType, SkHeight,
 
 	if (!split.has_value()) { /* split fails */
 		if (in.end() ==
-		    std::ranges::find_if_not(in, [&](Point const &p) {
+		    std::ranges::find_if_not(in, [&](point_type const &p) {
 			    return p.same_dimension(in[0]);
 		    })) { /* check whether all elements are identical */
-			if constexpr (is_aug_point<Point>) {
+			if constexpr (is_aug_point<point_type>) {
 				if constexpr (
-					Point::is_non_trivial_augmentation()) {
+					point_type::
+						is_non_trivial_augmentation()) {
 					return alloc_fix_size_leaf_node<
 						slice_type, leaf_type>(
 						in,
@@ -127,11 +115,11 @@ node *kd_tree<Point, SplitRule, LeafAugType, InteriorAugType, SkHeight,
 		}
 	}
 
-	assert(std::ranges::all_of(in.begin(), split_iter, [&](Point &p) {
+	assert(std::ranges::all_of(in.begin(), split_iter, [&](point_type &p) {
 		return num_type::lt(p.pnt[split.value().second],
 				    split.value().first);
 	}));
-	assert(std::ranges::all_of(split_iter, in.end(), [&](Point &p) {
+	assert(std::ranges::all_of(split_iter, in.end(), [&](point_type &p) {
 		return num_type::geq(p.pnt[split.value().second],
 				     split.value().first);
 	}));
@@ -150,12 +138,9 @@ node *kd_tree<Point, SplitRule, LeafAugType, InteriorAugType, SkHeight,
 	return alloc_interior_node<interior_type>(L, R, split.value());
 }
 
-template <typename Point, typename SplitRule, typename LeafAugType,
-	  typename InteriorAugType, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
-node *kd_tree<Point, SplitRule, LeafAugType, InteriorAugType, SkHeight,
-	      ImbaRatio>::build_recursive(slice_type in, slice_type out,
-					  dims_type dim, box_type const &bx)
+template <typename Traits>
+node *kd_tree<Traits>::build_recursive(slice_type in, slice_type out,
+				       dims_type dim, box_type const &bx)
 {
 	assert(in.size() == 0 ||
 	       base_type::within_box(base_type::get_box(in), bx));
@@ -222,11 +207,8 @@ node *kd_tree<Point, SplitRule, LeafAugType, InteriorAugType, SkHeight,
 		1, pivots, tree_nodes);
 }
 
-template <typename Point, typename SplitRule, typename LeafAugType,
-	  typename InteriorAugType, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
-void kd_tree<Point, SplitRule, LeafAugType, InteriorAugType, SkHeight,
-	     ImbaRatio>::build_(slice_type A)
+template <typename Traits>
+void kd_tree<Traits>::build_(slice_type A)
 {
 	base_type::template delete_tree_nodes<leaf_type, interior_type>();
 	points_type B = points_type::uninitialized(A.size());

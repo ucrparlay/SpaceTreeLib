@@ -11,19 +11,16 @@
 namespace psi
 {
 
-template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
+template <typename Traits, typename DerivedTree>
 template <typename leaf_type, typename interior_type>
-typename base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::box_type
-base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::check_box(
-	node *T, box_type const &box)
+typename base_tree<Traits, DerivedTree>::box_type
+base_tree<Traits, DerivedTree>::check_box(node *T, box_type const &box)
 {
 	if (T->is_leaf) {
 		auto const *tl = static_cast<leaf_type const *>(T);
-		auto const node_box = get_box<leaf_type, interior_type>(T);
-		if constexpr (has_box<typename leaf_type::at_type>) { /* whether
-								       */
-			/* has bb */
+		auto const node_box =
+			Traits::template get_box<leaf_type, interior_type>(T);
+		if constexpr (has_box<typename leaf_type::at_type>) {
 			assert(same_box(node_box, tl->get_box()));
 		} else {
 			assert(within_box(node_box, box));
@@ -128,10 +125,9 @@ base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::check_box(
 	}
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
+template <typename Traits, typename DerivedTree>
 template <typename leaf_type, typename interior_type>
-size_t base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::check_size(node *T)
+size_t base_tree<Traits, DerivedTree>::check_size(node *T)
 {
 	if (T->is_leaf) {
 		return T->size;
@@ -164,11 +160,10 @@ size_t base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::check_size(node *T)
 	}
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
+template <typename Traits, typename DerivedTree>
 template <typename leaf_type, typename interior_type>
-void base_tree<Point, DerivedTree, SkHeight,
-	       ImbaRatio>::check_tree_same_sequential(node *T, int dim)
+void base_tree<Traits, DerivedTree>::check_tree_same_sequential(node *T,
+								int dim)
 {
 	if (T->is_leaf) {
 		return;
@@ -212,10 +207,9 @@ void base_tree<Point, DerivedTree, SkHeight,
 	return;
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
+template <typename Traits, typename DerivedTree>
 template <typename leaf_type, typename interior_type, typename SplitRule>
-void base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::validate()
+void base_tree<Traits, DerivedTree>::validate()
 {
 	std::cout << ">>> begin validate tree\n" << std::flush;
 
@@ -263,10 +257,9 @@ void base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::validate()
 	return;
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
+template <typename Traits, typename DerivedTree>
 template <typename leaf_type, typename interior_type>
-size_t base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::get_tree_height()
+size_t base_tree<Traits, DerivedTree>::get_tree_height()
 {
 	if (this->root_ == nullptr) {
 		return 0;
@@ -275,11 +268,9 @@ size_t base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::get_tree_height()
 	return get_max_tree_depth<leaf_type, interior_type>(this->root_, deep);
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
+template <typename Traits, typename DerivedTree>
 template <typename leaf_type, typename interior_type>
-size_t base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::get_max_tree_depth(
-	node *T, size_t deep)
+size_t base_tree<Traits, DerivedTree>::get_max_tree_depth(node *T, size_t deep)
 {
 	if (T == nullptr) {
 		return deep;
@@ -309,10 +300,9 @@ size_t base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::get_max_tree_depth(
 	}
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
+template <typename Traits, typename DerivedTree>
 template <typename leaf_type, typename interior_type>
-double base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::get_ave_tree_height()
+double base_tree<Traits, DerivedTree>::get_ave_tree_height()
 {
 	if (this->root_ == nullptr) {
 		return 0.0;
@@ -323,11 +313,9 @@ double base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::get_ave_tree_height()
 	return leaf_num == 0 ? 0.0 : double(depth_sum) / double(leaf_num);
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
+template <typename Traits, typename DerivedTree>
 template <typename leaf_type, typename interior_type>
-size_t base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::count_tree_nodes_num(
-	node *T)
+size_t base_tree<Traits, DerivedTree>::count_tree_nodes_num(node *T)
 {
 	if (T == nullptr) {
 		return 0;
@@ -361,11 +349,11 @@ size_t base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::count_tree_nodes_num(
 	}
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
+template <typename Traits, typename DerivedTree>
 template <typename leaf_type, typename interior_type>
-void base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::count_tree_heights(
-	node *T, size_t deep, size_t &leaf_num, size_t &depth_sum)
+void base_tree<Traits, DerivedTree>::count_tree_heights(node *T, size_t deep,
+							size_t &leaf_num,
+							size_t &depth_sum)
 {
 	if (T->is_leaf) {
 		leaf_num++;

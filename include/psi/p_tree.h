@@ -7,6 +7,7 @@
 #include <utility>
 
 #include "psi/base_tree.h"
+#include "psi/tree_traits.h"
 
 /*
  * cpam is third party. Silence its noise, but not -Wreturn-local-addr or
@@ -21,24 +22,20 @@
 namespace psi
 {
 
-template <typename Point, typename SplitRule, uint_fast8_t SkHeight = 6,
-	  uint_fast8_t ImbaRatio = 30>
-class p_tree
-    : public base_tree<Point, p_tree<Point, SplitRule, SkHeight, ImbaRatio>,
-		       SkHeight, ImbaRatio>
+template <typename Traits>
+class p_tree : public base_tree<Traits, p_tree<Traits>>
 {
 public:
-	using base_type =
-		base_tree<Point, p_tree<Point, SplitRule, SkHeight, ImbaRatio>,
-			  SkHeight, ImbaRatio>;
+	using base_type = base_tree<Traits, p_tree<Traits>>;
 
+	using point_type = typename base_type::point_type;
 	using bucket_type = typename base_type::bucket_type;
 	using balls_type = typename base_type::balls_type;
 	using dims_type = typename base_type::dims_type;
 	using bucket_seq_type = typename base_type::bucket_seq_type;
-	using coord_type = typename Point::coord_type;
-	using coords_type = typename Point::coords_type;
-	using num_type = num_comparator<coord_type>;
+	using coord_type = typename base_type::coord_type;
+	using coords_type = typename base_type::coords_type;
+	using num_type = typename base_type::num_type;
 	using slice_type = typename base_type::slice_type;
 	using points_type = typename base_type::points_type;
 	using points_iter_type = typename base_type::points_iter_type;
@@ -51,13 +48,13 @@ public:
 	using node_box_seq_type = typename base_type::node_box_seq_type;
 	using splitter_type = hyper_plane_type;
 	using splitter_seq_type = hyper_plane_seq_type;
-	using split_rule_type = SplitRule;
+	using split_rule_type = typename base_type::split_rule_type;
 
 	/* for the CPAM */
-	using curve_code_type = typename Point::at_type::curve_code_type;
-	using id_type = typename Point::at_type::id_type;
+	using curve_code_type = typename point_type::at_type::curve_code_type;
+	using id_type = typename point_type::at_type::id_type;
 
-	using cpam_key_type = typename Point::at_type; /* morton_id, id */
+	using cpam_key_type = typename point_type::at_type; /* morton_id, id */
 	using cpam_val_type = coords_type;
 
 	using cpam_aug_type = box_type;
@@ -66,12 +63,13 @@ public:
 		using key_t = cpam_key_type;
 		using val_t = cpam_val_type;
 		using aug_t = cpam_aug_type;
-		using entry_t = Point;
+		using entry_t = point_type;
 
-		using filling_curve_t = SplitRule;
+		using filling_curve_t = split_rule_type;
 		using key_entry_pointer =
-			std::pair<typename Point::at_type, entry_t *>;
-		using entry_t_ref_wrapper_v = std::reference_wrapper<Point>;
+			std::pair<typename point_type::at_type, entry_t *>;
+		using entry_t_ref_wrapper_v =
+			std::reference_wrapper<point_type>;
 
 		static inline key_t const &get_key(entry_t const &e)
 		{
@@ -128,14 +126,14 @@ public:
 	};
 
 	using cpam_aug_map_type = cpam::aug_map<cpam_entry, 40>;
-	using cpam_map_type = cpam_aug_map_type::map_type;
+	using cpam_map_type = typename cpam_aug_map_type::map_type;
 
 	using cpam_inner_entry_type =
 		std::tuple<typename cpam_entry::key_t,
 			   std::reference_wrapper<typename cpam_entry::val_t>>;
 
-	using leaf_type = cpam_aug_map_type::Tree::node;
-	using interior_type = cpam_aug_map_type::Tree::node;
+	using leaf_type = typename cpam_aug_map_type::Tree::node;
+	using interior_type = typename cpam_aug_map_type::Tree::node;
 
 	/* general tree structure */
 	/* delete_tree_wrapper is idempotent, so an explicit delete_tree()
@@ -148,7 +146,7 @@ public:
 	p_tree() = default;
 	/*
 	 * Move-only: root_ is an owning raw pointer. Assignment ends up
-	 * deleted because SplitRule holds const members; construction is
+	 * deleted because the split rule holds const members; construction is
 	 * what containers and factory returns need.
 	 */
 	p_tree(p_tree &&) = default;
@@ -184,7 +182,8 @@ public:
 
 	template <typename Range>
 	/* Not const: cpam takes the map by non-const reference. */
-	auto knn(Point const &q, bounded_queue<Point, Range> &bq) const;
+	auto knn(point_type const &q,
+		 bounded_queue<point_type, Range> &bq) const;
 
 	/* The buffer-taking forms below would otherwise hide the
 	 * allocating ones the base provides. */
@@ -226,7 +225,7 @@ private:
 
 	/*
 	 * No split-rule member: unlike kd_tree and orth_tree, p_tree never
-	 * calls its rule. SplitRule reaches the tree as cpam_entry's
+	 * calls its rule. The rule reaches the tree as cpam_entry's
 	 * filling_curve_t, and the code is applied by cpam_sample_sort during
 	 * the build. Adding a curve means writing one with encode(), not
 	 * touching anything here.

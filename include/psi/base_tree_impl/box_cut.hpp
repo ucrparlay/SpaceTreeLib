@@ -5,10 +5,9 @@
 
 namespace psi
 {
-template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
-struct base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::box_cut_type {
-	using base_type = base_tree<Point, DerivedTree, SkHeight, ImbaRatio>;
+template <typename Traits, typename DerivedTree>
+struct base_tree<Traits, DerivedTree>::box_cut_type {
+	using base_type = base_tree<Traits, DerivedTree>;
 
 	box_cut_type(box_type const &box, hyper_plane_type const &hp,
 		     bool go_left)

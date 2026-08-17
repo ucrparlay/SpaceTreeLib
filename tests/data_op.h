@@ -122,7 +122,7 @@ public:
 
 	static output_points_type shift_to_first_region(auto &wp)
 	{
-		auto bb = psi::base_tree<output_point_type>::get_box(
+		auto bb = psi::point_traits<output_point_type>::get_box(
 			parlay::make_slice(wp));
 		return parlay::tabulate(wp.size(), [&](size_t i) {
 			output_point_type p;
@@ -374,7 +374,7 @@ public:
 			}));
 
 		// move the points to the first region of the space
-		auto bb = psi::base_tree<Point>::get_box(
+		auto bb = psi::point_traits<Point>::get_box(
 			parlay::make_slice(cluster_seq));
 		for (dims_type j = 0; j < Point::get_dim(); j++) {
 			bb.first[j] = num_type::min(bb.first[j],

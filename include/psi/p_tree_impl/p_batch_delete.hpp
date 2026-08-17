@@ -7,19 +7,17 @@ namespace psi
 {
 
 /* default batch delete */
-template <typename Point, typename SplitRule, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
+template <typename Traits>
 template <typename Range>
-void p_tree<Point, SplitRule, SkHeight, ImbaRatio>::batch_delete(Range &&in)
+void p_tree<Traits>::batch_delete(Range &&in)
 {
 	base_type::ingest_range(in, [&](slice_type A) { batch_delete_(A); });
 	return;
 }
 
 /* assume all points_type are fully covered in the tree */
-template <typename Point, typename SplitRule, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
-void p_tree<Point, SplitRule, SkHeight, ImbaRatio>::batch_delete_(slice_type A)
+template <typename Traits>
+void p_tree<Traits>::batch_delete_(slice_type A)
 {
 	if (!this->cpam_aug_map_.root ||
 	    !cpam_aug_map_type::size(this->cpam_aug_map_.root)) {

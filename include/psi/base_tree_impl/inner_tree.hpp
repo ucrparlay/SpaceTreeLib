@@ -8,11 +8,10 @@
 
 namespace psi
 {
-template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
+template <typename Traits, typename DerivedTree>
 template <typename leaf_type, typename interior_type>
-struct base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::inner_tree {
-	using base_type = base_tree<Point, DerivedTree, SkHeight, ImbaRatio>;
+struct base_tree<Traits, DerivedTree>::inner_tree {
+	using base_type = base_tree<Traits, DerivedTree>;
 	inner_tree()
 	    : tags_num(0), tags(node_tag_seq_type::uninitialized(
 				   pivot_num + bucket_num + 1)),
@@ -399,7 +398,7 @@ struct base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::inner_tree {
 	template <update_type ut, bool UpdateParFlag = true,
 		  typename ReturnType, typename... Args>
 		requires is_pointer_to_node<ReturnType> ||
-			 is_node_box<ReturnType, Point>
+			 is_node_box<ReturnType, point_type>
 	ReturnType
 	update_inner_tree(parlay::sequence<ReturnType> const &tree_nodes,
 			  Args &&...args)

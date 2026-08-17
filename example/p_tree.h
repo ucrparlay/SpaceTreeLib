@@ -58,7 +58,7 @@ struct aug_id_code {
 // Define point type: 2D points with augmented ID and curve code
 using Point = psi::aug_point<coord_type, 2, aug_id_code>;
 using points_type = parlay::sequence<Point>;
-using base_type = psi::base_tree<Point>;
+using base_type = psi::point_traits<Point>;
 
 // Define split rule using space-filling curve (Morton curve in this example)
 using SplitRule = psi::spatial_filling_curve<psi::morton_curve<Point>>;
@@ -71,7 +71,7 @@ using another_split_rule_type =
 // p_tree doesn't use LeafAug/InteriorAug like kd_tree/orth_tree
 // It uses CPAM (Compressed Purely Functional Augmented Maps) internally to
 // maintain the bounding box as an augmented value.
-using Tree = psi::p_tree<Point, another_split_rule_type>;
+using Tree = psi::p_tree<psi::tree_traits<Point, another_split_rule_type>>;
 
 /*
  * The example doubles as a smoke test: without these it prints success even

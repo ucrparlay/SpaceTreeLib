@@ -17,18 +17,23 @@ using parlay::par_do;
 using parlay::par_do_if;
 using parlay::sequence;
 
+/* psi::base_tree takes one traits type; the defaults cannot be skipped. */
+template <typename Point, typename SplitRule, uint_fast8_t SkHeight,
+	  uint_fast8_t ImbaRatio>
+using cpam_raw_traits = psi::tree_traits<
+	Point, SplitRule, psi::box_leaf_aug<psi::point_traits<Point>>,
+	psi::box_interior_aug<psi::point_traits<Point>>, SkHeight, ImbaRatio>;
+
 template <typename Point, typename SplitRule, uint_fast8_t SkHeight = 6,
 	  uint_fast8_t ImbaRatio = 30>
-class cpam_raw
-    : public psi::base_tree<Point,
-			    cpam_raw<Point, SplitRule, SkHeight, ImbaRatio>,
-			    SkHeight, ImbaRatio>
+class cpam_raw : public psi::base_tree<
+			 cpam_raw_traits<Point, SplitRule, SkHeight, ImbaRatio>,
+			 cpam_raw<Point, SplitRule, SkHeight, ImbaRatio>>
 {
 public:
-	using base_type =
-		psi::base_tree<Point,
-			       cpam_raw<Point, SplitRule, SkHeight, ImbaRatio>,
-			       SkHeight, ImbaRatio>;
+	using base_type = psi::base_tree<
+		cpam_raw_traits<Point, SplitRule, SkHeight, ImbaRatio>,
+		cpam_raw<Point, SplitRule, SkHeight, ImbaRatio>>;
 
 	using bucket_type = typename base_type::bucket_type;
 	using balls_type = typename base_type::balls_type;

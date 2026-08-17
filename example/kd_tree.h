@@ -44,7 +44,7 @@ struct aug_id {
 // Define point type: 2D points with augmented ID
 using Point = psi::aug_point<coord_type, 2, aug_id>;
 using points_type = parlay::sequence<Point>;
-using base_type = psi::base_tree<Point>;
+using base_type = psi::point_traits<Point>;
 
 // leaf_type augmentation: stores bounding box
 
@@ -60,7 +60,7 @@ using another_split_rule_type =
 				   psi::spatial_median<Point>>;
 
 // Define kd_tree type
-using Tree = psi::kd_tree<Point, SplitRule>;
+using Tree = psi::kd_tree<psi::tree_traits<Point, SplitRule>>;
 
 /*
  * The example doubles as a smoke test: without these it prints success even

@@ -6,17 +6,15 @@
 
 namespace psi
 {
-template <typename Point, typename SplitRule, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
+template <typename Traits>
 template <typename Range>
-void p_tree<Point, SplitRule, SkHeight, ImbaRatio>::batch_insert(Range &&in)
+void p_tree<Traits>::batch_insert(Range &&in)
 {
 	base_type::ingest_range(in, [&](slice_type A) { batch_insert_(A); });
 }
 
-template <typename Point, typename SplitRule, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
-void p_tree<Point, SplitRule, SkHeight, ImbaRatio>::batch_insert_(slice_type A)
+template <typename Traits>
+void p_tree<Traits>::batch_insert_(slice_type A)
 {
 	if (!this->cpam_aug_map_.root ||
 	    !cpam_aug_map_type::size(this->cpam_aug_map_.root)) {

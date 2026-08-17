@@ -12,12 +12,9 @@
 
 namespace psi
 {
-template <typename Point, typename SplitRule, typename LeafAugType,
-	  typename InteriorAugType, uint_fast8_t md, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
+template <typename Traits>
 template <typename Range, typename... Args>
-void orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
-	       ImbaRatio>::build(Range &&in, Args &&...args)
+void orth_tree<Traits>::build(Range &&in, Args &&...args)
 {
 	static_assert(base_type::build_depth_once % md == 0);
 	base_type::ingest_range(in, [&](slice_type A) {
@@ -27,14 +24,11 @@ void orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
 
 /* TODO: maybe we don't need this function, it can be directly computed by value
  */
-template <typename Point, typename SplitRule, typename LeafAugType,
-	  typename InteriorAugType, uint_fast8_t md, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
-void orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
-	       ImbaRatio>::divide_rotate(hyper_plane_seq_type &pivots,
-					 dims_type dim, bucket_type idx,
-					 box_seq_type &box_seq,
-					 box_type const &box)
+template <typename Traits>
+void orth_tree<Traits>::divide_rotate(hyper_plane_seq_type &pivots,
+				      dims_type dim, bucket_type idx,
+				      box_seq_type &box_seq,
+				      box_type const &box)
 {
 	if (idx > base_type::pivot_num) {
 
@@ -56,13 +50,10 @@ void orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
 	return;
 }
 
-template <typename Point, typename SplitRule, typename LeafAugType,
-	  typename InteriorAugType, uint_fast8_t md, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
-void orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
-	       ImbaRatio>::serial_split(slice_type in, dims_type dim,
-					dims_type idx, box_type const &box,
-					parlay::sequence<balls_type> &sums)
+template <typename Traits>
+void orth_tree<Traits>::serial_split(slice_type in, dims_type dim,
+				     dims_type idx, box_type const &box,
+				     parlay::sequence<balls_type> &sums)
 {
 	assert(dim <= base_type::num_dims);
 
@@ -79,14 +70,10 @@ void orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
 		     idx << 1 | 1, box, sums);
 }
 
-template <typename Point, typename SplitRule, typename LeafAugType,
-	  typename InteriorAugType, uint_fast8_t md, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
-node *orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
-		ImbaRatio>::serial_build_recursive(slice_type in,
-						   slice_type out,
-						   box_type const &box,
-						   bool checked_duplicate)
+template <typename Traits>
+node *orth_tree<Traits>::serial_build_recursive(slice_type in, slice_type out,
+						box_type const &box,
+						bool checked_duplicate)
 {
 	assert(in.size() == 0 ||
 	       base_type::within_box(base_type::get_box(in), box));
@@ -110,13 +97,15 @@ node *orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
 
 	if (std::ranges::count(sums, 0) == node_regions - 1) { /* split fails */
 		if (std::ranges::find_if_not(
-			    in, [&](Point const &p) { /* early return */
-						      return p.same_dimension(
-							      in[0]);
+			    in,
+			    [&](point_type const &p) { /* early return */
+						       return p.same_dimension(
+							       in[0]);
 			    }) == in.end()) {
-			if constexpr (is_aug_point<Point>) {
+			if constexpr (is_aug_point<point_type>) {
 				if constexpr (
-					Point::is_non_trivial_augmentation()) {
+					point_type::
+						is_non_trivial_augmentation()) {
 					return alloc_fix_size_leaf_node<
 						slice_type, leaf_type>(
 						in,
@@ -162,12 +151,9 @@ node *orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
 	return alloc_interior_node<interior_type>(tree_nodes, splitter);
 }
 
-template <typename Point, typename SplitRule, typename LeafAugType,
-	  typename InteriorAugType, uint_fast8_t md, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
-node *orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
-		ImbaRatio>::build_recursive(slice_type in, slice_type out,
-					    box_type const &box)
+template <typename Traits>
+node *orth_tree<Traits>::build_recursive(slice_type in, slice_type out,
+					 box_type const &box)
 {
 	/* TODO: may ensure the bucket is corresponding the the splitter */
 	assert(in.size() == 0 ||
@@ -227,11 +213,8 @@ node *orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
 								   tree_nodes);
 }
 
-template <typename Point, typename SplitRule, typename LeafAugType,
-	  typename InteriorAugType, uint_fast8_t md, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
-void orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
-	       ImbaRatio>::build_(slice_type A)
+template <typename Traits>
+void orth_tree<Traits>::build_(slice_type A)
 {
 	base_type::template delete_tree_nodes<leaf_type, interior_type>();
 	points_type B = points_type::uninitialized(A.size());
@@ -243,11 +226,8 @@ void orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
 	return;
 }
 
-template <typename Point, typename SplitRule, typename LeafAugType,
-	  typename InteriorAugType, uint_fast8_t md, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
-void orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
-	       ImbaRatio>::build_(slice_type A, box_type const &box)
+template <typename Traits>
+void orth_tree<Traits>::build_(slice_type A, box_type const &box)
 {
 	assert(base_type::within_box(base_type::get_box(A), box));
 

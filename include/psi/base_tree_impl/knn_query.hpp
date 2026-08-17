@@ -15,13 +15,12 @@ namespace psi
  * distance between two points_type
  * TODO: change the name to p2p_distance_square to avoid ambiguous
  */
-template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
-inline typename base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::dis_type
-base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::p2p_distance_square(
-	Point const &p, Point const &q)
+template <typename Traits, typename DerivedTree>
+inline typename base_tree<Traits, DerivedTree>::dis_type
+base_tree<Traits, DerivedTree>::p2p_distance_square(point_type const &p,
+						    point_type const &q)
 {
-	constexpr uint_fast8_t num_dims = Point::get_dim();
+	constexpr uint_fast8_t num_dims = point_type::get_dim();
 	dis_type r = 0;
 
 	if constexpr (num_dims == 2) {
@@ -49,12 +48,11 @@ base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::p2p_distance_square(
 	return r;
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
-inline typename base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::dis_type
-base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::p2b_min_distance_square(
-	Point const &p, typename base_tree<Point, DerivedTree, SkHeight,
-					   ImbaRatio>::box_type const &a)
+template <typename Traits, typename DerivedTree>
+inline typename base_tree<Traits, DerivedTree>::dis_type
+base_tree<Traits, DerivedTree>::p2b_min_distance_square(
+	point_type const &p,
+	typename base_tree<Traits, DerivedTree>::box_type const &a)
 {
 	dis_type r = 0;
 	/* the distance is 0 when p is inside the box */
@@ -77,13 +75,12 @@ base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::p2b_min_distance_square(
 	return r;
 }
 
-/* max distance between a Point and a box_type */
-template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
-inline typename base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::dis_type
-base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::p2b_max_distance_square(
-	Point const &p, typename base_tree<Point, DerivedTree, SkHeight,
-					   ImbaRatio>::box_type const &a)
+/* max distance between a point and a box */
+template <typename Traits, typename DerivedTree>
+inline typename base_tree<Traits, DerivedTree>::dis_type
+base_tree<Traits, DerivedTree>::p2b_max_distance_square(
+	point_type const &p,
+	typename base_tree<Traits, DerivedTree>::box_type const &a)
 {
 	dis_type r = 0;
 	for (dims_type i = 0; i < num_dims; ++i) {
@@ -103,23 +100,20 @@ base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::p2b_max_distance_square(
 	return r;
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
-inline double
-base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::p2c_min_distance(
-	Point const &p, Point const &center, dis_type const r)
+template <typename Traits, typename DerivedTree>
+inline double base_tree<Traits, DerivedTree>::p2c_min_distance(
+	point_type const &p, point_type const &center, dis_type const r)
 {
 
 	return std::sqrt(p2p_distance_square(p, center)) -
 	       static_cast<double>(r);
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
+template <typename Traits, typename DerivedTree>
 template <typename CircleType>
 inline double
-base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::p2c_min_distance(
-	Point const &p, CircleType const &cl)
+base_tree<Traits, DerivedTree>::p2c_min_distance(point_type const &p,
+						 CircleType const &cl)
 {
 	return p2c_min_distance(p, cl.get_center(), cl.get_radius());
 }
@@ -128,11 +122,11 @@ base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::p2c_min_distance(
  * early return the partial distance between p and q if it is larger than
  * r else return the distance between p and q
  */
-template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
-inline typename base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::dis_type
-base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::interruptible_distance(
-	Point const &p, Point const &q, dis_type up)
+template <typename Traits, typename DerivedTree>
+inline typename base_tree<Traits, DerivedTree>::dis_type
+base_tree<Traits, DerivedTree>::interruptible_distance(point_type const &p,
+						       point_type const &q,
+						       dis_type up)
 {
 	dis_type r = 0;
 	dims_type i = 0;
@@ -177,12 +171,11 @@ base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::interruptible_distance(
 	return r;
 }
 
-/* knn search for Point q */
-template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
+/* knn search for the point q */
+template <typename Traits, typename DerivedTree>
 template <typename leaf_type, typename Range>
-void base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::knn_leaf(
-	node *T, Point const &q, bounded_queue<Point, Range> &bq)
+void base_tree<Traits, DerivedTree>::knn_leaf(
+	node *T, point_type const &q, bounded_queue<point_type, Range> &bq)
 {
 	assert(T->is_leaf);
 
@@ -212,15 +205,14 @@ void base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::knn_leaf(
 	return;
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
+template <typename Traits, typename DerivedTree>
 template <typename leaf_type, is_binary_node interior_type, typename Range>
-void base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::knn_binary(
-	node *T, Point const &q, bounded_queue<Point, Range> &bq,
+void base_tree<Traits, DerivedTree>::knn_binary(
+	node *T, point_type const &q, bounded_queue<point_type, Range> &bq,
 	box_type const &node_box, knn_logger &logger)
-	requires std::same_as<typename interior_type::st_type,
-			      typename base_tree<Point, DerivedTree, SkHeight,
-						 ImbaRatio>::hyper_plane_type>
+	requires std::same_as<
+		typename interior_type::st_type,
+		typename base_tree<Traits, DerivedTree>::hyper_plane_type>
 {
 	if (T->is_leaf) {
 		logger.vis_leaf_num++;
@@ -252,11 +244,10 @@ void base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::knn_binary(
 	return;
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
+template <typename Traits, typename DerivedTree>
 template <typename leaf_type, is_binary_node interior_type, typename Range>
-void base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::knn_binary_box(
-	node *T, Point const &q, bounded_queue<Point, Range> &bq,
+void base_tree<Traits, DerivedTree>::knn_binary_box(
+	node *T, point_type const &q, bounded_queue<point_type, Range> &bq,
 	knn_logger &logger)
 {
 	if (bq.size() &&
@@ -297,12 +288,11 @@ void base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::knn_binary_box(
 }
 
 /* compute knn for multinode as if a binary node */
-template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
+template <typename Traits, typename DerivedTree>
 template <typename leaf_type, is_multi_node interior_type, typename Range>
-void base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::knn_multi_expand(
-	node *T, Point const &q, dims_type dim, bucket_type idx,
-	bounded_queue<Point, Range> &bq, box_type const &node_box,
+void base_tree<Traits, DerivedTree>::knn_multi_expand(
+	node *T, point_type const &q, dims_type dim, bucket_type idx,
+	bounded_queue<point_type, Range> &bq, box_type const &node_box,
 	knn_logger &logger)
 {
 	if (T->size == 0) {
@@ -364,12 +354,11 @@ void base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::knn_multi_expand(
 }
 
 /* compute knn for multinode as if a binary node */
-template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
+template <typename Traits, typename DerivedTree>
 template <typename leaf_type, is_multi_node interior_type, typename Range>
-void base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::knn_multi_expand_box(
-	node *T, Point const &q, dims_type dim, bucket_type idx,
-	bounded_queue<Point, Range> &bq, knn_logger &logger)
+void base_tree<Traits, DerivedTree>::knn_multi_expand_box(
+	node *T, point_type const &q, dims_type dim, bucket_type idx,
+	bounded_queue<point_type, Range> &bq, knn_logger &logger)
 {
 	if (T->size == 0) {
 		return;
@@ -438,11 +427,10 @@ void base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::knn_multi_expand_box(
 }
 
 /* compute knn for multi-node by computing bounding boxes */
-template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
+template <typename Traits, typename DerivedTree>
 template <typename leaf_type, is_multi_node interior_type, typename Range>
-void base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::knn_multi(
-	node *T, Point const &q, bounded_queue<Point, Range> &bq,
+void base_tree<Traits, DerivedTree>::knn_multi(
+	node *T, point_type const &q, bounded_queue<point_type, Range> &bq,
 	knn_logger &logger)
 {
 	if (T->size == 0) {
@@ -503,11 +491,9 @@ void base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::knn_multi(
  * sorted by distance. The buffer-taking form is still there for callers that
  * want to own the storage.
  */
-template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
-typename base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::knn_result_seq_type
-base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::knn(Point const &q,
-							size_t k) const
+template <typename Traits, typename DerivedTree>
+typename base_tree<Traits, DerivedTree>::knn_result_seq_type
+base_tree<Traits, DerivedTree>::knn(point_type const &q, size_t k) const
 {
 	size_t const n =
 		std::min(k, static_cast<DerivedTree const *>(this)->get_size());
@@ -517,10 +503,10 @@ base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::knn(Point const &q,
 
 	/* bounded_queue holds references, which have no default state, so the
 	 * buffer needs a filler; it is overwritten before anything reads it. */
-	using nn_pair = std::pair<std::reference_wrapper<Point>, dis_type>;
-	Point filler = q;
+	using nn_pair = std::pair<std::reference_wrapper<point_type>, dis_type>;
+	point_type filler = q;
 	parlay::sequence<nn_pair> buf(n, nn_pair(std::ref(filler), dis_type()));
-	bounded_queue<Point, nn_pair> bq(parlay::make_slice(buf));
+	bounded_queue<point_type, nn_pair> bq(parlay::make_slice(buf));
 
 	static_cast<DerivedTree const *>(this)->knn(q, bq);
 

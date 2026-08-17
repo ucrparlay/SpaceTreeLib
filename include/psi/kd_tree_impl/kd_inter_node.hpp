@@ -9,18 +9,16 @@
 namespace psi
 {
 
-template <typename Point, typename SplitRule, typename LeafAugType,
-	  typename InteriorAugType, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
-struct kd_tree<Point, SplitRule, LeafAugType, InteriorAugType, SkHeight,
-	       ImbaRatio>::kd_interior_node
-    : binary_node<Point, splitter_type, InteriorAugType> {
-	using pt_type = Point;
+template <typename Traits>
+struct kd_tree<Traits>::kd_interior_node
+    : binary_node<point_type, splitter_type,
+		  typename Traits::interior_aug_type> {
+	using pt_type = point_type;
 	using st_type = splitter_type;
-	using at_type = InteriorAugType;
+	using at_type = typename Traits::interior_aug_type;
 
 	kd_interior_node(node *_left, node *_right, st_type const &_split)
-	    : binary_node<Point, splitter_type, at_type>(
+	    : binary_node<point_type, splitter_type, at_type>(
 		      _left, _right, _split,
 		      at_type(at_type::template create<leaf_type,
 						       interior_type>(_left,
@@ -30,8 +28,8 @@ struct kd_tree<Point, SplitRule, LeafAugType, InteriorAugType, SkHeight,
 
 	kd_interior_node(node *_left, node *_right, st_type const &_split,
 			 at_type const &_aug)
-	    : binary_node<Point, splitter_type, at_type>(_left, _right, _split,
-							 _aug)
+	    : binary_node<point_type, splitter_type, at_type>(_left, _right,
+							      _split, _aug)
 	{
 	}
 

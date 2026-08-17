@@ -8,10 +8,9 @@
 
 namespace psi
 {
-template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
-inline void base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::sample_points(
-	slice_type in, points_type &arr)
+template <typename Traits, typename DerivedTree>
+inline void base_tree<Traits, DerivedTree>::sample_points(slice_type in,
+							  points_type &arr)
 {
 	auto size = arr.size();
 	auto n = in.size();
@@ -26,11 +25,10 @@ inline void base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::sample_points(
 	return;
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
-inline typename base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::bucket_type
-base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::find_bucket(
-	Point const &p, hyper_plane_seq_type const &pivots)
+template <typename Traits, typename DerivedTree>
+inline typename base_tree<Traits, DerivedTree>::bucket_type
+base_tree<Traits, DerivedTree>::find_bucket(point_type const &p,
+					    hyper_plane_seq_type const &pivots)
 {
 	bucket_type k(1);
 	while (k <= pivot_num) {
@@ -42,9 +40,8 @@ base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::find_bucket(
 	return pivots[k].second;
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
-void base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::partition(
+template <typename Traits, typename DerivedTree>
+void base_tree<Traits, DerivedTree>::partition(
 	slice_type A, slice_type B, size_t const n,
 	hyper_plane_seq_type const &pivots, parlay::sequence<balls_type> &sums)
 {
@@ -93,13 +90,12 @@ void base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::partition(
 	return;
 }
 
-/* retrieve the bucket tag of Point p from the skeleton tags */
-template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
+/* retrieve the bucket tag of the point p from the skeleton tags */
+template <typename Traits, typename DerivedTree>
 template <is_binary_node interior_type>
-typename base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::bucket_type
-base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::retrieve_tag(
-	Point const &p, node_tag_seq_type const &tags)
+typename base_tree<Traits, DerivedTree>::bucket_type
+base_tree<Traits, DerivedTree>::retrieve_tag(point_type const &p,
+					     node_tag_seq_type const &tags)
 {
 	bucket_type k(1);
 	while (k <= pivot_num && (!tags[k].first->is_leaf)) {
@@ -114,12 +110,11 @@ base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::retrieve_tag(
 	return tags[k].second;
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
+template <typename Traits, typename DerivedTree>
 template <is_multi_node interior_type>
-typename base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::bucket_type
-base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::retrieve_tag(
-	Point const &p, node_tag_seq_type const &tags)
+typename base_tree<Traits, DerivedTree>::bucket_type
+base_tree<Traits, DerivedTree>::retrieve_tag(point_type const &p,
+					     node_tag_seq_type const &tags)
 {
 	bucket_type k(1);
 	while (k <= pivot_num && (!tags[k].first->is_leaf)) {
@@ -135,10 +130,9 @@ base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::retrieve_tag(
  * sums is the number of elemenets within each bucket, the tags_num is the total
  * number of buckets in the skeleton
  */
-template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
+template <typename Traits, typename DerivedTree>
 template <typename interior_type>
-void base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::sieve_points(
+void base_tree<Traits, DerivedTree>::sieve_points(
 	slice_type A, slice_type B, size_t const n,
 	node_tag_seq_type const &tags, parlay::sequence<balls_type> &sums,
 	bucket_type const tags_num)

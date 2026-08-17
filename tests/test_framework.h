@@ -1688,31 +1688,14 @@ static auto constexpr default_test_func = []<class TreeDesc, typename Point>(
 class wrapper
 {
 public:
-	// NOTE: determine the build depth once for the orth tree
-	static consteval uint8_t orth_get_build_depth_once(uint8_t const dim)
-	{
-		if (dim == 2 || dim == 3) {
-			return 6;
-		} else if (dim == 4) {
-			return 8;
-		} else if (dim >= 5 && dim <= 8) {
-			return dim;
-		} else {
-			static_assert("Cannot decide the build tree depth once "
-				      "for this dim");
-			return 0;
-		}
-	}
-
 	// NOTE: Trees
 	template <class PointType, class split_rule_type, class LeafAugType,
 		  class InteriorAugType>
 	struct kd_tree_wrapper {
 		using Point = PointType;
 		using SplitRule = split_rule_type;
-		using tree_type =
-			typename psi::kd_tree<Point, SplitRule, LeafAugType,
-					      InteriorAugType>;
+		using tree_type = psi::kd_tree<psi::tree_traits<
+			Point, SplitRule, LeafAugType, InteriorAugType>>;
 	};
 
 	template <class PointType, class split_rule_type, class LeafAugType,
@@ -1720,17 +1703,16 @@ public:
 	struct orth_tree_wrapper {
 		using Point = PointType;
 		using SplitRule = split_rule_type;
-		using tree_type = typename psi::orth_tree<
-			Point, SplitRule, LeafAugType, InteriorAugType,
-			Point::get_dim(),
-			orth_get_build_depth_once(Point::get_dim())>;
+		using tree_type = psi::orth_tree<psi::orth_tree_traits<
+			Point, SplitRule, LeafAugType, InteriorAugType>>;
 	};
 
 	template <class PointType, class split_rule_type>
 	struct p_tree_wrapper {
 		using Point = PointType;
 		using SplitRule = split_rule_type;
-		using tree_type = typename psi::p_tree<Point, SplitRule>;
+		using tree_type =
+			psi::p_tree<psi::tree_traits<Point, SplitRule>>;
 	};
 
 	template <class PointType, class split_rule_type>
@@ -1924,7 +1906,7 @@ public:
 	{
 		auto build_tree_type = [&]<typename Point,
 					   typename SplitRule>() {
-			using base_type = psi::base_tree<Point>;
+			using base_type = psi::point_traits<Point>;
 			if (tree_type == 0) {
 				// run<kd_tree_wrapper<Point, SplitRule,
 				// psi::box_leaf_aug<base_type>,

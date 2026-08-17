@@ -5,102 +5,71 @@
 #include <utility>
 
 #include "psi/base_tree.h"
-#include "psi/dependence/augmentation.h"
+#include "psi/dependence/concepts.h"
+#include "psi/tree_traits.h"
 
 namespace psi
 {
 
-/*
- * Skeleton height for a given dimension. A skeleton level splits every
- * dimension once, so the height has to be a multiple of the dimension.
- * Throwing is how a consteval function reports an unsupported dimension.
- */
-consteval uint_fast8_t orth_build_depth_once(uint_fast8_t const dim)
-{
-	if (dim == 2 || dim == 3) {
-		return 6;
-	}
-	if (dim == 4) {
-		return 8;
-	}
-	if (dim >= 5 && dim <= 8) {
-		return dim;
-	}
-	throw "orth_tree has no skeleton height for this dimension";
-}
-
-template <typename Point, typename SplitRule,
-	  typename LeafAugType = box_leaf_aug<base_tree<Point>>,
-	  typename InteriorAugType = box_interior_aug<base_tree<Point>>,
-	  uint_fast8_t md = Point::get_dim(),
-	  uint_fast8_t SkHeight = orth_build_depth_once(Point::get_dim()),
-	  uint_fast8_t ImbaRatio = 30>
-class orth_tree
-    : public base_tree<Point,
-		       orth_tree<Point, SplitRule, LeafAugType, InteriorAugType,
-				 md, SkHeight, ImbaRatio>,
-		       SkHeight, ImbaRatio>
+template <typename Traits>
+class orth_tree : public base_tree<Traits, orth_tree<Traits>>
 {
 public:
+	using base_type = base_tree<Traits, orth_tree<Traits>>;
+
+	using point_type = typename base_type::point_type;
+	using bucket_type = typename base_type::bucket_type;
+	using balls_type = typename base_type::balls_type;
+	using bucket_seq_type = typename base_type::bucket_seq_type;
+	using dims_type = typename base_type::dims_type;
+	using coord_type = typename base_type::coord_type;
+	using coords_type = typename base_type::coords_type;
+	using num_type = typename base_type::num_type;
+	using slice_type = typename base_type::slice_type;
+	using points_type = typename base_type::points_type;
+	using points_iter_type = typename base_type::points_iter_type;
+	using box_type = typename base_type::box_type;
+	using box_seq_type = typename base_type::box_seq_type;
+
+	using hyper_plane_type = typename base_type::hyper_plane_type;
+	using hyper_plane_seq_type = typename base_type::hyper_plane_seq_type;
+	using node_box_seq_type = typename base_type::node_box_seq_type;
+	using node_box_type = typename base_type::node_box_type;
+	using split_rule_type = typename base_type::split_rule_type;
+
+	/* One split per dimension, so a node has 2^dim children. */
+	static constexpr dims_type const md = base_type::num_dims;
 	static constexpr size_t splitter_num = md;
 	static constexpr size_t node_regions = 1 << md;
 
-	using base_type =
-		base_tree<Point,
-			  orth_tree<Point, SplitRule, LeafAugType,
-				    InteriorAugType, md, SkHeight, ImbaRatio>,
-			  SkHeight, ImbaRatio>;
+	using splitter_type = std::array<hyper_plane_type, splitter_num>;
+	using splitter_seq_type = parlay::sequence<splitter_type>;
 
-	static_assert(
-		leaf_augmentation<LeafAugType, typename base_type::slice_type>,
-		"LeafAugType needs A(), A(slice_type), update_aug(slice_type), "
-		"reset()");
-	static_assert(interior_augmentation<InteriorAugType>,
-		      "InteriorAugType needs set_parallel_flag(bool), "
-		      "reset_parallel_flag(), get_parallel_flag_ini_status(), "
-		      "force_parallel(size_t)");
 	/*
 	 * divide_rotate hands split_sample a null slice, which only
 	 * spatial_median ignores. object_median dereferences it and the build
 	 * segfaults.
 	 */
 	static_assert(is_spatial_median_split<
-			      typename SplitRule::partition_rule_type>,
+			      typename split_rule_type::partition_rule_type>,
 		      "orth_tree needs a spatial_median partition rule");
 	/*
-	 * A mismatch used to build an empty tree that answered 0 to every
-	 * query, since the only check was an assert compiled out in release.
+	 * A skeleton level splits every dimension once, so a height that is
+	 * not a multiple of the dimension leaves the skeleton lopsided.
+	 * orth_tree_traits picks a height that fits.
 	 */
-	static_assert(md == base_type::num_dims,
-		      "orth_tree's md must equal the point's dimension");
-
-	using bucket_type = base_type::bucket_type;
-	using balls_type = base_type::balls_type;
-	using bucket_seq_type = base_type::bucket_seq_type;
-	using dims_type = base_type::dims_type;
-	using coord_type = typename Point::coord_type;
-	using coords_type = typename Point::coords_type;
-	using num_type = num_comparator<coord_type>;
-	using slice_type = base_type::slice_type;
-	using points_type = base_type::points_type;
-	using points_iter_type = base_type::points_iter_type;
-	using box_type = base_type::box_type;
-	using box_seq_type = base_type::box_seq_type;
-
-	using hyper_plane_type = base_type::hyper_plane_type;
-	using hyper_plane_seq_type = base_type::hyper_plane_seq_type;
-	using splitter_type = std::array<hyper_plane_type, splitter_num>;
-	using splitter_seq_type = parlay::sequence<splitter_type>;
-	using node_box_seq_type = base_type::node_box_seq_type;
-	using node_box_type = base_type::node_box_type;
+	static_assert(base_type::build_depth_once % md == 0,
+		      "orth_tree's skeleton height must be a multiple of the "
+		      "point's dimension -- use psi::orth_tree_traits");
 
 	struct orth_interior_node;
 
-	using split_rule_type = SplitRule;
-	using leaf_type = leaf_node<Point, slice_type, base_type::leaf_capacity,
-				    LeafAugType, parlay::move_assign_tag>;
+	using leaf_type =
+		leaf_node<point_type, slice_type, base_type::leaf_capacity,
+			  typename Traits::leaf_aug_type,
+			  parlay::move_assign_tag>;
 	using interior_type = orth_interior_node;
-	using node_arr_type = interior_type::node_arr_type;
+	using node_arr_type = typename interior_type::node_arr_type;
 	using inner_tree =
 		typename base_type::template inner_tree<leaf_type,
 							interior_type>;
@@ -117,7 +86,7 @@ public:
 				       slice_type in, Args &&...args);
 
 	/* The split rule calls build_recursive back; see divide_space. */
-	friend SplitRule;
+	friend split_rule_type;
 
 	/* delete_tree_wrapper is idempotent, so an explicit delete_tree()
 	 * before this stays correct. */
@@ -129,7 +98,7 @@ public:
 	orth_tree() = default;
 	/*
 	 * Move-only: root_ is an owning raw pointer. Assignment ends up
-	 * deleted because SplitRule holds const members; construction is
+	 * deleted because the split rule holds const members; construction is
 	 * what containers and factory returns need.
 	 */
 	orth_tree(orth_tree &&) = default;
@@ -164,7 +133,8 @@ public:
 	size_t flatten(Range &&out) const;
 
 	template <typename Range>
-	auto knn(Point const &q, bounded_queue<Point, Range> &bq) const;
+	auto knn(point_type const &q,
+		 bounded_queue<point_type, Range> &bq) const;
 
 	/* The buffer-taking forms below would otherwise hide the
 	 * allocating ones the base provides. */
@@ -196,7 +166,7 @@ public:
 
 	constexpr static char const *check_has_box()
 	{
-		if constexpr (has_box<InteriorAugType>)
+		if constexpr (has_box<typename Traits::interior_aug_type>)
 			return "HasBox";
 		else
 			return "NoBox";
@@ -234,7 +204,7 @@ private:
 	void batch_diff_(slice_type in);
 	node *batch_diff_recursive(node *T, slice_type in, slice_type out);
 
-	SplitRule split_rule_;
+	split_rule_type split_rule_;
 	bool fixed_box = false;
 };
 

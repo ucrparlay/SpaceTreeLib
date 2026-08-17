@@ -27,7 +27,8 @@ struct kd_kind {
 	using split_rule =
 		psi::orthogonal_split_rule<psi::rotate_dim<point_type>,
 					   psi::spatial_median<point_type>>;
-	using tree_type = psi::kd_tree<point_type, split_rule>;
+	using tree_type =
+		psi::kd_tree<psi::tree_traits<point_type, split_rule>>;
 	static constexpr char const *name = "kd_tree";
 };
 
@@ -37,7 +38,8 @@ struct orth_kind {
 	using split_rule =
 		psi::orthogonal_split_rule<psi::rotate_dim<point_type>,
 					   psi::spatial_median<point_type>>;
-	using tree_type = psi::orth_tree<point_type, split_rule>;
+	using tree_type =
+		psi::orth_tree<psi::orth_tree_traits<point_type, split_rule>>;
 	static constexpr char const *name = "orth_tree";
 };
 
@@ -80,7 +82,7 @@ struct p_kind {
 	using point_type = psi::aug_point<Coord, Dim, curve_code>;
 	using split_rule =
 		psi::spatial_filling_curve<psi::morton_curve<point_type>>;
-	using tree_type = psi::p_tree<point_type, split_rule>;
+	using tree_type = psi::p_tree<psi::tree_traits<point_type, split_rule>>;
 	static constexpr char const *name = "p_tree";
 };
 

@@ -9,23 +9,17 @@ namespace psi
 {
 
 /* default batch delete */
-template <typename Point, typename SplitRule, typename LeafAugType,
-	  typename InteriorAugType, uint_fast8_t md, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
+template <typename Traits>
 template <typename Range>
-void orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
-	       ImbaRatio>::batch_diff(Range &&in)
+void orth_tree<Traits>::batch_diff(Range &&in)
 {
 	base_type::ingest_range(in, [&](slice_type A) { batch_diff_(A); });
 	return;
 }
 
 /* assume points are partially covered in the tree */
-template <typename Point, typename SplitRule, typename LeafAugType,
-	  typename InteriorAugType, uint_fast8_t md, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
-void orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
-	       ImbaRatio>::batch_diff_(slice_type A)
+template <typename Traits>
+void orth_tree<Traits>::batch_diff_(slice_type A)
 {
 	if (this->root_ == nullptr)
 		return;
@@ -57,12 +51,9 @@ void orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
 }
 
 /* the orth does not need box since the box will never change */
-template <typename Point, typename SplitRule, typename LeafAugType,
-	  typename InteriorAugType, uint_fast8_t md, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
-node *orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
-		ImbaRatio>::batch_diff_recursive(node *T, slice_type in,
-						 slice_type out)
+template <typename Traits>
+node *orth_tree<Traits>::batch_diff_recursive(node *T, slice_type in,
+					      slice_type out)
 {
 	size_t n = in.size();
 

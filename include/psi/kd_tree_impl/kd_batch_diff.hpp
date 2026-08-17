@@ -5,12 +5,9 @@
 
 namespace psi
 {
-template <typename Point, typename SplitRule, typename LeafAugType,
-	  typename InteriorAugType, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
+template <typename Traits>
 template <typename Range>
-void kd_tree<Point, SplitRule, LeafAugType, InteriorAugType, SkHeight,
-	     ImbaRatio>::batch_diff(Range &&in)
+void kd_tree<Traits>::batch_diff(Range &&in)
 {
 	base_type::ingest_range(in, [&](slice_type A) { batch_diff_(A); });
 	return;
@@ -20,11 +17,8 @@ void kd_tree<Point, SplitRule, LeafAugType, InteriorAugType, SkHeight,
  * batch delete suitable for points_type that are pratially covered in the
  * tree
  */
-template <typename Point, typename SplitRule, typename LeafAugType,
-	  typename InteriorAugType, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
-void kd_tree<Point, SplitRule, LeafAugType, InteriorAugType, SkHeight,
-	     ImbaRatio>::batch_diff_(slice_type A)
+template <typename Traits>
+void kd_tree<Traits>::batch_diff_(slice_type A)
 {
 	if (this->root_ == nullptr)
 		return;
@@ -75,17 +69,10 @@ void kd_tree<Point, SplitRule, LeafAugType, InteriorAugType, SkHeight,
  * only sieve the points_type, without rebuilding the tree
  * the kdtree needs box since the box will be changed in batch diff
  */
-template <typename Point, typename SplitRule, typename LeafAugType,
-	  typename InteriorAugType, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
-typename kd_tree<Point, SplitRule, LeafAugType, InteriorAugType, SkHeight,
-		 ImbaRatio>::node_box_type
-kd_tree<Point, SplitRule, LeafAugType, InteriorAugType, SkHeight, ImbaRatio>::
-	batch_diff_recursive(
-		node *T,
-		typename kd_tree<Point, SplitRule, LeafAugType, InteriorAugType,
-				 SkHeight, ImbaRatio>::box_type const &box,
-		slice_type in, slice_type out, dims_type d)
+template <typename Traits>
+typename kd_tree<Traits>::node_box_type kd_tree<Traits>::batch_diff_recursive(
+	node *T, typename kd_tree<Traits>::box_type const &box, slice_type in,
+	slice_type out, dims_type d)
 {
 	size_t n = in.size();
 
@@ -101,7 +88,7 @@ kd_tree<Point, SplitRule, LeafAugType, InteriorAugType, SkHeight, ImbaRatio>::
 	if (in.size() <= base_type::serial_build_cutoff) {
 		interior_type *ti = static_cast<interior_type *>(T);
 		points_iter_type split_iter =
-			std::ranges::partition(in, [&](Point const &p) {
+			std::ranges::partition(in, [&](point_type const &p) {
 				return num_type::lt(p.pnt[ti->split.second],
 						    ti->split.first);
 			}).begin();

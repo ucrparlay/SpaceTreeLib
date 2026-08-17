@@ -51,6 +51,21 @@ A few names stay `CamelCase` because someone else owns them — `Tree` is
 CPAM's and CGAL's nested type, and `tests/kd_ccp.cpp` typedefs CGAL names onto
 themselves.
 
+## Configuration
+
+A tree takes one template parameter, a traits type, and `base_tree` inherits
+it:
+
+```cpp
+using traits = psi::tree_traits<point, split_rule>;
+psi::kd_tree<traits> tree;
+```
+
+A new alias or constant goes in `psi/tree_traits.h` -- in `point_traits` if it
+follows from the point type alone, in `tree_traits` otherwise. Then re-export
+it from the block at the top of `base_tree.h`: the traits are a dependent
+base, so a name missing from that block is invisible to the impl files.
+
 ## Comments
 
 Few and short, `/* */`, and about *why*. If code needs a comment to say what

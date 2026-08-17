@@ -8,12 +8,9 @@
 namespace psi
 {
 
-template <typename Point, typename SplitRule, typename LeafAugType,
-	  typename InteriorAugType, uint_fast8_t md, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
+template <typename Traits>
 template <typename Range>
-void orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
-	       ImbaRatio>::batch_insert(Range &&in)
+void orth_tree<Traits>::batch_insert(Range &&in)
 {
 	static_assert(base_type::build_depth_once % md == 0);
 	assert(md == base_type::num_dims);
@@ -22,11 +19,8 @@ void orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
 	base_type::ingest_range(in, [&](slice_type A) { batch_insert_(A); });
 }
 
-template <typename Point, typename SplitRule, typename LeafAugType,
-	  typename InteriorAugType, uint_fast8_t md, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
-void orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
-	       ImbaRatio>::batch_insert_(slice_type A)
+template <typename Traits>
+void orth_tree<Traits>::batch_insert_(slice_type A)
 {
 	if (this->root_ == nullptr) { /* TODO: may check using explicity tag */
 		return build_(A);
@@ -41,14 +35,10 @@ void orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
 	return;
 }
 
-template <typename Point, typename SplitRule, typename LeafAugType,
-	  typename InteriorAugType, uint_fast8_t md, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
-void orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
-	       ImbaRatio>::serial_split_skeleton(node *T, slice_type in,
-						 dims_type dim, dims_type idx,
-						 parlay::sequence<balls_type>
-							 &sums)
+template <typename Traits>
+void orth_tree<Traits>::serial_split_skeleton(
+	node *T, slice_type in, dims_type dim, dims_type idx,
+	parlay::sequence<balls_type> &sums)
 {
 	/* TODO: change it using the split_rule_.split() */
 	if (dim == base_type::num_dims) {
@@ -60,7 +50,7 @@ void orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
 	assert(dim == static_cast<interior_type *>(T)->split[dim].second);
 
 	points_iter_type split_iter =
-		std::ranges::partition(in, [&](Point const &p) {
+		std::ranges::partition(in, [&](point_type const &p) {
 			return num_type::lt(p.pnt[dim], mid);
 		}).begin();
 
@@ -71,13 +61,10 @@ void orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
 	return;
 }
 
-template <typename Point, typename SplitRule, typename LeafAugType,
-	  typename InteriorAugType, uint_fast8_t md, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
-node *orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
-		ImbaRatio>::batch_insert_recursive(node *T, slice_type in,
-						   slice_type out,
-						   box_type const &box)
+template <typename Traits>
+node *orth_tree<Traits>::batch_insert_recursive(node *T, slice_type in,
+						slice_type out,
+						box_type const &box)
 {
 	size_t n = in.size();
 
@@ -93,7 +80,8 @@ node *orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
 		 */
 		if ((!tl->is_dummy &&
 		     n + T->size <= base_type::leaf_capacity) ||
-		    (tl->is_dummy && parlay::all_of(in, [&](Point const &p) {
+		    (tl->is_dummy &&
+		     parlay::all_of(in, [&](point_type const &p) {
 			     return p == tl->pts[0];
 		     }))) {
 			return base_type::template insert_points2_leaf<

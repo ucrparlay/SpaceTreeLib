@@ -23,6 +23,9 @@ using point = psi::basic_point<coord_type, 2>;
 using split_rule = psi::orthogonal_split_rule<psi::rotate_dim<point>,
 					      psi::spatial_median<point>>;
 
+/* --- "A traits type" --- */
+using traits = psi::tree_traits<point, split_rule>;
+
 /* --- "Choosing and configuring a tree": the SPaC-tree point --- */
 struct curve_code {
 	using id_type = int_fast32_t;
@@ -66,7 +69,7 @@ int main()
 {
 	CASE("manual/build");
 	/* --- "Build" --- */
-	psi::kd_tree<point, split_rule> tree;
+	psi::kd_tree<traits> tree;
 
 	parlay::sequence<point> points = sample_points(1000);
 	tree.build(parlay::make_slice(points));
@@ -169,9 +172,9 @@ int main()
 
 	CASE("manual/trees");
 	/* --- the three instantiations --- */
-	psi::kd_tree<point, split_rule> kd;
-	psi::orth_tree<point, split_rule> orth;
-	psi::p_tree<aug_pt, curve> p;
+	psi::kd_tree<psi::tree_traits<point, split_rule>> kd;
+	psi::orth_tree<psi::orth_tree_traits<point, split_rule>> orth;
+	psi::p_tree<psi::tree_traits<aug_pt, curve>> p;
 
 	kd.build(parlay::make_slice(points));
 	orth.build(parlay::make_slice(points));

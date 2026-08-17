@@ -16,11 +16,9 @@
 namespace psi
 {
 
-template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
+template <typename Traits, typename DerivedTree>
 template <typename leaf_type, typename Range>
-void base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::extract_points_in_leaf(
-	node *T, Range out)
+void base_tree<Traits, DerivedTree>::extract_points_in_leaf(node *T, Range out)
 {
 	leaf_type *tl = static_cast<leaf_type *>(T);
 	if (tl->is_dummy) {
@@ -32,11 +30,10 @@ void base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::extract_points_in_leaf(
 	return;
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
+template <typename Traits, typename DerivedTree>
 template <typename leaf_type>
-node *base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::insert_points2_leaf(
-	node *T, slice_type in)
+node *base_tree<Traits, DerivedTree>::insert_points2_leaf(node *T,
+							  slice_type in)
 {
 	leaf_type *tl = static_cast<leaf_type *>(T);
 	if (tl->is_dummy) {
@@ -58,12 +55,10 @@ node *base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::insert_points2_leaf(
 	return T;
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
+template <typename Traits, typename DerivedTree>
 template <typename leaf_type, typename ReturnType>
-ReturnType
-base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::delete_points4_leaf(
-	node *T, slice_type in)
+ReturnType base_tree<Traits, DerivedTree>::delete_points4_leaf(node *T,
+							       slice_type in)
 {
 	assert(T->size >= in.size());
 	leaf_type *tl = static_cast<leaf_type *>(T);
@@ -119,12 +114,10 @@ base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::delete_points4_leaf(
 	}
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
+template <typename Traits, typename DerivedTree>
 template <typename leaf_type, typename ReturnType>
-ReturnType
-base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::diff_points4_leaf(
-	node *T, slice_type in)
+ReturnType base_tree<Traits, DerivedTree>::diff_points4_leaf(node *T,
+							     slice_type in)
 {
 	leaf_type *tl = static_cast<leaf_type *>(T);
 
@@ -162,7 +155,9 @@ base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::diff_points4_leaf(
 	auto diff_res = std::ranges::set_difference(
 		parlay::sort(tl->pts.cut(0, tl->size)), parlay::sort(in),
 		tl->pts.begin(),
-		[](Point const &p1, Point const &p2) { return p1 < p2; });
+		[](point_type const &p1, point_type const &p2) {
+			return p1 < p2;
+		});
 	tl->size = std::ranges::distance(tl->pts.begin(), diff_res.out);
 	tl->update_aug(tl->pts.cut(0, tl->size));
 

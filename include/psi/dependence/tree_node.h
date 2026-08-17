@@ -367,6 +367,19 @@ concept is_node_box = requires {
 			 is_box<typename T::second_type, Point>;
 };
 
+/*
+ * A free function, not a member of the traits: it reads the box a node
+ * already carries, so it needs the node types and nothing about the point.
+ */
+template <typename leaf_type, typename interior_type>
+inline decltype(auto) retrieve_box(node const *T)
+	requires(has_box<typename leaf_type::at_type> &&
+		 has_box<typename interior_type::at_type>)
+{
+	return T->is_leaf ? static_cast<leaf_type const *>(T)->get_box()
+			  : static_cast<interior_type const *>(T)->get_box();
+}
+
 } /* namespace psi */
 
 #endif /* PSI_DEPENDENCE_TREE_NODE_H_ */

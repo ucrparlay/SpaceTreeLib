@@ -7,44 +7,26 @@
 #include <utility>
 
 #include "psi/base_tree.h"
-#include "psi/dependence/augmentation.h"
 #include "psi/dependence/concepts.h"
+#include "psi/tree_traits.h"
 
 namespace psi
 {
 
-template <typename Point, typename SplitRule,
-	  typename LeafAugType = box_leaf_aug<base_tree<Point>>,
-	  typename InteriorAugType = box_interior_aug<base_tree<Point>>,
-	  uint_fast8_t SkHeight = 6, uint_fast8_t ImbaRatio = 30>
-class kd_tree : public base_tree<Point,
-				 kd_tree<Point, SplitRule, LeafAugType,
-					 InteriorAugType, SkHeight, ImbaRatio>,
-				 SkHeight, ImbaRatio>
+template <typename Traits>
+class kd_tree : public base_tree<Traits, kd_tree<Traits>>
 {
 public:
-	using base_type =
-		base_tree<Point,
-			  kd_tree<Point, SplitRule, LeafAugType,
-				  InteriorAugType, SkHeight, ImbaRatio>,
-			  SkHeight, ImbaRatio>;
+	using base_type = base_tree<Traits, kd_tree<Traits>>;
 
-	static_assert(
-		leaf_augmentation<LeafAugType, typename base_type::slice_type>,
-		"LeafAugType needs A(), A(slice_type), update_aug(slice_type), "
-		"reset()");
-	static_assert(interior_augmentation<InteriorAugType>,
-		      "InteriorAugType needs set_parallel_flag(bool), "
-		      "reset_parallel_flag(), get_parallel_flag_ini_status(), "
-		      "force_parallel(size_t)");
-
+	using point_type = typename base_type::point_type;
 	using bucket_type = typename base_type::bucket_type;
 	using balls_type = typename base_type::balls_type;
 	using dims_type = typename base_type::dims_type;
 	using bucket_seq_type = typename base_type::bucket_seq_type;
-	using coord_type = typename Point::coord_type;
-	using coords_type = typename Point::coords_type;
-	using num_type = num_comparator<coord_type>;
+	using coord_type = typename base_type::coord_type;
+	using coords_type = typename base_type::coords_type;
+	using num_type = typename base_type::num_type;
 	using slice_type = typename base_type::slice_type;
 	using points_type = typename base_type::points_type;
 	using points_iter_type = typename base_type::points_iter_type;
@@ -57,12 +39,14 @@ public:
 	using node_box_seq_type = typename base_type::node_box_seq_type;
 	using splitter_type = hyper_plane_type;
 	using splitter_seq_type = hyper_plane_seq_type;
-	using split_rule_type = SplitRule;
+	using split_rule_type = typename base_type::split_rule_type;
 
 	static constexpr dims_type const md = 2;
 
-	using leaf_type = leaf_node<Point, slice_type, base_type::leaf_capacity,
-				    LeafAugType, parlay::move_assign_tag>;
+	using leaf_type =
+		leaf_node<point_type, slice_type, base_type::leaf_capacity,
+			  typename Traits::leaf_aug_type,
+			  parlay::move_assign_tag>;
 	struct kd_interior_node;
 	using interior_type = kd_interior_node;
 
@@ -82,7 +66,7 @@ public:
 				       slice_type in, Args &&...args);
 
 	/* The split rule calls build_recursive back; see divide_space. */
-	friend SplitRule;
+	friend split_rule_type;
 
 	/* delete_tree_wrapper is idempotent, so an explicit delete_tree()
 	 * before this stays correct. */
@@ -94,7 +78,7 @@ public:
 	kd_tree() = default;
 	/*
 	 * Move-only: root_ is an owning raw pointer. Assignment ends up
-	 * deleted because SplitRule holds const members; construction is
+	 * deleted because the split rule holds const members; construction is
 	 * what containers and factory returns need.
 	 */
 	kd_tree(kd_tree &&) = default;
@@ -129,7 +113,8 @@ public:
 	size_t flatten(Range &&out) const;
 
 	template <typename Range>
-	auto knn(Point const &q, bounded_queue<Point, Range> &bq) const;
+	auto knn(point_type const &q,
+		 bounded_queue<point_type, Range> &bq) const;
 
 	/* The buffer-taking forms below would otherwise hide the
 	 * allocating ones the base provides. */
@@ -155,7 +140,7 @@ public:
 
 	constexpr static char const *check_has_box()
 	{
-		if constexpr (has_box<InteriorAugType>)
+		if constexpr (has_box<typename Traits::interior_aug_type>)
 			return "HasBox";
 		else
 			return "NoBox";
@@ -188,7 +173,7 @@ private:
 					   slice_type in, slice_type out,
 					   dims_type d);
 
-	SplitRule split_rule_;
+	split_rule_type split_rule_;
 };
 
 } /* namespace psi */

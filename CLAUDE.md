@@ -37,6 +37,25 @@ CPAM's and CGAL's nested type, and `kd_ccp.cpp` typedefs CGAL names onto
 themselves (`Point_d`, `Fuzzy_iso_box`). Renaming those breaks the build in
 ways the compiler reports far from the cause.
 
+## Configuration
+
+A tree takes one template parameter, a traits type:
+
+    using traits = psi::tree_traits<point, split_rule>;
+    psi::kd_tree<traits> tree;
+
+`psi/tree_traits.h` holds both halves. `point_traits<Point>` is what follows
+from the point type alone -- the aliases, the tuning constants, and the box
+arithmetic; the default augmentations take it, so it cannot name the traits
+that name them. `tree_traits<Point, SplitRule, LeafAug, InteriorAug,
+SkHeight, ImbaRatio>` adds the rest and inherits it. `orth_tree_traits` is
+the same thing with a skeleton height that fits the dimension.
+
+`base_tree` inherits its traits, so a new alias or constant needs adding in
+one place. A dependent base is invisible to unqualified lookup, so anything
+a tree uses is re-exported by the block at the top of `base_tree.h`; a name
+missing from that block is a compile error, not a silent fallback.
+
 ## Comments
 
 Few and short. A comment costs maintenance; most code does not earn one.
@@ -106,6 +125,11 @@ Warnings are on for the three examples only; they cover the whole library.
 `include/psi` must stay warning-clean apart from the vendored
 `space_filling_curve/hilbert.c`.
 
+The tree is formatted with **clang-format 19.1.0**, which is what CI checks
+against. A different version on `PATH` will reformat `hilbert.c` wholesale
+and lose the fixpoint; check `clang-format --version` before trusting
+`make format`.
+
 There is a correctness gate now: `ctest` in the build directory runs the unit
 suite under `tests/unit`, which compares all three trees against brute force
 (queries, batch updates, flatten round-trip, degenerate inputs, double
@@ -138,5 +162,8 @@ would ask `batch_delete` to remove points that were never inserted, which its
 contract forbids.
 
 While iterating, check one size (`n=1000000`) — the larger sizes take over an
-hour each in a `-DDEBUG=ON` build. Run the whole matrix once the work is
-finished. Either way run `p_ccp` yourself, since the script will not.
+hour each. Run the whole matrix once the work is finished.
+
+`data_generator` writes `uniform_bigint/` and `ss_varden_bigint/` whenever the
+axis maximum exceeds 10^6, but the script looks for `uniform/` and
+`ss_varden/`; symlink them or the sweep finds no files and exits non-zero.

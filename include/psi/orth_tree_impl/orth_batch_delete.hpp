@@ -7,23 +7,17 @@ namespace psi
 {
 
 /* default batch delete */
-template <typename Point, typename SplitRule, typename LeafAugType,
-	  typename InteriorAugType, uint_fast8_t md, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
+template <typename Traits>
 template <typename Range>
-void orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
-	       ImbaRatio>::batch_delete(Range &&in)
+void orth_tree<Traits>::batch_delete(Range &&in)
 {
 	base_type::ingest_range(in, [&](slice_type A) { batch_delete_(A); });
 	return;
 }
 
 /* assume all points_type are fully covered in the tree */
-template <typename Point, typename SplitRule, typename LeafAugType,
-	  typename InteriorAugType, uint_fast8_t md, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
-void orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
-	       ImbaRatio>::batch_delete_(slice_type A)
+template <typename Traits>
+void orth_tree<Traits>::batch_delete_(slice_type A)
 {
 	if (this->root_ == nullptr) {
 		assert(A.size() == 0);
@@ -40,14 +34,11 @@ void orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
  * delete with rebuild, with the assumption that all points_type are in
  * the tree
  */
-template <typename Point, typename SplitRule, typename LeafAugType,
-	  typename InteriorAugType, uint_fast8_t md, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
-node *orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
-		ImbaRatio>::batch_delete_recursive(node *T, slice_type in,
-						   slice_type out,
-						   box_type const &box,
-						   bool has_tomb)
+template <typename Traits>
+node *orth_tree<Traits>::batch_delete_recursive(node *T, slice_type in,
+						slice_type out,
+						box_type const &box,
+						bool has_tomb)
 {
 	size_t n = in.size();
 

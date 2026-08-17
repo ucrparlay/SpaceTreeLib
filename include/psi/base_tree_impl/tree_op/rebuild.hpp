@@ -16,11 +16,10 @@ namespace psi
 {
 
 /* rebuild the tree */
-template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
+template <typename Traits, typename DerivedTree>
 template <typename leaf_type, typename interior_type, bool granularity>
-void base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::prepare_rebuild(
-	node *T, points_type &wx, points_type &wo)
+void base_tree<Traits, DerivedTree>::prepare_rebuild(node *T, points_type &wx,
+						     points_type &wo)
 {
 	wo = points_type::uninitialized(T->size);
 	wx = points_type::uninitialized(T->size);
@@ -31,11 +30,11 @@ void base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::prepare_rebuild(
 }
 
 /* rebuild with new input in */
-template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
+template <typename Traits, typename DerivedTree>
 template <typename leaf_type, typename interior_type, bool granularity>
-void base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::prepare_rebuild(
-	node *T, slice_type in, points_type &wx, points_type &wo)
+void base_tree<Traits, DerivedTree>::prepare_rebuild(node *T, slice_type in,
+						     points_type &wx,
+						     points_type &wo)
 {
 	wo = points_type::uninitialized(T->size + in.size());
 	wx = points_type::uninitialized(T->size + in.size());
@@ -46,11 +45,10 @@ void base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::prepare_rebuild(
 	return;
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
+template <typename Traits, typename DerivedTree>
 template <typename leaf_type, typename interior_type, typename PrepareFunc,
 	  typename... Args>
-node *base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::rebuild_with_insert(
+node *base_tree<Traits, DerivedTree>::rebuild_with_insert(
 	node *T, PrepareFunc prepare_func, slice_type in, Args &&...args)
 {
 	points_type w_in, w_out;
@@ -70,12 +68,11 @@ node *base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::rebuild_with_insert(
  * granularity size, which is base_type::serial_build_cutoff; instead, it will
  * check whether the force parallel flag has been enabled
  */
-template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
+template <typename Traits, typename DerivedTree>
 template <typename leaf_type, typename interior_type, bool granularity,
 	  typename... Args>
-node *base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::rebuild_single_tree(
-	node *T, Args &&...args)
+node *base_tree<Traits, DerivedTree>::rebuild_single_tree(node *T,
+							  Args &&...args)
 {
 	points_type wx, wo;
 	prepare_rebuild<leaf_type, interior_type, granularity>(T, wx, wo);
@@ -94,12 +91,10 @@ node *base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::rebuild_single_tree(
  * PARA: if allow_enable_rebuild enabled, this method will re-balance the
  * tree; otherwise, it flattens all sparse node into leaf nodes
  */
-template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
+template <typename Traits, typename DerivedTree>
 template <typename leaf_type, is_binary_node interior_type, bool granularity,
 	  typename PrepareFunc, typename... Args>
-node *
-base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::rebuild_tree_recursive(
+node *base_tree<Traits, DerivedTree>::rebuild_tree_recursive(
 	node *T, PrepareFunc &&prepare_func, bool const allow_inba_rebuild,
 	Args &&...args)
 {
@@ -156,12 +151,10 @@ base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::rebuild_tree_recursive(
 }
 
 /* rebuild a multi-node tree */
-template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
+template <typename Traits, typename DerivedTree>
 template <typename leaf_type, is_multi_node interior_type, bool granularity,
 	  typename PrepareFunc, typename... Args>
-node *
-base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::rebuild_tree_recursive(
+node *base_tree<Traits, DerivedTree>::rebuild_tree_recursive(
 	node *T, PrepareFunc &&prepare_func,
 	[[maybe_unused]] bool const allow_inba_rebuild, Args &&...args)
 {

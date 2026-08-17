@@ -11,13 +11,10 @@
 
 namespace psi
 {
-template <typename Point, typename SplitRule, typename LeafAugType,
-	  typename InteriorAugType, uint_fast8_t md, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
+template <typename Traits>
 template <typename Range>
-auto orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
-	       ImbaRatio>::knn(Point const &q,
-			       bounded_queue<Point, Range> &bq) const
+auto orth_tree<Traits>::knn(point_type const &q,
+			    bounded_queue<point_type, Range> &bq) const
 {
 	knn_logger logger;
 	/* An empty queue has no slot to write a neighbour into. */
@@ -33,12 +30,9 @@ auto orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
 	return logger;
 }
 
-template <typename Point, typename SplitRule, typename LeafAugType,
-	  typename InteriorAugType, uint_fast8_t md, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
+template <typename Traits>
 template <typename Range>
-size_t orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
-		 ImbaRatio>::flatten(Range &&out) const
+size_t orth_tree<Traits>::flatten(Range &&out) const
 {
 	size_t const n = this->get_size();
 	if (this->root_ == nullptr || out.size() != n) {
@@ -49,11 +43,8 @@ size_t orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
 	return n;
 }
 
-template <typename Point, typename SplitRule, typename LeafAugType,
-	  typename InteriorAugType, uint_fast8_t md, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
-auto orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
-	       ImbaRatio>::range_count(box_type const &bx) const
+template <typename Traits>
+auto orth_tree<Traits>::range_count(box_type const &bx) const
 {
 	range_query_logger logger;
 	if (this->root_ == nullptr || base_type::box_is_empty(bx))
@@ -64,13 +55,10 @@ auto orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
 	return std::make_pair(s, logger);
 }
 
-template <typename Point, typename SplitRule, typename LeafAugType,
-	  typename InteriorAugType, uint_fast8_t md, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
+template <typename Traits>
 template <typename Range>
-auto orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
-	       ImbaRatio>::range_query(box_type const &query_box,
-				       Range &&out) const
+auto orth_tree<Traits>::range_query(box_type const &query_box,
+				    Range &&out) const
 {
 	range_query_logger logger;
 	size_t s = 0;
@@ -83,11 +71,8 @@ auto orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
 	return std::make_pair(s, logger);
 }
 
-template <typename Point, typename SplitRule, typename LeafAugType,
-	  typename InteriorAugType, uint_fast8_t md, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
-constexpr void orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md,
-			 SkHeight, ImbaRatio>::delete_tree()
+template <typename Traits>
+constexpr void orth_tree<Traits>::delete_tree()
 {
 	base_type::template delete_tree_wrapper<leaf_type, interior_type>();
 	this->fixed_box = false;

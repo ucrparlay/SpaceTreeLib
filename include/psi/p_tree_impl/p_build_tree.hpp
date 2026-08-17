@@ -11,17 +11,15 @@
 
 namespace psi
 {
-template <typename Point, typename SplitRule, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
+template <typename Traits>
 template <typename Range>
-void p_tree<Point, SplitRule, SkHeight, ImbaRatio>::build(Range &&in)
+void p_tree<Traits>::build(Range &&in)
 {
 	base_type::ingest_range(in, [&](slice_type A) { build_(A); });
 }
 
-template <typename Point, typename SplitRule, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
-void p_tree<Point, SplitRule, SkHeight, ImbaRatio>::build_(slice_type A)
+template <typename Traits>
+void p_tree<Traits>::build_(slice_type A)
 {
 
 	this->cpam_aug_map_ = std::move(cpam_aug_map_type(A));

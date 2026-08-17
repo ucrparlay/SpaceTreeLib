@@ -1,17 +1,15 @@
-#ifndef PSI_BASE_TREE_IMPL_BOX_OP_HPP_
-#define PSI_BASE_TREE_IMPL_BOX_OP_HPP_
+#ifndef PSI_TREE_TRAITS_IMPL_BOX_OP_HPP_
+#define PSI_TREE_TRAITS_IMPL_BOX_OP_HPP_
 
-#include "psi/base_tree.h"
+#include "psi/tree_traits.h"
 #include "psi/dependence/concepts.h"
 
 namespace psi
 {
 
-template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
-inline typename base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::coord_type
-base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::get_box_mid(
-	dims_type const d, box_type const &box)
+template <typename Point>
+inline typename point_traits<Point>::coord_type
+point_traits<Point>::get_box_mid(dims_type const d, box_type const &box)
 {
 	if constexpr (std::is_integral_v<coord_type>) {
 		/*
@@ -31,10 +29,8 @@ base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::get_box_mid(
 	}
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
-inline bool base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::box_is_empty(
-	box_type const &bx)
+template <typename Point>
+inline bool point_traits<Point>::box_is_empty(box_type const &bx)
 {
 	for (dims_type i = 0; i < num_dims; ++i) {
 		if (num_type::gt(bx.first.pnt[i], bx.second.pnt[i])) {
@@ -44,10 +40,8 @@ inline bool base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::box_is_empty(
 	return false;
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
-inline bool base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::legal_box(
-	box_type const &bx)
+template <typename Point>
+inline bool point_traits<Point>::legal_box(box_type const &bx)
 {
 	/* TODO: remove it */
 	if (bx == get_empty_box())
@@ -70,10 +64,9 @@ inline bool base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::legal_box(
 	}
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
-inline bool base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::within_box(
-	box_type const &a, box_type const &b)
+template <typename Point>
+inline bool point_traits<Point>::within_box(box_type const &a,
+					    box_type const &b)
 {
 	constexpr uint_fast8_t num_dims = Point::get_dim();
 	assert(legal_box(a));
@@ -102,11 +95,8 @@ inline bool base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::within_box(
 	}
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
-inline bool
-base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::same_box(box_type const &a,
-							     box_type const &b)
+template <typename Point>
+inline bool point_traits<Point>::same_box(box_type const &a, box_type const &b)
 {
 	assert(legal_box(a));
 	assert(legal_box(b));
@@ -120,10 +110,8 @@ base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::same_box(box_type const &a,
 	return true;
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
-inline bool base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::within_box(
-	Point const &p, box_type const &bx)
+template <typename Point>
+inline bool point_traits<Point>::within_box(Point const &p, box_type const &bx)
 {
 	assert(legal_box(bx));
 
@@ -150,11 +138,9 @@ inline bool base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::within_box(
 	}
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
-inline bool
-base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::box_intersect_box(
-	box_type const &a, box_type const &b)
+template <typename Point>
+inline bool point_traits<Point>::box_intersect_box(box_type const &a,
+						   box_type const &b)
 {
 	assert(legal_box(a) && legal_box(b));
 
@@ -181,21 +167,18 @@ base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::box_intersect_box(
 	}
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
-inline bool
-base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::is_box_line_in_dimension(
-	box_type const &box, dims_type d)
+template <typename Point>
+inline bool point_traits<Point>::is_box_line_in_dimension(box_type const &box,
+							  dims_type d)
 {
 	assert(legal_box(box));
 	return num_type::eq(box.first[d], box.second[d]);
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
-inline bool
-base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::vertical_line_split_box(
-	coord_type const &line, box_type const &box, dims_type d)
+template <typename Point>
+inline bool point_traits<Point>::vertical_line_split_box(coord_type const &line,
+							 box_type const &box,
+							 dims_type d)
 {
 	assert(legal_box(box));
 	return vertical_line_intersect_box_exclude(line, box, d) ||
@@ -203,45 +186,34 @@ base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::vertical_line_split_box(
 		!is_box_line_in_dimension(box, d));
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
-inline bool
-base_tree<Point, DerivedTree, SkHeight,
-	  ImbaRatio>::vertical_line_on_box_left_edge(coord_type const &line,
-						     box_type const &box,
-						     dims_type d)
+template <typename Point>
+inline bool point_traits<Point>::vertical_line_on_box_left_edge(
+	coord_type const &line, box_type const &box, dims_type d)
 {
 	assert(legal_box(box));
 	return num_type::eq(line, box.first.pnt[d]);
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
-inline bool
-base_tree<Point, DerivedTree, SkHeight,
-	  ImbaRatio>::vertical_line_on_box_right_edge(coord_type const &line,
-						      box_type const &box,
-						      dims_type d)
+template <typename Point>
+inline bool point_traits<Point>::vertical_line_on_box_right_edge(
+	coord_type const &line, box_type const &box, dims_type d)
 {
 	assert(legal_box(box));
 	return num_type::eq(line, box.second.pnt[d]);
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
+template <typename Point>
 inline bool
-base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::vertical_line_on_box_edge(
-	coord_type const &line, box_type const &box, dims_type d)
+point_traits<Point>::vertical_line_on_box_edge(coord_type const &line,
+					       box_type const &box, dims_type d)
 {
 	assert(legal_box(box));
 	return vertical_line_on_box_left_edge(line, box, d) ||
 	       vertical_line_on_box_right_edge(line, box, d);
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
-inline bool
-base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::vertical_line_intersect_box(
+template <typename Point>
+inline bool point_traits<Point>::vertical_line_intersect_box(
 	coord_type const &line, box_type const &box, dims_type d)
 {
 	assert(legal_box(box));
@@ -253,40 +225,34 @@ base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::vertical_line_intersect_box(
  * if the line @line is one the boundary of the box, then it will be
  * considered as not intersect
  */
-template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
-inline bool base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::
-	vertical_line_intersect_box_exclude(coord_type const &line,
-					    box_type const &box, dims_type d)
+template <typename Point>
+inline bool point_traits<Point>::vertical_line_intersect_box_exclude(
+	coord_type const &line, box_type const &box, dims_type d)
 {
 	assert(legal_box(box));
 	return num_type::gt(line, box.first.pnt[d]) &&
 	       num_type::lt(line, box.second.pnt[d]);
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
-inline typename base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::box_type
-base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::get_empty_box()
+template <typename Point>
+inline typename point_traits<Point>::box_type
+point_traits<Point>::get_empty_box()
 {
 	return box_type(Point(std::numeric_limits<coord_type>::max()),
 			Point(std::numeric_limits<coord_type>::lowest()));
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
-typename base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::box_type
-base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::get_box(box_type const &x,
-							    box_type const &y)
+template <typename Point>
+typename point_traits<Point>::box_type
+point_traits<Point>::get_box(box_type const &x, box_type const &y)
 {
 	return box_type(x.first.min_coords(y.first),
 			x.second.max_coords(y.second));
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
-typename base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::box_type
-base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::get_box(slice_type V)
+template <typename Point>
+typename point_traits<Point>::box_type
+point_traits<Point>::get_box(slice_type V)
 {
 	if (V.size() == 0) {
 		return get_empty_box();
@@ -309,11 +275,9 @@ base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::get_box(slice_type V)
  * this function omit the possibility that T contains the bounding box --
  * it will always try to reduce a bounding box in the tree T
  */
-template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
+template <typename Point>
 template <typename leaf_type, typename interior_type>
-typename base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::box_type
-base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::get_box(node *T)
+typename point_traits<Point>::box_type point_traits<Point>::get_box(node *T)
 {
 	if (T->size == 0) {
 		return get_empty_box();
@@ -348,11 +312,9 @@ base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::get_box(node *T)
 	}
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
-typename base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::box_type
-base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::get_box(
-	box_seq_type const &box_seq)
+template <typename Point>
+typename point_traits<Point>::box_type
+point_traits<Point>::get_box(box_seq_type const &box_seq)
 {
 	box_type box = get_empty_box();
 	for (auto const &b : box_seq) {
@@ -361,10 +323,8 @@ base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::get_box(
 	return std::move(box);
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
-Point base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::get_box_center(
-	box_type const &box)
+template <typename Point>
+Point point_traits<Point>::get_box_center(box_type const &box)
 {
 	Point center;
 	if constexpr (num_dims == 2) {
@@ -383,4 +343,4 @@ Point base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::get_box_center(
 }
 } /* namespace psi */
 
-#endif /* PSI_BASE_TREE_IMPL_BOX_OP_HPP_ */
+#endif /* PSI_TREE_TRAITS_IMPL_BOX_OP_HPP_ */

@@ -15,11 +15,9 @@
 namespace psi
 {
 
-template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
+template <typename Traits, typename DerivedTree>
 template <supports_force_parallel interior_type, bool granularity>
-inline bool
-base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::force_parallel_recursion(
+inline bool base_tree<Traits, DerivedTree>::force_parallel_recursion(
 	interior_type const *ti)
 {
 #ifndef DISABLE_BATCH_DELETE_SIZE_OPT
@@ -30,12 +28,10 @@ base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::force_parallel_recursion(
 #endif /* !DISABLE_BATCH_DELETE_SIZE_OPT */
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
+template <typename Traits, typename DerivedTree>
 template <typename leaf_type, is_binary_node interior_type, typename Range,
 	  bool granularity>
-void base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::flatten_rec(node *T,
-								     Range out)
+void base_tree<Traits, DerivedTree>::flatten_rec(node *T, Range out)
 {
 	assert(T->size == out.size());
 
@@ -64,12 +60,10 @@ void base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::flatten_rec(node *T,
 	return;
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
+template <typename Traits, typename DerivedTree>
 template <typename leaf_type, typename interior_type, typename Range,
 	  bool granularity>
-void base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::flatten_rec(node *T,
-								     Range out)
+void base_tree<Traits, DerivedTree>::flatten_rec(node *T, Range out)
 	requires(!is_binary_node<interior_type>)
 {
 	assert(T->size == out.size());
@@ -111,12 +105,11 @@ void base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::flatten_rec(node *T,
 }
 
 /* for multi node @T, it only flatten the subtree with id @idx to @out */
-template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
+template <typename Traits, typename DerivedTree>
 template <typename leaf_type, is_multi_node interior_type, typename Range,
 	  bool granularity>
-void base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::partial_flatten(
-	node *T, Range out, bucket_type idx)
+void base_tree<Traits, DerivedTree>::partial_flatten(node *T, Range out,
+						     bucket_type idx)
 {
 	if (idx == 1) {
 		assert(T->size == out.size());

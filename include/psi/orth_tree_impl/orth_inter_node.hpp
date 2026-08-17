@@ -6,17 +6,16 @@
 
 namespace psi
 {
-template <typename Point, typename SplitRule, typename LeafAugType,
-	  typename InteriorAugType, uint_fast8_t md, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
-struct orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
-		 ImbaRatio>::orth_interior_node
-    : multi_node<Point, md, splitter_type, InteriorAugType> {
-	using base_node = multi_node<Point, md, splitter_type, InteriorAugType>;
+template <typename Traits>
+struct orth_tree<Traits>::orth_interior_node
+    : multi_node<point_type, md, splitter_type,
+		 typename Traits::interior_aug_type> {
+	using base_node = multi_node<point_type, md, splitter_type,
+				     typename Traits::interior_aug_type>;
 	using node_arr_type = typename base_node::node_arr_type;
-	using pt_type = Point;
+	using pt_type = point_type;
 	using st_type = splitter_type;
-	using at_type = InteriorAugType;
+	using at_type = typename Traits::interior_aug_type;
 
 	orth_interior_node(node_arr_type const &_tree_nodes,
 			   st_type const &_split)
@@ -81,9 +80,7 @@ struct orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
 		if (idx >= base_node::get_regions()) {
 			auto o = this->tree_nodes[idx -
 						  base_node::get_regions()];
-			return base_type::template retrieve_box<leaf_type,
-								interior_type>(
-				o);
+			return retrieve_box<leaf_type, interior_type>(o);
 		}
 		return base_type::get_box(get_box_by_id_recursive(2 * idx),
 					  get_box_by_id_recursive(2 * idx + 1));
@@ -152,8 +149,8 @@ struct orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
 	 * given an idx in the tree skeleton, modify its value its
 	 * position in left or right of the splitter
 	 */
-	static bucket_type sieve_point(Point const &p, st_type const &split,
-				       bucket_type idx)
+	static bucket_type sieve_point(point_type const &p,
+				       st_type const &split, bucket_type idx)
 	{
 		if constexpr (md == 2) { /* for dim = 2 */
 			idx = 2 * idx + 1 -
@@ -183,7 +180,7 @@ struct orth_tree<Point, SplitRule, LeafAugType, InteriorAugType, md, SkHeight,
 		return idx;
 	}
 
-	bucket_type sieve_point(Point const &p, bucket_type idx)
+	bucket_type sieve_point(point_type const &p, bucket_type idx)
 	{
 		return sieve_point(p, this->split, idx);
 	}

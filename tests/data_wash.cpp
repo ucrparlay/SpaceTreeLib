@@ -25,7 +25,8 @@ void round_data_and_shift(commandLine &P)
 
 	parlay::sequence<InputPoint> wp;
 	read_points<InputPoint>(input_path.c_str(), wp, 0);
-	auto bb = psi::base_tree<InputPoint>::get_box(parlay::make_slice(wp));
+	auto bb =
+		psi::point_traits<InputPoint>::get_box(parlay::make_slice(wp));
 	std::cout << bb.first << " " << bb.second << std::endl;
 
 	// print_points(wp);
@@ -40,7 +41,7 @@ void round_data_and_shift(commandLine &P)
 		exit(1);
 	}
 
-	auto new_bb = psi::base_tree<output_point_type>::get_box(
+	auto new_bb = psi::point_traits<output_point_type>::get_box(
 		parlay::make_slice(new_wp));
 	std::cout << new_bb.first << " " << new_bb.second << std::endl;
 

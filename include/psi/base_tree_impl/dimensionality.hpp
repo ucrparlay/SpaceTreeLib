@@ -6,18 +6,15 @@
 namespace psi
 {
 
-template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
-inline size_t
-base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::get_imbalance_ratio()
+template <typename Traits, typename DerivedTree>
+inline size_t base_tree<Traits, DerivedTree>::get_imbalance_ratio()
 {
 	return static_cast<size_t>(imbalance_ratio);
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
-inline bool base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::imbalance_node(
-	size_t const l, size_t const n)
+template <typename Traits, typename DerivedTree>
+inline bool base_tree<Traits, DerivedTree>::imbalance_node(size_t const l,
+							   size_t const n)
 {
 	if (n == 0)
 		return true;
@@ -32,11 +29,9 @@ inline bool base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::imbalance_node(
 	return std::abs(off) > static_cast<double>(get_imbalance_ratio());
 }
 
-template <typename Point, typename DerivedTree, uint_fast8_t SkHeight,
-	  uint_fast8_t ImbaRatio>
-inline bool
-base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::sparse_node(size_t const rm,
-								size_t const n)
+template <typename Traits, typename DerivedTree>
+inline bool base_tree<Traits, DerivedTree>::sparse_node(size_t const rm,
+							size_t const n)
 {
 	/*
 	 * to avoid the case that the new leaf is about 32 and then next
