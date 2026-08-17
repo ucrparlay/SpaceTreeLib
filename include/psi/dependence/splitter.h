@@ -14,13 +14,13 @@
 #include "psi/dependence/space_filling_curve/hilbert_high_dim.h"
 
 /*
- * hilbert.c holds the definitions, not just declarations, and is third party.
- * Its functions are inline so two translation units can both include this
- * header; its warnings are not ours to fix.
+ * hilbert.hpp holds the definitions, not just declarations, and is third
+ * party. Its functions are inline so two translation units can both include
+ * this header; its warnings are not ours to fix.
  */
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
-#include "psi/dependence/space_filling_curve/hilbert.c"
+#include "psi/dependence/space_filling_curve/hilbert.hpp"
 #pragma GCC diagnostic pop
 
 namespace psi

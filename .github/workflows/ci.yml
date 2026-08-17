@@ -152,14 +152,15 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-      # Pinned, and installed from pip rather than apt: distro clang-format
-      # versions disagree about this code, so an unpinned check fails for
-      # reasons that have nothing to do with the change under review.
+      # Pinned, and from pip rather than apt, so a runner image bump cannot
+      # fail a review for reasons unrelated to it. The tree is a fixpoint
+      # under 22.1.3 as well; the pin is for reproducibility, not because any
+      # file needs a particular version.
       - name: Check formatting
         run: |
           pip install "clang-format==19.1.0"
           files=$(git ls-files \
-            'include/psi/*.h' 'include/psi/*.hpp' 'include/psi/*.c' \
+            'include/psi/*.h' 'include/psi/*.hpp' \
             'include/baselines/*.h' 'include/baselines/*.hpp' \
             'include/baselines/*.cpp' \
             'tests/*.h' 'tests/*.cpp' 'example/*.h' 'example/*.cpp')

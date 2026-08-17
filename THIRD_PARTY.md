@@ -7,16 +7,22 @@ what is here and what it requires.
 
 ## Required notice
 
-`include/psi/dependence/space_filling_curve/hilbert.c` is copyrighted by Rice
+`include/psi/dependence/space_filling_curve/hilbert.hpp` is copyrighted by Rice
 University. Its terms require the following to be displayed anywhere the
 end-user would see PSI's own copyright:
 
 > Hilbert Curve implementation copyright 1998, Rice University
 
 The same terms ask that modifications carry the name of the person who made
-them, the date, and the reason. The file has been modified for PSI (made
-`inline` so two translation units can link); that is recorded here rather than
-in the file.
+them, the date, and the reason. Recorded here rather than in the file, so its
+notice stays verbatim:
+
+- made `inline`, so two translation units can both include it and still link;
+- wrapped in `namespace psi::hilbert`;
+- renamed from `hilbert.c` to `hilbert.hpp` on 2026-08-17. It was never C --
+  the namespace and the `inline` see to that -- and clang-format 20 began
+  inferring `Language: C` from the extension and rewriting the whole file.
+  Its own header still names it `hilbert.c`, which is the upstream file.
 
 ## Git submodules
 

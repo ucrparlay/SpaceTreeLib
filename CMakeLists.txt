@@ -180,7 +180,7 @@ include(CMakePackageConfigHelpers)
 install(TARGETS PSI EXPORT PSITargets)
 install(DIRECTORY "${PSI_SOURCE_DIR}/include/psi"
         DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
-        FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp" PATTERN "*.c")
+        FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp")
 install(EXPORT PSITargets
         FILE PSITargets.cmake
         NAMESPACE PSI::
@@ -302,10 +302,10 @@ endif()
 # The three examples instantiate KdTree, OrthTree and PTree between them, so
 # they are where library warnings surface. They are NOT warning-free: ~40
 # warnings remain, all from vendored code that constraint forbids touching
-# (space_filling_curve/hilbert.c 18, dependence/cpam 15, and libstdc++ headers
-# inlined from cpam 7). Zero come from base_tree_impl/, kd_tree_impl/,
-# orth_tree_impl/ or p_tree_impl/. Do NOT add -Werror here until hilbert.c is
-# moved out of splitter.h and the vendored roots are marked SYSTEM.
+# (space_filling_curve/hilbert.hpp 18, dependence/cpam 15, and libstdc++
+# headers inlined from cpam 7). Zero come from base_tree_impl/, kd_tree_impl/,
+# orth_tree_impl/ or p_tree_impl/. Do NOT add -Werror here until hilbert.hpp
+# is moved out of splitter.h and the vendored roots are marked SYSTEM.
 #
 # Everything else stays quiet: tests/ alone accounts for ~79 warning sites that
 # are not library code. Escalating past -Wall -Wextra (see the commented-out
@@ -328,7 +328,6 @@ endforeach()
 file(GLOB_RECURSE all_files CONFIGURE_DEPENDS
   ${PROJECT_SOURCE_DIR}/include/psi/*.h
   ${PROJECT_SOURCE_DIR}/include/psi/*.hpp
-  ${PROJECT_SOURCE_DIR}/include/psi/*.c
   ${PROJECT_SOURCE_DIR}/include/baselines/*.h
   ${PROJECT_SOURCE_DIR}/include/baselines/*.hpp
   ${PROJECT_SOURCE_DIR}/include/baselines/*.cpp

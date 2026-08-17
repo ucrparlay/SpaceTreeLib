@@ -123,16 +123,12 @@ Flag anything that could move a measured number, even an improvement.
 
 Warnings are on for the three examples only; they cover the whole library.
 `include/psi` must stay warning-clean apart from the vendored
-`space_filling_curve/hilbert.c`.
+`space_filling_curve/hilbert.hpp`.
 
-The tree is formatted with **clang-format 19.1.0**, which is what CI checks
-against. Any version from 20 on rewrites `space_filling_curve/hilbert.c`
-wholesale, and it is not a disagreement about style: clang-format 20 made `C`
-a language kind separate from `Cpp` and infers it from the extension, and that
-file is C++ -- `namespace psi`, `inline` functions, `#include`d by
-`splitter.h`. Parsed as C, `namespace psi` is an identifier before a brace
-block, so the body gets indented. The same bytes named `.hpp` are already a
-fixpoint under 22. Until the file is renamed, format with 19.1.0.
+CI checks formatting with **clang-format 19.1.0**, pinned so a runner image
+bump cannot fail a review for reasons unrelated to it. The tree is a fixpoint
+under 22.1.3 as well, so a local `make format` with a newer binary is safe;
+check the diff if it is much newer than that.
 
 There is a correctness gate now: `ctest` in the build directory runs the unit
 suite under `tests/unit`, which compares all three trees against brute force
