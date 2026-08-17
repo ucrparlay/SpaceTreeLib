@@ -412,8 +412,7 @@ public:
 	template <typename leaf_type, typename interior_type>
 	void check_tree_same_sequential(node *T, int dim);
 
-	template <typename leaf_type, typename interior_type,
-		  typename SplitRule>
+	template <typename leaf_type, typename interior_type>
 	void validate();
 
 	template <typename leaf_type, typename interior_type>

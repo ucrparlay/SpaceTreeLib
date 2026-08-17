@@ -140,18 +140,12 @@ void runPTreeParallel(auto const &wp, auto const &wi, scalar_type *kdknn,
 	constexpr bool test_time = false;
 
 	build_tree<Point, Tree, test_time>(wp, rounds, tree);
-	// tree.template validate<typename Tree::leaf_type, typename
-	// Tree::interior_type,
-	//                        typename Tree::split_rule_type>();
 
 	puts("---------------finish build tree---------------");
 
 	if (tag & (1 << 0)) {
 		batch_insert<Point, Tree, test_time>(tree, wp, wi, 2,
 						     batchInsertCheckRatio);
-		// tree.template validate<typename Tree::leaf_type, typename
-		// Tree::interior_type,
-		//                        typename Tree::split_rule_type>();
 		std::cout << "---------------finish insert----------------\n"
 			  << std::flush;
 	}
@@ -164,9 +158,6 @@ void runPTreeParallel(auto const &wp, auto const &wi, scalar_type *kdknn,
 			batch_delete<Point, Tree, test_time>(
 				tree, wp, wi, 2, batchInsertCheckRatio);
 		}
-		// tree.template validate<typename Tree::leaf_type, typename
-		// Tree::interior_type,
-		//                        typename Tree::split_rule_type>();
 		std::cout << "---------------finish delete----------------\n"
 			  << std::flush;
 	}
@@ -176,9 +167,6 @@ void runPTreeParallel(auto const &wp, auto const &wi, scalar_type *kdknn,
 						   kCCPBatchDiffTotalRatio,
 						   kCCPBatchDiffOverlapRatio);
 		// batch_diff<Point, Tree, test_time>(tree, wp, 2, 0.5, 1.0);
-		// tree.template validate<typename Tree::leaf_type, typename
-		// Tree::interior_type,
-		//                        typename Tree::split_rule_type>();
 		assert(tree.get_size() ==
 		       wp.size() - static_cast<size_t>(
 					   wp.size() * kCCPBatchDiffTotalRatio *

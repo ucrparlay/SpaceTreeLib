@@ -28,15 +28,11 @@ base_tree<Traits, DerivedTree>::check_box(node *T, box_type const &box)
 		return node_box;
 	}
 	interior_type *ti = static_cast<interior_type *>(T);
-	assert(!ti->get_parallel_flag_ini_status()); /* ensure that */
-						     /*
-						      * uninitialized force
-						      * parallelism
-						      */
+	/* Force parallelism must still be unset at this point. */
+	assert(!ti->get_parallel_flag_ini_status());
 	if constexpr (is_binary_node<interior_type> &&
-		      !has_box<typename interior_type::at_type>) { /* use */
-		/* hyperplane */
-		/* as splitter */
+		      !has_box<typename interior_type::at_type>) {
+		/* kd_tree, splitting on the hyperplane, not a stored box */
 		box_type lbox(box), rbox(box);
 		lbox.second.pnt[ti->split.second] = ti->split.first;
 		rbox.first.pnt[ti->split.second] = ti->split.first;
@@ -52,12 +48,8 @@ base_tree<Traits, DerivedTree>::check_box(node *T, box_type const &box)
 		assert(within_box(new_box, box));
 		return new_box;
 	} else if constexpr (is_binary_node<interior_type> &&
-			     has_box<typename interior_type::at_type>) { /* kd
-									  */
-		/*
-		 * with
-		 * box
-		 */
+			     has_box<typename interior_type::at_type>) {
+		/* kd_tree, with a box on the node */
 		auto left_box =
 			retrieve_box<leaf_type, interior_type>(ti->left);
 		auto right_box =
@@ -78,11 +70,8 @@ base_tree<Traits, DerivedTree>::check_box(node *T, box_type const &box)
 		assert(same_box(new_box, ti->get_box()));
 		return new_box;
 	} else if constexpr (is_multi_node<interior_type> &&
-			     !has_box<typename interior_type::
-					      at_type>) { /* orth
-							     without
-							   */
-		/* box */
+			     !has_box<typename interior_type::at_type>) {
+		/* orth_tree, without a box on the node */
 		box_seq_type new_box(
 			ti->template compute_subregions<box_seq_type>(box));
 		box_seq_type return_box_seq(new_box.size());
@@ -96,12 +85,8 @@ base_tree<Traits, DerivedTree>::check_box(node *T, box_type const &box)
 		assert(within_box(return_box, box));
 		return return_box;
 	} else if constexpr (is_multi_node<interior_type> &&
-			     has_box<typename interior_type::at_type>) { /* orth
-									  */
-		/*
-		 * with
-		 * box
-		 */
+			     has_box<typename interior_type::at_type>) {
+		/* orth_tree, with a box on the node */
 		box_seq_type new_box(
 			ti->template compute_subregions<box_seq_type>(box));
 		box_seq_type return_box_seq(new_box.size());
@@ -208,7 +193,7 @@ void base_tree<Traits, DerivedTree>::check_tree_same_sequential(node *T,
 }
 
 template <typename Traits, typename DerivedTree>
-template <typename leaf_type, typename interior_type, typename SplitRule>
+template <typename leaf_type, typename interior_type>
 void base_tree<Traits, DerivedTree>::validate()
 {
 	std::cout << ">>> begin validate tree\n" << std::flush;
@@ -233,8 +218,8 @@ void base_tree<Traits, DerivedTree>::validate()
 		 * manner, since if current dimension is un-splitable, one has
 		 * to switch to another dimension
 		 */
-		if constexpr (is_rotate_dim_split<
-				      typename SplitRule::dim_rule_type> &&
+		if constexpr (is_rotate_dim_split<typename split_rule_type::
+							  dim_rule_type> &&
 			      is_multi_node<interior_type>) {
 			check_tree_same_sequential<leaf_type, interior_type>(
 				this->root_, 0);

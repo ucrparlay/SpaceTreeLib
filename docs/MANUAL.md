@@ -354,11 +354,11 @@ Not "derive and override". A derived tree has to supply, by name:
 | What | Why |
 |---|---|
 | `leaf_type`, `interior_type` | every algorithm in `base_tree_impl/` takes them as template arguments |
-| `split_rule_type`, `splitter_type` | `validate()` and the build |
+| `splitter_type` | the build; the split rule itself comes from the traits |
 | `node_arr_type`, `node_regions`, `splitter_num` | multi-way trees only; the skeleton builder reads them off the derived class |
 | a tag method plus a matching `is_*` concept | how the shared code tells the families apart |
 | `build_recursive` / `serial_build_recursive` | the split rule calls back into these, so the signature is fixed by the family |
-| `friend SplitRule` and the two `rebuild_*` friends | the callbacks reach private members |
+| `friend split_rule_type` and the two `rebuild_*` friends | the callbacks reach private members |
 | `delete_tree()` | pure virtual on the base |
 
 `kd_tree` is the smaller model to copy; `orth_tree` shows the multi-way side.
