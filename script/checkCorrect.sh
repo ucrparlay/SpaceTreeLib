@@ -27,7 +27,10 @@ if [[ ${tier} == "fast" ]]; then
 	k=100
 	files_per_dir=1
 elif [[ ${tier} == "full" ]]; then
-	nodes=(${PSI_NODES:-1000000 5000000 8000000 10000000 50000000})
+	# 50000000 is deliberately out: it takes hours on its own and has never
+	# caught anything the smaller sizes did not. Ask for it explicitly with
+	# PSI_NODES if a change warrants it.
+	nodes=(${PSI_NODES:-1000000 5000000 8000000 10000000})
 	dims=(2 3)
 	k=100
 	files_per_dir=0   # every file

@@ -34,8 +34,10 @@ cmake --build build --target format
 
 Whatever `.clang-format` produces: tabs, 8 wide, 80 columns, Linux braces.
 The tree is formatted with **clang-format 19.1.0**, which CI installs with
-`pip install clang-format==19.1.0` -- versions disagree about this code, so
-use that one if `make format` produces churn.
+`pip install clang-format==19.1.0`. Use that one: from version 20 on,
+clang-format treats a `.c` file as C rather than C++, and
+`space_filling_curve/hilbert.c` is C++ despite its name, so a newer binary
+rewrites all 3,100 lines of it.
 Every file must be a clang-format fixpoint; CI checks it. `make format` covers
 `include/psi`, `include/baselines`, `tests` and `example`, and must never
 reach `include/parlaylib` or `include/libmorton`, which are submodules.

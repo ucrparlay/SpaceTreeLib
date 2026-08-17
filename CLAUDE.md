@@ -126,9 +126,13 @@ Warnings are on for the three examples only; they cover the whole library.
 `space_filling_curve/hilbert.c`.
 
 The tree is formatted with **clang-format 19.1.0**, which is what CI checks
-against. A different version on `PATH` will reformat `hilbert.c` wholesale
-and lose the fixpoint; check `clang-format --version` before trusting
-`make format`.
+against. Any version from 20 on rewrites `space_filling_curve/hilbert.c`
+wholesale, and it is not a disagreement about style: clang-format 20 made `C`
+a language kind separate from `Cpp` and infers it from the extension, and that
+file is C++ -- `namespace psi`, `inline` functions, `#include`d by
+`splitter.h`. Parsed as C, `namespace psi` is an identifier before a brace
+block, so the body gets indented. The same bytes named `.hpp` are already a
+fixpoint under 22. Until the file is renamed, format with 19.1.0.
 
 There is a correctness gate now: `ctest` in the build directory runs the unit
 suite under `tests/unit`, which compares all three trees against brute force
