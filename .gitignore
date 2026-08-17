@@ -9,6 +9,7 @@ compile_commands.json
 script/logger.in
 script/log.in
 script/*.out
+
 /.cache
 /script/backup_data
 /script/plots
@@ -65,6 +66,8 @@ Rplots.pdf
 
 # test files
 *.in
+# *.in above is for data files; CMake templates are source.
+!cmake/*.in
 build/
 .vscode
 external/

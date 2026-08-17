@@ -67,9 +67,12 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Install toolchain
+        run: sudo apt-get update && sudo apt-get install -y g++-14
+
       - name: Install and consume via find_package
         run: |
-          cmake -S . -B build -DPSI_NATIVE_ARCH=OFF \
+          cmake -S . -B build -DCMAKE_CXX_COMPILER=g++-14 -DPSI_NATIVE_ARCH=OFF \
             -DPSI_BUILD_BENCHMARKS=OFF -DPSI_BUILD_EXAMPLES=OFF \
             -DPSI_BUILD_TESTS=OFF -DCMAKE_INSTALL_PREFIX="$PWD/prefix"
           cmake --install build
@@ -100,7 +103,8 @@ jobs:
                   return t.get_size() == pts.size() ? 0 : 1;
           }
           EOF
-          cmake -S /tmp/consumer -B /tmp/cbuild -DCMAKE_PREFIX_PATH="$PWD/prefix"
+          cmake -S /tmp/consumer -B /tmp/cbuild -DCMAKE_CXX_COMPILER=g++-14 \
+            -DCMAKE_PREFIX_PATH="$PWD/prefix"
           cmake --build /tmp/cbuild
           /tmp/cbuild/app
 
@@ -115,13 +119,14 @@ jobs:
       - name: Install CGAL and Boost
         run: |
           sudo apt-get update
-          sudo apt-get install -y libcgal-dev libboost-dev libtbb-dev
+          sudo apt-get install -y libcgal-dev libboost-dev libtbb-dev g++-14
 
       # kd_ccp and p_ccp only exist with -DCGAL=ON, and their checks are
       # asserts, so they mean nothing without them.
       - name: Build the oracles
         run: |
-          cmake -S . -B build -DCGAL=ON -DPSI_ASSERTS=ON -DPSI_NATIVE_ARCH=OFF
+          cmake -S . -B build -DCMAKE_CXX_COMPILER=g++-14 \
+            -DCGAL=ON -DPSI_ASSERTS=ON -DPSI_NATIVE_ARCH=OFF
           cmake --build build -j "$(nproc)" --target kd_ccp p_ccp data_generator
 
       - name: Compare against CGAL on generated data
@@ -147,10 +152,12 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
+      # Pinned, and installed from pip rather than apt: distro clang-format
+      # versions disagree about this code, so an unpinned check fails for
+      # reasons that have nothing to do with the change under review.
       - name: Check formatting
         run: |
-          sudo apt-get update
-          sudo apt-get install -y clang-format
+          pip install "clang-format==19.1.0"
           files=$(git ls-files \
             'include/psi/*.h' 'include/psi/*.hpp' 'include/psi/*.c' \
             'include/baselines/*.h' 'include/baselines/*.hpp' \

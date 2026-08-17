@@ -547,8 +547,7 @@ struct base_tree<Point, DerivedTree, SkHeight, ImbaRatio>::inner_tree {
 					this->tags[idx].first, left, right);
 				return node_box_type(
 					this->tags[idx].first,
-					box_type()); /* box has been computed */
-						     /* before */
+					box_type()); /* box computed before */
 			} else if (this->tags[idx].second ==
 				   bucket_num + 3) { /* recurse back */
 				func(0); /* disable the under_rebuild_tree flag

@@ -1,0 +1,12 @@
+@PACKAGE_INIT@
+
+include(CMakeFindDependencyMacro)
+
+# PSI is header-only but its headers include parlay and libmorton, so a
+# consumer needs both to compile anything.
+find_dependency(Parlay)
+find_dependency(libmorton)
+
+include("${CMAKE_CURRENT_LIST_DIR}/PSITargets.cmake")
+
+check_required_components(PSI)
