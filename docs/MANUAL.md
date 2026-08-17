@@ -309,10 +309,49 @@ Common to all three trees. `Range` is any random-access range of points.
 | `knn(Point const&, bounded_queue&)` | profiling counters | results land in the queue; `queue.size()` is how many |
 | `range_count(box_type const&)` | `pair<size_t, counters>` | |
 | `range_query(box_type const&, Range&& out)` | `pair<size_t, counters>` | truncates to `out.size()` |
-| `get_size()` | `size_t` | number of points |
+| `get_size()`, `size()` | `size_t` | number of points; the two are the same call |
 | `empty()` | `bool` | |
-| `delete_tree()` | — | idempotent |
+| `bounds()` | `box_type const&` | a bound on the points -- see below |
+| `count(Point const&)` | `size_t` | how many points share those coordinates |
+| `contains(Point const&)` | `bool` | `count(p) != 0` |
+| `insert(Point const&)` | — | one point; see the warning below |
+| `erase(Point const&)` | `size_t` | one point, returns how many went away |
+| `delete_tree()`, `clear()` | — | idempotent; the two are the same call |
 | `get_tree_name()` | `char const*` | parsed by the plotting scripts; do not change |
+
+`bounds()` is a bound, not always the tightest one: the batch deletes leave it
+alone, so it can outlive the points that stretched it. Queries stay correct
+either way, and a rebuild tightens it. `p_tree` is the exception -- its box is
+the cpam augmentation at the root, which every update keeps current.
+
+`count` and `contains` compare **coordinates, not identity**. `p_tree` keys its
+points on a curve code and an id, so two points at the same position with
+different ids both count.
+
+`insert` and `erase` exist because sometimes one point is genuinely all you
+have. **A loop over them is the wrong shape**: these trees are built to absorb
+a whole batch in parallel, and one-at-a-time gives up everything that makes
+them fast. Collect the points and call `batch_insert` or `batch_diff` once.
+They also inherit the preconditions of the batch calls they wrap -- notably
+`orth_tree` does not grow its bounding box, so `insert`ing outside `bounds()`
+is an error there.
+
+### Coming from Boost.Geometry's R-tree
+
+| `bgi::rtree` | PSI |
+|---|---|
+| `rtree(first, last)` | `build(range)` |
+| `insert(v)` / `insert(first, last)` | `insert(p)` / `batch_insert(range)` |
+| `remove(v)` / `remove(first, last)` | `erase(p)` / `batch_diff(range)` |
+| `query(bgi::within(box), out)` | `range_query(box)` or `range_query(box, out)` |
+| `query(bgi::nearest(p, k), out)` | `knn(p, k)` or `knn(p, queue)` |
+| `size()`, `empty()`, `clear()`, `bounds()` | the same names |
+| `count(v)` | `count(p)`, over coordinates |
+| `begin()` / `end()` | `flatten(out)` -- there is no iterator |
+
+PSI has no predicate composition (`bgi::satisfies`, `!`, `&&`) and no lazy
+query iterators (`qbegin`/`qend`). A query answers into a buffer or a returned
+sequence, and filtering is the caller's to do afterwards.
 
 `orth_tree::build` takes an optional bounding box, and `set_bounding_box` pins
 one before building — useful when later inserts fall outside the initial

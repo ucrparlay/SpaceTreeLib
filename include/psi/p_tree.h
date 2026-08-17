@@ -204,6 +204,16 @@ public:
 	}
 
 	/*
+	 * Not the base's: p_tree never fills tree_box_. Its bounding box is
+	 * the cpam augmentation at the root, which the map keeps current
+	 * through every update, so unlike the base's this one is always tight.
+	 */
+	box_type bounds() const
+	{
+		return cpam_aug_map_.aug_val();
+	}
+
+	/*
 	 * Parsed by script_ae/merge_*.py to label the figures; changing it
 	 * silently relabels published results.
 	 */

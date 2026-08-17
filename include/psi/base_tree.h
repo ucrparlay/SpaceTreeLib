@@ -260,6 +260,70 @@ public:
 		return static_cast<DerivedTree const *>(this)->get_size() == 0;
 	}
 
+	size_t size() const
+	{
+		return static_cast<DerivedTree const *>(this)->get_size();
+	}
+
+	void clear()
+	{
+		delete_tree();
+	}
+
+	/*
+	 * A bound on the points, not necessarily the tightest one: the batch
+	 * deletes leave it alone, so it can outlive the points that stretched
+	 * it. Every query is still correct, and a rebuild tightens it again.
+	 */
+	box_type const &bounds() const
+	{
+		return this->tree_box_;
+	}
+
+	/*
+	 * How many points share these coordinates. Coordinates, not identity:
+	 * p_tree keys its points on the curve code and an id, and two points
+	 * with different ids but the same position both count here.
+	 */
+	size_t count(point_type const &p) const
+	{
+		return static_cast<DerivedTree const *>(this)
+			->range_count(box_type(p, p))
+			.first;
+	}
+
+	bool contains(point_type const &p) const
+	{
+		return count(p) != 0;
+	}
+
+	/*
+	 * One point at a time, for when that is genuinely what the caller has.
+	 * Every tree here is built to absorb a batch in parallel, so a loop
+	 * over these is the wrong shape by a wide margin -- collect the points
+	 * and call batch_insert or batch_diff once.
+	 *
+	 * These carry the preconditions of the batch calls they wrap. In
+	 * particular orth_tree does not grow its bounding box, so inserting a
+	 * point outside bounds() is an error there.
+	 */
+	void insert(point_type const &p)
+	{
+		points_type one(1, p);
+		static_cast<DerivedTree *>(this)->batch_insert(
+			parlay::make_slice(one));
+	}
+
+	/* Returns how many points went away, so an absent point reports 0. */
+	size_t erase(point_type const &p)
+	{
+		size_t const before = size();
+		points_type one(1, p);
+		static_cast<DerivedTree *>(this)->batch_diff(
+			parlay::make_slice(one));
+		return before - size();
+	}
+
 	constexpr virtual void delete_tree() = 0;
 
 	template <typename leaf_type, typename interior_type>
