@@ -6,7 +6,6 @@
 [![C++20, header-only](https://img.shields.io/badge/C%2B%2B-20%20%C2%B7%20header--only-00599C?logo=cplusplus&logoColor=white)](CMakeLists.txt)
 [![license](https://img.shields.io/github/license/ucrparlay/SpaceTreeLib?color=blue)](LICENSE)
 [![DOI](https://img.shields.io/badge/DOI-10.1145%2F3774934.3786412-1f6feb)](https://doi.org/10.1145/3774934.3786412)
-[![stars](https://img.shields.io/github/stars/ucrparlay/SpaceTreeLib?logo=github)](https://github.com/ucrparlay/SpaceTreeLib/stargazers)
 
 PSI is a high-performance parallel library for a collection of spatial indexes -- kd-trees, quad/oct-trees, and 1-D trees over a space-filling curve -- which are:
 - 🚀 Blazing fast, and scales to billions of input size,
