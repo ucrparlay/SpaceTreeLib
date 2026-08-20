@@ -1,11 +1,11 @@
 # PSI: A library for Parallel Spatial Indexes
 
-[![build and test](https://img.shields.io/github/actions/workflow/status/ucrparlay/SpaceTreeLib/ci.yml?branch=main&logo=github&label=build%20%26%20test)](https://github.com/ucrparlay/SpaceTreeLib/actions/workflows/ci.yml)
-[![coverage](https://img.shields.io/codecov/c/github/ucrparlay/SpaceTreeLib/main?logo=codecov&logoColor=white)](https://codecov.io/gh/ucrparlay/SpaceTreeLib)
-[![docker](https://img.shields.io/github/actions/workflow/status/ucrparlay/SpaceTreeLib/docker-build.yml?branch=main&logo=docker&logoColor=white&label=docker)](https://github.com/ucrparlay/SpaceTreeLib/actions/workflows/docker-build.yml)
-[![C++20, header-only](https://img.shields.io/badge/C%2B%2B-20%20%C2%B7%20header--only-00599C?logo=cplusplus&logoColor=white)](CMakeLists.txt)
-[![license](https://img.shields.io/github/license/ucrparlay/SpaceTreeLib?color=blue)](LICENSE)
-[![DOI](https://img.shields.io/badge/DOI-10.1145%2F3774934.3786412-1f6feb)](https://doi.org/10.1145/3774934.3786412)
+[![build and test](https://img.shields.io/github/actions/workflow/status/ucrparlay/SpaceTreeLib/ci.yml?branch=main&logo=github&logoColor=white&label=build%20%26%20test&labelColor=0D1117)](https://github.com/ucrparlay/SpaceTreeLib/actions/workflows/ci.yml)
+[![coverage](https://img.shields.io/codecov/c/github/ucrparlay/SpaceTreeLib/main?logo=codecov&logoColor=white&labelColor=0D1117)](https://codecov.io/gh/ucrparlay/SpaceTreeLib)
+[![docker](https://img.shields.io/github/actions/workflow/status/ucrparlay/SpaceTreeLib/docker-build.yml?branch=main&logo=docker&logoColor=white&label=docker&labelColor=0D1117)](https://github.com/ucrparlay/SpaceTreeLib/actions/workflows/docker-build.yml)
+[![C++20, header-only](https://img.shields.io/badge/C%2B%2B-20%20%C2%B7%20header--only-0F80FF?logo=cplusplus&logoColor=white&labelColor=0D1117)](CMakeLists.txt)
+[![license](https://img.shields.io/github/license/ucrparlay/SpaceTreeLib?color=8A2BE2&logo=opensourceinitiative&logoColor=white&labelColor=0D1117)](LICENSE)
+[![DOI](https://img.shields.io/badge/DOI-10.1145%2F3774934.3786412-FF3860?logo=acm&logoColor=white&labelColor=0D1117)](https://doi.org/10.1145/3774934.3786412)
 
 PSI is a high-performance parallel library for a collection of spatial indexes -- kd-trees, quad/oct-trees, and 1-D trees over a space-filling curve -- which are:
 - 🚀 Blazing fast, and scales to billions of input size,
