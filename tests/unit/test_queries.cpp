@@ -113,5 +113,8 @@ int main()
 	run<orth_kind<long, 2>>("orth/2d");
 	run<orth_kind<long, 3>>("orth/3d");
 	run<p_kind<long, 2>>("p/2d");
+	run<kd_stretch_kind<long, 2>>("kd-stretch/2d");
+	run<kd_stretch_kind<long, 3>>("kd-stretch/3d");
+	run<p_hilbert_kind<long, 2>>("p-hilbert/2d");
 	return psi_test_result();
 }

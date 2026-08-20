@@ -86,6 +86,32 @@ struct p_kind {
 	static constexpr char const *name = "p_tree";
 };
 
+/*
+ * The rules the three kinds above never reach. Both pairs already ship in
+ * example/, so these are supported configurations rather than new ones:
+ * example/kd_tree.h builds with max_stretch_dim and object_median, and
+ * example/p_tree.h with the hilbert curve.
+ */
+template <typename Coord, uint_fast8_t Dim>
+struct kd_stretch_kind {
+	using point_type = psi::basic_point<Coord, Dim>;
+	using split_rule =
+		psi::orthogonal_split_rule<psi::max_stretch_dim<point_type>,
+					   psi::object_median<point_type>>;
+	using tree_type =
+		psi::kd_tree<psi::tree_traits<point_type, split_rule>>;
+	static constexpr char const *name = "kd_tree/max_stretch";
+};
+
+template <typename Coord, uint_fast8_t Dim>
+struct p_hilbert_kind {
+	using point_type = psi::aug_point<Coord, Dim, curve_code>;
+	using split_rule =
+		psi::spatial_filling_curve<psi::hilbert_curve<point_type>>;
+	using tree_type = psi::p_tree<psi::tree_traits<point_type, split_rule>>;
+	static constexpr char const *name = "p_tree/hilbert";
+};
+
 /* Distinct ids matter for p_tree and are harmless elsewhere. */
 template <typename Kind>
 parlay::sequence<typename Kind::point_type>

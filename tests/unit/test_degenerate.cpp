@@ -161,6 +161,8 @@ int main()
 	run<kd_kind<long, 2>>("kd/2d");
 	run<orth_kind<long, 2>>("orth/2d");
 	run<p_kind<long, 2>>("p/2d");
+	run<kd_stretch_kind<long, 2>>("kd-stretch/2d");
+	run<p_hilbert_kind<long, 2>>("p-hilbert/2d");
 	/* double coordinates compile a comparison branch that the integer
 	 * instantiations never reach */
 	run<kd_kind<double, 2>>("kd/2d-double");
