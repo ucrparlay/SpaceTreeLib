@@ -147,6 +147,69 @@ jobs:
           cd script
           PSI_NODES=20000 ./checkCorrect.sh fast "$root" ../build
 
+  coverage:
+    name: coverage
+    runs-on: ubuntu-24.04
+    # Codecov verifies this job's OIDC token rather than a stored secret.
+    # contents: read is not redundant -- naming any permission at all drops
+    # the rest to none, and checkout needs it.
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      # gcovr is pinned for the reason clang-format is: a runner image bump
+      # should not move a reported number on its own.
+      - name: Install toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y g++-14
+          pip install "gcovr==8.6"
+
+      # -O1, not the -O0 that DEBUG=ON gives on its own: gcov can attribute
+      # nothing once -O3 inlines a header-only library into its callers, and
+      # -O0 costs seven times the run for the same report. Counters are
+      # atomic because every operation under test is parallel and racing
+      # counters undercount. The asserts stay live, so validate() runs too.
+      - name: Configure
+        run: |
+          cmake -S . -B build \
+            -DCMAKE_CXX_COMPILER=g++-14 \
+            -DPSI_NATIVE_ARCH=OFF \
+            -DPSI_BUILD_BENCHMARKS=OFF -DPSI_BUILD_EXAMPLES=OFF \
+            -DDEBUG=ON -DCMAKE_CXX_FLAGS_DEBUG="-O1 -g" \
+            -DCMAKE_CXX_FLAGS="--coverage -fprofile-update=atomic" \
+            -DCMAKE_EXE_LINKER_FLAGS="--coverage"
+
+      - name: Build
+        run: cmake --build build -j "$(nproc)"
+
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+
+      # cpam and hilbert.hpp are left out for the reason they are exempt from
+      # the warning policy: the project does not maintain them.
+      - name: Report
+        run: |
+          gcovr --root . build --gcov-executable gcov-14 \
+            --filter 'include/psi/' \
+            --exclude 'include/psi/dependence/cpam/' \
+            --exclude 'include/psi/dependence/space_filling_curve/hilbert\.hpp' \
+            -j "$(nproc)" \
+            --cobertura coverage.xml --cobertura-pretty \
+            --txt -
+
+      # A failed upload does not turn a passing build into a failing one.
+      - name: Upload to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          use_oidc: true
+          files: coverage.xml
+          fail_ci_if_error: false
+
   format:
     name: clang-format
     runs-on: ubuntu-24.04

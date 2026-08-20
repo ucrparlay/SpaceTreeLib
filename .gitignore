@@ -71,3 +71,8 @@ Rplots.pdf
 build/
 .vscode
 external/
+
+# Coverage
+coverage.xml
+*.gcda
+*.gcno

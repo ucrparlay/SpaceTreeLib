@@ -1,0 +1,13 @@
+# Codecov fails a pull request on any drop and comments on every one by
+# default. What this number measures is which templates a test happens to
+# instantiate, so it is reported and not enforced.
+coverage:
+  status:
+    project:
+      default:
+        informational: true
+    patch:
+      default:
+        informational: true
+
+comment: false
