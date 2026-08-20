@@ -202,12 +202,17 @@ jobs:
             --cobertura coverage.xml --cobertura-pretty \
             --txt -
 
-      # A failed upload does not turn a passing build into a failing one.
+      # disable_search and plugins: noop, or the action ignores the report
+      # above: it hunts the workspace for coverage data and runs its own gcov
+      # over build/, which puts cpam and tests/unit back in. A failed upload
+      # does not turn a passing build into a failing one.
       - name: Upload to Codecov
         uses: codecov/codecov-action@v5
         with:
           use_oidc: true
           files: coverage.xml
+          disable_search: true
+          plugins: noop
           fail_ci_if_error: false
 
   format:
