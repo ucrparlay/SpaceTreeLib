@@ -14,7 +14,7 @@ PSI is a high-performance parallel library for a collection of spatial indexes -
 - 📝 Provide strong theoretical guarantees for the running time, parallelism, and I/O (cache) efficiency,
 - 🛠️ Easy to adapt, integrate, and deploy.
 
-Note: the prototype of the PSI contains no AI-written code. Later it was refactored using AI to improve the readability and usability. The performance of some indexes are slightly affected but generally they all match the reports in the paper. If you are sensitive to the AI code, please checkout the [af67b82](https://github.com/ucrparlay/SpaceTreeLib/tree/af67b82d25aaaa49de8617e51c51812f5658fb46) for the original design. Thanks!
+Note: the prototype of the PSI contains no AI-written code. Recently it was refactored using AI to improve the readability and usability. The performance of some indexes are slightly affected but generally they all match the reports in the paper. If you are sensitive to the AI code, please checkout the [af67b82](https://github.com/ucrparlay/SpaceTreeLib/tree/af67b82d25aaaa49de8617e51c51812f5658fb46) for the original design. Thanks!
 
 ## Docs
 - [Quick Start](docs/QUICK_START.md)
