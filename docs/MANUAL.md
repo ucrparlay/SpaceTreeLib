@@ -41,9 +41,8 @@ g++ -std=c++20 -O3 -pthread myapp.cpp \
 ```
 
 `include/` is the only PSI include root, and every header is reached as
-`psi/…`. Build your own targets with optimisation: PSI's `-O3` applies to
-PSI's own targets, not to yours, and an unoptimised spatial index looks broken
-rather than slow. Add `-march=native` if you are measuring.
+`psi/…`. Build your own targets with optimization: PSI's `-O3` applies to
+PSI's own targets, not to yours, and an unoptimized spatial index will enforce the excessive assertion during execution, which may throw a segmentation fault rather than slow down. Add `-march=native` if you are measuring.
 
 Build options worth knowing:
 
@@ -59,7 +58,7 @@ Build options worth knowing:
 
 ## Step-by-step guide
 
-Taking the Pkd-tree; the other two differ only where noted under
+Taking the Pkd-tree as an example; the other two differ only where noted under
 [Choosing and configuring a tree](#choosing-and-configuring-a-tree). The
 complete programs are in [example/](../example/).
 
