@@ -37,6 +37,36 @@ static void unbuilt_tree(char const *tag)
 	CHECK_EQ(tree.flatten(parlay::make_slice(out)), size_t(0));
 }
 
+/* Built from no points, then filled by an insert. */
+template <typename Kind>
+static void empty_build(char const *tag)
+{
+	using point_type = typename Kind::point_type;
+	using tree_type = typename Kind::tree_type;
+	CASE(tag);
+
+	auto pts = make_points<Kind>(gen<Kind>(1000, 0, 100, seed_from_env()));
+	typename point_type::coord_type lo[point_type::get_dim()];
+	typename point_type::coord_type hi[point_type::get_dim()];
+	for (size_t d = 0; d < point_type::get_dim(); d++) {
+		lo[d] = 0;
+		hi[d] = 100;
+	}
+	typename tree_type::box_type all{typename point_type::bp_type(lo),
+					 typename point_type::bp_type(hi)};
+	parlay::sequence<point_type> none(0);
+	tree_type tree;
+	/* orth_tree inserts only inside its box */
+	if constexpr (requires { tree.set_bounding_box(all); })
+		tree.set_bounding_box(all);
+	tree.build(parlay::make_slice(none));
+	CHECK_EQ(tree.get_size(), size_t(0));
+
+	tree.batch_insert(parlay::make_slice(pts));
+	CHECK_EQ(tree.get_size(), pts.size());
+	CHECK_EQ(tree.range_count(all).first, pts.size());
+}
+
 template <typename Kind>
 static void empty_and_inverted_box(char const *tag)
 {
@@ -151,6 +181,7 @@ template <typename Kind>
 static void run(char const *tag)
 {
 	unbuilt_tree<Kind>((std::string(tag) + "/unbuilt").c_str());
+	empty_build<Kind>((std::string(tag) + "/empty-build").c_str());
 	empty_and_inverted_box<Kind>((std::string(tag) + "/empty-box").c_str());
 	undersized_output<Kind>((std::string(tag) + "/short-buffer").c_str());
 	k_outside_range<Kind>((std::string(tag) + "/k-range").c_str());

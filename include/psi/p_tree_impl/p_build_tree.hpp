@@ -21,6 +21,11 @@ void p_tree<Traits>::build(Range &&in)
 template <typename Traits>
 void p_tree<Traits>::build_(slice_type A)
 {
+	/* CPAM cannot build from no entries. */
+	if (A.size() == 0) {
+		delete_tree();
+		return;
+	}
 
 	this->cpam_aug_map_ = std::move(cpam_aug_map_type(A));
 
