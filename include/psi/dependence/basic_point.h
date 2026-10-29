@@ -21,8 +21,10 @@ template <typename T, uint_fast8_t d>
 struct basic_point {
 	using coord_type = T;
 	using coords_type = std::array<T, d>;
+	/* Unsigned: with coordinates in [0, 2^31), squared distances fit up to
+	 * 4 dims, signed only 2. */
 	using dis_type = std::conditional_t<std::is_integral_v<coord_type>,
-					    int_fast64_t, double>;
+					    uint_fast64_t, double>;
 	using num_type = num_comparator<coord_type>;
 	using dims_type = uint_fast8_t;
 	using bp_type = basic_point<T, d>;

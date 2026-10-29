@@ -106,6 +106,45 @@ static void run(char const *tag)
 		(std::string(tag) + "/one-plane").c_str());
 }
 
+/* Two clusters at opposite corners of [0, 2^31)^3: the squared distance
+ * between them passes INT64_MAX. */
+template <typename Kind>
+static void far_clusters(char const *tag)
+{
+	using point_type = typename Kind::point_type;
+	using tree_type = typename Kind::tree_type;
+	using coord_type = typename point_type::coord_type;
+	using dis_type = typename point_type::dis_type;
+	using nn_pair = std::pair<std::reference_wrapper<point_type>, dis_type>;
+	CASE(tag);
+
+	uint64_t seed = seed_from_env();
+	coord_type const top = (coord_type(1) << 31) - 1;
+	auto low = gen<Kind>(500, 0, 100, seed);
+	auto high = gen<Kind>(500, top - 100, top, seed + 1);
+	std::vector<point_type> src(low);
+	src.insert(src.end(), high.begin(), high.end());
+	auto pts = make_points<Kind>(src);
+	tree_type tree;
+	tree.build(parlay::make_slice(pts));
+
+	/* the neighbours of a point are all in its own cluster */
+	size_t const k = 10;
+	for (size_t i = 0; i < src.size(); i += 25) {
+		auto const &own = i < low.size() ? low : high;
+		parlay::sequence<nn_pair> buf(k, nn_pair(std::ref(pts[0]), 0));
+		psi::bounded_queue<point_type, nn_pair> bq(
+			parlay::make_slice(buf));
+		tree.knn(src[i], bq);
+
+		std::vector<dis_type> got;
+		for (size_t j = 0; j < bq.size(); j++)
+			got.push_back(buf[j].second);
+		std::sort(got.begin(), got.end());
+		CHECK(near(got, knn_distances(own, src[i], k)));
+	}
+}
+
 int main()
 {
 	run<kd_kind<long, 2>>("kd/2d");
@@ -116,5 +155,10 @@ int main()
 	run<kd_stretch_kind<long, 2>>("kd-stretch/2d");
 	run<kd_stretch_kind<long, 3>>("kd-stretch/3d");
 	run<p_hilbert_kind<long, 2>>("p-hilbert/2d");
+	far_clusters<kd_kind<long, 3>>("kd/3d/far-clusters");
+	far_clusters<orth_kind<long, 3>>("orth/3d/far-clusters");
+	far_clusters<p_kind<long, 3>>("p/3d/far-clusters");
+	far_clusters<kd_stretch_kind<long, 3>>("kd-stretch/3d/far-clusters");
+	far_clusters<p_hilbert_kind<long, 3>>("p-hilbert/3d/far-clusters");
 	return psi_test_result();
 }

@@ -190,11 +190,9 @@ void base_tree<Traits, DerivedTree>::knn_leaf(
 	while (i < tl->size) {
 		auto r = interruptible_distance(q, tl->pts[(!tl->is_dummy) * i],
 						bq.top_value());
-		if (num_type::lt(r, bq.top_value())) { /* the queue is full, */
-						       /*
-							* no need to insert points
-							* with equal distances
-							*/
+		/* the queue is full, no need to insert points with equal
+		 * distances */
+		if (num_comparator<dis_type>::lt(r, bq.top_value())) {
 			bq.insert(std::make_pair(
 				std::ref(tl->pts[(!tl->is_dummy) * i]), r));
 		} else if (tl->is_dummy) {
@@ -232,7 +230,7 @@ void base_tree<Traits, DerivedTree>::knn_binary(
 					     logger);
 
 	logger.check_box_num++;
-	if (num_type::gt(
+	if (num_comparator<dis_type>::gt(
 		    p2b_min_distance_square(q, box_cut.get_second_box_cut()),
 		    bq.top_value()) &&
 	    bq.full()) {
@@ -251,9 +249,10 @@ void base_tree<Traits, DerivedTree>::knn_binary_box(
 	knn_logger &logger)
 {
 	if (bq.size() &&
-	    num_type::gt(p2b_min_distance_square(
-				 q, retrieve_box<leaf_type, interior_type>(T)),
-			 bq.top_value()) &&
+	    num_comparator<dis_type>::gt(
+		    p2b_min_distance_square(
+			    q, retrieve_box<leaf_type, interior_type>(T)),
+		    bq.top_value()) &&
 	    bq.full()) {
 		logger.skip_box_num++;
 		return;
@@ -267,17 +266,18 @@ void base_tree<Traits, DerivedTree>::knn_binary_box(
 
 	logger.vis_interior_num++;
 	interior_type *ti = static_cast<interior_type *>(T);
-	coord_type dist_left = p2b_min_distance_square(
+	dis_type dist_left = p2b_min_distance_square(
 		q, retrieve_box<leaf_type, interior_type>(ti->left));
-	coord_type dist_right = p2b_min_distance_square(
+	dis_type dist_right = p2b_min_distance_square(
 		q, retrieve_box<leaf_type, interior_type>(ti->right));
-	bool go_left = num_type::leq(dist_left, dist_right);
+	bool go_left = num_comparator<dis_type>::leq(dist_left, dist_right);
 
 	knn_binary_box<leaf_type, interior_type>(go_left ? ti->left : ti->right,
 						 q, bq, logger);
 
 	logger.check_box_num++;
-	if (num_type::gt(go_left ? dist_right : dist_left, bq.top_value()) &&
+	if (num_comparator<dis_type>::gt(go_left ? dist_right : dist_left,
+					 bq.top_value()) &&
 	    bq.full()) {
 		logger.skip_box_num++;
 		return;
@@ -340,7 +340,7 @@ void base_tree<Traits, DerivedTree>::knn_multi_expand(
 
 	/* compute the other bounding box */
 	logger.check_box_num++;
-	if (num_type::gt(
+	if (num_comparator<dis_type>::gt(
 		    p2b_min_distance_square(q, box_cut.get_second_box_cut()),
 		    bq.top_value()) &&
 	    bq.full()) {
@@ -365,9 +365,10 @@ void base_tree<Traits, DerivedTree>::knn_multi_expand_box(
 	}
 
 	if (idx == 1 && bq.size() &&
-	    num_type::gt(p2b_min_distance_square(
-				 q, retrieve_box<leaf_type, interior_type>(T)),
-			 bq.top_value()) &&
+	    num_comparator<dis_type>::gt(
+		    p2b_min_distance_square(
+			    q, retrieve_box<leaf_type, interior_type>(T)),
+		    bq.top_value()) &&
 	    bq.full()) {
 		logger.skip_box_num++;
 		return;
@@ -415,8 +416,8 @@ void base_tree<Traits, DerivedTree>::knn_multi_expand_box(
 
 	/* compute the other bounding box */
 	logger.check_box_num++;
-	if (num_type::gt(p2b_min_distance_square(q, second_box),
-			 bq.top_value()) &&
+	if (num_comparator<dis_type>::gt(p2b_min_distance_square(q, second_box),
+					 bq.top_value()) &&
 	    bq.full()) {
 		logger.skip_box_num++;
 		return;
@@ -438,9 +439,10 @@ void base_tree<Traits, DerivedTree>::knn_multi(
 	}
 
 	if (bq.size() &&
-	    num_type::gt(p2b_min_distance_square(
-				 q, retrieve_box<leaf_type, interior_type>(T)),
-			 bq.top_value()) &&
+	    num_comparator<dis_type>::gt(
+		    p2b_min_distance_square(
+			    q, retrieve_box<leaf_type, interior_type>(T)),
+		    bq.top_value()) &&
 	    bq.full()) {
 		logger.skip_box_num++;
 		return;
@@ -455,7 +457,7 @@ void base_tree<Traits, DerivedTree>::knn_multi(
 	interior_type *ti = static_cast<interior_type *>(T);
 
 	/* TODO: may change to use parlay::sequence */
-	std::array<std::pair<coord_type, bucket_type>,
+	std::array<std::pair<dis_type, bucket_type>,
 		   interior_type::get_regions()>
 		dists;
 
@@ -475,7 +477,9 @@ void base_tree<Traits, DerivedTree>::knn_multi(
 					    bq, logger);
 	for (bucket_type i = 1; i < interior_type::get_regions(); ++i) {
 		logger.check_box_num++;
-		if (num_type::gt(dists[i].first, bq.top_value()) && bq.full()) {
+		if (num_comparator<dis_type>::gt(dists[i].first,
+						 bq.top_value()) &&
+		    bq.full()) {
 			logger.skip_box_num++;
 			continue;
 		}
