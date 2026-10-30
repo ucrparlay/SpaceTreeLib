@@ -320,7 +320,7 @@ struct augmented_ops : Map {
 		if (Map::is_compressed(b)) { // leaf node
 			logger.vis_leaf_num++;
 			auto f_filter = [&](auto &cur_pt) {
-				auto et = std::get<1>(cur_pt);
+				auto &et = std::get<1>(cur_pt);
 				if (!bq.full()) {
 					bq.insert(std::make_pair(
 						std::ref(et),
