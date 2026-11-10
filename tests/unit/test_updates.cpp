@@ -136,6 +136,55 @@ static void rebuild_keeps_answers(char const *tag)
 }
 
 template <typename Kind>
+static parlay::sequence<typename Kind::point_type>
+points_from(size_t n, uint64_t seed, size_t first_id)
+{
+	auto pts = make_points<Kind>(gen<Kind>(n, 0, 500, seed));
+	for (size_t i = 0; i < pts.size(); i++)
+		if constexpr (requires { pts[i].aug.id; })
+			pts[i].aug.id = decltype(pts[i].aug.id)(first_id + i);
+	return pts;
+}
+
+/*
+ * A small insert and a small delete leave p_tree's leaves out of order. The
+ * large insert then splits every leaf, and the delete has to find its points
+ * in what the split made.
+ */
+template <typename Kind>
+static void large_insert_after_small_updates(char const *tag)
+{
+	using point_type = typename Kind::point_type;
+	CASE(tag);
+	uint64_t seed = seed_from_env();
+	auto base = points_from<Kind>(3000, seed + 5, 0);
+	auto few = points_from<Kind>(300, seed + 6, 3000);
+	auto many = points_from<Kind>(30000, seed + 7, 3300);
+
+	typename Kind::tree_type tree;
+	tree.build(parlay::make_slice(base));
+	tree.batch_insert(parlay::make_slice(few));
+
+	std::vector<point_type> live, del;
+	for (size_t i = 0; i < base.size(); i++)
+		(i % 10 == 0 ? del : live).push_back(base[i]);
+	tree.batch_delete(parlay::to_sequence(del));
+	live.insert(live.end(), few.begin(), few.end());
+
+	tree.batch_insert(parlay::make_slice(many));
+	live.insert(live.end(), many.begin(), many.end());
+	CHECK_EQ(tree.get_size(), live.size());
+
+	std::vector<point_type> kept;
+	del.clear();
+	for (size_t i = 0; i < live.size(); i++)
+		(i % 2 == 0 ? del : kept).push_back(live[i]);
+	tree.batch_delete(parlay::to_sequence(del));
+	CHECK_EQ(tree.get_size(), kept.size());
+	CHECK(flatten_all<Kind>(tree) == sorted(kept));
+}
+
+template <typename Kind>
 static void run(char const *tag)
 {
 	round_trip<Kind>((std::string(tag) + "/flatten").c_str());
@@ -143,6 +192,8 @@ static void run(char const *tag)
 		(std::string(tag) + "/insert-delete").c_str());
 	diff_tolerates_absent<Kind>((std::string(tag) + "/diff").c_str());
 	rebuild_keeps_answers<Kind>((std::string(tag) + "/rebuild").c_str());
+	large_insert_after_small_updates<Kind>(
+		(std::string(tag) + "/large-insert").c_str());
 }
 
 int main()

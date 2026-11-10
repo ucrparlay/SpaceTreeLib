@@ -370,6 +370,8 @@ struct aug_node
 		auto f = [&](et_type const &et) {
 			parlay::assign_uninitialized(tmp_arr[i++], et);
 		};
+		/* The callers split and merge the entries in key order. */
+		reorder(c);
 		AugEntryEncoder::decode(data_start, c->s, f);
 		return tmp_arr;
 	}
