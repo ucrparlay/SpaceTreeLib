@@ -7,6 +7,7 @@ set(psi_unit_tests
 	test_degenerate
 	test_manual
 	test_convenience
+	test_node_size
 )
 
 foreach(psi_test ${psi_unit_tests})
