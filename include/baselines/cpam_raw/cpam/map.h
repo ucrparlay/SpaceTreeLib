@@ -424,7 +424,7 @@ public:
 		parlay::sequence<E> A = Build::sort_remove_duplicates(SS);
 		parlay::sequence<K> B(A.size());
 		parlay::parallel_for(0, A.size(),
-				     [&](int i) { B[i] = get<0>(A[i]); });
+				     [&](size_t i) { B[i] = get<0>(A[i]); });
 		t.next("build time");
 		//    M A_m = Seq_Tree::from_array(A.begin(), A.size());
 		//    //M A_m = Tree::multi_insert_sorted(nullptr, A.data(),

@@ -9,8 +9,8 @@
 namespace cpam
 {
 
-using node_size_t = unsigned int;
-// using node_size_t = size_t;
+/* A tree can hold 2^32 points or more. */
+using node_size_t = size_t;
 
 // *******************************************
 //   BASIC NODE

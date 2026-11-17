@@ -134,7 +134,7 @@ public:
 		size_t n = P.size();
 
 		// parlay::internal::timer t("SFC time", true);
-		parlay::parallel_for(0, n, [&](int i) {
+		parlay::parallel_for(0, n, [&](size_t i) {
 			P[i].aug.code = SplitRule::encode(P[i]);
 		});
 		// t.stop();
@@ -145,7 +145,7 @@ public:
 		// parlay::sequence<unsigned long long>::uninitialized(n);
 		// parlay::internal::timer t1("create entry time", true);
 		parlay::sequence<par> entries(n);
-		parlay::parallel_for(0, n, [&](int i) {
+		parlay::parallel_for(0, n, [&](size_t i) {
 			entries[i] = {{P[i].aug.code, P[i].aug.id}, P[i]};
 			// entries[i] = {P[i]->id, P[i]};
 			// h_values[i] = P[i].morton_id;
@@ -176,12 +176,12 @@ public:
 	{
 		size_t n = P.size();
 
-		parlay::parallel_for(0, n, [&](int i) {
+		parlay::parallel_for(0, n, [&](size_t i) {
 			P[i].aug.code = SplitRule::encode(P[i]);
 		});
 
 		parlay::sequence<par> insert_pts(n);
-		parlay::parallel_for(0, n, [&](int i) {
+		parlay::parallel_for(0, n, [&](size_t i) {
 			insert_pts[i] = {{P[i].aug.code, P[i].aug.id}, P[i]};
 			// insert_pts[i] = {P[i]->id, P[i]};
 		});
@@ -195,13 +195,13 @@ public:
 	{
 		size_t n = P.size();
 
-		parlay::parallel_for(0, n, [&](int i) {
+		parlay::parallel_for(0, n, [&](size_t i) {
 			P[i].aug.code = SplitRule::encode(P[i]);
 		});
 		parlay::sequence<par> delete_pts(n);
 		// parlay::sequence<pair<unsigned long long, long long> >
 		// delete_pts(n);
-		parlay::parallel_for(0, n, [&](int i) {
+		parlay::parallel_for(0, n, [&](size_t i) {
 			delete_pts[i] = {{P[i].aug.code, P[i].aug.id}, P[i]};
 			// delete_pts[i] = {P[i]->morton_id, P[i]->id};
 			// insert_pts[i] = {P[i]->id, P[i]};
