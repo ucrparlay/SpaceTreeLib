@@ -27,6 +27,7 @@ void p_tree<Traits>::build_(slice_type A)
 		return;
 	}
 
+	shifted_curve::code_shift = code_shift_;
 	this->cpam_aug_map_ = std::move(cpam_aug_map_type(A));
 
 	return;

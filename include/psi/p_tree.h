@@ -1,7 +1,11 @@
 #ifndef PSI_P_TREE_H
 #define PSI_P_TREE_H
 
+#include <algorithm>
 #include <array>
+#include <bit>
+#include <cassert>
+#include <cstdint>
 #include <functional>
 #include <optional>
 #include <utility>
@@ -59,13 +63,30 @@ public:
 
 	using cpam_aug_type = box_type;
 
+	/*
+	 * cpam applies the code through a type, so the shift is static and
+	 * shared by every p_tree of these traits: each update sets it, and
+	 * two of them must not update at once.
+	 */
+	struct shifted_curve {
+		inline static int code_shift = 0;
+
+		static auto encode(point_type const &p)
+		{
+			point_type shifted = p;
+			for (auto &coord : shifted.pnt)
+				coord >>= code_shift;
+			return split_rule_type::encode(shifted);
+		}
+	};
+
 	struct cpam_entry {
 		using key_t = cpam_key_type;
 		using val_t = cpam_val_type;
 		using aug_t = cpam_aug_type;
 		using entry_t = point_type;
 
-		using filling_curve_t = split_rule_type;
+		using filling_curve_t = shifted_curve;
 		using key_entry_pointer =
 			std::pair<typename point_type::at_type, entry_t *>;
 		using entry_t_ref_wrapper_v =
@@ -154,6 +175,24 @@ public:
 
 	void p_tree_tag();
 
+	/*
+	 * Before build(). A code holds a fixed number of bits an axis, the
+	 * low ones by default; with box it holds the top ones up to box's
+	 * largest coordinate. A point outside box is still found, but slows
+	 * the queries.
+	 */
+	void set_bounding_box(box_type const &box)
+	{
+		assert(get_size() == 0);
+		int const code_bits =
+			sizeof(curve_code_type) * 8 / base_type::num_dims;
+		int top = 0;
+		for (auto const coord : box.second.pnt)
+			top = std::max(top,
+				       int(std::bit_width(uint64_t(coord))));
+		code_shift_ = std::max(0, top - code_bits);
+	}
+
 	template <typename Range>
 	void build(Range &&in);
 
@@ -235,15 +274,16 @@ private:
 
 	/*
 	 * No split-rule member: unlike kd_tree and orth_tree, p_tree never
-	 * calls its rule. The rule reaches the tree as cpam_entry's
-	 * filling_curve_t, and the code is applied by cpam_sample_sort during
-	 * the build. Adding a curve means writing one with encode(), not
-	 * touching anything here.
+	 * calls its rule. The rule reaches cpam through shifted_curve, which
+	 * is cpam_entry's filling_curve_t, and the code is applied by
+	 * cpam_sample_sort during the build. Adding a curve means writing one
+	 * with encode(), not touching anything here.
 	 *
 	 * The queries do not change the tree, but cpam takes its map by
 	 * non-const reference.
 	 */
 	mutable cpam_aug_map_type cpam_aug_map_;
+	int code_shift_ = 0;
 };
 
 } /* namespace psi */

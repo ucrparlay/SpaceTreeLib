@@ -23,6 +23,7 @@ void p_tree<Traits>::batch_delete_(slice_type A)
 	    !cpam_aug_map_type::size(this->cpam_aug_map_.root)) {
 		return;
 	}
+	shifted_curve::code_shift = code_shift_;
 	this->cpam_aug_map_ = cpam_aug_map_type::multi_delete(
 		std::move(this->cpam_aug_map_), A);
 	return;

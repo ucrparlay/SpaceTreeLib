@@ -145,6 +145,59 @@ static void far_clusters(char const *tag)
 	}
 }
 
+/*
+ * Coordinates past the bits a code holds an axis. With the box, the code
+ * holds their top bits, so a leaf holds near points and a knn reads few
+ * leaves.
+ */
+template <typename Kind>
+static void top_bits(char const *tag)
+{
+	using point_type = typename Kind::point_type;
+	using tree_type = typename Kind::tree_type;
+	using box_type = typename tree_type::box_type;
+	using bp_type = typename point_type::bp_type;
+	using coord_type = typename point_type::coord_type;
+	using dis_type = typename point_type::dis_type;
+	using nn_pair = std::pair<std::reference_wrapper<point_type>, dis_type>;
+	CASE(tag);
+
+	uint64_t seed = seed_from_env();
+	coord_type const top = (coord_type(1) << 31) - 1;
+	auto src = gen<Kind>(20000, 0, top, seed);
+	auto pts = make_points<Kind>(src);
+	tree_type tree;
+	tree.set_bounding_box(box_type(bp_type(coord_type(0)), bp_type(top)));
+	tree.build(parlay::make_slice(pts));
+
+	/* Another tree's update sets the shared shift to its own. */
+	auto few = make_points<Kind>(gen<Kind>(100, 0, 100, seed + 1));
+	tree_type other;
+	other.build(parlay::make_slice(few));
+
+	size_t const half = src.size() / 2;
+	tree.batch_delete(parlay::make_slice(pts).cut(0, half));
+	CHECK_EQ(tree.get_size(), src.size() - half);
+
+	std::vector<point_type> const ref(src.begin() + half, src.end());
+	size_t const k = 10;
+	size_t leaf_cnt = 0, query_cnt = 0;
+	for (size_t i = half; i < src.size(); i += 50) {
+		parlay::sequence<nn_pair> buf(k, nn_pair(std::ref(pts[0]), 0));
+		psi::bounded_queue<point_type, nn_pair> bq(
+			parlay::make_slice(buf));
+		leaf_cnt += tree.knn(src[i], bq).vis_leaf_num;
+		query_cnt++;
+
+		std::vector<dis_type> got;
+		for (size_t j = 0; j < bq.size(); j++)
+			got.push_back(buf[j].second);
+		std::sort(got.begin(), got.end());
+		CHECK(near(got, knn_distances(ref, src[i], k)));
+	}
+	CHECK(leaf_cnt < 30 * query_cnt);
+}
+
 int main()
 {
 	run<kd_kind<long, 2>>("kd/2d");
@@ -160,5 +213,7 @@ int main()
 	far_clusters<p_kind<long, 3>>("p/3d/far-clusters");
 	far_clusters<kd_stretch_kind<long, 3>>("kd-stretch/3d/far-clusters");
 	far_clusters<p_hilbert_kind<long, 3>>("p-hilbert/3d/far-clusters");
+	top_bits<p_kind<long, 3>>("p/3d/top-bits");
+	top_bits<p_hilbert_kind<long, 3>>("p-hilbert/3d/top-bits");
 	return psi_test_result();
 }

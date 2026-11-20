@@ -21,6 +21,7 @@ void p_tree<Traits>::batch_insert_(slice_type A)
 		/* build_ , not build: A is already tree owned storage. */
 		return build_(A);
 	}
+	shifted_curve::code_shift = code_shift_;
 	this->cpam_aug_map_ = cpam_aug_map_type::multi_insert(
 		std::move(this->cpam_aug_map_), A);
 	return;
