@@ -198,6 +198,75 @@ static void top_bits(char const *tag)
 	CHECK(leaf_cnt < 30 * query_cnt);
 }
 
+/*
+ * One far value on the last axis stretches the tree's box, so the cuts of
+ * that axis leave the other points together and a leaf's part of the box is
+ * far taller than its points. A box reads no leaf whose points lie apart from
+ * it or all inside it.
+ */
+template <typename Kind>
+static void far_value(char const *tag)
+{
+	using point_type = typename Kind::point_type;
+	using tree_type = typename Kind::tree_type;
+	using box_type = typename tree_type::box_type;
+	using bp_type = typename point_type::bp_type;
+	using coord_type = typename point_type::coord_type;
+	CASE(tag);
+
+	uint64_t seed = seed_from_env();
+	size_t const last = point_type::get_dim() - 1;
+	auto src = gen<Kind>(20000, 0, 1000, seed);
+	src.push_back(src[0]);
+	src.back().pnt[last] = coord_type(1) << 30;
+	auto pts = make_points<Kind>(src);
+	tree_type tree;
+	tree.build(parlay::make_slice(pts));
+	std::vector<point_type> ref(pts.begin(), pts.end());
+
+	/* checks the answers of a box over [low, high] on the last axis and
+	 * returns the leaves it read */
+	auto query = [&](coord_type low, coord_type high) {
+		box_type box(bp_type(coord_type(0)), bp_type(coord_type(1000)));
+		box.first.pnt[last] = low;
+		box.second.pnt[last] = high;
+		size_t const expect = range_count(ref, box);
+
+		auto const counted = tree.range_count(box);
+		CHECK_EQ(counted.first, expect);
+
+		parlay::sequence<point_type> out(ref.size());
+		auto const reported =
+			tree.range_query(box, parlay::make_slice(out));
+		CHECK_EQ(reported.first, expect);
+		std::vector<point_type> got(out.begin(),
+					    out.begin() + reported.first);
+		CHECK(sorted(got) == range_query(ref, box));
+		return counted.second.vis_leaf_num +
+		       reported.second.vis_leaf_num;
+	};
+	auto check = [&] {
+		/* between the near points and the far one */
+		CHECK_EQ(query(5000, 6000), size_t(0));
+		/* around the near points */
+		CHECK_EQ(query(0, 2000), size_t(0));
+		/* through them */
+		for (coord_type low = 0; low < 1000; low += 97)
+			query(low, low + 10);
+	};
+	check();
+
+	size_t const half = 10000;
+	tree.batch_delete(parlay::make_slice(pts).cut(0, half));
+	ref.erase(ref.begin(), ref.begin() + half);
+	check();
+
+	auto more = make_points<Kind>(gen<Kind>(5000, 0, 1000, seed + 1));
+	tree.batch_insert(parlay::make_slice(more));
+	ref.insert(ref.end(), more.begin(), more.end());
+	check();
+}
+
 int main()
 {
 	run<kd_kind<long, 2>>("kd/2d");
@@ -215,5 +284,7 @@ int main()
 	far_clusters<p_hilbert_kind<long, 3>>("p-hilbert/3d/far-clusters");
 	top_bits<p_kind<long, 3>>("p/3d/top-bits");
 	top_bits<p_hilbert_kind<long, 3>>("p-hilbert/3d/top-bits");
+	far_value<orth_kind<long, 2>>("orth/2d/far-value");
+	far_value<orth_kind<long, 3>>("orth/3d/far-value");
 	return psi_test_result();
 }

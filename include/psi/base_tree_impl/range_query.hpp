@@ -95,6 +95,25 @@ size_t base_tree<Traits, DerivedTree>::range_count_rectangle(
 	node *T, box_type const &query_box, box_type const &node_box,
 	dims_type dim, bucket_type idx, range_query_logger &logger)
 {
+	/* A node's points can fill a small part of node_box. */
+	if constexpr (has_box<typename interior_type::at_type>) {
+		if (idx == 1) {
+			if (T->size == 0) {
+				return 0;
+			}
+			box_type const &bounding_box =
+				retrieve_box<leaf_type, interior_type>(T);
+			if (!box_intersect_box(bounding_box, query_box)) {
+				logger.skip_box_num++;
+				return 0;
+			}
+			if (within_box(bounding_box, query_box)) {
+				logger.full_box_num++;
+				return T->size;
+			}
+		}
+	}
+
 	if (T->is_leaf) {
 		logger.vis_leaf_num++;
 		return range_count_rectangle_leaf<leaf_type>(T, query_box);
@@ -253,6 +272,29 @@ void base_tree<Traits, DerivedTree>::range_query_serial_recursive(
 	box_type const &node_box, dims_type dim, bucket_type idx,
 	range_query_logger &logger)
 {
+	/* A node's points can fill a small part of node_box. */
+	if constexpr (has_box<typename interior_type::at_type>) {
+		if (idx == 1) {
+			if (T->size == 0) {
+				return;
+			}
+			box_type const &bounding_box =
+				retrieve_box<leaf_type, interior_type>(T);
+			if (!box_intersect_box(bounding_box, query_box)) {
+				logger.skip_box_num++;
+				return;
+			}
+			if (within_box(bounding_box, query_box) &&
+			    s + T->size <= out.size()) {
+				logger.full_box_num++;
+				flatten_rec<leaf_type, interior_type>(
+					T, out.cut(s, s + T->size));
+				s += T->size;
+				return;
+			}
+		}
+	}
+
 	if (T->is_leaf) {
 		logger.vis_leaf_num++;
 		range_query_leaf<leaf_type>(T, out, s, query_box);
